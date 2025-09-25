@@ -262,13 +262,12 @@ function mergeWithInsertions(core, digitsConfig, specialsConfig) {
   const digitsPlacement = digitsConfig?.placement;
   const specialsPlacement = specialsConfig?.placement;
 
-  if (digitsPlacement === 'fin' && specialsPlacement === 'fin') {
-    applyStep(specialsConfig);
-    applyStep(digitsConfig);
-  } else {
-    applyStep(digitsConfig);
-    applyStep(specialsConfig);
-  }
+  const sameSide = digitsPlacement && digitsPlacement === specialsPlacement;
+  const stackOrder = sameSide && (digitsPlacement === 'fin' || digitsPlacement === 'debut')
+    ? [specialsConfig, digitsConfig]
+    : [digitsConfig, specialsConfig];
+
+  stackOrder.forEach(applyStep);
 
   return result;
 }
