@@ -1,6 +1,5 @@
-// src/js/core/generators.js - Logique principale de génération
 /*
- * Copyright 2024 Julien Bombled
+ * Copyright 2025 Julien Bombled
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// src/js/core/generators.js - Logique principale de génération
 import { CHAR_SETS, DIGITS } from '../config/constants.js';
 import { pick, randInt, insertWithPlacement, log2 } from '../utils/helpers.js';
 import { getCurrentDictionary } from './dictionaries.js';
