@@ -1,0 +1,114 @@
+REM ============================================================================
+REM start-dev.bat - Script de démarrage rapide Windows
+REM ============================================================================
+@echo off
+setlocal enabledelayedexpansion
+
+echo.
+echo ========================================
+echo   GenPwd Pro v2.5 - Dev Server
+echo ========================================
+echo.
+
+REM Vérifier si Node.js est installé
+where node >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    echo ❌ Node.js n'est pas installe ou pas dans le PATH
+    echo 💡 Installez Node.js depuis : https://nodejs.org/
+    pause
+    exit /b 1
+)
+
+REM Afficher la version de Node.js
+for /f "tokens=*" %%i in ('node --version') do set NODE_VERSION=%%i
+echo ✅ Node.js detecte : !NODE_VERSION!
+
+REM Vérifier la structure du projet
+if not exist "index.html" (
+    echo ❌ index.html non trouve dans le repertoire courant
+    echo 💡 Executez ce script depuis la racine du projet GenPwd Pro
+    pause
+    exit /b 1
+)
+
+if not exist "tools\dev-server.js" (
+    echo ❌ dev-server.js non trouve dans le dossier tools/
+    echo 💡 Assurez-vous que le fichier tools/dev-server.js existe
+    pause
+    exit /b 1
+)
+
+echo ✅ Structure du projet validee
+echo.
+
+REM Démarrer le serveur
+echo 🚀 Demarrage du serveur de developpement...
+echo 📍 URL : http://localhost:3000/
+echo 🛑 Appuyez sur Ctrl+C pour arreter
+echo.
+
+node tools\dev-server.js 3000
+
+echo.
+echo 👋 Serveur arrete
+pause
+
+REM ============================================================================
+REM start-dev.sh - Script de démarrage rapide Unix/Linux/macOS
+REM ============================================================================
+#!/bin/bash
+
+# Couleurs pour les messages
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+echo -e ""
+echo -e "${CYAN}========================================"
+echo -e "  GenPwd Pro v2.5 - Dev Server"
+echo -e "========================================"
+echo -e "${NC}"
+
+# Vérifier si Node.js est installé
+if ! command -v node &> /dev/null; then
+    echo -e "${RED}❌ Node.js n'est pas installé ou pas dans le PATH${NC}"
+    echo -e "${YELLOW}💡 Installez Node.js depuis : https://nodejs.org/${NC}"
+    exit 1
+fi
+
+# Afficher la version de Node.js
+NODE_VERSION=$(node --version)
+echo -e "${GREEN}✅ Node.js détecté : ${NODE_VERSION}${NC}"
+
+# Vérifier la structure du projet
+if [ ! -f "index.html" ]; then
+    echo -e "${RED}❌ index.html non trouvé dans le répertoire courant${NC}"
+    echo -e "${YELLOW}💡 Exécutez ce script depuis la racine du projet GenPwd Pro${NC}"
+    exit 1
+fi
+
+if [ ! -f "tools/dev-server.js" ]; then
+    echo -e "${RED}❌ dev-server.js non trouvé dans le dossier tools/${NC}"
+    echo -e "${YELLOW}💡 Assurez-vous que le fichier tools/dev-server.js existe${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Structure du projet validée${NC}"
+echo -e ""
+
+# Rendre le script exécutable si nécessaire
+chmod +x tools/dev-server.js 2>/dev/null
+
+# Démarrer le serveur
+echo -e "${BLUE}🚀 Démarrage du serveur de développement...${NC}"
+echo -e "${GREEN}📍 URL : http://localhost:3000/${NC}"
+echo -e "${YELLOW}🛑 Appuyez sur Ctrl+C pour arrêter${NC}"
+echo -e ""
+
+node tools/dev-server.js 3000
+
+echo -e ""
+echo -e "${CYAN}👋 Serveur arrêté${NC}"

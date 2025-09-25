@@ -1,0 +1,402 @@
+/* src/styles/modal.css - Styles des modaux et overlays */
+
+/* ============================================================================
+   MODAL À PROPOS
+   ============================================================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 20px;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-large);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  transform: scale(0.9) translateY(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-overlay.show .modal {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, 
+    rgba(0, 212, 255, 0.05) 0%,
+    rgba(139, 92, 246, 0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-title svg {
+  color: var(--accent-cyan);
+  -webkit-text-fill-color: var(--accent-cyan);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-small);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-muted);
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+/* Scrollbars spécifiques au modal */
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-purple) var(--bg-tertiary);
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--accent-purple);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* ============================================================================
+   CONTENU DU MODAL À PROPOS
+   ============================================================================ */
+
+.about-section {
+  margin-bottom: 24px;
+}
+
+.about-section:last-child {
+  margin-bottom: 0;
+}
+
+.about-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.about-section h3 svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-cyan);
+}
+
+.about-section p {
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.about-section p:last-child {
+  margin-bottom: 0;
+}
+
+.highlight {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.feature-list li {
+  padding: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.feature-list li::before {
+  content: "✓";
+  color: var(--accent-green);
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.feature-list li strong {
+  color: var(--text-primary);
+}
+
+.author-credit {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  margin-top: 24px;
+}
+
+.author-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-purple);
+  margin-bottom: 4px;
+}
+
+.author-role {
+  font-size: 13px;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+/* ============================================================================
+   COMPOSITIONS DE MOTS DE PASSE
+   ============================================================================ */
+
+.pwd {
+  position: relative;
+  cursor: pointer;
+  user-select: all;
+  font-size: 18px;
+  letter-spacing: 0.25px;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: var(--radius-small);
+  border: 1px solid transparent;
+}
+
+.pwd:hover {
+  background: rgba(0, 212, 255, 0.05);
+  border-color: var(--accent-cyan);
+}
+
+.pwd .value {
+  filter: none;
+  transition: filter 0.2s ease;
+}
+
+.pwd.masked .value {
+  filter: blur(6px);
+}
+
+.pwd .actions {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.pwd:hover .actions {
+  opacity: 1;
+}
+
+.pwd .copy-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.pwd:hover .copy-icon {
+  opacity: 1;
+}
+
+/* ============================================================================
+   COMPOSITION VISUELLE
+   ============================================================================ */
+
+.comp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comp-bar {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+}
+
+.seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.seg.u {
+  background: var(--accent-blue);
+}
+
+.seg.l {
+  background: var(--accent-purple);
+}
+
+.seg.d {
+  background: var(--accent-yellow);
+}
+
+.seg.s {
+  background: var(--accent-green);
+}
+
+.comp-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* ============================================================================
+   RESPONSIVE MODAL
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .modal {
+    width: 95vw;
+    margin: 16px;
+    max-height: 90vh;
+  }
+  
+  .modal-header {
+    padding: 20px 20px 16px 20px;
+  }
+  
+  .modal-title {
+    font-size: 20px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+    max-height: 70vh;
+  }
+
+  .about-section h3 {
+    font-size: 16px;
+  }
+
+  .feature-list li {
+    padding: 6px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    max-height: none;
+  }
+  
+  .modal-overlay {
+    padding: 0;
+  }
+  
+  .modal-body {
+    max-height: calc(100vh - 100px);
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "genpwd-pro",
+  "version": "2.5.0",
+  "description": "Générateur de mots de passe sécurisés avec tests intégrés - Architecture modulaire",
+  "main": "src/index.html",
+  "scripts": {
+    "dev": "node tools/dev-server.js",
+    "build": "node tools/build.js",
+    "test": "node tools/run_tests.js",
+    "test:browser": "node tools/run_tests.js && node tools/browser-test.js",
+    "test:create-browser": "node tools/run_tests.js --create-browser-test"
+    "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
+    "lint": "eslint src/js/**/*.js tools/**/*.js",
+    "clean": "rimraf dist/*",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "chokidar": "^3.5.3",
+    "puppeteer": "^21.6.1",
+    "eslint": "^8.56.0",
+    "nodemon": "^3.0.2"
+  },
+  "files": [
+    "src/",
+    "tools/",
+    "dictionaries/",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "password",
+    "generator",
+    "security",
+    "cryptography",
+    "javascript",
+    "testing",
+    "automated-testing"
+  ],
+  "author": "Julien Bombled",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/votre-username/genpwd-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/votre-username/genpwd-pro/issues"
+  },
+  "homepage": "https://github.com/votre-username/genpwd-pro#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "testConfig": {
+    "testSuiteFile": "tools/test-suite.js",
+    "timeout": 60000,
+    "retries": 1
+  }
+}

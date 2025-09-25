@@ -1,0 +1,161 @@
+/* src/styles/main.css - Variables CSS et styles de base */
+
+:root {
+  /* Couleurs principales */
+  --bg-primary: #1a1d29;
+  --bg-secondary: #232740;
+  --bg-tertiary: #2a2f4a;
+  --bg-quaternary: #1f2336;
+  
+  /* Couleurs d'accent */
+  --accent-cyan: #00d4ff;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-yellow: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-blue: #3b82f6;
+  
+  /* Couleurs de texte */
+  --text-primary: #e8ebf7;
+  --text-secondary: #d1d5db;
+  --text-muted: #aab2cf;
+  
+  /* Bordures */
+  --border: #373c59;
+  --border-hover: #4f5578;
+  
+  /* Effets */
+  --shadow: 0 6px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03);
+  --radius: 12px;
+  --radius-small: 8px;
+  --radius-large: 16px;
+}
+
+/* Reset et base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: linear-gradient(135deg, #141725, var(--bg-primary));
+  color: var(--text-primary);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* Typographie */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+p {
+  margin: 0 0 1rem 0;
+}
+
+code, .mono {
+  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+
+/* Scrollbars personnalisées */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-cyan) var(--bg-secondary);
+}
+
+/* Utilitaires de base */
+.grow {
+  flex: 1;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1rem 0;
+  opacity: 0.7;
+}
+
+/* Animations de base */
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  50% { 
+    box-shadow: 0 12px 40px rgba(0, 212, 255, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+}
+
+@keyframes aurora {
+  0%, 100% { opacity: 0.5; transform: scale(1) rotate(0deg); }
+  50% { opacity: 0.8; transform: scale(1.1) rotate(1deg); }
+}
+
+@keyframes copyPulse {
+  0% { background: rgba(0,212,255,0.1); }
+  50% { background: rgba(0,212,255,0.3); }
+  100% { background: rgba(0,212,255,0.1); }
+}
+
+/* États spéciaux */
+.copying {
+  animation: copyPulse 0.6s ease;
+}
+
+/* App container */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}

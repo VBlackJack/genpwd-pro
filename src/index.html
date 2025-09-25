@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenPwd Pro – Secure Password Generator</title>
+  <meta name="author" content="Julien Bombled">
+  
+  <!-- CSS Modulaire -->
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/modal.css">
+  
+  <!-- Styles pour les tests -->
+  <style>
+    .test-modal {
+      max-width: 800px;
+      max-height: 90vh;
+    }
+
+    .test-summary {
+      background: rgba(19, 26, 52, 0.5);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .test-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab-button {
+      padding: 8px 16px;
+      border: 1px solid rgba(140, 148, 202, 0.3);
+      background: transparent;
+      border-radius: 6px;
+      color: #8c94ca;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-button.active {
+      background: rgba(21, 190, 255, 0.1);
+      color: #d6dcff;
+      border-color: #8c94ca;
+    }
+
+    .test-details {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .test-console {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    #test-console-output {
+      background: #0a0e1a;
+      border: 1px solid rgba(140, 148, 202, 0.15);
+      border-radius: 4px;
+      padding: 12px;
+      color: #d6dcff;
+      font-size: 11px;
+      line-height: 1.4;
+      margin: 0;
+      white-space: pre-wrap;
+    }
+
+    .test-item {
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .test-item.success {
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .test-item.error {
+      border: 1px solid #ef4444;
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    #test-status {
+      font-size: 11px;
+      color: #8c94ca;
+      font-family: var(--font-mono);
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header id="app-header">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-badge">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+              <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <div class="logo-title">GenPwd Pro</div>
+            <div class="logo-subtitle">Générateur de mots de passe sécurisés</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="version-badge">v2.5</div>
+          <button class="about-btn" id="btn-about">
+            <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span>À propos</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Modal À Propos -->
+    <div class="modal-overlay" id="about-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+            </svg>
+            À propos de GenPwd Pro
+          </div>
+          <button class="modal-close" id="modal-close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+		<div class="modal-body">
+		  <div class="about-section">
+			<h3>Architecture modulaire v2.5</h3>
+			<p><strong>GenPwd Pro v2.5</strong> propose une architecture ES6 modulaire avec dictionnaires externalisés et tests intégrés :</p>
+			<ul class="feature-list">
+			  <li><strong>Français :</strong> 2400+ mots et expressions courantes</li>
+			  <li><strong>English :</strong> Collection étendue de mots et phrases</li>
+			  <li><strong>Latin :</strong> Mots latins classiques et académiques</li>
+			  <li><strong>Chargement dynamique :</strong> Dictionnaires externalisés sans alourdir le code</li>
+			  <li><strong>Fallback intelligent :</strong> Dictionnaire français intégré en cas d'erreur</li>
+			  <li><strong>Tests automatisés :</strong> Suite de validation complète (score 100%)</li>
+			</ul>
+		  </div>
+
+		  <div class="about-section">
+			<h3>Sécurité par l'unicité</h3>
+			<p>La sécurité ne vient pas de l'illisibilité mais de l'<strong>unicité de votre pattern personnel</strong>.</p>
+			<ul class="feature-list">
+			  <li><strong>Politique adaptée :</strong> Standard, Layout-safe, Alphanumerique selon vos contraintes</li>
+			  <li><strong>Pattern de casse :</strong> Votre séquence U-T-l devient votre signature cryptographique</li>
+			  <li><strong>Placement personnel :</strong> Contrôle précis des positions (début/milieu/fin/visuel)</li>
+			  <li><strong>Entropie optimisée :</strong> Jusqu'à 140 bits pour une sécurité maximale</li>
+			  <li><strong>CLI-Safe :</strong> Caractères optimisés pour les environnements techniques</li>
+			</ul>
+		  </div>
+
+		  <div class="about-section">
+			<h3>Fonctionnalités avancées</h3>
+			<ul class="feature-list">
+			  <li><strong>3 modes de génération :</strong> Syllabes, Passphrase, Leet speak</li>
+			  <li><strong>Placement visuel :</strong> Interface interactive pour positionnement précis</li>
+			  <li><strong>Blocs de casse :</strong> Système U/T/L pour patterns complexes</li>
+			  <li><strong>Tests intégrés :</strong> Validation automatique avec score en temps réel</li>
+			  <li><strong>Export/Import :</strong> Sauvegarde des résultats et configurations</li>
+			</ul>
+		  </div>
+
+		  <div class="author-credit">
+			<div class="author-name">Julien Bombled</div>
+			<div class="author-role">Version modulaire v2.5.0 • Architecture ES6</div>
+		  </div>
+		</div>
+      </div>
+    </div>
+
+    <!-- Modal Résultats Tests -->
+    <div id="test-results-modal" class="modal-overlay" style="display: none;">
+      <div class="modal test-modal">
+        <div class="modal-header">
+          <div class="modal-title">📊 Résultats des Tests - GenPwd Pro v2.5</div>
+          <button type="button" class="modal-close" id="close-test-results">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          
+          <div id="test-summary" class="test-summary">
+            <!-- Score et résumé -->
+          </div>
+          
+          <div class="test-tabs">
+            <button id="tab-results" class="tab-button active">
+              Résultats
+            </button>
+            <button id="tab-console" class="tab-button">
+              Console
+            </button>
+          </div>
+          
+          <div id="test-details" class="test-details">
+            <!-- Détails des tests -->
+          </div>
+          
+          <div id="test-console" class="test-console" style="display: none;">
+            <pre id="test-console-output"></pre>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btn-rerun-tests" class="btn">🔄 Relancer</button>
+          <button type="button" id="btn-export-test-results" class="btn">📤 Exporter JSON</button>
+          <button type="button" class="btn danger" id="close-test-results-footer">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- Configuration Panel -->
+      <aside class="panel" id="config-panel">
+        <div class="panel-body">
+          
+          <!-- Mode de génération -->
+          <section class="section">
+            <div class="section-header chevron">
+              <span class="chev">▼</span>
+              <strong>Mode de génération</strong>
+              <span class="badge">3 modes</span>
+            </div>
+            <div class="section-content">
+              <div class="row">
+                <label for="mode-select">Mode</label>
+                <select id="mode-select" class="grow">
+                  <option value="syllables">Syllabes (alternance C/V)</option>
+                  <option value="passphrase">Passphrase (mots séparés)</option>
+                  <option value="leet">Mot → Leet</option>
+                </select>
+              </div>
+
+              <!-- Options syllables -->
+              <div id="mode-syllables-opts">
+                <div class="row">
+                  <label for="syll-len">Longueur (6–64)</label>
+                  <div class="grow slider-wrap">
+                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20">
+                    <span class="badge" id="syll-len-val">20</span>
+                  </div>
+                </div>
+                <div class="row">
+                  <label for="policy-select">Politique</label>
+                  <select id="policy-select" class="grow">
+                    <option value="standard">Standard</option>
+                    <option value="standard-layout">Standard Layout</option>
+                    <option value="alphanumerique">Alphanumerique</option>
+                    <option value="alphanumerique-layout">Alphanumerique Layout</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Options passphrase -->
+              <div id="mode-passphrase-opts" style="display:none">
+                <div class="row">
+                  <label for="pp-count">Nombre de mots (2–8)</label>
+                  <div class="grow slider-wrap">
+                    <input type="range" id="pp-count" class="slider" min="2" max="8" value="5">
+                    <span class="badge" id="pp-count-val">5</span>
+                  </div>
+                </div>
+                <div class="row">
+                  <label for="pp-sep">Séparateur</label>
+                  <select id="pp-sep" class="grow">
+                    <option value="-">- (tiret)</option>
+                    <option value="_">_ (souligné)</option>
+                    <option value=".">. (point)</option>
+                    <option value=" ">Espace</option>
+                  </select>
+                </div>
+                <div class="row">
+                  <label for="dict-select">Dictionnaire</label>
+                  <div class="dict-selector grow">
+                    <select id="dict-select" class="grow">
+                      <option value="french">🇫🇷 Français</option>
+                      <option value="english">🇬🇧 English</option>
+                      <option value="latin">🏛️ Latin</option>
+                    </select>
+                    <div class="dict-status" id="dict-status">--</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="dict-info" id="dict-info">Chargement du dictionnaire...</div>
+                </div>
+              </div>
+
+              <!-- Options leet -->
+              <div id="mode-leet-opts" style="display:none">
+                <div class="row">
+                  <label for="leet-input">Mot à transformer</label>
+                  <input id="leet-input" class="input grow" type="text" value="password">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Paramètres communs -->
+          <section class="section">
+            <div class="section-header chevron">
+              <span class="chev">▼</span>
+              <strong>Paramètres communs</strong>
+            </div>
+            <div class="section-content">
+              <div class="row">
+                <label for="qty">Nombre (1–20)</label>
+                <div class="grow slider-wrap">
+                  <input type="range" class="slider" id="qty" min="1" max="20" value="5">
+                  <span class="badge" id="qty-val">5</span>
+                </div>
+              </div>
+              <div class="row">
+                <label>Masquer l'affichage</label>
+                <label class="checkbox"><input type="checkbox" id="mask-toggle" checked> Flouter les mots de passe</label>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="row">
+                <label for="digits-count">Chiffres (0–6)</label>
+                <div class="grow slider-wrap">
+                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2">
+                  <span class="badge" id="digits-count-val">2</span>
+                </div>
+              </div>
+              <div class="row">
+                <label for="specials-count">Spéciaux (0–6)</label>
+                <div class="grow slider-wrap">
+                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2">
+                  <span class="badge" id="specials-count-val">2</span>
+                </div>
+              </div>
+              <div class="row">
+                <label for="custom-specials">Spéciaux personnalisés</label>
+                <input id="custom-specials" class="input grow" type="text" value="_+-=.@#%">
+              </div>
+
+              <div class="row">
+                <label>Placement chiffres</label>
+                <select id="place-digits" class="grow">
+                  <option value="debut">Début</option>
+                  <option value="fin">Fin</option>
+                  <option value="milieu">Milieu</option>
+                  <option value="aleatoire" selected>Aléatoire</option>
+                  <option value="positions">🎯 Visuel</option>
+                </select>
+              </div>
+              <div class="row">
+                <label>Placement spéciaux</label>
+                <select id="place-specials" class="grow">
+                  <option value="debut">Début</option>
+                  <option value="fin">Fin</option>
+                  <option value="milieu">Milieu</option>
+                  <option value="aleatoire" selected>Aléatoire</option>
+                  <option value="positions">🎯 Visuel</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <label>🎯 Placement visuel</label>
+                <div id="placement-visual-container" class="placement-visual-container">
+                  <div class="placement-bar-wrapper">
+                    <div class="placement-bar" id="placement-bar">
+                      <div class="bar-base"></div>
+                      <div class="bar-cursors" id="bar-cursors"></div>
+                      <div class="bar-labels" id="bar-labels"></div>
+                    </div>
+                  </div>
+                  <div class="placement-controls">
+                    <button class="btn-mini" id="btn-placement-reset">↻ Reset</button>
+                    <button class="btn-mini" id="btn-placement-auto">🎲 Auto</button>
+                    <button class="btn-mini" id="btn-placement-toggle">🎯 → 📊</button>
+                    <span class="placement-mode" id="placement-mode">Auto</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="row">
+                <label for="case-mode-select">Gestion de la casse</label>
+                <select id="case-mode-select" class="grow">
+                  <option value="mixte">Mixte (aléatoire)</option>
+                  <option value="upper">MAJUSCULES</option>
+                  <option value="lower">minuscules</option>
+                  <option value="title">Title Case</option>
+                  <option value="blocks">Blocs (U/T/L)</option>
+                </select>
+              </div>
+
+              <div class="row" id="blocks-editor-row" style="display:none">
+                <div class="grow blocks-wrap">
+                  <div class="block-controls">
+                    <div class="block-controls-left">
+                      <button class="btn-mini" id="btn-all-title">Tout Title</button>
+                      <button class="btn-mini" id="btn-all-upper">Tout UPPER</button>
+                      <button class="btn-mini" id="btn-all-lower">Tout lower</button>
+                    </div>
+                    <div class="block-controls-right">
+                      <button class="btn-mini" id="btn-block-dec">−</button>
+                      <span class="hint" id="block-size-label">Blocs: 2</span>
+                      <button class="btn-mini" id="btn-block-inc">+</button>
+                      <button class="btn-mini random" id="btn-block-random">🎲 Aléatoire</button>
+                    </div>
+                  </div>
+                  <div class="chips" id="chips"></div>
+                </div>
+              </div>
+
+              <div class="row" id="case-preview-row" style="display:none">
+                <label class="hint">Aperçu</label>
+                <div class="hint mono" id="case-preview"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Informations -->
+			<section class="section">
+			  <div class="section-header chevron">
+				<span class="chev">▼</span>
+				<strong>Aide & Notes</strong>
+			  </div>
+			  <div class="section-content">
+				<p class="small">
+				  <strong>💡 Astuce :</strong> Cliquez directement sur un mot de passe pour le copier !<br><br>
+				  
+				  <strong>🛡️ CLI-Safe :</strong> Les caractères spéciaux par défaut sont optimisés pour les environnements techniques (terminal, lignes de commande).<br><br>
+				  
+				  <strong>🌍 Dictionnaires :</strong> Collections multilingues chargées dynamiquement - Français (intégré), English et Latin (externalisés).<br><br>
+				  
+				  <strong>🧪 Tests intégrés :</strong> Utilisez le bouton "Tests" pour valider le fonctionnement (score 100% attendu). Console disponible : <code>runTests()</code><br><br>
+				  
+				  <strong>🎯 Placement visuel :</strong> Sélectionnez "Visuel" dans les dropdowns de placement pour un contrôle interactif des positions.<br><br>
+				  
+				  <strong>📊 Entropie :</strong> Les mots de passe générés atteignent jusqu'à 140 bits d'entropie pour une sécurité maximale.
+				</p>
+			  </div>
+			</section>
+        </div>
+      </aside>
+
+      <!-- Results Panel -->
+      <section class="results" id="results-panel">
+        <div class="actions">
+          <button class="btn primary" id="btn-generate">🔒 Générer</button>
+          <button class="btn" id="btn-copy-all">📋 Tout Copier</button>
+          <button class="btn" id="btn-export">📤 Export</button>
+          <button class="btn danger" id="btn-clear">🗑️ Effacer</button>
+          <span class="spacer"></span>
+          <button class="btn ghost" id="btn-run-tests">🧪 Tests</button>
+          <span id="test-status"></span>
+          <button class="btn ghost" id="btn-toggle-debug">🔬 Debug</button>
+        </div>
+        <div class="results-list" id="results-list">
+          <div class="empty-state">
+            <div class="empty-icon">🔐</div>
+            <p>Cliquez sur "Générer" pour créer vos mots de passe</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Debug Panel -->
+    <aside class="debug" id="debug-panel">
+      <div class="debug-header">
+        <strong>Debug</strong>
+        <button class="btn ghost small" id="btn-clear-logs">Effacer logs</button>
+      </div>
+      <div class="debug-body">
+        <div id="tests"></div>
+        <pre class="log" id="logs">[--:--:--] En attente d'initialisation...</pre>
+      </div>
+    </aside>
+
+    <!-- Toast Container -->
+    <div class="toasts" id="toasts"></div>
+  </div>
+
+  <!-- Suite de tests -->
+  <script src="./tests/test-suite.js"></script>
+
+  <!-- JavaScript modulaire ES6 -->
+  <script type="module" src="js/app.js"></script>
+  
+  <!-- Intégration UI des tests -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof GenPwdTestSuite === 'undefined') {
+      console.warn('Suite de tests non chargée');
+      return;
+    }
+
+    const testSuite = new GenPwdTestSuite();
+    
+    // Éléments DOM
+    const runTestsBtn = document.getElementById('btn-run-tests');
+    const testStatus = document.getElementById('test-status');
+    const testModal = document.getElementById('test-results-modal');
+    const tabResults = document.getElementById('tab-results');
+    const tabConsole = document.getElementById('tab-console');
+    const testDetails = document.getElementById('test-details');
+    const testConsole = document.getElementById('test-console');
+    
+    // Bouton principal
+    if (runTestsBtn) {
+      runTestsBtn.addEventListener('click', async () => {
+        runTestsBtn.disabled = true;
+        const originalText = runTestsBtn.textContent;
+        runTestsBtn.textContent = '⏳ Tests...';
+        testStatus.textContent = 'Exécution...';
+        testStatus.style.color = '#f59e0b';
+        
+        try {
+          const results = await testSuite.runAllTests();
+          displayTestResults(results);
+          showTestModal();
+          
+          const score = Math.round((results.passed / (results.passed + results.failed)) * 100);
+          testStatus.textContent = `${score}% (${results.passed}/${results.passed + results.failed})`;
+          testStatus.style.color = score === 100 ? '#10b981' : score >= 80 ? '#f59e0b' : '#ef4444';
+          
+        } catch (error) {
+          testStatus.textContent = 'Erreur';
+          testStatus.style.color = '#ef4444';
+          console.error('Erreur tests:', error);
+        } finally {
+          runTestsBtn.disabled = false;
+          runTestsBtn.textContent = originalText;
+        }
+      });
+    }
+    
+    // Gestion des onglets
+    if (tabResults && tabConsole) {
+      tabResults.addEventListener('click', () => {
+        tabResults.classList.add('active');
+        tabConsole.classList.remove('active');
+        testDetails.style.display = 'block';
+        testConsole.style.display = 'none';
+      });
+      
+      tabConsole.addEventListener('click', () => {
+        tabConsole.classList.add('active');
+        tabResults.classList.remove('active');
+        testDetails.style.display = 'none';
+        testConsole.style.display = 'block';
+      });
+    }
+    
+    // Fermeture modal
+    document.getElementById('close-test-results')?.addEventListener('click', closeModal);
+    document.getElementById('close-test-results-footer')?.addEventListener('click', closeModal);
+    
+    function closeModal() {
+      testModal.style.display = 'none';
+    }
+    
+    // Relancer tests
+    document.getElementById('btn-rerun-tests')?.addEventListener('click', () => {
+      closeModal();
+      runTestsBtn.click();
+    });
+    
+    // Export résultats
+    document.getElementById('btn-export-test-results')?.addEventListener('click', () => {
+      if (window.lastTestResults) {
+        const timestamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+        const filename = `genpwd-test-results-${timestamp}.json`;
+        
+        const blob = new Blob([JSON.stringify(window.lastTestResults, null, 2)], 
+          { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`Résultats exportés: ${filename}`);
+      }
+    });
+    
+    function displayTestResults(results) {
+      const summary = document.getElementById('test-summary');
+      const details = document.getElementById('test-details');
+      const consoleOutput = document.getElementById('test-console-output');
+      
+      if (summary) {
+        const total = results.passed + results.failed;
+        const score = Math.round((results.passed / total) * 100);
+        const scoreColor = score === 100 ? '#10b981' : score >= 80 ? '#f59e0b' : '#ef4444';
+        const duration = Math.round((results.endTime - results.startTime) / 1000);
+        
+        summary.innerHTML = `
+          <div style="font-size: 36px; font-weight: bold; color: ${scoreColor}; margin-bottom: 8px;">${score}%</div>
+          <div style="color: #8c94ca; font-size: 14px; margin-bottom: 4px;">
+            ${results.passed} réussis • ${results.failed} échoués • ${duration}s
+          </div>
+          <div style="color: #8c94ca; font-size: 12px;">
+            ${total} tests exécutés sur GenPwd Pro v2.5
+          </div>
+        `;
+      }
+      
+      if (details) {
+        let html = '<div class="test-list">';
+        
+        // Tests réussis
+        results.details.forEach((test) => {
+          const configErrors = test.configErrors || 0;
+          html += `
+            <div class="test-item success">
+              <div style="font-weight: 600; color: #10b981; margin-bottom: 6px;">✅ ${test.test}</div>
+              <div style="font-size: 12px; color: #8c94ca; margin-bottom: 4px;">
+                ${test.count} mots générés${configErrors > 0 ? ` • ${configErrors} éléments non trouvés` : ''}
+              </div>
+              ${test.passwords[0] ? `
+                <div style="font-size: 11px; color: #d6dcff; font-family: var(--font-mono); background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; margin-top: 6px;">
+                  "${test.passwords[0].password}" (${test.passwords[0].entropy})
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+        
+        // Tests échoués
+        results.errors.forEach((error) => {
+          html += `
+            <div class="test-item error">
+              <div style="font-weight: 600; color: #ef4444; margin-bottom: 6px;">❌ ${error.test}</div>
+              <div style="font-size: 12px; color: #ef4444;">
+                Erreur: ${error.error}
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        details.innerHTML = html;
+      }
+      
+      if (consoleOutput) {
+        consoleOutput.textContent = testSuite.getConsoleOutput();
+      }
+    }
+    
+    function showTestModal() {
+      testModal.style.display = 'flex';
+    }
+    
+    // Fermeture modal en cliquant à l'extérieur
+    testModal?.addEventListener('click', (e) => {
+      if (e.target === testModal) {
+        closeModal();
+      }
+    });
+
+    // API globale pour la console
+    window.testSuite = testSuite;
+    window.runTests = () => testSuite.runAllTests();
+    window.runTest = (name) => testSuite.runSingleTest(name);
+  });
+  </script>
+</body>
+</html>
