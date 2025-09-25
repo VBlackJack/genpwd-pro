@@ -351,5 +351,5 @@ L'export JSON contient :
 
 <div align="center">
   <b>Besoin d'aide ?</b><br>
-  Consultez la <a href="./TECHNICAL.md">documentation technique</a> ou créez une <a href="https://github.com/yourusername/genpwd-pro/issues">issue sur GitHub</a>
+  Consultez la <a href="./TECHNICAL.md">documentation technique</a> ou créez une <a href="https://github.com/VBlackJack/genpwd-pro/issues">issue sur GitHub</a>
 </div>
