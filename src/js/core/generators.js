@@ -84,40 +84,60 @@ export function generateSyllables(config) {
 export async function generatePassphrase(config) {
   try {
     const { wordCount, separator, digits, specials, customSpecials,
-            placeDigits, placeSpecials, caseMode, useBlocks, blockTokens, dictionary } = config;
+            placeDigits, placeSpecials, caseMode, useBlocks, blockTokens, dictionary,
+            wordListOverride } = config;
 
     safeLog(`Génération passphrase: ${wordCount} mots, dict="${dictionary}"`);
-    
-    // Charger le dictionnaire
-    const words = await getCurrentDictionary(dictionary);
-    const selectedWords = Array.from({ length: wordCount }, () => pick(words));
-    
-    let core = selectedWords.join(separator);
 
-    // Application de la casse
-    core = useBlocks && blockTokens?.length > 0
-      ? applyCasePattern(core, blockTokens, { perWord: true })
-      : applyCase(core, caseMode);
+    const sanitizedSeparator = typeof separator === 'string' ? separator : '';
+    const overrideWords = Array.isArray(wordListOverride)
+      ? wordListOverride.filter(word => typeof word === 'string' && word.length > 0)
+      : null;
+
+    const dictionaryWords = overrideWords && overrideWords.length > 0
+      ? overrideWords
+      : await getCurrentDictionary(dictionary);
+
+    const selectedWords = overrideWords && overrideWords.length >= wordCount
+      ? overrideWords.slice(0, wordCount)
+      : Array.from({ length: wordCount }, () => pick(dictionaryWords));
+
+    const validBlocks = Array.isArray(blockTokens)
+      ? blockTokens.filter(token => ['U', 'l', 'T'].includes(token))
+      : [];
+
+    const shouldUseBlocks = useBlocks && validBlocks.length > 0;
+    const transformedWords = shouldUseBlocks
+      ? selectedWords.map((word, index) => {
+          const token = validBlocks[index % validBlocks.length];
+          return applyCasePattern(word, [token], { perWord: false });
+        })
+      : [];
+
+    const fallbackCaseMode = caseMode === 'blocks' ? 'title' : caseMode;
+    const core = shouldUseBlocks
+      ? transformedWords.join(sanitizedSeparator)
+      : applyCase(selectedWords.join(sanitizedSeparator), fallbackCaseMode);
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0 
-      ? Array.from(customSpecials) 
+    const specialPool = customSpecials?.length > 0
+      ? Array.from(customSpecials)
       : CHAR_SETS.standard.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    const charSpace = computeCharacterSpace(result);
-    const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const dictionarySize = (dictionaryWords && dictionaryWords.length) || 1;
+    const entropy = calculateEntropy('passphrase', wordCount, dictionarySize, wordCount);
 
     return {
       value: result,
       entropy,
       mode: 'passphrase',
       dictionary,
-      words: selectedWords
+      words: (shouldUseBlocks ? transformedWords : selectedWords)
     };
 
   } catch (error) {

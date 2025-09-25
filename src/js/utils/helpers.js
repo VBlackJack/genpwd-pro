@@ -154,7 +154,9 @@ export function insertWithPercentages(base, charsToInsert, percentages) {
 export function insertWithPlacement(base, charsToInsert, placement, options = {}) {
   if (typeof base !== 'string') base = '';
 
-  const chars = ensureArray(charsToInsert).filter(c => typeof c === 'string');
+  const chars = ensureArray(charsToInsert)
+    .map(c => (typeof c === 'string' ? c : String(c ?? '')))
+    .filter(c => c.length > 0);
 
   if (chars.length === 0) return base;
   if (base.length === 0) return chars.join('');
@@ -178,6 +180,14 @@ export function insertWithPlacement(base, charsToInsert, placement, options = {}
     placement = 'aleatoire';
   }
 
+  if (placement === 'debut') {
+    return chars.join('') + base;
+  }
+
+  if (placement === 'fin') {
+    return base + chars.join('');
+  }
+
   const arr = base.split('');
   const insertAt = (pos, ch) => {
     const safePos = Math.max(0, Math.min(arr.length, pos));
@@ -190,9 +200,6 @@ export function insertWithPlacement(base, charsToInsert, placement, options = {}
         for (let i = chars.length - 1; i >= 0; i--) {
           insertAt(0, chars[i]);
         }
-        break;
-      case 'fin':
-        chars.forEach(ch => arr.push(ch));
         break;
       case 'milieu': {
         let mid = Math.floor(arr.length / 2);
