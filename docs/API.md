@@ -1123,10 +1123,9 @@ plugins.unregister(pluginName)      // Retire un plugin
 
 - **Documentation complète** : [TECHNICAL.md](./TECHNICAL.md)
 - **Guide utilisateur** : [USER-GUIDE.md](./USER-GUIDE.md)
-- **Exemples** : [/examples](./examples/)
 - **Tests** : [/src/tests](./src/tests/)
-- **Issues** : [GitHub Issues](https://github.com/yourusername/genpwd-pro/issues)
-- **Discussions** : [GitHub Discussions](https://github.com/yourusername/genpwd-pro/discussions)
+- **Issues** : [GitHub Issues](https://github.com/VBlackJack/genpwd-pro/issues)
+- **Discussions** : [GitHub Discussions](https://github.com/VBlackJack/genpwd-pro/discussions)
 
 ---
 
