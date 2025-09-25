@@ -202,6 +202,6 @@ Cette version marque une refonte complète de l'architecture avec passage à ES6
 
 <div align="center">
   <b>GenPwd Pro - Changelog</b><br>
-  <a href="https://github.com/yourusername/genpwd-pro/releases">Voir toutes les releases</a> •
-  <a href="https://github.com/yourusername/genpwd-pro/compare">Comparer les versions</a>
+  <a href="https://github.com/VBlackJack/genpwd-pro/releases">Voir toutes les releases</a> •
+  <a href="https://github.com/VBlackJack/genpwd-pro/compare">Comparer les versions</a>
 </div>
