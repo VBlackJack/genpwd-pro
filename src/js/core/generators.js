@@ -61,7 +61,6 @@ export function generateSyllables(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    // Calcul avec l'espace de caractères réel utilisé
     const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
 
@@ -110,7 +109,6 @@ export async function generatePassphrase(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    // Calcul avec l'espace de caractères réel utilisé
     const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
 
@@ -155,7 +153,6 @@ export function generateLeet(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    // Calcul avec l'espace de caractères réel utilisé
     const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
 
