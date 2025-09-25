@@ -100,33 +100,13 @@ class GenPwdTestSuite {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  resetDomState() {
-    const resultsContainer = document.getElementById('results-list');
-    if (resultsContainer) {
-      resultsContainer.innerHTML = '';
-    }
-
-    const toast = document.querySelector('.toast');
-    if (toast) {
-      toast.classList.remove('show');
-    }
-
-    const modal = document.querySelector('.modal.show');
-    if (modal) {
-      modal.classList.remove('show');
-    }
-  }
-
   async testConfiguration(config) {
     try {
       this.log(`Testing: ${config.name}`);
-
+      
       // Clear previous results
-      this.resetDomState();
       this.clickButton('btn-clear');
       await this.wait(300);
-      this.resetDomState();
-      await this.wait(120);
       
       // Configuration avec mapping correct
       const elementMapping = {
@@ -141,7 +121,6 @@ class GenPwdTestSuite {
           this.log(`⚠️  Élément ${actualKey} non trouvé`);
           configErrors++;
         }
-        await this.wait(120);
       }
 
       await this.wait(800);
@@ -151,7 +130,7 @@ class GenPwdTestSuite {
         throw new Error('Bouton génération non trouvé');
       }
 
-      await this.wait(1600);
+      await this.wait(1500);
 
       // Vérification
       const passwords = this.getResults();
@@ -178,8 +157,6 @@ class GenPwdTestSuite {
       if (passwords[0]) {
         this.log(`   Exemple: "${passwords[0].password}" (${passwords[0].entropy})`);
       }
-
-      await this.wait(120);
 
     } catch (error) {
       this.results.failed++;
@@ -390,9 +367,6 @@ class GenPwdTestSuite {
     try {
       let featuresWorking = 0;
 
-      this.resetDomState();
-      await this.wait(150);
-
       // Test masquage
       if (this.setElement('mask-toggle', true)) {
         await this.wait(300);
@@ -405,17 +379,17 @@ class GenPwdTestSuite {
       this.setElement('mode-select', 'syllables');
       this.setElement('case-mode-select', 'blocks');
       await this.wait(500);
-
+      
       const blockButtons = ['btn-all-title', 'btn-all-upper', 'btn-all-lower'];
       let workingButtons = 0;
-
+      
       for (const btnId of blockButtons) {
         if (this.clickButton(btnId)) {
           workingButtons++;
           await this.wait(200);
         }
       }
-
+      
       this.log(`✅ ${workingButtons}/${blockButtons.length} boutons blocs`);
       if (workingButtons > 0) featuresWorking++;
 
@@ -428,7 +402,7 @@ class GenPwdTestSuite {
           this.log('✅ Auto-distribution');
           await this.wait(300);
         }
-
+        
         if (this.clickButton('btn-placement-reset')) {
           this.log('✅ Reset placement');
         }
@@ -447,12 +421,9 @@ class GenPwdTestSuite {
         }
       }
 
-      await this.wait(150);
-      this.resetDomState();
-
       this.results.passed++;
       this.log(`✅ ${featuresWorking} fonctionnalités spéciales testées`);
-
+      
     } catch (error) {
       this.results.failed++;
       this.results.errors.push({

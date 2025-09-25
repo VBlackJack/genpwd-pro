@@ -240,34 +240,37 @@ function computeCharacterSpace(result) {
 }
 
 function mergeWithInsertions(core, digitsConfig, specialsConfig) {
-  const steps = [];
+  let result = core;
 
-  if (Array.isArray(digitsConfig?.chars) && digitsConfig.chars.length > 0) {
-    steps.push(digitsConfig);
-  }
-
-  if (Array.isArray(specialsConfig?.chars) && specialsConfig.chars.length > 0) {
-    steps.push(specialsConfig);
-  }
-
-  if (steps.length > 1) {
-    const placements = new Set(steps.map(step => step.placement));
-    if (placements.size === 1 && (placements.has('debut') || placements.has('fin'))) {
-      steps.sort((first, second) => {
-        if (first.type === second.type) {
-          return 0;
-        }
-        return first.type === 'digits' ? 1 : -1;
-      });
+  const applyStep = (step) => {
+    if (!step || !Array.isArray(step.chars) || step.chars.length === 0) {
+      return;
     }
+
+    const options = {};
+    if (step.type) {
+      options.type = step.type;
+    }
+
+    if (Array.isArray(step.percentages) && step.percentages.length > 0) {
+      options.percentages = step.percentages;
+    }
+
+    result = insertWithPlacement(result, step.chars, step.placement, options);
+  };
+
+  const digitsPlacement = digitsConfig?.placement;
+  const specialsPlacement = specialsConfig?.placement;
+
+  if (digitsPlacement === 'fin' && specialsPlacement === 'fin') {
+    applyStep(specialsConfig);
+    applyStep(digitsConfig);
+  } else {
+    applyStep(digitsConfig);
+    applyStep(specialsConfig);
   }
 
-  return steps.reduce((value, step) => insertWithPlacement(
-    value,
-    step.chars,
-    step.placement,
-    { type: step.type }
-  ), core);
+  return result;
 }
 
 function calculateEntropy(mode, length, poolSize, wordCount = 1) {
