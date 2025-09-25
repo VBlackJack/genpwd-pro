@@ -120,15 +120,22 @@ async function main() {
 
     const trailing = result.value.slice(-3);
     const specials = CHAR_SETS.standard.specials;
+    const chars = trailing.split('');
 
-    const [first, second, third] = trailing.split('');
+    const digitCount = chars.filter(ch => DIGITS.includes(ch)).length;
+    const specialCount = chars.filter(ch => specials.includes(ch)).length;
 
-    if (!DIGITS.includes(first) || !DIGITS.includes(second)) {
-      throw new Error(`Trailing digits incorrect: "${first}${second}"`);
+    if (digitCount !== config.digits) {
+      throw new Error(`Expected ${config.digits} trailing digits, found ${digitCount}`);
     }
 
-    if (!specials.includes(third)) {
-      throw new Error(`Trailing special incorrect: "${third}"`);
+    if (specialCount !== config.specials) {
+      throw new Error(`Expected ${config.specials} trailing specials, found ${specialCount}`);
+    }
+
+    const tailDigits = chars.slice(-config.digits);
+    if (!tailDigits.every(ch => DIGITS.includes(ch))) {
+      throw new Error(`Trailing characters not all digits: "${tailDigits.join('')}"`);
     }
   });
 

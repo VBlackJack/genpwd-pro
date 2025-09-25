@@ -250,13 +250,16 @@ function mergeWithInsertions(core, digitsConfig, specialsConfig) {
     steps.push(specialsConfig);
   }
 
-  if (steps.length > 1 && steps.every(step => step.placement === 'debut')) {
-    steps.sort((first, second) => {
-      if (first.type === second.type) {
-        return 0;
-      }
-      return first.type === 'digits' ? 1 : -1;
-    });
+  if (steps.length > 1) {
+    const placements = new Set(steps.map(step => step.placement));
+    if (placements.size === 1 && (placements.has('debut') || placements.has('fin'))) {
+      steps.sort((first, second) => {
+        if (first.type === second.type) {
+          return 0;
+        }
+        return first.type === 'digits' ? 1 : -1;
+      });
+    }
   }
 
   return steps.reduce((value, step) => insertWithPlacement(
