@@ -53,15 +53,15 @@ firefox src/index.html
 
 ### Mode Syllables (recommandé pour mémorisation)
 ```javascript
-// Génère : "nywOVyQep.OcyBoWEFY8"
-// Entropie : 140 bits
+// Génère : "nywOVyQep.OcyBoWEFY8KiLuMeRa"
+// Entropie : 95.2 bits
 // Pattern : Alternance consonnes/voyelles prononcables
 ```
 
 ### Mode Passphrase (mots séparés)
 ```javascript
-// Génère : "Forcer-Vague-Nature2"
-// Entropie : 105 bits
+// Génère : "Forcer-Vague-Nature-Soleil-Temps-2024"
+// Entropie : 78.4 bits
 // Utilise le dictionnaire français
 ```
 
