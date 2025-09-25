@@ -177,14 +177,15 @@ export function generateLeet(config) {
 }
 
 function computeCharacterSpace(result) {
-  let charSpace = 0;
+  const hasLower = /[a-z]/.test(result);
+  const hasUpper = /[A-Z]/.test(result);
+  const hasDigits = /[0-9]/.test(result);
+  const hasSpecials = /[^a-zA-Z0-9]/.test(result);
 
-  if (/[a-z]/.test(result)) charSpace += 26;
-  if (/[A-Z]/.test(result)) charSpace += 26;
-  if (/[0-9]/.test(result)) charSpace += 10;
-  if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
-  return charSpace;
+  return (hasLower ? 26 : 0)
+    + (hasUpper ? 26 : 0)
+    + (hasDigits ? 10 : 0)
+    + (hasSpecials ? 32 : 0);
 }
 
 function calculateEntropy(mode, length, poolSize, wordCount = 1) {
