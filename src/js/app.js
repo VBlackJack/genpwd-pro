@@ -1,6 +1,5 @@
-// src/js/app.js - Point d'entrée principal de l'application
 /*
- * Copyright 2024 Julien Bombled
+ * Copyright 2025 Julien Bombled
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// src/js/app.js - Point d'entrée principal de l'application
 import { validateCharSets } from './config/constants.js';
 import { initializeDictionaries } from './core/dictionaries.js';
 import { initializeDOM } from './ui/dom.js';
