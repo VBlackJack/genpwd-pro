@@ -320,26 +320,33 @@ async function generatePasswords() {
 
 async function copyAllPasswords() {
   const results = getResults();
-  if (!Array.isArray(results) || results.length === 0) {
+  if (!results?.length) {
     showToast('Aucun mot de passe à copier', 'warning');
     return;
   }
 
   const passwords = results
-    .map(result => typeof result?.value === 'string' ? result.value.trim() : '')
-    .filter(value => value.length > 0);
+    .map(result => result?.value)
+    .filter(Boolean)
+    .join('\n');
 
-  if (passwords.length === 0) {
+  if (!passwords) {
     showToast('Aucun mot de passe valide trouvé', 'warning');
     return;
   }
 
-  const success = await copyToClipboard(passwords.join('\n'));
+  const success = await copyToClipboard(passwords);
+  const count = passwords.split('\n').length;
+
+  showToast(
+    success
+      ? `${count} mot${count > 1 ? 's' : ''} de passe copiés !`
+      : 'Impossible de copier les mots de passe',
+    success ? 'success' : 'error'
+  );
+
   if (success) {
-    showToast(`${passwords.length} mot${passwords.length > 1 ? 's' : ''} de passe copiés !`, 'success');
-    safeLog(`Copie groupée: ${passwords.length} entrées`);
-  } else {
-    showToast('Impossible de copier les mots de passe', 'error');
+    safeLog(`Copie groupée: ${count} entrées`);
   }
 }
 

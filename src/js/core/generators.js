@@ -62,12 +62,7 @@ export function generateSyllables(config) {
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
     // Calcul avec l'espace de caractères réel utilisé
-    let charSpace = 0;
-    if (/[a-z]/.test(result)) charSpace += 26;
-    if (/[A-Z]/.test(result)) charSpace += 26;
-    if (/[0-9]/.test(result)) charSpace += 10;
-    if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
+    const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
@@ -116,12 +111,7 @@ export async function generatePassphrase(config) {
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
     // Calcul avec l'espace de caractères réel utilisé
-    let charSpace = 0;
-    if (/[a-z]/.test(result)) charSpace += 26;
-    if (/[A-Z]/.test(result)) charSpace += 26;
-    if (/[0-9]/.test(result)) charSpace += 10;
-    if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
+    const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
@@ -166,12 +156,7 @@ export function generateLeet(config) {
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
     // Calcul avec l'espace de caractères réel utilisé
-    let charSpace = 0;
-    if (/[a-z]/.test(result)) charSpace += 26;
-    if (/[A-Z]/.test(result)) charSpace += 26;
-    if (/[0-9]/.test(result)) charSpace += 10;
-    if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
+    const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
@@ -189,6 +174,17 @@ export function generateLeet(config) {
       mode: 'leet'
     };
   }
+}
+
+function computeCharacterSpace(result) {
+  let charSpace = 0;
+
+  if (/[a-z]/.test(result)) charSpace += 26;
+  if (/[A-Z]/.test(result)) charSpace += 26;
+  if (/[0-9]/.test(result)) charSpace += 10;
+  if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+
+  return charSpace;
 }
 
 function calculateEntropy(mode, length, poolSize, wordCount = 1) {
