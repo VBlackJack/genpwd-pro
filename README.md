@@ -1,9 +1,9 @@
 # GenPwd Pro v2.5 🔐
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/yourusername/genpwd-pro)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
 [![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./src/tests/)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![ES6+](https://img.shields.io/badge/ES6+-modern-orange.svg)](https://www.ecma-international.org/ecma-262/)
 
 > Générateur de mots de passe sécurisés nouvelle génération avec architecture modulaire ES6, tests intégrés et interface moderne.
@@ -133,13 +133,13 @@ Les contributions sont bienvenues ! Consultez notre guide de contribution pour :
 
 ## 📄 Licence
 
-MIT © 2024 Julien Bombled
+Apache 2.0 © 2025 Julien Bombled
 
 ---
 
 <div align="center">
   <b>GenPwd Pro v2.5</b> - Générateur de mots de passe professionnel<br>
-  <a href="https://github.com/yourusername/genpwd-pro">GitHub</a> •
+  <a href="https://github.com/VBlackJack/genpwd-pro">GitHub</a> •
   <a href="./docs/USER-GUIDE.md">Documentation</a> •
-  <a href="https://github.com/yourusername/genpwd-pro/issues">Issues</a>
+  <a href="https://github.com/VBlackJack/genpwd-pro/issues">Issues</a>
 </div>
