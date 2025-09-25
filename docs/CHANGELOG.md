@@ -5,7 +5,7 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [2.5.0] - 2024-01-15
+## [2.5.0] - 2025-09-25
 
 ### 🎉 Version majeure avec architecture modulaire et tests intégrés
 
@@ -76,7 +76,7 @@ Cette version marque une refonte complète de l'architecture avec passage à ES6
 - Sanitization des dictionnaires chargés
 - Pas de stockage permanent des mots de passe
 
-## [2.0.0] - 2023-11-20
+## [2.0.0] - 2025-08-23
 
 ### 🚀 Refonte majeure de l'interface
 
@@ -98,7 +98,7 @@ Cette version marque une refonte complète de l'architecture avec passage à ES6
 - Ancien système de thèmes multiples
 - Mode "pronounceable" remplacé par "syllables"
 
-## [1.5.0] - 2023-09-10
+## [1.5.0] - 2025-08-10
 
 ### Ajouté
 - **Placement interactif** des caractères spéciaux
@@ -116,7 +116,7 @@ Cette version marque une refonte complète de l'architecture avec passage à ES6
 - Bug de génération avec longueur maximale
 - Problème de caractères dupliqués
 
-## [1.0.0] - 2023-07-01
+## [1.0.0] - 2025-08-03
 
 ### 🎊 Version initiale
 
@@ -132,7 +132,7 @@ Cette version marque une refonte complète de l'architecture avec passage à ES6
 - Pas de dépendances externes
 - Compatible tous navigateurs modernes
 
-## [0.9.0-beta] - 2023-06-01
+## [0.9.0-beta] - 2025-07-21
 
 ### Version bêta
 
