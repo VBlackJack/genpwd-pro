@@ -14,7 +14,7 @@
 
 ```bash
 # Cloner le repository
-git clone https://github.com/yourusername/genpwd-pro.git
+git clone https://github.com/VBlackJack/genpwd-pro.git
 cd genpwd-pro
 
 # Installer les dépendances de développement (optionnel)
@@ -305,5 +305,5 @@ npm run deploy
 
 <div align="center">
   <b>GenPwd Pro v2.5 - Guide de Développement</b><br>
-  Pour toute question : <a href="https://github.com/yourusername/genpwd-pro/discussions">GitHub Discussions</a>
+  Pour toute question : <a href="https://github.com/VBlackJack/genpwd-pro/discussions">GitHub Discussions</a>
 </div>
