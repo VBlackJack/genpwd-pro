@@ -22,7 +22,7 @@
 ### Via NPM (recommandé)
 ```bash
 # Cloner le projet
-git clone https://github.com/yourusername/genpwd-pro.git
+git clone https://github.com/VBlackJack/genpwd-pro.git
 cd genpwd-pro
 
 # Installer les dépendances
