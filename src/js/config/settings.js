@@ -24,7 +24,9 @@ const AppState = {
   blocks: ['T', 'l'],
   ui: {
     debugVisible: false,
-    blockDirty: false
+    blockDirty: false,
+    useBlocks: false,
+    blockAutoSync: true
   },
   cache: {
     domElements: new Map(),
@@ -148,12 +150,16 @@ export function setBlocks(blocks) {
   }
 }
 
-export function getUIState() {
+export function getUIState(key) {
+  if (typeof key === 'string') {
+    return AppState.ui[key];
+  }
+
   return AppState.ui;
 }
 
 export function setUIState(key, value) {
-  if (Object.prototype.hasOwnProperty.call(AppState.ui, key)) {
+  if (typeof key === 'string') {
     AppState.ui[key] = value;
   }
 }
