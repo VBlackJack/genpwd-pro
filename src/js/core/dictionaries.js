@@ -1,6 +1,5 @@
-// src/js/core/dictionaries.js - Système de dictionnaires multilingues
 /*
- * Copyright 2024 Julien Bombled
+ * Copyright 2025 Julien Bombled
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// src/js/core/dictionaries.js - Système de dictionnaires multilingues
 import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
 import { safeLog } from '../utils/logger.js';
 
