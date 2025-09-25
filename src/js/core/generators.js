@@ -53,13 +53,20 @@ export function generateSyllables(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0 
-      ? Array.from(customSpecials) 
+    const specialPool = customSpecials?.length > 0
+      ? Array.from(customSpecials)
       : policyData.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
-    let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
-    result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
+    const result = mergeWithInsertions(core, {
+      chars: digitChars,
+      placement: placeDigits,
+      type: 'digits'
+    }, {
+      chars: specialChars,
+      placement: placeSpecials,
+      type: 'specials'
+    });
 
     const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
@@ -107,17 +114,29 @@ export async function generatePassphrase(config) {
       : [];
 
     const shouldUseBlocks = useBlocks && validBlocks.length > 0;
-    const transformedWords = shouldUseBlocks
-      ? selectedWords.map((word, index) => {
-          const token = validBlocks[index % validBlocks.length];
-          return applyCasePattern(word, [token], { perWord: false });
-        })
-      : [];
-
     const fallbackCaseMode = caseMode === 'blocks' ? 'title' : caseMode;
-    const core = shouldUseBlocks
-      ? transformedWords.join(sanitizedSeparator)
-      : applyCase(selectedWords.join(sanitizedSeparator), fallbackCaseMode);
+    const joined = selectedWords.join(sanitizedSeparator);
+
+    let core;
+    let displayedWords;
+
+    if (shouldUseBlocks) {
+      if (sanitizedSeparator.length > 0) {
+        core = applyCasePattern(joined, validBlocks, { perWord: true });
+        displayedWords = core.split(sanitizedSeparator);
+      } else {
+        displayedWords = selectedWords.map((word, index) => {
+          const token = validBlocks[index % validBlocks.length];
+          return applyCasePattern(word, [token]);
+        });
+        core = displayedWords.join('');
+      }
+    } else {
+      core = applyCase(joined, fallbackCaseMode);
+      displayedWords = sanitizedSeparator.length > 0
+        ? core.split(sanitizedSeparator)
+        : [core];
+    }
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
@@ -126,8 +145,15 @@ export async function generatePassphrase(config) {
       : CHAR_SETS.standard.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
-    let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
-    result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
+    const result = mergeWithInsertions(core, {
+      chars: digitChars,
+      placement: placeDigits,
+      type: 'digits'
+    }, {
+      chars: specialChars,
+      placement: placeSpecials,
+      type: 'specials'
+    });
 
     const dictionarySize = (dictionaryWords && dictionaryWords.length) || 1;
     const entropy = calculateEntropy('passphrase', wordCount, dictionarySize, wordCount);
@@ -137,7 +163,7 @@ export async function generatePassphrase(config) {
       entropy,
       mode: 'passphrase',
       dictionary,
-      words: (shouldUseBlocks ? transformedWords : selectedWords)
+      words: displayedWords
     };
 
   } catch (error) {
@@ -165,13 +191,20 @@ export function generateLeet(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0 
-      ? Array.from(customSpecials) 
+    const specialPool = customSpecials?.length > 0
+      ? Array.from(customSpecials)
       : CHAR_SETS.standard.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
-    let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
-    result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
+    const result = mergeWithInsertions(core, {
+      chars: digitChars,
+      placement: placeDigits,
+      type: 'digits'
+    }, {
+      chars: specialChars,
+      placement: placeSpecials,
+      type: 'specials'
+    });
 
     const charSpace = computeCharacterSpace(result);
     const entropy = calculateEntropy('syllables', result.length, charSpace);
@@ -203,6 +236,34 @@ function computeCharacterSpace(result) {
     + (hasUpper ? 26 : 0)
     + (hasDigits ? 10 : 0)
     + (hasSpecials ? 32 : 0);
+}
+
+function mergeWithInsertions(core, digitsConfig, specialsConfig) {
+  const steps = [];
+
+  if (Array.isArray(digitsConfig?.chars) && digitsConfig.chars.length > 0) {
+    steps.push(digitsConfig);
+  }
+
+  if (Array.isArray(specialsConfig?.chars) && specialsConfig.chars.length > 0) {
+    steps.push(specialsConfig);
+  }
+
+  if (steps.length > 1 && steps.every(step => step.placement === 'debut')) {
+    steps.sort((first, second) => {
+      if (first.type === second.type) {
+        return 0;
+      }
+      return first.type === 'digits' ? 1 : -1;
+    });
+  }
+
+  return steps.reduce((value, step) => insertWithPlacement(
+    value,
+    step.chars,
+    step.placement,
+    { type: step.type }
+  ), core);
 }
 
 function calculateEntropy(mode, length, poolSize, wordCount = 1) {

@@ -25,15 +25,15 @@ export function applyCase(str, mode) {
     case 'lower':
       return str.toLowerCase();
     case 'title':
-      return str.split(/(\W)/).map(seg => 
-        /^\w+$/.test(seg) ? 
-        seg.charAt(0).toUpperCase() + seg.slice(1).toLowerCase() : 
+      return str.split(/(\P{L})/u).map(seg =>
+        /\p{L}+/u.test(seg) ?
+        seg.charAt(0).toUpperCase() + seg.slice(1).toLowerCase() :
         seg
       ).join('');
     default: // mixte
-      return str.split('').map(ch => 
-        /[a-zA-Z]/.test(ch) ? 
-        (Math.random() < 0.5 ? ch.toLowerCase() : ch.toUpperCase()) : 
+      return str.split('').map(ch =>
+        /\p{L}/u.test(ch) ?
+        (Math.random() < 0.5 ? ch.toLowerCase() : ch.toUpperCase()) :
         ch
       ).join('');
   }
@@ -47,12 +47,14 @@ export function applyCasePattern(str, tokens, opts = {}) {
   const perWord = Boolean(opts.perWord);
   const syllableMode = Boolean(opts.syllableMode);
 
+  const isLetterChar = (char) => typeof char === 'string' && /\p{L}/u.test(char);
+
   let idx = 0, out = '', prev = '', letterCount = 0;
   let wordIndex = 0;
 
   for (const ch of str) {
-    const isLetter = /[A-Za-z]/.test(ch);
-    const isWordStart = isLetter && !/[A-Za-z]/.test(prev);
+    const isLetter = isLetterChar(ch);
+    const isWordStart = isLetter && !isLetterChar(prev);
 
     if (perWord && isWordStart) {
       idx = wordIndex % tokens.length;
