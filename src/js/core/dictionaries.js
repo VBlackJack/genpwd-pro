@@ -150,8 +150,6 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
   const infoEl = document.getElementById('dict-info');
   if (!infoEl) return;
 
-  const config = DICTIONARY_CONFIG[dictKey] || {};
-  
   if (error) {
     infoEl.textContent = `Erreur: ${error}`;
     infoEl.style.color = 'var(--accent-red)';

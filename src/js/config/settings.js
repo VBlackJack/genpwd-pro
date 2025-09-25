@@ -153,7 +153,7 @@ export function getUIState() {
 }
 
 export function setUIState(key, value) {
-  if (AppState.ui.hasOwnProperty(key)) {
+  if (Object.prototype.hasOwnProperty.call(AppState.ui, key)) {
     AppState.ui[key] = value;
   }
 }

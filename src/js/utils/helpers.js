@@ -194,13 +194,14 @@ export function insertWithPlacement(base, charsToInsert, placement, options = {}
       case 'fin':
         chars.forEach(ch => arr.push(ch));
         break;
-      case 'milieu':
+      case 'milieu': {
         let mid = Math.floor(arr.length / 2);
         chars.forEach(ch => {
           insertAt(mid, ch);
           mid++;
         });
         break;
+      }
       default: // aleatoire
         chars.forEach(ch => {
           insertAt(randInt(0, arr.length), ch);

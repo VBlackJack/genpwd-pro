@@ -20,7 +20,7 @@ import { getElement, getAllElements, addEventListener, updateBadgeForInput,
 import { generateSyllables, generatePassphrase, generateLeet } from '../core/generators.js';
 import { setCurrentDictionary } from '../core/dictionaries.js';
 import { randomizeBlocks, defaultBlocksForMode } from '../core/casing.js';
-import { readSettings, getBlocks, setBlocks, setResults, getUIState, setUIState } from '../config/settings.js';
+import { readSettings, getBlocks, setBlocks, setResults, getResults, getUIState, setUIState } from '../config/settings.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
@@ -319,8 +319,28 @@ async function generatePasswords() {
 }
 
 async function copyAllPasswords() {
-  // Implementation simplifiée - à compléter selon besoins
-  showToast('Fonction à implémenter', 'info');
+  const results = getResults();
+  if (!Array.isArray(results) || results.length === 0) {
+    showToast('Aucun mot de passe à copier', 'warning');
+    return;
+  }
+
+  const passwords = results
+    .map(result => typeof result?.value === 'string' ? result.value.trim() : '')
+    .filter(value => value.length > 0);
+
+  if (passwords.length === 0) {
+    showToast('Aucun mot de passe valide trouvé', 'warning');
+    return;
+  }
+
+  const success = await copyToClipboard(passwords.join('\n'));
+  if (success) {
+    showToast(`${passwords.length} mot${passwords.length > 1 ? 's' : ''} de passe copiés !`, 'success');
+    safeLog(`Copie groupée: ${passwords.length} entrées`);
+  } else {
+    showToast('Impossible de copier les mots de passe', 'error');
+  }
 }
 
 function exportPasswords() {

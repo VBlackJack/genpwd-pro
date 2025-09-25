@@ -90,7 +90,7 @@ class DevServer {
     }
 
     // Sécurité : empêcher l'accès aux répertoires parents
-    const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+    const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, '');
     
     // CORRECTION CRITIQUE : Gestion correcte des chemins de fichiers
     let filePath;

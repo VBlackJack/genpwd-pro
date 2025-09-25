@@ -15,7 +15,7 @@
  */
 // src/js/core/generators.js - Logique principale de génération
 import { CHAR_SETS, DIGITS } from '../config/constants.js';
-import { pick, randInt, insertWithPlacement, log2 } from '../utils/helpers.js';
+import { pick, insertWithPlacement } from '../utils/helpers.js';
 import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
 import { safeLog } from '../utils/logger.js';
@@ -62,13 +62,13 @@ export function generateSyllables(config) {
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
     // Calcul avec l'espace de caractères réel utilisé
-	let charSpace = 0;
-	if (/[a-z]/.test(result)) charSpace += 26;
-	if (/[A-Z]/.test(result)) charSpace += 26;
-	if (/[0-9]/.test(result)) charSpace += 10;
-	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+    let charSpace = 0;
+    if (/[a-z]/.test(result)) charSpace += 26;
+    if (/[A-Z]/.test(result)) charSpace += 26;
+    if (/[0-9]/.test(result)) charSpace += 10;
+    if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
 
-	const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -116,13 +116,13 @@ export async function generatePassphrase(config) {
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
     // Calcul avec l'espace de caractères réel utilisé
-	let charSpace = 0;
-	if (/[a-z]/.test(result)) charSpace += 26;
-	if (/[A-Z]/.test(result)) charSpace += 26;
-	if (/[0-9]/.test(result)) charSpace += 10;
-	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+    let charSpace = 0;
+    if (/[a-z]/.test(result)) charSpace += 26;
+    if (/[A-Z]/.test(result)) charSpace += 26;
+    if (/[0-9]/.test(result)) charSpace += 10;
+    if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
 
-	const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -165,14 +165,14 @@ export function generateLeet(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-	// Calcul avec l'espace de caractères réel utilisé
-	let charSpace = 0;
-	if (/[a-z]/.test(result)) charSpace += 26;
-	if (/[A-Z]/.test(result)) charSpace += 26;
-	if (/[0-9]/.test(result)) charSpace += 10;
-	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+    // Calcul avec l'espace de caractères réel utilisé
+    let charSpace = 0;
+    if (/[a-z]/.test(result)) charSpace += 26;
+    if (/[A-Z]/.test(result)) charSpace += 26;
+    if (/[0-9]/.test(result)) charSpace += 10;
+    if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
 
-	const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,

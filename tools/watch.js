@@ -23,6 +23,7 @@ class WatchBuilder {
     this.builder = new GenPwdBuilder();
     this.isBuilding = false;
     this.buildQueue = [];
+    this.continuous = false;
   }
 
   async start() {
@@ -126,8 +127,9 @@ class WatchBuilder {
   // Mode build continu (alternative)
   async startContinuous() {
     console.log('🔄 Mode build continu activé...');
-    
-    while (true) {
+
+    this.continuous = true;
+    while (this.continuous) {
       try {
         await this.build('Build périodique');
         await this.sleep(5000); // Build toutes les 5 secondes
@@ -136,6 +138,10 @@ class WatchBuilder {
         await this.sleep(10000);
       }
     }
+  }
+
+  stopContinuous() {
+    this.continuous = false;
   }
 
   sleep(ms) {
@@ -149,6 +155,11 @@ if (require.main === module) {
   const watchBuilder = new WatchBuilder();
 
   if (args.includes('--continuous')) {
+    process.on('SIGINT', () => {
+      console.log('\n🛑 Arrêt du mode continu...');
+      watchBuilder.stopContinuous();
+      process.exit(0);
+    });
     watchBuilder.startContinuous().catch(console.error);
   } else {
     watchBuilder.start().catch(console.error);
