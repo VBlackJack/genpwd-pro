@@ -61,7 +61,14 @@ export function generateSyllables(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    const entropy = calculateEntropy('syllables', result.length, consonants.length + vowels.length);
+    // Calcul avec l'espace de caractères réel utilisé
+	let charSpace = 0;
+	if (/[a-z]/.test(result)) charSpace += 26;
+	if (/[A-Z]/.test(result)) charSpace += 26;
+	if (/[0-9]/.test(result)) charSpace += 10;
+	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+
+	const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -108,7 +115,14 @@ export async function generatePassphrase(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    const entropy = calculateEntropy('passphrase', result.length, words.length, wordCount);
+    // Calcul avec l'espace de caractères réel utilisé
+	let charSpace = 0;
+	if (/[a-z]/.test(result)) charSpace += 26;
+	if (/[A-Z]/.test(result)) charSpace += 26;
+	if (/[0-9]/.test(result)) charSpace += 10;
+	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+
+	const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -151,7 +165,14 @@ export function generateLeet(config) {
     let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
     result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
 
-    const entropy = calculateEntropy('leet', result.length, 26);
+	// Calcul avec l'espace de caractères réel utilisé
+	let charSpace = 0;
+	if (/[a-z]/.test(result)) charSpace += 26;
+	if (/[A-Z]/.test(result)) charSpace += 26;
+	if (/[0-9]/.test(result)) charSpace += 10;
+	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
+
+	const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -171,21 +192,30 @@ export function generateLeet(config) {
 }
 
 function calculateEntropy(mode, length, poolSize, wordCount = 1) {
-  let base;
+  let entropy;
   
   switch (mode) {
     case 'syllables':
-      base = 50 + log2(poolSize) * length;
+      // Calcul correct : log2(poolSize^length)
+      entropy = Math.log2(Math.pow(poolSize, length));
       break;
+      
     case 'passphrase':
-      base = 60 + log2(poolSize) * wordCount;
+      // Pour passphrase : log2(dictSize) * wordCount
+      entropy = Math.log2(poolSize) * wordCount;
       break;
+      
     case 'leet':
-      base = 30 + log2(26) * length;
+      // Pour leet : log2(26^length) mais réduit car transformation prédictible
+      entropy = Math.log2(Math.pow(26, length)) * 0.8;
       break;
+      
     default:
-      base = 40;
+      // Calcul standard basé sur l'espace de caractères réel
+      entropy = Math.log2(Math.pow(poolSize, length));
+      break;
   }
   
-  return Math.min(140, base + Math.random() * 20);
+  // Arrondi à 1 décimale sans artifice
+  return Math.round(entropy * 10) / 10;
 }
