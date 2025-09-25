@@ -8,7 +8,7 @@
     "build": "node tools/build.js",
     "test": "node tools/run_tests.js",
     "test:browser": "node tools/run_tests.js && node tools/browser-test.js",
-    "test:create-browser": "node tools/run_tests.js --create-browser-test"
+    "test:create-browser": "node tools/run_tests.js --create-browser-test",
     "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
     "lint": "eslint src/js/**/*.js tools/**/*.js",
     "clean": "rimraf dist/*",
@@ -38,15 +38,15 @@
     "automated-testing"
   ],
   "author": "Julien Bombled",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/votre-username/genpwd-pro.git"
+    "url": "git+https://github.com/VBlackJack/genpwd-pro.git"
   },
   "bugs": {
-    "url": "https://github.com/votre-username/genpwd-pro/issues"
+    "url": "https://github.com/VBlackJack/genpwd-pro/issues"
   },
-  "homepage": "https://github.com/votre-username/genpwd-pro#readme",
+  "homepage": "https://github.com/VBlackJack/genpwd-pro#readme",
   "engines": {
     "node": ">=16.0.0"
   },
