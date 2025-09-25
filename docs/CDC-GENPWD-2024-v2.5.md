@@ -2,7 +2,7 @@
 # GenPwd Pro v2.5 - Générateur de Mots de Passe Sécurisés
 
 **Document de référence : CDC-GENPWD-2024-v2.5**  
-**Date : 15 Janvier 2024**  
+**Date : 25 Septembre 2025**  
 **Auteur : Julien Bombled**  
 **Statut : Version Finale**
 
