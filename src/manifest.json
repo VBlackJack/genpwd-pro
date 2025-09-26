@@ -5,7 +5,7 @@
   "description": "Générateur de mots de passe et passphrases sécurisé, modes syllabes et passphrase.",
   "lang": "fr",
   "start_url": "/",
-  "scope": "./",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
@@ -65,7 +65,7 @@
       "name": "Mode Syllabes",
       "short_name": "Syllabes",
       "description": "Générer des mots de passe basés sur des syllabes.",
-      "url": "./index.html?mode=syllables",
+      "url": "/?mode=syllables",
       "icons": [
         {
           "src": "assets/icons/icon-192x192.png",
@@ -78,7 +78,7 @@
       "name": "Mode Passphrase",
       "short_name": "Passphrase",
       "description": "Créer des passphrases sécurisées à partir du dictionnaire.",
-      "url": "./index.html?mode=passphrase",
+      "url": "/?mode=passphrase",
       "icons": [
         {
           "src": "assets/icons/icon-192x192.png",

@@ -3,13 +3,16 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/styles/main.css',
-  '/styles/layout.css',
-  '/styles/components.css',
-  '/styles/modal.css',
+  '/css/main.css',
+  '/css/layout.css',
+  '/css/components.css',
+  '/css/modal.css',
   '/js/app.js',
-  '/dictionaries/english.json',
-  '/dictionaries/french.json',
+  '/js/config/constants.js',
+  '/js/generators/syllables.js',
+  '/js/generators/passphrase.js',
+  '/dictionaries/en.json',
+  '/dictionaries/fr.json',
   '/dictionaries/latin.json',
   '/assets/icons/icon-72x72.png',
   '/assets/icons/icon-96x96.png',
@@ -23,7 +26,22 @@ const ASSETS_TO_CACHE = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(
+        ASSETS_TO_CACHE.map(async (asset) => {
+          try {
+            const response = await fetch(asset);
+            if (response && response.ok) {
+              await cache.put(asset, response.clone());
+            } else {
+              console.warn(`[SW] Ressource ignorée: ${asset}`);
+            }
+          } catch (error) {
+            console.warn(`[SW] Échec mise en cache: ${asset}`, error);
+          }
+        })
+      );
+    })
   );
   self.skipWaiting();
 });
@@ -42,6 +60,12 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', (event) => {
+  if (event?.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
