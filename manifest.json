@@ -1,0 +1,97 @@
+{
+  "manifest_version": 3,
+  "name": "GenPwd Pro - Password Generator",
+  "description": "Générateur de mots de passe sécurisés avec architecture modulaire ES6 et tests intégrés",
+  "version": "2.5.1",
+  "author": "Julien Bombled",
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GenPwd Pro - Générer un mot de passe sécurisé",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  
+  "commands": {
+    "generate_password": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+G",
+        "mac": "Command+Shift+G"
+      },
+      "description": "Génération rapide de mot de passe"
+    },
+    "fill_password": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Remplir le champ de mot de passe actuel"
+    },
+    "open_popup": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Ouvrir l'interface GenPwd Pro"
+    }
+  },
+  
+  "options_page": "options.html",
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "js/*.js",
+        "css/*.css",
+        "dictionaries/*.json",
+        "icons/*.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  
+  "minimum_chrome_version": "88",
+  
+  "externally_connectable": {
+    "matches": []
+  }
+}
