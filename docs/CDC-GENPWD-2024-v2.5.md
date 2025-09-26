@@ -139,9 +139,9 @@ Note : Pour ≥100 bits, utiliser 9 mots ou top-up automatique
 **Exemple de génération :**
 ```
 Entrée : "PASSWORD"
-Résultat : P@$$W0RD_
-Substitutions : 4 (A→@, S→$, S→$, O→0)
-Entropie : 94.4 bits
+Résultat : P@55W0RD_
+Substitutions : 4 (A→@, S→5, S→5, O→0)
+Entropie : ~50 bits
 ```
 
 ### 2.2 Système de placement des caractères

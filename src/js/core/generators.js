@@ -319,7 +319,11 @@ function getSpecialsSetSize(policy) {
 
 export function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
   let result = generatorFn(config);
-  let currentEntropy = calculateEntropy(config.mode, config, result.value);
+  let extraEntropy = 0;
+  let baseEntropy = calculateEntropy(config.mode, config, result.value);
+  let currentEntropy = config.mode === 'passphrase'
+    ? baseEntropy + extraEntropy
+    : baseEntropy;
 
   let attempts = 0;
   while (currentEntropy < minBits && attempts < 5) {
@@ -327,11 +331,20 @@ export function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
     const topUp = generateRandomString(needed, '!#%+,-./:=@_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
     result.value += topUp;
-    currentEntropy = calculateEntropy(config.mode, config, result.value);
+    if (config.mode === 'passphrase') {
+      extraEntropy += needed * Math.log2(74);
+    }
+
+    baseEntropy = calculateEntropy(config.mode, config, result.value);
+    currentEntropy = config.mode === 'passphrase'
+      ? baseEntropy + extraEntropy
+      : baseEntropy;
     attempts++;
   }
 
-  result.entropy = currentEntropy;
+  result.entropy = config.mode === 'passphrase'
+    ? Math.round(currentEntropy * 10) / 10
+    : currentEntropy;
   return result;
 }
 

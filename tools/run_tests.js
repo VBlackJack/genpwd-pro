@@ -443,6 +443,49 @@ class NodeTestRunner {
         }
       },
       {
+        name: '#ENTROPY-MIN: Passphrase ≥100 bits',
+        run: async (ctx) => withSeed(1300 + ctx.run, async () => {
+          console.log('Test #ENTROPY-MIN: Passphrase entropie ≥100 bits');
+          const basePassphrase = await generatePassphrase({
+            wordCount: 5,
+            separator: '-',
+            digits: 0,
+            specials: 0,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'title',
+            useBlocks: false,
+            blockTokens: [],
+            dictionary: 'french'
+          });
+
+          const entropyConfig = {
+            mode: 'passphrase',
+            dictSize: 2429,
+            wordCount: 5,
+            digits: 0,
+            specials: 0,
+            sepChoices: 1,
+            policy: 'standard'
+          };
+
+          const passphraseTest = ensureMinimumEntropy(
+            () => ({
+              value: basePassphrase.value,
+              entropy: basePassphrase.entropy,
+              mode: basePassphrase.mode
+            }),
+            entropyConfig
+          );
+
+          assert(passphraseTest.entropy >= 100,
+            `Entropie passphrase ${passphraseTest.entropy} bits < 100`);
+
+          return { sample: passphraseTest.value, entropy: passphraseTest.entropy };
+        })
+      },
+      {
         name: 'API Insertion',
         run: async () => {
           const base = 'abc';
