@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 // src/js/core/generators.js - Logique principale de génération
-import { CHAR_SETS, DIGITS } from '../config/constants.js';
+import { CHAR_SETS, DIGITS, LEET_SUBSTITUTIONS } from '../config/constants.js';
 import { pick, insertWithPlacement } from '../utils/helpers.js';
 import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
@@ -68,8 +68,8 @@ export function generateSyllables(config) {
       type: 'specials'
     });
 
-    const charSpace = computeCharacterSpace(result);
-    const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const entropyConfig = { ...config, mode: 'syllables' };
+    const entropy = calculateEntropy('syllables', entropyConfig, result);
 
     return {
       value: result,
@@ -156,7 +156,15 @@ export async function generatePassphrase(config) {
     });
 
     const dictionarySize = (dictionaryWords && dictionaryWords.length) || 1;
-    const entropy = calculateEntropy('passphrase', wordCount, dictionarySize, wordCount);
+    const entropyConfig = {
+      ...config,
+      mode: 'passphrase',
+      wordCount,
+      dictSize: dictionarySize,
+      sepChoices: config.sepChoices ?? 1,
+      policy: config.policy || 'standard'
+    };
+    const entropy = calculateEntropy('passphrase', entropyConfig, result);
 
     return {
       value: result,
@@ -181,8 +189,7 @@ export function generateLeet(config) {
     const { baseWord, digits, specials, customSpecials,
             placeDigits, placeSpecials, caseMode, useBlocks, blockTokens } = config;
 
-    const leetMap = { 'a': '@', 'e': '3', 'i': '1', 'o': '0', 's': '$' };
-    let core = baseWord.split('').map(ch => leetMap[ch.toLowerCase()] || ch).join('');
+    let core = applyLeetTransformation(baseWord);
 
     // Application de la casse
     core = useBlocks && blockTokens?.length > 0
@@ -206,8 +213,8 @@ export function generateLeet(config) {
       type: 'specials'
     });
 
-    const charSpace = computeCharacterSpace(result);
-    const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const entropyConfig = { ...config, mode: 'leet', policy: config.policy || 'standard' };
+    const entropy = calculateEntropy('leet', entropyConfig, result);
 
     return {
       value: result,
@@ -226,18 +233,6 @@ export function generateLeet(config) {
   }
 }
 
-
-function computeCharacterSpace(result) {
-  const hasLower = /[a-z]/.test(result);
-  const hasUpper = /[A-Z]/.test(result);
-  const hasDigits = /[0-9]/.test(result);
-  const hasSpecials = /[^a-zA-Z0-9]/.test(result);
-
-  return (hasLower ? 26 : 0)
-    + (hasUpper ? 26 : 0)
-    + (hasDigits ? 10 : 0)
-    + (hasSpecials ? 32 : 0);
-}
 
 function mergeWithInsertions(core, digitsConfig, specialsConfig) {
   let result = core;
@@ -272,31 +267,80 @@ function mergeWithInsertions(core, digitsConfig, specialsConfig) {
   return result;
 }
 
-function calculateEntropy(mode, length, poolSize, wordCount = 1) {
-  let entropy;
-  
-  switch (mode) {
-    case 'syllables':
-      // Calcul correct : log2(poolSize^length)
-      entropy = Math.log2(Math.pow(poolSize, length));
-      break;
-      
-    case 'passphrase':
-      // Pour passphrase : log2(dictSize) * wordCount
-      entropy = Math.log2(poolSize) * wordCount;
-      break;
-      
-    case 'leet':
-      // Pour leet : log2(26^length) mais réduit car transformation prédictible
-      entropy = Math.log2(Math.pow(26, length)) * 0.8;
-      break;
-      
-    default:
-      // Calcul standard basé sur l'espace de caractères réel
-      entropy = Math.log2(Math.pow(poolSize, length));
-      break;
+function calculateEntropy(mode, config, result) {
+  const LOG2 = Math.log2;
+
+  if (mode === 'passphrase') {
+    const { wordCount, dictSize } = config;
+    let entropy = (wordCount || 0) * LOG2(dictSize || 2429);
+
+    if (config.sepChoices > 1) {
+      entropy += Math.max(0, (wordCount || 0) - 1) * LOG2(config.sepChoices);
+    }
+
+    if (config.digits > 0) entropy += config.digits * LOG2(10);
+    if (config.specials > 0) {
+      const specialsSetSize = getSpecialsSetSize(config.policy);
+      entropy += config.specials * LOG2(specialsSetSize);
+    }
+
+    return Math.round(entropy * 10) / 10;
   }
-  
-  // Arrondi à 1 décimale sans artifice
+
+  const alphabetSize = calculatePolicyAlphabetSize(config);
+  const entropy = result.length * LOG2(alphabetSize || 1);
   return Math.round(entropy * 10) / 10;
+}
+
+function calculatePolicyAlphabetSize(config) {
+  let size = 0;
+  const policy = CHAR_SETS[config.policy || 'standard'];
+
+  if (policy?.consonants) size += policy.consonants.length;
+  if (policy?.vowels) size += policy.vowels.length;
+  if (config.digits > 0) size += 10;
+
+  if (config.specials > 0) {
+    if (config.customSpecials && config.customSpecials.length > 0) {
+      size += Array.from(new Set(Array.from(config.customSpecials))).length;
+    } else {
+      size += (policy?.specials || []).length;
+    }
+  }
+
+  return size;
+}
+
+function getSpecialsSetSize(policy) {
+  const policyData = CHAR_SETS[policy || 'standard'];
+  const specials = policyData?.specials || [];
+  return specials.length > 0 ? specials.length : 12;
+}
+
+export function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
+  let result = generatorFn(config);
+  let currentEntropy = calculateEntropy(config.mode, config, result.value);
+
+  let attempts = 0;
+  while (currentEntropy < minBits && attempts < 5) {
+    const needed = Math.ceil((minBits - currentEntropy) / Math.log2(74));
+    const topUp = generateRandomString(needed, '!#%+,-./:=@_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+
+    result.value += topUp;
+    currentEntropy = calculateEntropy(config.mode, config, result.value);
+    attempts++;
+  }
+
+  result.entropy = currentEntropy;
+  return result;
+}
+
+function generateRandomString(length, alphabet) {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => alphabet[byte % alphabet.length]).join('');
+}
+
+function applyLeetTransformation(word) {
+  return word.split('').map(char => LEET_SUBSTITUTIONS[char] || char).join('');
 }

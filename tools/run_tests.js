@@ -72,6 +72,7 @@ class NodeTestRunner {
       generateSyllables,
       generatePassphrase,
       generateLeet,
+      ensureMinimumEntropy,
       insertWithPlacement,
       setDigitPositions,
       setSpecialPositions
@@ -221,11 +222,44 @@ class NodeTestRunner {
             blockTokens: ['U', 'l']
           });
 
-          assert(/[A-Z]/.test(result.value) && /[a-z]/.test(result.value),
-            'Pattern blocs leet absent');
+          const letters = result.value.match(/\p{L}/gu) || [];
+          if (letters.length > 0) {
+            assert(letters[0] === letters[0].toUpperCase(),
+              'Première lettre devrait être en majuscule');
+            letters.slice(1).forEach((letter, index) => {
+              assert(letter === letter.toLowerCase(),
+                `Lettre ${index + 2} devrait être en minuscule`);
+            });
+          }
           assert(result.value.endsWith('#' + result.value.slice(-1)), 'Spécial fin attendu');
           return { sample: result.value, entropy: result.entropy };
         })
+      },
+      {
+        name: '#CLI-SAFE: Vérification S→5',
+        run: async () => {
+          console.log('Test #CLI-SAFE: Vérification S→5 au lieu de S→$');
+          const leetTest = generateLeet({
+            baseWord: 'password',
+            digits: 0,
+            specials: 0,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          if (leetTest.value.includes('$')) {
+            console.log('❌ ÉCHEC: Le caractère $ est présent (non CLI-safe)');
+          }
+
+          assert(!leetTest.value.includes('$'), 'Le caractère $ ne doit plus apparaître');
+          assert(leetTest.value.includes('5'), 'La substitution S→5 doit être appliquée');
+          console.log('✅ SUCCÈS: S→5 appliqué correctement');
+          return { sample: leetTest.value };
+        }
       },
       {
         name: 'Placement - Début',
@@ -370,6 +404,45 @@ class NodeTestRunner {
         })
       },
       {
+        name: '#ENTROPY-MIN: Vérification entropie ≥100 bits',
+        run: async () => {
+          console.log('Test #ENTROPY-MIN: Vérification entropie ≥100 bits');
+          const generatorConfig = {
+            length: 12,
+            policy: 'standard',
+            digits: 0,
+            specials: 0,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          };
+
+          const entropyConfig = {
+            mode: 'syllables',
+            policy: 'standard',
+            digits: 0,
+            specials: 0,
+            customSpecials: ''
+          };
+
+          const entropyTest = ensureMinimumEntropy(
+            () => generateSyllables(generatorConfig),
+            entropyConfig
+          );
+
+          if (entropyTest.entropy >= 100) {
+            console.log(`✅ SUCCÈS: Entropie ${entropyTest.entropy} bits ≥ 100`);
+          }
+
+          assert(entropyTest.entropy >= 100,
+            `Entropie ${entropyTest.entropy} bits < 100`);
+          return { sample: entropyTest.value, entropy: entropyTest.entropy };
+        }
+      },
+      {
         name: 'API Insertion',
         run: async () => {
           const base = 'abc';
@@ -450,6 +523,7 @@ async function main() {
     generateSyllables: generatorsModule.generateSyllables,
     generatePassphrase: generatorsModule.generatePassphrase,
     generateLeet: generatorsModule.generateLeet,
+    ensureMinimumEntropy: generatorsModule.ensureMinimumEntropy,
     insertWithPlacement: helpersModule.insertWithPlacement,
     setDigitPositions: helpersModule.setDigitPositions,
     setSpecialPositions: helpersModule.setSpecialPositions
