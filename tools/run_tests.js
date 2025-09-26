@@ -201,7 +201,7 @@ class NodeTestRunner {
             blockTokens: []
           });
 
-          assert(/[@$0]/.test(result.value), 'Transformation leet non détectée');
+          assert(/[@50]/.test(result.value), 'Transformation leet non détectée');
           assert(/\d$/.test(result.value), 'Chiffre final manquant');
           assert(/^[^a-zA-Z]/.test(result.value), 'Symbole leet début manquant');
           return { sample: result.value, entropy: result.entropy };
@@ -238,7 +238,7 @@ class NodeTestRunner {
       {
         name: '#CLI-SAFE: Vérification S→5',
         run: async () => {
-          console.log('Test #CLI-SAFE: Vérification S→5 au lieu de S→$');
+          console.log('Test #CLI-SAFE: Vérification S→5 (aucun dollar attendu)');
           const leetTest = generateLeet({
             baseWord: 'password',
             digits: 0,
@@ -251,14 +251,54 @@ class NodeTestRunner {
             blockTokens: []
           });
 
-          if (leetTest.value.includes('$')) {
-            console.log('❌ ÉCHEC: Le caractère $ est présent (non CLI-safe)');
+          if (leetTest.value.includes('\u0024')) {
+            console.log('❌ ÉCHEC: Le caractère dollar est présent (non CLI-safe)');
           }
 
-          assert(!leetTest.value.includes('$'), 'Le caractère $ ne doit plus apparaître');
+          assert(!leetTest.value.includes('\u0024'), 'Le caractère dollar ne doit plus apparaître');
           assert(leetTest.value.includes('5'), 'La substitution S→5 doit être appliquée');
           console.log('✅ SUCCÈS: S→5 appliqué correctement');
           return { sample: leetTest.value };
+        }
+      },
+      {
+        name: 'CLI-SAFE: Aucun caractère dangereux',
+        run: async () => {
+          const dangerous = ['\u0024', '^', '&', '*', "'"];
+          const results = [];
+
+          for (let i = 0; i < 50; i++) {
+            results.push(generateSyllables({
+              length: 12,
+              policy: 'standard',
+              digits: 0,
+              specials: 3,
+              customSpecials: '',
+              placeDigits: 'fin',
+              placeSpecials: 'milieu',
+              caseMode: 'mixte',
+              useBlocks: false,
+              blockTokens: []
+            }).value);
+
+            results.push(generateLeet({
+              baseWord: 'password',
+              digits: 1,
+              specials: 2,
+              customSpecials: '',
+              placeDigits: 'fin',
+              placeSpecials: 'debut',
+              caseMode: 'mixte',
+              useBlocks: false,
+              blockTokens: []
+            }).value);
+          }
+
+          const allText = results.join('');
+          const found = dangerous.filter((char) => allText.includes(char));
+
+          assert(found.length === 0, `Caractères dangereux trouvés: ${found}`);
+          return { tested: results.length };
         }
       },
       {
@@ -359,7 +399,7 @@ class NodeTestRunner {
       {
         name: 'Spéciaux Personnalisés',
         run: async (ctx) => withSeed(1100 + ctx.run, () => {
-          const custom = '@$%';
+          const custom = '@#%';
           const result = generateSyllables({
             length: 15,
             policy: 'standard',

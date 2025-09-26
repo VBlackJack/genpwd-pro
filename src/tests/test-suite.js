@@ -254,7 +254,7 @@ class GenPwdTestSuite {
         },
         validation: (passwords) => {
           const pwd = passwords[0].password;
-          if (!(/[@301$]/.test(pwd))) {
+          if (!(/[@3015]/.test(pwd))) {
             throw new Error('Transformation leet non détectée');
           }
         }

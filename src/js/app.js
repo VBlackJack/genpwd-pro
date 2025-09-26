@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 // src/js/app.js - Point d'entrée principal de l'application
-import { validateCharSets } from './config/constants.js';
+import { CHAR_SETS, validateCharSets } from './config/constants.js';
 import { initializeDictionaries } from './core/dictionaries.js';
 import { initializeDOM } from './ui/dom.js';
 import { bindEventHandlers } from './ui/events.js';
@@ -23,6 +23,9 @@ import { defaultBlocksForMode } from './core/casing.js';
 import { setBlocks } from './config/settings.js';
 import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
+
+console.log('CHAR_SETS.standard.specials:', CHAR_SETS.standard.specials.join(''));
+console.log('Contient $ ?', CHAR_SETS.standard.specials.includes('$'));
 
 class GenPwdApp {
   constructor() {

@@ -53,9 +53,7 @@ export function generateSyllables(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0
-      ? Array.from(customSpecials)
-      : policyData.specials;
+    const specialPool = resolveSpecialPool(customSpecials, policy);
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     const result = mergeWithInsertions(core, {
@@ -140,9 +138,7 @@ export async function generatePassphrase(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0
-      ? Array.from(customSpecials)
-      : CHAR_SETS.standard.specials;
+    const specialPool = resolveSpecialPool(customSpecials, config.policy || 'standard');
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     const result = mergeWithInsertions(core, {
@@ -198,9 +194,7 @@ export function generateLeet(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0
-      ? Array.from(customSpecials)
-      : CHAR_SETS.standard.specials;
+    const specialPool = resolveSpecialPool(customSpecials, config.policy || 'standard');
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     const result = mergeWithInsertions(core, {
@@ -361,4 +355,21 @@ function generateRandomString(length, alphabet) {
 
 function applyLeetTransformation(word) {
   return word.split('').map(char => LEET_SUBSTITUTIONS[char] || char).join('');
+}
+
+function resolveSpecialPool(customSpecials, policyKey = 'standard') {
+  if (Array.isArray(customSpecials) && customSpecials.length > 0) {
+    return customSpecials;
+  }
+
+  if (typeof customSpecials === 'string' && customSpecials.length > 0) {
+    return Array.from(new Set(customSpecials.split('')));
+  }
+
+  const policyData = CHAR_SETS[policyKey] || CHAR_SETS.standard;
+  if (policyData?.specials && policyData.specials.length > 0) {
+    return policyData.specials;
+  }
+
+  return CHAR_SETS.standard.specials;
 }
