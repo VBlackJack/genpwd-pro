@@ -5,6 +5,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.5.1] - 2025-09-26
+
+### 🔒 Sécurité et stabilité
+
+- Remplacement des caractères spéciaux par un sous-ensemble CLI-safe commun à toutes les politiques.
+- Nouvelle table de substitutions Leet (`S→5`) partagée côté générateur et tests pour éviter les caractères interdits.
+- Refonte du calcul d'entropie basée sur les politiques avec prise en compte des séparateurs, chiffres et symboles configurés.
+- Mise à jour d'`ensureMinimumEntropy` pour accepter les générateurs asynchrones et ajouter des compléments automatiques.
+- Renforcement de la batterie de tests Node avec validations CLI-safe et entropie minimale ≥100 bits.
+- Documentation CDC ajustée avec des exemples d'entropie réalistes et des conversions Leet conformes.
+
 ## [2.5.0] - 2025-09-25
 
 ### 🎉 Version majeure avec architecture modulaire et tests intégrés
