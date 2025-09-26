@@ -12,12 +12,17 @@
     "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
     "lint": "eslint src/js/**/*.js tools/**/*.js",
     "clean": "rimraf dist/*",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "icons:generate": "node tools/generate-icons.js",
+    "pwa:build": "node tools/build-pwa.js",
+    "pwa:test": "npm run pwa:build && npx http-server dist/pwa -p 8080",
+    "pwa:deploy": "npm run pwa:build && echo 'Déployez le contenu de dist/pwa/ sur votre serveur HTTPS'"
   },
   "devDependencies": {
     "rimraf": "^5.0.5",
     "chokidar": "^3.5.3",
-    "puppeteer": "^21.6.1",
+    "puppeteer": "^21.0.0",
+    "http-server": "^14.1.1",
     "eslint": "^8.56.0",
     "nodemon": "^3.0.2"
   },
