@@ -4,51 +4,57 @@
   "version": "2.5.1",
   "description": "Générateur de mots de passe et passphrases sécurisé, modes syllabes et passphrase.",
   "lang": "fr",
-  "start_url": "./index.html",
+  "start_url": "/",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#2563eb",
+  "categories": [
+    "security",
+    "utilities",
+    "productivity"
+  ],
   "icons": [
     {
-      "src": "icons/icon-72x72.png",
+      "src": "assets/icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-96x96.png",
+      "src": "assets/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-128x128.png",
+      "src": "assets/icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-144x144.png",
+      "src": "assets/icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-152x152.png",
+      "src": "assets/icons/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-192x192.png",
+      "src": "assets/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-384x384.png",
+      "src": "assets/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "assets/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -62,7 +68,7 @@
       "url": "./index.html?mode=syllables",
       "icons": [
         {
-          "src": "icons/icon-192x192.png",
+          "src": "assets/icons/icon-192x192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -75,7 +81,7 @@
       "url": "./index.html?mode=passphrase",
       "icons": [
         {
-          "src": "icons/icon-192x192.png",
+          "src": "assets/icons/icon-192x192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
