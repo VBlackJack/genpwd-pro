@@ -1,7 +1,7 @@
 # GenPwd Pro v2.5 🔐
 
 [![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
-[![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./src/tests/)
+[![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![ES6+](https://img.shields.io/badge/ES6+-modern-orange.svg)](https://www.ecma-international.org/ecma-262/)
@@ -46,8 +46,10 @@ firefox src/index.html
 |----------|-------------|
 | `npm run dev` | Lance le serveur de développement sur http://localhost:3000 |
 | `npm run build` | Compile une version optimisée pour production |
-| `npm run test` | Execute la suite de tests automatisés |
-| `npm run watch` | Surveillance des fichiers avec rechargement automatique |
+| `npm run test` | Exécute la suite de tests automatisés (Node) |
+| `npm run test:watch` | Relance les tests en continu via nodemon |
+| `npm run test:browser` | Vérifie l'interface via Puppeteer |
+| `npm run lint` | Analyse statique ESLint sur src/ et tools/ |
 
 ## 🎮 Utilisation rapide
 
@@ -81,8 +83,8 @@ src/
 │   ├── ui/         # Interface utilisateur (DOM, événements, modal)
 │   ├── utils/      # Utilitaires (clipboard, logger)
 │   └── app.js      # Point d'entrée
-├── tests/          # Suite de tests intégrés
-└── styles/         # Styles CSS modulaires
+├── styles/         # Styles CSS modulaires
+└── tools/          # Scripts build, dev-server, tests
 ```
 
 ### Modules principaux
