@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenPwd Pro – Popup</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-app" role="application">
+    <header class="app-header">
+      <div class="logo">
+        <div class="logo-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+            <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <div class="logo-title">GenPwd Pro</div>
+          <div class="logo-subtitle">Extension v2.5.1</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-generate" class="btn primary" type="button" aria-label="Générer un nouveau mot de passe">Générer</button>
+      </div>
+    </header>
+
+    <main class="app-main" tabindex="-1">
+      <section class="panel">
+        <div class="panel-title">Mode de génération</div>
+        <div class="field">
+          <label for="mode-select">Sélection du mode</label>
+          <select id="mode-select">
+            <option value="syllables">Syllabes sécurisées</option>
+            <option value="passphrase">Passphrase</option>
+            <option value="leet">Leet Speak</option>
+          </select>
+        </div>
+        <div class="mode-groups">
+          <div id="mode-syllables-opts" class="mode-group">
+            <div class="field">
+              <label for="syll-len">Longueur</label>
+              <div class="field-control slider">
+                <input id="syll-len" type="range" min="6" max="48" step="1" value="20">
+                <span class="badge" data-for="syll-len">20</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="policy-select">Politique</label>
+              <select id="policy-select">
+                <option value="standard">Standard</option>
+                <option value="standard-layout">AZERTY</option>
+                <option value="alphanumerique">Alphanumérique</option>
+                <option value="alphanumerique-layout">Alphanumérique AZERTY</option>
+              </select>
+            </div>
+          </div>
+          <div id="mode-passphrase-opts" class="mode-group" hidden>
+            <div class="field">
+              <label for="pp-count">Nombre de mots</label>
+              <div class="field-control slider">
+                <input id="pp-count" type="range" min="2" max="8" step="1" value="4">
+                <span class="badge" data-for="pp-count">4</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="pp-sep">Séparateur</label>
+              <select id="pp-sep">
+                <option value="-">Tiret -</option>
+                <option value="_">Souligné _</option>
+                <option value=".">Point .</option>
+                <option value=" ">Espace</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="dict-select">Dictionnaire</label>
+              <select id="dict-select">
+                <option value="french">Français 🇫🇷</option>
+                <option value="english">English 🇬🇧</option>
+                <option value="latin">Latin 🏛️</option>
+              </select>
+            </div>
+            <div class="dict-meta">
+              <span id="dict-status" class="dict-status">--</span>
+              <span id="dict-info" class="dict-info">Initialisation…</span>
+            </div>
+          </div>
+          <div id="mode-leet-opts" class="mode-group" hidden>
+            <div class="field">
+              <label for="leet-input">Mot de départ</label>
+              <input id="leet-input" type="text" value="password" maxlength="48" autocomplete="off" spellcheck="false">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Options avancées</div>
+        <div class="field grid-2">
+          <div>
+            <label for="qty">Quantité</label>
+            <input id="qty" type="number" min="1" max="10" value="3">
+          </div>
+          <div class="toggle-field">
+            <label for="mask-toggle">Masquer</label>
+            <label class="switch">
+              <input id="mask-toggle" type="checkbox" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+        </div>
+        <div class="field grid-2">
+          <div>
+            <label for="digits-count">Chiffres</label>
+            <div class="field-control slider">
+              <input id="digits-count" type="range" min="0" max="6" value="2">
+              <span class="badge" data-for="digits-count">2</span>
+            </div>
+          </div>
+          <div>
+            <label for="specials-count">Spéciaux</label>
+            <div class="field-control slider">
+              <input id="specials-count" type="range" min="0" max="6" value="2">
+              <span class="badge" data-for="specials-count">2</span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="custom-specials">Caractères spéciaux personnalisés</label>
+          <input id="custom-specials" type="text" value="_+-=.@#%" maxlength="20">
+        </div>
+        <div class="field grid-2">
+          <div>
+            <label for="place-digits">Placement chiffres</label>
+            <select id="place-digits">
+              <option value="aleatoire">Aléatoire</option>
+              <option value="debut">Début</option>
+              <option value="milieu">Milieu</option>
+              <option value="fin">Fin</option>
+            </select>
+          </div>
+          <div>
+            <label for="place-specials">Placement spéciaux</label>
+            <select id="place-specials">
+              <option value="aleatoire">Aléatoire</option>
+              <option value="debut">Début</option>
+              <option value="milieu">Milieu</option>
+              <option value="fin">Fin</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="case-mode-select">Casse</label>
+          <select id="case-mode-select">
+            <option value="mixte">Mixte</option>
+            <option value="upper">MAJUSCULES</option>
+            <option value="lower">minuscules</option>
+            <option value="title">Titre</option>
+            <option value="blocks">Blocs U/T/l</option>
+          </select>
+        </div>
+        <div id="blocks-section" class="blocks-section" hidden>
+          <div class="field blocks-head">
+            <div>
+              <span class="blocks-title">Blocs de casse</span>
+              <span id="blocks-count" class="blocks-count">Blocs: 0</span>
+            </div>
+            <div class="blocks-actions">
+              <button id="btn-blocks-random" type="button" class="btn ghost">Aléatoire</button>
+              <button id="btn-blocks-reset" type="button" class="btn ghost">Réinitialiser</button>
+            </div>
+          </div>
+          <div id="blocks-editor" class="blocks-editor" role="list" aria-label="Séquence de blocs"></div>
+        </div>
+      </section>
+
+      <section class="panel results-panel">
+        <div class="panel-title">Résultats</div>
+        <div class="actions-row">
+          <button id="btn-copy-first" type="button" class="btn ghost" aria-label="Copier le premier mot de passe">Copier</button>
+          <button id="btn-fill" type="button" class="btn ghost" aria-label="Remplir le champ de mot de passe dans la page">Remplir le champ</button>
+          <button id="btn-copy-all" type="button" class="btn ghost" aria-label="Copier tous les mots de passe">Tout copier</button>
+        </div>
+        <div id="results-list" class="results-list" role="list"></div>
+        <div id="empty-state" class="empty-state" role="note">Cliquez sur "Générer" pour commencer.</div>
+      </section>
+
+      <section class="panel tests-panel">
+        <div class="panel-title">Tests intégrés</div>
+        <div class="actions-row">
+          <button id="btn-run-tests" type="button" class="btn ghost">Lancer les tests</button>
+          <span id="test-status" class="test-status">Inactif</span>
+        </div>
+        <div id="test-summary" class="test-summary">Aucun test exécuté.</div>
+        <pre id="test-console" class="test-console" aria-live="polite"></pre>
+      </section>
+
+      <section class="panel logs-panel">
+        <div class="panel-title">Journal</div>
+        <pre id="logs" class="logs">[--:--:--] En attente d'initialisation...</pre>
+      </section>
+    </main>
+  </div>
+  <div id="toasts" aria-live="assertive" aria-atomic="true"></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
