@@ -20,9 +20,13 @@ const path = require('path');
 const url = require('url');
 
 class DevServer {
-  constructor(port = 3000, sourceDir = 'src') {
+  constructor(port = 3000, sourceDir = 'src', options = {}) {
     this.port = port;
     this.sourceDir = sourceDir;
+    this.options = {
+      autoOpen: options.autoOpen !== false,
+      quiet: Boolean(options.quiet)
+    };
     this.mimeTypes = {
       '.html': 'text/html; charset=utf-8',
       '.js': 'application/javascript; charset=utf-8',
@@ -49,7 +53,11 @@ class DevServer {
       console.log(`[DEV] Ctrl+C pour arrêter`);
       
       // Auto-ouverture navigateur selon la plateforme
-      this.openBrowser();
+      if (this.options.autoOpen) {
+        this.openBrowser();
+      } else if (!this.options.quiet) {
+        console.log('[DEV] Ouverture automatique désactivée');
+      }
     });
 
     // Gestion arrêt propre
@@ -90,7 +98,7 @@ class DevServer {
     }
 
     // Sécurité : empêcher l'accès aux répertoires parents
-    const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+    const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, '');
     
     // CORRECTION CRITIQUE : Gestion correcte des chemins de fichiers
     let filePath;

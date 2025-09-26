@@ -15,7 +15,7 @@
  */
 // src/js/core/generators.js - Logique principale de génération
 import { CHAR_SETS, DIGITS } from '../config/constants.js';
-import { pick, randInt, insertWithPlacement, log2 } from '../utils/helpers.js';
+import { pick, insertWithPlacement } from '../utils/helpers.js';
 import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
 import { safeLog } from '../utils/logger.js';
@@ -53,22 +53,23 @@ export function generateSyllables(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0 
-      ? Array.from(customSpecials) 
+    const specialPool = customSpecials?.length > 0
+      ? Array.from(customSpecials)
       : policyData.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
-    let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
-    result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
+    const result = mergeWithInsertions(core, {
+      chars: digitChars,
+      placement: placeDigits,
+      type: 'digits'
+    }, {
+      chars: specialChars,
+      placement: placeSpecials,
+      type: 'specials'
+    });
 
-    // Calcul avec l'espace de caractères réel utilisé
-	let charSpace = 0;
-	if (/[a-z]/.test(result)) charSpace += 26;
-	if (/[A-Z]/.test(result)) charSpace += 26;
-	if (/[0-9]/.test(result)) charSpace += 10;
-	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
-	const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const charSpace = computeCharacterSpace(result);
+    const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -90,46 +91,79 @@ export function generateSyllables(config) {
 export async function generatePassphrase(config) {
   try {
     const { wordCount, separator, digits, specials, customSpecials,
-            placeDigits, placeSpecials, caseMode, useBlocks, blockTokens, dictionary } = config;
+            placeDigits, placeSpecials, caseMode, useBlocks, blockTokens, dictionary,
+            wordListOverride } = config;
 
     safeLog(`Génération passphrase: ${wordCount} mots, dict="${dictionary}"`);
-    
-    // Charger le dictionnaire
-    const words = await getCurrentDictionary(dictionary);
-    const selectedWords = Array.from({ length: wordCount }, () => pick(words));
-    
-    let core = selectedWords.join(separator);
 
-    // Application de la casse
-    core = useBlocks && blockTokens?.length > 0
-      ? applyCasePattern(core, blockTokens, { perWord: true })
-      : applyCase(core, caseMode);
+    const sanitizedSeparator = typeof separator === 'string' ? separator : '';
+    const overrideWords = Array.isArray(wordListOverride)
+      ? wordListOverride.filter(word => typeof word === 'string' && word.length > 0)
+      : null;
+
+    const dictionaryWords = overrideWords && overrideWords.length > 0
+      ? overrideWords
+      : await getCurrentDictionary(dictionary);
+
+    const selectedWords = overrideWords && overrideWords.length >= wordCount
+      ? overrideWords.slice(0, wordCount)
+      : Array.from({ length: wordCount }, () => pick(dictionaryWords));
+
+    const validBlocks = Array.isArray(blockTokens)
+      ? blockTokens.filter(token => ['U', 'l', 'T'].includes(token))
+      : [];
+
+    const shouldUseBlocks = useBlocks && validBlocks.length > 0;
+    const fallbackCaseMode = caseMode === 'blocks' ? 'title' : caseMode;
+    const joined = selectedWords.join(sanitizedSeparator);
+
+    let core;
+    let displayedWords;
+
+    if (shouldUseBlocks) {
+      if (sanitizedSeparator.length > 0) {
+        core = applyCasePattern(joined, validBlocks, { perWord: true });
+        displayedWords = core.split(sanitizedSeparator);
+      } else {
+        displayedWords = selectedWords.map((word, index) => {
+          const token = validBlocks[index % validBlocks.length];
+          return applyCasePattern(word, [token]);
+        });
+        core = displayedWords.join('');
+      }
+    } else {
+      core = applyCase(joined, fallbackCaseMode);
+      displayedWords = sanitizedSeparator.length > 0
+        ? core.split(sanitizedSeparator)
+        : selectedWords.slice();
+    }
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0 
-      ? Array.from(customSpecials) 
+    const specialPool = customSpecials?.length > 0
+      ? Array.from(customSpecials)
       : CHAR_SETS.standard.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
-    let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
-    result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
+    const result = mergeWithInsertions(core, {
+      chars: digitChars,
+      placement: placeDigits,
+      type: 'digits'
+    }, {
+      chars: specialChars,
+      placement: placeSpecials,
+      type: 'specials'
+    });
 
-    // Calcul avec l'espace de caractères réel utilisé
-	let charSpace = 0;
-	if (/[a-z]/.test(result)) charSpace += 26;
-	if (/[A-Z]/.test(result)) charSpace += 26;
-	if (/[0-9]/.test(result)) charSpace += 10;
-	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
-	const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const dictionarySize = (dictionaryWords && dictionaryWords.length) || 1;
+    const entropy = calculateEntropy('passphrase', wordCount, dictionarySize, wordCount);
 
     return {
       value: result,
       entropy,
       mode: 'passphrase',
       dictionary,
-      words: selectedWords
+      words: displayedWords
     };
 
   } catch (error) {
@@ -157,22 +191,23 @@ export function generateLeet(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0 
-      ? Array.from(customSpecials) 
+    const specialPool = customSpecials?.length > 0
+      ? Array.from(customSpecials)
       : CHAR_SETS.standard.specials;
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
-    let result = insertWithPlacement(core, digitChars, placeDigits, { type: 'digits' });
-    result = insertWithPlacement(result, specialChars, placeSpecials, { type: 'specials' });
+    const result = mergeWithInsertions(core, {
+      chars: digitChars,
+      placement: placeDigits,
+      type: 'digits'
+    }, {
+      chars: specialChars,
+      placement: placeSpecials,
+      type: 'specials'
+    });
 
-	// Calcul avec l'espace de caractères réel utilisé
-	let charSpace = 0;
-	if (/[a-z]/.test(result)) charSpace += 26;
-	if (/[A-Z]/.test(result)) charSpace += 26;
-	if (/[0-9]/.test(result)) charSpace += 10;
-	if (/[^a-zA-Z0-9]/.test(result)) charSpace += 32;
-
-	const entropy = calculateEntropy('syllables', result.length, charSpace);
+    const charSpace = computeCharacterSpace(result);
+    const entropy = calculateEntropy('syllables', result.length, charSpace);
 
     return {
       value: result,
@@ -189,6 +224,52 @@ export function generateLeet(config) {
       mode: 'leet'
     };
   }
+}
+
+
+function computeCharacterSpace(result) {
+  const hasLower = /[a-z]/.test(result);
+  const hasUpper = /[A-Z]/.test(result);
+  const hasDigits = /[0-9]/.test(result);
+  const hasSpecials = /[^a-zA-Z0-9]/.test(result);
+
+  return (hasLower ? 26 : 0)
+    + (hasUpper ? 26 : 0)
+    + (hasDigits ? 10 : 0)
+    + (hasSpecials ? 32 : 0);
+}
+
+function mergeWithInsertions(core, digitsConfig, specialsConfig) {
+  let result = core;
+
+  const applyStep = (step) => {
+    if (!step || !Array.isArray(step.chars) || step.chars.length === 0) {
+      return;
+    }
+
+    const options = {};
+    if (step.type) {
+      options.type = step.type;
+    }
+
+    if (Array.isArray(step.percentages) && step.percentages.length > 0) {
+      options.percentages = step.percentages;
+    }
+
+    result = insertWithPlacement(result, step.chars, step.placement, options);
+  };
+
+  const digitsPlacement = digitsConfig?.placement;
+  const specialsPlacement = specialsConfig?.placement;
+
+  const sameSide = digitsPlacement && digitsPlacement === specialsPlacement;
+  const stackOrder = sameSide && (digitsPlacement === 'fin' || digitsPlacement === 'debut')
+    ? [specialsConfig, digitsConfig]
+    : [digitsConfig, specialsConfig];
+
+  stackOrder.forEach(applyStep);
+
+  return result;
 }
 
 function calculateEntropy(mode, length, poolSize, wordCount = 1) {

@@ -24,7 +24,9 @@ const AppState = {
   blocks: ['T', 'l'],
   ui: {
     debugVisible: false,
-    blockDirty: false
+    blockDirty: false,
+    useBlocks: false,
+    blockAutoSync: true
   },
   cache: {
     domElements: new Map(),
@@ -99,8 +101,24 @@ export function readSettings() {
     }
 
     const validSettings = validateSettings(rawSettings);
+    if (validSettings.mode === 'syllables') {
+      const policySelect = document.querySelector('#policy-select');
+      if (policySelect && policySelect.options) {
+        const options = Array.from(policySelect.options);
+        const fallback = options.find(option => option.value === 'standard')?.value
+          || options[0]?.value
+          || 'standard';
+        const desired = options.some(option => option.value === validSettings.specific.policy)
+          ? validSettings.specific.policy
+          : fallback;
+        if (desired && policySelect.value !== desired) {
+          policySelect.value = desired;
+        }
+      }
+    }
+
     AppState.settings = { ...validSettings, caseBlocks: AppState.blocks.slice() };
-    
+
     return AppState.settings;
   } catch (e) {
     safeLog(`Erreur readSettings: ${e.message}`);
@@ -148,12 +166,16 @@ export function setBlocks(blocks) {
   }
 }
 
-export function getUIState() {
+export function getUIState(key) {
+  if (typeof key === 'string') {
+    return AppState.ui[key];
+  }
+
   return AppState.ui;
 }
 
 export function setUIState(key, value) {
-  if (AppState.ui.hasOwnProperty(key)) {
+  if (typeof key === 'string') {
     AppState.ui[key] = value;
   }
 }

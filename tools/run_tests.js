@@ -1,142 +1,469 @@
 #!/usr/bin/env node
 /*
- * Copyright 2025 Julien Bombled
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Exécution automatisée de la suite de tests GenPwd Pro côté Node.
+ * Les tests vérifient les mêmes scénarios fonctionnels que la batterie UI
+ * (générations syllabiques, passphrases, placements, etc.) sans nécessiter
+ * un navigateur headless.
  */
-// tools/run-tests.js - Runner pour les tests depuis Node.js
 
-const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
-function runTestSuite() {
-  console.log('GenPwd Pro - Test Suite');
-  console.log('=======================');
-  console.log('');
-  
-  console.log('Mode d\'exécution disponible:');
-  console.log('1. Console navigateur: Ouvrez votre app et tapez runTests()');
-  console.log('2. Interface web: Utilisez le bouton "Lancer Tests" dans l\'app');
-  console.log('3. Automatisé: npm run test:browser (nécessite Puppeteer)');
-  console.log('');
-  
-  // Vérifier si les fichiers nécessaires existent
-  const requiredFiles = [
-    'src/index.html',
-    'src/tests/test-suite.js'
-  ];
-  
-  console.log('Vérification des fichiers:');
-  let allFilesExist = true;
-  
-  requiredFiles.forEach(file => {
-    const exists = fs.existsSync(path.join(process.cwd(), file));
-    console.log(`${exists ? '✓' : '✗'} ${file}`);
-    if (!exists) allFilesExist = false;
-  });
-  
-  if (!allFilesExist) {
-    console.log('');
-    console.log('ERREUR: Fichiers manquants. Assurez-vous que:');
-    console.log('- tools/test-suite.js est présent');
-    console.log('- src/index.html inclut le script de tests');
-    process.exit(1);
-  }
-  
-  console.log('');
-  console.log('Tous les fichiers sont présents!');
-  console.log('');
-  console.log('Pour exécuter les tests:');
-  console.log('1. Démarrez l\'app: npm run dev');
-  console.log('2. Ouvrez http://localhost:3000');
-  console.log('3. Ouvrez la console (F12) et tapez: runTests()');
-  console.log('4. Ou utilisez le bouton dans l\'interface');
+// Stubs DOM/api nécessaires aux modules front
+if (typeof global.document === 'undefined') {
+  global.document = {
+    getElementById: () => null
+  };
 }
 
-// Fonction pour créer un test browser automatisé (optionnel)
-function createBrowserTest() {
-  const browserTestContent = `// tools/browser-test.js - Tests automatisés avec Puppeteer
-const puppeteer = require('puppeteer');
-const path = require('path');
+if (typeof global.requestAnimationFrame === 'undefined') {
+  global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+}
 
-async function runBrowserTests() {
-  console.log('Démarrage des tests browser automatisés...');
-  
-  const browser = await puppeteer.launch({ 
-    headless: false, // Mettre à true pour mode silencieux
-    devtools: false 
-  });
-  
+const originalMathRandom = Math.random;
+
+function createPRNG(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6D2B79F5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+async function withSeed(seed, fn) {
+  Math.random = createPRNG(seed);
   try {
-    const page = await browser.newPage();
-    
-    // Naviguer vers l'app (ajustez l'URL selon votre config)
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
-    
-    // Attendre que l'app soit chargée
-    await page.waitForSelector('#btn-generate', { timeout: 10000 });
-    
-    console.log('App chargée, lancement des tests...');
-    
-    // Exécuter les tests
-    const results = await page.evaluate(async () => {
-      if (typeof window.runTests === 'function') {
-        return await window.runTests();
-      } else {
-        throw new Error('Suite de tests non trouvée');
-      }
-    });
-    
-    // Afficher les résultats
-    console.log('\\n=== RÉSULTATS DES TESTS ===');
-    console.log(\`Tests réussis: \${results.passed}\`);
-    console.log(\`Tests échoués: \${results.failed}\`);
-    console.log(\`Score: \${Math.round((results.passed / (results.passed + results.failed)) * 100)}%\`);
-    
-    if (results.errors.length > 0) {
-      console.log('\\nERREURS:');
-      results.errors.forEach((err, i) => {
-        console.log(\`\${i + 1}. \${err.test}: \${err.error}\`);
-      });
-    }
-    
-    // Sauvegarder les résultats
-    const fs = require('fs');
-    fs.writeFileSync('test-results.json', JSON.stringify(results, null, 2));
-    console.log('\\nRésultats sauvegardés dans test-results.json');
-    
-    process.exit(results.failed === 0 ? 0 : 1);
-    
-  } catch (error) {
-    console.error('Erreur lors des tests:', error);
-    process.exit(1);
+    return await fn();
   } finally {
-    await browser.close();
+    Math.random = originalMathRandom;
   }
 }
 
-runBrowserTests().catch(console.error);
-`;
-
-  fs.writeFileSync('tools/browser-test.js', browserTestContent);
-  console.log('Fichier tools/browser-test.js créé!');
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
 }
 
-// CLI
-const args = process.argv.slice(2);
-
-if (args.includes('--create-browser-test')) {
-  createBrowserTest();
-} else {
-  runTestSuite();
+async function importModule(relativePath) {
+  const url = pathToFileURL(path.join(process.cwd(), relativePath)).href;
+  return import(url);
 }
+
+function formatTimestamp() {
+  return new Date().toTimeString().split(' ')[0];
+}
+
+function countMatches(str, regex) {
+  const matches = str.match(regex);
+  return matches ? matches.length : 0;
+}
+
+class NodeTestRunner {
+  constructor(modules) {
+    this.modules = modules;
+    this.tests = this.buildTests();
+  }
+
+  buildTests() {
+    const {
+      generateSyllables,
+      generatePassphrase,
+      generateLeet,
+      insertWithPlacement,
+      setDigitPositions,
+      setSpecialPositions
+    } = this.modules;
+
+    const wordListA = ['critere', 'beatifie', 'liquide', 'atelier', 'opera'];
+    const wordListB = ['atroce', 'visqueux', 'cidre', 'brigade', 'orchidee'];
+
+    return [
+      {
+        name: 'Syllables - Base',
+        run: async (ctx) => withSeed(100 + ctx.run, () => {
+          const result = generateSyllables({
+            length: 20,
+            policy: 'standard',
+            digits: 1,
+            specials: 1,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'milieu',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          assert(result.value.length === 20, 'Longueur syllables incorrecte');
+          assert(/\d/.test(result.value), 'Chiffre manquant');
+          assert(/[^a-zA-Z0-9]/.test(result.value), 'Caractère spécial manquant');
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Syllables - Blocks',
+        run: async (ctx) => withSeed(200 + ctx.run, () => {
+          const result = generateSyllables({
+            length: 15,
+            policy: 'standard',
+            digits: 2,
+            specials: 1,
+            customSpecials: '',
+            placeDigits: 'aleatoire',
+            placeSpecials: 'aleatoire',
+            caseMode: 'blocks',
+            useBlocks: true,
+            blockTokens: ['T', 'l', 'U', 'T']
+          });
+
+          assert(/[A-Z]/.test(result.value) && /[a-z]/.test(result.value),
+            'Pattern de casse blocs non appliqué');
+          assert(result.value.length === 15, 'Longueur bloc syllables incorrecte');
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Passphrase - Français',
+        run: async (ctx) => withSeed(300 + ctx.run, async () => {
+          const result = await generatePassphrase({
+            wordCount: 3,
+            separator: '-',
+            digits: 0,
+            specials: 0,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'title',
+            useBlocks: false,
+            blockTokens: [],
+            dictionary: 'french',
+            wordListOverride: wordListA
+          });
+
+          const parts = result.value.split('-');
+          assert(parts.length === 3, 'Nombre de mots incorrect');
+          parts.forEach((word) => {
+            assert(/^\p{Lu}[\p{Ll}]+$/u.test(word), 'Mot non en Title Case');
+          });
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Passphrase - Blocks',
+        run: async (ctx) => withSeed(400 + ctx.run, async () => {
+          const blockTokens = ['T', 'l', 'U', 'T'];
+          const result = await generatePassphrase({
+            wordCount: 4,
+            separator: '-',
+            digits: 0,
+            specials: 0,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'blocks',
+            useBlocks: true,
+            blockTokens,
+            dictionary: 'french',
+            wordListOverride: wordListB
+          });
+
+          const parts = result.value.split('-');
+          assert(parts.length === 4, 'Passphrase bloc incomplet');
+          parts.forEach((word, index) => {
+            const token = blockTokens[index % blockTokens.length];
+            if (token === 'T') {
+              assert(/^\p{Lu}[\p{Ll}]+$/u.test(word), `Mot ${index + 1} devrait être en Title case`);
+            } else if (token === 'l') {
+              assert(word === word.toLowerCase(), `Mot ${index + 1} devrait être en minuscules`);
+            } else if (token === 'U') {
+              assert(word === word.toUpperCase(), `Mot ${index + 1} devrait être en majuscules`);
+            }
+          });
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Leet - Password',
+        run: async (ctx) => withSeed(500 + ctx.run, () => {
+          const result = generateLeet({
+            baseWord: 'password',
+            digits: 1,
+            specials: 1,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'debut',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          assert(/[@$0]/.test(result.value), 'Transformation leet non détectée');
+          assert(/\d$/.test(result.value), 'Chiffre final manquant');
+          assert(/^[^a-zA-Z]/.test(result.value), 'Symbole leet début manquant');
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Leet - Hello Blocks',
+        run: async (ctx) => withSeed(600 + ctx.run, () => {
+          const result = generateLeet({
+            baseWord: 'hello',
+            digits: 1,
+            specials: 1,
+            customSpecials: '#',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'blocks',
+            useBlocks: true,
+            blockTokens: ['U', 'l']
+          });
+
+          assert(/[A-Z]/.test(result.value) && /[a-z]/.test(result.value),
+            'Pattern blocs leet absent');
+          assert(result.value.endsWith('#' + result.value.slice(-1)), 'Spécial fin attendu');
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Placement - Début',
+        run: async (ctx) => withSeed(700 + ctx.run, () => {
+          const result = generateSyllables({
+            length: 12,
+            policy: 'standard',
+            digits: 2,
+            specials: 1,
+            customSpecials: '',
+            placeDigits: 'debut',
+            placeSpecials: 'debut',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          const prefix = result.value.slice(0, 3);
+          assert(/^[^a-zA-Z]{3}$/.test(prefix), 'Les insertions début ne sont pas en tête');
+          assert(result.value.length === 12, 'Longueur placement début incorrecte');
+          return { sample: result.value };
+        })
+      },
+      {
+        name: 'Placement - Fin',
+        run: async (ctx) => withSeed(800 + ctx.run, () => {
+          const result = generateSyllables({
+            length: 12,
+            policy: 'standard',
+            digits: 2,
+            specials: 1,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'fin',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          const suffix = result.value.slice(-3);
+          assert(/^[^a-zA-Z]{3}$/.test(suffix), 'Les insertions fin ne sont pas en queue');
+          assert(/\d$/.test(result.value), 'Dernier caractère devrait être un chiffre');
+          return { sample: result.value };
+        })
+      },
+      {
+        name: 'Placement - Visuel',
+        run: async (ctx) => withSeed(900 + ctx.run, () => {
+          setDigitPositions([0, 100]);
+          setSpecialPositions([0, 50, 100]);
+
+          const result = generateSyllables({
+            length: 12,
+            policy: 'standard',
+            digits: 2,
+            specials: 3,
+            customSpecials: '',
+            placeDigits: 'positions',
+            placeSpecials: 'positions',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          const digitCount = countMatches(result.value, /\d/g);
+          const specialCount = countMatches(result.value, /[^a-zA-Z0-9]/g);
+          assert(digitCount === 2, 'Nombre de chiffres positionnels incorrect');
+          assert(specialCount >= 3, 'Nombre de spéciaux positionnels incorrect');
+          assert(/^[^a-zA-Z]/.test(result.value), 'Un caractère positionné devrait ouvrir la chaîne');
+          assert(/[^a-zA-Z]$/.test(result.value), 'Un caractère positionné devrait clôturer la chaîne');
+
+          setDigitPositions([]);
+          setSpecialPositions([]);
+          return { sample: result.value };
+        })
+      },
+      {
+        name: 'Politique Layout-Safe',
+        run: async (ctx) => withSeed(1000 + ctx.run, () => {
+          const result = generateSyllables({
+            length: 18,
+            policy: 'standard-layout',
+            digits: 1,
+            specials: 0,
+            customSpecials: '',
+            placeDigits: 'debut',
+            placeSpecials: 'milieu',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          assert(!/[aA]/.test(result.value), 'Lettre "a" détectée dans le layout-safe');
+          return { sample: result.value, entropy: result.entropy };
+        })
+      },
+      {
+        name: 'Spéciaux Personnalisés',
+        run: async (ctx) => withSeed(1100 + ctx.run, () => {
+          const custom = '@$%';
+          const result = generateSyllables({
+            length: 15,
+            policy: 'standard',
+            digits: 0,
+            specials: 3,
+            customSpecials: custom,
+            placeDigits: 'milieu',
+            placeSpecials: 'milieu',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          });
+
+          const specials = result.value.match(/[^a-zA-Z0-9]/g) || [];
+          specials.forEach((ch) => {
+            assert(custom.includes(ch), `Caractère spécial inattendu: ${ch}`);
+          });
+          return { sample: result.value };
+        })
+      },
+      {
+        name: 'Quantité Élevée',
+        run: async (ctx) => withSeed(1200 + ctx.run, () => {
+          const outputs = Array.from({ length: 8 }, () => generateSyllables({
+            length: 12,
+            policy: 'standard',
+            digits: 1,
+            specials: 1,
+            customSpecials: '',
+            placeDigits: 'fin',
+            placeSpecials: 'debut',
+            caseMode: 'mixte',
+            useBlocks: false,
+            blockTokens: []
+          }));
+
+          assert(outputs.length === 8, 'Quantité générée incorrecte');
+          outputs.forEach((res) => {
+            assert(res.value.length === 12, 'Longueur incorrecte dans la génération multiple');
+          });
+          return { count: outputs.length, sample: outputs[0].value };
+        })
+      },
+      {
+        name: 'API Insertion',
+        run: async () => {
+          const base = 'abc';
+          const chars = ['1', '2'];
+          assert(insertWithPlacement(base, chars, 'debut') === '12abc', 'Insertion début invalide');
+          assert(insertWithPlacement(base, chars, 'fin') === 'abc12', 'Insertion fin invalide');
+          assert(insertWithPlacement(base, chars, 'milieu') === 'a12bc', 'Insertion milieu invalide');
+          return { sample: '12abc / abc12 / a12bc' };
+        }
+      }
+    ];
+  }
+
+  async runAll(runs = 1) {
+    const summary = [];
+
+    for (let run = 1; run <= runs; run++) {
+      const results = { passed: 0, failed: 0, errors: [], details: [] };
+      console.log(`[${formatTimestamp()}] ℹ️ 🚀 DÉBUT DES TESTS (run ${run}/${runs})`);
+      console.log(`[${formatTimestamp()}] ℹ️ ==================================================`);
+
+      for (const test of this.tests) {
+        try {
+          const detail = await test.run({ run });
+          results.passed++;
+          results.details.push({ test: test.name, detail });
+          const sample = detail?.sample ? ` - Exemple: "${detail.sample}"` : '';
+          console.log(`[${formatTimestamp()}] ✅ ${test.name}${sample}`);
+        } catch (error) {
+          results.failed++;
+          results.errors.push({ test: test.name, error: error.message });
+          console.log(`[${formatTimestamp()}] ❌ ${test.name} - ${error.message}`);
+        }
+      }
+
+      const total = results.passed + results.failed;
+      const score = total > 0 ? Math.round((results.passed / total) * 100) : 0;
+
+      console.log(`[${formatTimestamp()}] ℹ️ ==================================================`);
+      console.log(`[${formatTimestamp()}] ℹ️ 📊 RAPPORT FINAL`);
+      console.log(`[${formatTimestamp()}] ℹ️ ==================================================`);
+      console.log(`[${formatTimestamp()}] ℹ️ ✅ Tests réussis: ${results.passed}`);
+      console.log(`[${formatTimestamp()}] ℹ️ ❌ Tests échoués: ${results.failed}`);
+      console.log(`[${formatTimestamp()}] ℹ️ 📈 Score: ${score}%`);
+
+      if (results.errors.length > 0) {
+        console.log(`[${formatTimestamp()}] ℹ️ 🚨 ERREURS:`);
+        results.errors.forEach((err, idx) => {
+          console.log(`[${formatTimestamp()}] ℹ️  ${idx + 1}. ${err.test}: ${err.error}`);
+        });
+      }
+
+      summary.push({ run, ...results, score });
+      console.log('');
+    }
+
+    return summary;
+  }
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const runsArg = args.find(arg => arg.startsWith('--runs'));
+  let runs = 1;
+
+  if (runsArg) {
+    const value = runsArg.includes('=') ? runsArg.split('=')[1] : args[args.indexOf(runsArg) + 1];
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      runs = parsed;
+    }
+  }
+
+  const generatorsModule = await importModule('src/js/core/generators.js');
+  const helpersModule = await importModule('src/js/utils/helpers.js');
+
+  const runner = new NodeTestRunner({
+    generateSyllables: generatorsModule.generateSyllables,
+    generatePassphrase: generatorsModule.generatePassphrase,
+    generateLeet: generatorsModule.generateLeet,
+    insertWithPlacement: helpersModule.insertWithPlacement,
+    setDigitPositions: helpersModule.setDigitPositions,
+    setSpecialPositions: helpersModule.setSpecialPositions
+  });
+
+  const results = await runner.runAll(runs);
+  const lastRun = results[results.length - 1];
+
+  if (lastRun.failed > 0) {
+    process.exitCode = 1;
+  }
+}
+
+main().catch((error) => {
+  console.error('❌ Exécution des tests impossible:', error);
+  process.exit(1);
+});

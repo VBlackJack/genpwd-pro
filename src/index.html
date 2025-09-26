@@ -265,10 +265,10 @@
                 <div class="row">
                   <label for="policy-select">Politique</label>
                   <select id="policy-select" class="grow">
-                    <option value="standard">Standard</option>
-                    <option value="standard-layout">Standard Layout</option>
-                    <option value="alphanumerique">Alphanumerique</option>
-                    <option value="alphanumerique-layout">Alphanumerique Layout</option>
+                    <option value="standard" selected>Standard (tous caractères)</option>
+                    <option value="standard-layout">Standard Layout-Safe (AZERTY/QWERTY)</option>
+                    <option value="alphanumerique">Alphanumérique (lettres + chiffres)</option>
+                    <option value="alphanumerique-layout">Alpha Layout-Safe (AZERTY/QWERTY)</option>
                   </select>
                 </div>
               </div>
@@ -424,6 +424,12 @@
                       <button class="btn-mini" id="btn-block-inc">+</button>
                       <button class="btn-mini random" id="btn-block-random">🎲 Aléatoire</button>
                     </div>
+                  </div>
+                  <div class="block-sync-toggle">
+                    <label class="checkbox">
+                      <input type="checkbox" id="blocks-sync-toggle" checked>
+                      Synchronisation auto blocs
+                    </label>
                   </div>
                   <div class="chips" id="chips"></div>
                 </div>

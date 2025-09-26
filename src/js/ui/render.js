@@ -40,7 +40,7 @@ export function renderResults(results, mask) {
     }
 
     results.forEach((item, idx) => {
-      const { value, entropy, mode, dictionary } = item;
+      const { value } = item;
       if (typeof value !== 'string') return;
 
       const card = createPasswordCard(item, idx + 1, mask);

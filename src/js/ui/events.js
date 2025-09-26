@@ -20,7 +20,7 @@ import { getElement, getAllElements, addEventListener, updateBadgeForInput,
 import { generateSyllables, generatePassphrase, generateLeet } from '../core/generators.js';
 import { setCurrentDictionary } from '../core/dictionaries.js';
 import { randomizeBlocks, defaultBlocksForMode } from '../core/casing.js';
-import { readSettings, getBlocks, setBlocks, setResults, getUIState, setUIState } from '../config/settings.js';
+import { readSettings, getBlocks, setBlocks, setResults, getResults, getUIState, setUIState } from '../config/settings.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
@@ -28,6 +28,8 @@ import { renderResults, updateMaskDisplay, renderEmptyState } from './render.js'
 import { initVisualPlacement, getVisualPlacement } from './placement.js';
 
 let previewTimeout = null;
+let blockSyncTimeout = null;
+const BLOCK_SYNC_DELAY = 200;
 
 export function bindEventHandlers() {
   try {
@@ -36,6 +38,8 @@ export function bindEventHandlers() {
     bindSliders();
     bindCaseAndBlocks();
     bindDebugActions();
+
+    initializeBlockSyncState();
 
     const placementApi = initVisualPlacement();
     if (placementApi && typeof placementApi.onUpdate === 'function') {
@@ -68,14 +72,32 @@ function bindMainActions() {
 
 function bindModeAndSettings() {
   // Changement de mode
-  addEventListener(getElement('#mode-select'), 'change', () => {
+  addEventListener(getElement('#mode-select'), 'change', (event) => {
     updateVisibilityByMode();
-    if (getElement('#case-mode-select')?.value === 'blocks' && !getUIState().blockDirty) {
+
+    const caseModeValue = getElement('#case-mode-select')?.value;
+    const programmatic = event?.isTrusted === false;
+    const shouldResyncBlocks = caseModeValue === 'blocks'
+      && (programmatic || !getUIState().blockDirty);
+
+    if (shouldResyncBlocks) {
+      setUIState('blockDirty', false);
       resetBlocksForCurrentMode();
+      scheduleCurrentModeBlockSync();
     }
+
     debouncedUpdatePreview();
   });
-  
+
+  const policySelect = getElement('#policy-select');
+  if (policySelect) {
+    ensurePolicySelection(policySelect);
+    addEventListener(policySelect, 'change', (event) => {
+      ensurePolicySelection(event?.target);
+      debouncedUpdatePreview();
+    });
+  }
+
   // Masquage
   addEventListener(getElement('#mask-toggle'), 'change', () => {
     const masked = getElement('#mask-toggle').checked;
@@ -113,13 +135,24 @@ function bindSliders() {
     const target = e.target;
     if (target && target.type === 'range') {
       updateBadgeForInput(target);
-      
+
       if (['syll-len', 'digits-count', 'specials-count', 'pp-count'].includes(target.id)) {
         debouncedUpdatePreview();
-        
+
         // Réajuster les blocs si mode blocks et pas modifié manuellement
-        if (getElement('#case-mode-select')?.value === 'blocks' && !getUIState().blockDirty) {
+        const programmatic = e?.isTrusted === false;
+        if (getElement('#case-mode-select')?.value === 'blocks'
+          && (programmatic || !getUIState().blockDirty)) {
+          if (programmatic) {
+            setUIState('blockDirty', false);
+          }
           resetBlocksForCurrentMode();
+        }
+
+        if (target.id === 'syll-len') {
+          scheduleBlockSync('syllables', parseInt(target.value, 10));
+        } else if (target.id === 'pp-count') {
+          scheduleBlockSync('passphrase', parseInt(target.value, 10));
         }
       }
     }
@@ -134,13 +167,37 @@ function bindSliders() {
 
 function bindCaseAndBlocks() {
   // Changement mode de casse
-  addEventListener(getElement('#case-mode-select'), 'change', (e) => {
+  addEventListener(getElement('#case-mode-select'), 'change', (event) => {
     ensureBlockVisible();
-    if (e.target.value === 'blocks' && !getUIState().blockDirty) {
+    const isBlocks = event.target.value === 'blocks';
+    const programmatic = event?.isTrusted === false;
+
+    setUIState('useBlocks', isBlocks);
+
+    if (isBlocks && (programmatic || !getUIState().blockDirty)) {
+      setUIState('blockDirty', false);
       resetBlocksForCurrentMode();
+      scheduleCurrentModeBlockSync();
     }
+
+    if (!isBlocks) {
+      setUIState('blockDirty', false);
+    }
+
     debouncedUpdatePreview();
   });
+
+  const syncToggle = getElement('#blocks-sync-toggle');
+  if (syncToggle) {
+    addEventListener(syncToggle, 'change', (event) => {
+      const enabled = Boolean(event.target.checked);
+      setUIState('blockAutoSync', enabled);
+      if (enabled) {
+        setUIState('blockDirty', false);
+        scheduleCurrentModeBlockSync();
+      }
+    });
+  }
 
   // Contrôles des blocs
   addEventListener(getElement('#btn-all-title'), 'click', () => {
@@ -319,8 +376,35 @@ async function generatePasswords() {
 }
 
 async function copyAllPasswords() {
-  // Implementation simplifiée - à compléter selon besoins
-  showToast('Fonction à implémenter', 'info');
+  const results = getResults();
+  if (!results?.length) {
+    showToast('Aucun mot de passe à copier', 'warning');
+    return;
+  }
+
+  const passwords = results
+    .map(result => result?.value)
+    .filter(Boolean)
+    .join('\n');
+
+  if (!passwords) {
+    showToast('Aucun mot de passe valide trouvé', 'warning');
+    return;
+  }
+
+  const success = await copyToClipboard(passwords);
+  const count = passwords.split('\n').length;
+
+  showToast(
+    success
+      ? `${count} mot${count > 1 ? 's' : ''} de passe copiés !`
+      : 'Impossible de copier les mots de passe',
+    success ? 'success' : 'error'
+  );
+
+  if (success) {
+    safeLog(`Copie groupée: ${count} entrées`);
+  }
 }
 
 function exportPasswords() {
@@ -348,6 +432,36 @@ function runTests() {
 }
 
 // Helpers
+function ensurePolicySelection(select) {
+  if (!select || !select.options) {
+    return;
+  }
+
+  const options = Array.from(select.options);
+  if (options.length === 0) {
+    return;
+  }
+
+  const fallback = options.find(option => option.value === 'standard')?.value
+    || options[0].value
+    || '';
+
+  let desired = select.value;
+  const hasDesired = options.some(option => option.value === desired && option.value !== '');
+
+  if (!hasDesired) {
+    desired = fallback;
+  }
+
+  if (!desired && fallback) {
+    desired = fallback;
+  }
+
+  if (desired && select.value !== desired) {
+    select.value = desired;
+  }
+}
+
 function resetBlocksForCurrentMode() {
   const settings = readSettings();
   let param = 20;
@@ -364,6 +478,7 @@ function resetBlocksForCurrentMode() {
   const blocks = defaultBlocksForMode(settings.mode, param);
   setBlocks(blocks);
   renderBlocksUI();
+  setUIState('blockDirty', false);
 }
 
 function renderBlocksUI() {
@@ -379,6 +494,87 @@ function renderBlocksUI() {
   });
   
   updateBlockSizeLabel('#block-size-label', blocks.length);
+}
+
+function initializeBlockSyncState() {
+  const caseMode = getElement('#case-mode-select')?.value || 'mixte';
+  setUIState('useBlocks', caseMode === 'blocks');
+
+  const toggle = getElement('#blocks-sync-toggle');
+  if (toggle) {
+    setUIState('blockAutoSync', toggle.checked !== false);
+  }
+
+  if (caseMode === 'blocks') {
+    scheduleCurrentModeBlockSync();
+  }
+}
+
+function scheduleCurrentModeBlockSync() {
+  const mode = getElement('#mode-select')?.value || 'syllables';
+  if (mode === 'syllables') {
+    const length = parseInt(getElement('#syll-len')?.value || '0', 10);
+    scheduleBlockSync('syllables', length);
+  } else if (mode === 'passphrase') {
+    const count = parseInt(getElement('#pp-count')?.value || '0', 10);
+    scheduleBlockSync('passphrase', count);
+  }
+}
+
+function scheduleBlockSync(mode, value) {
+  if (!getUIState('blockAutoSync') || !getUIState('useBlocks')) {
+    return;
+  }
+
+  if (getUIState('blockDirty')) {
+    return;
+  }
+
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return;
+  }
+
+  if (blockSyncTimeout) {
+    clearTimeout(blockSyncTimeout);
+  }
+
+  blockSyncTimeout = setTimeout(() => {
+    syncBlocksWithLength(mode, numericValue);
+  }, BLOCK_SYNC_DELAY);
+}
+
+function syncBlocksWithLength(mode, value) {
+  if (!getUIState('blockAutoSync') || !getUIState('useBlocks') || getUIState('blockDirty')) {
+    return;
+  }
+
+  let targetBlocks;
+
+  switch (mode) {
+    case 'syllables':
+      targetBlocks = Math.max(2, Math.min(6, Math.ceil(value / 4)));
+      break;
+    case 'passphrase':
+      targetBlocks = Math.max(1, Math.min(6, value));
+      break;
+    default:
+      return;
+  }
+
+  const patterns = ['T', 'l', 'U'];
+  const newBlocks = Array.from({ length: targetBlocks }, (_, index) => patterns[index % patterns.length]);
+
+  const current = getBlocks();
+  const isIdentical = current.length === newBlocks.length && current.every((token, index) => token === newBlocks[index]);
+  if (isIdentical) {
+    return;
+  }
+
+  setBlocks(newBlocks);
+  renderBlocksUI();
+  setUIState('blockDirty', false);
+  safeLog(`Blocs synchronisés: ${newBlocks.join('-')} (${targetBlocks} blocs)`);
 }
 
 function debouncedUpdatePreview() {

@@ -277,6 +277,17 @@ select {
   align-items: center;
 }
 
+.block-sync-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.block-sync-toggle .checkbox {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
