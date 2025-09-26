@@ -101,8 +101,24 @@ export function readSettings() {
     }
 
     const validSettings = validateSettings(rawSettings);
+    if (validSettings.mode === 'syllables') {
+      const policySelect = document.querySelector('#policy-select');
+      if (policySelect && policySelect.options) {
+        const options = Array.from(policySelect.options);
+        const fallback = options.find(option => option.value === 'standard')?.value
+          || options[0]?.value
+          || 'standard';
+        const desired = options.some(option => option.value === validSettings.specific.policy)
+          ? validSettings.specific.policy
+          : fallback;
+        if (desired && policySelect.value !== desired) {
+          policySelect.value = desired;
+        }
+      }
+    }
+
     AppState.settings = { ...validSettings, caseBlocks: AppState.blocks.slice() };
-    
+
     return AppState.settings;
   } catch (e) {
     safeLog(`Erreur readSettings: ${e.message}`);

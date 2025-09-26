@@ -88,7 +88,16 @@ function bindModeAndSettings() {
 
     debouncedUpdatePreview();
   });
-  
+
+  const policySelect = getElement('#policy-select');
+  if (policySelect) {
+    ensurePolicySelection(policySelect);
+    addEventListener(policySelect, 'change', (event) => {
+      ensurePolicySelection(event?.target);
+      debouncedUpdatePreview();
+    });
+  }
+
   // Masquage
   addEventListener(getElement('#mask-toggle'), 'change', () => {
     const masked = getElement('#mask-toggle').checked;
@@ -423,6 +432,36 @@ function runTests() {
 }
 
 // Helpers
+function ensurePolicySelection(select) {
+  if (!select || !select.options) {
+    return;
+  }
+
+  const options = Array.from(select.options);
+  if (options.length === 0) {
+    return;
+  }
+
+  const fallback = options.find(option => option.value === 'standard')?.value
+    || options[0].value
+    || '';
+
+  let desired = select.value;
+  const hasDesired = options.some(option => option.value === desired && option.value !== '');
+
+  if (!hasDesired) {
+    desired = fallback;
+  }
+
+  if (!desired && fallback) {
+    desired = fallback;
+  }
+
+  if (desired && select.value !== desired) {
+    select.value = desired;
+  }
+}
+
 function resetBlocksForCurrentMode() {
   const settings = readSettings();
   let param = 20;
