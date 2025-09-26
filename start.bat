@@ -1,14 +1,14 @@
 REM ============================================================================
 REM start-dev.bat - Script de demarrage Windows (ENCODAGE FIXE)
-REM GenPwd Pro v2.5 - Architecture modulaire ES6
+REM GenPwd Pro v2.5.1 - Architecture modulaire ES6
 REM ============================================================================
 @echo off
 setlocal enabledelayedexpansion
-title GenPwd Pro v2.5 - Dev Server
+title GenPwd Pro v2.5.1 - Dev Server
 
 echo.
 echo ========================================
-echo   GenPwd Pro v2.5 - Dev Server
+echo   GenPwd Pro v2.5.1 - Dev Server
 echo ========================================
 echo.
 

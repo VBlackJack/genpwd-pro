@@ -1,6 +1,6 @@
-# GenPwd Pro v2.5 🔐
+# GenPwd Pro v2.5.1 🔐
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
+[![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
 [![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
@@ -140,7 +140,7 @@ Apache 2.0 © 2025 Julien Bombled
 ---
 
 <div align="center">
-  <b>GenPwd Pro v2.5</b> - Générateur de mots de passe professionnel<br>
+  <b>GenPwd Pro v2.5.1</b> - Générateur de mots de passe professionnel<br>
   <a href="https://github.com/VBlackJack/genpwd-pro">GitHub</a> •
   <a href="./docs/USER-GUIDE.md">Documentation</a> •
   <a href="https://github.com/VBlackJack/genpwd-pro/issues">Issues</a>

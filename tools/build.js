@@ -76,7 +76,7 @@ class GenPwdBuilder {
   async buildJavaScript() {
     console.log('📦 Consolidation JavaScript...');
     
-    let output = `// GenPwd Pro v2.5 - Build automatique ${new Date().toISOString()}
+    let output = `// GenPwd Pro v2.5.1 - Build automatique ${new Date().toISOString()}
 (function() {
 "use strict";
 
@@ -178,7 +178,7 @@ if (document.readyState === 'loading') {
   async buildCSS() {
     console.log('🎨 Consolidation CSS...');
     
-    let consolidatedCSS = '/* GenPwd Pro v2.5 - Styles consolidés */\n\n';
+    let consolidatedCSS = '/* GenPwd Pro v2.5.1 - Styles consolidés */\n\n';
     
     for (const cssFile of this.cssFiles) {
       const fullPath = path.join(this.sourceDir, cssFile);

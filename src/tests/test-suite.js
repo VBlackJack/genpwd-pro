@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// tools/test-suite.js - Suite de tests complète pour GenPwd Pro v2.5
+// tools/test-suite.js - Suite de tests complète pour GenPwd Pro v2.5.1
 // Usage: Inclure dans index.html ou exécuter via console
 
 class GenPwdTestSuite {
@@ -447,7 +447,7 @@ class GenPwdTestSuite {
     this.results = { passed: 0, failed: 0, errors: [], details: [], startTime: new Date(), endTime: null };
     this.consoleOutput = [];
 
-    this.log('🚀 DÉBUT DES TESTS - GenPwd Pro v2.5');
+    this.log('🚀 DÉBUT DES TESTS - GenPwd Pro v2.5.1');
     this.log('='.repeat(50));
     
     const configurations = this.getTestConfigurations();
