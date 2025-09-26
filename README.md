@@ -69,8 +69,8 @@ firefox src/index.html
 
 ### Mode Leet Speak (transformation stylisée)
 ```javascript
-// Génère : "P@$$W0RD_"
-// Remplace : a→@, e→3, o→0, s→$
+// Génère : "P@55W0RD_"
+// Remplace : a→@, e→3, o→0, s→5
 ```
 
 ## 🏗️ Architecture

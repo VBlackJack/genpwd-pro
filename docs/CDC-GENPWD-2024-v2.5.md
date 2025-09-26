@@ -554,7 +554,7 @@ function calculateEntropy(password, mode) {
 
 **Cross-Layout (QWERTY/AZERTY) :**
 ```
-@ # $ % + = _
+! # % + , - . / : = @ _
 ```
 Évite les caractères dont la position change selon le layout
 

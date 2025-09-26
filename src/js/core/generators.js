@@ -20,6 +20,40 @@ import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
 import { safeLog } from '../utils/logger.js';
 
+const CLI_SAFE_SPECIAL_SET = new Set(CHAR_SETS.standard.specials);
+const DANGEROUS_CHARS = new Set(['$', '^', '&', '*', "'"]);
+
+function sanitizeSpecialCandidates(candidates) {
+  const unique = [];
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string' || candidate.length === 0) {
+      continue;
+    }
+
+    const char = candidate[0];
+    if (!CLI_SAFE_SPECIAL_SET.has(char)) {
+      continue;
+    }
+
+    if (!unique.includes(char)) {
+      unique.push(char);
+    }
+  }
+  return unique;
+}
+
+function enforceCliSafety(value, context) {
+  if (typeof value !== 'string') {
+    return;
+  }
+
+  for (const dangerous of DANGEROUS_CHARS) {
+    if (value.includes(dangerous)) {
+      throw new Error(`SECURITE: Caractère ${dangerous} détecté dans ${context}`);
+    }
+  }
+}
+
 export function generateSyllables(config) {
   try {
     const { length, policy, digits, specials, customSpecials, 
@@ -65,6 +99,8 @@ export function generateSyllables(config) {
       placement: placeSpecials,
       type: 'specials'
     });
+
+    enforceCliSafety(result, 'generateSyllables');
 
     const entropyConfig = { ...config, mode: 'syllables' };
     const entropy = calculateEntropy('syllables', entropyConfig, result);
@@ -151,6 +187,8 @@ export async function generatePassphrase(config) {
       type: 'specials'
     });
 
+    enforceCliSafety(result, 'generatePassphrase');
+
     const dictionarySize = (dictionaryWords && dictionaryWords.length) || 1;
     const entropyConfig = {
       ...config,
@@ -206,6 +244,8 @@ export function generateLeet(config) {
       placement: placeSpecials,
       type: 'specials'
     });
+
+    enforceCliSafety(result, 'generateLeet');
 
     const entropyConfig = { ...config, mode: 'leet', policy: config.policy || 'standard' };
     const entropy = calculateEntropy('leet', entropyConfig, result);
@@ -295,11 +335,8 @@ function calculatePolicyAlphabetSize(config) {
   if (config.digits > 0) size += 10;
 
   if (config.specials > 0) {
-    if (config.customSpecials && config.customSpecials.length > 0) {
-      size += Array.from(new Set(Array.from(config.customSpecials))).length;
-    } else {
-      size += (policy?.specials || []).length;
-    }
+    const resolved = resolveSpecialPool(config.customSpecials, config.policy || 'standard');
+    size += resolved.length;
   }
 
   return size;
@@ -344,6 +381,8 @@ export async function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
   result.entropy = config.mode === 'passphrase'
     ? Math.round(currentEntropy * 10) / 10
     : currentEntropy;
+
+  enforceCliSafety(result.value, `ensureMinimumEntropy(${config.mode})`);
   return result;
 }
 
@@ -358,18 +397,35 @@ function applyLeetTransformation(word) {
 }
 
 function resolveSpecialPool(customSpecials, policyKey = 'standard') {
+  console.log('DEBUG: resolveSpecialPool called with:', { customSpecials, policyKey });
+
   if (Array.isArray(customSpecials) && customSpecials.length > 0) {
-    return customSpecials;
+    console.log('DEBUG: Using array customSpecials:', customSpecials);
+    const sanitizedArray = sanitizeSpecialCandidates(customSpecials);
+    if (sanitizedArray.length > 0) {
+      console.log('DEBUG: Sanitized custom array:', sanitizedArray);
+      return sanitizedArray;
+    }
   }
 
   if (typeof customSpecials === 'string' && customSpecials.length > 0) {
-    return Array.from(new Set(customSpecials.split('')));
+    const rawChars = Array.from(new Set(customSpecials.split('')));
+    console.log('DEBUG: Using string customSpecials:', rawChars);
+    const sanitizedString = sanitizeSpecialCandidates(rawChars);
+    if (sanitizedString.length > 0) {
+      console.log('DEBUG: Sanitized custom string:', sanitizedString);
+      return sanitizedString;
+    }
   }
 
-  const policyData = CHAR_SETS[policyKey] || CHAR_SETS.standard;
-  if (policyData?.specials && policyData.specials.length > 0) {
-    return policyData.specials;
+  const policyData = CHAR_SETS[policyKey];
+  if (policyData && Array.isArray(policyData.specials)) {
+    const sanitizedPolicy = sanitizeSpecialCandidates(policyData.specials);
+    console.log('DEBUG: Using policy specials:', sanitizedPolicy);
+    return sanitizedPolicy;
   }
 
-  return CHAR_SETS.standard.specials;
+  const fallback = sanitizeSpecialCandidates(CHAR_SETS.standard.specials);
+  console.log('DEBUG: Using policy specials:', fallback);
+  return fallback;
 }

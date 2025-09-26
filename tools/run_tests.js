@@ -267,8 +267,8 @@ class NodeTestRunner {
           const dangerous = ['\u0024', '^', '&', '*', "'"];
           const results = [];
 
-          for (let i = 0; i < 50; i++) {
-            results.push(generateSyllables({
+          for (let i = 0; i < 40; i++) {
+            const defaultSyllables = generateSyllables({
               length: 12,
               policy: 'standard',
               digits: 0,
@@ -279,9 +279,22 @@ class NodeTestRunner {
               caseMode: 'mixte',
               useBlocks: false,
               blockTokens: []
-            }).value);
+            }).value;
 
-            results.push(generateLeet({
+            const customSyllables = generateSyllables({
+              length: 12,
+              policy: 'standard',
+              digits: 0,
+              specials: 3,
+              customSpecials: '@#%',
+              placeDigits: 'milieu',
+              placeSpecials: 'debut',
+              caseMode: 'mixte',
+              useBlocks: false,
+              blockTokens: []
+            }).value;
+
+            const leetValue = generateLeet({
               baseWord: 'password',
               digits: 1,
               specials: 2,
@@ -291,11 +304,26 @@ class NodeTestRunner {
               caseMode: 'mixte',
               useBlocks: false,
               blockTokens: []
-            }).value);
+            }).value;
+
+            const passphrase = await generatePassphrase({
+              wordCount: 5,
+              separator: '-',
+              digits: 0,
+              specials: 2,
+              customSpecials: '@#%',
+              placeDigits: 'fin',
+              placeSpecials: 'milieu',
+              caseMode: 'title',
+              useBlocks: false,
+              blockTokens: [],
+              dictionary: 'french'
+            });
+
+            results.push(defaultSyllables, customSyllables, leetValue, passphrase.value);
           }
 
-          const allText = results.join('');
-          const found = dangerous.filter((char) => allText.includes(char));
+          const found = dangerous.filter((char) => results.some((value) => value.includes(char)));
 
           assert(found.length === 0, `Caractères dangereux trouvés: ${found}`);
           return { tested: results.length };
