@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GenPwd Pro – Console PWA</title>
+    <link rel="stylesheet" href="../styles/pwa-styles.css" />
+    <style>
+      :root {
+        color-scheme: dark light;
+      }
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        padding: 1.5rem 2rem;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(18px);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      main {
+        flex: 1;
+        padding: 2rem;
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+      section {
+        background: rgba(30, 41, 59, 0.85);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+      h1, h2 {
+        margin: 0 0 1rem;
+        font-weight: 700;
+        color: #f8fafc;
+      }
+      p {
+        margin: 0 0 0.75rem;
+        line-height: 1.6;
+      }
+      .status {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+      }
+      .status span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .status span strong {
+        color: #38bdf8;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.65rem 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        color: #0f172a;
+        background: linear-gradient(135deg, #38bdf8, #2563eb);
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 30px rgba(37, 99, 235, 0.4);
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      ul {
+        padding-left: 1.25rem;
+        margin: 0;
+        display: grid;
+        gap: 0.35rem;
+      }
+      .log {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        font-family: "Fira Code", "Consolas", monospace;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      footer {
+        padding: 1rem 2rem;
+        font-size: 0.85rem;
+        text-align: center;
+        color: rgba(148, 163, 184, 0.7);
+      }
+      @media (max-width: 640px) {
+        header, main, footer {
+          padding-left: 1.25rem;
+          padding-right: 1.25rem;
+        }
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Console PWA – GenPwd Pro</h1>
+      <p>Utilisez cet espace pour vérifier rapidement le fonctionnement hors ligne et l'état d'installation.</p>
+    </header>
+    <main>
+      <section>
+        <h2>Statuts</h2>
+        <div class="status">
+          <span><strong>Service worker :</strong> <span id="sw-status">–</span></span>
+          <span><strong>Cache :</strong> <span id="cache-status">–</span></span>
+          <span><strong>Mode installation :</strong> <span id="install-status">–</span></span>
+        </div>
+      </section>
+      <section>
+        <h2>Actions rapides</h2>
+        <div class="status">
+          <button id="btn-register">Enregistrer le service worker</button>
+          <button id="btn-unregister">Désenregistrer le service worker</button>
+          <button id="btn-check-cache">Analyser le cache</button>
+          <button id="btn-simulate-install">Simuler l'invite d'installation</button>
+          <button id="btn-simulate-update">Simuler une mise à jour</button>
+        </div>
+      </section>
+      <section>
+        <h2>Détails du cache</h2>
+        <ul id="cache-details"></ul>
+      </section>
+      <section>
+        <h2>Journal</h2>
+        <div class="log" id="log"></div>
+      </section>
+    </main>
+    <footer>GenPwd Pro v2.5.1 · Tests PWA</footer>
+
+    <script>
+      const logContainer = document.getElementById('log');
+      const swStatus = document.getElementById('sw-status');
+      const cacheStatus = document.getElementById('cache-status');
+      const installStatus = document.getElementById('install-status');
+      const cacheDetails = document.getElementById('cache-details');
+
+      const essentialAssets = [
+        '/',
+        '/index.html',
+        '/manifest.json',
+        '/pwa-installer.js',
+        '/service-worker.js',
+        '/styles/pwa-styles.css',
+      ];
+
+      function log(message) {
+        const time = new Date().toLocaleTimeString();
+        logContainer.innerText += `[${time}] ${message}\n`;
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+
+      function updateInstallStatus() {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        installStatus.innerText = isStandalone ? 'Installée (standalone)' : 'Navigateur';
+      }
+
+      async function refreshSwStatus() {
+        if (!('serviceWorker' in navigator)) {
+          swStatus.innerText = 'Non supporté';
+          return;
+        }
+
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          const state = registration.active ? registration.active.state : 'en attente';
+          swStatus.innerText = `Actif (${state})`;
+        } else {
+          swStatus.innerText = 'Non enregistré';
+        }
+      }
+
+      async function analyseCache() {
+        if (!('caches' in window)) {
+          cacheStatus.innerText = 'Cache API non supportée';
+          log("Cache Storage n'est pas disponible dans ce navigateur.");
+          return;
+        }
+
+        const cacheName = 'genpwd-pro-v2.5.1';
+        const cache = await caches.open(cacheName);
+        cacheDetails.innerHTML = '';
+
+        let cachedCount = 0;
+        for (const asset of essentialAssets) {
+          const match = await cache.match(asset);
+          const li = document.createElement('li');
+          if (match) {
+            li.textContent = `✅ ${asset}`;
+            cachedCount += 1;
+          } else {
+            li.textContent = `⚠️ ${asset} manquant`;
+          }
+          cacheDetails.appendChild(li);
+        }
+
+        cacheStatus.innerText = `${cachedCount}/${essentialAssets.length} ressources`; 
+        log(`Analyse du cache terminée (${cachedCount} ressources trouvées).`);
+      }
+
+      async function registerSw() {
+        if (!('serviceWorker' in navigator)) {
+          log('Les service workers ne sont pas supportés.');
+          return;
+        }
+
+        try {
+          const registration = await navigator.serviceWorker.register('/service-worker.js');
+          log('Service worker enregistré.');
+          swStatus.innerText = 'Actif (enregistrement en cours)';
+          registration.addEventListener('updatefound', () => log('Nouvelle version de service worker détectée.'));
+        } catch (error) {
+          log(`Erreur lors de l\'enregistrement : ${error.message}`);
+        }
+      }
+
+      async function unregisterSw() {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+          log('Aucun service worker enregistré.');
+          return;
+        }
+        await registration.unregister();
+        swStatus.innerText = 'Non enregistré';
+        log('Service worker désenregistré.');
+      }
+
+      async function simulateInstall() {
+        log("Simulation d'invite d'installation envoyée.");
+        const event = new CustomEvent('pwa:test-install');
+        window.dispatchEvent(event);
+      }
+
+      async function simulateUpdate() {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+          log('Aucun service worker pour simuler la mise à jour.');
+          return;
+        }
+
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          log('Message SKIP_WAITING envoyé au worker en attente.');
+        } else {
+          await registration.update();
+          log('Mise à jour du service worker demandée.');
+        }
+      }
+
+      document.getElementById('btn-register').addEventListener('click', registerSw);
+      document.getElementById('btn-unregister').addEventListener('click', unregisterSw);
+      document.getElementById('btn-check-cache').addEventListener('click', analyseCache);
+      document.getElementById('btn-simulate-install').addEventListener('click', simulateInstall);
+      document.getElementById('btn-simulate-update').addEventListener('click', simulateUpdate);
+
+      window.addEventListener('load', () => {
+        updateInstallStatus();
+        refreshSwStatus();
+        analyseCache();
+      });
+
+      window.matchMedia('(display-mode: standalone)').addEventListener('change', updateInstallStatus);
+
+      log('Console PWA initialisée.');
+    </script>
+  </body>
+</html>
