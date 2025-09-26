@@ -8,71 +8,109 @@
 
   <!-- PROTECTION SELECTION - DOIT ÊTRE LE PREMIER SCRIPT -->
   <script>
-    (function() {
-      'use strict';
-      console.log('🛡️ Installation protection Selection ULTRA-PRÉCOCE...');
+(function() {
+  'use strict';
+  console.log('🛡️ Installation protection Selection NUCLÉAIRE...');
 
-      // Sauvegarder immédiatement la méthode originale
-      const originalGetRangeAt = Selection.prototype.getRangeAt;
-      let protectionEnabled = true;
+  // Sauvegarder LA VRAIE méthode originale
+  const REAL_originalGetRangeAt = Selection.prototype.getRangeAt;
+  let protectionEnabled = true;
+  let interceptionCount = 0;
 
-      // Remplacer sur le prototype IMMÉDIATEMENT
-      Selection.prototype.getRangeAt = function(index) {
-        if (!protectionEnabled) {
-          return originalGetRangeAt.call(this, index);
-        }
+  // Fonction de protection universelle
+  function safeGetRangeAt(index) {
+    interceptionCount++;
 
-        try {
-          // Vérifications de sécurité
-          if (!document.hasFocus()) {
-            console.warn('🛡️ ULTRA: getRangeAt bloqué - Document sans focus');
-            try { this.removeAllRanges(); } catch (e) { /* ignore */ }
-            throw new DOMException('Document not focused - selection access denied', 'IndexSizeError');
-          }
+    if (!protectionEnabled) {
+      return REAL_originalGetRangeAt.call(this, index);
+    }
 
-          if (index < 0 || index >= this.rangeCount) {
-            console.warn('🛡️ ULTRA: getRangeAt bloqué - Index invalide', {
-              index,
-              rangeCount: this.rangeCount,
-              caller: (new Error()).stack.split('\n')[1]
-            });
-            try { this.removeAllRanges(); } catch (e) { /* ignore */ }
-            throw new DOMException('Index is not valid', 'IndexSizeError');
-          }
+    try {
+      if (!document.hasFocus()) {
+        console.warn(`🛡️ NUCLÉAIRE [${interceptionCount}]: getRangeAt bloqué - Document sans focus`);
+        try { this.removeAllRanges(); } catch (e) { /* ignore */ }
+        throw new DOMException('Document not focused - selection access denied', 'IndexSizeError');
+      }
 
-          if (this.rangeCount === 0) {
-            console.warn('🛡️ ULTRA: getRangeAt bloqué - Aucune range disponible');
-            throw new DOMException('No ranges available', 'IndexSizeError');
-          }
+      if (index < 0 || index >= this.rangeCount) {
+        console.warn(`🛡️ NUCLÉAIRE [${interceptionCount}]: getRangeAt bloqué - Index invalide`, {
+          index,
+          rangeCount: this.rangeCount
+        });
+        try { this.removeAllRanges(); } catch (e) { /* ignore */ }
+        throw new DOMException('Index is not valid', 'IndexSizeError');
+      }
 
-          // Appel sécurisé
-          return originalGetRangeAt.call(this, index);
+      if (this.rangeCount === 0) {
+        console.warn(`🛡️ NUCLÉAIRE [${interceptionCount}]: getRangeAt bloqué - Aucune range disponible`);
+        throw new DOMException('No ranges available', 'IndexSizeError');
+      }
 
-        } catch (error) {
-          if (error.name === 'IndexSizeError') {
-            console.warn('🛡️ ULTRA: IndexSizeError interceptée:', error.message);
-          } else {
-            console.error('🛡️ ULTRA: Erreur inattendue:', error);
-          }
+      return REAL_originalGetRangeAt.call(this, index);
 
-          try { this.removeAllRanges(); } catch (e) { /* ignore */ }
-          throw error;
-        }
-      };
+    } catch (error) {
+      if (error.name === 'IndexSizeError') {
+        console.warn(`🛡️ NUCLÉAIRE [${interceptionCount}]: IndexSizeError interceptée:`, error.message);
+      } else {
+        console.error(`🛡️ NUCLÉAIRE [${interceptionCount}]: Erreur inattendue:`, error);
+      }
 
-      // Fonction pour désactiver temporairement (si nécessaire)
-      window.disableSelectionProtection = function() {
-        protectionEnabled = false;
-        console.log('🛡️ ULTRA: Protection temporairement désactivée');
-      };
+      try { this.removeAllRanges(); } catch (e) { /* ignore */ }
+      throw error;
+    }
+  }
 
-      window.enableSelectionProtection = function() {
-        protectionEnabled = true;
-        console.log('🛡️ ULTRA: Protection réactivée');
-      };
+  // Remplacer la méthode sur le prototype
+  Selection.prototype.getRangeAt = safeGetRangeAt;
 
-      console.log('🛡️ ULTRA: Protection Selection installée AVANT extensions !');
-    })();
+  // PIÈGE POUR LES EXTENSIONS : Intercepter les Object.getOwnPropertyDescriptor
+  const originalGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+  Object.getOwnPropertyDescriptor = function(target, prop) {
+    const result = originalGetOwnPropertyDescriptor.call(this, target, prop);
+
+    // Si une extension essaie d'accéder à getRangeAt, on lui donne notre version
+    if (target === Selection.prototype && prop === 'getRangeAt' && result) {
+      console.log('🛡️ NUCLÉAIRE: Extension tentant de capturer getRangeAt - Piège activé !');
+      result.value = safeGetRangeAt;
+    }
+
+    return result;
+  };
+
+  // PIÈGE SUPPLÉMENTAIRE : Redéfinir la propriété comme non-configurable
+  try {
+    Object.defineProperty(Selection.prototype, 'getRangeAt', {
+      value: safeGetRangeAt,
+      writable: false,
+      configurable: false,
+      enumerable: false
+    });
+    console.log('🛡️ NUCLÉAIRE: getRangeAt verrouillé comme non-configurable');
+  } catch (e) {
+    console.warn('🛡️ NUCLÉAIRE: Impossible de verrouiller getRangeAt:', e.message);
+  }
+
+  // Fonctions de contrôle
+  window.disableSelectionProtection = function() {
+    protectionEnabled = false;
+    console.log('🛡️ NUCLÉAIRE: Protection désactivée');
+  };
+
+  window.enableSelectionProtection = function() {
+    protectionEnabled = true;
+    console.log('🛡️ NUCLÉAIRE: Protection réactivée');
+  };
+
+  window.getSelectionProtectionStats = function() {
+    return {
+      enabled: protectionEnabled,
+      interceptions: interceptionCount,
+      locked: !Object.getOwnPropertyDescriptor(Selection.prototype, 'getRangeAt').configurable
+    };
+  };
+
+  console.log('🛡️ NUCLÉAIRE: Protection Selection installée avec pièges anti-extension !');
+})();
   </script>
 
   <!-- CSS Modulaire -->
