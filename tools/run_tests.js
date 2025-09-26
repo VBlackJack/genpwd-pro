@@ -428,7 +428,7 @@ class NodeTestRunner {
             customSpecials: ''
           };
 
-          const entropyTest = ensureMinimumEntropy(
+          const entropyTest = await ensureMinimumEntropy(
             () => generateSyllables(generatorConfig),
             entropyConfig
           );
@@ -446,20 +446,6 @@ class NodeTestRunner {
         name: '#ENTROPY-MIN: Passphrase ≥100 bits',
         run: async (ctx) => withSeed(1300 + ctx.run, async () => {
           console.log('Test #ENTROPY-MIN: Passphrase entropie ≥100 bits');
-          const basePassphrase = await generatePassphrase({
-            wordCount: 5,
-            separator: '-',
-            digits: 0,
-            specials: 0,
-            customSpecials: '',
-            placeDigits: 'fin',
-            placeSpecials: 'fin',
-            caseMode: 'title',
-            useBlocks: false,
-            blockTokens: [],
-            dictionary: 'french'
-          });
-
           const entropyConfig = {
             mode: 'passphrase',
             dictSize: 2429,
@@ -470,11 +456,19 @@ class NodeTestRunner {
             policy: 'standard'
           };
 
-          const passphraseTest = ensureMinimumEntropy(
-            () => ({
-              value: basePassphrase.value,
-              entropy: basePassphrase.entropy,
-              mode: basePassphrase.mode
+          const passphraseTest = await ensureMinimumEntropy(
+            async () => await generatePassphrase({
+              wordCount: 5,
+              separator: '-',
+              digits: 0,
+              specials: 0,
+              customSpecials: '',
+              placeDigits: 'fin',
+              placeSpecials: 'fin',
+              caseMode: 'title',
+              useBlocks: false,
+              blockTokens: [],
+              dictionary: 'french'
             }),
             entropyConfig
           );

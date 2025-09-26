@@ -317,8 +317,13 @@ function getSpecialsSetSize(policy) {
   return specials.length > 0 ? specials.length : 12;
 }
 
-export function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
+export async function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
   let result = generatorFn(config);
+
+  if (result && typeof result.then === 'function') {
+    result = await result;
+  }
+
   let extraEntropy = 0;
   let baseEntropy = calculateEntropy(config.mode, config, result.value);
   let currentEntropy = config.mode === 'passphrase'
