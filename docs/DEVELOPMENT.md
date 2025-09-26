@@ -17,8 +17,8 @@
 git clone https://github.com/VBlackJack/genpwd-pro.git
 cd genpwd-pro
 
-# Installer les dépendances de développement (optionnel)
-cd tools && npm install && cd ..
+# Installer les dépendances
+npm install
 ```
 
 ### Lancement du serveur de développement
@@ -33,8 +33,8 @@ node tools/dev-server.js
 # Méthode 3 : Port personnalisé
 node tools/dev-server.js 8080
 
-# Méthode 4 : Mode watch (rechargement auto)
-npm run watch
+# Méthode 4 : Tests en watch (terminal séparé)
+npm run test:watch
 ```
 
 L'application sera accessible à : http://localhost:3000
@@ -46,21 +46,20 @@ L'application sera accessible à : http://localhost:3000
 ```
 genpwd-pro/
 ├── src/
-│   ├── index.html          # Point d'entrée
+│   ├── index.html          # Point d'entrée statique
 │   ├── js/                 # Modules ES6
 │   │   ├── app.js         # Application principale
 │   │   ├── config/        # Configuration
 │   │   ├── core/          # Logique métier
 │   │   ├── ui/            # Interface
 │   │   └── utils/         # Utilitaires
-│   ├── styles/            # CSS modulaire
-│   └── tests/             # Tests unitaires
+│   └── styles/            # CSS modulaire
 ├── dictionaries/          # Dictionnaires JSON
 ├── tools/                 # Outils de développement
 │   ├── dev-server.js     # Serveur HTTP
 │   ├── build.js          # Build production
-│   ├── run_tests.js      # Runner de tests
-│   └── watch.js          # File watcher
+│   ├── run_tests.js      # Runner de tests (Node)
+│   └── watch.js          # Utilitaire de surveillance
 └── package.json          # Configuration npm
 ```
 
@@ -79,14 +78,14 @@ Le serveur (`tools/dev-server.js`) fournit :
 
 ### Scripts npm disponibles
 
-| Commande | Description | Port |
-|----------|-------------|------|
-| `npm run dev` | Serveur de développement | 3000 |
-| `npm run watch` | Dev + rechargement auto | 3000 |
-| `npm run test` | Lance les tests | - |
-| `npm run build` | Build production | - |
-| `npm run lint` | Vérification code | - |
-| `npm run format` | Formatage code | - |
+| Commande | Description |
+|----------|-------------|
+| `npm run dev` | Serveur de développement |
+| `npm run build` | Build production |
+| `npm run test` | Lance les tests |
+| `npm run test:watch` | Tests en mode watch |
+| `npm run test:browser` | Tests navigateur + Puppeteer |
+| `npm run lint` | ESLint sur src/ et tools/ |
 
 ### Variables d'environnement
 
@@ -109,8 +108,8 @@ DEBUG=true npm run dev
 # Créer une branche feature
 git checkout -b feature/nom-fonctionnalite
 
-# Développer avec le serveur en mode watch
-npm run watch
+# Développer avec le serveur de développement
+npm run dev
 
 # Lancer les tests en continu
 npm run test:watch
@@ -137,11 +136,8 @@ Utilisez les préfixes conventionnels :
 # Lancer tous les tests
 npm run test
 
-# Tests avec couverture
-npm run test:coverage
-
-# Tests d'un module spécifique
-npm run test -- --grep "generators"
+# Tests navigateur (Puppeteer)
+npm run test:browser
 
 # Tests en mode watch
 npm run test:watch
@@ -153,11 +149,8 @@ npm run test:watch
 # Créer un build optimisé
 npm run build
 
-# Tester le build localement
-npm run serve:build
-
-# Analyser la taille du bundle
-npm run analyze
+# Servir le build localement
+node tools/dev-server.js dist
 ```
 
 ## 🐛 Débogage
@@ -171,9 +164,9 @@ npm run analyze
    - Console : Logs et erreurs
 
 2. **Extensions navigateur**
-   - Vue DevTools (si migration Vue.js)
-   - React DevTools (si migration React)
-   - Redux DevTools (si state management)
+   - ESLint DevTools
+   - Puppeteer Recorder
+   - Accessibility Insights
 
 ### Logs du serveur
 
@@ -247,7 +240,7 @@ git push origin main
 
 # Ou déploiement manuel
 npm run build
-npm run deploy
+# Publier le contenu de `dist/` sur votre hébergeur statique
 ```
 
 ## 🤝 Contribution
@@ -276,7 +269,7 @@ npm run deploy
 - [README Principal](./README.md) - Vue d'ensemble du projet
 - [Guide Utilisateur](./docs/USER-GUIDE.md) - Utilisation de l'application
 - [Documentation Technique](./docs/TECHNICAL.md) - Architecture détaillée
-- [Cahier des Charges](./docs/SPECIFICATIONS.md) - Spécifications complètes
+- [Cahier des Charges](./docs/CDC-GENPWD-2024-v2.5.md) - Spécifications complètes
 
 ### Liens utiles
 

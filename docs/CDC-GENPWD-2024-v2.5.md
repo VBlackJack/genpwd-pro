@@ -396,11 +396,11 @@ src/js/
 | Pattern | Usage | Implémentation |
 |---------|-------|----------------|
 | Module Pattern | Encapsulation | ES6 modules natifs |
-| Factory Pattern | Création générateurs | `GeneratorFactory.create()` |
-| Observer Pattern | Events UI | `EventEmitter` custom |
-| Singleton Pattern | Settings manager | Instance unique |
-| Strategy Pattern | Modes génération | Classes polymorphes |
-| Facade Pattern | API simplifiée | `PasswordAPI` wrapper |
+| Composition fonctionnelle | Création générateurs | Fonctions `generate*` |
+| Observer Pattern | Events UI | Gestionnaires dans `events.js` |
+| Module Pattern | Settings | Objet `AppState` partagé |
+| Strategy Pattern | Modes génération | Fonctions `generate*` |
+| Facade Pattern | API simplifiée | Exports ES6 consolidés |
 
 #### 3.1.3 Flux de données
 
@@ -446,8 +446,10 @@ sequenceDiagram
 | Node.js | 16+ | Runtime développement |
 | npm | 8+ | Gestion dépendances |
 | ESLint | 8.x | Linting code |
-| Prettier | 2.x | Formatage |
-| Jest | 29.x | Tests unitaires |
+| Puppeteer | 21.x | Tests navigateur |
+| Chokidar | 3.x | Watcher fichiers |
+| Nodemon | 3.x | Relance tests |
+| Rimraf | 5.x | Nettoyage dist |
 
 **Scripts npm :**
 ```json
@@ -456,9 +458,9 @@ sequenceDiagram
     "dev": "node tools/dev-server.js",
     "build": "node tools/build.js",
     "test": "node tools/run_tests.js",
-    "watch": "node tools/watch.js",
-    "lint": "eslint src/**/*.js",
-    "format": "prettier --write src/**/*.js"
+    "test:browser": "node tools/run_tests.js && node tools/browser-test.js",
+    "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
+    "lint": "eslint src/js/**/*.js tools/**/*.js"
   }
 }
 ```
