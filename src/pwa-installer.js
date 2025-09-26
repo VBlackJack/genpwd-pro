@@ -1,8 +1,8 @@
-import { showToast } from './js/utils/toast.js';
-
 const SW_PATH = '/service-worker.js';
 const INSTALL_BUTTON_ID = 'install-app-button';
 const PWA_READY_KEY = 'genpwd-pro:pwa-ready';
+const TOAST_CONTAINER_ID = 'pwa-toast-container';
+const TOAST_DURATION = 4000;
 
 let deferredPrompt = null;
 let installButton = null;
@@ -18,6 +18,41 @@ function init() {
   registerServiceWorker();
   listenToBeforeInstallPrompt();
   listenToAppInstalled();
+}
+
+function showToast(message, type = 'info') {
+  const container = getToastContainer();
+  const toast = document.createElement('div');
+  toast.className = `pwa-toast pwa-toast--${type}`;
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('is-visible');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('is-visible');
+    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+  }, TOAST_DURATION);
+}
+
+function getToastContainer() {
+  let container = document.getElementById(TOAST_CONTAINER_ID);
+
+  if (!container) {
+    container = document.createElement('div');
+    container.id = TOAST_CONTAINER_ID;
+    container.className = 'pwa-toast-container';
+    container.setAttribute('aria-live', 'polite');
+    container.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(container);
+  }
+
+  return container;
 }
 
 function prepareInstallButton() {

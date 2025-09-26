@@ -11,6 +11,18 @@
   <link rel="stylesheet" href="styles/components.css">
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/modal.css">
+  <link rel="stylesheet" href="styles/pwa-styles.css">
+
+  <!-- Métadonnées PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="application-name" content="GenPwd Pro">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GenPwd Pro">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="assets/icons/icon-512x512.png">
   
   <!-- Styles pour les tests -->
   <style>
@@ -509,7 +521,10 @@
 
   <!-- JavaScript modulaire ES6 -->
   <script type="module" src="js/app.js"></script>
-  
+
+  <!-- Intégration PWA -->
+  <script src="pwa-installer.js" defer></script>
+
   <!-- Intégration UI des tests -->
   <script>
   document.addEventListener('DOMContentLoaded', function() {
