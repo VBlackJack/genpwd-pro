@@ -72,12 +72,20 @@ function bindMainActions() {
 
 function bindModeAndSettings() {
   // Changement de mode
-  addEventListener(getElement('#mode-select'), 'change', () => {
+  addEventListener(getElement('#mode-select'), 'change', (event) => {
     updateVisibilityByMode();
-    if (getElement('#case-mode-select')?.value === 'blocks' && !getUIState().blockDirty) {
+
+    const caseModeValue = getElement('#case-mode-select')?.value;
+    const programmatic = event?.isTrusted === false;
+    const shouldResyncBlocks = caseModeValue === 'blocks'
+      && (programmatic || !getUIState().blockDirty);
+
+    if (shouldResyncBlocks) {
+      setUIState('blockDirty', false);
       resetBlocksForCurrentMode();
       scheduleCurrentModeBlockSync();
     }
+
     debouncedUpdatePreview();
   });
   
@@ -123,7 +131,12 @@ function bindSliders() {
         debouncedUpdatePreview();
 
         // Réajuster les blocs si mode blocks et pas modifié manuellement
-        if (getElement('#case-mode-select')?.value === 'blocks' && !getUIState().blockDirty) {
+        const programmatic = e?.isTrusted === false;
+        if (getElement('#case-mode-select')?.value === 'blocks'
+          && (programmatic || !getUIState().blockDirty)) {
+          if (programmatic) {
+            setUIState('blockDirty', false);
+          }
           resetBlocksForCurrentMode();
         }
 
@@ -145,17 +158,23 @@ function bindSliders() {
 
 function bindCaseAndBlocks() {
   // Changement mode de casse
-  addEventListener(getElement('#case-mode-select'), 'change', (e) => {
+  addEventListener(getElement('#case-mode-select'), 'change', (event) => {
     ensureBlockVisible();
-    const isBlocks = e.target.value === 'blocks';
+    const isBlocks = event.target.value === 'blocks';
+    const programmatic = event?.isTrusted === false;
+
     setUIState('useBlocks', isBlocks);
-    if (e.target.value === 'blocks' && !getUIState().blockDirty) {
+
+    if (isBlocks && (programmatic || !getUIState().blockDirty)) {
+      setUIState('blockDirty', false);
       resetBlocksForCurrentMode();
       scheduleCurrentModeBlockSync();
     }
+
     if (!isBlocks) {
       setUIState('blockDirty', false);
     }
+
     debouncedUpdatePreview();
   });
 
