@@ -23,6 +23,12 @@ import { defaultBlocksForMode } from './core/casing.js';
 import { setBlocks } from './config/settings.js';
 import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
+import { testClipboardCapabilities as runClipboardTest } from './utils/clipboard.js';
+import {
+  installSelectionProtection,
+  focusAndCleanSelection,
+  debugSelection
+} from './utils/selection-fix.js';
 
 class GenPwdApp {
   constructor() {
@@ -32,9 +38,17 @@ class GenPwdApp {
 
   async init() {
     try {
+      if (this.initialized) return;
+
       safeLog(`Démarrage GenPwd Pro v${this.version} - Architecture modulaire`);
-      
-      // 1. Validation de l'environnement
+
+      // 🔧 NOUVEAU: Installation protection Selection
+      installSelectionProtection();
+
+      // 🔧 NOUVEAU: Nettoyage initial
+      focusAndCleanSelection();
+
+      // 1. Validation environnement
       if (!this.validateEnvironment()) {
         throw new Error('Environnement non compatible');
       }
@@ -110,6 +124,17 @@ class GenPwdApp {
       return false;
     }
 
+    // 🔧 NOUVEAU: Test de l'API Selection
+    try {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        selection.getRangeAt(0);
+      }
+      safeLog('✅ API Selection validée');
+    } catch (e) {
+      safeLog(`⚠️  API Selection problématique: ${e.message}`);
+    }
+
     safeLog('Environnement validé avec succès');
     return true;
   }
@@ -132,9 +157,20 @@ class GenPwdApp {
   }
 
   isDevelopment() {
-    return location.hostname === 'localhost' || 
+    return location.hostname === 'localhost' ||
            location.hostname === '127.0.0.1' ||
            location.protocol === 'file:';
+  }
+
+  // 🔧 NOUVEAU: Ajout d'un utilitaire de debug
+  debugSelectionIssue() {
+    if (this.isDevelopment()) {
+      debugSelection();
+    }
+  }
+
+  testClipboardCapabilities() {
+    runClipboardTest();
   }
 }
 
