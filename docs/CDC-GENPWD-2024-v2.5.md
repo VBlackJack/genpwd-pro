@@ -917,8 +917,6 @@ GenPwd Pro v2.5 représente une solution complète et professionnelle pour la g�
 
 **Responsable projet :**
 - Nom : Julien Bombled
-- Email : contact@genpwd.dev
-- GitHub : @julienbombled
 
 ---
 
