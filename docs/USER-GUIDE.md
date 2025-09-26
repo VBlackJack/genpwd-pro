@@ -40,9 +40,9 @@ L'interface se compose de :
 Le mode Syllables crée des mots de passe prononcables en alternant consonnes et voyelles :
 
 ```
-Exemple : nywOVyQep.OcyBoWEFY8
-Entropie : 140 bits
-Pattern : C-V-C-V avec majuscules et caractères spéciaux
+Exemple court : nywOVyQep.Ocy (36.8 bits)
+Exemple sécurisé : nywOVyQep.OcyBoWEFY8KiLu (89.4 bits)
+Pour atteindre 100+ bits : 25+ caractères recommandés
 ```
 
 **Options disponibles** :
@@ -274,22 +274,13 @@ npm run test
 ✅ Unique pour chaque service
 ```
 
-### Stratégies par usage
+### ⚠️ Attention aux fausses entropies
 
-**Compte bancaire / Email principal** :
-- Mode : Passphrase avec 5+ mots
-- Exemple : `Soleil-Plage-Vacances-2024-Bonheur!`
-- Entropie : 120+ bits
-
-**Réseaux sociaux** :
-- Mode : Syllables avec placement
-- Exemple : `#RyMo3vaLiPex`
-- Entropie : 100+ bits
-
-**Services secondaires** :
-- Mode : Leet speak d'un mot mémorable
-- Exemple : `F@c3b00k_2024`
-- Entropie : 80+ bits
+Certains générateurs affichent des valeurs d'entropie gonflées artificiellement. 
+Les vraies valeurs pour des mots de passe standards :
+- 6 caractères : ~35-40 bits maximum
+- 12 caractères : ~70-80 bits  
+- 18+ caractères : 100+ bits possibles
 
 ### Stockage sécurisé
 
