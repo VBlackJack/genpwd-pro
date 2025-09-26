@@ -113,8 +113,10 @@ Entropie : 140.0 bits
 ```
 Configuration : 5 mots, français, séparateur "-"
 Résultat : Forcer-Vague-Nature-Soleil-Temps2
-Entropie : 105.1 bits
+Entropie : 56.2 bits (5 mots × 11.25 bits/mot)
 ```
+
+Note : Pour ≥100 bits, utiliser 9 mots ou top-up automatique
 
 #### 2.1.3 Mode Leet Speak
 
@@ -125,7 +127,7 @@ Entropie : 105.1 bits
 | Original | Leet | Original | Leet | Original | Leet |
 |----------|------|----------|------|----------|------|
 | a, A | @ | e, E | 3 | i, I | 1 |
-| o, O | 0 | s, S | $ | t, T | 7 |
+| o, O | 0 | s, S | 5 | t, T | 7 |
 | l, L | ! | g, G | 9 | b, B | 8 |
 
 **Spécifications :**
@@ -137,9 +139,9 @@ Entropie : 105.1 bits
 **Exemple de génération :**
 ```
 Entrée : "PASSWORD"
-Résultat : P@$$W0RD_
-Substitutions : 4 (A→@, S→$, S→$, O→0)
-Entropie : 94.4 bits
+Résultat : P@55W0RD_
+Substitutions : 4 (A→@, S→5, S→5, O→0)
+Entropie : ~50 bits
 ```
 
 ### 2.2 Système de placement des caractères
@@ -552,7 +554,7 @@ function calculateEntropy(password, mode) {
 
 **Cross-Layout (QWERTY/AZERTY) :**
 ```
-@ # $ % + = _
+! # % + , - . / : = @ _
 ```
 Évite les caractères dont la position change selon le layout
 

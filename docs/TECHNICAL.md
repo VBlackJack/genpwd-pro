@@ -69,7 +69,7 @@ export const CHAR_SETS = {
   standard: {
     consonants: 'bcdfghjklmnpqrstvwxyz',
     vowels: 'aeiouy',
-    specials: '!@#$%^&*_+-='
+    specials: '!#%+,-./:=@_'
   },
   'standard-layout': {
     consonants: 'bcdfghjklmnpqrstvwxyz',
@@ -137,7 +137,7 @@ Les générateurs s'appuient sur trois primitives : `pick()` pour l'aléatoire, 
 
 ### Leet
 
-1. Transformation du mot de base selon la table interne `{a→@, e→3, i→1, o→0, s→$}`.
+1. Transformation du mot de base selon la table interne `{a→@, e→3, i→1, o→0, s→5}`.
 2. Application de la casse ou des blocs.
 3. Insertion des chiffres/spéciaux.
 4. Entropie calculée sur l'espace de caractères final.

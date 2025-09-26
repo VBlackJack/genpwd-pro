@@ -138,7 +138,7 @@ const leet = generateLeet({
   placeSpecials: 'debut'
 });
 
-console.log(leet.value);  // "@P@$$w0rd1!" (exemple)
+console.log(leet.value);  // "@P@55w0rd1!" (exemple)
 ```
 
 ## API des dictionnaires

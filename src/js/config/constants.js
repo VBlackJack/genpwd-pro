@@ -21,13 +21,13 @@ export const CHAR_SETS = Object.freeze({
   standard: Object.freeze({
     consonants: Object.freeze(['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'z']),
     vowels: Object.freeze(['a', 'e', 'i', 'o', 'u', 'y']),
-    specials: Object.freeze(['_', '+', '-', '=', '.', ':', '@', '#', '%', '!', '^', '&', '*'])
+    specials: Object.freeze(['!', '#', '%', '+', ',', '-', '.', '/', ':', '=', '@', '_'])
   }),
   
   'standard-layout': Object.freeze({
     consonants: Object.freeze(['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'n', 'p', 'r', 's', 't', 'v', 'x']),
     vowels: Object.freeze(['e', 'i', 'o', 'u', 'y']),
-    specials: Object.freeze(['_', '+', '-', '=', '.', ':', '@', '#', '%', '!', '^', '&', '*'])
+    specials: Object.freeze(['!', '#', '%', '+', ',', '-', '.', '/', ':', '=', '@', '_'])
   }),
   
   alphanumerique: Object.freeze({
@@ -44,6 +44,18 @@ export const CHAR_SETS = Object.freeze({
 });
 
 export const DIGITS = Object.freeze(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+
+export const LEET_SUBSTITUTIONS = Object.freeze({
+  'a': '@', 'A': '@',
+  'e': '3', 'E': '3',
+  'i': '1', 'I': '1',
+  'o': '0', 'O': '0',
+  's': '5', 'S': '5',
+  't': '7', 'T': '7',
+  'l': '!', 'L': '!',
+  'g': '9', 'G': '9',
+  'b': '8', 'B': '8'
+});
 
 export const DICTIONARY_CONFIG = Object.freeze({
   french: {

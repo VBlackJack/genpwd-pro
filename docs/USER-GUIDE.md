@@ -85,15 +85,15 @@ Dictionnaire : 2429 mots français
 Convertit du texte normal en leet speak avec substitutions :
 
 ```
-Exemple : P@$$W0RD_
-Transformations : a→@, e→3, o→0, s→$
+Exemple : P@55W0RD_
+Transformations : a→@, e→3, o→0, s→5
 ```
 
 **Table de conversion** :
 | Lettre | Leet | Lettre | Leet |
 |--------|------|--------|------|
 | a/A | @ | o/O | 0 |
-| e/E | 3 | s/S | $ |
+| e/E | 3 | s/S | 5 |
 | i/I | 1 | t/T | 7 |
 | l/L | ! | g/G | 9 |
 

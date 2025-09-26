@@ -254,7 +254,7 @@ class GenPwdTestSuite {
         },
         validation: (passwords) => {
           const pwd = passwords[0].password;
-          if (!(/[@301$]/.test(pwd))) {
+          if (!(/[@3015]/.test(pwd))) {
             throw new Error('Transformation leet non détectée');
           }
         }
@@ -335,12 +335,15 @@ class GenPwdTestSuite {
           'syll-len': '15',
           'digits-count': '0',
           'specials-count': '3',
-          'custom-specials': '@#$%'
+          'custom-specials': '@#%'
         },
         validation: (passwords) => {
           const pwd = passwords[0].password;
-          if (!/@|#|\$|%/.test(pwd)) {
+          if (!/@|#|%/.test(pwd)) {
             throw new Error('Caractères personnalisés non utilisés');
+          }
+          if (pwd.includes('$')) {
+            throw new Error('Caractère dangereux "$" détecté');
           }
         }
       },

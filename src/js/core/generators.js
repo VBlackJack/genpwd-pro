@@ -14,11 +14,45 @@
  * limitations under the License.
  */
 // src/js/core/generators.js - Logique principale de génération
-import { CHAR_SETS, DIGITS } from '../config/constants.js';
+import { CHAR_SETS, DIGITS, LEET_SUBSTITUTIONS } from '../config/constants.js';
 import { pick, insertWithPlacement } from '../utils/helpers.js';
 import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
 import { safeLog } from '../utils/logger.js';
+
+const CLI_SAFE_SPECIAL_SET = new Set(CHAR_SETS.standard.specials);
+const DANGEROUS_CHARS = new Set(['$', '^', '&', '*', "'"]);
+
+function sanitizeSpecialCandidates(candidates) {
+  const unique = [];
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string' || candidate.length === 0) {
+      continue;
+    }
+
+    const char = candidate[0];
+    if (!CLI_SAFE_SPECIAL_SET.has(char)) {
+      continue;
+    }
+
+    if (!unique.includes(char)) {
+      unique.push(char);
+    }
+  }
+  return unique;
+}
+
+function enforceCliSafety(value, context) {
+  if (typeof value !== 'string') {
+    return;
+  }
+
+  for (const dangerous of DANGEROUS_CHARS) {
+    if (value.includes(dangerous)) {
+      throw new Error(`SECURITE: Caractère ${dangerous} détecté dans ${context}`);
+    }
+  }
+}
 
 export function generateSyllables(config) {
   try {
@@ -53,9 +87,7 @@ export function generateSyllables(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0
-      ? Array.from(customSpecials)
-      : policyData.specials;
+    const specialPool = resolveSpecialPool(customSpecials, policy);
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     const result = mergeWithInsertions(core, {
@@ -68,8 +100,10 @@ export function generateSyllables(config) {
       type: 'specials'
     });
 
-    const charSpace = computeCharacterSpace(result);
-    const entropy = calculateEntropy('syllables', result.length, charSpace);
+    enforceCliSafety(result, 'generateSyllables');
+
+    const entropyConfig = { ...config, mode: 'syllables' };
+    const entropy = calculateEntropy('syllables', entropyConfig, result);
 
     return {
       value: result,
@@ -140,9 +174,7 @@ export async function generatePassphrase(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0
-      ? Array.from(customSpecials)
-      : CHAR_SETS.standard.specials;
+    const specialPool = resolveSpecialPool(customSpecials, config.policy || 'standard');
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     const result = mergeWithInsertions(core, {
@@ -155,8 +187,18 @@ export async function generatePassphrase(config) {
       type: 'specials'
     });
 
+    enforceCliSafety(result, 'generatePassphrase');
+
     const dictionarySize = (dictionaryWords && dictionaryWords.length) || 1;
-    const entropy = calculateEntropy('passphrase', wordCount, dictionarySize, wordCount);
+    const entropyConfig = {
+      ...config,
+      mode: 'passphrase',
+      wordCount,
+      dictSize: dictionarySize,
+      sepChoices: config.sepChoices ?? 1,
+      policy: config.policy || 'standard'
+    };
+    const entropy = calculateEntropy('passphrase', entropyConfig, result);
 
     return {
       value: result,
@@ -181,8 +223,7 @@ export function generateLeet(config) {
     const { baseWord, digits, specials, customSpecials,
             placeDigits, placeSpecials, caseMode, useBlocks, blockTokens } = config;
 
-    const leetMap = { 'a': '@', 'e': '3', 'i': '1', 'o': '0', 's': '$' };
-    let core = baseWord.split('').map(ch => leetMap[ch.toLowerCase()] || ch).join('');
+    let core = applyLeetTransformation(baseWord);
 
     // Application de la casse
     core = useBlocks && blockTokens?.length > 0
@@ -191,9 +232,7 @@ export function generateLeet(config) {
 
     // Ajout des chiffres et caractères spéciaux
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
-    const specialPool = customSpecials?.length > 0
-      ? Array.from(customSpecials)
-      : CHAR_SETS.standard.specials;
+    const specialPool = resolveSpecialPool(customSpecials, config.policy || 'standard');
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
 
     const result = mergeWithInsertions(core, {
@@ -206,8 +245,10 @@ export function generateLeet(config) {
       type: 'specials'
     });
 
-    const charSpace = computeCharacterSpace(result);
-    const entropy = calculateEntropy('syllables', result.length, charSpace);
+    enforceCliSafety(result, 'generateLeet');
+
+    const entropyConfig = { ...config, mode: 'leet', policy: config.policy || 'standard' };
+    const entropy = calculateEntropy('leet', entropyConfig, result);
 
     return {
       value: result,
@@ -226,18 +267,6 @@ export function generateLeet(config) {
   }
 }
 
-
-function computeCharacterSpace(result) {
-  const hasLower = /[a-z]/.test(result);
-  const hasUpper = /[A-Z]/.test(result);
-  const hasDigits = /[0-9]/.test(result);
-  const hasSpecials = /[^a-zA-Z0-9]/.test(result);
-
-  return (hasLower ? 26 : 0)
-    + (hasUpper ? 26 : 0)
-    + (hasDigits ? 10 : 0)
-    + (hasSpecials ? 32 : 0);
-}
 
 function mergeWithInsertions(core, digitsConfig, specialsConfig) {
   let result = core;
@@ -272,31 +301,131 @@ function mergeWithInsertions(core, digitsConfig, specialsConfig) {
   return result;
 }
 
-function calculateEntropy(mode, length, poolSize, wordCount = 1) {
-  let entropy;
-  
-  switch (mode) {
-    case 'syllables':
-      // Calcul correct : log2(poolSize^length)
-      entropy = Math.log2(Math.pow(poolSize, length));
-      break;
-      
-    case 'passphrase':
-      // Pour passphrase : log2(dictSize) * wordCount
-      entropy = Math.log2(poolSize) * wordCount;
-      break;
-      
-    case 'leet':
-      // Pour leet : log2(26^length) mais réduit car transformation prédictible
-      entropy = Math.log2(Math.pow(26, length)) * 0.8;
-      break;
-      
-    default:
-      // Calcul standard basé sur l'espace de caractères réel
-      entropy = Math.log2(Math.pow(poolSize, length));
-      break;
+function calculateEntropy(mode, config, result) {
+  const LOG2 = Math.log2;
+
+  if (mode === 'passphrase') {
+    const { wordCount, dictSize } = config;
+    let entropy = (wordCount || 0) * LOG2(dictSize || 2429);
+
+    if (config.sepChoices > 1) {
+      entropy += Math.max(0, (wordCount || 0) - 1) * LOG2(config.sepChoices);
+    }
+
+    if (config.digits > 0) entropy += config.digits * LOG2(10);
+    if (config.specials > 0) {
+      const specialsSetSize = getSpecialsSetSize(config.policy);
+      entropy += config.specials * LOG2(specialsSetSize);
+    }
+
+    return Math.round(entropy * 10) / 10;
   }
-  
-  // Arrondi à 1 décimale sans artifice
+
+  const alphabetSize = calculatePolicyAlphabetSize(config);
+  const entropy = result.length * LOG2(alphabetSize || 1);
   return Math.round(entropy * 10) / 10;
+}
+
+function calculatePolicyAlphabetSize(config) {
+  let size = 0;
+  const policy = CHAR_SETS[config.policy || 'standard'];
+
+  if (policy?.consonants) size += policy.consonants.length;
+  if (policy?.vowels) size += policy.vowels.length;
+  if (config.digits > 0) size += 10;
+
+  if (config.specials > 0) {
+    const resolved = resolveSpecialPool(config.customSpecials, config.policy || 'standard');
+    size += resolved.length;
+  }
+
+  return size;
+}
+
+function getSpecialsSetSize(policy) {
+  const policyData = CHAR_SETS[policy || 'standard'];
+  const specials = policyData?.specials || [];
+  return specials.length > 0 ? specials.length : 12;
+}
+
+export async function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
+  let result = generatorFn(config);
+
+  if (result && typeof result.then === 'function') {
+    result = await result;
+  }
+
+  let extraEntropy = 0;
+  let baseEntropy = calculateEntropy(config.mode, config, result.value);
+  let currentEntropy = config.mode === 'passphrase'
+    ? baseEntropy + extraEntropy
+    : baseEntropy;
+
+  let attempts = 0;
+  while (currentEntropy < minBits && attempts < 5) {
+    const needed = Math.ceil((minBits - currentEntropy) / Math.log2(74));
+    const topUp = generateRandomString(needed, '!#%+,-./:=@_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+
+    result.value += topUp;
+    if (config.mode === 'passphrase') {
+      extraEntropy += needed * Math.log2(74);
+    }
+
+    baseEntropy = calculateEntropy(config.mode, config, result.value);
+    currentEntropy = config.mode === 'passphrase'
+      ? baseEntropy + extraEntropy
+      : baseEntropy;
+    attempts++;
+  }
+
+  result.entropy = config.mode === 'passphrase'
+    ? Math.round(currentEntropy * 10) / 10
+    : currentEntropy;
+
+  enforceCliSafety(result.value, `ensureMinimumEntropy(${config.mode})`);
+  return result;
+}
+
+function generateRandomString(length, alphabet) {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => alphabet[byte % alphabet.length]).join('');
+}
+
+function applyLeetTransformation(word) {
+  return word.split('').map(char => LEET_SUBSTITUTIONS[char] || char).join('');
+}
+
+function resolveSpecialPool(customSpecials, policyKey = 'standard') {
+  console.log('DEBUG: resolveSpecialPool called with:', { customSpecials, policyKey });
+
+  if (Array.isArray(customSpecials) && customSpecials.length > 0) {
+    console.log('DEBUG: Using array customSpecials:', customSpecials);
+    const sanitizedArray = sanitizeSpecialCandidates(customSpecials);
+    if (sanitizedArray.length > 0) {
+      console.log('DEBUG: Sanitized custom array:', sanitizedArray);
+      return sanitizedArray;
+    }
+  }
+
+  if (typeof customSpecials === 'string' && customSpecials.length > 0) {
+    const rawChars = Array.from(new Set(customSpecials.split('')));
+    console.log('DEBUG: Using string customSpecials:', rawChars);
+    const sanitizedString = sanitizeSpecialCandidates(rawChars);
+    if (sanitizedString.length > 0) {
+      console.log('DEBUG: Sanitized custom string:', sanitizedString);
+      return sanitizedString;
+    }
+  }
+
+  const policyData = CHAR_SETS[policyKey];
+  if (policyData && Array.isArray(policyData.specials)) {
+    const sanitizedPolicy = sanitizeSpecialCandidates(policyData.specials);
+    console.log('DEBUG: Using policy specials:', sanitizedPolicy);
+    return sanitizedPolicy;
+  }
+
+  const fallback = sanitizeSpecialCandidates(CHAR_SETS.standard.specials);
+  console.log('DEBUG: Using policy specials:', fallback);
+  return fallback;
 }
