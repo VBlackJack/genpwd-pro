@@ -1,10 +1,10 @@
-import { generateSyllables, generatePassphrase, generateLeet } from './src/js/core/generators.js';
-import { initializeDictionaries, setCurrentDictionary, getCurrentDictionary } from './src/js/core/dictionaries.js';
-import { defaultBlocksForMode, randomizeBlocks } from './src/js/core/casing.js';
-import { showToast } from './src/js/utils/toast.js';
-import { safeLog } from './src/js/utils/logger.js';
-import { copyToClipboard } from './src/js/utils/clipboard.js';
-import { compositionCounts, escapeHtml } from './src/js/utils/helpers.js';
+import { generateSyllables, generatePassphrase, generateLeet } from './js/core/generators.js';
+import { initializeDictionaries, setCurrentDictionary, getCurrentDictionary } from './js/core/dictionaries.js';
+import { defaultBlocksForMode, randomizeBlocks } from './js/core/casing.js';
+import { showToast } from './js/utils/toast.js';
+import { safeLog } from './js/utils/logger.js';
+import { copyToClipboard } from './js/utils/clipboard.js';
+import { compositionCounts, escapeHtml } from './js/utils/helpers.js';
 
 const STORAGE_KEY = 'genpwd_pro_popup_settings_v1';
 const DEFAULT_SETTINGS = {
@@ -50,10 +50,10 @@ function interceptDictionaryFetch() {
       if (typeof input === 'string' && input.startsWith('./dictionaries/')) {
         const suffix = input.slice(1); // remove leading dot
         if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
-          const absolute = chrome.runtime.getURL(`src${suffix}`);
+          const absolute = chrome.runtime.getURL(suffix.slice(1));
           return originalFetch(absolute, init);
         }
-        return originalFetch(`src${suffix}`, init);
+        return originalFetch(suffix.slice(1), init);
       }
       return originalFetch(input, init);
     } catch (error) {
