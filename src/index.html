@@ -3,9 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GenPwd Pro – Secure Password Generator</title>
+  <title>GenPwd Pro - Générateur de Mots de Passe Avancé</title>
   <meta name="author" content="Julien Bombled">
-  
+
+  <!-- PROTECTION SELECTION - DOIT ÊTRE LE PREMIER SCRIPT -->
+  <script>
+    (function() {
+      'use strict';
+      console.log('🛡️ Installation protection Selection ULTRA-PRÉCOCE...');
+
+      // Sauvegarder immédiatement la méthode originale
+      const originalGetRangeAt = Selection.prototype.getRangeAt;
+      let protectionEnabled = true;
+
+      // Remplacer sur le prototype IMMÉDIATEMENT
+      Selection.prototype.getRangeAt = function(index) {
+        if (!protectionEnabled) {
+          return originalGetRangeAt.call(this, index);
+        }
+
+        try {
+          // Vérifications de sécurité
+          if (!document.hasFocus()) {
+            console.warn('🛡️ ULTRA: getRangeAt bloqué - Document sans focus');
+            try { this.removeAllRanges(); } catch (e) { /* ignore */ }
+            throw new DOMException('Document not focused - selection access denied', 'IndexSizeError');
+          }
+
+          if (index < 0 || index >= this.rangeCount) {
+            console.warn('🛡️ ULTRA: getRangeAt bloqué - Index invalide', {
+              index,
+              rangeCount: this.rangeCount,
+              caller: (new Error()).stack.split('\n')[1]
+            });
+            try { this.removeAllRanges(); } catch (e) { /* ignore */ }
+            throw new DOMException('Index is not valid', 'IndexSizeError');
+          }
+
+          if (this.rangeCount === 0) {
+            console.warn('🛡️ ULTRA: getRangeAt bloqué - Aucune range disponible');
+            throw new DOMException('No ranges available', 'IndexSizeError');
+          }
+
+          // Appel sécurisé
+          return originalGetRangeAt.call(this, index);
+
+        } catch (error) {
+          if (error.name === 'IndexSizeError') {
+            console.warn('🛡️ ULTRA: IndexSizeError interceptée:', error.message);
+          } else {
+            console.error('🛡️ ULTRA: Erreur inattendue:', error);
+          }
+
+          try { this.removeAllRanges(); } catch (e) { /* ignore */ }
+          throw error;
+        }
+      };
+
+      // Fonction pour désactiver temporairement (si nécessaire)
+      window.disableSelectionProtection = function() {
+        protectionEnabled = false;
+        console.log('🛡️ ULTRA: Protection temporairement désactivée');
+      };
+
+      window.enableSelectionProtection = function() {
+        protectionEnabled = true;
+        console.log('🛡️ ULTRA: Protection réactivée');
+      };
+
+      console.log('🛡️ ULTRA: Protection Selection installée AVANT extensions !');
+    })();
+  </script>
+
   <!-- CSS Modulaire -->
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/components.css">

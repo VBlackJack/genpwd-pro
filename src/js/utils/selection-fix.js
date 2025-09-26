@@ -13,73 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/utils/selection-fix.js - Protection renforcée contre IndexSizeError
+// src/js/utils/selection-fix.js - Utilitaires pour la protection Selection
 
 /**
- * Protection AGRESSIVE qui patche directement le prototype Selection
- * Pour intercepter même les références stockées par des extensions
+ * La protection principale est maintenant dans <head> de index.html
+ * Ce module fournit juste les utilitaires complémentaires
  */
 export function installSelectionProtection() {
-  // Sauvegarder la méthode originale
-  const originalGetRangeAt = Selection.prototype.getRangeAt;
-  
-  // Remplacer sur le prototype pour intercepter TOUS les appels
-  Selection.prototype.getRangeAt = function(index) {
-    try {
-      // Vérifications de sécurité AVANT l'appel original
-      if (!document.hasFocus()) {
-        console.warn('🛡️ getRangeAt bloqué: Document sans focus');
-        // Nettoyage préventif
-        try {
-          this.removeAllRanges();
-        } catch (e) { /* ignore */ }
-        throw new DOMException('Document not focused - selection access denied', 'IndexSizeError');
-      }
-      
-      if (index < 0 || index >= this.rangeCount) {
-        console.warn('🛡️ getRangeAt bloqué: Index invalide', { index, rangeCount: this.rangeCount });
-        // Nettoyage préventif
-        try {
-          this.removeAllRanges();
-        } catch (e) { /* ignore */ }
-        throw new DOMException('Index is not valid', 'IndexSizeError');
-      }
-      
-      if (this.rangeCount === 0) {
-        console.warn('🛡️ getRangeAt bloqué: Aucune range disponible');
-        throw new DOMException('No ranges available', 'IndexSizeError');
-      }
-      
-      // Appel sécurisé à la méthode originale
-      return originalGetRangeAt.call(this, index);
-      
-    } catch (error) {
-      // Log pour debug mais sans polluer
-      if (error.name === 'IndexSizeError') {
-        console.warn('🛡️ IndexSizeError interceptée et gérée:', error.message);
-      } else {
-        console.error('🛡️ Erreur inattendue dans getRangeAt:', error);
-      }
-      
-      // Nettoyage forcé
-      try {
-        this.removeAllRanges();
-      } catch (e) { /* ignore */ }
-      
-      // Re-lancer l'erreur pour que le code appelant la gère
-      throw error;
-    }
-  };
-
-  // Protection supplémentaire sur window.getSelection
-  const originalGetSelection = window.getSelection;
-  window.getSelection = function() {
-    const selection = originalGetSelection.call(this);
-    // Le travail est déjà fait sur le prototype, on retourne juste la sélection
-    return selection;
-  };
-
-  console.log('🛡️ Protection Selection RENFORCÉE installée (prototype + window)');
+  // Ne fait plus rien - protection déjà installée dans <head>
+  console.log('🛡️ Protection Selection déjà active (installée dans <head>)');
 }
 
 /**
@@ -87,26 +29,22 @@ export function installSelectionProtection() {
  */
 export function focusAndCleanSelection() {
   try {
-    // Forcer le focus de façon plus agressive
     if (!document.hasFocus()) {
       window.focus();
       if (document.body) {
         document.body.focus();
       }
-      // Essayer de donner le focus à un élément focusable
       const focusable = document.querySelector('input, button, [tabindex]:not([tabindex="-1"])');
       if (focusable) {
         focusable.focus();
-        focusable.blur(); // Retirer le focus visuel
+        focusable.blur();
       }
     }
 
-    // Nettoyage de toutes les sélections corrompues
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       let needsCleaning = false;
       
-      // Tester chaque range
       for (let i = 0; i < selection.rangeCount; i++) {
         try {
           selection.getRangeAt(i);
@@ -126,7 +64,7 @@ export function focusAndCleanSelection() {
   }
 }
 
-// Fonctions utilitaires (inchangées)
+// Fonctions utilitaires inchangées
 export function safeGetSelection() {
   try {
     const selection = window.getSelection();
@@ -177,6 +115,8 @@ export function debugSelection() {
   console.log('hasFocus:', document.hasFocus());
   console.log('selection:', selection);
   console.log('rangeCount:', selection?.rangeCount);
+  console.log('Protection ultra-précoce active:', 
+    typeof window.disableSelectionProtection === 'function');
 
   if (selection && selection.rangeCount > 0) {
     for (let i = 0; i < selection.rangeCount; i++) {
