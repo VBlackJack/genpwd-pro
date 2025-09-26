@@ -1,5 +1,5 @@
 # Cahier des Charges
-# GenPwd Pro v2.5 - Générateur de Mots de Passe Sécurisés
+# GenPwd Pro v2.5.1 - Générateur de Mots de Passe Sécurisés
 
 **Document de référence : CDC-GENPWD-2024-v2.5**  
 **Date : 25 Septembre 2025**  
@@ -103,7 +103,7 @@ Entropie : 140.0 bits
   "metadata": {
     "count": 2429,
     "entropyPerWord": 11.2,
-    "version": "2.5.0",
+    "version": "2.5.1",
     "lastUpdate": "2024-01-15"
   }
 }
@@ -634,7 +634,7 @@ function calculateEntropy(password, mode) {
 | Développement v1 | 4 semaines | 01/12/2023 |
 | Tests & Debug | 2 semaines | 15/12/2023 |
 | Documentation | 1 semaine | 22/12/2023 |
-| Release v2.5 | - | 15/01/2024 |
+| Release v2.5.1 | - | 15/01/2024 |
 
 ## 6. LIVRABLES
 
@@ -870,7 +870,7 @@ En cas de problème :
 
 ### 13.1 Synthèse
 
-GenPwd Pro v2.5 représente une solution complète et professionnelle pour la génération de mots de passe sécurisés. Le projet répond à tous les objectifs fixés :
+GenPwd Pro v2.5.1 représente une solution complète et professionnelle pour la génération de mots de passe sécurisés. Le projet répond à tous les objectifs fixés :
 
 - ✅ **Sécurité maximale** : Entropie jusqu'à 140 bits
 - ✅ **Fiabilité totale** : 100% de tests réussis
@@ -888,7 +888,7 @@ GenPwd Pro v2.5 représente une solution complète et professionnelle pour la g�
 
 ### 13.3 Prochaines étapes
 
-1. Finalisation v2.5 et déploiement production
+1. Finalisation v2.5.1 et déploiement production
 2. Collecte feedback utilisateurs
 3. Planification sprint v3.0
 4. Extension de la communauté open source
@@ -924,6 +924,6 @@ GenPwd Pro v2.5 représente une solution complète et professionnelle pour la g�
 
 <div align="center">
   <b>Document validé et approuvé</b><br>
-  Version 2.5.0 - 15 Janvier 2024<br>
+  Version 2.5.1 - 15 Janvier 2024<br>
   <i>© 2024 GenPwd Pro - MIT License</i>
 </div>

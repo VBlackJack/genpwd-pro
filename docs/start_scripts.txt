@@ -6,7 +6,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ========================================
-echo   GenPwd Pro v2.5 - Dev Server
+echo   GenPwd Pro v2.5.1 - Dev Server
 echo ========================================
 echo.
 
@@ -68,7 +68,7 @@ NC='\033[0m' # No Color
 
 echo -e ""
 echo -e "${CYAN}========================================"
-echo -e "  GenPwd Pro v2.5 - Dev Server"
+echo -e "  GenPwd Pro v2.5.1 - Dev Server"
 echo -e "========================================"
 echo -e "${NC}"
 

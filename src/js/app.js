@@ -30,7 +30,7 @@ console.log('Contient $ ?', CHAR_SETS.standard.specials.includes('$'));
 class GenPwdApp {
   constructor() {
     this.initialized = false;
-    this.version = '2.5.0';
+    this.version = '2.5.1';
   }
 
   async init() {
