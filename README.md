@@ -32,14 +32,6 @@ npm install
 npm run dev
 ```
 
-### Usage direct (sans build)
-```bash
-# Ouvrir directement dans le navigateur
-open src/index.html
-# ou
-firefox src/index.html
-```
-
 ## 📦 Scripts disponibles
 
 | Commande | Description |
