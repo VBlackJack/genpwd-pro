@@ -75,4 +75,47 @@ interface PasswordHistoryDao {
      */
     @Query("DELETE FROM password_history WHERE id IN (SELECT id FROM password_history ORDER BY timestamp ASC LIMIT :count)")
     suspend fun deleteOldest(count: Int)
+
+    /**
+     * Récupère uniquement les favoris
+     */
+    @Query("SELECT * FROM password_history WHERE isFavorite = 1 ORDER BY timestamp DESC")
+    fun getFavorites(): Flow<List<PasswordHistoryEntity>>
+
+    /**
+     * Marque/démarque comme favori
+     */
+    @Query("UPDATE password_history SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun updateFavoriteStatus(id: String, isFavorite: Boolean)
+
+    /**
+     * Met à jour la note
+     */
+    @Query("UPDATE password_history SET note = :note WHERE id = :id")
+    suspend fun updateNote(id: String, note: String)
+
+    /**
+     * Recherche avancée avec filtres
+     */
+    @Query("""
+        SELECT * FROM password_history
+        WHERE (:query = '' OR password LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%')
+        AND (:favoritesOnly = 0 OR isFavorite = 1)
+        AND (:modeFilter = '' OR mode = :modeFilter)
+        ORDER BY
+            CASE WHEN :sortByFavorites = 1 THEN isFavorite END DESC,
+            timestamp DESC
+    """)
+    fun searchWithFilters(
+        query: String = "",
+        favoritesOnly: Boolean = false,
+        modeFilter: String = "",
+        sortByFavorites: Boolean = true
+    ): Flow<List<PasswordHistoryEntity>>
+
+    /**
+     * Compte le nombre de favoris
+     */
+    @Query("SELECT COUNT(*) FROM password_history WHERE isFavorite = 1")
+    suspend fun getFavoritesCount(): Int
 }

@@ -90,6 +90,50 @@ class PasswordHistoryRepository @Inject constructor(
     suspend fun getCount(): Int {
         return dao.getCount()
     }
+
+    /**
+     * Récupère uniquement les favoris
+     */
+    fun getFavorites(): Flow<List<PasswordResult>> {
+        return dao.getFavorites().map { entities ->
+            entities.map { it.toPasswordResult(gson) }
+        }
+    }
+
+    /**
+     * Marque/démarque comme favori
+     */
+    suspend fun updateFavoriteStatus(id: String, isFavorite: Boolean) {
+        dao.updateFavoriteStatus(id, isFavorite)
+    }
+
+    /**
+     * Met à jour la note
+     */
+    suspend fun updateNote(id: String, note: String) {
+        dao.updateNote(id, note)
+    }
+
+    /**
+     * Recherche avancée avec filtres
+     */
+    fun searchWithFilters(
+        query: String = "",
+        favoritesOnly: Boolean = false,
+        modeFilter: String = "",
+        sortByFavorites: Boolean = true
+    ): Flow<List<PasswordResult>> {
+        return dao.searchWithFilters(query, favoritesOnly, modeFilter, sortByFavorites).map { entities ->
+            entities.map { it.toPasswordResult(gson) }
+        }
+    }
+
+    /**
+     * Compte le nombre de favoris
+     */
+    suspend fun getFavoritesCount(): Int {
+        return dao.getFavoritesCount()
+    }
 }
 
 /**
@@ -104,7 +148,9 @@ private fun PasswordHistoryEntity.toPasswordResult(gson: Gson): PasswordResult {
         mode = mode.toGenerationMode(),
         timestamp = timestamp,
         settings = settings,
-        isMasked = true
+        isMasked = true,
+        isFavorite = isFavorite,
+        note = note
     )
 }
 
@@ -118,6 +164,8 @@ private fun PasswordResult.toEntity(gson: Gson): PasswordHistoryEntity {
         entropy = entropy,
         mode = mode.name,
         timestamp = timestamp,
-        settingsJson = gson.toJson(settings)
+        settingsJson = gson.toJson(settings),
+        isFavorite = isFavorite,
+        note = note
     )
 }
