@@ -16,12 +16,63 @@ if errorlevel 1 (
     echo.
     echo Telechargez et installez Java JDK 17 ou superieur:
     echo https://adoptium.net/
+    echo.
     pause
     exit /b 1
 )
 
-java -version
-echo Java detecte!
+echo Version de Java detectee:
+java -version 2>&1
+echo.
+
+REM Extraire la version de Java
+for /f "tokens=3" %%g in ('java -version 2^>^&1 ^| findstr /i "version"') do (
+    set JAVA_VERSION=%%g
+)
+set JAVA_VERSION=%JAVA_VERSION:"=%
+for /f "delims=. tokens=1-2" %%v in ("%JAVA_VERSION%") do (
+    set JAVA_MAJOR=%%v
+    if "%%v"=="1" set JAVA_MAJOR=%%w
+)
+
+echo Version majeure de Java: %JAVA_MAJOR%
+echo.
+
+REM Verifier que Java >= 17 (minimum 11)
+if %JAVA_MAJOR% LSS 11 (
+    echo ========================================
+    echo   ERREUR: Java version incompatible!
+    echo ========================================
+    echo.
+    echo Votre version: Java %JAVA_MAJOR%
+    echo Version requise: Java 11 minimum (Java 17 recommande^)
+    echo.
+    echo Android Gradle Plugin 8.1.2 necessite Java 11+
+    echo.
+    echo SOLUTION:
+    echo 1. Telechargez Java 17 (recommande^):
+    echo    https://adoptium.net/temurin/releases/?version=17
+    echo.
+    echo 2. Installez-le
+    echo.
+    echo 3. Ajoutez-le au PATH ou definissez JAVA_HOME:
+    echo    set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.x.x
+    echo    set PATH=%%JAVA_HOME%%\bin;%%PATH%%
+    echo.
+    pause
+    exit /b 1
+)
+
+if %JAVA_MAJOR% LSS 17 (
+    echo AVERTISSEMENT: Java %JAVA_MAJOR% detecte
+    echo Java 17 est recommande pour de meilleures performances.
+    echo.
+    set /p continue="Continuer avec Java %JAVA_MAJOR%? (O/N): "
+    if /i not "%continue%"=="O" exit /b 0
+    echo.
+)
+
+echo Java %JAVA_MAJOR% OK - Compatible!
 echo.
 
 REM Verifier Android SDK

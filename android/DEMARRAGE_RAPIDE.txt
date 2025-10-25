@@ -2,6 +2,23 @@
   GenPwd Pro - Guide de Démarrage Rapide
 ========================================
 
+⚠️ IMPORTANT: PRÉREQUIS JAVA
+========================================
+
+Ce projet nécessite JAVA 17 (ou Java 11 minimum)
+
+Si vous avez Java 8, vous obtiendrez une erreur!
+→ Consultez ERREUR_JAVA_SOLUTION.txt pour installer Java 17
+
+Vérifiez votre version:
+  java -version
+
+Devrait afficher "17.x.x" ou au moins "11.x.x"
+
+Télécharger Java 17:
+  https://adoptium.net/temurin/releases/?version=17
+
+
 📱 COMPILATION DE L'APK EN 3 ÉTAPES
 ========================================
 
