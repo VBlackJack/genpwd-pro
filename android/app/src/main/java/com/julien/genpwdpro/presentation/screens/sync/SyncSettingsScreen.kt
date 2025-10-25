@@ -42,6 +42,7 @@ import javax.inject.Inject
 fun SyncSettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAutofill: () -> Unit = {},
+    onNavigateToSecurity: () -> Unit = {},
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -118,7 +119,7 @@ fun SyncSettingsScreen(
             }
 
             // Quick access to related settings
-            QuickAccessCard(onNavigateToAutofill)
+            QuickAccessCard(onNavigateToAutofill, onNavigateToSecurity)
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -607,7 +608,10 @@ private fun formatTimestamp(timestamp: Long): String {
  * Carte d'accès rapide aux paramètres liés
  */
 @Composable
-private fun QuickAccessCard(onNavigateToAutofill: () -> Unit) {
+private fun QuickAccessCard(
+    onNavigateToAutofill: () -> Unit,
+    onNavigateToSecurity: () -> Unit
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -618,6 +622,20 @@ private fun QuickAccessCard(onNavigateToAutofill: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+
+            // Security button
+            OutlinedButton(
+                onClick = onNavigateToSecurity,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Default.Security,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Sécurité & Biométrie")
+            }
 
             // Autofill button
             OutlinedButton(
@@ -630,7 +648,7 @@ private fun QuickAccessCard(onNavigateToAutofill: () -> Unit) {
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Configurer l'auto-remplissage")
+                Text("Auto-remplissage")
             }
         }
     }

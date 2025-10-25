@@ -17,6 +17,7 @@ import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.autofill.AutofillSettingsScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
+import com.julien.genpwdpro.presentation.screens.security.SecuritySettingsScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +36,7 @@ sealed class Screen(val route: String) {
     object CustomPhrase : Screen("custom_phrase")
     object SyncSettings : Screen("sync_settings")
     object AutofillSettings : Screen("autofill_settings")
+    object SecuritySettings : Screen("security_settings")
 }
 
 /**
@@ -131,6 +133,9 @@ fun AppNavigation(
                 },
                 onNavigateToAutofill = {
                     navController.navigate(Screen.AutofillSettings.route)
+                },
+                onNavigateToSecurity = {
+                    navController.navigate(Screen.SecuritySettings.route)
                 }
             )
         }
@@ -138,6 +143,15 @@ fun AppNavigation(
         // Écran Autofill Settings
         composable(Screen.AutofillSettings.route) {
             AutofillSettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Écran Security Settings
+        composable(Screen.SecuritySettings.route) {
+            SecuritySettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
