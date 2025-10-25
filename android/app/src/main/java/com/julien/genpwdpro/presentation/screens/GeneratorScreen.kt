@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +29,7 @@ import kotlinx.coroutines.launch
 fun GeneratorScreen(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToAnalyzer: () -> Unit = {},
+    onNavigateToCustomPhrase: () -> Unit = {},
     viewModel: GeneratorViewModel = hiltViewModel(),
     initialMode: String? = null,
     autoGenerate: Boolean = false
@@ -75,6 +74,13 @@ fun GeneratorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToCustomPhrase) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Phrases personnalisées",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(onClick = onNavigateToAnalyzer) {
                         Icon(
                             imageVector = Icons.Default.Search,

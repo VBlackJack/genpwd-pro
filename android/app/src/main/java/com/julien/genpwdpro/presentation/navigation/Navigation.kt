@@ -14,6 +14,7 @@ import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.presentation.onboarding.OnboardingScreen
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
+import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +30,7 @@ sealed class Screen(val route: String) {
     object Generator : Screen("generator")
     object History : Screen("history")
     object Analyzer : Screen("analyzer")
+    object CustomPhrase : Screen("custom_phrase")
 }
 
 /**
@@ -75,6 +77,9 @@ fun AppNavigation(
                 onNavigateToAnalyzer = {
                     navController.navigate(Screen.Analyzer.route)
                 },
+                onNavigateToCustomPhrase = {
+                    navController.navigate(Screen.CustomPhrase.route)
+                },
                 initialMode = generationMode,
                 autoGenerate = quickGenerate
             )
@@ -93,6 +98,19 @@ fun AppNavigation(
         composable(Screen.Analyzer.route) {
             AnalyzerScreen(
                 onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Écran Custom Phrase
+        composable(Screen.CustomPhrase.route) {
+            CustomPhraseScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onSaveAndGenerate = { words, format, wordCount, separator ->
+                    // TODO: Sauvegarder et retourner au générateur
                     navController.popBackStack()
                 }
             )
