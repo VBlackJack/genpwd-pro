@@ -1,0 +1,41 @@
+# Gradle wrapper scripts - preserve line endings
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+
+# Windows batch files - CRLF line endings
+*.bat text eol=crlf
+
+# Unix shell scripts - LF line endings
+*.sh text eol=lf
+
+# Java/Kotlin source files
+*.java text diff=java
+*.kt text diff=kotlin
+*.kts text diff=kotlin
+
+# Gradle files
+*.gradle text
+*.gradle.kts text
+gradle.properties text
+
+# XML files
+*.xml text
+
+# JSON files
+*.json text
+
+# Markdown
+*.md text
+
+# Binary files
+*.jar binary
+*.so binary
+*.apk binary
+*.aab binary
+*.dex binary
+*.class binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
