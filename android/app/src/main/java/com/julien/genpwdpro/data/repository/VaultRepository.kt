@@ -502,4 +502,347 @@ class VaultRepository @Inject constructor(
     suspend fun removeTagFromEntry(entryId: String, tagId: String) {
         tagDao.removeTagFromEntry(EntryTagCrossRef(entryId, tagId))
     }
+
+    // ========== Secure Notes Management ==========
+
+    /**
+     * Crée une note sécurisée
+     *
+     * @param vaultId ID du vault
+     * @param title Titre de la note
+     * @param content Contenu de la note (sera chiffré)
+     * @param folderId ID du dossier (optionnel)
+     * @param isFavorite Marquer comme favori
+     * @param icon Icône (défaut: 📝)
+     * @param color Couleur (optionnel)
+     * @return ID de la note créée
+     */
+    suspend fun createSecureNote(
+        vaultId: String,
+        title: String,
+        content: String,
+        folderId: String? = null,
+        isFavorite: Boolean = false,
+        icon: String? = "📝",
+        color: String? = null
+    ): String {
+        val noteId = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val entry = DecryptedEntry(
+            id = noteId,
+            vaultId = vaultId,
+            folderId = folderId,
+            title = title,
+            username = "",
+            password = "",
+            url = "",
+            notes = content,
+            customFields = "",
+            entryType = EntryType.NOTE,
+            isFavorite = isFavorite,
+            passwordStrength = 0,
+            passwordEntropy = 0.0,
+            generationMode = null,
+            createdAt = now,
+            modifiedAt = now,
+            lastAccessedAt = now,
+            passwordExpiresAt = 0,
+            requiresPasswordChange = false,
+            usageCount = 0,
+            icon = icon,
+            color = color,
+            hasTOTP = false,
+            totpSecret = "",
+            totpPeriod = 30,
+            totpDigits = 6,
+            totpAlgorithm = "SHA1",
+            totpIssuer = "",
+            hasPasskey = false,
+            passkeyData = "",
+            passkeyRpId = "",
+            passkeyRpName = "",
+            passkeyUserHandle = "",
+            passkeyCreatedAt = 0,
+            passkeyLastUsedAt = 0
+        )
+
+        createEntry(vaultId, entry)
+        return noteId
+    }
+
+    /**
+     * Met à jour une note sécurisée
+     */
+    suspend fun updateSecureNote(
+        vaultId: String,
+        noteId: String,
+        title: String,
+        content: String,
+        isFavorite: Boolean = false,
+        icon: String? = null,
+        color: String? = null
+    ) {
+        val existing = getEntryById(vaultId, noteId)
+        if (existing != null && existing.entryType == EntryType.NOTE) {
+            val updated = existing.copy(
+                title = title,
+                notes = content,
+                isFavorite = isFavorite,
+                icon = icon ?: existing.icon,
+                color = color ?: existing.color,
+                modifiedAt = System.currentTimeMillis()
+            )
+            updateEntry(vaultId, updated)
+        }
+    }
+
+    /**
+     * Récupère toutes les notes sécurisées d'un vault
+     */
+    fun getSecureNotes(vaultId: String): Flow<List<DecryptedEntry>> {
+        val vaultKey = getVaultKey(vaultId)
+        return entryDao.getEntriesByVault(vaultId).map { entities ->
+            entities
+                .filter { it.entryType == EntryType.NOTE.name }
+                .map { decryptEntry(it, vaultKey) }
+        }
+    }
+
+    /**
+     * Récupère une note sécurisée par ID
+     */
+    suspend fun getSecureNoteById(vaultId: String, noteId: String): DecryptedEntry? {
+        val entry = getEntryById(vaultId, noteId)
+        return if (entry?.entryType == EntryType.NOTE) entry else null
+    }
+
+    /**
+     * Recherche dans les notes sécurisées (par titre)
+     * Note: Le contenu ne peut pas être recherché car il est chiffré
+     */
+    fun searchSecureNotes(vaultId: String, query: String): Flow<List<DecryptedEntry>> {
+        val vaultKey = getVaultKey(vaultId)
+        return entryDao.getEntriesByVault(vaultId).map { entities ->
+            entities
+                .filter { it.entryType == EntryType.NOTE.name }
+                .map { decryptEntry(it, vaultKey) }
+                .filter { it.title.contains(query, ignoreCase = true) }
+        }
+    }
+
+    // ========== Card Management ==========
+
+    /**
+     * Crée une carte bancaire sécurisée
+     */
+    suspend fun createSecureCard(
+        vaultId: String,
+        cardholderName: String,
+        cardNumber: String,
+        expiryDate: String,
+        cvv: String,
+        pin: String = "",
+        cardType: String = "CARD",
+        notes: String = "",
+        folderId: String? = null,
+        isFavorite: Boolean = false
+    ): String {
+        val cardId = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val cardData = """
+            {
+                "cardNumber": "$cardNumber",
+                "expiryDate": "$expiryDate",
+                "cvv": "$cvv",
+                "pin": "$pin",
+                "cardType": "$cardType"
+            }
+        """.trimIndent()
+
+        val entry = DecryptedEntry(
+            id = cardId,
+            vaultId = vaultId,
+            folderId = folderId,
+            title = "$cardType - **** ${cardNumber.takeLast(4)}",
+            username = cardholderName,
+            password = cvv,
+            url = "",
+            notes = notes,
+            customFields = cardData,
+            entryType = EntryType.CARD,
+            isFavorite = isFavorite,
+            passwordStrength = 0,
+            passwordEntropy = 0.0,
+            generationMode = null,
+            createdAt = now,
+            modifiedAt = now,
+            lastAccessedAt = now,
+            passwordExpiresAt = 0,
+            requiresPasswordChange = false,
+            usageCount = 0,
+            icon = "💳",
+            color = null,
+            hasTOTP = false,
+            totpSecret = "",
+            totpPeriod = 30,
+            totpDigits = 6,
+            totpAlgorithm = "SHA1",
+            totpIssuer = "",
+            hasPasskey = false,
+            passkeyData = "",
+            passkeyRpId = "",
+            passkeyRpName = "",
+            passkeyUserHandle = "",
+            passkeyCreatedAt = 0,
+            passkeyLastUsedAt = 0
+        )
+
+        createEntry(vaultId, entry)
+        return cardId
+    }
+
+    /**
+     * Récupère toutes les cartes bancaires d'un vault
+     */
+    fun getSecureCards(vaultId: String): Flow<List<DecryptedEntry>> {
+        val vaultKey = getVaultKey(vaultId)
+        return entryDao.getEntriesByVault(vaultId).map { entities ->
+            entities
+                .filter { it.entryType == EntryType.CARD.name }
+                .map { decryptEntry(it, vaultKey) }
+        }
+    }
+
+    // ========== Identity Management ==========
+
+    /**
+     * Crée une identité sécurisée (passeport, permis, etc.)
+     */
+    suspend fun createSecureIdentity(
+        vaultId: String,
+        fullName: String,
+        identityType: String,
+        identityData: String,
+        folderId: String? = null,
+        isFavorite: Boolean = false
+    ): String {
+        val identityId = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val entry = DecryptedEntry(
+            id = identityId,
+            vaultId = vaultId,
+            folderId = folderId,
+            title = fullName,
+            username = identityType,
+            password = "",
+            url = "",
+            notes = identityData,
+            customFields = "",
+            entryType = EntryType.IDENTITY,
+            isFavorite = isFavorite,
+            passwordStrength = 0,
+            passwordEntropy = 0.0,
+            generationMode = null,
+            createdAt = now,
+            modifiedAt = now,
+            lastAccessedAt = now,
+            passwordExpiresAt = 0,
+            requiresPasswordChange = false,
+            usageCount = 0,
+            icon = "🪪",
+            color = null,
+            hasTOTP = false,
+            totpSecret = "",
+            totpPeriod = 30,
+            totpDigits = 6,
+            totpAlgorithm = "SHA1",
+            totpIssuer = "",
+            hasPasskey = false,
+            passkeyData = "",
+            passkeyRpId = "",
+            passkeyRpName = "",
+            passkeyUserHandle = "",
+            passkeyCreatedAt = 0,
+            passkeyLastUsedAt = 0
+        )
+
+        createEntry(vaultId, entry)
+        return identityId
+    }
+
+    /**
+     * Récupère toutes les identités d'un vault
+     */
+    fun getSecureIdentities(vaultId: String): Flow<List<DecryptedEntry>> {
+        val vaultKey = getVaultKey(vaultId)
+        return entryDao.getEntriesByVault(vaultId).map { entities ->
+            entities
+                .filter { it.entryType == EntryType.IDENTITY.name }
+                .map { decryptEntry(it, vaultKey) }
+        }
+    }
+
+    // ========== Statistics ==========
+
+    /**
+     * Récupère les statistiques d'un vault
+     */
+    suspend fun getVaultStatistics(vaultId: String): VaultStatistics {
+        val totalEntries = entryDao.getCountByVault(vaultId)
+        val favoritesCount = entryDao.getFavoritesCount(vaultId)
+        val passwordStats = entryDao.getPasswordStrengthStats(vaultId)
+
+        // Compter par type
+        val allEntries = entryDao.getEntriesByVault(vaultId)
+        var loginCount = 0
+        var noteCount = 0
+        var cardCount = 0
+        var identityCount = 0
+        var totpCount = 0
+        var passkeyCount = 0
+
+        allEntries.collect { entities ->
+            entities.forEach { entry ->
+                when (entry.entryType) {
+                    "LOGIN" -> loginCount++
+                    "NOTE" -> noteCount++
+                    "CARD" -> cardCount++
+                    "IDENTITY" -> identityCount++
+                }
+                if (entry.hasTOTP) totpCount++
+                if (entry.hasPasskey) passkeyCount++
+            }
+        }
+
+        return VaultStatistics(
+            totalEntries = totalEntries,
+            favoritesCount = favoritesCount,
+            loginCount = loginCount,
+            noteCount = noteCount,
+            cardCount = cardCount,
+            identityCount = identityCount,
+            totpCount = totpCount,
+            passkeyCount = passkeyCount,
+            weakPasswordCount = passwordStats.weak,
+            mediumPasswordCount = passwordStats.medium,
+            strongPasswordCount = passwordStats.strong
+        )
+    }
+
+    data class VaultStatistics(
+        val totalEntries: Int,
+        val favoritesCount: Int,
+        val loginCount: Int,
+        val noteCount: Int,
+        val cardCount: Int,
+        val identityCount: Int,
+        val totpCount: Int,
+        val passkeyCount: Int,
+        val weakPasswordCount: Int,
+        val mediumPasswordCount: Int,
+        val strongPasswordCount: Int
+    )
 }
