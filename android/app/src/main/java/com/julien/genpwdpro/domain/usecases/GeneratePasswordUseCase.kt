@@ -3,6 +3,7 @@ package com.julien.genpwdpro.domain.usecases
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.domain.generators.CustomPhraseGenerator
 import com.julien.genpwdpro.domain.generators.LeetSpeakGenerator
 import com.julien.genpwdpro.domain.generators.PassphraseGenerator
 import com.julien.genpwdpro.domain.generators.SyllablesGenerator
@@ -18,6 +19,7 @@ class GeneratePasswordUseCase(
     private val syllablesGenerator: SyllablesGenerator,
     private val passphraseGenerator: PassphraseGenerator,
     private val leetSpeakGenerator: LeetSpeakGenerator,
+    private val customPhraseGenerator: CustomPhraseGenerator,
     private val applyCasingUseCase: ApplyCasingUseCase,
     private val placeCharactersUseCase: PlaceCharactersUseCase
 ) {
@@ -47,6 +49,7 @@ class GeneratePasswordUseCase(
             GenerationMode.SYLLABLES -> syllablesGenerator
             GenerationMode.PASSPHRASE -> passphraseGenerator
             GenerationMode.LEET -> leetSpeakGenerator
+            GenerationMode.CUSTOM_PHRASE -> customPhraseGenerator
         }
 
         var password = generator.generate(settings)
@@ -74,6 +77,13 @@ class GeneratePasswordUseCase(
                 EntropyCalculator.calculatePassphraseEntropy(
                     wordCount = settings.passphraseWordCount,
                     dictionarySize = 2400
+                )
+            }
+            GenerationMode.CUSTOM_PHRASE -> {
+                // Entropie basée sur la taille de la liste personnalisée
+                customPhraseGenerator.calculateEntropy(
+                    wordListSize = settings.customPhraseWords.size.coerceAtLeast(10),
+                    wordCount = settings.customPhraseWordCount
                 )
             }
             else -> {

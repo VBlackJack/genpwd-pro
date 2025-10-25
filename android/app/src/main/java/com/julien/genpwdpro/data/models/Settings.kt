@@ -35,7 +35,13 @@ data class Settings(
     val dictionary: DictionaryType = DictionaryType.FRENCH,
 
     // Mode Leet
-    val leetWord: String = "password"
+    val leetWord: String = "password",
+
+    // Mode Custom Phrase (phrases personnalisées)
+    val customPhraseWords: List<String> = emptyList(),
+    val customPhraseWordCount: Int = 4,
+    val customPhraseSeparator: String = "-",
+    val customPhraseFormat: com.julien.genpwdpro.domain.generators.CustomPhraseFormat = com.julien.genpwdpro.domain.generators.CustomPhraseFormat.SEPARATED
 ) {
     companion object {
         // Limites de validation
@@ -49,6 +55,8 @@ data class Settings(
         const val MAX_SYLLABLES_LENGTH = 64
         const val MIN_PASSPHRASE_WORDS = 2
         const val MAX_PASSPHRASE_WORDS = 8
+        const val MIN_CUSTOM_PHRASE_WORDS = 2
+        const val MAX_CUSTOM_PHRASE_WORDS = 10
     }
 
     /**
@@ -63,6 +71,7 @@ data class Settings(
             specialsPosition = specialsPosition.coerceIn(0, 100),
             syllablesLength = syllablesLength.coerceIn(MIN_SYLLABLES_LENGTH, MAX_SYLLABLES_LENGTH),
             passphraseWordCount = passphraseWordCount.coerceIn(MIN_PASSPHRASE_WORDS, MAX_PASSPHRASE_WORDS),
+            customPhraseWordCount = customPhraseWordCount.coerceIn(MIN_CUSTOM_PHRASE_WORDS, MAX_CUSTOM_PHRASE_WORDS),
             caseBlocks = if (caseBlocks.isEmpty()) listOf(CaseBlock.T, CaseBlock.L) else caseBlocks
         )
 
