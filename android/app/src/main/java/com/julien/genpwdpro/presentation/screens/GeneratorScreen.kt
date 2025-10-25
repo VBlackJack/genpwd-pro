@@ -17,7 +17,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.presentation.components.*
+import com.julien.genpwdpro.presentation.utils.ClipboardUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -27,13 +29,31 @@ import kotlinx.coroutines.launch
 @Composable
 fun GeneratorScreen(
     onNavigateToHistory: () -> Unit = {},
-    viewModel: GeneratorViewModel = hiltViewModel()
+    viewModel: GeneratorViewModel = hiltViewModel(),
+    initialMode: String? = null,
+    autoGenerate: Boolean = false
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showPlacementSheet by remember { mutableStateOf(false) }
+
+    // Gérer le mode initial et la génération automatique depuis les raccourcis
+    LaunchedEffect(initialMode, autoGenerate) {
+        initialMode?.let { modeString ->
+            try {
+                val mode = GenerationMode.valueOf(modeString)
+                viewModel.updateSettings { it.copy(mode = mode) }
+
+                if (autoGenerate) {
+                    viewModel.generatePasswords()
+                }
+            } catch (e: IllegalArgumentException) {
+                // Mode invalide, ignorer
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -229,10 +249,15 @@ fun GeneratorScreen(
                     PasswordCard(
                         result = result,
                         onCopy = {
-                            copyToClipboard(context, result.password)
+                            // Copie sécurisée avec auto-effacement après 60s
+                            ClipboardUtils.copyWithTimeout(
+                                context = context,
+                                text = result.password,
+                                showToast = false
+                            )
                             // Afficher snackbar
                             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                snackbarHostState.showSnackbar("Copié !")
+                                snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
                             }
                         },
                         onToggleMask = { viewModel.toggleMask(result.id) }
@@ -293,10 +318,4 @@ private fun EmptyState() {
             )
         }
     }
-}
-
-private fun copyToClipboard(context: Context, text: String) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("password", text)
-    clipboard.setPrimaryClip(clip)
 }

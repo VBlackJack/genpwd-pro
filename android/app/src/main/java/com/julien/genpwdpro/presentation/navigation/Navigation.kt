@@ -21,7 +21,9 @@ sealed class Screen(val route: String) {
  */
 @Composable
 fun AppNavigation(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    generationMode: String? = null,
+    quickGenerate: Boolean = false
 ) {
     NavHost(
         navController = navController,
@@ -32,7 +34,9 @@ fun AppNavigation(
             GeneratorScreen(
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
-                }
+                },
+                initialMode = generationMode,
+                autoGenerate = quickGenerate
             )
         }
 

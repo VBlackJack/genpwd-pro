@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.julien.genpwdpro.presentation.navigation.AppNavigation
+import com.julien.genpwdpro.presentation.shortcuts.AppShortcutManager
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -20,13 +21,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialiser les raccourcis dynamiques (Android 7.1+)
+        AppShortcutManager.setupShortcuts(this)
+
         setContent {
             GenPwdProTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(
+                        generationMode = intent.getStringExtra(AppShortcutManager.EXTRA_GENERATION_MODE),
+                        quickGenerate = intent.getBooleanExtra(AppShortcutManager.EXTRA_QUICK_GENERATE, false)
+                    )
                 }
             }
         }
