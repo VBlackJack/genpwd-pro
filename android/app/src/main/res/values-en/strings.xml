@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GenPwd Pro</string>
+    <string name="app_subtitle">Secure password generator</string>
+
+    <!-- Modes -->
+    <string name="mode_syllables">Syllables</string>
+    <string name="mode_passphrase">Passphrase</string>
+    <string name="mode_leet">Leet Speak</string>
+
+    <!-- Actions -->
+    <string name="action_generate">Generate</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_copy_all">Copy all</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_export">Export</string>
+    <string name="action_import">Import</string>
+
+    <!-- Sections -->
+    <string name="section_main_options">Main options</string>
+    <string name="section_characters">Characters</string>
+    <string name="section_casing">Advanced casing</string>
+    <string name="section_results">Results</string>
+
+    <!-- Settings -->
+    <string name="setting_length">Length</string>
+    <string name="setting_policy">Policy</string>
+    <string name="setting_word_count">Word count</string>
+    <string name="setting_separator">Separator</string>
+    <string name="setting_dictionary">Dictionary</string>
+    <string name="setting_digits">Digits</string>
+    <string name="setting_specials">Specials</string>
+    <string name="setting_quantity">Quantity</string>
+    <string name="setting_mask">Mask</string>
+
+    <!-- Placement -->
+    <string name="placement_start">Start</string>
+    <string name="placement_end">End</string>
+    <string name="placement_middle">Middle</string>
+    <string name="placement_random">Random</string>
+    <string name="placement_visual">Visual</string>
+
+    <!-- Case modes -->
+    <string name="case_mixed">Mixed</string>
+    <string name="case_upper">UPPERCASE</string>
+    <string name="case_lower">lowercase</string>
+    <string name="case_title">Title Case</string>
+    <string name="case_blocks">Blocks</string>
+
+    <!-- Messages -->
+    <string name="msg_copied">Copied to clipboard</string>
+    <string name="msg_generated">%d passwords generated</string>
+    <string name="msg_error">Generation error</string>
+
+    <!-- Empty states -->
+    <string name="empty_generate">Click Generate to create your passwords</string>
+    <string name="empty_history">No history</string>
+
+    <!-- Entropy -->
+    <string name="entropy_bits">%s bits</string>
+    <string name="entropy_weak">Weak</string>
+    <string name="entropy_medium">Medium</string>
+    <string name="entropy_strong">Strong</string>
+    <string name="entropy_very_strong">Very strong</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Generate passwords quickly from your home screen</string>
+</resources>

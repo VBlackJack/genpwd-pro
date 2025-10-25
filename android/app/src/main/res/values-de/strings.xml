@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GenPwd Pro</string>
+    <string name="app_subtitle">Sicherer Passwort-Generator</string>
+
+    <!-- Modes -->
+    <string name="mode_syllables">Silben</string>
+    <string name="mode_passphrase">Passphrase</string>
+    <string name="mode_leet">Leet Speak</string>
+
+    <!-- Actions -->
+    <string name="action_generate">Generieren</string>
+    <string name="action_copy">Kopieren</string>
+    <string name="action_copy_all">Alles kopieren</string>
+    <string name="action_clear">Löschen</string>
+    <string name="action_export">Exportieren</string>
+    <string name="action_import">Importieren</string>
+
+    <!-- Sections -->
+    <string name="section_main_options">Hauptoptionen</string>
+    <string name="section_characters">Zeichen</string>
+    <string name="section_casing">Erweiterte Groß-/Kleinschreibung</string>
+    <string name="section_results">Ergebnisse</string>
+
+    <!-- Settings -->
+    <string name="setting_length">Länge</string>
+    <string name="setting_policy">Richtlinie</string>
+    <string name="setting_word_count">Wortanzahl</string>
+    <string name="setting_separator">Trennzeichen</string>
+    <string name="setting_dictionary">Wörterbuch</string>
+    <string name="setting_digits">Ziffern</string>
+    <string name="setting_specials">Sonderzeichen</string>
+    <string name="setting_quantity">Anzahl</string>
+    <string name="setting_mask">Maskieren</string>
+
+    <!-- Placement -->
+    <string name="placement_start">Anfang</string>
+    <string name="placement_end">Ende</string>
+    <string name="placement_middle">Mitte</string>
+    <string name="placement_random">Zufällig</string>
+    <string name="placement_visual">Visuell</string>
+
+    <!-- Case modes -->
+    <string name="case_mixed">Gemischt</string>
+    <string name="case_upper">GROSSBUCHSTABEN</string>
+    <string name="case_lower">kleinbuchstaben</string>
+    <string name="case_title">Titelfall</string>
+    <string name="case_blocks">Blöcke</string>
+
+    <!-- Messages -->
+    <string name="msg_copied">In Zwischenablage kopiert</string>
+    <string name="msg_generated">%d Passwörter generiert</string>
+    <string name="msg_error">Generierungsfehler</string>
+
+    <!-- Empty states -->
+    <string name="empty_generate">Klicken Sie auf Generieren, um Ihre Passwörter zu erstellen</string>
+    <string name="empty_history">Kein Verlauf</string>
+
+    <!-- Entropy -->
+    <string name="entropy_bits">%s Bits</string>
+    <string name="entropy_weak">Schwach</string>
+    <string name="entropy_medium">Mittel</string>
+    <string name="entropy_strong">Stark</string>
+    <string name="entropy_very_strong">Sehr stark</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Generieren Sie Passwörter schnell von Ihrem Startbildschirm aus</string>
+</resources>
