@@ -7,7 +7,10 @@ import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.database.AppDatabase
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.crypto.TotpGenerator
+import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -103,5 +106,29 @@ object DatabaseModule {
         database: AppDatabase
     ): TagDao {
         return database.tagDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideVaultCryptoManager(): VaultCryptoManager {
+        return VaultCryptoManager()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTotpGenerator(): TotpGenerator {
+        return TotpGenerator()
+    }
+
+    @Provides
+    @Singleton
+    fun provideVaultRepository(
+        vaultDao: VaultDao,
+        entryDao: VaultEntryDao,
+        folderDao: FolderDao,
+        tagDao: TagDao,
+        cryptoManager: VaultCryptoManager
+    ): VaultRepository {
+        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, cryptoManager)
     }
 }
