@@ -3,6 +3,8 @@ package com.julien.genpwdpro.presentation.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.*
+import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,11 +19,22 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class GeneratorViewModel @Inject constructor(
-    private val generatePasswordUseCase: GeneratePasswordUseCase
+    private val generatePasswordUseCase: GeneratePasswordUseCase,
+    private val historyRepository: PasswordHistoryRepository,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
     val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
+
+    init {
+        // Charger les settings sauvegardés
+        viewModelScope.launch {
+            settingsDataStore.settingsFlow.collect { savedSettings ->
+                _uiState.update { it.copy(settings = savedSettings) }
+            }
+        }
+    }
 
     /**
      * Génère des mots de passe
@@ -37,6 +50,9 @@ class GeneratorViewModel @Inject constructor(
                         isGenerating = false
                     )
                 }
+
+                // Sauvegarder dans l'historique
+                historyRepository.savePasswords(results)
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -52,8 +68,14 @@ class GeneratorViewModel @Inject constructor(
      * Met à jour les paramètres
      */
     fun updateSettings(update: (Settings) -> Settings) {
+        val newSettings = update(_uiState.value.settings).validate()
         _uiState.update {
-            it.copy(settings = update(it.settings).validate())
+            it.copy(settings = newSettings)
+        }
+
+        // Sauvegarder les settings
+        viewModelScope.launch {
+            settingsDataStore.saveSettings(newSettings)
         }
     }
 
