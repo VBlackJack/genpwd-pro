@@ -14,6 +14,7 @@ import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.presentation.onboarding.OnboardingScreen
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
+import com.julien.genpwdpro.presentation.screens.autofill.AutofillSettingsScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
@@ -33,6 +34,7 @@ sealed class Screen(val route: String) {
     object Analyzer : Screen("analyzer")
     object CustomPhrase : Screen("custom_phrase")
     object SyncSettings : Screen("sync_settings")
+    object AutofillSettings : Screen("autofill_settings")
 }
 
 /**
@@ -124,6 +126,18 @@ fun AppNavigation(
         // Écran Sync Settings
         composable(Screen.SyncSettings.route) {
             SyncSettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToAutofill = {
+                    navController.navigate(Screen.AutofillSettings.route)
+                }
+            )
+        }
+
+        // Écran Autofill Settings
+        composable(Screen.AutofillSettings.route) {
+            AutofillSettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

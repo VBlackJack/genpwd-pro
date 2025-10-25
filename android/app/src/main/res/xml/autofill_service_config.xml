@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<autofill-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.julien.genpwdpro.presentation.MainActivity">
+    <!--
+        Configuration du service d'auto-remplissage GenPwd Pro
+
+        Features:
+        - Détection automatique des champs de mot de passe
+        - Génération de mots de passe sécurisés à la demande
+        - Support des formulaires username + password
+        - Sauvegarde dans l'historique
+
+        Pour activer:
+        Paramètres > Système > Langues et saisie > Service de saisie automatique > GenPwd Pro
+    -->
+</autofill-service>

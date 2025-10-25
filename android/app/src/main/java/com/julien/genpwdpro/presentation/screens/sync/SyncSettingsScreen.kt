@@ -41,6 +41,7 @@ import javax.inject.Inject
 @Composable
 fun SyncSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToAutofill: () -> Unit = {},
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -115,6 +116,9 @@ fun SyncSettingsScreen(
                 // Encryption info
                 EncryptionInfoCard()
             }
+
+            // Quick access to related settings
+            QuickAccessCard(onNavigateToAutofill)
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -595,6 +599,39 @@ private fun formatTimestamp(timestamp: Long): String {
         else -> {
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRENCH)
             sdf.format(Date(timestamp))
+        }
+    }
+}
+
+/**
+ * Carte d'accès rapide aux paramètres liés
+ */
+@Composable
+private fun QuickAccessCard(onNavigateToAutofill: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Paramètres associés",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            // Autofill button
+            OutlinedButton(
+                onClick = onNavigateToAutofill,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Default.Input,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Configurer l'auto-remplissage")
+            }
         }
     }
 }
