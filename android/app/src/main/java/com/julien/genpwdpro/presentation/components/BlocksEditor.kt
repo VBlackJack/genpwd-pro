@@ -33,6 +33,13 @@ fun BlocksEditor(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Info sur l'auto-ajustement
+        Text(
+            text = "Nombre de blocs: ${blocks.size} (auto-ajusté selon longueur/mots)",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
         // Contrôles
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -44,63 +51,38 @@ fun BlocksEditor(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = { onBlocksChange(listOf(CaseBlock.T, CaseBlock.T, CaseBlock.T)) },
+                    onClick = { onBlocksChange(List(blocks.size) { CaseBlock.T }) },
                     modifier = Modifier.height(36.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                 ) {
                     Text("Tout Title", style = MaterialTheme.typography.labelSmall)
                 }
                 OutlinedButton(
-                    onClick = { onBlocksChange(listOf(CaseBlock.U, CaseBlock.U, CaseBlock.U)) },
+                    onClick = { onBlocksChange(List(blocks.size) { CaseBlock.U }) },
                     modifier = Modifier.height(36.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                 ) {
                     Text("Tout UPPER", style = MaterialTheme.typography.labelSmall)
                 }
+                OutlinedButton(
+                    onClick = { onBlocksChange(List(blocks.size) { CaseBlock.L }) },
+                    modifier = Modifier.height(36.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                ) {
+                    Text("Tout lower", style = MaterialTheme.typography.labelSmall)
+                }
             }
 
-            // Boutons +/- et aléatoire
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        if (blocks.size > 1) {
-                            onBlocksChange(blocks.dropLast(1))
-                        }
-                    },
-                    enabled = blocks.size > 1
-                ) {
-                    Icon(Icons.Default.Remove, "Remove block")
-                }
-
-                Text(
-                    text = "${blocks.size}",
-                    style = MaterialTheme.typography.labelMedium
-                )
-
-                IconButton(
-                    onClick = {
-                        if (blocks.size < 8) {
-                            onBlocksChange(blocks + CaseBlock.L)
-                        }
-                    },
-                    enabled = blocks.size < 8
-                ) {
-                    Icon(Icons.Default.Add, "Add block")
-                }
-
-                IconButton(
-                    onClick = {
-                        val random = List(blocks.size) {
-                            CaseBlock.values().random()
-                        }
-                        onBlocksChange(random)
+            // Bouton aléatoire
+            IconButton(
+                onClick = {
+                    val random = List(blocks.size) {
+                        CaseBlock.values().random()
                     }
-                ) {
-                    Icon(Icons.Default.Casino, "Random blocks", tint = MaterialTheme.colorScheme.primary)
+                    onBlocksChange(random)
                 }
+            ) {
+                Icon(Icons.Default.Casino, "Random blocks", tint = MaterialTheme.colorScheme.primary)
             }
         }
 

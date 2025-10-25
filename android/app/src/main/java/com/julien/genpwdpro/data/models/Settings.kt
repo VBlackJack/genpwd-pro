@@ -55,7 +55,7 @@ data class Settings(
      * Valide et corrige les paramètres si nécessaire
      */
     fun validate(): Settings {
-        return copy(
+        val validatedSettings = copy(
             quantity = quantity.coerceIn(MIN_QUANTITY, MAX_QUANTITY),
             digitsCount = digitsCount.coerceIn(MIN_DIGITS, MAX_DIGITS),
             specialsCount = specialsCount.coerceIn(MIN_SPECIALS, MAX_SPECIALS),
@@ -65,5 +65,50 @@ data class Settings(
             passphraseWordCount = passphraseWordCount.coerceIn(MIN_PASSPHRASE_WORDS, MAX_PASSPHRASE_WORDS),
             caseBlocks = if (caseBlocks.isEmpty()) listOf(CaseBlock.T, CaseBlock.L) else caseBlocks
         )
+
+        // Auto-ajuster les blocs si mode BLOCKS activé
+        return if (validatedSettings.caseMode == CaseMode.BLOCKS) {
+            validatedSettings.copy(caseBlocks = validatedSettings.calculateRequiredBlocks())
+        } else {
+            validatedSettings
+        }
+    }
+
+    /**
+     * Calcule le nombre de blocs nécessaires en fonction du mode et de la longueur
+     */
+    private fun calculateRequiredBlocks(): List<CaseBlock> {
+        val requiredBlockCount = when (mode) {
+            GenerationMode.SYLLABLES -> {
+                // Pour syllables: 1 bloc = 3 caractères
+                (syllablesLength + 2) / 3 // Arrondi au supérieur
+            }
+            GenerationMode.PASSPHRASE -> {
+                // Pour passphrase: 1 bloc = 1 mot
+                passphraseWordCount
+            }
+            else -> {
+                // Pour les autres modes, garder le nombre actuel de blocs
+                return caseBlocks
+            }
+        }
+
+        // Limiter entre 1 et 8 blocs
+        val targetCount = requiredBlockCount.coerceIn(1, 8)
+
+        // Si le nombre actuel correspond déjà, garder les blocs existants
+        if (caseBlocks.size == targetCount) {
+            return caseBlocks
+        }
+
+        // Sinon, ajuster la taille en gardant autant de blocs existants que possible
+        return if (targetCount > caseBlocks.size) {
+            // Ajouter des blocs (répéter le pattern existant)
+            val pattern = if (caseBlocks.isEmpty()) listOf(CaseBlock.T, CaseBlock.L) else caseBlocks
+            List(targetCount) { pattern[it % pattern.size] }
+        } else {
+            // Retirer des blocs (garder les premiers)
+            caseBlocks.take(targetCount)
+        }
     }
 }
