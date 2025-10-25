@@ -30,6 +30,7 @@ fun GeneratorScreen(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToAnalyzer: () -> Unit = {},
     onNavigateToCustomPhrase: () -> Unit = {},
+    onNavigateToSyncSettings: () -> Unit = {},
     viewModel: GeneratorViewModel = hiltViewModel(),
     initialMode: String? = null,
     autoGenerate: Boolean = false
@@ -74,6 +75,13 @@ fun GeneratorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToSyncSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Synchronisation Cloud",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(onClick = onNavigateToCustomPhrase) {
                         Icon(
                             imageVector = Icons.Default.Edit,

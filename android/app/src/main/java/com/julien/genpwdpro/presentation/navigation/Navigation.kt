@@ -16,6 +16,7 @@ import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
+import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -31,6 +32,7 @@ sealed class Screen(val route: String) {
     object History : Screen("history")
     object Analyzer : Screen("analyzer")
     object CustomPhrase : Screen("custom_phrase")
+    object SyncSettings : Screen("sync_settings")
 }
 
 /**
@@ -80,6 +82,9 @@ fun AppNavigation(
                 onNavigateToCustomPhrase = {
                     navController.navigate(Screen.CustomPhrase.route)
                 },
+                onNavigateToSyncSettings = {
+                    navController.navigate(Screen.SyncSettings.route)
+                },
                 initialMode = generationMode,
                 autoGenerate = quickGenerate
             )
@@ -111,6 +116,15 @@ fun AppNavigation(
                 },
                 onSaveAndGenerate = { words, format, wordCount, separator ->
                     // TODO: Sauvegarder et retourner au générateur
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Écran Sync Settings
+        composable(Screen.SyncSettings.route) {
+            SyncSettingsScreen(
+                onNavigateBack = {
                     navController.popBackStack()
                 }
             )
