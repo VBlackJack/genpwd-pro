@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.presentation.onboarding.OnboardingScreen
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
+import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,6 +28,7 @@ sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
     object Generator : Screen("generator")
     object History : Screen("history")
+    object Analyzer : Screen("analyzer")
 }
 
 /**
@@ -70,6 +72,9 @@ fun AppNavigation(
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
                 },
+                onNavigateToAnalyzer = {
+                    navController.navigate(Screen.Analyzer.route)
+                },
                 initialMode = generationMode,
                 autoGenerate = quickGenerate
             )
@@ -78,6 +83,15 @@ fun AppNavigation(
         // Écran d'historique
         composable(Screen.History.route) {
             HistoryScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Écran d'analyse
+        composable(Screen.Analyzer.route) {
+            AnalyzerScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
