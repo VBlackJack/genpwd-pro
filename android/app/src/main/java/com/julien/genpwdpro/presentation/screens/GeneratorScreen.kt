@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,7 @@ import com.julien.genpwdpro.presentation.components.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneratorScreen(
+    onNavigateToHistory: () -> Unit = {},
     viewModel: GeneratorViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -46,6 +48,15 @@ fun GeneratorScreen(
                             text = "Générateur de mots de passe sécurisés",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "Historique",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },

@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.julien.genpwdpro.presentation.screens.GeneratorScreen
+import com.julien.genpwdpro.presentation.navigation.AppNavigation
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    GeneratorScreen()
+                    AppNavigation()
                 }
             }
         }
