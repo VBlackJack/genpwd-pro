@@ -25,6 +25,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true // Enable resource shrinking
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -42,6 +43,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi"
+        )
     }
 
     buildFeatures {
@@ -71,7 +76,13 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3:1.1.2")
+    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
+    implementation("androidx.compose.material:material:1.5.4")
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
+
+    // Accompanist (Pager for onboarding)
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
 
     // ViewModel & Navigation
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
@@ -90,6 +101,9 @@ dependencies {
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // Biometric Authentication
+    implementation("androidx.biometric:biometric:1.1.0")
 
     // JSON parsing
     implementation("com.google.code.gson:gson:2.10.1")

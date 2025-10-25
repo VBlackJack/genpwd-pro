@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -83,39 +84,33 @@ fun PasswordCard(
                 }
             }
 
-            // Barre d'entropie
+            // Indicateur de force et barre d'entropie
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Nouvel indicateur visuel de force
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = result.entropyDisplay,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = result.strength.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color(result.strength.color)
+                    PasswordStrengthIndicator(
+                        entropy = result.entropy,
+                        strength = result.strength,
+                        showEntropyValue = true
                     )
                 }
 
+                // Barre de progression visuelle
                 LinearProgressIndicator(
                     progress = result.strength.progress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp),
+                        .height(6.dp),
                     color = Color(result.strength.color),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 )
             }
         }
     }
 }
-
-// Import Color
-import androidx.compose.ui.graphics.Color

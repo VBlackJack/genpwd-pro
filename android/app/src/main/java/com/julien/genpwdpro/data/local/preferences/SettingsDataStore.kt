@@ -19,6 +19,7 @@ class SettingsDataStore(private val context: Context) {
 
     // Clés de préférences
     private object PreferencesKeys {
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val MODE = stringPreferencesKey("mode")
         val QUANTITY = intPreferencesKey("quantity")
         val MASK_DISPLAY = booleanPreferencesKey("mask_display")
@@ -96,6 +97,30 @@ class SettingsDataStore(private val context: Context) {
             preferences[PreferencesKeys.PASSPHRASE_SEPARATOR] = settings.passphraseSeparator
             preferences[PreferencesKeys.DICTIONARY] = settings.dictionary.name
             preferences[PreferencesKeys.LEET_WORD] = settings.leetWord
+        }
+    }
+
+    /**
+     * Vérifie si l'onboarding a été complété
+     */
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.ONBOARDING_COMPLETED] ?: false
+        }
+
+    /**
+     * Marque l'onboarding comme complété
+     */
+    suspend fun setOnboardingCompleted() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ONBOARDING_COMPLETED] = true
         }
     }
 

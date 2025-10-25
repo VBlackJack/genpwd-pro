@@ -7,8 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +16,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.presentation.components.*
+import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import kotlinx.coroutines.launch
 
 /**
  * Écran principal de génération de mots de passe
@@ -26,13 +28,34 @@ import com.julien.genpwdpro.presentation.components.*
 @Composable
 fun GeneratorScreen(
     onNavigateToHistory: () -> Unit = {},
-    viewModel: GeneratorViewModel = hiltViewModel()
+    onNavigateToAnalyzer: () -> Unit = {},
+    onNavigateToCustomPhrase: () -> Unit = {},
+    onNavigateToSyncSettings: () -> Unit = {},
+    viewModel: GeneratorViewModel = hiltViewModel(),
+    initialMode: String? = null,
+    autoGenerate: Boolean = false
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showPlacementSheet by remember { mutableStateOf(false) }
+
+    // Gérer le mode initial et la génération automatique depuis les raccourcis
+    LaunchedEffect(initialMode, autoGenerate) {
+        initialMode?.let { modeString ->
+            try {
+                val mode = GenerationMode.valueOf(modeString)
+                viewModel.updateSettings { it.copy(mode = mode) }
+
+                if (autoGenerate) {
+                    viewModel.generatePasswords()
+                }
+            } catch (e: IllegalArgumentException) {
+                // Mode invalide, ignorer
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -52,6 +75,27 @@ fun GeneratorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToSyncSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Synchronisation Cloud",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onNavigateToCustomPhrase) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Phrases personnalisées",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onNavigateToAnalyzer) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Analyseur",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(onClick = onNavigateToHistory) {
                         Icon(
                             imageVector = Icons.Default.History,
@@ -228,10 +272,15 @@ fun GeneratorScreen(
                     PasswordCard(
                         result = result,
                         onCopy = {
-                            copyToClipboard(context, result.password)
+                            // Copie sécurisée avec auto-effacement après 60s
+                            ClipboardUtils.copyWithTimeout(
+                                context = context,
+                                text = result.password,
+                                showToast = false
+                            )
                             // Afficher snackbar
                             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                snackbarHostState.showSnackbar("Copié !")
+                                snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
                             }
                         },
                         onToggleMask = { viewModel.toggleMask(result.id) }
@@ -293,12 +342,3 @@ private fun EmptyState() {
         }
     }
 }
-
-private fun copyToClipboard(context: Context, text: String) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("password", text)
-    clipboard.setPrimaryClip(clip)
-}
-
-// Import kotlinx.coroutines
-import kotlinx.coroutines.launch

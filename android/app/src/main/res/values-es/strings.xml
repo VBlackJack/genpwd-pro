@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GenPwd Pro</string>
+    <string name="app_subtitle">Generador de contraseñas seguras</string>
+
+    <!-- Modes -->
+    <string name="mode_syllables">Sílabas</string>
+    <string name="mode_passphrase">Frase de contraseña</string>
+    <string name="mode_leet">Leet Speak</string>
+
+    <!-- Actions -->
+    <string name="action_generate">Generar</string>
+    <string name="action_copy">Copiar</string>
+    <string name="action_copy_all">Copiar todo</string>
+    <string name="action_clear">Borrar</string>
+    <string name="action_export">Exportar</string>
+    <string name="action_import">Importar</string>
+
+    <!-- Sections -->
+    <string name="section_main_options">Opciones principales</string>
+    <string name="section_characters">Caracteres</string>
+    <string name="section_casing">Mayúsculas avanzadas</string>
+    <string name="section_results">Resultados</string>
+
+    <!-- Settings -->
+    <string name="setting_length">Longitud</string>
+    <string name="setting_policy">Política</string>
+    <string name="setting_word_count">Número de palabras</string>
+    <string name="setting_separator">Separador</string>
+    <string name="setting_dictionary">Diccionario</string>
+    <string name="setting_digits">Dígitos</string>
+    <string name="setting_specials">Especiales</string>
+    <string name="setting_quantity">Cantidad</string>
+    <string name="setting_mask">Ocultar</string>
+
+    <!-- Placement -->
+    <string name="placement_start">Inicio</string>
+    <string name="placement_end">Final</string>
+    <string name="placement_middle">Medio</string>
+    <string name="placement_random">Aleatorio</string>
+    <string name="placement_visual">Visual</string>
+
+    <!-- Case modes -->
+    <string name="case_mixed">Mixto</string>
+    <string name="case_upper">MAYÚSCULAS</string>
+    <string name="case_lower">minúsculas</string>
+    <string name="case_title">Título</string>
+    <string name="case_blocks">Bloques</string>
+
+    <!-- Messages -->
+    <string name="msg_copied">Copiado al portapapeles</string>
+    <string name="msg_generated">%d contraseñas generadas</string>
+    <string name="msg_error">Error de generación</string>
+
+    <!-- Empty states -->
+    <string name="empty_generate">Haz clic en Generar para crear tus contraseñas</string>
+    <string name="empty_history">Sin historial</string>
+
+    <!-- Entropy -->
+    <string name="entropy_bits">%s bits</string>
+    <string name="entropy_weak">Débil</string>
+    <string name="entropy_medium">Medio</string>
+    <string name="entropy_strong">Fuerte</string>
+    <string name="entropy_very_strong">Muy fuerte</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Genera contraseñas rápidamente desde tu pantalla de inicio</string>
+</resources>

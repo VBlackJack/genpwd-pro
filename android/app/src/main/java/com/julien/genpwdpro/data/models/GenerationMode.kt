@@ -20,7 +20,13 @@ enum class GenerationMode {
      * Mode Leet Speak: transformation de texte
      * Exemple: "P@55W0RD"
      */
-    LEET
+    LEET,
+
+    /**
+     * Mode Custom Phrase: mots personnalisés
+     * Exemple: "Chat-Bleu-Montagne-Rapide"
+     */
+    CUSTOM_PHRASE
 }
 
 /**
