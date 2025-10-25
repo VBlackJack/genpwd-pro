@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GenPwd Pro</string>
+    <string name="app_subtitle">Générateur de mots de passe sécurisés</string>
+
+    <!-- Modes -->
+    <string name="mode_syllables">Syllabes</string>
+    <string name="mode_passphrase">Passphrase</string>
+    <string name="mode_leet">Leet Speak</string>
+
+    <!-- Actions -->
+    <string name="action_generate">Générer</string>
+    <string name="action_copy">Copier</string>
+    <string name="action_copy_all">Tout copier</string>
+    <string name="action_clear">Effacer</string>
+    <string name="action_export">Exporter</string>
+    <string name="action_import">Importer</string>
+
+    <!-- Sections -->
+    <string name="section_main_options">Options principales</string>
+    <string name="section_characters">Caractères</string>
+    <string name="section_casing">Casse avancée</string>
+    <string name="section_results">Résultats</string>
+
+    <!-- Settings -->
+    <string name="setting_length">Longueur</string>
+    <string name="setting_policy">Politique</string>
+    <string name="setting_word_count">Nombre de mots</string>
+    <string name="setting_separator">Séparateur</string>
+    <string name="setting_dictionary">Dictionnaire</string>
+    <string name="setting_digits">Chiffres</string>
+    <string name="setting_specials">Spéciaux</string>
+    <string name="setting_quantity">Nombre</string>
+    <string name="setting_mask">Masquer</string>
+
+    <!-- Placement -->
+    <string name="placement_start">Début</string>
+    <string name="placement_end">Fin</string>
+    <string name="placement_middle">Milieu</string>
+    <string name="placement_random">Aléatoire</string>
+    <string name="placement_visual">Visuel</string>
+
+    <!-- Case modes -->
+    <string name="case_mixed">Mixte</string>
+    <string name="case_upper">MAJUSCULES</string>
+    <string name="case_lower">minuscules</string>
+    <string name="case_title">Title Case</string>
+    <string name="case_blocks">Blocs</string>
+
+    <!-- Messages -->
+    <string name="msg_copied">Copié dans le presse-papiers</string>
+    <string name="msg_generated">%d mots de passe générés</string>
+    <string name="msg_error">Erreur lors de la génération</string>
+
+    <!-- Empty states -->
+    <string name="empty_generate">Cliquez sur Générer pour créer vos mots de passe</string>
+    <string name="empty_history">Aucun historique</string>
+
+    <!-- Entropy -->
+    <string name="entropy_bits">%s bits</string>
+    <string name="entropy_weak">Faible</string>
+    <string name="entropy_medium">Moyen</string>
+    <string name="entropy_strong">Fort</string>
+    <string name="entropy_very_strong">Très fort</string>
+</resources>
