@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.presentation.components.*
+import kotlinx.coroutines.launch
 
 /**
  * Écran principal de génération de mots de passe
@@ -299,6 +300,3 @@ private fun copyToClipboard(context: Context, text: String) {
     val clip = ClipData.newPlainText("password", text)
     clipboard.setPrimaryClip(clip)
 }
-
-// Import kotlinx.coroutines
-import kotlinx.coroutines.launch

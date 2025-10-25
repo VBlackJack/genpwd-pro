@@ -172,7 +172,7 @@ fun FlippablePasswordCard(
     onToggleMask: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isMasked by remember { mutableStateOf(result.masked) }
+    var isMasked by remember { mutableStateOf(result.isMasked) }
 
     // Animation de rotation pour le flip
     val rotation by animateFloatAsState(
