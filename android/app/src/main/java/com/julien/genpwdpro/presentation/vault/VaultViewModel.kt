@@ -167,6 +167,13 @@ class VaultViewModel @Inject constructor(
     fun checkVaultUnlocked(vaultId: String): Boolean {
         return vaultRepository.isVaultUnlocked(vaultId)
     }
+
+    /**
+     * Récupère un vault par ID (suspend)
+     */
+    suspend fun getVaultById(vaultId: String): VaultEntity? {
+        return vaultRepository.getVaultById(vaultId)
+    }
 }
 
 /**

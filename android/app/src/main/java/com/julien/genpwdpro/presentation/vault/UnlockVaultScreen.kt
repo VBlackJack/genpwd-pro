@@ -25,7 +25,7 @@ import com.julien.genpwdpro.data.local.entity.VaultEntity
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UnlockVaultScreen(
-    vault: VaultEntity,
+    vaultId: String,
     onVaultUnlocked: () -> Unit,
     onBackClick: () -> Unit,
     viewModel: VaultViewModel = hiltViewModel()
@@ -33,9 +33,15 @@ fun UnlockVaultScreen(
     var masterPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(0) }
+    var vault by remember { mutableStateOf<VaultEntity?>(null) }
 
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
+
+    // Charger le vault
+    LaunchedEffect(vaultId) {
+        vault = viewModel.getVaultById(vaultId)
+    }
 
     // Observer les changements d'état
     LaunchedEffect(uiState) {
@@ -49,6 +55,17 @@ fun UnlockVaultScreen(
             }
             else -> {}
         }
+    }
+
+    // Afficher un loader pendant le chargement du vault
+    if (vault == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
     }
 
     Scaffold(

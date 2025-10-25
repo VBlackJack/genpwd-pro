@@ -1,0 +1,244 @@
+package com.julien.genpwdpro.presentation.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.presentation.generator.GeneratorScreen
+import com.julien.genpwdpro.presentation.history.HistoryScreen
+import com.julien.genpwdpro.presentation.settings.SettingsScreen
+import com.julien.genpwdpro.presentation.vault.*
+
+/**
+ * Routes de navigation de l'application
+ */
+sealed class Screen(val route: String) {
+    // Générateur (écran existant)
+    object Generator : Screen("generator")
+
+    // Historique (écran existant)
+    object History : Screen("history")
+
+    // Paramètres (écran existant)
+    object Settings : Screen("settings")
+
+    // Vault - Sélection/Création
+    object VaultSelector : Screen("vault_selector")
+    object CreateVault : Screen("create_vault")
+
+    // Vault - Déverrouillage et liste
+    object UnlockVault : Screen("unlock_vault/{vaultId}") {
+        fun createRoute(vaultId: String) = "unlock_vault/$vaultId"
+    }
+
+    object VaultList : Screen("vault_list/{vaultId}") {
+        fun createRoute(vaultId: String) = "vault_list/$vaultId"
+    }
+
+    // Entry - Création/Édition
+    object CreateEntry : Screen("create_entry/{vaultId}?type={type}") {
+        fun createRoute(vaultId: String, type: EntryType = EntryType.LOGIN) =
+            "create_entry/$vaultId?type=${type.name}"
+    }
+
+    object EditEntry : Screen("edit_entry/{vaultId}/{entryId}") {
+        fun createRoute(vaultId: String, entryId: String) =
+            "edit_entry/$vaultId/$entryId"
+    }
+}
+
+/**
+ * NavHost principal de l'application
+ */
+@Composable
+fun AppNavGraph(
+    navController: NavHostController,
+    startDestination: String = Screen.VaultSelector.route
+) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
+        // ========== Générateur (écran existant) ==========
+        composable(Screen.Generator.route) {
+            GeneratorScreen(
+                onNavigateToHistory = {
+                    navController.navigate(Screen.History.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
+        }
+
+        // ========== Historique (écran existant) ==========
+        composable(Screen.History.route) {
+            HistoryScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Paramètres (écran existant) ==========
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Vault Selector ==========
+        composable(Screen.VaultSelector.route) {
+            VaultSelectorScreen(
+                onVaultSelected = { vault ->
+                    navController.navigate(Screen.UnlockVault.createRoute(vault.id))
+                },
+                onCreateVault = {
+                    navController.navigate(Screen.CreateVault.route)
+                },
+                onNavigateToGenerator = {
+                    navController.navigate(Screen.Generator.route)
+                }
+            )
+        }
+
+        // ========== Create Vault ==========
+        composable(Screen.CreateVault.route) {
+            CreateVaultScreen(
+                onVaultCreated = { vaultId ->
+                    // Après création, aller directement à la liste (vault déjà déverrouillé)
+                    navController.navigate(Screen.VaultList.createRoute(vaultId)) {
+                        // Nettoyer le backstack
+                        popUpTo(Screen.VaultSelector.route) {
+                            inclusive = false
+                        }
+                    }
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Unlock Vault ==========
+        composable(
+            route = Screen.UnlockVault.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            // Récupérer le vault depuis le ViewModel
+            // Pour simplifier, on passe vaultId et le screen charge les détails
+            UnlockVaultScreen(
+                vaultId = vaultId,
+                onVaultUnlocked = {
+                    navController.navigate(Screen.VaultList.createRoute(vaultId)) {
+                        // Remplacer l'unlock screen
+                        popUpTo(Screen.UnlockVault.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Vault List ==========
+        composable(
+            route = Screen.VaultList.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            VaultListScreen(
+                vaultId = vaultId,
+                onEntryClick = { entryId ->
+                    navController.navigate(Screen.EditEntry.createRoute(vaultId, entryId))
+                },
+                onAddEntry = { entryType ->
+                    navController.navigate(Screen.CreateEntry.createRoute(vaultId, entryType))
+                },
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
+                },
+                onLockClick = {
+                    // Retourner au vault selector
+                    navController.navigate(Screen.VaultSelector.route) {
+                        popUpTo(Screen.VaultSelector.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
+
+        // ========== Create Entry ==========
+        composable(
+            route = Screen.CreateEntry.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType },
+                navArgument("type") {
+                    type = NavType.StringType
+                    defaultValue = EntryType.LOGIN.name
+                }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+            val typeString = backStackEntry.arguments?.getString("type") ?: EntryType.LOGIN.name
+            val entryType = try {
+                EntryType.valueOf(typeString)
+            } catch (e: IllegalArgumentException) {
+                EntryType.LOGIN
+            }
+
+            EntryEditScreen(
+                vaultId = vaultId,
+                entryId = null,
+                entryType = entryType,
+                onSaved = {
+                    navController.popBackStack()
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Edit Entry ==========
+        composable(
+            route = Screen.EditEntry.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType },
+                navArgument("entryId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+            val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
+
+            EntryEditScreen(
+                vaultId = vaultId,
+                entryId = entryId,
+                onSaved = {
+                    navController.popBackStack()
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+    }
+}
+
+/**
+ * Extension pour simplifier la navigation
+ */
+fun NavHostController.navigateToVaultList(vaultId: String) {
+    navigate(Screen.VaultList.createRoute(vaultId))
+}
+
+fun NavHostController.navigateToCreateEntry(vaultId: String, type: EntryType = EntryType.LOGIN) {
+    navigate(Screen.CreateEntry.createRoute(vaultId, type))
+}
+
+fun NavHostController.navigateToEditEntry(vaultId: String, entryId: String) {
+    navigate(Screen.EditEntry.createRoute(vaultId, entryId))
+}
