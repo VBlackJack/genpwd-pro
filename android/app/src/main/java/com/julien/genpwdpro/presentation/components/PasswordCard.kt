@@ -84,34 +84,31 @@ fun PasswordCard(
                 }
             }
 
-            // Barre d'entropie
+            // Indicateur de force et barre d'entropie
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Nouvel indicateur visuel de force
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = result.entropyDisplay,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = result.strength.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color(result.strength.color)
+                    PasswordStrengthIndicator(
+                        entropy = result.entropy,
+                        strength = result.strength,
+                        showEntropyValue = true
                     )
                 }
 
+                // Barre de progression visuelle
                 LinearProgressIndicator(
                     progress = result.strength.progress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp),
+                        .height(6.dp),
                     color = Color(result.strength.color),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 )
             }
         }
