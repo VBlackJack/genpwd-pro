@@ -112,6 +112,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
+    // Cryptography
+    implementation("de.mkammerer:argon2-jvm:2.11") // Argon2id for master password
+    implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
