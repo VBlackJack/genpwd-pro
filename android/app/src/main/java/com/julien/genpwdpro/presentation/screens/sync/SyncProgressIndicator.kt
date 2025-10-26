@@ -193,6 +193,7 @@ private fun UploadingIndicator(
                 progress = progress,
                 modifier = Modifier.fillMaxWidth(),
                 color = Color(0xFF4CAF50),
+                trackColor = Color(0xFF4CAF50).copy(alpha = 0.2f)
             )
         }
     }
@@ -266,6 +267,7 @@ private fun DownloadingIndicator(
                 progress = progress,
                 modifier = Modifier.fillMaxWidth(),
                 color = Color(0xFF03A9F4),
+                trackColor = Color(0xFF03A9F4).copy(alpha = 0.2f)
             )
         }
     }
