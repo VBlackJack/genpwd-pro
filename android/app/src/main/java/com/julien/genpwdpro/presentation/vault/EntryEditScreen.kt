@@ -33,6 +33,7 @@ fun EntryEditScreen(
     vaultId: String,
     entryId: String? = null,
     entryType: EntryType = EntryType.LOGIN,
+    initialPassword: String? = null,
     onSaved: () -> Unit,
     onBackClick: () -> Unit,
     viewModel: EntryViewModel = hiltViewModel()
@@ -57,11 +58,13 @@ fun EntryEditScreen(
     val focusManager = LocalFocusManager.current
 
     // Initialiser le ViewModel
-    LaunchedEffect(vaultId, entryId) {
+    LaunchedEffect(vaultId, entryId, initialPassword) {
         if (entryId != null) {
             viewModel.initForEdit(vaultId, entryId)
         } else {
             viewModel.initForCreate(vaultId, entryType)
+            // Si un mot de passe initial est fourni, le définir
+            initialPassword?.let { viewModel.updatePassword(it) }
         }
     }
 

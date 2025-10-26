@@ -314,8 +314,17 @@ fun GeneratorScreen(
                             }
                         },
                         onToggleMask = { viewModel.toggleMask(result.id) },
-                        onSave = onSaveToVault?.let { callback ->
-                            { callback(result.password) }
+                        onSave = if (onSaveToVault != null) {
+                            { onSaveToVault(result.password) }
+                        } else {
+                            {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Déverrouillez d'abord un coffre-fort pour sauvegarder",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            }
                         }
                     )
                 }

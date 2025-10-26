@@ -8,7 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
+import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
+import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
+import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.vault.*
 
 /**
@@ -97,6 +100,27 @@ fun AppNavGraph(
         // ========== Historique (écran existant) ==========
         composable(Screen.History.route) {
             HistoryScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Analyzer ==========
+        composable(Screen.Analyzer.route) {
+            AnalyzerScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Custom Phrase ==========
+        composable(Screen.CustomPhrase.route) {
+            CustomPhraseScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Sync Settings ==========
+        composable(Screen.SyncSettings.route) {
+            SyncSettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
