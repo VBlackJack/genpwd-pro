@@ -165,10 +165,10 @@ fun SyncSettingsScreen(
                 )
 
                 // Conflicts (if any)
-                if (uiState.metadata.conflictCount > 0) {
+                if (uiState.currentConflict != null) {
                     ConflictsCard(
                         conflictCount = uiState.metadata.conflictCount,
-                        onResolve = { /* TODO */ }
+                        onResolve = { /* Dialog will be shown below */ }
                     )
                 }
 
@@ -237,6 +237,174 @@ fun SyncSettingsScreen(
             }
         }
     }
+
+    // Show conflict resolution dialog
+    if (uiState.currentConflict != null) {
+        ConflictResolutionDialog(
+            conflict = uiState.currentConflict,
+            onResolve = { strategy ->
+                viewModel.resolveConflict(strategy)
+            },
+            onDismiss = {
+                viewModel.dismissConflict()
+            }
+        )
+    }
+}
+
+/**
+ * Dialogue de résolution de conflits
+ */
+@Composable
+private fun ConflictResolutionDialog(
+    conflict: SyncResult.Conflict,
+    onResolve: (ConflictResolutionStrategy) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = null,
+                tint = Color(0xFFF59E0B),
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        title = {
+            Text(
+                "Conflit de synchronisation détecté",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    "Vos paramètres ont été modifiés localement et sur le cloud. " +
+                            "Quelle version souhaitez-vous conserver ?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                // Local version info
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.PhoneAndroid, null, modifier = Modifier.size(16.dp))
+                            Text(
+                                "Version locale",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            "Modifié : ${formatTimestamp(conflict.localData.timestamp)}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "Appareil : ${conflict.localData.deviceId.take(8)}...",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                // Remote version info
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Cloud, null, modifier = Modifier.size(16.dp))
+                            Text(
+                                "Version cloud",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            "Modifié : ${formatTimestamp(conflict.remoteData.timestamp)}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "Appareil : ${conflict.remoteData.deviceId.take(8)}...",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Divider()
+
+                Text(
+                    "Choisissez une stratégie de résolution :",
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        },
+        confirmButton = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Keep local
+                Button(
+                    onClick = { onResolve(ConflictResolutionStrategy.LOCAL_WINS) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.PhoneAndroid, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Garder la version locale")
+                }
+
+                // Keep remote
+                Button(
+                    onClick = { onResolve(ConflictResolutionStrategy.REMOTE_WINS) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.Cloud, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Garder la version cloud")
+                }
+
+                // Keep newest
+                Button(
+                    onClick = { onResolve(ConflictResolutionStrategy.NEWEST_WINS) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Schedule, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Garder la plus récente")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
 }
 
 /**
@@ -1069,28 +1237,12 @@ class SyncSettingsViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.CONFLICT,
+                                currentConflict = result,
                                 metadata = syncManager.getMetadata().copy(
                                     conflictCount = 1
                                 )
                             )
                         }
-                        // Auto-resolve with NEWEST_WINS strategy
-                        val resolved = syncManager.resolveConflict(
-                            conflict = result,
-                            strategy = ConflictResolutionStrategy.NEWEST_WINS
-                        )
-                        Log.d("SyncSettingsViewModel", "Conflict auto-resolved with NEWEST_WINS")
-
-                        // Apply resolved data if it's remote (newer)
-                        if (resolved == result.remoteData) {
-                            val remoteSettings = syncManager.downloadSettings()
-                            if (remoteSettings != null) {
-                                settingsDataStore.saveSettings(remoteSettings)
-                                Log.d("SyncSettingsViewModel", "Applied remote settings")
-                            }
-                        }
-
-                        _uiState.update { it.copy(status = SyncStatus.SUCCESS) }
                     }
                     is SyncResult.Error -> {
                         Log.e("SyncSettingsViewModel", "Sync error: ${result.message}")
@@ -1165,6 +1317,71 @@ class SyncSettingsViewModel @Inject constructor(
         _uiState.update { it.copy(testConnectionResult = null) }
     }
 
+    /**
+     * Résout un conflit avec la stratégie choisie par l'utilisateur
+     */
+    fun resolveConflict(strategy: ConflictResolutionStrategy) {
+        viewModelScope.launch {
+            val conflict = _uiState.value.currentConflict ?: return@launch
+
+            try {
+                Log.d("SyncSettingsViewModel", "Resolving conflict with strategy: $strategy")
+
+                // Résoudre le conflit
+                val resolved = syncManager.resolveConflict(conflict, strategy)
+
+                // Appliquer la version résolue
+                val settingsDataStore = SettingsDataStore(context)
+
+                if (resolved == conflict.remoteData) {
+                    // Appliquer les paramètres distants
+                    val remoteSettings = syncManager.downloadSettings()
+                    if (remoteSettings != null) {
+                        settingsDataStore.saveSettings(remoteSettings)
+                        Log.d("SyncSettingsViewModel", "Applied remote settings")
+                    }
+                } else {
+                    // Uploader les paramètres locaux
+                    val currentSettings = settingsDataStore.settingsFlow.first()
+                    syncManager.syncSettings(currentSettings)
+                    Log.d("SyncSettingsViewModel", "Uploaded local settings")
+                }
+
+                // Mettre à jour l'état
+                _uiState.update {
+                    it.copy(
+                        status = SyncStatus.SUCCESS,
+                        currentConflict = null,
+                        metadata = syncManager.getMetadata().copy(conflictCount = 0)
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("SyncSettingsViewModel", "Error resolving conflict", e)
+                _uiState.update {
+                    it.copy(
+                        status = SyncStatus.ERROR,
+                        metadata = it.metadata.copy(
+                            syncErrors = listOf(e.message ?: "Erreur lors de la résolution du conflit")
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Annule la résolution de conflit (garde la version locale)
+     */
+    fun dismissConflict() {
+        _uiState.update {
+            it.copy(
+                status = SyncStatus.IDLE,
+                currentConflict = null,
+                metadata = it.metadata.copy(conflictCount = 0)
+            )
+        }
+    }
+
     private suspend fun getMetadata(): LocalSyncMetadata {
         return syncManager.getMetadata()
     }
@@ -1181,7 +1398,8 @@ data class SyncSettingsUiState(
     val isTestingConnection: Boolean = false,
     val testConnectionResult: TestConnectionResult? = null,
     val isAuthenticating: Boolean = false,
-    val authenticationResult: AuthenticationResult? = null
+    val authenticationResult: AuthenticationResult? = null,
+    val currentConflict: SyncResult.Conflict? = null
 )
 
 /**
