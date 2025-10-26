@@ -33,10 +33,10 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // TEMPORAIRE: Generator en attendant de fixer VaultSelector
+                    // ✅ VaultSelector restauré après migration Lazysodium
                     AppNavGraph(
                         navController = navController,
-                        startDestination = Screen.Generator.route
+                        startDestination = Screen.VaultSelector.route
                     )
                 }
             }
