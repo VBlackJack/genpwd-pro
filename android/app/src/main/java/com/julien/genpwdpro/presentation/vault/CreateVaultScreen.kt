@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,12 +36,22 @@ fun CreateVaultScreen(
     var masterPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var setAsDefault by remember { mutableStateOf(true) }
+    var enableBiometric by remember { mutableStateOf(false) }
 
     var showPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
+
+    // Vérifier si la biométrie est disponible
+    val biometricHelper = remember {
+        context.getBiometricHelper()
+    }
+    val isBiometricAvailable = remember {
+        biometricHelper?.isBiometricOrCredentialsAvailable() == true
+    }
 
     // Observer les changements d'état
     LaunchedEffect(uiState) {
@@ -223,6 +234,42 @@ fun CreateVaultScreen(
                 Text("Définir comme coffre-fort par défaut")
             }
 
+            // Activer la biométrie
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = enableBiometric,
+                    onCheckedChange = { enableBiometric = it },
+                    enabled = isBiometricAvailable
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Activer le déverrouillage biométrique",
+                        color = if (isBiometricAvailable) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                    if (!isBiometricAvailable) {
+                        Text(
+                            text = "Non disponible sur cet appareil",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (isBiometricAvailable) {
+                    Icon(
+                        Icons.Default.Fingerprint,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             // Avertissement sécurité
@@ -256,7 +303,8 @@ fun CreateVaultScreen(
                         name = name,
                         masterPassword = masterPassword,
                         description = description,
-                        setAsDefault = setAsDefault
+                        setAsDefault = setAsDefault,
+                        biometricUnlockEnabled = enableBiometric
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),

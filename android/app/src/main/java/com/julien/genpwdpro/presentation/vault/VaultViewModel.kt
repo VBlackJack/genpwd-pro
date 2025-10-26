@@ -73,7 +73,8 @@ class VaultViewModel @Inject constructor(
         name: String,
         masterPassword: String,
         description: String = "",
-        setAsDefault: Boolean = true
+        setAsDefault: Boolean = true,
+        biometricUnlockEnabled: Boolean = false
     ) {
         viewModelScope.launch {
             _uiState.value = VaultUiState.Loading
@@ -82,7 +83,8 @@ class VaultViewModel @Inject constructor(
                     name = name,
                     masterPassword = masterPassword,
                     description = description,
-                    setAsDefault = setAsDefault
+                    setAsDefault = setAsDefault,
+                    biometricUnlockEnabled = biometricUnlockEnabled
                 )
 
                 // Le vault est déjà déverrouillé après création

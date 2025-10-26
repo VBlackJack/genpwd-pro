@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -25,7 +26,8 @@ fun PasswordCard(
     result: PasswordResult,
     onCopy: () -> Unit,
     onToggleMask: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSave: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -64,6 +66,17 @@ fun PasswordCard(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Bouton sauvegarder (si callback fourni)
+                    if (onSave != null) {
+                        IconButton(onClick = onSave) {
+                            Icon(
+                                imageVector = Icons.Default.Save,
+                                contentDescription = "Sauvegarder dans le vault",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
                     // Bouton masquer/afficher
                     IconButton(onClick = onToggleMask) {
                         Icon(

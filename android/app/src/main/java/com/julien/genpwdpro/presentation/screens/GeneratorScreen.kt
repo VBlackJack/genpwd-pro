@@ -31,6 +31,7 @@ fun GeneratorScreen(
     onNavigateToAnalyzer: () -> Unit = {},
     onNavigateToCustomPhrase: () -> Unit = {},
     onNavigateToSyncSettings: () -> Unit = {},
+    onSaveToVault: ((String) -> Unit)? = null,
     viewModel: GeneratorViewModel = hiltViewModel(),
     initialMode: String? = null,
     autoGenerate: Boolean = false
@@ -289,7 +290,10 @@ fun GeneratorScreen(
                                 snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
                             }
                         },
-                        onToggleMask = { viewModel.toggleMask(result.id) }
+                        onToggleMask = { viewModel.toggleMask(result.id) },
+                        onSave = onSaveToVault?.let { callback ->
+                            { callback(result.password) }
+                        }
                     )
                 }
             }
