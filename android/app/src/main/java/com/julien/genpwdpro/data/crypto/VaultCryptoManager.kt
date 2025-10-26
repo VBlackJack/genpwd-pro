@@ -1,8 +1,10 @@
 package com.julien.genpwdpro.data.crypto
 
 import android.util.Base64
-import de.mkammerer.argon2.Argon2
-import de.mkammerer.argon2.Argon2Factory
+import com.goterl.lazysodium.LazySodiumAndroid
+import com.goterl.lazysodium.SodiumAndroid
+import com.goterl.lazysodium.interfaces.PwHash
+import com.sun.jna.NativeLong
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -16,7 +18,7 @@ import javax.inject.Singleton
  * Gestionnaire de cryptographie pour les vaults
  *
  * Utilise:
- * - Argon2id pour la dérivation de clé du master password
+ * - Argon2id (via Lazysodium) pour la dérivation de clé du master password
  * - AES-256-GCM pour le chiffrement des données sensibles
  */
 @Singleton
@@ -26,13 +28,15 @@ class VaultCryptoManager @Inject constructor() {
         private const val AES_KEY_SIZE = 256
         private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
-        private const val SALT_LENGTH = 32
+        private const val SALT_LENGTH = 32 // On garde 32 bytes pour compatibilité DB
+        private const val LIBSODIUM_SALT_LENGTH = 16 // libsodium utilise 16 bytes
+        private const val KEY_LENGTH = 32 // AES-256 = 32 bytes
         private const val ARGON2_ITERATIONS = 3
-        private const val ARGON2_MEMORY = 65536 // 64 MB
+        private const val ARGON2_MEMORY = 65536 // 64 MB (en KB pour libsodium)
         private const val ARGON2_PARALLELISM = 4
     }
 
-    private val argon2: Argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id)
+    private val lazySodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
     private val secureRandom = SecureRandom()
 
     /**
@@ -85,8 +89,10 @@ class VaultCryptoManager @Inject constructor() {
     /**
      * Dérive une clé depuis un master password avec Argon2id
      *
+     * ✅ Migré vers Lazysodium-Android (compatible ARM)
+     *
      * @param masterPassword Le mot de passe maître
-     * @param salt Le salt (32 bytes)
+     * @param salt Le salt (32 bytes, on utilise les 16 premiers pour libsodium)
      * @param params Paramètres Argon2id
      * @return Clé dérivée de 32 bytes (256 bits)
      */
@@ -97,20 +103,44 @@ class VaultCryptoManager @Inject constructor() {
     ): SecretKey {
         require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
 
-        // Argon2id raw hash (32 bytes pour AES-256)
-        val hash = argon2.rawHash(
-            params.iterations,
-            params.memory,
-            params.parallelism,
-            masterPassword.toCharArray(),
-            salt
+        // libsodium utilise 16 bytes de salt, on prend les 16 premiers de notre salt de 32 bytes
+        val libsodiumSalt = salt.copyOf(LIBSODIUM_SALT_LENGTH)
+
+        // Buffer pour la clé dérivée (32 bytes pour AES-256)
+        val keyBytes = ByteArray(KEY_LENGTH)
+        val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
+
+        // Conversion des paramètres: memory est en KB, libsodium attend des bytes
+        val opsLimit = params.iterations.toLong()  // → long
+        val memLimit = NativeLong(params.memory.toLong() * 1024L)  // → NativeLong (bytes)
+
+        // Dérivation de clé avec Argon2id via l'interface Native
+        // Signature: cryptoPwHash(..., long opsLimit, NativeLong memLimit, Alg alg)
+        val success = (lazySodium as PwHash.Native).cryptoPwHash(
+            keyBytes,
+            keyBytes.size,           // int, pas toLong()
+            passwordBytes,
+            passwordBytes.size,      // int, pas toLong()
+            libsodiumSalt,
+            opsLimit,                // long
+            memLimit,                // NativeLong
+            PwHash.Alg.PWHASH_ALG_ARGON2ID13
         )
 
-        return SecretKeySpec(hash, "AES")
+        if (!success) {
+            throw IllegalStateException("Argon2id key derivation failed")
+        }
+
+        return SecretKeySpec(keyBytes, "AES")
     }
 
     /**
      * Crée un hash Argon2id du master password (pour vérification)
+     *
+     * ✅ Migré vers Lazysodium-Android (compatible ARM)
+     *
+     * Note: Le paramètre salt est conservé pour compatibilité API mais cryptoPwHashStr
+     * génère son propre salt interne (inclus dans le hash retourné au format PHC)
      */
     fun hashPassword(
         masterPassword: String,
@@ -119,21 +149,32 @@ class VaultCryptoManager @Inject constructor() {
     ): String {
         require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
 
-        return argon2.hash(
-            params.iterations,
-            params.memory,
-            params.parallelism,
-            masterPassword.toCharArray(),
-            salt
+        // Conversion des paramètres: memory est en KB, libsodium attend des bytes
+        val opsLimit = params.iterations.toLong()  // → long
+        val memLimit = NativeLong(params.memory.toLong() * 1024L)  // → NativeLong (bytes)
+
+        // cryptoPwHashStr génère un hash au format PHC avec salt inclus
+        // Le format est: $argon2id$v=19$m=65536,t=3,p=4$[salt]$[hash]
+        // Signature: cryptoPwHashStr(String password, long opsLimit, NativeLong memLimit)
+        val hashResult = (lazySodium as PwHash.Lazy).cryptoPwHashStr(
+            masterPassword,
+            opsLimit,    // long
+            memLimit     // NativeLong
         )
+
+        return hashResult ?: throw IllegalStateException("Argon2id password hashing failed")
     }
 
     /**
      * Vérifie un master password contre son hash
+     *
+     * ✅ Migré vers Lazysodium-Android (compatible ARM)
      */
     fun verifyPassword(hash: String, masterPassword: String): Boolean {
         return try {
-            argon2.verify(hash, masterPassword.toCharArray())
+            // cryptoPwHashStrVerify retourne true si le password correspond au hash
+            // Utilise l'interface Lazy pour cryptoPwHashStrVerify
+            (lazySodium as PwHash.Lazy).cryptoPwHashStrVerify(hash, masterPassword)
         } catch (e: Exception) {
             false
         }

@@ -1,9 +1,9 @@
-package com.julien.genpwd-pro.data.sync
+package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import com.google.gson.Gson
-import com.julien.genpwd-pro.data.encryption.EncryptionManager
-import com.julien.genpwd-pro.data.models.Settings
+import com.julien.genpwdpro.data.encryption.EncryptionManager
+import com.julien.genpwdpro.data.models.Settings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -256,6 +256,23 @@ class SyncManager @Inject constructor(
             dataType = dataType,
             encryptedPayload = encryptedData.toBase64(),
             checksum = calculateChecksum(json)
+        )
+    }
+
+    /**
+     * Obtient les métadonnées de synchronisation locale
+     */
+    fun getMetadata(): LocalSyncMetadata {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return LocalSyncMetadata(
+            lastSyncTimestamp = prefs.getLong(KEY_LAST_SYNC, 0),
+            lastSuccessfulSyncTimestamp = when (_syncStatus.value) {
+                SyncStatus.SUCCESS -> prefs.getLong(KEY_LAST_SYNC, 0)
+                else -> 0
+            },
+            pendingChanges = 0,
+            conflictCount = 0,
+            syncErrors = emptyList()
         )
     }
 

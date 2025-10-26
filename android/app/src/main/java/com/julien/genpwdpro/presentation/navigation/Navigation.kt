@@ -26,18 +26,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Routes de navigation
+ * NOTE: Screen sealed class is now defined in NavGraph.kt
+ * This file provides an alternative navigation setup (AppNavigation)
+ * The main app uses AppNavGraph from NavGraph.kt
  */
-sealed class Screen(val route: String) {
-    object Onboarding : Screen("onboarding")
-    object Generator : Screen("generator")
-    object History : Screen("history")
-    object Analyzer : Screen("analyzer")
-    object CustomPhrase : Screen("custom_phrase")
-    object SyncSettings : Screen("sync_settings")
-    object AutofillSettings : Screen("autofill_settings")
-    object SecuritySettings : Screen("security_settings")
-}
 
 /**
  * Navigation principale de l'application

@@ -7,9 +7,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.julien.genpwdpro.data.local.entity.EntryType
-import com.julien.genpwdpro.presentation.generator.GeneratorScreen
-import com.julien.genpwdpro.presentation.history.HistoryScreen
-import com.julien.genpwdpro.presentation.settings.SettingsScreen
+import com.julien.genpwdpro.presentation.screens.GeneratorScreen
+import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
+import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
+import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
+import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.vault.*
 
 /**
@@ -22,8 +24,23 @@ sealed class Screen(val route: String) {
     // Historique (écran existant)
     object History : Screen("history")
 
-    // Paramètres (écran existant)
-    object Settings : Screen("settings")
+    // Onboarding
+    object Onboarding : Screen("onboarding")
+
+    // Analyzer
+    object Analyzer : Screen("analyzer")
+
+    // Custom Phrase
+    object CustomPhrase : Screen("custom_phrase")
+
+    // Sync Settings
+    object SyncSettings : Screen("sync_settings")
+
+    // Autofill Settings
+    object AutofillSettings : Screen("autofill_settings")
+
+    // Security Settings
+    object SecuritySettings : Screen("security_settings")
 
     // Vault - Sélection/Création
     object VaultSelector : Screen("vault_selector")
@@ -56,7 +73,8 @@ sealed class Screen(val route: String) {
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.VaultSelector.route
+    startDestination: String = Screen.VaultSelector.route,
+    sessionManager: com.julien.genpwdpro.domain.session.SessionManager
 ) {
     NavHost(
         navController = navController,
@@ -68,8 +86,26 @@ fun AppNavGraph(
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
                 },
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
+                onNavigateToAnalyzer = {
+                    navController.navigate(Screen.Analyzer.route)
+                },
+                onNavigateToCustomPhrase = {
+                    navController.navigate(Screen.CustomPhrase.route)
+                },
+                onNavigateToSyncSettings = {
+                    navController.navigate(Screen.SyncSettings.route)
+                },
+                onSaveToVault = { password ->
+                    // Vérifier si un vault est déverrouillé
+                    val vaultId = sessionManager.getCurrentVaultId()
+                    if (vaultId != null) {
+                        // Naviguer vers CreateEntry avec le mot de passe
+                        navController.navigate(
+                            Screen.CreateEntry.createRoute(vaultId) +
+                            "&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+                        )
+                    }
+                    // Sinon, le GeneratorScreen affichera déjà le message d'erreur
                 }
             )
         }
@@ -77,14 +113,28 @@ fun AppNavGraph(
         // ========== Historique (écran existant) ==========
         composable(Screen.History.route) {
             HistoryScreen(
-                onBackClick = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        // ========== Paramètres (écran existant) ==========
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                onBackClick = { navController.popBackStack() }
+        // ========== Analyzer ==========
+        composable(Screen.Analyzer.route) {
+            AnalyzerScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Custom Phrase ==========
+        composable(Screen.CustomPhrase.route) {
+            CustomPhraseScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Sync Settings ==========
+        composable(Screen.SyncSettings.route) {
+            SyncSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -162,7 +212,7 @@ fun AppNavGraph(
                     navController.navigate(Screen.CreateEntry.createRoute(vaultId, entryType))
                 },
                 onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
+                    navController.navigate(Screen.SyncSettings.route)
                 },
                 onLockClick = {
                     // Retourner au vault selector
@@ -183,6 +233,11 @@ fun AppNavGraph(
                 navArgument("type") {
                     type = NavType.StringType
                     defaultValue = EntryType.LOGIN.name
+                },
+                navArgument("password") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -193,11 +248,13 @@ fun AppNavGraph(
             } catch (e: IllegalArgumentException) {
                 EntryType.LOGIN
             }
+            val initialPassword = backStackEntry.arguments?.getString("password")
 
             EntryEditScreen(
                 vaultId = vaultId,
                 entryId = null,
                 entryType = entryType,
+                initialPassword = initialPassword,
                 onSaved = {
                     navController.popBackStack()
                 },

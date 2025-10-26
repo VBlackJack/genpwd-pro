@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.repository.VaultRepository
-import com.julien.genpwdpro.domain.PasswordAnalyzer
-import com.julien.genpwdpro.domain.PasswordGenerator
-import com.julien.genpwdpro.domain.Settings
+import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
+import com.julien.genpwdpro.domain.generators.PasswordGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -136,7 +136,7 @@ class EntryViewModel @Inject constructor(
         // Analyser la force du mot de passe
         if (value.isNotEmpty()) {
             val analysis = passwordAnalyzer.analyze(value)
-            _passwordStrength.value = analysis.strength
+            _passwordStrength.value = analysis.strength.ordinal
             _passwordEntropy.value = analysis.entropy
         } else {
             _passwordStrength.value = 0
@@ -201,8 +201,10 @@ class EntryViewModel @Inject constructor(
      * Génère un mot de passe aléatoire
      */
     fun generatePassword(settings: Settings) {
-        val generated = passwordGenerator.generate(settings)
-        updatePassword(generated.password)
+        viewModelScope.launch {
+            val generated = passwordGenerator.generate(settings)
+            updatePassword(generated)
+        }
     }
 
     /**

@@ -34,7 +34,7 @@ class TagManagementViewModel @Inject constructor(
     fun loadTags(vaultId: String) {
         viewModelScope.launch {
             try {
-                tagDao.getTagsForVault(vaultId).collect { tags ->
+                tagDao.getTagsByVault(vaultId).collect { tags ->
                     _uiState.value = TagUiState.Success(tags)
                 }
             } catch (e: Exception) {
@@ -88,7 +88,7 @@ class TagManagementViewModel @Inject constructor(
     fun deleteTag(tagId: String) {
         viewModelScope.launch {
             try {
-                tagDao.delete(tagId)
+                tagDao.deleteById(tagId)
             } catch (e: Exception) {
                 _uiState.value = TagUiState.Error(e.message ?: "Erreur de suppression")
             }
@@ -137,9 +137,9 @@ class TagManagementViewModel @Inject constructor(
     fun loadTagStatistics(vaultId: String) {
         viewModelScope.launch {
             try {
-                tagDao.getTagsForVault(vaultId).collect { tags ->
+                tagDao.getTagsByVault(vaultId).collect { tags ->
                     val statistics = tags.map { tag ->
-                        val count = tagDao.countEntriesWithTag(tag.id)
+                        val count = tagDao.getEntryCountForTag(tag.id)
                         TagStatistic(tag, count)
                     }.sortedByDescending { it.count }
 

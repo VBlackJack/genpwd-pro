@@ -1,8 +1,13 @@
 package com.julien.genpwdpro.di
 
 import android.content.Context
+import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.sync.CloudSyncRepository
+import com.julien.genpwdpro.data.sync.NoOpCloudSyncRepository
+import com.julien.genpwdpro.domain.generators.CustomPhraseGenerator
 import com.julien.genpwdpro.domain.generators.LeetSpeakGenerator
 import com.julien.genpwdpro.domain.generators.PassphraseGenerator
+import com.julien.genpwdpro.domain.generators.PasswordGenerator
 import com.julien.genpwdpro.domain.generators.SyllablesGenerator
 import com.julien.genpwdpro.domain.usecases.ApplyCasingUseCase
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
@@ -52,6 +57,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCustomPhraseGenerator(): CustomPhraseGenerator {
+        return CustomPhraseGenerator()
+    }
+
+    @Provides
+    @Singleton
     fun provideApplyCasingUseCase(): ApplyCasingUseCase {
         return ApplyCasingUseCase()
     }
@@ -68,6 +79,7 @@ object AppModule {
         syllablesGenerator: SyllablesGenerator,
         passphraseGenerator: PassphraseGenerator,
         leetSpeakGenerator: LeetSpeakGenerator,
+        customPhraseGenerator: CustomPhraseGenerator,
         applyCasingUseCase: ApplyCasingUseCase,
         placeCharactersUseCase: PlaceCharactersUseCase
     ): GeneratePasswordUseCase {
@@ -75,8 +87,28 @@ object AppModule {
             syllablesGenerator,
             passphraseGenerator,
             leetSpeakGenerator,
+            customPhraseGenerator,
             applyCasingUseCase,
             placeCharactersUseCase
         )
+    }
+
+    @Provides
+    @Singleton
+    fun providePasswordGenerator(
+        generatePasswordUseCase: GeneratePasswordUseCase
+    ): PasswordGenerator {
+        return object : PasswordGenerator {
+            override suspend fun generate(settings: Settings): String {
+                val results = generatePasswordUseCase(settings)
+                return results.firstOrNull()?.password ?: ""
+            }
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideCloudSyncRepository(): CloudSyncRepository {
+        return NoOpCloudSyncRepository()
     }
 }

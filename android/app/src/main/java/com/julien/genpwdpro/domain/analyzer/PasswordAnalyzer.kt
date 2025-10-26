@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.domain.analyzer
 
+import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.domain.utils.EntropyCalculator
 import javax.inject.Inject
 
@@ -7,9 +8,7 @@ import javax.inject.Inject
  * Analyseur de mots de passe existants
  * Fournit des informations détaillées sur la force et la composition
  */
-class PasswordAnalyzer @Inject constructor(
-    private val entropyCalculator: EntropyCalculator
-) {
+class PasswordAnalyzer @Inject constructor() {
 
     /**
      * Analyse un mot de passe et retourne des métriques détaillées
@@ -56,7 +55,7 @@ class PasswordAnalyzer @Inject constructor(
         val commonWords = findCommonWords(password)
 
         val charsetSize = calculateCharsetSize(hasLowercase, hasUppercase, hasDigits, hasSpecials)
-        val entropy = entropyCalculator.calculate(password)
+        val entropy = EntropyCalculator.calculateEntropy(password, GenerationMode.SYLLABLES)
 
         val estimatedCrackTime = estimateCrackTime(entropy)
         val strength = determineStrength(entropy, length, uniqueChars, sequentialPatterns.isNotEmpty(), commonWords.isNotEmpty())

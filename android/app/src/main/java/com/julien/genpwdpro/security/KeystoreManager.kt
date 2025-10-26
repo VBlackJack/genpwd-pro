@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.security
+package com.julien.genpwdpro.security
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

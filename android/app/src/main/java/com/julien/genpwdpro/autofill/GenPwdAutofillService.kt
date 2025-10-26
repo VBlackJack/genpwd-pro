@@ -83,7 +83,8 @@ class GenPwdAutofillService : AutofillService() {
 
                 // Générer 3 options de mots de passe
                 repeat(MAX_DATASETS) { index ->
-                    val password = generatePasswordUseCase.execute(settings)
+                    val passwordResults = generatePasswordUseCase(settings)
+                    val password = passwordResults.firstOrNull()?.password ?: ""
                     val dataset = createPasswordDataset(
                         autofillFields = autofillFields,
                         password = password,
@@ -212,7 +213,9 @@ data class AutofillFieldsMetadata(
     val passwordField: AutofillFieldMetadata? = null,
     val usernameField: AutofillFieldMetadata? = null,
     val packageName: String = ""
-)
+) {
+    fun isEmpty(): Boolean = passwordField == null && usernameField == null
+}
 
 /**
  * Métadonnées d'un champ individuel
