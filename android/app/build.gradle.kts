@@ -118,6 +118,32 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
 
+    // Google Drive API for Cloud Sync
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20230520-2.0.0")
+    implementation("com.google.http-client:google-http-client-android:1.43.3")
+    implementation("com.google.api-client:google-api-client-android:2.2.0")
+
+    // WorkManager for Auto-Sync
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
+
+    // Encrypted SharedPreferences for secure credential storage
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // OkHttp for HTTP/REST APIs (WebDAV, pCloud, ProtonDrive)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Retrofit for REST APIs (pCloud, ProtonDrive)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Optional: Microsoft Graph SDK for OneDrive (requires Azure app config)
+    // implementation("com.microsoft.graph:microsoft-graph:5.+")
+    // implementation("com.microsoft.identity.client:msal:4.+")
+
     // CameraX for QR scanning
     implementation("androidx.camera:camera-camera2:1.3.1")
     implementation("androidx.camera:camera-lifecycle:1.3.1")

@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Network permissions for cloud sync -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".GenPwdProApplication"
         android:allowBackup="true"
@@ -22,10 +26,34 @@
             android:name=".presentation.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.GenPwdPro"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- OAuth2 Deep Links for Cloud Providers -->
+            <!-- pCloud OAuth2 callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="genpwdpro"
+                    android:host="oauth"
+                    android:path="/pcloud" />
+            </intent-filter>
+
+            <!-- ProtonDrive OAuth2 callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="genpwdpro"
+                    android:host="oauth"
+                    android:path="/proton" />
             </intent-filter>
         </activity>
 
@@ -55,5 +83,17 @@
                 android:name="android.autofill"
                 android:resource="@xml/autofill_service_config" />
         </service>
+
+        <!-- Disable WorkManager default initialization (using custom HiltWorkerFactory) -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 </manifest>

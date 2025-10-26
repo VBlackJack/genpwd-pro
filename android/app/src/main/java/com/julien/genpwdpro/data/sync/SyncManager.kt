@@ -262,7 +262,7 @@ class SyncManager @Inject constructor(
     /**
      * Obtient les métadonnées de synchronisation locale
      */
-    fun getMetadata(): LocalSyncMetadata {
+    suspend fun getMetadata(): LocalSyncMetadata {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return LocalSyncMetadata(
             lastSyncTimestamp = prefs.getLong(KEY_LAST_SYNC, 0),

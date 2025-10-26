@@ -1,53 +1,58 @@
 package com.julien.genpwdpro.data.sync
 
 import android.app.Activity
+import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
+import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 
 /**
- * Interface pour les providers de stockage cloud
+ * Interface commune pour tous les providers cloud
  *
- * SÉCURITÉ: Tous les providers ne stockent QUE des données chiffrées.
- * Le chiffrement/déchiffrement se fait AVANT l'upload et APRÈS le download.
+ * Implémentations:
+ * - GoogleDriveProvider: Google Drive
+ * - OneDriveProvider: Microsoft OneDrive (à venir)
+ * - ProtonDriveProvider: Proton Drive (à venir)
+ * - PCloudProvider: pCloud (à venir)
+ *
+ * Sécurité:
+ * - Tous les providers manipulent UNIQUEMENT des données chiffrées
+ * - Le chiffrement/déchiffrement se fait AVANT/APRÈS l'upload/download
+ * - Les providers ne voient jamais les données en clair
  */
 interface CloudProvider {
 
     /**
-     * Type de provider
-     */
-    val providerType: String
-
-    /**
-     * Vérifie si le provider est connecté et authentifié
+     * Vérifie si l'utilisateur est authentifié
      */
     suspend fun isAuthenticated(): Boolean
 
     /**
-     * Initie le processus d'authentification OAuth2
+     * Authentifie l'utilisateur (OAuth2)
      *
-     * @param activity Activité pour lancer l'intent OAuth
-     * @return true si authentification réussie
+     * @param activity Activity pour le flow OAuth
+     * @return true si l'authentification a réussi
      */
     suspend fun authenticate(activity: Activity): Boolean
 
     /**
-     * Déconnecte le provider
+     * Déconnecte l'utilisateur
      */
     suspend fun disconnect()
 
     /**
-     * Upload des données de vault chiffrées vers le cloud
+     * Upload un vault chiffré vers le cloud
      *
      * @param vaultId ID du vault
-     * @param syncData Données chiffrées du vault
-     * @return ID du fichier cloud si succès, null si échec
+     * @param syncData Données chiffrées à synchroniser
+     * @return ID du fichier cloud, ou null en cas d'erreur
      */
     suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String?
 
     /**
-     * Download des données de vault chiffrées depuis le cloud
+     * Télécharge un vault depuis le cloud
      *
      * @param vaultId ID du vault
-     * @return Données chiffrées du vault, null si non trouvé
+     * @return Données chiffrées, ou null si le vault n'existe pas
      */
     suspend fun downloadVault(vaultId: String): VaultSyncData?
 
@@ -55,63 +60,38 @@ interface CloudProvider {
      * Vérifie si une version plus récente existe sur le cloud
      *
      * @param vaultId ID du vault
-     * @param localTimestamp Timestamp de la version locale
-     * @return true si version cloud plus récente
+     * @param localTimestamp Timestamp local
+     * @return true si la version cloud est plus récente
      */
     suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean
 
     /**
-     * Récupère les métadonnées du fichier cloud
+     * Supprime un vault du cloud
      *
      * @param vaultId ID du vault
-     * @return Métadonnées (timestamp, taille, etc.) ou null
-     */
-    suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata?
-
-    /**
-     * Supprime le vault du cloud
-     *
-     * @param vaultId ID du vault
-     * @return true si suppression réussie
+     * @return true si la suppression a réussi
      */
     suspend fun deleteVault(vaultId: String): Boolean
 
     /**
-     * Liste tous les vaults disponibles sur le cloud
+     * Récupère les métadonnées d'un fichier cloud
+     *
+     * @param vaultId ID du vault
+     * @return Métadonnées, ou null si le fichier n'existe pas
+     */
+    suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata?
+
+    /**
+     * Liste tous les vaults synchronisés
      *
      * @return Liste des IDs de vaults
      */
     suspend fun listVaults(): List<String>
 
     /**
-     * Récupère l'espace de stockage disponible
+     * Récupère le quota de stockage
      *
-     * @return Quota (utilisé, total) en bytes, null si non disponible
+     * @return Informations sur le stockage, ou null en cas d'erreur
      */
     suspend fun getStorageQuota(): StorageQuota?
-}
-
-/**
- * Métadonnées d'un fichier cloud
- */
-data class CloudFileMetadata(
-    val fileId: String,
-    val name: String,
-    val size: Long,
-    val modifiedTime: Long,
-    val checksum: String?
-)
-
-/**
- * Quota de stockage
- */
-data class StorageQuota(
-    val usedBytes: Long,
-    val totalBytes: Long
-) {
-    val usedPercentage: Float
-        get() = if (totalBytes > 0) (usedBytes.toFloat() / totalBytes) * 100 else 0f
-
-    val availableBytes: Long
-        get() = totalBytes - usedBytes
 }

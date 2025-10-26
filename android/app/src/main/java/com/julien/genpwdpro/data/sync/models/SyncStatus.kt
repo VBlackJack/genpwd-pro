@@ -1,82 +1,70 @@
 package com.julien.genpwdpro.data.sync.models
 
 /**
- * Statut de la synchronisation
+ * État de synchronisation d'un vault
  */
 enum class SyncStatus {
-    /** Jamais synchronisé */
-    NEVER_SYNCED,
-
-    /** Synchronisé et à jour */
-    SYNCED,
-
-    /** Synchronisation en cours */
-    SYNCING,
-
-    /** Changements locaux non synchronisés */
-    PENDING,
-
-    /** Erreur de synchronisation */
-    ERROR,
-
-    /** Conflit détecté */
-    CONFLICT
+    NEVER_SYNCED,    // Jamais synchronisé
+    SYNCED,          // Synchronisé, à jour
+    SYNCING,         // Synchronisation en cours
+    PENDING,         // Modifications en attente
+    ERROR,           // Erreur de sync
+    CONFLICT         // Conflit détecté
 }
 
 /**
- * Provider cloud supporté
+ * Type de provider cloud
  */
 enum class CloudProviderType {
     GOOGLE_DRIVE,
     ONEDRIVE,
     PROTON_DRIVE,
     PCLOUD,
+    WEBDAV,      // Serveur WebDAV personnalisé
     NONE
 }
 
 /**
- * Configuration de la synchronisation
+ * Intervalle de synchronisation automatique
+ */
+enum class SyncInterval {
+    MANUAL,         // Synchronisation manuelle uniquement
+    REALTIME,       // Temps réel (après chaque modification)
+    EVERY_15_MIN,   // Toutes les 15 minutes
+    EVERY_30_MIN,   // Toutes les 30 minutes
+    HOURLY,         // Toutes les heures
+    DAILY           // Une fois par jour
+}
+
+/**
+ * Configuration de synchronisation cloud
  */
 data class SyncConfig(
-    val providerType: CloudProviderType,
-    val autoSyncEnabled: Boolean = false,
+    val enabled: Boolean = false,
+    val providerType: CloudProviderType = CloudProviderType.NONE,
     val syncInterval: SyncInterval = SyncInterval.MANUAL,
-    val lastSyncTimestamp: Long = 0,
-    val encryptionEnabled: Boolean = true,
-    val deviceId: String = ""
+    val autoSync: Boolean = false,
+    val syncOnWifiOnly: Boolean = true,
+    val deviceId: String = "",
+    val deviceName: String = ""
 )
 
 /**
- * Intervalle de synchronisation
- */
-enum class SyncInterval(val minutes: Int) {
-    MANUAL(0),
-    REALTIME(0),  // Sync immédiat après chaque modification
-    EVERY_15_MIN(15),
-    EVERY_30_MIN(30),
-    HOURLY(60),
-    DAILY(1440)
-}
-
-/**
- * Résultat d'une opération de synchronisation
- */
-sealed class SyncResult {
-    object Success : SyncResult()
-    data class Conflict(val remoteVersion: VaultSyncData, val localVersion: VaultSyncData) : SyncResult()
-    data class Error(val message: String, val exception: Throwable? = null) : SyncResult()
-}
-
-/**
- * Données de synchronisation d'un vault
+ * Données d'un vault à synchroniser (chiffrées)
+ *
+ * Sécurité:
+ * - Toutes les données sont déjà chiffrées AVANT l'upload
+ * - Le cloud ne voit QUE des données chiffrées
+ * - Impossible de déchiffrer sans le master password
  */
 data class VaultSyncData(
     val vaultId: String,
-    val encryptedData: ByteArray,
-    val timestamp: Long,
-    val deviceId: String,
-    val checksum: String,
-    val version: Int = 1
+    val vaultName: String,           // Nom en clair (pour l'utilisateur)
+    val encryptedData: ByteArray,    // Vault + entrées chiffrées
+    val timestamp: Long,              // Date de dernière modification
+    val version: Int,                 // Version du format
+    val deviceId: String,             // ID de l'appareil ayant créé cette version
+    val checksum: String              // SHA-256 pour intégrité
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -85,34 +73,92 @@ data class VaultSyncData(
         other as VaultSyncData
 
         if (vaultId != other.vaultId) return false
+        if (vaultName != other.vaultName) return false
         if (!encryptedData.contentEquals(other.encryptedData)) return false
         if (timestamp != other.timestamp) return false
+        if (version != other.version) return false
         if (deviceId != other.deviceId) return false
         if (checksum != other.checksum) return false
-        if (version != other.version) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = vaultId.hashCode()
+        result = 31 * result + vaultName.hashCode()
         result = 31 * result + encryptedData.contentHashCode()
         result = 31 * result + timestamp.hashCode()
+        result = 31 * result + version
         result = 31 * result + deviceId.hashCode()
         result = 31 * result + checksum.hashCode()
-        result = 31 * result + version
         return result
     }
 }
 
 /**
- * Métadonnées de synchronisation
+ * Métadonnées de synchronisation par vault
  */
 data class SyncMetadata(
     val vaultId: String,
-    val status: SyncStatus,
-    val lastSyncTime: Long,
-    val lastError: String? = null,
-    val pendingChanges: Int = 0,
-    val cloudFileId: String? = null
+    val status: SyncStatus = SyncStatus.NEVER_SYNCED,
+    val lastSyncTimestamp: Long = 0,
+    val lastSuccessfulSync: Long = 0,
+    val cloudFileId: String? = null,          // ID du fichier sur le cloud
+    val cloudModifiedTime: Long = 0,
+    val localModifiedTime: Long = 0,
+    val errorMessage: String? = null,
+    val conflictDetected: Boolean = false,
+    val pendingChanges: Boolean = false
 )
+
+/**
+ * Informations sur un fichier cloud
+ */
+data class CloudFileMetadata(
+    val fileId: String,
+    val fileName: String,
+    val size: Long,
+    val modifiedTime: Long,
+    val checksum: String?,
+    val version: String?
+)
+
+/**
+ * Quota de stockage cloud
+ */
+data class StorageQuota(
+    val totalBytes: Long,
+    val usedBytes: Long,
+    val freeBytes: Long
+) {
+    val usagePercent: Float
+        get() = if (totalBytes > 0) (usedBytes.toFloat() / totalBytes.toFloat()) * 100f else 0f
+}
+
+/**
+ * Résultat d'une opération de synchronisation
+ */
+sealed class SyncResult {
+    object Success : SyncResult()
+
+    data class Conflict(
+        val remoteVersion: VaultSyncData,
+        val localVersion: VaultSyncData
+    ) : SyncResult()
+
+    data class Error(
+        val message: String,
+        val exception: Exception? = null
+    ) : SyncResult()
+}
+
+/**
+ * Stratégie de résolution de conflits
+ */
+enum class ConflictResolutionStrategy {
+    LOCAL_WINS,     // Garder la version locale
+    REMOTE_WINS,    // Garder la version cloud
+    NEWEST_WINS,    // Garder la plus récente (timestamp)
+    SMART_MERGE,    // Fusion intelligente (si possible)
+    MANUAL          // Demander à l'utilisateur
+}
