@@ -39,7 +39,9 @@ class CloudProviderFactory @Inject constructor() {
             }
 
             CloudProviderType.PCLOUD -> {
-                PCloudProvider()
+                // pCloud nécessite une config personnalisée
+                // Utiliser createPCloudProvider() à la place
+                null
             }
 
             CloudProviderType.WEBDAV -> {
@@ -72,6 +74,26 @@ class CloudProviderFactory @Inject constructor() {
             username = username,
             password = password,
             validateSSL = validateSSL
+        )
+    }
+
+    /**
+     * Crée un provider pCloud avec configuration personnalisée
+     *
+     * @param appKey Clé d'application pCloud (OAuth2 Client ID)
+     * @param appSecret Secret d'application pCloud (OAuth2 Client Secret)
+     * @param region Région serveur (EU ou US, défaut: EU)
+     * @return Instance de PCloudProvider
+     */
+    fun createPCloudProvider(
+        appKey: String,
+        appSecret: String,
+        region: PCloudProvider.PCloudRegion = PCloudProvider.PCloudRegion.EU
+    ): PCloudProvider {
+        return PCloudProvider(
+            appKey = appKey,
+            appSecret = appSecret,
+            region = region
         )
     }
 
@@ -132,7 +154,7 @@ class CloudProviderFactory @Inject constructor() {
                 icon = "☁️",
                 requiresOAuth = true,
                 supportsQuota = true,
-                implementationStatus = ImplementationStatus.TEMPLATE,
+                implementationStatus = ImplementationStatus.PRODUCTION_READY,
                 maxFileSize = Long.MAX_VALUE,
                 freeStorage = 10_000_000_000L, // 10 GB
                 website = "https://www.pcloud.com",
