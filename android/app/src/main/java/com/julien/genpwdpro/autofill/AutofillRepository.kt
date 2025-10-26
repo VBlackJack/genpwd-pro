@@ -28,7 +28,7 @@ class AutofillRepository @Inject constructor(
      * Récupère les paramètres de génération actuels
      */
     fun getSettings(): Flow<Settings> {
-        return settingsDataStore.settings
+        return settingsDataStore.settingsFlow
     }
 
     /**
@@ -52,7 +52,7 @@ class AutofillRepository @Inject constructor(
         }
 
         // Récupérer les settings actuels pour le PasswordResult
-        val currentSettings = settingsDataStore.settings.first()
+        val currentSettings = settingsDataStore.settingsFlow.first()
 
         val passwordResult = PasswordResult(
             password = password,

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
 
@@ -418,12 +419,16 @@ private fun PasswordGeneratorDialog(
     // Générer le premier mot de passe
     LaunchedEffect(Unit) {
         val settings = Settings(
-            length = length,
-            includeUppercase = includeUppercase,
-            includeLowercase = includeLowercase,
-            includeNumbers = includeNumbers,
-            includeSymbols = includeSymbols,
-            mode = GenerationMode.RANDOM
+            mode = GenerationMode.SYLLABLES,
+            syllablesLength = length,
+            digitsCount = if (includeNumbers) 2 else 0,
+            specialsCount = if (includeSymbols) 2 else 0,
+            caseMode = when {
+                includeUppercase && includeLowercase -> CaseMode.MIXED
+                includeUppercase -> CaseMode.UPPER
+                includeLowercase -> CaseMode.LOWER
+                else -> CaseMode.MIXED
+            }
         )
         viewModel.generatePassword(settings)
         generatedPassword = viewModel.password.value
@@ -479,12 +484,16 @@ private fun PasswordGeneratorDialog(
                 Button(
                     onClick = {
                         val settings = Settings(
-                            length = length,
-                            includeUppercase = includeUppercase,
-                            includeLowercase = includeLowercase,
-                            includeNumbers = includeNumbers,
-                            includeSymbols = includeSymbols,
-                            mode = GenerationMode.RANDOM
+                            mode = GenerationMode.SYLLABLES,
+                            syllablesLength = length,
+                            digitsCount = if (includeNumbers) 2 else 0,
+                            specialsCount = if (includeSymbols) 2 else 0,
+                            caseMode = when {
+                                includeUppercase && includeLowercase -> CaseMode.MIXED
+                                includeUppercase -> CaseMode.UPPER
+                                includeLowercase -> CaseMode.LOWER
+                                else -> CaseMode.MIXED
+                            }
                         )
                         viewModel.generatePassword(settings)
                         generatedPassword = viewModel.password.value
