@@ -441,18 +441,23 @@ class PCloudProvider(
     /**
      * Download un vault chiffré
      */
-    override suspend fun downloadVault(vaultId: String, cloudFileId: String): VaultSyncData? =
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? =
         withContext(Dispatchers.IO) {
             try {
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
-                val fileId = cloudFileId.toLongOrNull() ?: throw IllegalArgumentException("Invalid file ID")
+
+                // Trouver le fileId depuis vaultId
+                val fileName = "vault_${vaultId}.enc"
+                val metadata = listVaults().find { it.fileName == fileName }
+                    ?: return@withContext null
+                val fileId = metadata.fileId.toLongOrNull() ?: throw IllegalArgumentException("Invalid file ID")
 
                 // Download le fichier
                 val responseBody = api.downloadFile(token, fileId)
                 val encryptedData = responseBody.bytes()
 
-                // Récupérer les métadonnées
-                val fileName = "vault_${vaultId}.enc"
+                // Récupérer les métadonnées (déjà trouvé ci-dessus)
+                // val fileName = "vault_${vaultId}.enc"
                 val path = "/$FOLDER_NAME/$fileName"
                 val statResponse = api.getFileStat(token, path)
 
@@ -565,16 +570,14 @@ class PCloudProvider(
     /**
      * Se déconnecte
      */
-    override suspend fun signOut(): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun disconnect() = withContext(Dispatchers.IO) {
         try {
             accessToken = null
             genPwdFolderId = null
             authCallback = null
             Log.d(TAG, "Signed out successfully")
-            true
         } catch (e: Exception) {
             Log.e(TAG, "Error signing out", e)
-            false
         }
     }
 

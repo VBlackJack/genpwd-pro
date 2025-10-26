@@ -2,7 +2,6 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.util.Log
-import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
@@ -71,6 +70,7 @@ class WebDAVProvider(
         private const val TAG = "WebDAVProvider"
         private const val FOLDER_NAME = "GenPwdPro"
         private const val TIMEOUT_SECONDS = 30L
+        private const val DEBUG = false // Set to true for debugging HTTP requests
     }
 
     private val httpClient: OkHttpClient by lazy { createHttpClient() }
@@ -97,7 +97,7 @@ class WebDAVProvider(
         }
 
         // Logging (debug uniquement)
-        if (BuildConfig.DEBUG) {
+        if (DEBUG) {
             val logging = HttpLoggingInterceptor()
             logging.level = HttpLoggingInterceptor.Level.HEADERS
             builder.addInterceptor(logging)

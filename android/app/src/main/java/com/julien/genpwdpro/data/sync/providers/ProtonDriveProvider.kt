@@ -570,11 +570,17 @@ class ProtonDriveProvider(
     /**
      * Download un vault chiffré
      */
-    override suspend fun downloadVault(vaultId: String, cloudFileId: String): VaultSyncData? =
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? =
         withContext(Dispatchers.IO) {
             try {
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
                 val share = ensureShare()
+
+                // Trouver le fileId depuis vaultId
+                val fileName = "vault_${vaultId}.enc"
+                val metadata = listVaults().find { it.fileName == fileName }
+                    ?: return@withContext null
+                val cloudFileId = metadata.fileId
 
                 // Récupérer l'URL de download
                 val urlResponse = api.getDownloadUrl("Bearer $token", share, cloudFileId)
@@ -699,7 +705,7 @@ class ProtonDriveProvider(
     /**
      * Se déconnecte
      */
-    override suspend fun signOut(): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun disconnect() = withContext(Dispatchers.IO) {
         try {
             accessToken = null
             refreshToken = null
@@ -710,10 +716,8 @@ class ProtonDriveProvider(
             codeChallenge = null
 
             Log.d(TAG, "Signed out successfully")
-            true
         } catch (e: Exception) {
             Log.e(TAG, "Error signing out", e)
-            false
         }
     }
 }

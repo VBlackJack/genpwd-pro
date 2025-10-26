@@ -345,12 +345,18 @@ class OneDriveProvider(
     /**
      * Download un vault chiffré
      */
-    override suspend fun downloadVault(vaultId: String, cloudFileId: String): VaultSyncData? =
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? =
         withContext(Dispatchers.IO) {
             try {
                 if (accessToken == null) {
                     throw IllegalStateException("Not authenticated")
                 }
+
+                // Trouver le fileId depuis vaultId
+                val fileName = "vault_${vaultId}.enc"
+                val metadata = listVaults().find { it.fileName == fileName }
+                    ?: return@withContext null
+                val cloudFileId = metadata.fileId
 
                 // Récupérer les métadonnées
                 val metadataRequest = Request.Builder()
@@ -543,7 +549,7 @@ class OneDriveProvider(
     /**
      * Se déconnecte
      */
-    override suspend fun signOut(): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun disconnect() = withContext(Dispatchers.IO) {
         try {
             accessToken = null
             genPwdFolderId = null
@@ -553,10 +559,8 @@ class OneDriveProvider(
             // msalApp.signOut()
 
             Log.d(TAG, "Signed out successfully")
-            true
         } catch (e: Exception) {
             Log.e(TAG, "Error signing out", e)
-            false
         }
     }
 
