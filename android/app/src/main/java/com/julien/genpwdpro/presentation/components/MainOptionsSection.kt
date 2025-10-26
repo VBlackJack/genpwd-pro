@@ -61,6 +61,10 @@ fun MainOptionsSection(
                     onWordChange = { onSettingsChange(settings.copy(leetWord = it)) }
                 )
             }
+            GenerationMode.CUSTOM_PHRASE -> {
+                // TODO: Implement CustomPhraseOptions composable
+                // For now, empty options section
+            }
         }
     }
 }
@@ -308,6 +312,7 @@ private fun getModeLabel(mode: GenerationMode): String = when (mode) {
     GenerationMode.SYLLABLES -> "Syllabes (alternance C/V)"
     GenerationMode.PASSPHRASE -> "Passphrase (mots séparés)"
     GenerationMode.LEET -> "Mot → Leet"
+    GenerationMode.CUSTOM_PHRASE -> "Custom Phrase (mots personnalisés)"
 }
 
 private fun getPolicyLabel(policy: CharPolicy): String = when (policy) {
