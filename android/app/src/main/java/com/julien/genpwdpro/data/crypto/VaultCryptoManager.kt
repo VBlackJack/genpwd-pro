@@ -118,12 +118,12 @@ class VaultCryptoManager @Inject constructor() {
         // cryptoPwHash retourne un boolean (true = succès, false = erreur)
         val success = (lazySodium as PwHash.Native).cryptoPwHash(
             keyBytes,
-            keyBytes.size.toLong(),
+            keyBytes.size,
             passwordBytes,
-            passwordBytes.size.toLong(),
+            passwordBytes.size,
             libsodiumSalt,
-            opsLimit,
-            memLimit,
+            NativeLong(opsLimit),
+            NativeLong(memLimit),
             PwHash.Alg.PWHASH_ALG_ARGON2ID13
         )
 
@@ -158,8 +158,8 @@ class VaultCryptoManager @Inject constructor() {
         // Utilise l'interface Lazy pour cryptoPwHashStr
         val hashResult = (lazySodium as PwHash.Lazy).cryptoPwHashStr(
             masterPassword,
-            opsLimit,
-            memLimit
+            NativeLong(opsLimit),
+            NativeLong(memLimit)
         )
 
         return hashResult ?: throw IllegalStateException("Argon2id password hashing failed")
