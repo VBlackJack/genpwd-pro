@@ -12,7 +12,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
+// Temporarily disabled due to compilation error
+// import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.presentation.navigation.AppNavGraph
 import com.julien.genpwdpro.presentation.navigation.Screen
@@ -45,7 +46,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Gérer les deep links OAuth2 au lancement
-        handleOAuthDeepLink(intent)
+        // Temporarily disabled due to OAuthCallbackManager compilation error
+        // handleOAuthDeepLink(intent)
 
         setContent {
             GenPwdProTheme {
@@ -69,7 +71,10 @@ class MainActivity : ComponentActivity() {
     /**
      * Appelé quand une nouvelle Intent arrive pendant que l'activité est active
      * (grâce à launchMode="singleTask")
+     *
+     * Temporarily disabled due to OAuthCallbackManager compilation error
      */
+    /*
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -102,4 +107,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    */
 }
