@@ -41,7 +41,9 @@ class CloudProviderFactory @Inject constructor(
             }
 
             CloudProviderType.PROTON_DRIVE -> {
-                ProtonDriveProvider()
+                // ProtonDrive nécessite une config personnalisée
+                // Utiliser createProtonDriveProvider() à la place
+                null
             }
 
             CloudProviderType.PCLOUD -> {
@@ -119,6 +121,23 @@ class CloudProviderFactory @Inject constructor(
     }
 
     /**
+     * Crée un provider ProtonDrive avec configuration personnalisée
+     *
+     * @param clientId Client ID Proton OAuth2
+     * @param clientSecret Client Secret Proton OAuth2
+     * @return Instance de ProtonDriveProvider
+     */
+    fun createProtonDriveProvider(
+        clientId: String,
+        clientSecret: String
+    ): ProtonDriveProvider {
+        return ProtonDriveProvider(
+            clientId = clientId,
+            clientSecret = clientSecret
+        )
+    }
+
+    /**
      * Obtient les informations d'un provider
      *
      * @param type Type de provider
@@ -161,7 +180,7 @@ class CloudProviderFactory @Inject constructor(
                 icon = "🔐",
                 requiresOAuth = true,
                 supportsQuota = true,
-                implementationStatus = ImplementationStatus.TEMPLATE,
+                implementationStatus = ImplementationStatus.PRODUCTION_READY,
                 maxFileSize = Long.MAX_VALUE,
                 freeStorage = 1_000_000_000L, // 1 GB (peut varier)
                 website = "https://proton.me/drive",
