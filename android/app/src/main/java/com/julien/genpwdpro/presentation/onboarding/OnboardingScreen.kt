@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.*
+import kotlinx.coroutines.launch
 
 /**
  * Écran d'onboarding en 3 pages

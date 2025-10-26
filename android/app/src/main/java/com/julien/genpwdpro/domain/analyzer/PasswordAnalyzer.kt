@@ -55,7 +55,7 @@ class PasswordAnalyzer @Inject constructor() {
         val commonWords = findCommonWords(password)
 
         val charsetSize = calculateCharsetSize(hasLowercase, hasUppercase, hasDigits, hasSpecials)
-        val entropy = EntropyCalculator.calculateEntropy(password, GenerationMode.CLASSIC)
+        val entropy = EntropyCalculator.calculateEntropy(password, GenerationMode.SYLLABLES)
 
         val estimatedCrackTime = estimateCrackTime(entropy)
         val strength = determineStrength(entropy, length, uniqueChars, sequentialPatterns.isNotEmpty(), commonWords.isNotEmpty())
