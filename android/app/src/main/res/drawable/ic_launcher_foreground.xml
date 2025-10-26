@@ -55,30 +55,26 @@
         <!-- Password dots decoration -->
         <group
             android:translateY="18">
-            <circle
+            <!-- Circle at x=-6, y=0, radius=1.5 -->
+            <path
                 android:fillColor="#2196F3"
                 android:fillAlpha="0.6"
-                android:cx="-6"
-                android:cy="0"
-                android:radius="1.5" />
-            <circle
+                android:pathData="M-6,0 m-1.5,0 a1.5,1.5 0,1,0 3,0 a1.5,1.5 0,1,0 -3,0" />
+            <!-- Circle at x=-2, y=0, radius=1.5 -->
+            <path
                 android:fillColor="#2196F3"
                 android:fillAlpha="0.6"
-                android:cx="-2"
-                android:cy="0"
-                android:radius="1.5" />
-            <circle
+                android:pathData="M-2,0 m-1.5,0 a1.5,1.5 0,1,0 3,0 a1.5,1.5 0,1,0 -3,0" />
+            <!-- Circle at x=2, y=0, radius=1.5 -->
+            <path
                 android:fillColor="#2196F3"
                 android:fillAlpha="0.6"
-                android:cx="2"
-                android:cy="0"
-                android:radius="1.5" />
-            <circle
+                android:pathData="M2,0 m-1.5,0 a1.5,1.5 0,1,0 3,0 a1.5,1.5 0,1,0 -3,0" />
+            <!-- Circle at x=6, y=0, radius=1.5 -->
+            <path
                 android:fillColor="#2196F3"
                 android:fillAlpha="0.6"
-                android:cx="6"
-                android:cy="0"
-                android:radius="1.5" />
+                android:pathData="M6,0 m-1.5,0 a1.5,1.5 0,1,0 3,0 a1.5,1.5 0,1,0 -3,0" />
         </group>
     </group>
 </vector>

@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.autofill
+package com.julien.genpwdpro.autofill
 
 import com.julien.genpwdpro.data.local.entity.PasswordHistoryEntity
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore

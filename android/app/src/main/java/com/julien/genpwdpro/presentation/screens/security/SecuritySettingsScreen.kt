@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.presentation.screens.security
+package com.julien.genpwdpro.presentation.screens.security
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
