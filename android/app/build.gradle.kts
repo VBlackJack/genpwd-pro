@@ -116,6 +116,14 @@ dependencies {
     implementation("de.mkammerer:argon2-jvm:2.11") // Argon2id for master password
     implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
 
+    // CameraX for QR scanning
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+
+    // ML Kit Barcode Scanning
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")

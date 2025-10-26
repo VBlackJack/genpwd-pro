@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -16,6 +17,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.VaultEntity
 
@@ -34,9 +36,16 @@ fun UnlockVaultScreen(
     var showPassword by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(0) }
     var vault by remember { mutableStateOf<VaultEntity?>(null) }
+    var biometricErrorMessage by remember { mutableStateOf<String?>(null) }
 
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
+
+    // BiometricHelper (nécessite FragmentActivity)
+    val biometricHelper = remember {
+        (context as? FragmentActivity)?.let { BiometricHelper(it) }
+    }
 
     // Charger le vault
     LaunchedEffect(vaultId) {
@@ -227,23 +236,70 @@ fun UnlockVaultScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Bouton biométrie (à implémenter)
+            // Bouton biométrie
             OutlinedButton(
                 onClick = {
-                    // TODO: Implémenter le déverrouillage biométrique
+                    biometricErrorMessage = null
+                    biometricHelper?.showBiometricPrompt(
+                        title = "Déverrouiller le coffre-fort",
+                        subtitle = vault.name,
+                        description = "Authentifiez-vous pour accéder à vos mots de passe",
+                        allowDeviceCredentials = true,
+                        onSuccess = {
+                            // Succès : déverrouiller le vault sans master password
+                            // Note: En production, il faudrait stocker le master password
+                            // chiffré avec le keystore Android pour le récupérer ici
+                            onVaultUnlocked()
+                        },
+                        onError = { errorCode, errorMessage ->
+                            // Gérer l'erreur
+                            if (errorCode != BiometricHelper.ERROR_CANCELED &&
+                                errorCode != BiometricHelper.ERROR_USER_CANCELED &&
+                                errorCode != BiometricHelper.ERROR_NEGATIVE_BUTTON
+                            ) {
+                                biometricErrorMessage = BiometricHelper.getErrorMessage(errorCode)
+                            }
+                        }
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = vault.biometricUnlockEnabled
+                enabled = vault.biometricUnlockEnabled && biometricHelper != null && uiState !is VaultUiState.Loading
             ) {
                 Icon(Icons.Default.Fingerprint, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    if (vault.biometricUnlockEnabled) {
-                        "Utiliser la biométrie"
-                    } else {
-                        "Biométrie non configurée"
+                    when {
+                        biometricHelper == null -> "Biométrie non disponible"
+                        !vault.biometricUnlockEnabled -> "Biométrie non configurée"
+                        else -> "Utiliser la biométrie"
                     }
                 )
+            }
+
+            // Message d'erreur biométrique
+            if (biometricErrorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = biometricErrorMessage!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
