@@ -35,6 +35,7 @@ sealed class Screen(val route: String) {
 
     // Sync Settings
     object SyncSettings : Screen("sync_settings")
+    object SyncHistory : Screen("sync_history")
 
     // Autofill Settings
     object AutofillSettings : Screen("autofill_settings")
