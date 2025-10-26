@@ -33,14 +33,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Point d'entrée : VaultSelector
-                    // L'utilisateur pourra soit :
-                    // - Créer un nouveau vault
-                    // - Déverrouiller un vault existant
-                    // - Utiliser le générateur simple (mode standalone)
+                    // TEMPORAIRE: Démarrer sur le générateur pour tester
+                    // Point d'entrée : Generator (au lieu de VaultSelector)
                     AppNavGraph(
                         navController = navController,
-                        startDestination = Screen.VaultSelector.route
+                        startDestination = Screen.Generator.route  // CHANGEMENT TEMPORAIRE
                     )
                 }
             }
