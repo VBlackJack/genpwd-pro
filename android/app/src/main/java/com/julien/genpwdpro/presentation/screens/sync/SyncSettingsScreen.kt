@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,6 +24,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.sync.*
+import android.app.Activity
+import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
@@ -50,6 +53,7 @@ fun SyncSettingsScreen(
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val activity = LocalContext.current as? Activity
     var showProviderConfigDialog by remember { mutableStateOf(false) }
     var selectedProviderForConfig by remember { mutableStateOf<ProviderInfo?>(null) }
 
@@ -179,7 +183,13 @@ fun SyncSettingsScreen(
                         selectedProviderForConfig = null
                     },
                     onAuthenticate = { config ->
-                        viewModel.authenticateProvider(selectedProviderForConfig!!.type, config)
+                        if (activity != null) {
+                            viewModel.authenticateProvider(
+                                activity = activity,
+                                providerType = selectedProviderForConfig!!.type,
+                                config = config
+                            )
+                        }
                         showProviderConfigDialog = false
                         selectedProviderForConfig = null
                     }
@@ -786,7 +796,8 @@ private fun QuickAccessCard(
 @HiltViewModel
 class SyncSettingsViewModel @Inject constructor(
     private val syncManager: SyncManager,
-    private val providerFactory: CloudProviderFactory
+    private val providerFactory: CloudProviderFactory,
+    private val cloudRepository: CloudProviderSyncRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -861,27 +872,83 @@ class SyncSettingsViewModel @Inject constructor(
         }
     }
 
-    fun authenticateProvider(providerType: CloudProviderType, config: CloudProviderConfig) {
+    /**
+     * Authentifier un provider cloud et le définir comme actif
+     *
+     * @param activity Activity nécessaire pour OAuth2
+     * @param providerType Type de provider
+     * @param config Configuration du provider
+     */
+    fun authenticateProvider(
+        activity: Activity,
+        providerType: CloudProviderType,
+        config: CloudProviderConfig
+    ) {
         viewModelScope.launch {
-            // TODO: Authenticate with provider using config
-            when (config) {
-                is CloudProviderConfig.GoogleDrive -> {
-                    // Start Google OAuth flow
+            _uiState.update { it.copy(isAuthenticating = true) }
+
+            try {
+                val provider = when (config) {
+                    is CloudProviderConfig.GoogleDrive -> {
+                        // Google Drive ne nécessite pas de config spécifique
+                        providerFactory.createGoogleDriveProvider()
+                    }
+                    is CloudProviderConfig.OneDrive -> {
+                        providerFactory.createOneDriveProvider(config.clientId)
+                    }
+                    is CloudProviderConfig.PCloud -> {
+                        providerFactory.createPCloudProvider(
+                            appKey = config.appKey,
+                            appSecret = config.appSecret,
+                            region = config.region
+                        )
+                    }
+                    is CloudProviderConfig.ProtonDrive -> {
+                        providerFactory.createProtonDriveProvider(
+                            clientId = config.clientId,
+                            clientSecret = config.clientSecret
+                        )
+                    }
                 }
-                is CloudProviderConfig.OneDrive -> {
-                    // Start OneDrive OAuth with clientId
+
+                if (provider != null) {
+                    // Authentifier avec le provider
+                    val success = provider.authenticate(activity)
+
+                    if (success) {
+                        // Définir comme provider actif
+                        cloudRepository.setActiveProvider(providerType, provider)
+
+                        _uiState.update { state ->
+                            state.copy(
+                                config = state.config.copy(providerType = providerType),
+                                isAuthenticating = false,
+                                authenticationResult = AuthenticationResult.Success("Authentification réussie!")
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isAuthenticating = false,
+                                authenticationResult = AuthenticationResult.Failure("Authentification échouée")
+                            )
+                        }
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isAuthenticating = false,
+                            authenticationResult = AuthenticationResult.Failure("Provider non supporté")
+                        )
+                    }
                 }
-                is CloudProviderConfig.PCloud -> {
-                    // Start pCloud OAuth with appKey, appSecret, region
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isAuthenticating = false,
+                        authenticationResult = AuthenticationResult.Failure(e.message ?: "Erreur inconnue")
+                    )
                 }
-                is CloudProviderConfig.ProtonDrive -> {
-                    // Start ProtonDrive OAuth with clientId, clientSecret
-                }
-            }
-            _uiState.update { state ->
-                state.copy(
-                    config = state.config.copy(providerType = providerType)
-                )
             }
         }
     }
@@ -943,5 +1010,15 @@ data class SyncSettingsUiState(
     val availableProviders: List<ProviderInfo> = emptyList(),
     val metadata: LocalSyncMetadata = LocalSyncMetadata(),
     val isTestingConnection: Boolean = false,
-    val testConnectionResult: TestConnectionResult? = null
+    val testConnectionResult: TestConnectionResult? = null,
+    val isAuthenticating: Boolean = false,
+    val authenticationResult: AuthenticationResult? = null
 )
+
+/**
+ * Résultat d'une authentification provider
+ */
+sealed class AuthenticationResult {
+    data class Success(val message: String) : AuthenticationResult()
+    data class Failure(val error: String) : AuthenticationResult()
+}
