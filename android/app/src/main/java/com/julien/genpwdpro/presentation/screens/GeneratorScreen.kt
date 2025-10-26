@@ -39,8 +39,23 @@ fun GeneratorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     var showPlacementSheet by remember { mutableStateOf(false) }
+
+    // Fonction helper pour gérer les navigations qui peuvent échouer
+    fun safeNavigate(action: () -> Unit, featureName: String) {
+        try {
+            action()
+        } catch (e: Exception) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "$featureName - Fonctionnalité à venir",
+                    duration = SnackbarDuration.Short
+                )
+            }
+        }
+    }
 
     // Gérer le mode initial et la génération automatique depuis les raccourcis
     LaunchedEffect(initialMode, autoGenerate) {
@@ -76,28 +91,36 @@ fun GeneratorScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToSyncSettings) {
+                    IconButton(onClick = {
+                        safeNavigate(onNavigateToSyncSettings, "Synchronisation Cloud")
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Synchronisation Cloud",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                    IconButton(onClick = onNavigateToCustomPhrase) {
+                    IconButton(onClick = {
+                        safeNavigate(onNavigateToCustomPhrase, "Phrases personnalisées")
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Phrases personnalisées",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                    IconButton(onClick = onNavigateToAnalyzer) {
+                    IconButton(onClick = {
+                        safeNavigate(onNavigateToAnalyzer, "Analyseur")
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Analyseur",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                    IconButton(onClick = onNavigateToHistory) {
+                    IconButton(onClick = {
+                        safeNavigate(onNavigateToHistory, "Historique")
+                    }) {
                         Icon(
                             imageVector = Icons.Default.History,
                             contentDescription = "Historique",
