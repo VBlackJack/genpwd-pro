@@ -70,7 +70,7 @@ class GenPwdAutofillService : AutofillService() {
                 val parser = AutofillParser(context)
                 val autofillFields = parser.parseForCredentials()
 
-                if (autofillFields == null || autofillFields.isEmpty()) {
+                if (autofillFields.isEmpty()) {
                     callback.onSuccess(null)
                     return@launch
                 }
@@ -213,7 +213,9 @@ data class AutofillFieldsMetadata(
     val passwordField: AutofillFieldMetadata? = null,
     val usernameField: AutofillFieldMetadata? = null,
     val packageName: String = ""
-)
+) {
+    fun isEmpty(): Boolean = passwordField == null && usernameField == null
+}
 
 /**
  * Métadonnées d'un champ individuel
