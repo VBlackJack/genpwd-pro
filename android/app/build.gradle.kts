@@ -127,6 +127,21 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.1.0")
     kapt("androidx.hilt:hilt-compiler:1.1.0")
 
+    // Encrypted SharedPreferences for secure credential storage
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // OkHttp for HTTP/REST APIs (WebDAV, pCloud, ProtonDrive)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Retrofit for REST APIs (pCloud, ProtonDrive)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Optional: Microsoft Graph SDK for OneDrive (requires Azure app config)
+    // implementation("com.microsoft.graph:microsoft-graph:5.+")
+    // implementation("com.microsoft.identity.client:msal:4.+")
+
     // CameraX for QR scanning
     implementation("androidx.camera:camera-camera2:1.3.1")
     implementation("androidx.camera:camera-lifecycle:1.3.1")

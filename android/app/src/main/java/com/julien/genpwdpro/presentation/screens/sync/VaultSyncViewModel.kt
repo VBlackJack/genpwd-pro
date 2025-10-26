@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.sync.AutoSyncScheduler
 import com.julien.genpwdpro.data.sync.VaultSyncManager
+import com.julien.genpwdpro.data.sync.SyncPreferencesManager
 import com.julien.genpwdpro.data.sync.models.*
 import com.julien.genpwdpro.data.sync.providers.GoogleDriveProvider
 import com.julien.genpwdpro.data.sync.providers.OneDriveProvider
+import com.julien.genpwdpro.data.sync.providers.WebDAVProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -27,11 +29,20 @@ import javax.inject.Inject
 class VaultSyncViewModel @Inject constructor(
     private val vaultSyncManager: VaultSyncManager,
     private val autoSyncScheduler: AutoSyncScheduler,
-    private val providerFactory: com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
+    private val providerFactory: com.julien.genpwdpro.data.sync.providers.CloudProviderFactory,
+    private val preferencesManager: SyncPreferencesManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultSyncUiState())
     val uiState: StateFlow<VaultSyncUiState> = _uiState.asStateFlow()
+
+    // État de progression de la synchronisation
+    private val _syncProgressState = MutableStateFlow<SyncProgressState>(SyncProgressState.Idle)
+    val syncProgressState: StateFlow<SyncProgressState> = _syncProgressState.asStateFlow()
+
+    // Quota de stockage
+    private val _storageQuota = MutableStateFlow<StorageQuota?>(null)
+    val storageQuota: StateFlow<StorageQuota?> = _storageQuota.asStateFlow()
 
     init {
         // Observer la configuration
@@ -373,6 +384,192 @@ class VaultSyncViewModel @Inject constructor(
      */
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    /**
+     * Configure WebDAV avec les credentials fournis
+     */
+    fun configureWebDAV(
+        serverUrl: String,
+        username: String,
+        password: String,
+        validateSSL: Boolean
+    ) {
+        viewModelScope.launch {
+            try {
+                // Sauvegarder les credentials de manière sécurisée
+                preferencesManager.setWebDAVCredentials(
+                    serverUrl = serverUrl,
+                    username = username,
+                    password = password,
+                    validateSSL = validateSSL
+                )
+
+                // Créer le provider WebDAV
+                val webDAVProvider = providerFactory.createWebDAVProvider(
+                    serverUrl = serverUrl,
+                    username = username,
+                    password = password,
+                    validateSSL = validateSSL
+                )
+
+                // Configurer le manager
+                vaultSyncManager.setProvider(webDAVProvider, CloudProviderType.WEBDAV)
+
+                // Mettre à jour le provider actuel
+                preferencesManager.setCurrentProvider(CloudProviderType.WEBDAV)
+
+                _uiState.update {
+                    it.copy(
+                        selectedProvider = CloudProviderType.WEBDAV,
+                        isAuthenticated = true,
+                        errorMessage = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(errorMessage = "Erreur de configuration WebDAV: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Teste la connexion WebDAV
+     */
+    fun testWebDAVConnection(
+        serverUrl: String,
+        username: String,
+        password: String,
+        validateSSL: Boolean,
+        onResult: (success: Boolean, message: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                _syncProgressState.value = SyncProgressState.Connecting
+
+                // Créer un provider temporaire pour tester
+                val testProvider = providerFactory.createWebDAVProvider(
+                    serverUrl = serverUrl,
+                    username = username,
+                    password = password,
+                    validateSSL = validateSSL
+                )
+
+                // Tester l'authentification
+                val isAuthenticated = testProvider.isAuthenticated()
+
+                _syncProgressState.value = SyncProgressState.Idle
+
+                if (isAuthenticated) {
+                    // Essayer de récupérer le quota pour vérifier complètement
+                    val quota = testProvider.getStorageQuota()
+                    onResult(
+                        true,
+                        "Connexion réussie! Espace: ${formatBytes(quota.usedBytes)} / ${formatBytes(quota.totalBytes)}"
+                    )
+                } else {
+                    onResult(false, "Échec de l'authentification. Vérifiez vos identifiants.")
+                }
+            } catch (e: Exception) {
+                _syncProgressState.value = SyncProgressState.Idle
+                onResult(
+                    false,
+                    "Erreur de connexion: ${e.message ?: "Impossible d'accéder au serveur"}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Déconnecte du provider actuel
+     */
+    fun disconnectProvider() {
+        viewModelScope.launch {
+            try {
+                // Effacer les credentials du provider actuel
+                preferencesManager.clearCurrentProviderCredentials()
+
+                // Réinitialiser le provider
+                preferencesManager.setCurrentProvider(CloudProviderType.NONE)
+
+                // Déconnecter le manager
+                vaultSyncManager.disconnect()
+
+                // Annuler les syncs planifiées
+                autoSyncScheduler.cancelPeriodicSync()
+
+                _uiState.update {
+                    it.copy(
+                        selectedProvider = CloudProviderType.NONE,
+                        isAuthenticated = false,
+                        storageQuota = null
+                    )
+                }
+
+                _storageQuota.value = null
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(errorMessage = "Erreur de déconnexion: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Active/désactive l'auto-sync
+     */
+    fun toggleAutoSync(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setAutoSyncEnabled(enabled)
+
+            if (!enabled) {
+                autoSyncScheduler.cancelPeriodicSync()
+            }
+
+            _uiState.update {
+                it.copy(config = it.config.copy(autoSync = enabled))
+            }
+        }
+    }
+
+    /**
+     * Définit l'intervalle de synchronisation
+     */
+    fun setSyncInterval(interval: SyncInterval) {
+        viewModelScope.launch {
+            preferencesManager.setSyncInterval(interval)
+
+            _uiState.update {
+                it.copy(config = it.config.copy(syncInterval = interval))
+            }
+        }
+    }
+
+    /**
+     * Récupère les statistiques de synchronisation
+     */
+    fun getSyncStatistics(): com.julien.genpwdpro.data.sync.SyncStatistics {
+        return preferencesManager.getSyncStatistics()
+    }
+
+    /**
+     * Met à jour l'état de progression
+     */
+    fun updateSyncProgress(state: SyncProgressState) {
+        _syncProgressState.value = state
+    }
+
+    /**
+     * Formate les bytes en format lisible
+     */
+    private fun formatBytes(bytes: Long): String {
+        return when {
+            bytes < 1024 -> "$bytes B"
+            bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+            bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
+            else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+        }
     }
 }
 
