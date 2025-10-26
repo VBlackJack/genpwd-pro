@@ -23,6 +23,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.sync.*
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
+import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
+import com.julien.genpwdpro.data.sync.providers.ProviderInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,14 +84,15 @@ fun SyncSettingsScreen(
             if (uiState.config.enabled) {
                 SyncStatusCard(
                     status = uiState.status,
-                    lastSyncTimestamp = uiState.config.lastSyncTimestamp,
+                    lastSyncTimestamp = uiState.metadata.lastSyncTimestamp,
                     metadata = uiState.metadata
                 )
 
-                // Backend selection (placeholder pour l'instant)
-                BackendSelectionCard(
-                    selectedBackend = uiState.selectedBackend,
-                    onBackendChange = { viewModel.selectBackend(it) }
+                // Cloud provider selection
+                ProviderSelectionCard(
+                    availableProviders = uiState.availableProviders,
+                    selectedProvider = uiState.config.providerType,
+                    onProviderChange = { viewModel.selectProvider(it) }
                 )
 
                 // Auto-sync settings
@@ -284,12 +288,13 @@ private fun SyncStatusCard(
 }
 
 /**
- * Sélection du backend
+ * Sélection du cloud provider
  */
 @Composable
-private fun BackendSelectionCard(
-    selectedBackend: CloudBackend,
-    onBackendChange: (CloudBackend) -> Unit
+private fun ProviderSelectionCard(
+    availableProviders: List<ProviderInfo>,
+    selectedProvider: CloudProviderType,
+    onProviderChange: (CloudProviderType) -> Unit
 ) {
     Card {
         Column(
@@ -299,31 +304,31 @@ private fun BackendSelectionCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Service de stockage",
+                text = "Service de stockage cloud",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
-            CloudBackend.values().forEach { backend ->
-                BackendOption(
-                    backend = backend,
-                    isSelected = backend == selectedBackend,
-                    onClick = { onBackendChange(backend) }
+            Text(
+                text = "Tous les providers sont production-ready avec chiffrement E2E",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            availableProviders.forEach { provider ->
+                ProviderOption(
+                    provider = provider,
+                    isSelected = provider.type == selectedProvider,
+                    onClick = { onProviderChange(provider.type) }
                 )
             }
-
-            Text(
-                text = "Note: Les backends cloud seront disponibles dans une future mise à jour",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
 @Composable
-private fun BackendOption(
-    backend: CloudBackend,
+private fun ProviderOption(
+    provider: ProviderInfo,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -345,20 +350,55 @@ private fun BackendOption(
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                Text(backend.icon, style = MaterialTheme.typography.headlineSmall)
+                Text(provider.icon, style = MaterialTheme.typography.headlineSmall)
                 Column {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = provider.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                        // Privacy badge
+                        val privacyColor = when (provider.privacyLevel) {
+                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> Color(0xFF10B981)
+                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> Color(0xFF3B82F6)
+                            else -> Color(0xFF9CA3AF)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = privacyColor.copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                text = when (provider.privacyLevel) {
+                                    com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> "Max Privacy"
+                                    com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> "High Privacy"
+                                    else -> "Standard"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = privacyColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                     Text(
-                        text = backend.displayName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                    )
-                    Text(
-                        text = backend.description,
+                        text = provider.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    // Storage info
+                    if (provider.freeStorage > 0) {
+                        Text(
+                            text = "Gratuit: ${formatBytes(provider.freeStorage)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                 }
             }
             if (isSelected) {
@@ -369,6 +409,18 @@ private fun BackendOption(
                 )
             }
         }
+    }
+}
+
+/**
+ * Format bytes to human readable string
+ */
+private fun formatBytes(bytes: Long): String {
+    return when {
+        bytes >= 1_000_000_000 -> "${bytes / 1_000_000_000} GB"
+        bytes >= 1_000_000 -> "${bytes / 1_000_000} MB"
+        bytes >= 1_000 -> "${bytes / 1_000} KB"
+        else -> "$bytes B"
     }
 }
 
@@ -675,30 +727,19 @@ private fun QuickAccessCard(
 }
 
 /**
- * Backends cloud disponibles
- */
-enum class CloudBackend(
-    val displayName: String,
-    val description: String,
-    val icon: String
-) {
-    NONE("Aucun", "Synchronisation désactivée", "❌"),
-    FIREBASE("Firebase", "Google Firebase (gratuit)", "🔥"),
-    GOOGLE_DRIVE("Google Drive", "Stockage Google Drive", "📁"),
-    DROPBOX("Dropbox", "Stockage Dropbox", "📦"),
-    WEBDAV("WebDAV", "Serveur WebDAV personnalisé", "🌐"),
-    CUSTOM_API("API REST", "Backend personnalisé", "⚙️")
-}
-
-/**
  * ViewModel pour la synchronisation
  */
 @HiltViewModel
 class SyncSettingsViewModel @Inject constructor(
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val providerFactory: CloudProviderFactory
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SyncSettingsUiState())
+    private val _uiState = MutableStateFlow(
+        SyncSettingsUiState(
+            availableProviders = providerFactory.getProductionReadyProviders()
+        )
+    )
     val uiState: StateFlow<SyncSettingsUiState> = _uiState.asStateFlow()
 
     init {
@@ -724,8 +765,12 @@ class SyncSettingsViewModel @Inject constructor(
         }
     }
 
-    fun selectBackend(backend: CloudBackend) {
-        _uiState.update { it.copy(selectedBackend = backend) }
+    fun selectProvider(providerType: CloudProviderType) {
+        _uiState.update { state ->
+            state.copy(
+                config = state.config.copy(providerType = providerType)
+            )
+        }
     }
 
     fun toggleAutoSync() {
@@ -763,7 +808,11 @@ class SyncSettingsViewModel @Inject constructor(
     fun resetSync() {
         viewModelScope.launch {
             syncManager.reset()
-            _uiState.update { SyncSettingsUiState() }
+            _uiState.update {
+                SyncSettingsUiState(
+                    availableProviders = providerFactory.getProductionReadyProviders()
+                )
+            }
         }
     }
 
@@ -776,8 +825,8 @@ class SyncSettingsViewModel @Inject constructor(
  * État de l'UI
  */
 data class SyncSettingsUiState(
-    val config: SyncConfig = SyncConfig(),
+    val config: com.julien.genpwdpro.data.sync.models.SyncConfig = com.julien.genpwdpro.data.sync.models.SyncConfig(),
     val status: SyncStatus = SyncStatus.IDLE,
-    val selectedBackend: CloudBackend = CloudBackend.NONE,
+    val availableProviders: List<ProviderInfo> = emptyList(),
     val metadata: LocalSyncMetadata = LocalSyncMetadata()
 )
