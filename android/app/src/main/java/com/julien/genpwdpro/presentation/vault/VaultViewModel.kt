@@ -37,18 +37,22 @@ class VaultViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = VaultUiState.Loading
             try {
-                vaultRepository.getAllVaults().collect { vaults ->
-                    if (vaults.isEmpty()) {
-                        _uiState.value = VaultUiState.NoVault
-                    } else {
-                        _uiState.value = VaultUiState.Success(vaults)
-                        // Sélectionner le vault par défaut ou le premier
-                        if (_selectedVault.value == null) {
-                            val defaultVault = vaults.find { it.isDefault } ?: vaults.firstOrNull()
-                            _selectedVault.value = defaultVault
+                vaultRepository.getAllVaults()
+                    .catch { e ->
+                        _uiState.value = VaultUiState.Error(e.message ?: "Erreur inconnue")
+                    }
+                    .collect { vaults ->
+                        if (vaults.isEmpty()) {
+                            _uiState.value = VaultUiState.NoVault
+                        } else {
+                            _uiState.value = VaultUiState.Success(vaults)
+                            // Sélectionner le vault par défaut ou le premier
+                            if (_selectedVault.value == null) {
+                                val defaultVault = vaults.find { it.isDefault } ?: vaults.firstOrNull()
+                                _selectedVault.value = defaultVault
+                            }
                         }
                     }
-                }
             } catch (e: Exception) {
                 _uiState.value = VaultUiState.Error(e.message ?: "Erreur inconnue")
             }

@@ -3,6 +3,10 @@ package com.julien.genpwdpro.presentation.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.julien.genpwdpro.data.models.*
@@ -74,7 +78,7 @@ private fun ModeDropdown(
     selectedMode: GenerationMode,
     onModeSelected: (GenerationMode) -> Unit
 ) {
-    var expanded = false
+    var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -190,7 +194,7 @@ private fun PolicyDropdown(
     selectedPolicy: CharPolicy,
     onPolicySelected: (CharPolicy) -> Unit
 ) {
-    var expanded = false
+    var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -229,7 +233,7 @@ private fun SeparatorDropdown(
     selectedSeparator: String,
     onSeparatorSelected: (String) -> Unit
 ) {
-    var expanded = false
+    var expanded by remember { mutableStateOf(false) }
     val separators = mapOf(
         "-" to "- (tiret)",
         "_" to "_ (souligné)",
@@ -274,7 +278,7 @@ private fun DictionaryDropdown(
     selectedDictionary: DictionaryType,
     onDictionarySelected: (DictionaryType) -> Unit
 ) {
-    var expanded = false
+    var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
