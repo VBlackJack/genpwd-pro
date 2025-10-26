@@ -455,11 +455,12 @@ class OneDriveProvider(
                     val timestamp = parseIso8601(modifiedTime)
 
                     CloudFileMetadata(
-                        id = fileId,
-                        name = name,
+                        fileId = fileId,
+                        fileName = name,
                         size = size,
                         modifiedTime = timestamp,
-                        checksum = null // OneDrive ne fournit pas le checksum facilement
+                        checksum = null,
+                        version = null
                     )
                 }
             }

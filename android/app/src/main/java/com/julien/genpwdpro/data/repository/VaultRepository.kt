@@ -952,7 +952,7 @@ class VaultRepository @Inject constructor(
                     FolderExport(
                         id = folder.id,
                         name = folder.name,
-                        parentId = folder.parentId,
+                        parentId = folder.parentFolderId,
                         icon = folder.icon,
                         color = folder.color,
                         createdAt = folder.createdAt
@@ -1058,8 +1058,8 @@ class VaultRepository @Inject constructor(
                     id = folderExport.id,
                     vaultId = vaultId,
                     name = folderExport.name,
-                    parentId = folderExport.parentId,
-                    icon = folderExport.icon,
+                    parentFolderId = folderExport.parentId,
+                    icon = folderExport.icon ?: "📁",
                     color = folderExport.color,
                     createdAt = folderExport.createdAt
                 )
@@ -1072,7 +1072,7 @@ class VaultRepository @Inject constructor(
                     id = tagExport.id,
                     vaultId = vaultId,
                     name = tagExport.name,
-                    color = tagExport.color,
+                    color = tagExport.color ?: "#808080",
                     createdAt = tagExport.createdAt
                 )
                 tagDao.insert(tag)

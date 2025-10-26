@@ -121,11 +121,11 @@ class SyncPreferencesManager @Inject constructor(
      * Récupère l'intervalle de synchronisation
      */
     fun getSyncInterval(): SyncInterval {
-        val name = configPrefs.getString(KEY_SYNC_INTERVAL, SyncInterval.ONE_HOUR.name)
+        val name = configPrefs.getString(KEY_SYNC_INTERVAL, SyncInterval.HOURLY.name)
         return try {
-            SyncInterval.valueOf(name ?: SyncInterval.ONE_HOUR.name)
+            SyncInterval.valueOf(name ?: SyncInterval.HOURLY.name)
         } catch (e: IllegalArgumentException) {
-            SyncInterval.ONE_HOUR
+            SyncInterval.HOURLY
         }
     }
 

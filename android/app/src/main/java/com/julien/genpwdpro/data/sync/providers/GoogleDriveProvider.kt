@@ -277,7 +277,7 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Liste tous les vaults synchronisés
      */
-    override suspend fun listVaults(): List<String> = withContext(Dispatchers.IO) {
+    override suspend fun listVaults(): List<CloudFileMetadata> = withContext(Dispatchers.IO) {
         try {
             val service = driveService ?: return@withContext emptyList()
 
@@ -285,15 +285,18 @@ class GoogleDriveProvider : CloudProvider {
                 .list()
                 .setSpaces("appDataFolder")
                 .setQ("name contains 'vault_' and name contains '.enc'")
-                .setFields("files(id, name)")
+                .setFields("files(id, name, size, modifiedTime, md5Checksum, version)")
                 .execute()
 
-            result.files.mapNotNull { file ->
-                // Extraire l'ID du vault depuis le nom du fichier
-                file.name
-                    .removePrefix("vault_")
-                    .removeSuffix(".enc")
-                    .takeIf { it.isNotBlank() }
+            result.files.map { file ->
+                CloudFileMetadata(
+                    fileId = file.id,
+                    fileName = file.name,
+                    size = file.getSize() ?: 0L,
+                    modifiedTime = file.modifiedTime?.value ?: 0L,
+                    checksum = file.md5Checksum,
+                    version = file.version?.toString()
+                )
             }
         } catch (e: IOException) {
             Log.e(TAG, "Error listing vaults", e)
