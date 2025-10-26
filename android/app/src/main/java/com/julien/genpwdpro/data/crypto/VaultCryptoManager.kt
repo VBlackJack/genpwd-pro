@@ -110,19 +110,20 @@ class VaultCryptoManager @Inject constructor() {
         val keyBytes = ByteArray(KEY_LENGTH)
 
         // Dérivation de clé avec Argon2id
-        // cryptoPwHash retourne un int (0 = succès, -1 = erreur)
+        // cryptoPwHash retourne un boolean (true = succès, false = erreur)
+        val passwordBytes = masterPassword.toByteArray()
         val result = lazySodium.cryptoPwHash(
             keyBytes,
-            keyBytes.size.toLong(),
-            masterPassword.toByteArray(),
-            masterPassword.length.toLong(),
+            keyBytes.size,
+            passwordBytes,
+            passwordBytes.size,
             libsodiumSalt,
-            params.iterations.toLong(),
-            params.memory.toLong(),
+            NativeLong(params.iterations.toLong()),
+            NativeLong(params.memory.toLong()),
             PwHash.Alg.PWHASH_ALG_ARGON2ID13
         )
 
-        if (result != 0) {
+        if (!result) {
             throw IllegalStateException("Argon2id key derivation failed")
         }
 
@@ -148,8 +149,8 @@ class VaultCryptoManager @Inject constructor() {
         // Le format est: $argon2id$v=19$m=65536,t=3,p=4$[salt]$[hash]
         val hashResult = lazySodium.cryptoPwHashStr(
             masterPassword,
-            params.iterations.toLong(),
-            params.memory.toLong()
+            NativeLong(params.iterations.toLong()),
+            NativeLong(params.memory.toLong())
         )
 
         return hashResult ?: throw IllegalStateException("Argon2id password hashing failed")
