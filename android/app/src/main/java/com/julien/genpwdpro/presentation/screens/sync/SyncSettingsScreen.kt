@@ -31,6 +31,8 @@ import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
+import com.julien.genpwdpro.data.sync.models.SyncStatus
+import com.julien.genpwdpro.data.sync.models.SyncInterval
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
 import com.julien.genpwdpro.workers.CloudSyncWorker
@@ -454,9 +456,10 @@ private fun SyncStatusCard(
     metadata: LocalSyncMetadata
 ) {
     val (statusColor, statusIcon, statusText) = when (status) {
-        SyncStatus.IDLE -> Triple(Color(0xFF9CA3AF), Icons.Default.CloudOff, "Inactif")
+        SyncStatus.NEVER_SYNCED -> Triple(Color(0xFF9CA3AF), Icons.Default.CloudOff, "Jamais synchronisé")
+        SyncStatus.PENDING -> Triple(Color(0xFF9CA3AF), Icons.Default.CloudOff, "En attente")
         SyncStatus.SYNCING -> Triple(Color(0xFF3B82F6), Icons.Default.CloudSync, "Synchronisation...")
-        SyncStatus.SUCCESS -> Triple(Color(0xFF10B981), Icons.Default.CloudDone, "Synchronisé")
+        SyncStatus.SYNCED -> Triple(Color(0xFF10B981), Icons.Default.CloudDone, "Synchronisé")
         SyncStatus.ERROR -> Triple(Color(0xFFEF4444), Icons.Default.CloudOff, "Erreur")
         SyncStatus.CONFLICT -> Triple(Color(0xFFF59E0B), Icons.Default.Warning, "Conflit détecté")
     }
@@ -1124,7 +1127,7 @@ class SyncSettingsViewModel @Inject constructor(
                 val provider = when (config) {
                     is CloudProviderConfig.GoogleDrive -> {
                         // Google Drive ne nécessite pas de config spécifique
-                        providerFactory.createGoogleDriveProvider()
+                        providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE)
                     }
                     is CloudProviderConfig.OneDrive -> {
                         providerFactory.createOneDriveProvider(config.clientId)
@@ -1263,7 +1266,7 @@ class SyncSettingsViewModel @Inject constructor(
 
                         _uiState.update {
                             it.copy(
-                                status = SyncStatus.SUCCESS,
+                                status = SyncStatus.SYNCED,
                                 metadata = syncManager.getMetadata()
                             )
                         }
@@ -1397,7 +1400,7 @@ class SyncSettingsViewModel @Inject constructor(
                 // Mettre à jour l'état
                 _uiState.update {
                     it.copy(
-                        status = SyncStatus.SUCCESS,
+                        status = SyncStatus.SYNCED,
                         currentConflict = null,
                         metadata = syncManager.getMetadata().copy(conflictCount = 0)
                     )
@@ -1422,7 +1425,7 @@ class SyncSettingsViewModel @Inject constructor(
     fun dismissConflict() {
         _uiState.update {
             it.copy(
-                status = SyncStatus.IDLE,
+                status = SyncStatus.PENDING,
                 currentConflict = null,
                 metadata = it.metadata.copy(conflictCount = 0)
             )
@@ -1435,8 +1438,8 @@ class SyncSettingsViewModel @Inject constructor(
  * État de l'UI
  */
 data class SyncSettingsUiState(
-    val config: com.julien.genpwdpro.data.sync.models.SyncConfig = com.julien.genpwdpro.data.sync.models.SyncConfig(),
-    val status: SyncStatus = SyncStatus.IDLE,
+    val config: UiSyncConfig = UiSyncConfig(),
+    val status: SyncStatus = SyncStatus.PENDING,
     val availableProviders: List<ProviderInfo> = emptyList(),
     val metadata: LocalSyncMetadata = LocalSyncMetadata(),
     val isTestingConnection: Boolean = false,
@@ -1444,6 +1447,17 @@ data class SyncSettingsUiState(
     val isAuthenticating: Boolean = false,
     val authenticationResult: AuthenticationResult? = null,
     val currentConflict: SyncResult.Conflict? = null
+)
+
+/**
+ * Configuration de sync pour l'UI (utilise Long pour syncInterval)
+ */
+data class UiSyncConfig(
+    val enabled: Boolean = false,
+    val providerType: CloudProviderType = CloudProviderType.NONE,
+    val autoSync: Boolean = false,
+    val syncInterval: Long = 3600000L, // 1 heure par défaut (en millisecondes)
+    val syncOnWifiOnly: Boolean = true
 )
 
 /**
