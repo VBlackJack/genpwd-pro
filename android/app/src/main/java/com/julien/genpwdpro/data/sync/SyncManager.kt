@@ -260,6 +260,23 @@ class SyncManager @Inject constructor(
     }
 
     /**
+     * Obtient les métadonnées de synchronisation locale
+     */
+    fun getMetadata(): LocalSyncMetadata {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return LocalSyncMetadata(
+            lastSyncTimestamp = prefs.getLong(KEY_LAST_SYNC, 0),
+            lastSuccessfulSyncTimestamp = when (_syncStatus.value) {
+                SyncStatus.SUCCESS -> prefs.getLong(KEY_LAST_SYNC, 0)
+                else -> 0
+            },
+            pendingChanges = 0,
+            conflictCount = 0,
+            syncErrors = emptyList()
+        )
+    }
+
+    /**
      * Réinitialise la synchronisation (efface la clé et les données)
      */
     suspend fun reset() {
