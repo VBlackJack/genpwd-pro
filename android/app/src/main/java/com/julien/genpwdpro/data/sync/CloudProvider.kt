@@ -84,9 +84,9 @@ interface CloudProvider {
     /**
      * Liste tous les vaults synchronisés
      *
-     * @return Liste des IDs de vaults
+     * @return Liste des métadonnées de fichiers cloud
      */
-    suspend fun listVaults(): List<String>
+    suspend fun listVaults(): List<CloudFileMetadata>
 
     /**
      * Récupère le quota de stockage

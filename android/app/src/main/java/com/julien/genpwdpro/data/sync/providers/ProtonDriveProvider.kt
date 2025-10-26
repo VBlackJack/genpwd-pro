@@ -622,11 +622,12 @@ class ProtonDriveProvider(
                     .filter { it.name.endsWith(".enc") }
                     .map { file ->
                         CloudFileMetadata(
-                            id = file.id,
-                            name = file.name,
+                            fileId = file.id,
+                            fileName = file.name,
                             size = file.size,
                             modifiedTime = file.modifyTime * 1000, // Proton utilise secondes
-                            checksum = null
+                            checksum = null,
+                            version = null
                         )
                     }
             } else {

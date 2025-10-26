@@ -488,11 +488,12 @@ class PCloudProvider(
                     .mapNotNull { content ->
                         content.fileId?.let { fileId ->
                             CloudFileMetadata(
-                                id = fileId.toString(),
-                                name = content.name,
+                                fileId = fileId.toString(),
+                                fileName = content.name,
                                 size = content.size ?: 0,
                                 modifiedTime = parseTimestamp(content.modified),
-                                checksum = null // pCloud ne fournit pas le checksum dans listFolder
+                                checksum = null,
+                                version = null
                             )
                         }
                     }

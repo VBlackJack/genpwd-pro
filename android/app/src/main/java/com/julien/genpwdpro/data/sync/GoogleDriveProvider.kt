@@ -12,6 +12,8 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
+import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
+import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,8 +31,6 @@ import javax.inject.Singleton
  */
 @Singleton
 class GoogleDriveProvider @Inject constructor() : CloudProvider {
-
-    override val providerType: String = "Google Drive"
 
     private var driveService: Drive? = null
     private var signedInAccount: GoogleSignInAccount? = null
@@ -219,7 +219,7 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         }
     }
 
-    override suspend fun listVaults(): List<String> = withContext(Dispatchers.IO) {
+    override suspend fun listVaults(): List<CloudFileMetadata> = withContext(Dispatchers.IO) {
         try {
             val service = driveService ?: return@withContext emptyList()
             val folderId = getOrCreateAppFolder()
@@ -227,12 +227,18 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
             val result = service.files().list()
                 .setQ("'$folderId' in parents and name contains 'vault_' and trashed=false")
                 .setSpaces("drive")
-                .setFields("files(id, name)")
+                .setFields("files(id, name, size, modifiedTime, md5Checksum, version)")
                 .execute()
 
-            result.files.mapNotNull { file ->
-                // Extract vault ID from filename "vault_{id}.enc"
-                file.name.removePrefix("vault_").removeSuffix(".enc")
+            result.files.map { file ->
+                CloudFileMetadata(
+                    fileId = file.id,
+                    fileName = file.name,
+                    size = file.getSize() ?: 0L,
+                    modifiedTime = file.modifiedTime?.value ?: 0L,
+                    checksum = file.md5Checksum,
+                    version = file.version?.toString()
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()
