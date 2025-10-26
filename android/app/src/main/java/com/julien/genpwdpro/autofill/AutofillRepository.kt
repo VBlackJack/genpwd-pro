@@ -3,7 +3,7 @@ package com.julien.genpwdpro.autofill
 import com.julien.genpwdpro.data.local.entity.PasswordHistoryEntity
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.domain.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton

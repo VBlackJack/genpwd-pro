@@ -223,7 +223,7 @@ private fun AppLockCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                </Column>
+                }
                 Switch(
                     checked = isEnabled,
                     onCheckedChange = onToggle

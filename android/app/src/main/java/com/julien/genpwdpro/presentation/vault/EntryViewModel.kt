@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.repository.VaultRepository
-import com.julien.genpwdpro.domain.PasswordAnalyzer
-import com.julien.genpwdpro.domain.PasswordGenerator
-import com.julien.genpwdpro.domain.Settings
+import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
+import com.julien.genpwdpro.domain.generators.PasswordGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
