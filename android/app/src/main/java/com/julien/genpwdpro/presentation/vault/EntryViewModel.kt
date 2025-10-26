@@ -136,7 +136,7 @@ class EntryViewModel @Inject constructor(
         // Analyser la force du mot de passe
         if (value.isNotEmpty()) {
             val analysis = passwordAnalyzer.analyze(value)
-            _passwordStrength.value = analysis.strength
+            _passwordStrength.value = analysis.strength.ordinal
             _passwordEntropy.value = analysis.entropy
         } else {
             _passwordStrength.value = 0
