@@ -11,8 +11,10 @@ Architecture complète de synchronisation cloud avec chiffrement end-to-end pour
 - [Installation](#installation)
 - [Utilisation](#utilisation)
 - [Configuration](#configuration)
+- [Interface Utilisateur](#interface-utilisateur)
 - [Tests](#tests)
 - [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
 
 ## 🎯 Vue d'ensemble
 
@@ -81,8 +83,17 @@ data/sync/
 └── AutoSyncScheduler.kt        # Planification auto-sync
 
 presentation/screens/sync/
-├── VaultSyncViewModel.kt       # ViewModel UI
-└── SyncSettingsScreen.kt       # Écran de configuration
+├── VaultSyncViewModel.kt          # ViewModel UI
+├── SyncSettingsScreen.kt          # Écran de configuration
+├── ConflictResolutionDialog.kt    # Dialog résolution conflits
+├── WebDAVConfigDialog.kt          # Dialog configuration WebDAV
+├── SyncProgressIndicator.kt       # Indicateurs de progression
+└── SyncHistoryScreen.kt           # Historique synchronisation
+
+data/sync/
+├── SyncPreferencesManager.kt      # Gestion préférences sécurisées
+└── providers/
+    └── CloudProviderFactory.kt    # Factory pattern providers
 
 test/
 └── data/sync/
@@ -575,6 +586,152 @@ cloudVaults.forEach { vaultId ->
 }
 ```
 
+## 🎨 Interface Utilisateur
+
+### ConflictResolutionDialog
+
+Dialog Compose pour résoudre manuellement les conflits de synchronisation.
+
+**Fonctionnalités**:
+- 📊 Comparaison visuelle des versions (locale vs cloud)
+- 🔍 Affichage des métadonnées (nom, appareil, date, taille, checksum)
+- 🎯 Sélection de stratégie (LOCAL_WINS, REMOTE_WINS, NEWEST_WINS)
+- 📝 Description détaillée de chaque stratégie
+- ⚠️ Avertissement sur l'irréversibilité
+
+**Usage**:
+```kotlin
+ConflictResolutionDialog(
+    localVersion = localVaultData,
+    remoteVersion = remoteVaultData,
+    onResolve = { strategy ->
+        viewModel.resolveConflict(strategy, masterPassword)
+    },
+    onDismiss = { /* Close dialog */ }
+)
+```
+
+### WebDAVConfigDialog
+
+Dialog de configuration pour serveurs WebDAV personnalisés.
+
+**Fonctionnalités**:
+- 🌐 Configuration URL serveur
+- 👤 Saisie username/password
+- 🔒 Toggle validation SSL
+- 🧪 Test de connexion
+- 📝 Exemples d'URLs (Nextcloud, ownCloud, Synology)
+- ⚠️ Avertissements de sécurité
+
+**Usage**:
+```kotlin
+WebDAVConfigDialog(
+    onSave = { url, username, password, validateSSL ->
+        viewModel.configureWebDAV(url, username, password, validateSSL)
+    },
+    onTestConnection = { url, username, password, validateSSL ->
+        viewModel.testWebDAVConnection(url, username, password, validateSSL) { success, message ->
+            // Handle result
+        }
+    },
+    onDismiss = { /* Close dialog */ }
+)
+```
+
+### SyncProgressIndicator
+
+Composant animé affichant l'état de la synchronisation.
+
+**États supportés**:
+- 🔄 **Connecting**: Connexion au cloud (icône rotation)
+- ⬆️ **Uploading**: Upload avec barre de progression
+- ⬇️ **Downloading**: Download avec barre de progression
+- ✅ **Verifying**: Vérification d'intégrité (pulsation)
+- ✔️ **Success**: Succès (auto-dismiss après 3s)
+- ❌ **Error**: Erreur avec message
+
+**Usage**:
+```kotlin
+var syncState by remember { mutableStateOf<SyncProgressState>(SyncProgressState.Idle) }
+
+SyncProgressIndicator(
+    state = syncState,
+    onDismiss = { syncState = SyncProgressState.Idle }
+)
+
+// Update state during sync
+syncState = SyncProgressState.Uploading(progress = 0.5f, fileName = "vault.enc")
+```
+
+**Mini Indicator** (pour toolbar):
+```kotlin
+MiniSyncIndicator(isSyncing = true)
+```
+
+### SyncHistoryScreen
+
+Écran complet d'historique avec statistiques détaillées.
+
+**Fonctionnalités**:
+- 📊 Statistiques globales (total, réussies, échouées)
+- 📈 Graphique taux de succès
+- 📜 Liste des synchronisations récentes
+- 🔍 Détails expandables pour chaque sync
+- ⚠️ Affichage des erreurs et conflits
+- 🎨 Codes couleur par statut
+
+**Données affichées**:
+```kotlin
+data class SyncHistoryEntry(
+    val timestamp: Long,
+    val operation: String,
+    val status: SyncHistoryStatus, // SUCCESS, ERROR, CONFLICT
+    val provider: String,
+    val vaultName: String?,
+    val durationMs: Long?,
+    val sizeBytes: Long?,
+    val changesCount: Int?,
+    val errorMessage: String?,
+    val conflictResolution: String?
+)
+```
+
+### SyncPreferencesManager
+
+Gestionnaire de préférences avec stockage sécurisé.
+
+**Fonctionnalités**:
+- 🔐 EncryptedSharedPreferences pour credentials
+- ⚙️ Configuration sync (auto-sync, intervalle, WiFi-only)
+- 📊 Historique et statistiques
+- 🔑 Gestion multi-provider (Google Drive, OneDrive, WebDAV, etc.)
+
+**Configuration**:
+```kotlin
+@Inject lateinit var prefsManager: SyncPreferencesManager
+
+// Auto-sync
+prefsManager.setAutoSyncEnabled(true)
+prefsManager.setSyncInterval(SyncInterval.ONE_HOUR)
+
+// Provider
+prefsManager.setCurrentProvider(CloudProviderType.GOOGLE_DRIVE)
+
+// Credentials (encrypted)
+prefsManager.setGoogleDriveCredentials(accessToken, refreshToken)
+prefsManager.setWebDAVCredentials(url, username, password, validateSSL = true)
+
+// Statistics
+val stats = prefsManager.getSyncStatistics()
+println("Success rate: ${stats.successRate}%")
+```
+
+**Données stockées de manière sécurisée**:
+- ✅ OAuth2 tokens (Google Drive, OneDrive, pCloud, ProtonDrive)
+- ✅ WebDAV credentials (URL, username, password)
+- ✅ Timestamps et historique
+- ✅ Configuration auto-sync
+
 ## 🚀 Roadmap
 
 ### Version 1.0 (Actuelle)
@@ -597,15 +754,23 @@ cloudVaults.forEach { vaultId ->
 - ⏳ Implémentation complète pCloud
 - ⏳ Implémentation complète WebDAV
 
-### Version 1.2 (Future Features)
-- 🔜 UI Dialog résolution de conflits manuel
+### Version 1.2 (UI & UX - EN COURS)
+- ✅ ConflictResolutionDialog pour résolution manuelle
+- ✅ WebDAVConfigDialog pour configuration WebDAV
+- ✅ SyncPreferencesManager pour persistance sécurisée
+- ✅ SyncProgressIndicator avec états animés
+- ✅ SyncHistoryScreen avec statistiques détaillées
+- ✅ CloudProviderFactory pour gestion centralisée
+- ⏳ Intégration complète UI dans l'app
+
+### Version 1.3 (Future Features)
 - 🔜 Sync temps réel avec observers
-- 🔜 Smart merge algorithm
+- 🔜 Smart merge algorithm amélioré
 - 🔜 Delta sync (sync incrémentale)
 - 🔜 Compression des données
-- 🔜 Backup/restore complet
+- 🔜 Backup/restore complet automatisé
 - 🔜 Multi-vault sync simultané
-- 🔜 Statistiques de synchronisation
+- 🔜 Export/Import historique de sync
 
 ### Providers Status
 
