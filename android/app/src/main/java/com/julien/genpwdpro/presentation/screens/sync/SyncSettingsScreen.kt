@@ -54,8 +54,39 @@ fun SyncSettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val activity = LocalContext.current as? Activity
+    val snackbarHostState = remember { SnackbarHostState() }
     var showProviderConfigDialog by remember { mutableStateOf(false) }
     var selectedProviderForConfig by remember { mutableStateOf<ProviderInfo?>(null) }
+
+    // Show authentication result in Snackbar
+    LaunchedEffect(uiState.authenticationResult) {
+        uiState.authenticationResult?.let { result ->
+            val message = when (result) {
+                is AuthenticationResult.Success -> result.message
+                is AuthenticationResult.Failure -> "Erreur: ${result.error}"
+            }
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearAuthenticationResult()
+        }
+    }
+
+    // Show test connection result in Snackbar
+    LaunchedEffect(uiState.testConnectionResult) {
+        uiState.testConnectionResult?.let { result ->
+            val message = when (result) {
+                is TestConnectionResult.Success -> result.message
+                is TestConnectionResult.Failure -> "Erreur: ${result.error}"
+            }
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearTestConnectionResult()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,6 +101,9 @@ fun SyncSettingsScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { padding ->
         Column(
@@ -994,6 +1028,14 @@ class SyncSettingsViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun clearAuthenticationResult() {
+        _uiState.update { it.copy(authenticationResult = null) }
+    }
+
+    fun clearTestConnectionResult() {
+        _uiState.update { it.copy(testConnectionResult = null) }
     }
 
     private suspend fun getMetadata(): LocalSyncMetadata {
