@@ -220,7 +220,7 @@ fun CreateVaultScreen(
                 Text("Définir comme coffre-fort par défaut")
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Avertissement sécurité
             Card(
