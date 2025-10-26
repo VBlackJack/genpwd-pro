@@ -1,8 +1,10 @@
 package com.julien.genpwdpro.data.crypto
 
 import android.util.Base64
-import de.mkammerer.argon2.Argon2
-import de.mkammerer.argon2.Argon2Factory
+import com.goterl.lazysodium.LazySodiumAndroid
+import com.goterl.lazysodium.SodiumAndroid
+import com.goterl.lazysodium.interfaces.PwHash
+import com.sun.jna.NativeLong
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -16,7 +18,7 @@ import javax.inject.Singleton
  * Gestionnaire de cryptographie pour les vaults
  *
  * Utilise:
- * - Argon2id pour la dérivation de clé du master password
+ * - Argon2id (via Lazysodium/libsodium) pour la dérivation de clé du master password
  * - AES-256-GCM pour le chiffrement des données sensibles
  */
 @Singleton
@@ -26,22 +28,28 @@ class VaultCryptoManager @Inject constructor() {
         private const val AES_KEY_SIZE = 256
         private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
-        private const val SALT_LENGTH = 32
-        private const val ARGON2_ITERATIONS = 3
-        private const val ARGON2_MEMORY = 65536 // 64 MB
-        private const val ARGON2_PARALLELISM = 4
+        private const val SALT_LENGTH = 32 // libsodium uses 16 bytes for Argon2, but we keep 32 for compatibility
+
+        // Argon2id parameters (mapped to libsodium constants)
+        // Using MODERATE preset: balance between security and performance
+        private const val ARGON2_OPS_LIMIT = 3L // PwHash.OPSLIMIT_MODERATE value
+        private const val ARGON2_MEM_LIMIT = 268435456L // PwHash.MEMLIMIT_MODERATE value (256 MB)
     }
 
-    private val argon2: Argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id)
+    private val lazySodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
     private val secureRandom = SecureRandom()
 
     /**
      * Paramètres de configuration Argon2id
+     * Note: Lazysodium uses opsLimit and memLimit instead of iterations/memory/parallelism
      */
     data class Argon2Params(
-        val iterations: Int = ARGON2_ITERATIONS,
-        val memory: Int = ARGON2_MEMORY,
-        val parallelism: Int = ARGON2_PARALLELISM
+        val opsLimit: Long = ARGON2_OPS_LIMIT,
+        val memLimit: Long = ARGON2_MEM_LIMIT,
+        // Legacy fields for compatibility with database (VaultEntity)
+        val iterations: Int = 3,
+        val memory: Int = 65536,
+        val parallelism: Int = 4
     )
 
     /**
@@ -86,7 +94,7 @@ class VaultCryptoManager @Inject constructor() {
      * Dérive une clé depuis un master password avec Argon2id
      *
      * @param masterPassword Le mot de passe maître
-     * @param salt Le salt (32 bytes)
+     * @param salt Le salt (32 bytes, only first 16 used for libsodium)
      * @param params Paramètres Argon2id
      * @return Clé dérivée de 32 bytes (256 bits)
      */
@@ -95,46 +103,49 @@ class VaultCryptoManager @Inject constructor() {
         salt: ByteArray,
         params: Argon2Params = Argon2Params()
     ): SecretKey {
-        require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
+        require(salt.size >= PwHash.SALTBYTES) { "Salt must be at least ${PwHash.SALTBYTES} bytes" }
 
-        // Argon2id hash (encoded string)
-        // Note: argon2-jvm library generates salt internally
-        // For custom salt, we use the hash string and extract bytes
-        val hashString = argon2.hash(
-            params.iterations,
-            params.memory,
-            params.parallelism,
-            masterPassword.toCharArray(),
-            Charsets.UTF_8
+        // Lazysodium requires exactly 16 bytes for Argon2 salt
+        val sodiumSalt = salt.copyOf(PwHash.SALTBYTES)
+
+        // Derive 32 bytes for AES-256 key
+        val derivedKey = ByteArray(32)
+        val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
+
+        val success = lazySodium.cryptoPwHash(
+            derivedKey,
+            derivedKey.size,
+            passwordBytes,
+            passwordBytes.size,
+            sodiumSalt,
+            NativeLong(params.opsLimit),
+            NativeLong(params.memLimit),
+            PwHash.Alg.PWHASH_ALG_ARGON2ID13
         )
 
-        // Extract 32 bytes for AES-256 from the hash string
-        // TODO: This should use proper key derivation with custom salt
-        val hash = hashString.toByteArray(Charsets.UTF_8).copyOf(32)
+        require(success) { "Failed to derive key with Argon2id" }
 
-        return SecretKeySpec(hash, "AES")
+        return SecretKeySpec(derivedKey, "AES")
     }
 
     /**
      * Crée un hash Argon2id du master password (pour vérification)
+     * Note: salt parameter kept for API compatibility but cryptoPwHashStr generates its own salt internally
      */
     fun hashPassword(
         masterPassword: String,
         salt: ByteArray,
         params: Argon2Params = Argon2Params()
     ): String {
-        require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
-
-        // Note: argon2-jvm library generates salt internally
-        // The salt parameter is accepted for API compatibility but not used
-        // TODO: Implement proper salt handling for verification
-        return argon2.hash(
-            params.iterations,
-            params.memory,
-            params.parallelism,
-            masterPassword.toCharArray(),
-            Charsets.UTF_8
+        // cryptoPwHashStr returns an encoded hash string compatible with libsodium
+        // Format: $argon2id$v=19$m=65536,t=2,p=1$<salt>$<hash>
+        val hash = lazySodium.cryptoPwHashStr(
+            masterPassword,
+            NativeLong(params.opsLimit),
+            NativeLong(params.memLimit)
         )
+
+        return hash ?: throw IllegalStateException("Failed to hash password with Argon2id")
     }
 
     /**
@@ -142,7 +153,7 @@ class VaultCryptoManager @Inject constructor() {
      */
     fun verifyPassword(hash: String, masterPassword: String): Boolean {
         return try {
-            argon2.verify(hash, masterPassword.toCharArray())
+            lazySodium.cryptoPwHashStrVerify(hash, masterPassword)
         } catch (e: Exception) {
             false
         }
