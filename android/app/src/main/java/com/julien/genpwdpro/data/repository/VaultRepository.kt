@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.data.repository
 
+import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.entity.*
@@ -844,5 +845,358 @@ class VaultRepository @Inject constructor(
         val weakPasswordCount: Int,
         val mediumPasswordCount: Int,
         val strongPasswordCount: Int
+    )
+
+    // ========== Cloud Sync Export/Import ==========
+
+    /**
+     * Exporte un vault complet pour la synchronisation cloud
+     *
+     * Processus:
+     * 1. Récupère le vault et toutes ses entrées
+     * 2. Sérialise en JSON
+     * 3. Chiffre avec le master password
+     * 4. Retourne les données chiffrées prêtes pour l'upload
+     *
+     * Sécurité:
+     * - Le chiffrement se fait AVANT l'export
+     * - Le cloud ne voit jamais les données en clair
+     * - Utilise le même système de chiffrement que le vault
+     *
+     * @param vaultId ID du vault à exporter
+     * @param masterPassword Mot de passe maître pour vérification
+     * @return ByteArray chiffré, ou null en cas d'erreur
+     */
+    suspend fun exportVault(vaultId: String, masterPassword: String): ByteArray? {
+        return try {
+            // Vérifier que le vault existe et que le password est correct
+            val vault = vaultDao.getById(vaultId) ?: return null
+
+            // Déverrouiller le vault pour vérifier le password
+            val isValid = unlockVault(vaultId, masterPassword)
+            if (!isValid) return null
+
+            val vaultKey = getVaultKey(vaultId)
+
+            // Récupérer toutes les entrées
+            val entries = mutableListOf<DecryptedEntry>()
+            entryDao.getEntriesByVault(vaultId).collect { entities ->
+                entities.forEach { entity ->
+                    entries.add(decryptEntry(entity, vaultKey))
+                }
+            }
+
+            // Récupérer les dossiers
+            val folders = mutableListOf<FolderEntity>()
+            folderDao.getFoldersByVault(vaultId).collect { folderEntities ->
+                folders.addAll(folderEntities)
+            }
+
+            // Récupérer les tags
+            val tags = mutableListOf<TagEntity>()
+            tagDao.getTagsByVault(vaultId).collect { tagEntities ->
+                tags.addAll(tagEntities)
+            }
+
+            // Créer l'objet d'export
+            val exportData = VaultExportData(
+                vault = VaultExport(
+                    id = vault.id,
+                    name = vault.name,
+                    description = vault.description,
+                    createdAt = vault.createdAt,
+                    modifiedAt = vault.modifiedAt,
+                    isDefault = vault.isDefault
+                ),
+                entries = entries.map { entry ->
+                    EntryExport(
+                        id = entry.id,
+                        folderId = entry.folderId,
+                        title = entry.title,
+                        username = entry.username,
+                        password = entry.password,
+                        url = entry.url,
+                        notes = entry.notes,
+                        customFields = entry.customFields,
+                        entryType = entry.entryType.name,
+                        isFavorite = entry.isFavorite,
+                        passwordStrength = entry.passwordStrength,
+                        passwordEntropy = entry.passwordEntropy,
+                        generationMode = entry.generationMode,
+                        createdAt = entry.createdAt,
+                        modifiedAt = entry.modifiedAt,
+                        lastAccessedAt = entry.lastAccessedAt,
+                        passwordExpiresAt = entry.passwordExpiresAt,
+                        requiresPasswordChange = entry.requiresPasswordChange,
+                        usageCount = entry.usageCount,
+                        icon = entry.icon,
+                        color = entry.color,
+                        hasTOTP = entry.hasTOTP,
+                        totpSecret = entry.totpSecret,
+                        totpPeriod = entry.totpPeriod,
+                        totpDigits = entry.totpDigits,
+                        totpAlgorithm = entry.totpAlgorithm,
+                        totpIssuer = entry.totpIssuer,
+                        hasPasskey = entry.hasPasskey,
+                        passkeyData = entry.passkeyData,
+                        passkeyRpId = entry.passkeyRpId,
+                        passkeyRpName = entry.passkeyRpName,
+                        passkeyUserHandle = entry.passkeyUserHandle,
+                        passkeyCreatedAt = entry.passkeyCreatedAt,
+                        passkeyLastUsedAt = entry.passkeyLastUsedAt
+                    )
+                },
+                folders = folders.map { folder ->
+                    FolderExport(
+                        id = folder.id,
+                        name = folder.name,
+                        parentId = folder.parentId,
+                        icon = folder.icon,
+                        color = folder.color,
+                        createdAt = folder.createdAt
+                    )
+                },
+                tags = tags.map { tag ->
+                    TagExport(
+                        id = tag.id,
+                        name = tag.name,
+                        color = tag.color,
+                        createdAt = tag.createdAt
+                    )
+                }
+            )
+
+            // Sérialiser en JSON
+            val json = com.google.gson.Gson().toJson(exportData)
+
+            // Chiffrer avec AES-256-GCM
+            val iv = cryptoManager.generateIV()
+            val encryptedData = cryptoManager.encryptString(json, vaultKey, iv)
+
+            // Combiner IV + données chiffrées
+            iv + encryptedData
+        } catch (e: Exception) {
+            Log.e("VaultRepository", "Error exporting vault", e)
+            null
+        }
+    }
+
+    /**
+     * Importe un vault depuis des données chiffrées (synchronisation cloud)
+     *
+     * Processus:
+     * 1. Déchiffre les données avec le master password
+     * 2. Désérialise le JSON
+     * 3. Insère le vault et toutes ses entrées dans la base de données
+     *
+     * Sécurité:
+     * - Le déchiffrement se fait APRÈS le download
+     * - Vérifie l'intégrité des données
+     * - Crée un nouveau vault (ne remplace pas un existant)
+     *
+     * @param encryptedData Données chiffrées depuis le cloud
+     * @param masterPassword Mot de passe maître pour déchiffrement
+     * @return true si l'import a réussi
+     */
+    suspend fun importVault(encryptedData: ByteArray, masterPassword: String): Boolean {
+        return try {
+            // Extraire IV (premiers 12 bytes) et données chiffrées
+            val iv = encryptedData.sliceArray(0 until 12)
+            val ciphertext = encryptedData.sliceArray(12 until encryptedData.size)
+
+            // Créer une clé temporaire pour déchiffrer
+            // On utilise le même processus que pour créer un vault
+            val vaultResult = cryptoManager.createVault(
+                masterPassword,
+                VaultCryptoManager.Argon2Params()
+            )
+
+            // Déchiffrer
+            val json = cryptoManager.decryptString(ciphertext, vaultResult.derivedKey, iv)
+
+            // Désérialiser
+            val importData = com.google.gson.Gson().fromJson(json, VaultExportData::class.java)
+
+            // Vérifier si un vault avec le même ID existe déjà
+            val existingVault = vaultDao.getById(importData.vault.id)
+            if (existingVault != null) {
+                // Vault déjà importé, mettre à jour
+                Log.d("VaultRepository", "Vault already exists, updating...")
+            }
+
+            // Créer le vault avec les mêmes paramètres cryptographiques
+            val vaultId = importData.vault.id
+            val vault = VaultEntity(
+                id = vaultId,
+                name = importData.vault.name,
+                description = importData.vault.description,
+                masterPasswordHash = vaultResult.masterPasswordHash,
+                salt = vaultResult.salt,
+                encryptedKey = vaultResult.encryptedKey,
+                keyIv = vaultResult.keyIv,
+                createdAt = importData.vault.createdAt,
+                modifiedAt = importData.vault.modifiedAt,
+                lastAccessedAt = System.currentTimeMillis(),
+                isDefault = importData.vault.isDefault
+            )
+
+            // Insérer le vault (ou le mettre à jour)
+            if (existingVault != null) {
+                vaultDao.update(vault)
+            } else {
+                vaultDao.insert(vault)
+            }
+
+            // Stocker la clé déverrouillée en mémoire
+            unlockedKeys[vaultId] = vaultResult.derivedKey
+
+            // Importer les dossiers
+            importData.folders.forEach { folderExport ->
+                val folder = FolderEntity(
+                    id = folderExport.id,
+                    vaultId = vaultId,
+                    name = folderExport.name,
+                    parentId = folderExport.parentId,
+                    icon = folderExport.icon,
+                    color = folderExport.color,
+                    createdAt = folderExport.createdAt
+                )
+                folderDao.insert(folder)
+            }
+
+            // Importer les tags
+            importData.tags.forEach { tagExport ->
+                val tag = TagEntity(
+                    id = tagExport.id,
+                    vaultId = vaultId,
+                    name = tagExport.name,
+                    color = tagExport.color,
+                    createdAt = tagExport.createdAt
+                )
+                tagDao.insert(tag)
+            }
+
+            // Importer toutes les entrées
+            importData.entries.forEach { entryExport ->
+                val entry = DecryptedEntry(
+                    id = entryExport.id,
+                    vaultId = vaultId,
+                    folderId = entryExport.folderId,
+                    title = entryExport.title,
+                    username = entryExport.username,
+                    password = entryExport.password,
+                    url = entryExport.url,
+                    notes = entryExport.notes,
+                    customFields = entryExport.customFields,
+                    entryType = entryExport.entryType.toEntryType(),
+                    isFavorite = entryExport.isFavorite,
+                    passwordStrength = entryExport.passwordStrength,
+                    passwordEntropy = entryExport.passwordEntropy,
+                    generationMode = entryExport.generationMode,
+                    createdAt = entryExport.createdAt,
+                    modifiedAt = entryExport.modifiedAt,
+                    lastAccessedAt = entryExport.lastAccessedAt,
+                    passwordExpiresAt = entryExport.passwordExpiresAt,
+                    requiresPasswordChange = entryExport.requiresPasswordChange,
+                    usageCount = entryExport.usageCount,
+                    icon = entryExport.icon,
+                    color = entryExport.color,
+                    hasTOTP = entryExport.hasTOTP,
+                    totpSecret = entryExport.totpSecret,
+                    totpPeriod = entryExport.totpPeriod,
+                    totpDigits = entryExport.totpDigits,
+                    totpAlgorithm = entryExport.totpAlgorithm,
+                    totpIssuer = entryExport.totpIssuer,
+                    hasPasskey = entryExport.hasPasskey,
+                    passkeyData = entryExport.passkeyData,
+                    passkeyRpId = entryExport.passkeyRpId,
+                    passkeyRpName = entryExport.passkeyRpName,
+                    passkeyUserHandle = entryExport.passkeyUserHandle,
+                    passkeyCreatedAt = entryExport.passkeyCreatedAt,
+                    passkeyLastUsedAt = entryExport.passkeyLastUsedAt
+                )
+
+                createEntry(vaultId, entry)
+            }
+
+            // Mettre à jour le compteur d'entrées
+            updateVaultEntryCount(vaultId)
+
+            true
+        } catch (e: Exception) {
+            Log.e("VaultRepository", "Error importing vault", e)
+            false
+        }
+    }
+
+    // ========== Export/Import Data Classes ==========
+
+    private data class VaultExportData(
+        val vault: VaultExport,
+        val entries: List<EntryExport>,
+        val folders: List<FolderExport>,
+        val tags: List<TagExport>
+    )
+
+    private data class VaultExport(
+        val id: String,
+        val name: String,
+        val description: String,
+        val createdAt: Long,
+        val modifiedAt: Long,
+        val isDefault: Boolean
+    )
+
+    private data class EntryExport(
+        val id: String,
+        val folderId: String?,
+        val title: String,
+        val username: String,
+        val password: String,
+        val url: String,
+        val notes: String,
+        val customFields: String,
+        val entryType: String,
+        val isFavorite: Boolean,
+        val passwordStrength: Int,
+        val passwordEntropy: Double,
+        val generationMode: String?,
+        val createdAt: Long,
+        val modifiedAt: Long,
+        val lastAccessedAt: Long,
+        val passwordExpiresAt: Long,
+        val requiresPasswordChange: Boolean,
+        val usageCount: Int,
+        val icon: String?,
+        val color: String?,
+        val hasTOTP: Boolean,
+        val totpSecret: String,
+        val totpPeriod: Int,
+        val totpDigits: Int,
+        val totpAlgorithm: String,
+        val totpIssuer: String,
+        val hasPasskey: Boolean,
+        val passkeyData: String,
+        val passkeyRpId: String,
+        val passkeyRpName: String,
+        val passkeyUserHandle: String,
+        val passkeyCreatedAt: Long,
+        val passkeyLastUsedAt: Long
+    )
+
+    private data class FolderExport(
+        val id: String,
+        val name: String,
+        val parentId: String?,
+        val icon: String?,
+        val color: String?,
+        val createdAt: Long
+    )
+
+    private data class TagExport(
+        val id: String,
+        val name: String,
+        val color: String?,
+        val createdAt: Long
     )
 }

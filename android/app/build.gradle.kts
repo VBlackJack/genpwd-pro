@@ -116,6 +116,17 @@ dependencies {
     implementation("de.mkammerer:argon2-jvm:2.11") // Argon2id for master password
     implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
 
+    // Google Drive API for Cloud Sync
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20230520-2.0.0")
+    implementation("com.google.http-client:google-http-client-android:1.43.3")
+    implementation("com.google.api-client:google-api-client-android:2.2.0")
+
+    // WorkManager for Auto-Sync
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
+
     // CameraX for QR scanning
     implementation("androidx.camera:camera-camera2:1.3.1")
     implementation("androidx.camera:camera-lifecycle:1.3.1")
