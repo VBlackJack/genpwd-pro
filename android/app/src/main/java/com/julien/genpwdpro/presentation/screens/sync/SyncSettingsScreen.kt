@@ -41,6 +41,7 @@ import javax.inject.Inject
 @Composable
 fun SyncSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToHistory: () -> Unit = {},
     onNavigateToAutofill: () -> Unit = {},
     onNavigateToSecurity: () -> Unit = {},
     viewModel: SyncSettingsViewModel = hiltViewModel()
@@ -119,7 +120,11 @@ fun SyncSettingsScreen(
             }
 
             // Quick access to related settings
-            QuickAccessCard(onNavigateToAutofill, onNavigateToSecurity)
+            QuickAccessCard(
+                onNavigateToHistory = onNavigateToHistory,
+                onNavigateToAutofill = onNavigateToAutofill,
+                onNavigateToSecurity = onNavigateToSecurity
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -609,6 +614,7 @@ private fun formatTimestamp(timestamp: Long): String {
  */
 @Composable
 private fun QuickAccessCard(
+    onNavigateToHistory: () -> Unit,
     onNavigateToAutofill: () -> Unit,
     onNavigateToSecurity: () -> Unit
 ) {
@@ -622,6 +628,20 @@ private fun QuickAccessCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+
+            // Sync History button
+            OutlinedButton(
+                onClick = onNavigateToHistory,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Default.History,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Historique de Synchronisation")
+            }
 
             // Security button
             OutlinedButton(

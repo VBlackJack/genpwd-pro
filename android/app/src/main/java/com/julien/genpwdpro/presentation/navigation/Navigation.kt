@@ -19,6 +19,7 @@ import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.security.SecuritySettingsScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
+import com.julien.genpwdpro.presentation.screens.sync.SyncHistoryScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -35,6 +36,7 @@ sealed class Screen(val route: String) {
     object Analyzer : Screen("analyzer")
     object CustomPhrase : Screen("custom_phrase")
     object SyncSettings : Screen("sync_settings")
+    object SyncHistory : Screen("sync_history")
     object AutofillSettings : Screen("autofill_settings")
     object SecuritySettings : Screen("security_settings")
 }
@@ -131,12 +133,25 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
+                onNavigateToHistory = {
+                    navController.navigate(Screen.SyncHistory.route)
+                },
                 onNavigateToAutofill = {
                     navController.navigate(Screen.AutofillSettings.route)
                 },
                 onNavigateToSecurity = {
                     navController.navigate(Screen.SecuritySettings.route)
                 }
+            )
+        }
+
+        // Écran Sync History
+        composable(Screen.SyncHistory.route) {
+            SyncHistoryScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+                // Statistics and history will be retrieved from the screen's ViewModel
             )
         }
 

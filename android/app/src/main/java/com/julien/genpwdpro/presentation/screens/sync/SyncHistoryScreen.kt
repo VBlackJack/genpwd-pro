@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.sync.SyncStatistics
 import java.text.SimpleDateFormat
 import java.util.*
@@ -33,9 +34,14 @@ import java.util.*
 @Composable
 fun SyncHistoryScreen(
     onNavigateBack: () -> Unit,
-    statistics: SyncStatistics = SyncStatistics(0, 0, 0, null, 0L),
-    history: List<SyncHistoryEntry> = emptyList()
+    viewModel: VaultSyncViewModel = hiltViewModel()
 ) {
+    // Récupère les statistiques de synchronisation
+    val statistics = remember { viewModel.getSyncStatistics() }
+
+    // Pour l'instant, l'historique détaillé n'est pas encore implémenté
+    // Il sera ajouté dans une future mise à jour
+    val history: List<SyncHistoryEntry> = emptyList()
     Scaffold(
         topBar = {
             TopAppBar(
