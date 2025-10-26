@@ -113,8 +113,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     // Cryptography
-    implementation("com.goterl:lazysodium-android:5.1.0@aar") // Argon2id + libsodium for Android
-    implementation("net.java.dev.jna:jna:5.13.0@aar") // Required by Lazysodium
+    // Lazysodium for Argon2id (Android ARM compatible - replaces argon2-jvm)
+    implementation("com.goterl:lazysodium-android:5.1.0@aar")
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
 
     // CameraX for QR scanning

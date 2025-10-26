@@ -18,7 +18,7 @@ import javax.inject.Singleton
  * Gestionnaire de cryptographie pour les vaults
  *
  * Utilise:
- * - Argon2id (via Lazysodium/libsodium) pour la dérivation de clé du master password
+ * - Argon2id (via Lazysodium) pour la dérivation de clé du master password
  * - AES-256-GCM pour le chiffrement des données sensibles
  */
 @Singleton
@@ -28,12 +28,12 @@ class VaultCryptoManager @Inject constructor() {
         private const val AES_KEY_SIZE = 256
         private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
-        private const val SALT_LENGTH = 32 // libsodium uses 16 bytes for Argon2, but we keep 32 for compatibility
-
-        // Argon2id parameters (mapped to libsodium constants)
-        // Using MODERATE preset: balance between security and performance
-        private const val ARGON2_OPS_LIMIT = 3L // PwHash.OPSLIMIT_MODERATE value
-        private const val ARGON2_MEM_LIMIT = 268435456L // PwHash.MEMLIMIT_MODERATE value (256 MB)
+        private const val SALT_LENGTH = 32 // On garde 32 bytes pour compatibilité DB
+        private const val LIBSODIUM_SALT_LENGTH = 16 // libsodium utilise 16 bytes
+        private const val KEY_LENGTH = 32 // AES-256 = 32 bytes
+        private const val ARGON2_ITERATIONS = 3
+        private const val ARGON2_MEMORY = 65536 // 64 MB (en KB pour libsodium)
+        private const val ARGON2_PARALLELISM = 4
     }
 
     private val lazySodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
@@ -41,15 +41,11 @@ class VaultCryptoManager @Inject constructor() {
 
     /**
      * Paramètres de configuration Argon2id
-     * Note: Lazysodium uses opsLimit and memLimit instead of iterations/memory/parallelism
      */
     data class Argon2Params(
-        val opsLimit: Long = ARGON2_OPS_LIMIT,
-        val memLimit: Long = ARGON2_MEM_LIMIT,
-        // Legacy fields for compatibility with database (VaultEntity)
-        val iterations: Int = 3,
-        val memory: Int = 65536,
-        val parallelism: Int = 4
+        val iterations: Int = ARGON2_ITERATIONS,
+        val memory: Int = ARGON2_MEMORY,
+        val parallelism: Int = ARGON2_PARALLELISM
     )
 
     /**
@@ -93,8 +89,10 @@ class VaultCryptoManager @Inject constructor() {
     /**
      * Dérive une clé depuis un master password avec Argon2id
      *
+     * ✅ Migré vers Lazysodium-Android (compatible ARM)
+     *
      * @param masterPassword Le mot de passe maître
-     * @param salt Le salt (32 bytes, only first 16 used for libsodium)
+     * @param salt Le salt (32 bytes, on utilise les 16 premiers pour libsodium)
      * @param params Paramètres Argon2id
      * @return Clé dérivée de 32 bytes (256 bits)
      */
@@ -103,56 +101,68 @@ class VaultCryptoManager @Inject constructor() {
         salt: ByteArray,
         params: Argon2Params = Argon2Params()
     ): SecretKey {
-        require(salt.size >= PwHash.SALTBYTES) { "Salt must be at least ${PwHash.SALTBYTES} bytes" }
+        require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
 
-        // Lazysodium requires exactly 16 bytes for Argon2 salt
-        val sodiumSalt = salt.copyOf(PwHash.SALTBYTES)
+        // libsodium utilise 16 bytes de salt, on prend les 16 premiers de notre salt de 32 bytes
+        val libsodiumSalt = salt.copyOf(LIBSODIUM_SALT_LENGTH)
 
-        // Derive 32 bytes for AES-256 key
-        val derivedKey = ByteArray(32)
-        val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
+        // Buffer pour la clé dérivée (32 bytes pour AES-256)
+        val keyBytes = ByteArray(KEY_LENGTH)
 
-        val success = lazySodium.cryptoPwHash(
-            derivedKey,
-            derivedKey.size,
-            passwordBytes,
-            passwordBytes.size,
-            sodiumSalt,
-            NativeLong(params.opsLimit),
-            NativeLong(params.memLimit),
+        // Dérivation de clé avec Argon2id
+        // cryptoPwHash retourne un int (0 = succès, -1 = erreur)
+        val result = lazySodium.cryptoPwHash(
+            keyBytes,
+            keyBytes.size.toLong(),
+            masterPassword.toByteArray(),
+            masterPassword.length.toLong(),
+            libsodiumSalt,
+            params.iterations.toLong(),
+            params.memory.toLong(),
             PwHash.Alg.PWHASH_ALG_ARGON2ID13
         )
 
-        require(success) { "Failed to derive key with Argon2id" }
+        if (result != 0) {
+            throw IllegalStateException("Argon2id key derivation failed")
+        }
 
-        return SecretKeySpec(derivedKey, "AES")
+        return SecretKeySpec(keyBytes, "AES")
     }
 
     /**
      * Crée un hash Argon2id du master password (pour vérification)
-     * Note: salt parameter kept for API compatibility but cryptoPwHashStr generates its own salt internally
+     *
+     * ✅ Migré vers Lazysodium-Android (compatible ARM)
+     *
+     * Note: Le paramètre salt est conservé pour compatibilité API mais cryptoPwHashStr
+     * génère son propre salt interne (inclus dans le hash retourné au format PHC)
      */
     fun hashPassword(
         masterPassword: String,
         salt: ByteArray,
         params: Argon2Params = Argon2Params()
     ): String {
-        // cryptoPwHashStr returns an encoded hash string compatible with libsodium
-        // Format: $argon2id$v=19$m=65536,t=2,p=1$<salt>$<hash>
-        val hash = lazySodium.cryptoPwHashStr(
+        require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
+
+        // cryptoPwHashStr génère un hash au format PHC avec salt inclus
+        // Le format est: $argon2id$v=19$m=65536,t=3,p=4$[salt]$[hash]
+        val hashResult = lazySodium.cryptoPwHashStr(
             masterPassword,
-            NativeLong(params.opsLimit),
-            NativeLong(params.memLimit)
+            params.iterations.toLong(),
+            params.memory.toLong()
         )
 
-        return hash ?: throw IllegalStateException("Failed to hash password with Argon2id")
+        return hashResult ?: throw IllegalStateException("Argon2id password hashing failed")
     }
 
     /**
      * Vérifie un master password contre son hash
+     *
+     * ✅ Migré vers Lazysodium-Android (compatible ARM)
      */
     fun verifyPassword(hash: String, masterPassword: String): Boolean {
         return try {
+            // cryptoPwHashStrVerify retourne true si le password correspond au hash
             lazySodium.cryptoPwHashStrVerify(hash, masterPassword)
         } catch (e: Exception) {
             false
