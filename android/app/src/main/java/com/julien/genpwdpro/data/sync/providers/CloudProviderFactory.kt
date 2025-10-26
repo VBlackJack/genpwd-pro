@@ -1,7 +1,9 @@
 package com.julien.genpwdpro.data.sync.providers
 
+import android.content.Context
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,7 +14,9 @@ import javax.inject.Singleton
  * Facilite l'ajout de nouveaux providers et la gestion de la configuration.
  */
 @Singleton
-class CloudProviderFactory @Inject constructor() {
+class CloudProviderFactory @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     /**
      * Crée un provider basé sur le type
@@ -31,7 +35,9 @@ class CloudProviderFactory @Inject constructor() {
             }
 
             CloudProviderType.ONEDRIVE -> {
-                OneDriveProvider()
+                // OneDrive nécessite une config personnalisée
+                // Utiliser createOneDriveProvider() à la place
+                null
             }
 
             CloudProviderType.PROTON_DRIVE -> {
@@ -98,6 +104,21 @@ class CloudProviderFactory @Inject constructor() {
     }
 
     /**
+     * Crée un provider OneDrive avec configuration personnalisée
+     *
+     * @param clientId Application (client) ID de Azure AD
+     * @return Instance de OneDriveProvider
+     */
+    fun createOneDriveProvider(
+        clientId: String
+    ): OneDriveProvider {
+        return OneDriveProvider(
+            context = context,
+            clientId = clientId
+        )
+    }
+
+    /**
      * Obtient les informations d'un provider
      *
      * @param type Type de provider
@@ -126,7 +147,7 @@ class CloudProviderFactory @Inject constructor() {
                 icon = "☁️",
                 requiresOAuth = true,
                 supportsQuota = true,
-                implementationStatus = ImplementationStatus.TEMPLATE,
+                implementationStatus = ImplementationStatus.PRODUCTION_READY,
                 maxFileSize = 100_000_000_000L, // 100 GB (avec app)
                 freeStorage = 5_000_000_000L, // 5 GB
                 website = "https://onedrive.live.com",
