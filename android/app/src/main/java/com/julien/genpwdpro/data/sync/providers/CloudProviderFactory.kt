@@ -2,6 +2,7 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.content.Context
 import com.julien.genpwdpro.data.sync.CloudProvider
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -12,10 +13,12 @@ import javax.inject.Singleton
  *
  * Centralise la création de tous les providers cloud supportés.
  * Facilite l'ajout de nouveaux providers et la gestion de la configuration.
+ * Injecte automatiquement le ProviderCredentialManager pour la persistance des tokens.
  */
 @Singleton
 class CloudProviderFactory @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val credentialManager: ProviderCredentialManager
 ) {
 
     /**
@@ -101,7 +104,8 @@ class CloudProviderFactory @Inject constructor(
         return PCloudProvider(
             appKey = appKey,
             appSecret = appSecret,
-            region = region
+            region = region,
+            credentialManager = credentialManager
         )
     }
 
@@ -133,7 +137,8 @@ class CloudProviderFactory @Inject constructor(
     ): ProtonDriveProvider {
         return ProtonDriveProvider(
             clientId = clientId,
-            clientSecret = clientSecret
+            clientSecret = clientSecret,
+            credentialManager = credentialManager
         )
     }
 

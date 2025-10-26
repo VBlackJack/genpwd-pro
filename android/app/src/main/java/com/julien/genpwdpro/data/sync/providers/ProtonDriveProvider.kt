@@ -60,10 +60,12 @@ import kotlin.coroutines.resume
  *
  * @param clientId Client ID Proton OAuth2
  * @param clientSecret Client Secret Proton OAuth2
+ * @param credentialManager Gestionnaire de credentials (optionnel, pour persistance)
  */
 class ProtonDriveProvider(
     private val clientId: String,
-    private val clientSecret: String
+    private val clientSecret: String,
+    private val credentialManager: com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager? = null
 ) : CloudProvider {
 
     companion object {
@@ -252,6 +254,17 @@ class ProtonDriveProvider(
     private var shareId: String? = null // Dossier GenPwdPro
     private var authCallback: ((Boolean) -> Unit)? = null
 
+    init {
+        // Charger le token sauvegardé au démarrage
+        credentialManager?.let {
+            accessToken = it.getAccessToken(CloudProviderType.PROTON_DRIVE)
+            refreshToken = it.getRefreshToken(CloudProviderType.PROTON_DRIVE)
+            if (accessToken != null) {
+                Log.d(TAG, "Loaded saved access token")
+            }
+        }
+    }
+
     // PKCE state
     private var codeVerifier: String? = null
     private var codeChallenge: String? = null
@@ -411,6 +424,13 @@ class ProtonDriveProvider(
                 accessToken = response.accessToken
                 refreshToken = response.refreshToken
                 Log.d(TAG, "Access token obtained successfully")
+
+                // Sauvegarder les tokens de manière sécurisée
+                credentialManager?.saveAccessToken(
+                    providerType = CloudProviderType.PROTON_DRIVE,
+                    accessToken = response.accessToken!!,
+                    refreshToken = response.refreshToken
+                )
 
                 // Initialiser volume et share
                 initializeVolumeAndShare()

@@ -38,6 +38,7 @@ import kotlin.coroutines.resume
  * - ✅ Métadonnées et quota
  * - ✅ Stockage sécurisé européen
  * - ✅ Support multi-régions (EU/US)
+ * - ✅ Persistance sécurisée des credentials
  *
  * Configuration requise:
  * 1. Compte développeur pCloud: https://docs.pcloud.com/
@@ -48,11 +49,13 @@ import kotlin.coroutines.resume
  * @param appKey Clé d'application pCloud
  * @param appSecret Secret d'application pCloud
  * @param region Région serveur (EU ou US)
+ * @param credentialManager Gestionnaire de credentials (optionnel, pour persistance)
  */
 class PCloudProvider(
     private val appKey: String,
     private val appSecret: String,
-    private val region: PCloudRegion = PCloudRegion.EU
+    private val region: PCloudRegion = PCloudRegion.EU,
+    private val credentialManager: com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager? = null
 ) : CloudProvider {
 
     companion object {
@@ -214,6 +217,16 @@ class PCloudProvider(
     private var genPwdFolderId: Long? = null
     private var authCallback: ((Boolean) -> Unit)? = null
 
+    init {
+        // Charger le token sauvegardé au démarrage
+        credentialManager?.let {
+            accessToken = it.getAccessToken(CloudProviderType.PCLOUD)
+            if (accessToken != null) {
+                Log.d(TAG, "Loaded saved access token")
+            }
+        }
+    }
+
     // HTTP Client with logging
     private val httpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -326,6 +339,12 @@ class PCloudProvider(
             if (response.result == 0 && !response.accessToken.isNullOrEmpty()) {
                 accessToken = response.accessToken
                 Log.d(TAG, "Access token obtained successfully")
+
+                // Sauvegarder le token de manière sécurisée
+                credentialManager?.saveAccessToken(
+                    providerType = CloudProviderType.PCLOUD,
+                    accessToken = response.accessToken!!
+                )
 
                 // Initialiser le dossier GenPwdPro
                 ensureFolder()
