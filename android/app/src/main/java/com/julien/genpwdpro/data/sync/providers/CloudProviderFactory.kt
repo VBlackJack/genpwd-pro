@@ -42,6 +42,12 @@ class CloudProviderFactory @Inject constructor() {
                 PCloudProvider()
             }
 
+            CloudProviderType.WEBDAV -> {
+                // WebDAV nécessite une config personnalisée
+                // Utiliser createWebDAVProvider() à la place
+                null
+            }
+
             CloudProviderType.NONE -> null
         }
     }
@@ -133,6 +139,20 @@ class CloudProviderFactory @Inject constructor() {
                 privacyLevel = PrivacyLevel.HIGH
             )
 
+            CloudProviderType.WEBDAV -> ProviderInfo(
+                type = type,
+                name = "WebDAV",
+                description = "Serveur WebDAV personnalisé (Nextcloud, ownCloud, Synology, etc.)",
+                icon = "🌐",
+                requiresOAuth = false,
+                supportsQuota = true, // Implémenté pour Nextcloud/ownCloud
+                implementationStatus = ImplementationStatus.PRODUCTION_READY,
+                maxFileSize = Long.MAX_VALUE, // Dépend du serveur
+                freeStorage = 0L, // Dépend du serveur
+                website = "https://en.wikipedia.org/wiki/WebDAV",
+                privacyLevel = PrivacyLevel.MAXIMUM // Self-hosted = contrôle total
+            )
+
             CloudProviderType.NONE -> ProviderInfo(
                 type = type,
                 name = "Aucun",
@@ -147,25 +167,6 @@ class CloudProviderFactory @Inject constructor() {
                 privacyLevel = PrivacyLevel.NOT_APPLICABLE
             )
         }
-    }
-
-    /**
-     * Obtient les informations pour WebDAV
-     */
-    fun getWebDAVInfo(): ProviderInfo {
-        return ProviderInfo(
-            type = CloudProviderType.NONE, // Pas dans l'enum
-            name = "WebDAV",
-            description = "Serveur WebDAV personnalisé (Nextcloud, ownCloud, etc.)",
-            icon = "🌐",
-            requiresOAuth = false,
-            supportsQuota = false, // Dépend du serveur
-            implementationStatus = ImplementationStatus.TEMPLATE,
-            maxFileSize = Long.MAX_VALUE,
-            freeStorage = 0L, // Dépend du serveur
-            website = "",
-            privacyLevel = PrivacyLevel.CONFIGURABLE
-        )
     }
 
     /**

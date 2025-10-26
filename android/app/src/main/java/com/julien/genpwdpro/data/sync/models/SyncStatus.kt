@@ -20,6 +20,7 @@ enum class CloudProviderType {
     ONEDRIVE,
     PROTON_DRIVE,
     PCLOUD,
+    WEBDAV,      // Serveur WebDAV personnalisé
     NONE
 }
 
