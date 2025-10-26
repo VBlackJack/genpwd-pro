@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme for Compose - minimal wrapper theme -->
+    <style name="Theme.GenPwdPro" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- Navigation bar color -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Window background -->
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>
