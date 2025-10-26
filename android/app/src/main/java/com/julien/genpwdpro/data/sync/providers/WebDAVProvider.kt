@@ -356,7 +356,7 @@ class WebDAVProvider(
     /**
      * Liste tous les vaults synchronisés
      */
-    override suspend fun listVaults(): List<String> = withContext(Dispatchers.IO) {
+    override suspend fun listVaults(): List<CloudFileMetadata> = withContext(Dispatchers.IO) {
         try {
             val folderPath = ensureFolderExists()
 
@@ -392,10 +392,17 @@ class WebDAVProvider(
                 fileNames
                     .filter { it.startsWith("vault_") && it.endsWith(".enc") }
                     .mapNotNull { fileName ->
-                        fileName
+                        val vaultId = fileName
                             .removePrefix("vault_")
                             .removeSuffix(".enc")
                             .takeIf { it.isNotBlank() }
+
+                        if (vaultId != null) {
+                            // Récupérer les métadonnées de chaque vault
+                            getCloudMetadata(vaultId)
+                        } else {
+                            null
+                        }
                     }
             }
         } catch (e: Exception) {

@@ -127,7 +127,18 @@ fun AppNavGraph(
         // ========== Custom Phrase ==========
         composable(Screen.CustomPhrase.route) {
             CustomPhraseScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onSaveAndGenerate = { password ->
+                    // Vérifier si un vault est déverrouillé
+                    val vaultId = sessionManager.getCurrentVaultId()
+                    if (vaultId != null) {
+                        // Naviguer vers CreateEntry avec le mot de passe
+                        navController.navigate(
+                            Screen.CreateEntry.createRoute(vaultId) +
+                            "&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+                        )
+                    }
+                }
             )
         }
 

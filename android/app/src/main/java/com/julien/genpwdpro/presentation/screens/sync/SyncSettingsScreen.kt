@@ -240,9 +240,10 @@ fun SyncSettingsScreen(
     }
 
     // Show conflict resolution dialog
-    if (uiState.currentConflict != null) {
+    val currentConflict = uiState.currentConflict
+    if (currentConflict != null) {
         ConflictResolutionDialog(
-            conflict = uiState.currentConflict,
+            conflict = currentConflict,
             onResolve = { strategy ->
                 viewModel.resolveConflict(strategy)
             },
