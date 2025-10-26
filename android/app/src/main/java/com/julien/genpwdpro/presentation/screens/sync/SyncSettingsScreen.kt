@@ -25,14 +25,19 @@ import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.sync.*
 import android.app.Activity
+import android.content.Context
+import android.util.Log
+import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -831,7 +836,8 @@ private fun QuickAccessCard(
 class SyncSettingsViewModel @Inject constructor(
     private val syncManager: SyncManager,
     private val providerFactory: CloudProviderFactory,
-    private val cloudRepository: CloudProviderSyncRepository
+    private val cloudRepository: CloudProviderSyncRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -1005,17 +1011,109 @@ class SyncSettingsViewModel @Inject constructor(
 
     fun syncNow() {
         viewModelScope.launch {
-            _uiState.update { it.copy(status = SyncStatus.SYNCING) }
-            // TODO: Implémenter sync complète
-            kotlinx.coroutines.delay(2000)
-            _uiState.update { it.copy(status = SyncStatus.SUCCESS) }
+            try {
+                _uiState.update { it.copy(status = SyncStatus.SYNCING) }
+                Log.d("SyncSettingsViewModel", "Starting full sync...")
+
+                // Initialize SyncManager (ensures encryption key is ready)
+                syncManager.initialize()
+
+                // Get current settings
+                val settingsDataStore = SettingsDataStore(context)
+                val currentSettings = settingsDataStore.settingsFlow.first()
+
+                // Perform full bidirectional sync
+                val result = syncManager.performFullSync(currentSettings)
+
+                when (result) {
+                    is SyncResult.Success -> {
+                        Log.d("SyncSettingsViewModel", "Sync successful")
+                        _uiState.update {
+                            it.copy(
+                                status = SyncStatus.SUCCESS,
+                                metadata = syncManager.getMetadata()
+                            )
+                        }
+                    }
+                    is SyncResult.Conflict -> {
+                        Log.w("SyncSettingsViewModel", "Conflict detected during sync")
+                        _uiState.update {
+                            it.copy(
+                                status = SyncStatus.CONFLICT,
+                                metadata = syncManager.getMetadata().copy(
+                                    conflictCount = 1
+                                )
+                            )
+                        }
+                        // Auto-resolve with NEWEST_WINS strategy
+                        val resolved = syncManager.resolveConflict(
+                            conflict = result,
+                            strategy = ConflictResolutionStrategy.NEWEST_WINS
+                        )
+                        Log.d("SyncSettingsViewModel", "Conflict auto-resolved with NEWEST_WINS")
+
+                        // Apply resolved data if it's remote (newer)
+                        if (resolved == result.remoteData) {
+                            val remoteSettings = syncManager.downloadSettings()
+                            if (remoteSettings != null) {
+                                settingsDataStore.saveSettings(remoteSettings)
+                                Log.d("SyncSettingsViewModel", "Applied remote settings")
+                            }
+                        }
+
+                        _uiState.update { it.copy(status = SyncStatus.SUCCESS) }
+                    }
+                    is SyncResult.Error -> {
+                        Log.e("SyncSettingsViewModel", "Sync error: ${result.message}")
+                        _uiState.update {
+                            it.copy(
+                                status = SyncStatus.ERROR,
+                                metadata = syncManager.getMetadata().copy(
+                                    syncErrors = listOf(result.message)
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SyncSettingsViewModel", "Sync failed with exception", e)
+                _uiState.update {
+                    it.copy(
+                        status = SyncStatus.ERROR,
+                        metadata = syncManager.getMetadata().copy(
+                            syncErrors = listOf(e.message ?: "Erreur inconnue")
+                        )
+                    )
+                }
+            }
         }
     }
 
     fun testConnection() {
         viewModelScope.launch {
-            val result = syncManager.testConnection()
-            // TODO: Afficher résultat
+            _uiState.update { it.copy(isTestingConnection = true) }
+
+            try {
+                val result = syncManager.testConnection()
+
+                _uiState.update {
+                    it.copy(
+                        isTestingConnection = false,
+                        testConnectionResult = if (result) {
+                            TestConnectionResult.Success("Connexion réussie!")
+                        } else {
+                            TestConnectionResult.Failure("Impossible de se connecter au cloud")
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isTestingConnection = false,
+                        testConnectionResult = TestConnectionResult.Failure(e.message ?: "Erreur inconnue")
+                    )
+                }
+            }
         }
     }
 
