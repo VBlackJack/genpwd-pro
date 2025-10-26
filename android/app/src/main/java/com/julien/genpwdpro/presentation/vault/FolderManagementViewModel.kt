@@ -33,7 +33,7 @@ class FolderManagementViewModel @Inject constructor(
     fun loadFolders(vaultId: String) {
         viewModelScope.launch {
             try {
-                folderDao.getFoldersForVault(vaultId).collect { folders ->
+                folderDao.getFoldersByVault(vaultId).collect { folders ->
                     // Construire la hiérarchie
                     val hierarchy = buildHierarchy(folders)
                     _uiState.value = FolderUiState.Success(folders, hierarchy)
@@ -64,7 +64,7 @@ class FolderManagementViewModel @Inject constructor(
                     icon = icon,
                     color = color,
                     createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
+                    modifiedAt = System.currentTimeMillis()
                 )
                 folderDao.insert(folder)
             } catch (e: Exception) {
@@ -79,7 +79,7 @@ class FolderManagementViewModel @Inject constructor(
     fun updateFolder(folder: FolderEntity) {
         viewModelScope.launch {
             try {
-                folderDao.update(folder.copy(updatedAt = System.currentTimeMillis()))
+                folderDao.update(folder.copy(modifiedAt = System.currentTimeMillis()))
             } catch (e: Exception) {
                 _uiState.value = FolderUiState.Error(e.message ?: "Erreur de mise à jour")
             }
@@ -94,7 +94,7 @@ class FolderManagementViewModel @Inject constructor(
     fun deleteFolder(folderId: String) {
         viewModelScope.launch {
             try {
-                folderDao.delete(folderId)
+                folderDao.deleteById(folderId)
             } catch (e: Exception) {
                 _uiState.value = FolderUiState.Error(e.message ?: "Erreur de suppression")
             }
@@ -107,7 +107,7 @@ class FolderManagementViewModel @Inject constructor(
     fun moveFolder(folderId: String, newParentId: String?) {
         viewModelScope.launch {
             try {
-                val folder = folderDao.getFolderById(folderId)
+                val folder = folderDao.getById(folderId)
                 if (folder != null) {
                     // Vérifier qu'on ne crée pas une boucle
                     if (newParentId != null && isDescendant(newParentId, folderId)) {
@@ -118,7 +118,7 @@ class FolderManagementViewModel @Inject constructor(
                     folderDao.update(
                         folder.copy(
                             parentFolderId = newParentId,
-                            updatedAt = System.currentTimeMillis()
+                            modifiedAt = System.currentTimeMillis()
                         )
                     )
                 }

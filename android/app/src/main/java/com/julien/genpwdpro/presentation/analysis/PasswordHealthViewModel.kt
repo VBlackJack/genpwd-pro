@@ -49,7 +49,7 @@ class PasswordHealthViewModel @Inject constructor(
 
                 // Analyser chaque entrée
                 for (entry in entries) {
-                    if (entry.type != EntryType.LOGIN) continue
+                    if (entry.entryType != EntryType.LOGIN) continue
                     if (entry.password.isEmpty()) continue
 
                     // Mots de passe faibles
@@ -69,19 +69,20 @@ class PasswordHealthViewModel @Inject constructor(
                     passwordMap.getOrPut(entry.password) { mutableListOf() }.add(entry)
 
                     // Mots de passe compromis
-                    if (entry.isCompromised) {
-                        compromisedPasswords.add(
-                            CompromisedPasswordEntry(
-                                id = entry.id,
-                                title = entry.title,
-                                username = entry.username,
-                                breachCount = entry.breachCount
-                            )
-                        )
-                    }
+                    // TODO: Implémenter la vérification des breaches via API externe (HaveIBeenPwned)
+                    // if (entry.isCompromised) {
+                    //     compromisedPasswords.add(
+                    //         CompromisedPasswordEntry(
+                    //             id = entry.id,
+                    //             title = entry.title,
+                    //             username = entry.username,
+                    //             breachCount = entry.breachCount
+                    //         )
+                    //     )
+                    // }
 
                     // Mots de passe anciens (> 90 jours)
-                    val daysSinceUpdate = (System.currentTimeMillis() - entry.updatedAt) / (1000 * 60 * 60 * 24)
+                    val daysSinceUpdate = (System.currentTimeMillis() - entry.modifiedAt) / (1000 * 60 * 60 * 24)
                     if (daysSinceUpdate > 90) {
                         oldPasswords.add(
                             OldPasswordEntry(
@@ -110,7 +111,7 @@ class PasswordHealthViewModel @Inject constructor(
                 }
 
                 // Calculer le score de santé global (0-100)
-                val totalPasswords = entries.count { it.type == EntryType.LOGIN && it.password.isNotEmpty() }
+                val totalPasswords = entries.count { it.entryType == EntryType.LOGIN && it.password.isNotEmpty() }
                 val score = calculateHealthScore(
                     totalPasswords = totalPasswords,
                     weakCount = weakPasswords.size,
@@ -128,7 +129,7 @@ class PasswordHealthViewModel @Inject constructor(
                     compromisedPasswords = compromisedPasswords.size,
                     oldPasswords = oldPasswords.size,
                     averageStrength = entries
-                        .filter { it.type == EntryType.LOGIN && it.password.isNotEmpty() }
+                        .filter { it.entryType == EntryType.LOGIN && it.password.isNotEmpty() }
                         .map { it.passwordStrength }
                         .average()
                         .toInt()
