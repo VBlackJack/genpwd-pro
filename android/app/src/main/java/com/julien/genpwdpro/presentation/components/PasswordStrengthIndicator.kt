@@ -150,11 +150,6 @@ private fun getStrengthProperties(
     strength: PasswordStrength
 ): Triple<Color, String, ImageVector> {
     return when (strength) {
-        PasswordStrength.VERY_WEAK -> Triple(
-            Color(0xFFEF4444), // Rouge
-            "Très Faible",
-            Icons.Default.Lock
-        )
         PasswordStrength.WEAK -> Triple(
             Color(0xFFFF6B6B), // Rouge clair
             "Faible",
@@ -215,7 +210,6 @@ fun PasswordStrengthDetails(
  */
 private fun getStrengthDescription(strength: PasswordStrength): String {
     return when (strength) {
-        PasswordStrength.VERY_WEAK -> "Cassable en quelques secondes. Non recommandé."
         PasswordStrength.WEAK -> "Cassable en quelques heures. Faible protection."
         PasswordStrength.MEDIUM -> "Cassable en quelques jours. Protection basique."
         PasswordStrength.STRONG -> "Cassable en plusieurs années. Bonne protection."

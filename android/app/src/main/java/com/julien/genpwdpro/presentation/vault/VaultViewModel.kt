@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.local.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.domain.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,7 +15,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class VaultViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository
+    private val vaultRepository: VaultRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VaultUiState>(VaultUiState.Loading)
@@ -32,24 +34,35 @@ class VaultViewModel @Inject constructor(
 
     /**
      * Charge tous les vaults
+     *
+     * ✅ FIX: Utilise .catch() pour gérer les erreurs du Flow de manière robuste
+     * Cela évite les crashs au démarrage si la DB n'est pas encore initialisée
      */
     fun loadVaults() {
         viewModelScope.launch {
             _uiState.value = VaultUiState.Loading
             try {
-                vaultRepository.getAllVaults().collect { vaults ->
-                    if (vaults.isEmpty()) {
-                        _uiState.value = VaultUiState.NoVault
-                    } else {
-                        _uiState.value = VaultUiState.Success(vaults)
-                        // Sélectionner le vault par défaut ou le premier
-                        if (_selectedVault.value == null) {
-                            val defaultVault = vaults.find { it.isDefault } ?: vaults.firstOrNull()
-                            _selectedVault.value = defaultVault
+                vaultRepository.getAllVaults()
+                    .catch { e ->
+                        // Gérer les erreurs d'initialisation de la DB ou d'accès au Flow
+                        _uiState.value = VaultUiState.Error(
+                            e.message ?: "Erreur d'accès à la base de données"
+                        )
+                    }
+                    .collect { vaults ->
+                        if (vaults.isEmpty()) {
+                            _uiState.value = VaultUiState.NoVault
+                        } else {
+                            _uiState.value = VaultUiState.Success(vaults)
+                            // Sélectionner le vault par défaut ou le premier
+                            if (_selectedVault.value == null) {
+                                val defaultVault = vaults.find { it.isDefault } ?: vaults.firstOrNull()
+                                _selectedVault.value = defaultVault
+                            }
                         }
                     }
-                }
             } catch (e: Exception) {
+                // Capturer toutes les autres exceptions
                 _uiState.value = VaultUiState.Error(e.message ?: "Erreur inconnue")
             }
         }
@@ -62,7 +75,8 @@ class VaultViewModel @Inject constructor(
         name: String,
         masterPassword: String,
         description: String = "",
-        setAsDefault: Boolean = true
+        setAsDefault: Boolean = true,
+        biometricUnlockEnabled: Boolean = false
     ) {
         viewModelScope.launch {
             _uiState.value = VaultUiState.Loading
@@ -71,11 +85,15 @@ class VaultViewModel @Inject constructor(
                     name = name,
                     masterPassword = masterPassword,
                     description = description,
-                    setAsDefault = setAsDefault
+                    setAsDefault = setAsDefault,
+                    biometricUnlockEnabled = biometricUnlockEnabled
                 )
 
                 // Le vault est déjà déverrouillé après création
                 _isVaultUnlocked.value = true
+
+                // Mettre à jour le SessionManager avec le nouveau vault
+                sessionManager.unlockVault(vaultId)
 
                 // Recharger les vaults
                 loadVaults()
@@ -103,6 +121,10 @@ class VaultViewModel @Inject constructor(
                     _isVaultUnlocked.value = true
                     val vault = vaultRepository.getVaultById(vaultId)
                     _selectedVault.value = vault
+
+                    // Mettre à jour le SessionManager avec le vault déverrouillé
+                    sessionManager.unlockVault(vaultId)
+
                     _uiState.value = VaultUiState.VaultUnlocked(vaultId)
                 } else {
                     _isVaultUnlocked.value = false
@@ -122,6 +144,10 @@ class VaultViewModel @Inject constructor(
         _selectedVault.value?.let { vault ->
             vaultRepository.lockVault(vault.id)
             _isVaultUnlocked.value = false
+
+            // Mettre à jour le SessionManager
+            sessionManager.lockVault()
+
             _uiState.value = VaultUiState.VaultLocked
         }
     }
@@ -132,6 +158,10 @@ class VaultViewModel @Inject constructor(
     fun lockAllVaults() {
         vaultRepository.lockAllVaults()
         _isVaultUnlocked.value = false
+
+        // Mettre à jour le SessionManager
+        sessionManager.lockVault()
+
         _uiState.value = VaultUiState.VaultLocked
     }
 

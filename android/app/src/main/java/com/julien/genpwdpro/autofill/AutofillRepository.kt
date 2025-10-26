@@ -1,10 +1,12 @@
-package com.julien.genpwd-pro.autofill
+package com.julien.genpwdpro.autofill
 
-import com.julien.genpwdpro.data.local.entity.PasswordHistoryEntity
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.domain.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,7 +28,7 @@ class AutofillRepository @Inject constructor(
      * Récupère les paramètres de génération actuels
      */
     fun getSettings(): Flow<Settings> {
-        return settingsDataStore.settings
+        return settingsDataStore.settingsFlow
     }
 
     /**
@@ -49,13 +51,43 @@ class AutofillRepository @Inject constructor(
             }
         }
 
-        historyRepository.insertPassword(
-            PasswordHistoryEntity(
-                password = password,
-                timestamp = System.currentTimeMillis(),
-                note = note
-            )
+        // Récupérer les settings actuels pour le PasswordResult
+        val currentSettings = settingsDataStore.settingsFlow.first()
+
+        val passwordResult = PasswordResult(
+            password = password,
+            entropy = calculateEntropy(password),
+            mode = GenerationMode.SYLLABLES, // Mode par défaut pour autofill
+            settings = currentSettings,
+            note = note,
+            isFavorite = false
         )
+
+        historyRepository.savePassword(passwordResult)
+    }
+
+    /**
+     * Calcule l'entropie approximative d'un mot de passe
+     */
+    private fun calculateEntropy(password: String): Double {
+        if (password.isEmpty()) return 0.0
+
+        val hasLower = password.any { it.isLowerCase() }
+        val hasUpper = password.any { it.isUpperCase() }
+        val hasDigit = password.any { it.isDigit() }
+        val hasSpecial = password.any { !it.isLetterOrDigit() }
+
+        var poolSize = 0
+        if (hasLower) poolSize += 26
+        if (hasUpper) poolSize += 26
+        if (hasDigit) poolSize += 10
+        if (hasSpecial) poolSize += 32
+
+        return if (poolSize > 0) {
+            password.length * Math.log(poolSize.toDouble()) / Math.log(2.0)
+        } else {
+            0.0
+        }
     }
 
     /**

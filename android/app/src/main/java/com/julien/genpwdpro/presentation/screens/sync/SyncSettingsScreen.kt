@@ -1429,9 +1429,6 @@ class SyncSettingsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getMetadata(): LocalSyncMetadata {
-        return syncManager.getMetadata()
-    }
 }
 
 /**

@@ -1,5 +1,6 @@
-package com.julien.genpwd-pro.presentation.screens.security
+package com.julien.genpwdpro.presentation.screens.security
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -223,7 +224,7 @@ private fun AppLockCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                </Column>
+                }
                 Switch(
                     checked = isEnabled,
                     onCheckedChange = onToggle

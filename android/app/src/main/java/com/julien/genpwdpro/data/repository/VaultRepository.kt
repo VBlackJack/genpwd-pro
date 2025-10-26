@@ -93,7 +93,8 @@ class VaultRepository @Inject constructor(
         name: String,
         masterPassword: String,
         description: String = "",
-        setAsDefault: Boolean = false
+        setAsDefault: Boolean = false,
+        biometricUnlockEnabled: Boolean = false
     ): String {
         // Vérifier si le nom existe déjà
         val existingCount = vaultDao.countByName(name)
@@ -119,7 +120,8 @@ class VaultRepository @Inject constructor(
             createdAt = now,
             modifiedAt = now,
             lastAccessedAt = now,
-            isDefault = setAsDefault
+            isDefault = setAsDefault,
+            biometricUnlockEnabled = biometricUnlockEnabled
         )
 
         vaultDao.insert(vault)

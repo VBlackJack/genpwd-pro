@@ -13,11 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
+import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.presentation.navigation.AppNavGraph
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Activité principale de l'application GenPwd Pro
@@ -36,6 +38,9 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
     }
 
+    @Inject
+    lateinit var sessionManager: SessionManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -50,14 +55,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Point d'entrée : VaultSelector
-                    // L'utilisateur pourra soit :
-                    // - Créer un nouveau vault
-                    // - Déverrouiller un vault existant
-                    // - Utiliser le générateur simple (mode standalone)
+                    // ✅ VaultSelector restauré après migration Lazysodium
                     AppNavGraph(
                         navController = navController,
-                        startDestination = Screen.VaultSelector.route
+                        startDestination = Screen.VaultSelector.route,
+                        sessionManager = sessionManager
                     )
                 }
             }

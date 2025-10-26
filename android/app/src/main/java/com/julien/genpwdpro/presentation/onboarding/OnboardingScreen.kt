@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.*
+import kotlinx.coroutines.launch
 
 /**
  * Écran d'onboarding en 3 pages
@@ -27,6 +28,7 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState()
+    val scope = rememberCoroutineScope()
     val pages = listOf(
         OnboardingPage(
             title = "Bienvenue sur GenPwd Pro",
@@ -57,7 +59,7 @@ fun OnboardingScreen(
                 onNext = {
                     if (pagerState.currentPage < pages.size - 1) {
                         // Page suivante
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                        scope.launch {
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     } else {

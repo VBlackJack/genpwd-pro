@@ -12,6 +12,7 @@ import com.julien.genpwdpro.data.local.entity.VaultEntity
 import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -54,7 +55,7 @@ class ImportExportRepository @Inject constructor(
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val entries = vaultEntryDao.getEntriesForVault(vaultId)
+            val entries = vaultEntryDao.getEntriesByVault(vaultId).first()
 
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
@@ -118,14 +119,14 @@ class ImportExportRepository @Inject constructor(
                             "${escapeCsv(password)}," +
                             "${escapeCsv(url)}," +
                             "${escapeCsv(notes)}," +
-                            "${entry.type}," +
+                            "${entry.entryType}," +
                             "${escapeCsv(totpSecret)}," +
                             "${entry.isFavorite}," +
                             "${entry.icon}," +
                             "${entry.folderId ?: ""}," +
                             "," + // tags (à implémenter)
                             "${entry.createdAt}," +
-                            "${entry.updatedAt}\n"
+                            "${entry.modifiedAt}\n"
                         )
                         count++
                     }
@@ -177,29 +178,41 @@ class ImportExportRepository @Inject constructor(
                             val decryptedEntry = VaultRepository.DecryptedEntry(
                                 id = UUID.randomUUID().toString(),
                                 vaultId = vaultId,
-                                type = type,
+                                folderId = null,
                                 title = title,
                                 username = username,
                                 password = password,
                                 url = url,
                                 notes = notes,
+                                customFields = "",
+                                entryType = type,
                                 isFavorite = favorite,
-                                folderId = null,
+                                passwordStrength = calculatePasswordStrength(password),
+                                passwordEntropy = 0.0,
+                                generationMode = null,
+                                createdAt = System.currentTimeMillis(),
+                                modifiedAt = System.currentTimeMillis(),
+                                lastAccessedAt = 0L,
+                                passwordExpiresAt = 0,
+                                requiresPasswordChange = false,
+                                usageCount = 0,
                                 icon = "🔐",
                                 color = "#2196F3",
-                                passwordStrength = calculatePasswordStrength(password),
-                                isCompromised = false,
-                                breachCount = 0,
-                                createdAt = System.currentTimeMillis(),
-                                updatedAt = System.currentTimeMillis(),
-                                lastUsedAt = 0L,
+                                // TOTP
                                 hasTOTP = totpSecret.isNotEmpty(),
                                 totpSecret = totpSecret,
                                 totpPeriod = 30,
                                 totpDigits = 6,
                                 totpAlgorithm = "SHA1",
+                                totpIssuer = "",
+                                // Passkey
                                 hasPasskey = false,
-                                passkeyData = ""
+                                passkeyData = "",
+                                passkeyRpId = "",
+                                passkeyRpName = "",
+                                passkeyUserHandle = "",
+                                passkeyCreatedAt = 0,
+                                passkeyLastUsedAt = 0
                             )
 
                             vaultRepository.createEntry(vaultId, decryptedEntry)
@@ -230,11 +243,11 @@ class ImportExportRepository @Inject constructor(
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val vault = vaultDao.getVaultById(vaultId) ?: return@withContext Result.failure(
+            val vault = vaultDao.getById(vaultId) ?: return@withContext Result.failure(
                 Exception("Vault non trouvé")
             )
 
-            val entries = vaultEntryDao.getEntriesForVault(vaultId)
+            val entries = vaultEntryDao.getEntriesByVault(vaultId).first()
 
             // Créer l'export data
             val exportData = VaultExportData(
@@ -327,7 +340,7 @@ class ImportExportRepository @Inject constructor(
                         id = newVaultId,
                         name = newVaultName ?: "${exportData.vault.name} (Importé)",
                         createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
+                        modifiedAt = System.currentTimeMillis()
                     )
 
                     vaultDao.insert(newVault)
@@ -338,7 +351,7 @@ class ImportExportRepository @Inject constructor(
                             id = UUID.randomUUID().toString(),
                             vaultId = newVaultId,
                             createdAt = System.currentTimeMillis(),
-                            updatedAt = System.currentTimeMillis()
+                            modifiedAt = System.currentTimeMillis()
                         )
                         vaultEntryDao.insert(newEntry)
                     }

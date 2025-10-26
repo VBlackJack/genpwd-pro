@@ -3,6 +3,10 @@ package com.julien.genpwdpro.presentation.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.julien.genpwdpro.data.models.CaseMode
@@ -48,7 +52,7 @@ private fun CaseModeDropdown(
     selectedMode: CaseMode,
     onModeSelected: (CaseMode) -> Unit
 ) {
-    var expanded = false
+    var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
