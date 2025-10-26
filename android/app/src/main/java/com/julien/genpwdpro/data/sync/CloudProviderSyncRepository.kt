@@ -127,7 +127,7 @@ class CloudProviderSyncRepository @Inject constructor(
             // Convertir EncryptedDataEncoded → ByteArray
             // EncryptedDataEncoded contient les données en Base64, on doit les décoder
             val encryptedBytes = android.util.Base64.decode(
-                data.encryptedPayload.data,
+                data.encryptedPayload.ciphertext,
                 android.util.Base64.NO_WRAP
             )
 
@@ -194,7 +194,7 @@ class CloudProviderSyncRepository @Inject constructor(
                             timestamp = vaultData.timestamp,
                             version = vaultData.version,
                             encryptedPayload = EncryptedDataEncoded(
-                                data = encodedData,
+                                ciphertext = encodedData,
                                 iv = "" // IV non utilisé dans ce contexte
                             ),
                             checksum = vaultData.checksum
@@ -237,7 +237,7 @@ class CloudProviderSyncRepository @Inject constructor(
                     timestamp = vaultData.timestamp,
                     version = vaultData.version,
                     encryptedPayload = EncryptedDataEncoded(
-                        data = encodedData,
+                        ciphertext = encodedData,
                         iv = "" // IV non utilisé dans ce contexte
                     ),
                     checksum = vaultData.checksum

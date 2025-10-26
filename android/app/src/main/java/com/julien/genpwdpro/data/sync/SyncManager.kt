@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.gson.Gson
 import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.sync.models.SyncStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,7 @@ class SyncManager @Inject constructor(
     private val gson: Gson
 ) {
 
-    private val _syncStatus = MutableStateFlow<SyncStatus>(SyncStatus.IDLE)
+    private val _syncStatus = MutableStateFlow<SyncStatus>(SyncStatus.PENDING)
     val syncStatus: Flow<SyncStatus> = _syncStatus.asStateFlow()
 
     private val _syncEvents = MutableStateFlow<SyncEvent>(SyncEvent.Completed)
@@ -111,7 +112,7 @@ class SyncManager @Inject constructor(
 
             when (result) {
                 is SyncResult.Success -> {
-                    _syncStatus.value = SyncStatus.SUCCESS
+                    _syncStatus.value = SyncStatus.SYNCED
                     _syncEvents.value = SyncEvent.Completed
                     updateLastSyncTimestamp()
                 }
@@ -267,7 +268,7 @@ class SyncManager @Inject constructor(
         return LocalSyncMetadata(
             lastSyncTimestamp = prefs.getLong(KEY_LAST_SYNC, 0),
             lastSuccessfulSyncTimestamp = when (_syncStatus.value) {
-                SyncStatus.SUCCESS -> prefs.getLong(KEY_LAST_SYNC, 0)
+                SyncStatus.SYNCED -> prefs.getLong(KEY_LAST_SYNC, 0)
                 else -> 0
             },
             pendingChanges = 0,
@@ -283,6 +284,6 @@ class SyncManager @Inject constructor(
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().clear().apply()
         encryptionKey = null
-        _syncStatus.value = SyncStatus.IDLE
+        _syncStatus.value = SyncStatus.PENDING
     }
 }
