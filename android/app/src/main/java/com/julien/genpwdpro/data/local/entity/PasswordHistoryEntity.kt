@@ -15,7 +15,9 @@ data class PasswordHistoryEntity(
     val entropy: Double,
     val mode: String, // GenerationMode en String
     val timestamp: Long,
-    val settingsJson: String // Settings sérialisé en JSON
+    val settingsJson: String, // Settings sérialisé en JSON
+    val isFavorite: Boolean = false, // Marqué comme favori
+    val note: String = "" // Note personnalisée
 )
 
 /**

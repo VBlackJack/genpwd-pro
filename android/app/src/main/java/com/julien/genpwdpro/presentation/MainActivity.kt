@@ -7,13 +7,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.julien.genpwdpro.presentation.navigation.AppNavigation
-import com.julien.genpwdpro.presentation.shortcuts.AppShortcutManager
+import androidx.navigation.compose.rememberNavController
+import com.julien.genpwdpro.presentation.navigation.AppNavGraph
+import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
- * Activité principale de l'application
+ * Activité principale de l'application GenPwd Pro
+ *
+ * Point d'entrée de l'application qui configure la navigation et le thème.
+ * Utilise Jetpack Compose avec Navigation Compose pour la gestion des écrans.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -21,18 +25,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialiser les raccourcis dynamiques (Android 7.1+)
-        AppShortcutManager.setupShortcuts(this)
-
         setContent {
             GenPwdProTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(
-                        generationMode = intent.getStringExtra(AppShortcutManager.EXTRA_GENERATION_MODE),
-                        quickGenerate = intent.getBooleanExtra(AppShortcutManager.EXTRA_QUICK_GENERATE, false)
+                    val navController = rememberNavController()
+
+                    // Point d'entrée : VaultSelector
+                    // L'utilisateur pourra soit :
+                    // - Créer un nouveau vault
+                    // - Déverrouiller un vault existant
+                    // - Utiliser le générateur simple (mode standalone)
+                    AppNavGraph(
+                        navController = navController,
+                        startDestination = Screen.VaultSelector.route
                     )
                 }
             }

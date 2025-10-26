@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    GenPwd Pro - Monochrome Icon (Android 13+ Themed Icons)
+    Simple lock + key design that adapts to user's theme
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:translateX="54"
+        android:translateY="54">
+
+        <!-- Simplified lock body -->
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M-12,-4 L12,-4 Q16,-4 16,0 L16,12 Q16,16 12,16 L-12,16 Q-16,16 -16,12 L-16,0 Q-16,-4 -12,-4 Z" />
+
+        <!-- Lock shackle -->
+        <path
+            android:strokeColor="@android:color/white"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M-8,-4 Q-8,-14 0,-14 Q8,-14 8,-4" />
+
+        <!-- Key hole -->
+        <path
+            android:fillColor="#1976D2"
+            android:pathData="M0,2 m-3,0 a3,3 0,1,0 6,0 a3,3 0,1,0 -6,0 M-1,4 L1,4 L1,10 L-1,10 Z" />
+    </group>
+</vector>

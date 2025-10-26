@@ -12,7 +12,9 @@ data class PasswordResult(
     val mode: GenerationMode,
     val timestamp: Long = System.currentTimeMillis(),
     val settings: Settings,
-    val isMasked: Boolean = true
+    val isMasked: Boolean = true,
+    val isFavorite: Boolean = false,
+    val note: String = ""
 ) {
     /**
      * Mot de passe masqué pour l'affichage
