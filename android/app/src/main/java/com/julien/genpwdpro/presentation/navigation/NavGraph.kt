@@ -57,9 +57,13 @@ sealed class Screen(val route: String) {
     }
 
     // Entry - Création/Édition
-    object CreateEntry : Screen("create_entry/{vaultId}?type={type}") {
-        fun createRoute(vaultId: String, type: EntryType = EntryType.LOGIN) =
-            "create_entry/$vaultId?type=${type.name}"
+    object CreateEntry : Screen("create_entry/{vaultId}?type={type}&password={password}") {
+        fun createRoute(vaultId: String, type: EntryType = EntryType.LOGIN, password: String? = null) =
+            if (password != null) {
+                "create_entry/$vaultId?type=${type.name}&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+            } else {
+                "create_entry/$vaultId?type=${type.name}"
+            }
     }
 
     object EditEntry : Screen("edit_entry/{vaultId}/{entryId}") {
@@ -102,8 +106,11 @@ fun AppNavGraph(
                     if (vaultId != null) {
                         // Naviguer vers CreateEntry avec le mot de passe
                         navController.navigate(
-                            Screen.CreateEntry.createRoute(vaultId) +
-                            "&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+                            Screen.CreateEntry.createRoute(
+                                vaultId = vaultId,
+                                type = EntryType.LOGIN,
+                                password = password
+                            )
                         )
                     }
                     // Sinon, le GeneratorScreen affichera déjà le message d'erreur
