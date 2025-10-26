@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.data.encryption
+package com.julien.genpwdpro.data.encryption
 
 import android.util.Base64
 import java.security.SecureRandom

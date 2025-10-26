@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.data.sync
+package com.julien.genpwdpro.data.sync
 
 import kotlinx.coroutines.flow.Flow
 

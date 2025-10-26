@@ -1,9 +1,9 @@
-package com.julien.genpwd-pro.data.sync
+package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import com.google.gson.Gson
-import com.julien.genpwd-pro.data.encryption.EncryptionManager
-import com.julien.genpwd-pro.data.models.Settings
+import com.julien.genpwdpro.data.encryption.EncryptionManager
+import com.julien.genpwdpro.data.models.Settings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

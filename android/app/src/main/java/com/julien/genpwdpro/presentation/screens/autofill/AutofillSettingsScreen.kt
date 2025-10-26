@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.presentation.screens.autofill
+package com.julien.genpwdpro.presentation.screens.autofill
 
 import android.content.Context
 import android.content.Intent
