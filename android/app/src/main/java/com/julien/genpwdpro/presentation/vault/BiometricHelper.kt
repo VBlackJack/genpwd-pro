@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.presentation.vault
 
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -153,8 +154,20 @@ class BiometricHelper(private val activity: FragmentActivity) {
 }
 
 /**
+ * Trouve la FragmentActivity en parcourant la chaîne de ContextWrapper
+ */
+fun Context.findActivity(): FragmentActivity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is FragmentActivity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
+/**
  * Extension pour obtenir le BiometricHelper depuis un Context
  */
 fun Context.getBiometricHelper(): BiometricHelper? {
-    return (this as? FragmentActivity)?.let { BiometricHelper(it) }
+    return findActivity()?.let { BiometricHelper(it) }
 }

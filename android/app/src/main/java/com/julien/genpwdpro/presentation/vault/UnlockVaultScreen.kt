@@ -17,7 +17,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.VaultEntity
 
@@ -44,7 +43,7 @@ fun UnlockVaultScreen(
 
     // BiometricHelper (nécessite FragmentActivity)
     val biometricHelper = remember {
-        (context as? FragmentActivity)?.let { BiometricHelper(it) }
+        context.getBiometricHelper()
     }
 
     // Charger le vault
