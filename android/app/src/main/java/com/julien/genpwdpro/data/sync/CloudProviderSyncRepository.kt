@@ -94,6 +94,16 @@ class CloudProviderSyncRepository @Inject constructor(
     }
 
     /**
+     * Effacer le provider actif
+     */
+    fun clearActiveProvider() {
+        Log.d(TAG, "Clearing active provider")
+        activeProvider = null
+        activeProviderType = null
+        prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()
+    }
+
+    /**
      * Vérifier qu'un provider est actif
      */
     private fun ensureProviderAvailable(): Boolean {

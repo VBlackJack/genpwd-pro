@@ -28,6 +28,7 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
@@ -1006,6 +1007,7 @@ class SyncSettingsViewModel @Inject constructor(
     private val syncManager: SyncManager,
     private val providerFactory: CloudProviderFactory,
     private val cloudRepository: CloudProviderSyncRepository,
+    private val syncConfigDataStore: SyncConfigDataStore,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -1017,6 +1019,23 @@ class SyncSettingsViewModel @Inject constructor(
     val uiState: StateFlow<SyncSettingsUiState> = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            // Charger la configuration sauvegardée
+            syncConfigDataStore.syncConfigFlow.collect { savedConfig ->
+                _uiState.update { state ->
+                    state.copy(
+                        config = state.config.copy(
+                            enabled = savedConfig.enabled,
+                            providerType = savedConfig.providerType,
+                            autoSync = savedConfig.autoSync,
+                            syncInterval = savedConfig.syncInterval,
+                            syncOnWifiOnly = savedConfig.syncOnWifiOnly
+                        )
+                    )
+                }
+            }
+        }
+
         viewModelScope.launch {
             // Observer le statut de la sync
             syncManager.syncStatus.collect { status ->
@@ -1032,10 +1051,15 @@ class SyncSettingsViewModel @Inject constructor(
     }
 
     fun toggleSync() {
-        _uiState.update { state ->
-            state.copy(
-                config = state.config.copy(enabled = !state.config.enabled)
-            )
+        viewModelScope.launch {
+            val newEnabled = !_uiState.value.config.enabled
+            syncConfigDataStore.setSyncEnabled(newEnabled)
+
+            _uiState.update { state ->
+                state.copy(
+                    config = state.config.copy(enabled = newEnabled)
+                )
+            }
         }
     }
 
@@ -1128,6 +1152,9 @@ class SyncSettingsViewModel @Inject constructor(
                         // Définir comme provider actif
                         cloudRepository.setActiveProvider(providerType, provider)
 
+                        // Sauvegarder le provider type
+                        syncConfigDataStore.setProviderType(providerType)
+
                         _uiState.update { state ->
                             state.copy(
                                 config = state.config.copy(providerType = providerType),
@@ -1163,16 +1190,17 @@ class SyncSettingsViewModel @Inject constructor(
     }
 
     fun toggleAutoSync() {
-        _uiState.update { state ->
-            val newAutoSync = !state.config.autoSync
+        viewModelScope.launch {
+            val newAutoSync = !_uiState.value.config.autoSync
+            syncConfigDataStore.setAutoSync(newAutoSync)
 
             if (newAutoSync) {
                 // Activer la synchronisation automatique
-                Log.d("SyncSettingsViewModel", "Enabling auto-sync with interval: ${state.config.syncInterval}")
+                Log.d("SyncSettingsViewModel", "Enabling auto-sync with interval: ${_uiState.value.config.syncInterval}")
                 CloudSyncWorker.schedule(
                     context = context,
-                    intervalMillis = state.config.syncInterval,
-                    wifiOnly = state.config.syncOnWifiOnly
+                    intervalMillis = _uiState.value.config.syncInterval,
+                    wifiOnly = _uiState.value.config.syncOnWifiOnly
                 )
             } else {
                 // Désactiver la synchronisation automatique
@@ -1180,29 +1208,33 @@ class SyncSettingsViewModel @Inject constructor(
                 CloudSyncWorker.cancel(context)
             }
 
-            state.copy(
-                config = state.config.copy(autoSync = newAutoSync)
-            )
+            _uiState.update { state ->
+                state.copy(
+                    config = state.config.copy(autoSync = newAutoSync)
+                )
+            }
         }
     }
 
     fun updateSyncInterval(interval: Long) {
-        _uiState.update { state ->
-            val newState = state.copy(
-                config = state.config.copy(syncInterval = interval)
-            )
+        viewModelScope.launch {
+            syncConfigDataStore.setSyncInterval(interval)
 
             // Si auto-sync est activé, reprogrammer avec le nouvel intervalle
-            if (newState.config.autoSync) {
+            if (_uiState.value.config.autoSync) {
                 Log.d("SyncSettingsViewModel", "Updating sync interval to: $interval")
                 CloudSyncWorker.schedule(
                     context = context,
                     intervalMillis = interval,
-                    wifiOnly = newState.config.syncOnWifiOnly
+                    wifiOnly = _uiState.value.config.syncOnWifiOnly
                 )
             }
 
-            newState
+            _uiState.update { state ->
+                state.copy(
+                    config = state.config.copy(syncInterval = interval)
+                )
+            }
         }
     }
 
@@ -1225,6 +1257,10 @@ class SyncSettingsViewModel @Inject constructor(
                 when (result) {
                     is SyncResult.Success -> {
                         Log.d("SyncSettingsViewModel", "Sync successful")
+
+                        // Sauvegarder le timestamp de dernière sync
+                        syncConfigDataStore.updateLastSyncTimestamp()
+
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.SUCCESS,
@@ -1300,7 +1336,18 @@ class SyncSettingsViewModel @Inject constructor(
 
     fun resetSync() {
         viewModelScope.launch {
+            // Annuler les workers
+            CloudSyncWorker.cancel(context)
+
+            // Réinitialiser SyncManager
             syncManager.reset()
+
+            // Effacer la config persistée
+            syncConfigDataStore.clearSyncConfig()
+
+            // Réinitialiser le repository
+            cloudRepository.clearActiveProvider()
+
             _uiState.update {
                 SyncSettingsUiState(
                     availableProviders = providerFactory.getProductionReadyProviders()
