@@ -32,6 +32,9 @@ class VaultViewModel @Inject constructor(
 
     /**
      * Charge tous les vaults
+     *
+     * ✅ FIX: Utilise .catch() pour gérer les erreurs du Flow de manière robuste
+     * Cela évite les crashs au démarrage si la DB n'est pas encore initialisée
      */
     fun loadVaults() {
         viewModelScope.launch {
@@ -39,7 +42,10 @@ class VaultViewModel @Inject constructor(
             try {
                 vaultRepository.getAllVaults()
                     .catch { e ->
-                        _uiState.value = VaultUiState.Error(e.message ?: "Erreur inconnue")
+                        // Gérer les erreurs d'initialisation de la DB ou d'accès au Flow
+                        _uiState.value = VaultUiState.Error(
+                            e.message ?: "Erreur d'accès à la base de données"
+                        )
                     }
                     .collect { vaults ->
                         if (vaults.isEmpty()) {
@@ -54,6 +60,7 @@ class VaultViewModel @Inject constructor(
                         }
                     }
             } catch (e: Exception) {
+                // Capturer toutes les autres exceptions
                 _uiState.value = VaultUiState.Error(e.message ?: "Erreur inconnue")
             }
         }
