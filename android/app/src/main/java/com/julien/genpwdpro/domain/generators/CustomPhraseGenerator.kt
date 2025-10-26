@@ -27,7 +27,7 @@ class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
     /**
      * Génère une passphrase à partir de mots personnalisés
      */
-    override fun generate(settings: Settings): String {
+    override suspend fun generate(settings: Settings): String {
         val customWords = settings.customPhraseWords.ifEmpty {
             // Si aucun mot personnalisé, utiliser les suggestions
             SUGGESTIONS.values.flatten().shuffled().take(50)

@@ -201,8 +201,10 @@ class EntryViewModel @Inject constructor(
      * Génère un mot de passe aléatoire
      */
     fun generatePassword(settings: Settings) {
-        val generated = passwordGenerator.generate(settings)
-        updatePassword(generated.password)
+        viewModelScope.launch {
+            val generated = passwordGenerator.generate(settings)
+            updatePassword(generated)
+        }
     }
 
     /**

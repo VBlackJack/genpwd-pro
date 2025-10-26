@@ -20,8 +20,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.EntryType
-import com.julien.genpwdpro.domain.GenerationMode
-import com.julien.genpwdpro.domain.Settings
+import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.Settings
 
 /**
  * Écran de création/édition d'une entrée

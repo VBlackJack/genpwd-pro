@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.di
 
 import android.content.Context
+import com.julien.genpwdpro.domain.generators.CustomPhraseGenerator
 import com.julien.genpwdpro.domain.generators.LeetSpeakGenerator
 import com.julien.genpwdpro.domain.generators.PassphraseGenerator
 import com.julien.genpwdpro.domain.generators.SyllablesGenerator
@@ -52,6 +53,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCustomPhraseGenerator(): CustomPhraseGenerator {
+        return CustomPhraseGenerator()
+    }
+
+    @Provides
+    @Singleton
     fun provideApplyCasingUseCase(): ApplyCasingUseCase {
         return ApplyCasingUseCase()
     }
@@ -68,6 +75,7 @@ object AppModule {
         syllablesGenerator: SyllablesGenerator,
         passphraseGenerator: PassphraseGenerator,
         leetSpeakGenerator: LeetSpeakGenerator,
+        customPhraseGenerator: CustomPhraseGenerator,
         applyCasingUseCase: ApplyCasingUseCase,
         placeCharactersUseCase: PlaceCharactersUseCase
     ): GeneratePasswordUseCase {
@@ -75,6 +83,7 @@ object AppModule {
             syllablesGenerator,
             passphraseGenerator,
             leetSpeakGenerator,
+            customPhraseGenerator,
             applyCasingUseCase,
             placeCharactersUseCase
         )

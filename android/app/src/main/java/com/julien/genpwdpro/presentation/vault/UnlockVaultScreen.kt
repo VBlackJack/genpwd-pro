@@ -67,7 +67,8 @@ fun UnlockVaultScreen(
     }
 
     // Afficher un loader pendant le chargement du vault
-    if (vault == null) {
+    val currentVault = vault
+    if (currentVault == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -109,15 +110,15 @@ fun UnlockVaultScreen(
 
             // Nom du vault
             Text(
-                text = vault.name,
+                text = currentVault.name,
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center
             )
 
-            if (vault.description.isNotEmpty()) {
+            if (currentVault.description.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = vault.description,
+                    text = currentVault.description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -133,11 +134,11 @@ fun UnlockVaultScreen(
             ) {
                 VaultStatChip(
                     icon = Icons.Default.Key,
-                    label = "${vault.entryCount} entrées"
+                    label = "${currentVault.entryCount} entrées"
                 )
                 VaultStatChip(
                     icon = Icons.Default.Update,
-                    label = formatLastAccess(vault.lastAccessedAt)
+                    label = formatLastAccess(currentVault.lastAccessedAt)
                 )
             }
 
@@ -171,7 +172,7 @@ fun UnlockVaultScreen(
                     onDone = {
                         focusManager.clearFocus()
                         if (masterPassword.isNotEmpty()) {
-                            viewModel.unlockVault(vault.id, masterPassword)
+                            viewModel.unlockVault(currentVault.id, masterPassword)
                         }
                     }
                 )
@@ -217,7 +218,7 @@ fun UnlockVaultScreen(
             // Bouton déverrouiller
             Button(
                 onClick = {
-                    viewModel.unlockVault(vault.id, masterPassword)
+                    viewModel.unlockVault(currentVault.id, masterPassword)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = masterPassword.isNotEmpty() && uiState !is VaultUiState.Loading
@@ -242,7 +243,7 @@ fun UnlockVaultScreen(
                     biometricErrorMessage = null
                     biometricHelper?.showBiometricPrompt(
                         title = "Déverrouiller le coffre-fort",
-                        subtitle = vault.name,
+                        subtitle = currentVault.name,
                         description = "Authentifiez-vous pour accéder à vos mots de passe",
                         allowDeviceCredentials = true,
                         onSuccess = {
@@ -263,14 +264,14 @@ fun UnlockVaultScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = vault.biometricUnlockEnabled && biometricHelper != null && uiState !is VaultUiState.Loading
+                enabled = currentVault.biometricUnlockEnabled && biometricHelper != null && uiState !is VaultUiState.Loading
             ) {
                 Icon(Icons.Default.Fingerprint, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     when {
                         biometricHelper == null -> "Biométrie non disponible"
-                        !vault.biometricUnlockEnabled -> "Biométrie non configurée"
+                        !currentVault.biometricUnlockEnabled -> "Biométrie non configurée"
                         else -> "Utiliser la biométrie"
                     }
                 )

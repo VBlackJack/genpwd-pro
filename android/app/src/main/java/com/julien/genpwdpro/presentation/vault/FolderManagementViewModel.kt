@@ -173,11 +173,11 @@ class FolderManagementViewModel @Inject constructor(
      * Vérifie si un dossier est un descendant d'un autre
      */
     private suspend fun isDescendant(folderId: String, potentialAncestorId: String): Boolean {
-        var currentFolder = folderDao.getFolderById(folderId)
+        var currentFolder = folderDao.getById(folderId)
 
         while (currentFolder != null) {
             if (currentFolder.id == potentialAncestorId) return true
-            currentFolder = currentFolder.parentFolderId?.let { folderDao.getFolderById(it) }
+            currentFolder = currentFolder.parentFolderId?.let { folderDao.getById(it) }
         }
 
         return false
