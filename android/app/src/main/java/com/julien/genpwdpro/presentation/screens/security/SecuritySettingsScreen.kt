@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation.screens.security
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll

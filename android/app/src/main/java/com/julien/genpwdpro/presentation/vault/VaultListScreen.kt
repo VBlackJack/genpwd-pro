@@ -85,11 +85,13 @@ fun VaultListScreen(
 
                         // Filtres
                         IconButton(onClick = { showFilterMenu = true }) {
-                            Badge(
-                                content = if (filterType != null || showFavoritesOnly) {
-                                    { Text("•") }
-                                } else null
-                            ) {
+                            if (filterType != null || showFavoritesOnly) {
+                                BadgedBox(
+                                    badge = { Badge { Text("•") } }
+                                ) {
+                                    Icon(Icons.Default.FilterList, "Filtrer")
+                                }
+                            } else {
                                 Icon(Icons.Default.FilterList, "Filtrer")
                             }
                         }
