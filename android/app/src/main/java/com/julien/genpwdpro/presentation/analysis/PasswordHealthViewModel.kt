@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,7 +38,7 @@ class PasswordHealthViewModel @Inject constructor(
                 _uiState.value = HealthUiState.Loading
 
                 // Récupérer toutes les entrées
-                val entries = vaultRepository.getEntries(vaultId)
+                val entries = vaultRepository.getEntries(vaultId).first()
 
                 // Analyser les mots de passe
                 val weakPasswords = mutableListOf<WeakPasswordEntry>()

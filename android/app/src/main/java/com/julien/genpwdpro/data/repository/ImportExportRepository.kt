@@ -12,6 +12,7 @@ import com.julien.genpwdpro.data.local.entity.VaultEntity
 import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -54,7 +55,7 @@ class ImportExportRepository @Inject constructor(
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val entries = vaultEntryDao.getEntriesForVault(vaultId)
+            val entries = vaultEntryDao.getEntriesByVault(vaultId).first()
 
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
@@ -242,11 +243,11 @@ class ImportExportRepository @Inject constructor(
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val vault = vaultDao.getVaultById(vaultId) ?: return@withContext Result.failure(
+            val vault = vaultDao.getById(vaultId) ?: return@withContext Result.failure(
                 Exception("Vault non trouvé")
             )
 
-            val entries = vaultEntryDao.getEntriesForVault(vaultId)
+            val entries = vaultEntryDao.getEntriesByVault(vaultId).first()
 
             // Créer l'export data
             val exportData = VaultExportData(
