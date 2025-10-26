@@ -136,7 +136,9 @@ fun GeneratorScreen(
                 ) {
                     MainOptionsSection(
                         settings = uiState.settings,
-                        onSettingsChange = { viewModel.updateSettings { it.copy() } }
+                        onSettingsChange = { newSettings ->
+                            viewModel.updateSettings { newSettings }
+                        }
                     )
                 }
             }
@@ -151,7 +153,9 @@ fun GeneratorScreen(
                 ) {
                     CharactersSection(
                         settings = uiState.settings,
-                        onSettingsChange = { viewModel.updateSettings { it.copy() } },
+                        onSettingsChange = { newSettings ->
+                            viewModel.updateSettings { newSettings }
+                        },
                         onOpenPlacementSheet = { showPlacementSheet = true }
                     )
                 }
@@ -166,7 +170,9 @@ fun GeneratorScreen(
                 ) {
                     CasingSection(
                         settings = uiState.settings,
-                        onSettingsChange = { viewModel.updateSettings { it.copy() } }
+                        onSettingsChange = { newSettings ->
+                            viewModel.updateSettings { newSettings }
+                        }
                     )
                 }
             }
@@ -188,8 +194,8 @@ fun GeneratorScreen(
                             label = "Nombre de mots de passe",
                             value = uiState.settings.quantity,
                             valueRange = 1..20,
-                            onValueChange = {
-                                viewModel.updateSettings { it.copy(quantity = it.quantity) }
+                            onValueChange = { newQuantity ->
+                                viewModel.updateSettings { it.copy(quantity = newQuantity) }
                             }
                         )
 

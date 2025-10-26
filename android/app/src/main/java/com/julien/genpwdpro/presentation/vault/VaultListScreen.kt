@@ -171,49 +171,51 @@ fun VaultListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddMenu = true }
-            ) {
-                Icon(Icons.Default.Add, "Ajouter")
-            }
+            Box {
+                FloatingActionButton(
+                    onClick = { showAddMenu = true }
+                ) {
+                    Icon(Icons.Default.Add, "Ajouter")
+                }
 
-            // Menu d'ajout
-            DropdownMenu(
-                expanded = showAddMenu,
-                onDismissRequest = { showAddMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Identifiant") },
-                    onClick = {
-                        onAddEntry(EntryType.LOGIN)
-                        showAddMenu = false
-                    },
-                    leadingIcon = { Icon(Icons.Default.Key, null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Note sécurisée") },
-                    onClick = {
-                        onAddEntry(EntryType.NOTE)
-                        showAddMenu = false
-                    },
-                    leadingIcon = { Icon(Icons.Default.Description, null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Carte bancaire") },
-                    onClick = {
-                        onAddEntry(EntryType.CARD)
-                        showAddMenu = false
-                    },
-                    leadingIcon = { Icon(Icons.Default.CreditCard, null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Document d'identité") },
-                    onClick = {
-                        onAddEntry(EntryType.IDENTITY)
-                        showAddMenu = false
-                    },
-                    leadingIcon = { Icon(Icons.Default.Badge, null) }
-                )
+                // Menu d'ajout
+                DropdownMenu(
+                    expanded = showAddMenu,
+                    onDismissRequest = { showAddMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Identifiant") },
+                        onClick = {
+                            onAddEntry(EntryType.LOGIN)
+                            showAddMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Key, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Note sécurisée") },
+                        onClick = {
+                            onAddEntry(EntryType.NOTE)
+                            showAddMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Description, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Carte bancaire") },
+                        onClick = {
+                            onAddEntry(EntryType.CARD)
+                            showAddMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.CreditCard, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Document d'identité") },
+                        onClick = {
+                            onAddEntry(EntryType.IDENTITY)
+                            showAddMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Badge, null) }
+                    )
+                }
             }
         }
     ) { padding ->
