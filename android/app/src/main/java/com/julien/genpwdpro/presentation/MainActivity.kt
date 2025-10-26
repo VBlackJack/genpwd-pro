@@ -8,10 +8,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.presentation.navigation.AppNavGraph
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Activité principale de l'application GenPwd Pro
@@ -21,6 +23,9 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +41,8 @@ class MainActivity : ComponentActivity() {
                     // ✅ VaultSelector restauré après migration Lazysodium
                     AppNavGraph(
                         navController = navController,
-                        startDestination = Screen.VaultSelector.route
+                        startDestination = Screen.VaultSelector.route,
+                        sessionManager = sessionManager
                     )
                 }
             }

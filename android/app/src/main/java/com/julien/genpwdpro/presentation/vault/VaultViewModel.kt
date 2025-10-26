@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.local.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.domain.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,7 +15,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class VaultViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository
+    private val vaultRepository: VaultRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VaultUiState>(VaultUiState.Loading)
@@ -90,6 +92,9 @@ class VaultViewModel @Inject constructor(
                 // Le vault est déjà déverrouillé après création
                 _isVaultUnlocked.value = true
 
+                // Mettre à jour le SessionManager avec le nouveau vault
+                sessionManager.unlockVault(vaultId)
+
                 // Recharger les vaults
                 loadVaults()
 
@@ -116,6 +121,10 @@ class VaultViewModel @Inject constructor(
                     _isVaultUnlocked.value = true
                     val vault = vaultRepository.getVaultById(vaultId)
                     _selectedVault.value = vault
+
+                    // Mettre à jour le SessionManager avec le vault déverrouillé
+                    sessionManager.unlockVault(vaultId)
+
                     _uiState.value = VaultUiState.VaultUnlocked(vaultId)
                 } else {
                     _isVaultUnlocked.value = false
@@ -135,6 +144,10 @@ class VaultViewModel @Inject constructor(
         _selectedVault.value?.let { vault ->
             vaultRepository.lockVault(vault.id)
             _isVaultUnlocked.value = false
+
+            // Mettre à jour le SessionManager
+            sessionManager.lockVault()
+
             _uiState.value = VaultUiState.VaultLocked
         }
     }
@@ -145,6 +158,10 @@ class VaultViewModel @Inject constructor(
     fun lockAllVaults() {
         vaultRepository.lockAllVaults()
         _isVaultUnlocked.value = false
+
+        // Mettre à jour le SessionManager
+        sessionManager.lockVault()
+
         _uiState.value = VaultUiState.VaultLocked
     }
 

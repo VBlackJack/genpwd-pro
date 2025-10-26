@@ -73,7 +73,8 @@ sealed class Screen(val route: String) {
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.VaultSelector.route
+    startDestination: String = Screen.VaultSelector.route,
+    sessionManager: com.julien.genpwdpro.domain.session.SessionManager
 ) {
     NavHost(
         navController = navController,
@@ -93,6 +94,18 @@ fun AppNavGraph(
                 },
                 onNavigateToSyncSettings = {
                     navController.navigate(Screen.SyncSettings.route)
+                },
+                onSaveToVault = { password ->
+                    // Vérifier si un vault est déverrouillé
+                    val vaultId = sessionManager.getCurrentVaultId()
+                    if (vaultId != null) {
+                        // Naviguer vers CreateEntry avec le mot de passe
+                        navController.navigate(
+                            Screen.CreateEntry.createRoute(vaultId) +
+                            "&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+                        )
+                    }
+                    // Sinon, le GeneratorScreen affichera déjà le message d'erreur
                 }
             )
         }
@@ -220,6 +233,11 @@ fun AppNavGraph(
                 navArgument("type") {
                     type = NavType.StringType
                     defaultValue = EntryType.LOGIN.name
+                },
+                navArgument("password") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -230,11 +248,13 @@ fun AppNavGraph(
             } catch (e: IllegalArgumentException) {
                 EntryType.LOGIN
             }
+            val initialPassword = backStackEntry.arguments?.getString("password")
 
             EntryEditScreen(
                 vaultId = vaultId,
                 entryId = null,
                 entryType = entryType,
+                initialPassword = initialPassword,
                 onSaved = {
                     navController.popBackStack()
                 },
