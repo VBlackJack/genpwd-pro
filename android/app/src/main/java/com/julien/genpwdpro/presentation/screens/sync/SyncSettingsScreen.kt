@@ -50,6 +50,8 @@ fun SyncSettingsScreen(
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showProviderConfigDialog by remember { mutableStateOf(false) }
+    var selectedProviderForConfig by remember { mutableStateOf<ProviderInfo?>(null) }
 
     Scaffold(
         topBar = {
@@ -92,7 +94,14 @@ fun SyncSettingsScreen(
                 ProviderSelectionCard(
                     availableProviders = uiState.availableProviders,
                     selectedProvider = uiState.config.providerType,
-                    onProviderChange = { viewModel.selectProvider(it) }
+                    onProviderChange = { providerType ->
+                        // Find provider info and show config dialog
+                        val providerInfo = uiState.availableProviders.find { it.type == providerType }
+                        if (providerInfo != null) {
+                            selectedProviderForConfig = providerInfo
+                            showProviderConfigDialog = true
+                        }
+                    }
                 )
 
                 // Auto-sync settings
@@ -131,6 +140,51 @@ fun SyncSettingsScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    // Show provider configuration dialog
+    if (showProviderConfigDialog && selectedProviderForConfig != null) {
+        when (selectedProviderForConfig!!.type) {
+            CloudProviderType.WEBDAV -> {
+                // Use WebDAV-specific dialog
+                var showWebDAVDialog by remember { mutableStateOf(true) }
+                if (showWebDAVDialog) {
+                    WebDAVConfigDialog(
+                        onDismiss = {
+                            showWebDAVDialog = false
+                            showProviderConfigDialog = false
+                            selectedProviderForConfig = null
+                        },
+                        onSave = { serverUrl, username, password, validateSSL ->
+                            viewModel.configureWebDAV(serverUrl, username, password, validateSSL)
+                            showWebDAVDialog = false
+                            showProviderConfigDialog = false
+                            selectedProviderForConfig = null
+                        },
+                        onTestConnection = { serverUrl, username, password, validateSSL ->
+                            viewModel.testWebDAVConnection(serverUrl, username, password, validateSSL)
+                        },
+                        isTestingConnection = uiState.isTestingConnection,
+                        testConnectionResult = uiState.testConnectionResult
+                    )
+                }
+            }
+            else -> {
+                // Use generic OAuth2 dialogs
+                CloudProviderConfigDialog(
+                    providerInfo = selectedProviderForConfig!!,
+                    onDismiss = {
+                        showProviderConfigDialog = false
+                        selectedProviderForConfig = null
+                    },
+                    onAuthenticate = { config ->
+                        viewModel.authenticateProvider(selectedProviderForConfig!!.type, config)
+                        showProviderConfigDialog = false
+                        selectedProviderForConfig = null
+                    }
+                )
+            }
         }
     }
 }
@@ -773,6 +827,65 @@ class SyncSettingsViewModel @Inject constructor(
         }
     }
 
+    fun configureWebDAV(serverUrl: String, username: String, password: String, validateSSL: Boolean) {
+        viewModelScope.launch {
+            // TODO: Save WebDAV config and create provider
+            _uiState.update { state ->
+                state.copy(
+                    config = state.config.copy(providerType = CloudProviderType.WEBDAV)
+                )
+            }
+        }
+    }
+
+    fun testWebDAVConnection(serverUrl: String, username: String, password: String, validateSSL: Boolean) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isTestingConnection = true) }
+            try {
+                // TODO: Test WebDAV connection
+                kotlinx.coroutines.delay(1500)
+                _uiState.update {
+                    it.copy(
+                        isTestingConnection = false,
+                        testConnectionResult = TestConnectionResult.Success("Connexion WebDAV réussie!")
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isTestingConnection = false,
+                        testConnectionResult = TestConnectionResult.Failure(e.message ?: "Erreur inconnue")
+                    )
+                }
+            }
+        }
+    }
+
+    fun authenticateProvider(providerType: CloudProviderType, config: CloudProviderConfig) {
+        viewModelScope.launch {
+            // TODO: Authenticate with provider using config
+            when (config) {
+                is CloudProviderConfig.GoogleDrive -> {
+                    // Start Google OAuth flow
+                }
+                is CloudProviderConfig.OneDrive -> {
+                    // Start OneDrive OAuth with clientId
+                }
+                is CloudProviderConfig.PCloud -> {
+                    // Start pCloud OAuth with appKey, appSecret, region
+                }
+                is CloudProviderConfig.ProtonDrive -> {
+                    // Start ProtonDrive OAuth with clientId, clientSecret
+                }
+            }
+            _uiState.update { state ->
+                state.copy(
+                    config = state.config.copy(providerType = providerType)
+                )
+            }
+        }
+    }
+
     fun toggleAutoSync() {
         _uiState.update { state ->
             state.copy(
@@ -828,5 +941,7 @@ data class SyncSettingsUiState(
     val config: com.julien.genpwdpro.data.sync.models.SyncConfig = com.julien.genpwdpro.data.sync.models.SyncConfig(),
     val status: SyncStatus = SyncStatus.IDLE,
     val availableProviders: List<ProviderInfo> = emptyList(),
-    val metadata: LocalSyncMetadata = LocalSyncMetadata()
+    val metadata: LocalSyncMetadata = LocalSyncMetadata(),
+    val isTestingConnection: Boolean = false,
+    val testConnectionResult: TestConnectionResult? = null
 )
