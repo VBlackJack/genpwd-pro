@@ -66,6 +66,25 @@ class ApplyCasingUseCase {
 
         // Séparer par les délimiteurs
         val separators = listOf('-', '_', '.', ' ')
+        val hasSeparators = password.any { it in separators }
+
+        return if (hasSeparators) {
+            // Mode avec séparateurs (ex: passphrase)
+            applyBlocksWithSeparators(password, blocks, separators)
+        } else {
+            // Mode sans séparateurs (ex: syllables)
+            applyBlocksAsChunks(password, blocks)
+        }
+    }
+
+    /**
+     * Applique les blocs de casse en divisant par séparateurs (pour passphrases)
+     */
+    private fun applyBlocksWithSeparators(
+        password: String,
+        blocks: List<CaseBlock>,
+        separators: List<Char>
+    ): String {
         val words = password.split(*separators.map { it.toString() }.toTypedArray())
         val usedSeparators = mutableListOf<Char>()
 
@@ -88,6 +107,31 @@ class ApplyCasingUseCase {
             result.append(word)
             if (index < usedSeparators.size) {
                 result.append(usedSeparators[index])
+            }
+        }
+
+        return result.toString()
+    }
+
+    /**
+     * Applique les blocs de casse en divisant en chunks (pour syllables)
+     */
+    private fun applyBlocksAsChunks(password: String, blocks: List<CaseBlock>): String {
+        if (password.isEmpty()) return password
+
+        // Calculer la taille de chaque chunk
+        val chunkSize = (password.length + blocks.size - 1) / blocks.size
+
+        val result = StringBuilder()
+        var position = 0
+
+        blocks.forEachIndexed { blockIndex, block ->
+            // Extraire le chunk pour ce bloc
+            val endPosition = minOf(position + chunkSize, password.length)
+            if (position < password.length) {
+                val chunk = password.substring(position, endPosition)
+                result.append(applyBlockToWord(chunk, block))
+                position = endPosition
             }
         }
 
