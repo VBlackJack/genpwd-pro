@@ -547,9 +547,36 @@ class OneDriveProvider(
     }
 
     /**
+     * Vérifie si une version plus récente existe sur le cloud
+     */
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val metadata = getCloudMetadata(vaultId)
+            metadata != null && metadata.modifiedTime > localTimestamp
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking version", e)
+            false
+        }
+    }
+
+    /**
+     * Récupère les métadonnées d'un fichier cloud
+     */
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+        try {
+            val fileName = "vault_${vaultId}.enc"
+            val metadata = listVaults().find { it.fileName == fileName }
+            metadata
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting metadata", e)
+            null
+        }
+    }
+
+    /**
      * Se déconnecte
      */
-    override suspend fun disconnect() = withContext(Dispatchers.IO) {
+    override suspend fun disconnect(): Unit = withContext(Dispatchers.IO) {
         try {
             accessToken = null
             genPwdFolderId = null

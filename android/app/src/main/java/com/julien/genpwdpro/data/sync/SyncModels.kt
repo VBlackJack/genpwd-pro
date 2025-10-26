@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.sync
 
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
+import com.julien.genpwdpro.data.sync.models.VaultSyncData
 
 // NOTE: ConflictResolutionStrategy is also defined in models/SyncStatus.kt
 // But we keep a local copy for CloudSyncRepository to use with SyncData
@@ -35,7 +36,7 @@ enum class SyncDataType {
 }
 
 /**
- * Résultat d'une opération de synchronisation (pour CloudSyncRepository avec SyncData)
+ * Résultat d'une opération de synchronisation (uses VaultSyncData from models package)
  */
 sealed class SyncResult {
     object Success : SyncResult()
@@ -44,7 +45,8 @@ sealed class SyncResult {
 }
 
 /**
- * Stratégie de résolution de conflits
+ * Stratégie de résolution de conflits (sync package version - for CloudSyncRepository)
+ * NOTE: VaultSyncManager uses the version from models/SyncStatus.kt
  */
 enum class ConflictResolutionStrategy {
     LOCAL_WINS,         // Garder les données locales

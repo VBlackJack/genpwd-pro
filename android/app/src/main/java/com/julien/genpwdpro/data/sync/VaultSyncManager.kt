@@ -13,6 +13,8 @@ import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.julien.genpwdpro.data.sync.models.SyncResult as VaultSyncResult
+import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as VaultConflictResolutionStrategy
 
 /**
  * Gestionnaire de synchronisation des vaults avec le cloud
@@ -137,19 +139,19 @@ class VaultSyncManager @Inject constructor(
      * @param masterPassword Mot de passe maître pour chiffrement
      * @return Résultat de la synchronisation
      */
-    suspend fun syncVault(vaultId: String, masterPassword: String): SyncResult {
-        val provider = currentProvider ?: return SyncResult.Error("Aucun provider configuré")
+    suspend fun syncVault(vaultId: String, masterPassword: String): VaultSyncResult {
+        val provider = currentProvider ?: return VaultSyncResult.Error("Aucun provider configuré")
 
         _syncStatus.value = SyncStatus.SYNCING
 
         return try {
             // 1. Exporter le vault (chiffré)
             val encryptedData = vaultRepository.exportVault(vaultId, masterPassword)
-                ?: return SyncResult.Error("Impossible d'exporter le vault")
+                ?: return VaultSyncResult.Error("Impossible d'exporter le vault")
 
             // 2. Obtenir les métadonnées du vault
             val vault = vaultRepository.getVaultById(vaultId)
-                ?: return SyncResult.Error("Vault non trouvé")
+                ?: return VaultSyncResult.Error("Vault non trouvé")
 
             // 3. Calculer le checksum
             val checksum = calculateChecksum(encryptedData)
@@ -171,7 +173,7 @@ class VaultSyncManager @Inject constructor(
                 val remoteData = provider.downloadVault(vaultId)
                 if (remoteData != null && conflictResolver.hasConflict(syncData, remoteData)) {
                     _syncStatus.value = SyncStatus.CONFLICT
-                    return SyncResult.Conflict(remoteData, syncData)
+                    return VaultSyncResult.Conflict(remoteData, syncData)
                 }
             }
 
@@ -180,15 +182,15 @@ class VaultSyncManager @Inject constructor(
 
             if (fileId != null) {
                 _syncStatus.value = SyncStatus.SYNCED
-                SyncResult.Success
+                VaultSyncResult.Success
             } else {
                 _syncStatus.value = SyncStatus.ERROR
-                SyncResult.Error("Échec de l'upload")
+                VaultSyncResult.Error("Échec de l'upload")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing vault", e)
             _syncStatus.value = SyncStatus.ERROR
-            SyncResult.Error(e.message ?: "Erreur inconnue", e)
+            VaultSyncResult.Error(e.message ?: "Erreur inconnue", e)
         }
     }
 
@@ -240,7 +242,7 @@ class VaultSyncManager @Inject constructor(
     suspend fun resolveConflict(
         local: VaultSyncData,
         remote: VaultSyncData,
-        strategy: ConflictResolutionStrategy,
+        strategy: VaultConflictResolutionStrategy,
         masterPassword: String
     ): Boolean {
         val provider = currentProvider ?: return false

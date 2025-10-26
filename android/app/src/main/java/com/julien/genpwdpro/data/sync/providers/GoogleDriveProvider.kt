@@ -130,7 +130,7 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Déconnecte l'utilisateur
      */
-    override suspend fun disconnect() = withContext(Dispatchers.IO) {
+    override suspend fun disconnect(): Unit = withContext(Dispatchers.IO) {
         try {
             driveService = null
             currentAccount = null

@@ -168,6 +168,7 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
 
             VaultSyncData(
                 vaultId = vaultId,
+                vaultName = "Vault $vaultId",
                 encryptedData = encryptedData,
                 timestamp = timestamp,
                 deviceId = "", // Will be set by SyncManager
@@ -196,10 +197,11 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
 
             CloudFileMetadata(
                 fileId = file.id,
-                name = file.name,
+                fileName = file.name,
                 size = file.getSize() ?: 0,
                 modifiedTime = file.modifiedTime?.value ?: 0,
-                checksum = file.md5Checksum
+                checksum = file.md5Checksum,
+                version = null
             )
         } catch (e: Exception) {
             null
@@ -255,9 +257,12 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                 .execute()
 
             val quota = about.storageQuota
+            val used = quota.usage ?: 0
+            val total = quota.limit ?: 0
             StorageQuota(
-                usedBytes = quota.usage ?: 0,
-                totalBytes = quota.limit ?: 0
+                usedBytes = used,
+                totalBytes = total,
+                freeBytes = total - used
             )
         } catch (e: Exception) {
             e.printStackTrace()
