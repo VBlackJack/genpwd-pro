@@ -10,8 +10,10 @@ import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -311,9 +313,16 @@ class ProtonDriveProvider(
      */
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
+            // Enregistrer le callback OAuth auprès du gestionnaire global
+            OAuthCallbackManager.registerCallback(CloudProviderType.PROTON_DRIVE) { uri ->
+                handleOAuthCallback(uri)
+            }
+
             suspendCancellableCoroutine { continuation ->
                 authCallback = { success ->
                     if (continuation.isActive) {
+                        // Désenregistrer le callback après utilisation
+                        OAuthCallbackManager.unregisterCallback(CloudProviderType.PROTON_DRIVE)
                         continuation.resume(success)
                     }
                 }
@@ -337,10 +346,11 @@ class ProtonDriveProvider(
                 val intent = Intent(Intent.ACTION_VIEW, authUrl)
                 activity.startActivity(intent)
 
-                // Le callback sera appelé depuis handleOAuthCallback()
+                // Le callback sera appelé depuis handleOAuthCallback() via OAuthCallbackManager
             }
         } catch (e: Exception) {
             Log.e(TAG, "Authentication error", e)
+            OAuthCallbackManager.unregisterCallback(CloudProviderType.PROTON_DRIVE)
             false
         }
     }
