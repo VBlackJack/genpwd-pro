@@ -272,7 +272,7 @@ class VaultSyncManager @Inject constructor(
      * Liste tous les vaults synchronisés sur le cloud
      */
     suspend fun listCloudVaults(): List<String> {
-        return currentProvider?.listVaults() ?: emptyList()
+        return currentProvider?.listVaults()?.map { it.fileId } ?: emptyList()
     }
 
     /**

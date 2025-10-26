@@ -92,7 +92,7 @@ class SyncInitializer @Inject constructor(
 
             val provider = when (providerType) {
                 CloudProviderType.GOOGLE_DRIVE -> {
-                    providerFactory.createGoogleDriveProvider()
+                    providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE)
                 }
                 CloudProviderType.ONEDRIVE -> {
                     // OneDrive nécessite un clientId - on le récupère des credentials ou config

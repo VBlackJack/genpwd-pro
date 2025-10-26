@@ -2,28 +2,9 @@ package com.julien.genpwdpro.data.sync
 
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
 
-/**
- * État de synchronisation
- */
-enum class SyncStatus {
-    IDLE,           // Aucune sync en cours
-    SYNCING,        // Synchronisation en cours
-    SUCCESS,        // Dernière sync réussie
-    ERROR,          // Erreur lors de la sync
-    CONFLICT        // Conflit détecté
-}
-
-/**
- * Configuration de synchronisation
- */
-data class SyncConfig(
-    val enabled: Boolean = false,
-    val autoSync: Boolean = true,
-    val syncInterval: Long = 3600000, // 1 heure en millisecondes
-    val lastSyncTimestamp: Long = 0,
-    val deviceId: String = "",
-    val encryptionKeyId: String = ""
-)
+// NOTE: ConflictResolutionStrategy is also defined in models/SyncStatus.kt
+// But we keep a local copy for CloudSyncRepository to use with SyncData
+// VaultSyncManager uses the one from models/ with VaultSyncData
 
 /**
  * Données synchronisées (chiffrées)
@@ -54,7 +35,7 @@ enum class SyncDataType {
 }
 
 /**
- * Résultat d'une opération de synchronisation
+ * Résultat d'une opération de synchronisation (pour CloudSyncRepository avec SyncData)
  */
 sealed class SyncResult {
     object Success : SyncResult()
