@@ -32,6 +32,7 @@ import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
+import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -995,17 +996,45 @@ class SyncSettingsViewModel @Inject constructor(
 
     fun toggleAutoSync() {
         _uiState.update { state ->
+            val newAutoSync = !state.config.autoSync
+
+            if (newAutoSync) {
+                // Activer la synchronisation automatique
+                Log.d("SyncSettingsViewModel", "Enabling auto-sync with interval: ${state.config.syncInterval}")
+                CloudSyncWorker.schedule(
+                    context = context,
+                    intervalMillis = state.config.syncInterval,
+                    wifiOnly = state.config.syncOnWifiOnly
+                )
+            } else {
+                // Désactiver la synchronisation automatique
+                Log.d("SyncSettingsViewModel", "Disabling auto-sync")
+                CloudSyncWorker.cancel(context)
+            }
+
             state.copy(
-                config = state.config.copy(autoSync = !state.config.autoSync)
+                config = state.config.copy(autoSync = newAutoSync)
             )
         }
     }
 
     fun updateSyncInterval(interval: Long) {
         _uiState.update { state ->
-            state.copy(
+            val newState = state.copy(
                 config = state.config.copy(syncInterval = interval)
             )
+
+            // Si auto-sync est activé, reprogrammer avec le nouvel intervalle
+            if (newState.config.autoSync) {
+                Log.d("SyncSettingsViewModel", "Updating sync interval to: $interval")
+                CloudSyncWorker.schedule(
+                    context = context,
+                    intervalMillis = interval,
+                    wifiOnly = newState.config.syncOnWifiOnly
+                )
+            }
+
+            newState
         }
     }
 
