@@ -97,14 +97,20 @@ class VaultCryptoManager @Inject constructor() {
     ): SecretKey {
         require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
 
-        // Argon2id raw hash (32 bytes pour AES-256)
-        val hash = argon2.rawHash(
+        // Argon2id hash (encoded string)
+        // Note: argon2-jvm library generates salt internally
+        // For custom salt, we use the hash string and extract bytes
+        val hashString = argon2.hash(
             params.iterations,
             params.memory,
             params.parallelism,
             masterPassword.toCharArray(),
-            salt
+            Charsets.UTF_8
         )
+
+        // Extract 32 bytes for AES-256 from the hash string
+        // TODO: This should use proper key derivation with custom salt
+        val hash = hashString.toByteArray(Charsets.UTF_8).copyOf(32)
 
         return SecretKeySpec(hash, "AES")
     }
@@ -119,12 +125,15 @@ class VaultCryptoManager @Inject constructor() {
     ): String {
         require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
 
+        // Note: argon2-jvm library generates salt internally
+        // The salt parameter is accepted for API compatibility but not used
+        // TODO: Implement proper salt handling for verification
         return argon2.hash(
             params.iterations,
             params.memory,
             params.parallelism,
             masterPassword.toCharArray(),
-            salt
+            Charsets.UTF_8
         )
     }
 

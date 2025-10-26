@@ -70,7 +70,7 @@ class GenPwdAutofillService : AutofillService() {
                 val parser = AutofillParser(context)
                 val autofillFields = parser.parseForCredentials()
 
-                if (autofillFields.isEmpty()) {
+                if (autofillFields == null || autofillFields.isEmpty()) {
                     callback.onSuccess(null)
                     return@launch
                 }
