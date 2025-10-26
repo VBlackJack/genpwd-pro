@@ -4,8 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,13 +27,14 @@ import javax.inject.Inject
  *
  * Point d'entrée de l'application qui configure la navigation et le thème.
  * Utilise Jetpack Compose avec Navigation Compose pour la gestion des écrans.
+ * Hérite de FragmentActivity pour la compatibilité biométrique.
  *
  * Gère également les deep links OAuth2 pour la synchronisation cloud:
  * - genpwdpro://oauth/pcloud - Callback OAuth2 pCloud
  * - genpwdpro://oauth/proton - Callback OAuth2 ProtonDrive
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "MainActivity"

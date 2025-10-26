@@ -15,6 +15,8 @@ import androidx.fragment.app.FragmentActivity
  * - Reconnaissance faciale
  * - Reconnaissance de l'iris
  * - Device credentials (PIN/Pattern)
+ *
+ * Compatible avec FragmentActivity (requis pour BiometricPrompt)
  */
 class BiometricHelper(private val activity: FragmentActivity) {
 
@@ -155,6 +157,7 @@ class BiometricHelper(private val activity: FragmentActivity) {
 
 /**
  * Trouve la FragmentActivity en parcourant la chaîne de ContextWrapper
+ * FragmentActivity est requise pour BiometricPrompt
  */
 fun Context.findActivity(): FragmentActivity? {
     var context = this
