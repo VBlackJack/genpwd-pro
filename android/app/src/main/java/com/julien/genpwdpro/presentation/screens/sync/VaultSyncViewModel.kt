@@ -26,7 +26,8 @@ import javax.inject.Inject
 @HiltViewModel
 class VaultSyncViewModel @Inject constructor(
     private val vaultSyncManager: VaultSyncManager,
-    private val autoSyncScheduler: AutoSyncScheduler
+    private val autoSyncScheduler: AutoSyncScheduler,
+    private val providerFactory: com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultSyncUiState())
@@ -66,31 +67,29 @@ class VaultSyncViewModel @Inject constructor(
             _uiState.update { it.copy(isConnecting = true, errorMessage = null) }
 
             try {
-                val provider = when (providerType) {
-                    CloudProviderType.GOOGLE_DRIVE -> GoogleDriveProvider()
-                    CloudProviderType.ONEDRIVE -> OneDriveProvider()
-                    CloudProviderType.PROTON_DRIVE -> {
-                        _uiState.update {
-                            it.copy(
-                                isConnecting = false,
-                                errorMessage = "ProtonDrive n'est pas encore implémenté"
-                            )
-                        }
-                        return@launch
+                // Créer le provider via la factory
+                val provider = providerFactory.createProvider(providerType)
+
+                if (provider == null) {
+                    _uiState.update {
+                        it.copy(
+                            isConnecting = false,
+                            errorMessage = "Provider non supporté"
+                        )
                     }
-                    CloudProviderType.PCLOUD -> {
-                        _uiState.update {
-                            it.copy(
-                                isConnecting = false,
-                                errorMessage = "pCloud n'est pas encore implémenté"
-                            )
-                        }
-                        return@launch
+                    return@launch
+                }
+
+                // Vérifier le statut d'implémentation
+                val providerInfo = providerFactory.getProviderInfo(providerType)
+                if (providerInfo.implementationStatus != com.julien.genpwdpro.data.sync.providers.ImplementationStatus.PRODUCTION_READY) {
+                    _uiState.update {
+                        it.copy(
+                            isConnecting = false,
+                            errorMessage = "${providerInfo.name} n'est pas encore complètement implémenté. Status: ${providerInfo.implementationStatus}"
+                        )
                     }
-                    CloudProviderType.NONE -> {
-                        _uiState.update { it.copy(isConnecting = false) }
-                        return@launch
-                    }
+                    return@launch
                 }
 
                 // Configurer le provider
@@ -119,6 +118,20 @@ class VaultSyncViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Récupère les informations de tous les providers
+     */
+    fun getAllProviderInfo(): List<com.julien.genpwdpro.data.sync.providers.ProviderInfo> {
+        return providerFactory.getAllProviders()
+    }
+
+    /**
+     * Récupère les providers prêts pour la production
+     */
+    fun getProductionReadyProviders(): List<com.julien.genpwdpro.data.sync.providers.ProviderInfo> {
+        return providerFactory.getProductionReadyProviders()
     }
 
     /**
