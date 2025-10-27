@@ -163,3 +163,11 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
+
+#===============================================================================
+# APACHE HTTP CLIENT (Google Drive API dependency)
+#===============================================================================
+# Ignore missing javax.naming classes (not available on Android)
+-dontwarn javax.naming.**
+-dontwarn org.ietf.jgss.**
+-dontwarn org.apache.http.**
