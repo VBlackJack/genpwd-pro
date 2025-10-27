@@ -63,8 +63,19 @@ fun EntryEditScreen(
             viewModel.initForEdit(vaultId, entryId)
         } else {
             viewModel.initForCreate(vaultId, entryType)
-            // Si un mot de passe initial est fourni, le définir
-            initialPassword?.let { viewModel.updatePassword(it) }
+            // Si un mot de passe initial est fourni, le placer dans le bon champ
+            initialPassword?.let { password ->
+                when (entryType) {
+                    EntryType.NOTE -> {
+                        // Pour une note sécurisée, mettre le contenu dans les notes
+                        viewModel.updateNotes(password)
+                    }
+                    else -> {
+                        // Pour LOGIN et WIFI, mettre dans le champ password
+                        viewModel.updatePassword(password)
+                    }
+                }
+            }
         }
     }
 

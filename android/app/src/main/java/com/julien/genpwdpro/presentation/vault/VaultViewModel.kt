@@ -208,13 +208,19 @@ class VaultViewModel @Inject constructor(
 
     /**
      * Sauvegarde le master password pour déverrouillage biométrique
+     * IMPORTANT: Cette fonction est suspend pour garantir que la sauvegarde est terminée
+     * avant que la navigation ne se produise (évite les race conditions)
      */
-    fun saveBiometricPassword(vaultId: String, masterPassword: String) {
-        viewModelScope.launch {
+    suspend fun saveBiometricPassword(vaultId: String, masterPassword: String): Boolean {
+        return try {
             val success = vaultRepository.saveBiometricPassword(vaultId, masterPassword)
             if (!success) {
                 _uiState.value = VaultUiState.Error("Échec de la configuration biométrique")
             }
+            success
+        } catch (e: Exception) {
+            _uiState.value = VaultUiState.Error("Erreur lors de la configuration biométrique")
+            false
         }
     }
 

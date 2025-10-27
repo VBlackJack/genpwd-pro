@@ -54,14 +54,17 @@ fun CreateVaultScreen(
     }
 
     // Observer les changements d'état
-    // IMPORTANT: N'observer QUE uiState, pas masterPassword (cause des relances inutiles)
+    // IMPORTANT: N'observer QUE uiState (pas masterPassword/enableBiometric)
     LaunchedEffect(uiState) {
         if (uiState is VaultUiState.VaultCreated) {
             val vaultId = (uiState as VaultUiState.VaultCreated).vaultId
 
-            // Si biométrie activée, sauvegarder le master password
+            // ATTENDRE que la biométrie soit sauvegardée avant de naviguer
             if (enableBiometric && masterPassword.isNotEmpty()) {
-                viewModel.saveBiometricPassword(vaultId, masterPassword)
+                val success = viewModel.saveBiometricPassword(vaultId, masterPassword)
+                if (!success) {
+                    android.util.Log.w("CreateVaultScreen", "Failed to save biometric password for vault $vaultId")
+                }
             }
 
             onVaultCreated(vaultId)
