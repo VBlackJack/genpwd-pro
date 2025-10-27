@@ -20,7 +20,7 @@ import com.julien.genpwdpro.data.local.entity.*
         EntryTagCrossRef::class,
         VaultRegistryEntry::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -241,6 +241,51 @@ abstract class AppDatabase : RoomDatabase() {
                 """)
 
                 // Create indexes for common queries
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_name ON vault_registry(name)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_filePath ON vault_registry(filePath)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_lastAccessed ON vault_registry(lastAccessed)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
+            }
+        }
+
+        /**
+         * Migration 5 → 6: Fix vault_registry schema
+         *
+         * This migration fixes the vault_registry table schema by dropping and recreating it.
+         * This is necessary because v5 may have been created with DEFAULT values that don't
+         * match Room's expectations (defaultValue='undefined').
+         *
+         * Safe to drop because vault_registry is new and shouldn't contain user data yet.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Drop the table if it exists (safe - it's new and likely empty)
+                database.execSQL("DROP TABLE IF EXISTS vault_registry")
+
+                // Recreate with correct schema (no DEFAULT clauses)
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS vault_registry (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        filePath TEXT NOT NULL,
+                        storageStrategy TEXT NOT NULL,
+                        fileSize INTEGER NOT NULL,
+                        lastModified INTEGER NOT NULL,
+                        lastAccessed INTEGER,
+                        isDefault INTEGER NOT NULL,
+                        isLoaded INTEGER NOT NULL,
+                        entryCount INTEGER NOT NULL,
+                        folderCount INTEGER NOT NULL,
+                        presetCount INTEGER NOT NULL,
+                        tagCount INTEGER NOT NULL,
+                        totalSize INTEGER NOT NULL,
+                        description TEXT,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
+
+                // Recreate indexes
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_name ON vault_registry(name)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_filePath ON vault_registry(filePath)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
