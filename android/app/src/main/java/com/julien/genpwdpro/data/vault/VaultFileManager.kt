@@ -1,9 +1,11 @@
 package com.julien.genpwdpro.data.vault
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
@@ -154,13 +156,13 @@ class VaultFileManager @Inject constructor(
         strategy: StorageStrategy,
         customPath: Uri? = null
     ): File {
-        val file = if (strategy == StorageStrategy.CUSTOM && customPath != null) {
+        if (strategy == StorageStrategy.CUSTOM && customPath != null) {
             // Utiliser SAF pour custom paths
-            throw UnsupportedOperationException("Use saveVaultFileToUri for custom paths")
-        } else {
-            val dir = getStorageDirectory(strategy)
-            File(dir, getVaultFileName(vaultId))
+            throw UnsupportedOperationException("Use createVaultFileToUri for custom paths - this returns Uri, not File")
         }
+
+        val dir = getStorageDirectory(strategy)
+        val file = File(dir, getVaultFileName(vaultId))
 
         return writeVaultFile(file, data, vaultKey, vaultId)
     }
@@ -410,5 +412,234 @@ class VaultFileManager @Inject constructor(
      */
     fun getVaultFileSize(filePath: String): Long {
         return File(filePath).length()
+    }
+
+    // ========== Storage Access Framework (SAF) Methods ==========
+
+    /**
+     * Crée un nouveau vault dans un dossier sélectionné via SAF
+     *
+     * @param name Nom du vault
+     * @param masterPassword Master password
+     * @param customFolderUri URI du dossier sélectionné via SAF
+     * @param description Description optionnelle
+     * @return Pair(vaultId, fileUri)
+     */
+    suspend fun createVaultFileToUri(
+        name: String,
+        masterPassword: String,
+        customFolderUri: Uri,
+        description: String? = null
+    ): Pair<String, Uri> {
+        val vaultId = UUID.randomUUID().toString()
+        val timestamp = System.currentTimeMillis()
+
+        // Prendre les permissions persistantes sur le dossier
+        context.contentResolver.takePersistableUriPermission(
+            customFolderUri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        )
+
+        // Créer la clé depuis le master password
+        val salt = cryptoManager.generateSaltFromString(vaultId)
+        val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
+
+        // Créer les métadonnées initiales
+        val metadata = VaultMetadata(
+            vaultId = vaultId,
+            name = name,
+            description = description,
+            isDefault = false,
+            createdAt = timestamp,
+            modifiedAt = timestamp,
+            statistics = VaultStatistics()
+        )
+
+        // Créer le vault vide
+        val vaultData = VaultData(
+            metadata = metadata,
+            entries = emptyList(),
+            folders = emptyList(),
+            tags = emptyList(),
+            presets = emptyList(),
+            entryTags = emptyList()
+        )
+
+        // Sauvegarder dans le dossier SAF
+        val fileUri = saveVaultFileToUri(vaultId, vaultData, vaultKey, customFolderUri)
+
+        return Pair(vaultId, fileUri)
+    }
+
+    /**
+     * Sauvegarde un vault dans un dossier SAF
+     *
+     * @param vaultId ID du vault
+     * @param data Données du vault
+     * @param vaultKey Clé de chiffrement
+     * @param customFolderUri URI du dossier
+     * @return URI du fichier créé
+     */
+    suspend fun saveVaultFileToUri(
+        vaultId: String,
+        data: VaultData,
+        vaultKey: SecretKey,
+        customFolderUri: Uri
+    ): Uri {
+        try {
+            val folder = DocumentFile.fromTreeUri(context, customFolderUri)
+                ?: throw IllegalStateException("Cannot access custom folder")
+
+            val fileName = getVaultFileName(vaultId)
+
+            // Vérifier si le fichier existe déjà
+            var vaultFile = folder.findFile(fileName)
+
+            // Si le fichier n'existe pas, le créer
+            if (vaultFile == null) {
+                vaultFile = folder.createFile("application/octet-stream", fileName)
+                    ?: throw IllegalStateException("Cannot create vault file in custom folder")
+            }
+
+            // Mettre à jour le timestamp de modification
+            val updatedData = data.copy(
+                metadata = data.metadata.copy(
+                    modifiedAt = System.currentTimeMillis()
+                )
+            )
+
+            // Sérialiser les données
+            val dataJson = gson.toJson(updatedData)
+
+            // Chiffrer le contenu
+            val encryptedContent = cryptoManager.encryptBytes(
+                dataJson.toByteArray(Charsets.UTF_8),
+                vaultKey
+            )
+
+            // Calculer le checksum
+            val checksum = calculateChecksum(dataJson)
+
+            // Créer le header
+            val header = VaultFileHeader(
+                vaultId = vaultId,
+                createdAt = updatedData.metadata.createdAt,
+                modifiedAt = updatedData.metadata.modifiedAt,
+                checksum = checksum
+            )
+
+            // Écrire le fichier via SAF
+            context.contentResolver.openOutputStream(vaultFile.uri, "wt")?.use { outputStream ->
+                // Écrire le header (padding à 256 bytes)
+                val headerJson = gson.toJson(header)
+                val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
+                val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
+                System.arraycopy(headerBytes, 0, paddedHeader, 0, minOf(headerBytes.size, paddedHeader.size))
+                outputStream.write(paddedHeader)
+
+                // Écrire le contenu chiffré
+                outputStream.write(encryptedContent)
+                outputStream.flush()
+            } ?: throw IllegalStateException("Cannot open output stream")
+
+            Log.d(TAG, "Vault file written to SAF URI: ${vaultFile.uri}")
+            return vaultFile.uri
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error writing vault file to SAF", e)
+            throw e
+        }
+    }
+
+    /**
+     * Charge un vault depuis une URI SAF
+     *
+     * @param vaultId ID du vault
+     * @param masterPassword Master password
+     * @param fileUri URI du fichier
+     * @return Données déchiffrées du vault
+     */
+    suspend fun loadVaultFileFromUri(
+        vaultId: String,
+        masterPassword: String,
+        fileUri: Uri
+    ): VaultData {
+        try {
+            // Dériver la clé depuis le master password
+            val salt = cryptoManager.generateSaltFromString(vaultId)
+            val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
+
+            context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
+                // Lire le header (256 bytes)
+                val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
+                inputStream.read(headerBytes)
+                val headerJson = String(headerBytes).trim('\u0000')
+                val header = gson.fromJson(headerJson, VaultFileHeader::class.java)
+
+                // Valider le header
+                if (!header.isValid()) {
+                    throw IllegalStateException("Invalid vault file header")
+                }
+
+                // Lire le contenu chiffré
+                val encryptedContent = inputStream.readBytes()
+
+                // Déchiffrer le contenu
+                val decryptedJson = cryptoManager.decryptBytes(encryptedContent, vaultKey)
+                val decryptedString = String(decryptedJson, Charsets.UTF_8)
+
+                // Parser le JSON
+                val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
+
+                // Valider le checksum
+                val contentChecksum = calculateChecksum(decryptedString)
+                if (contentChecksum != header.checksum) {
+                    Log.w(TAG, "Checksum mismatch - file may be corrupted")
+                }
+
+                return vaultData
+            } ?: throw IllegalStateException("Cannot open input stream from URI")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error reading vault file from SAF", e)
+            throw e
+        }
+    }
+
+    /**
+     * Obtient la taille d'un fichier via son URI SAF
+     */
+    fun getVaultFileSizeFromUri(fileUri: Uri): Long {
+        return try {
+            val documentFile = DocumentFile.fromSingleUri(context, fileUri)
+            documentFile?.length() ?: 0L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting file size from URI", e)
+            0L
+        }
+    }
+
+    /**
+     * Convertit une URI en chemin pour stockage dans la base de données
+     * Pour SAF, on stocke l'URI en string
+     */
+    fun uriToPath(uri: Uri): String {
+        return uri.toString()
+    }
+
+    /**
+     * Convertit un chemin stocké en URI
+     * Détecte automatiquement si c'est un chemin File ou une URI
+     */
+    fun pathToUri(path: String): Uri? {
+        return try {
+            if (path.startsWith("content://")) {
+                Uri.parse(path)
+            } else {
+                null // C'est un chemin File normal
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 }

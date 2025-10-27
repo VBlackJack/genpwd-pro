@@ -81,23 +81,48 @@ class VaultManagerViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // Créer le fichier vault
-                val (vaultId, file) = vaultFileManager.createVaultFile(
-                    name = name,
-                    masterPassword = masterPassword,
-                    strategy = strategy,
-                    description = description,
-                    customPath = null
-                )
+                val vaultId: String
+                val filePath: String
+                val fileSize: Long
+
+                if (strategy == StorageStrategy.CUSTOM) {
+                    // Utiliser SAF pour custom paths
+                    val customFolderUri = _uiState.value.customFolderUri
+                        ?: throw IllegalStateException("Custom folder not selected")
+
+                    val (id, fileUri) = vaultFileManager.createVaultFileToUri(
+                        name = name,
+                        masterPassword = masterPassword,
+                        customFolderUri = customFolderUri,
+                        description = description
+                    )
+
+                    vaultId = id
+                    filePath = vaultFileManager.uriToPath(fileUri)
+                    fileSize = vaultFileManager.getVaultFileSizeFromUri(fileUri)
+                } else {
+                    // Utiliser les méthodes standard pour les autres stratégies
+                    val (id, file) = vaultFileManager.createVaultFile(
+                        name = name,
+                        masterPassword = masterPassword,
+                        strategy = strategy,
+                        description = description,
+                        customPath = null
+                    )
+
+                    vaultId = id
+                    filePath = file.absolutePath
+                    fileSize = file.length()
+                }
 
                 // Créer l'entrée dans le registry
                 val registryEntry = VaultRegistryEntry(
                     id = vaultId,
                     name = name,
-                    filePath = file.absolutePath,
+                    filePath = filePath,
                     storageStrategy = strategy,
-                    fileSize = file.length(),
-                    lastModified = file.lastModified(),
+                    fileSize = fileSize,
+                    lastModified = System.currentTimeMillis(),
                     lastAccessed = null,
                     isDefault = setAsDefault,
                     isLoaded = false,
@@ -112,7 +137,14 @@ class VaultManagerViewModel @Inject constructor(
                     vaultRegistryDao.setAsDefault(vaultId)
                 }
 
-                _uiState.update { it.copy(isLoading = false, showCreateDialog = false) }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        showCreateDialog = false,
+                        customFolderUri = null, // Reset après création
+                        successMessage = "Vault created successfully"
+                    )
+                }
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -123,6 +155,13 @@ class VaultManagerViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Définit le dossier personnalisé pour la stratégie CUSTOM
+     */
+    fun setCustomFolderUri(uri: Uri?) {
+        _uiState.update { it.copy(customFolderUri = uri) }
     }
 
     /**
@@ -347,7 +386,7 @@ class VaultManagerViewModel @Inject constructor(
     }
 
     fun hideCreateDialog() {
-        _uiState.update { it.copy(showCreateDialog = false) }
+        _uiState.update { it.copy(showCreateDialog = false, customFolderUri = null) }
     }
 
     fun showImportDialog() {
@@ -391,5 +430,6 @@ data class VaultManagerUiState(
     val showMigrationDialog: Boolean = false,
     val confirmDeleteVaultId: String? = null,
     val isMigrating: Boolean = false,
-    val migrationProgress: VaultMigrationManager.MigrationProgress? = null
+    val migrationProgress: VaultMigrationManager.MigrationProgress? = null,
+    val customFolderUri: Uri? = null  // URI du dossier sélectionné pour CUSTOM storage
 )

@@ -34,6 +34,8 @@ fun VaultManagerScreen(
     // Dialogs
     if (uiState.showCreateDialog) {
         CreateVaultDialog(
+            viewModel = viewModel,
+            uiState = uiState,
             onDismiss = { viewModel.hideCreateDialog() },
             onCreate = { name, password, strategy, description, setAsDefault ->
                 viewModel.createVault(name, password, strategy, description, setAsDefault)
@@ -405,6 +407,8 @@ fun DetailRow(label: String, value: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateVaultDialog(
+    viewModel: VaultManagerViewModel,
+    uiState: VaultManagerUiState,
     onDismiss: () -> Unit,
     onCreate: (String, String, StorageStrategy, String?, Boolean) -> Unit
 ) {
@@ -416,10 +420,18 @@ fun CreateVaultDialog(
     var setAsDefault by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
 
+    // Folder picker launcher for CUSTOM strategy
+    val folderPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()
+    ) { uri: android.net.Uri? ->
+        viewModel.setCustomFolderUri(uri)
+    }
+
     val isValid = name.isNotBlank() &&
             password.isNotBlank() &&
             password == confirmPassword &&
-            password.length >= 8
+            password.length >= 8 &&
+            (selectedStrategy != StorageStrategy.CUSTOM || uiState.customFolderUri != null)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -474,6 +486,36 @@ fun CreateVaultDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                }
+
+                // Custom folder picker button
+                if (selectedStrategy == StorageStrategy.CUSTOM) {
+                    OutlinedButton(
+                        onClick = { folderPickerLauncher.launch(null) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (uiState.customFolderUri != null) {
+                                "Folder Selected ✓"
+                            } else {
+                                "Select Folder"
+                            }
+                        )
+                    }
+                    if (uiState.customFolderUri == null) {
+                        Text(
+                            text = "Please select a folder to store the vault",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
 
