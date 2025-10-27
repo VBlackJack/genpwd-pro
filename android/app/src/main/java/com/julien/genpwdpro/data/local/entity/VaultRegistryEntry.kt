@@ -2,6 +2,7 @@ package com.julien.genpwdpro.data.local.entity
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
@@ -13,10 +14,20 @@ import com.julien.genpwdpro.data.models.vault.VaultStatistics
  * This table maintains a registry of all vault files, their locations,
  * and statistics about their contents.
  *
- * IMPORTANT: Field order in this entity MUST match the column order
- * in MIGRATION_4_5 CREATE TABLE statement for schema validation.
+ * IMPORTANT:
+ * - Field order in this entity MUST match the column order in MIGRATION SQL
+ * - Indices MUST be declared here to match migration CREATE INDEX statements
  */
-@Entity(tableName = "vault_registry")
+@Entity(
+    tableName = "vault_registry",
+    indices = [
+        Index(value = ["name"]),
+        Index(value = ["filePath"]),
+        Index(value = ["isDefault"]),
+        Index(value = ["lastAccessed"]),
+        Index(value = ["storageStrategy"])
+    ]
+)
 data class VaultRegistryEntry(
     /** Unique identifier (UUID) */
     @PrimaryKey

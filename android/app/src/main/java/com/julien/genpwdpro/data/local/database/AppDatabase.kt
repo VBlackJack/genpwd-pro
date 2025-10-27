@@ -20,7 +20,7 @@ import com.julien.genpwdpro.data.local.entity.*
         EntryTagCrossRef::class,
         VaultRegistryEntry::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -291,6 +291,34 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_lastAccessed ON vault_registry(lastAccessed)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
+            }
+        }
+
+        /**
+         * Migration 6 → 7: Update VaultRegistryEntry entity to declare indices
+         *
+         * This migration doesn't change the database schema - it only updates the entity
+         * definition to declare indices that were already created in MIGRATION_5_6.
+         *
+         * Room requires that indices created in SQL migrations MUST be declared in the
+         * @Entity annotation, otherwise schema validation fails.
+         *
+         * No SQL changes needed - indices already exist from v6.
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // No SQL changes needed
+                // Entity annotation updated to include:
+                // @Entity(tableName = "vault_registry", indices = [
+                //     Index(value = ["name"]),
+                //     Index(value = ["filePath"]),
+                //     Index(value = ["isDefault"]),
+                //     Index(value = ["lastAccessed"]),
+                //     Index(value = ["storageStrategy"])
+                // ])
+                //
+                // This migration exists only to bump the version number so Room
+                // re-validates the schema with the updated entity definition.
             }
         }
     }
