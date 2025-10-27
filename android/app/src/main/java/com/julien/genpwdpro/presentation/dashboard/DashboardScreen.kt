@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.VaultEntity
 import com.julien.genpwdpro.presentation.utils.ClipboardUtils
 import kotlinx.coroutines.launch
 
@@ -24,9 +22,7 @@ import kotlinx.coroutines.launch
  *
  * Features:
  * - Générateur rapide intégré
- * - Liste des coffres avec statistiques
  * - Outils rapides (Analyser, Historique, Phrases personnalisées)
- * - Statistiques de sécurité globales
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -45,7 +41,6 @@ fun DashboardScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.loadVaults()
         viewModel.loadQuickPassword()
     }
 
@@ -90,31 +85,6 @@ fun DashboardScreen(
                         }
                     }
                 )
-            }
-
-            // Section Mes Coffres
-            item {
-                SectionHeader(
-                    title = "Mes Coffres",
-                    subtitle = "${uiState.vaults.size} coffre${if (uiState.vaults.size > 1) "s" else ""}",
-                    icon = Icons.Default.Lock
-                )
-            }
-
-            if (uiState.vaults.isEmpty()) {
-                item {
-                    EmptyVaultsCard(
-                        onCreateVault = onNavigateToCreateVault
-                    )
-                }
-            } else {
-                items(uiState.vaults) { vault ->
-                    VaultCard(
-                        vault = vault,
-                        onClick = { onNavigateToVault(vault.id) },
-                        onManagePresets = { onNavigateToPresetManager(vault.id) }
-                    )
-                }
             }
 
             // Section Outils Rapides

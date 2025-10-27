@@ -228,7 +228,9 @@ fun AppNavGraph(
             )
         }
 
-        // ========== Vault Selector ==========
+        // ========== Vault Selector (OLD SYSTEM - DISABLED) ==========
+        // Use VaultManager instead for file-based vault management
+        /*
         composable(Screen.VaultSelector.route) {
             VaultSelectorScreen(
                 onVaultSelected = { vault ->
@@ -242,8 +244,11 @@ fun AppNavGraph(
                 }
             )
         }
+        */
 
-        // ========== Create Vault ==========
+        // ========== Create Vault (OLD SYSTEM - DISABLED) ==========
+        // Use VaultManager instead for file-based vault creation
+        /*
         composable(Screen.CreateVault.route) {
             CreateVaultScreen(
                 onVaultCreated = { vaultId ->
@@ -258,6 +263,7 @@ fun AppNavGraph(
                 onBackClick = { navController.popBackStack() }
             )
         }
+        */
 
         // ========== Unlock Vault ==========
         composable(
@@ -305,9 +311,9 @@ fun AppNavGraph(
                     navController.navigate(Screen.SyncSettings.route)
                 },
                 onLockClick = {
-                    // Retourner au vault selector
-                    navController.navigate(Screen.VaultSelector.route) {
-                        popUpTo(Screen.VaultSelector.route) {
+                    // Return to dashboard instead of vault selector
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) {
                             inclusive = true
                         }
                     }

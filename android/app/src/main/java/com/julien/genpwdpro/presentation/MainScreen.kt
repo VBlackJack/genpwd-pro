@@ -43,7 +43,6 @@ fun MainScreen(
     val screensWithDrawer = listOf(
         Screen.Dashboard.route,
         Screen.Generator.route,
-        Screen.VaultSelector.route,
         Screen.History.route,
         Screen.VaultManager.route
     )
@@ -207,7 +206,6 @@ fun getCurrentScreenTitle(route: String?): String {
     return when (route) {
         Screen.Dashboard.route -> "GenPwd Pro"
         Screen.Generator.route -> "Générateur"
-        Screen.VaultSelector.route -> "Coffres"
         Screen.History.route -> "Historique"
         Screen.VaultManager.route -> "Gestion des Coffres"
         Screen.Analyzer.route -> "Analyseur"
@@ -242,10 +240,10 @@ private val drawerItems = listOf(
         label = "Générateur"
     ),
     DrawerNavItem(
-        route = Screen.VaultSelector.route,
-        icon = Icons.Default.Lock,
-        selectedIcon = Icons.Default.Lock,
-        label = "Coffres"
+        route = Screen.VaultManager.route,
+        icon = Icons.Default.Storage,
+        selectedIcon = Icons.Default.Storage,
+        label = "Gestion des Coffres"
     ),
     DrawerNavItem(
         route = Screen.History.route,
@@ -259,12 +257,6 @@ private val drawerItems = listOf(
  * Items secondaires du drawer
  */
 private val secondaryDrawerItems = listOf(
-    DrawerNavItem(
-        route = Screen.VaultManager.route,
-        icon = Icons.Default.Storage,
-        selectedIcon = Icons.Default.Storage,
-        label = "Gestion des Coffres"
-    ),
     DrawerNavItem(
         route = Screen.Analyzer.route,
         icon = Icons.Default.Security,
