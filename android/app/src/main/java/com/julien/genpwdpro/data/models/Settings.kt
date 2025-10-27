@@ -5,7 +5,7 @@ package com.julien.genpwdpro.data.models
  * Contient tous les paramètres nécessaires pour générer des mots de passe
  */
 data class Settings(
-    // Mode de génération
+    // Mode de génération (SYLLABLES par défaut)
     val mode: GenerationMode = GenerationMode.SYLLABLES,
 
     // Paramètres communs

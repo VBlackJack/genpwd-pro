@@ -17,9 +17,10 @@ import com.julien.genpwdpro.data.local.entity.*
         VaultEntryEntity::class,
         FolderEntity::class,
         TagEntity::class,
-        EntryTagCrossRef::class
+        EntryTagCrossRef::class,
+        PresetEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun vaultEntryDao(): VaultEntryDao
     abstract fun folderDao(): FolderDao
     abstract fun tagDao(): TagDao
+    abstract fun presetDao(): PresetDao
 
     companion object {
         const val DATABASE_NAME = "genpwd_database"
@@ -189,6 +191,39 @@ abstract class AppDatabase : RoomDatabase() {
                 // Ajouter colonnes pour stocker le master password chiffré
                 database.execSQL("ALTER TABLE vaults ADD COLUMN encryptedMasterPassword BLOB")
                 database.execSQL("ALTER TABLE vaults ADD COLUMN masterPasswordIv BLOB")
+            }
+        }
+
+        /**
+         * Migration 4 → 5: Ajout de la table presets pour les patterns de génération
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Créer la table presets
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS presets (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        vaultId TEXT NOT NULL,
+                        encryptedName TEXT NOT NULL,
+                        nameIv TEXT NOT NULL,
+                        icon TEXT NOT NULL DEFAULT '🔐',
+                        generationMode TEXT NOT NULL,
+                        encryptedSettings TEXT NOT NULL,
+                        settingsIv TEXT NOT NULL,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
+                        isSystemPreset INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        modifiedAt INTEGER NOT NULL,
+                        lastUsedAt INTEGER,
+                        usageCount INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY (vaultId) REFERENCES vaults(id) ON DELETE CASCADE
+                    )
+                """)
+
+                // Index pour optimiser les requêtes
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_vaultId ON presets(vaultId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_generationMode ON presets(generationMode)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_isDefault ON presets(isDefault)")
             }
         }
     }
