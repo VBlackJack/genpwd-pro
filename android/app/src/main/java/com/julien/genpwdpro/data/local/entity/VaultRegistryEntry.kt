@@ -2,6 +2,7 @@ package com.julien.genpwdpro.data.local.entity
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
@@ -9,8 +10,19 @@ import com.julien.genpwdpro.data.models.vault.VaultStatistics
 /**
  * Entrée du registre des vaults
  * Stocke les métadonnées et l'emplacement des fichiers .gpv
+ *
+ * IMPORTANT:
+ * - Indices MUST be declared here to match migration CREATE INDEX statements
+ * - Field order MUST match migration SQL column order
  */
-@Entity(tableName = "vault_registry")
+@Entity(
+    tableName = "vault_registry",
+    indices = [
+        Index(value = ["isDefault"]),
+        Index(value = ["isLoaded"]),
+        Index(value = ["storageStrategy"])
+    ]
+)
 data class VaultRegistryEntry(
     @PrimaryKey
     val id: String,

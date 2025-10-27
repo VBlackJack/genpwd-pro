@@ -21,7 +21,7 @@ import com.julien.genpwdpro.data.local.entity.*
         PresetEntity::class,
         VaultRegistryEntry::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -236,20 +236,15 @@ abstract class AppDatabase : RoomDatabase() {
          * - Les vaults existants restent dans Room (table vaults)
          * - Les nouveaux vaults peuvent être stockés en fichiers .gpv
          * - vault_registry indexe tous les vaults (DB + fichiers)
+         *
+         * CRITICAL: NO DEFAULT values in SQL (Room expects defaultValue='undefined')
          */
         val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Vérifier si la table existe déjà
-                val cursor = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='vault_registry'")
-                val tableExists = cursor.count > 0
-                cursor.close()
+                // Drop table if exists (safe - it's new)
+                database.execSQL("DROP TABLE IF EXISTS vault_registry")
 
-                if (tableExists) {
-                    // La table existe, faire une migration destructive et recréer
-                    database.execSQL("DROP TABLE IF EXISTS vault_registry")
-                }
-
-                // Créer la table vault_registry avec le schéma correct
+                // Create vault_registry table WITHOUT DEFAULT values
                 database.execSQL("""
                     CREATE TABLE vault_registry (
                         id TEXT NOT NULL PRIMARY KEY,
@@ -259,22 +254,37 @@ abstract class AppDatabase : RoomDatabase() {
                         fileSize INTEGER NOT NULL,
                         lastModified INTEGER NOT NULL,
                         lastAccessed INTEGER,
-                        isDefault INTEGER NOT NULL DEFAULT 0,
-                        isLoaded INTEGER NOT NULL DEFAULT 0,
-                        entryCount INTEGER NOT NULL DEFAULT 0,
-                        folderCount INTEGER NOT NULL DEFAULT 0,
-                        presetCount INTEGER NOT NULL DEFAULT 0,
-                        tagCount INTEGER NOT NULL DEFAULT 0,
-                        totalSize INTEGER NOT NULL DEFAULT 0,
+                        isDefault INTEGER NOT NULL,
+                        isLoaded INTEGER NOT NULL,
+                        entryCount INTEGER NOT NULL,
+                        folderCount INTEGER NOT NULL,
+                        presetCount INTEGER NOT NULL,
+                        tagCount INTEGER NOT NULL,
+                        totalSize INTEGER NOT NULL,
                         description TEXT,
                         createdAt INTEGER NOT NULL
                     )
                 """)
 
-                // Index pour optimiser les requêtes
+                // Create indexes
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isLoaded ON vault_registry(isLoaded)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
+            }
+        }
+
+        /**
+         * Migration 6 → 7: Re-validation for VaultRegistryEntry indices
+         *
+         * This migration doesn't change the database schema - it only updates the entity
+         * definition to declare indices that were already created in MIGRATION_5_6.
+         *
+         * Room requires that indices created in SQL migrations MUST be declared in the
+         * @Entity annotation, otherwise schema validation fails.
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // No SQL changes needed - entity annotation updated to include indices
             }
         }
     }
