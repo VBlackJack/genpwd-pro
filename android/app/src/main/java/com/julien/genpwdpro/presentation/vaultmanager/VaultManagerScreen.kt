@@ -3,6 +3,8 @@ package com.julien.genpwdpro.presentation.vaultmanager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -438,6 +440,9 @@ fun CreateVaultDialog(
         title = { Text("Create New Vault") },
         text = {
             Column(
+                modifier = Modifier
+                    .heightIn(max = 500.dp) // Limite la hauteur maximale
+                    .verticalScroll(rememberScrollState()), // Rend le contenu scrollable
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
