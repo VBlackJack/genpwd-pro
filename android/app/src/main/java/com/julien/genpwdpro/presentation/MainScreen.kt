@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -77,13 +78,14 @@ fun MainScreen(
             }
         }
     ) { paddingValues ->
-        // The padding is applied in individual screens' Scaffold
-        // We don't apply it here to avoid double padding
-        AppNavGraph(
-            navController = navController,
-            startDestination = Screen.Dashboard.route,
-            sessionManager = sessionManager
-        )
+        // Apply padding from Scaffold to avoid bottom bar covering content
+        Box(modifier = Modifier.padding(paddingValues)) {
+            AppNavGraph(
+                navController = navController,
+                startDestination = Screen.Dashboard.route,
+                sessionManager = sessionManager
+            )
+        }
     }
 }
 

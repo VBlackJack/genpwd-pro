@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
+import kotlinx.coroutines.launch
 
 /**
  * Écran de gestion des presets

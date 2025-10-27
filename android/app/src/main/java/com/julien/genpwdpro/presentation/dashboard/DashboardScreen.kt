@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
  * - Outils rapides (Analyser, Historique, Phrases personnalisées)
  * - Statistiques de sécurité globales
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun DashboardScreen(
     onNavigateToVault: (String) -> Unit,
