@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -26,7 +27,7 @@ private val Context.syncConfigDataStore: DataStore<Preferences> by preferencesDa
  */
 @Singleton
 class SyncConfigDataStore @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
 
     private object PreferencesKeys {

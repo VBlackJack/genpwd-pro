@@ -128,7 +128,11 @@ fun AppNavGraph(
         // ========== Custom Phrase ==========
         composable(Screen.CustomPhrase.route) {
             CustomPhraseScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onSaveAndGenerate = { wordList, format, wordCount, separator ->
+                    // Navigate back to generator with custom phrase settings
+                    navController.popBackStack()
+                }
             )
         }
 

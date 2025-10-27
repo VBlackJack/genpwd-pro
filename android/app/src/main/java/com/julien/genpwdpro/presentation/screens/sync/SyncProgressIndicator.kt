@@ -190,7 +190,7 @@ private fun UploadingIndicator(
             }
 
             LinearProgressIndicator(
-                progress = { progress },
+                progress = progress,
                 modifier = Modifier.fillMaxWidth(),
                 color = Color(0xFF4CAF50),
             )
@@ -263,7 +263,7 @@ private fun DownloadingIndicator(
             }
 
             LinearProgressIndicator(
-                progress = { progress },
+                progress = progress,
                 modifier = Modifier.fillMaxWidth(),
                 color = Color(0xFF03A9F4),
             )

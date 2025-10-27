@@ -298,7 +298,7 @@ private fun SuccessRateCard(statistics: SyncStatistics) {
             }
 
             LinearProgressIndicator(
-                progress = { successRate / 100f },
+                progress = successRate / 100f,
                 modifier = Modifier.fillMaxWidth(),
                 color = color,
                 trackColor = color.copy(alpha = 0.2f)

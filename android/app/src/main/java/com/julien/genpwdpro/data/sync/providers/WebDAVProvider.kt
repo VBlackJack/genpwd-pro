@@ -356,7 +356,7 @@ class WebDAVProvider(
     /**
      * Liste tous les vaults synchronisés
      */
-    override suspend fun listVaults(): List<String> = withContext(Dispatchers.IO) {
+    override suspend fun listVaults(): List<CloudFileMetadata> = withContext(Dispatchers.IO) {
         try {
             val folderPath = ensureFolderExists()
 
@@ -367,6 +367,8 @@ class WebDAVProvider(
                     <d:prop>
                         <d:displayname/>
                         <d:resourcetype/>
+                        <d:getcontentlength/>
+                        <d:getlastmodified/>
                     </d:prop>
                 </d:propfind>
             """.trimIndent()
@@ -386,22 +388,66 @@ class WebDAVProvider(
 
                 val xml = response.body?.string() ?: return@withContext emptyList()
 
-                // Parser le XML pour extraire les noms de fichiers
-                val fileNames = extractAllFileNames(xml)
-
-                fileNames
-                    .filter { it.startsWith("vault_") && it.endsWith(".enc") }
-                    .mapNotNull { fileName ->
-                        fileName
-                            .removePrefix("vault_")
-                            .removeSuffix(".enc")
-                            .takeIf { it.isNotBlank() }
-                    }
+                // Parser le XML pour extraire les fichiers vault
+                parseWebDAVResponse(xml)
+                    .filter { it.fileName.startsWith("vault_") && it.fileName.endsWith(".enc") }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error listing vaults", e)
             emptyList()
         }
+    }
+
+    /**
+     * Parse WebDAV XML response to extract file metadata
+     */
+    private fun parseWebDAVResponse(xml: String): List<CloudFileMetadata> {
+        val files = mutableListOf<CloudFileMetadata>()
+
+        // Simple XML parsing - in production, use a proper XML parser
+        val responses = xml.split("<d:response>").drop(1)
+
+        for (responseBlock in responses) {
+            try {
+                val href = extractXmlValue(responseBlock, "d:href") ?: continue
+                val fileName = href.substringAfterLast('/').takeIf { it.isNotBlank() } ?: continue
+
+                // Skip directories
+                if (responseBlock.contains("<d:collection/>")) continue
+
+                val size = extractXmlValue(responseBlock, "d:getcontentlength")?.toLongOrNull() ?: 0L
+                val lastModified = extractXmlValue(responseBlock, "d:getlastmodified")?.let {
+                    // Parse RFC 1123 date format to timestamp
+                    System.currentTimeMillis() // Simplified for now
+                } ?: System.currentTimeMillis()
+
+                files.add(CloudFileMetadata(
+                    fileId = href,
+                    fileName = fileName,
+                    size = size,
+                    modifiedTime = lastModified,
+                    checksum = null,
+                    version = null
+                ))
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing file metadata", e)
+            }
+        }
+
+        return files
+    }
+
+    /**
+     * Extract value from XML tag
+     */
+    private fun extractXmlValue(xml: String, tag: String): String? {
+        val startTag = "<$tag>"
+        val endTag = "</$tag>"
+        val startIndex = xml.indexOf(startTag)
+        if (startIndex == -1) return null
+        val endIndex = xml.indexOf(endTag, startIndex)
+        if (endIndex == -1) return null
+        return xml.substring(startIndex + startTag.length, endIndex).trim()
     }
 
     /**

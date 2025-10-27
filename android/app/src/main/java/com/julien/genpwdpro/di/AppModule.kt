@@ -2,8 +2,6 @@ package com.julien.genpwdpro.di
 
 import android.content.Context
 import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.data.sync.CloudSyncRepository
-import com.julien.genpwdpro.data.sync.NoOpCloudSyncRepository
 import com.julien.genpwdpro.domain.generators.CustomPhraseGenerator
 import com.julien.genpwdpro.domain.generators.LeetSpeakGenerator
 import com.julien.genpwdpro.domain.generators.PassphraseGenerator
@@ -104,11 +102,5 @@ object AppModule {
                 return results.firstOrNull()?.password ?: ""
             }
         }
-    }
-
-    @Provides
-    @Singleton
-    fun provideCloudSyncRepository(): CloudSyncRepository {
-        return NoOpCloudSyncRepository()
     }
 }
