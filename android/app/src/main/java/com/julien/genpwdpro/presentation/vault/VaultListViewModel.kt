@@ -4,18 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.local.entity.EntryType
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
+import com.julien.genpwdpro.data.repository.FileVaultRepository
+import com.julien.genpwdpro.domain.model.VaultStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel pour la liste des entrées de vault
+ * ViewModel pour la liste des entrées de vault (nouveau système file-based)
  */
 @HiltViewModel
 class VaultListViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository,
+    private val fileVaultRepository: FileVaultRepository,
     private val totpGenerator: TotpGenerator
 ) : ViewModel() {
 
@@ -31,31 +33,39 @@ class VaultListViewModel @Inject constructor(
     private val _showFavoritesOnly = MutableStateFlow(false)
     val showFavoritesOnly: StateFlow<Boolean> = _showFavoritesOnly.asStateFlow()
 
-    private val _statistics = MutableStateFlow<VaultRepository.VaultStatistics?>(null)
-    val statistics: StateFlow<VaultRepository.VaultStatistics?> = _statistics.asStateFlow()
+    private val _statistics = MutableStateFlow<VaultStatistics?>(null)
+    val statistics: StateFlow<VaultStatistics?> = _statistics.asStateFlow()
 
     private var currentVaultId: String? = null
 
     /**
-     * Charge les entrées d'un vault
+     * Charge les entrées d'un vault (nouveau système file-based)
+     * Note: Le vaultId n'est utilisé que pour tracking, car FileVaultRepository
+     * utilise la session active déverrouillée
      */
     fun loadEntries(vaultId: String) {
         currentVaultId = vaultId
         viewModelScope.launch {
             try {
-                vaultRepository.getEntries(vaultId).collect { entries ->
-                    val filtered = entries.filter { entry ->
-                        val matchesSearch = if (_searchQuery.value.isEmpty()) {
+                // ✅ FIX: Utiliser FileVaultRepository avec searchEntries() pour filtrage réactif
+                combine(
+                    fileVaultRepository.getEntries(),
+                    _searchQuery,
+                    _filterType,
+                    _showFavoritesOnly
+                ) { entries, search, typeFilter, favoritesOnly ->
+                    entries.filter { entry ->
+                        val matchesSearch = if (search.isEmpty()) {
                             true
                         } else {
-                            entry.title.contains(_searchQuery.value, ignoreCase = true)
+                            entry.title.contains(search, ignoreCase = true)
                         }
 
-                        val matchesType = _filterType.value?.let { type ->
+                        val matchesType = typeFilter?.let { type ->
                             entry.entryType == type
                         } ?: true
 
-                        val matchesFavorites = if (_showFavoritesOnly.value) {
+                        val matchesFavorites = if (favoritesOnly) {
                             entry.isFavorite
                         } else {
                             true
@@ -63,8 +73,8 @@ class VaultListViewModel @Inject constructor(
 
                         matchesSearch && matchesType && matchesFavorites
                     }
-
-                    _uiState.value = VaultListUiState.Success(filtered)
+                }.collect { filteredEntries ->
+                    _uiState.value = VaultListUiState.Success(filteredEntries)
                 }
             } catch (e: Exception) {
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur lors du chargement")
@@ -73,13 +83,15 @@ class VaultListViewModel @Inject constructor(
     }
 
     /**
-     * Charge les statistiques du vault
+     * Charge les statistiques du vault (nouveau système)
      */
     fun loadStatistics(vaultId: String) {
         viewModelScope.launch {
             try {
-                val stats = vaultRepository.getVaultStatistics(vaultId)
-                _statistics.value = stats
+                // ✅ FIX: Utiliser FileVaultRepository.getStatistics()
+                fileVaultRepository.getStatistics().collect { stats ->
+                    _statistics.value = stats
+                }
             } catch (e: Exception) {
                 // Ignorer les erreurs de stats
             }
@@ -87,36 +99,38 @@ class VaultListViewModel @Inject constructor(
     }
 
     /**
-     * Recherche des entrées
+     * Recherche des entrées (réactif - pas besoin de recharger)
      */
     fun searchEntries(query: String) {
         _searchQuery.value = query
-        currentVaultId?.let { loadEntries(it) }
+        // Le combine() dans loadEntries() gère automatiquement le filtrage
     }
 
     /**
-     * Filtre par type
+     * Filtre par type (réactif)
      */
     fun filterByType(type: EntryType?) {
         _filterType.value = type
-        currentVaultId?.let { loadEntries(it) }
+        // Le combine() dans loadEntries() gère automatiquement le filtrage
     }
 
     /**
-     * Toggle favoris uniquement
+     * Toggle favoris uniquement (réactif)
      */
     fun toggleFavoritesOnly() {
         _showFavoritesOnly.value = !_showFavoritesOnly.value
-        currentVaultId?.let { loadEntries(it) }
+        // Le combine() dans loadEntries() gère automatiquement le filtrage
     }
 
     /**
-     * Toggle le statut favori d'une entrée
+     * Toggle le statut favori d'une entrée (nouveau système)
      */
-    fun toggleFavorite(entryId: String, isFavorite: Boolean) {
+    fun toggleFavorite(entryId: String) {
         viewModelScope.launch {
             try {
-                vaultRepository.toggleFavorite(entryId, isFavorite)
+                // ✅ FIX: Utiliser FileVaultRepository
+                fileVaultRepository.toggleFavorite(entryId)
+                // Le Flow dans loadEntries() se met à jour automatiquement
             } catch (e: Exception) {
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur")
             }
@@ -124,13 +138,17 @@ class VaultListViewModel @Inject constructor(
     }
 
     /**
-     * Supprime une entrée
+     * Supprime une entrée (nouveau système)
      */
     fun deleteEntry(entryId: String) {
         viewModelScope.launch {
             try {
-                vaultRepository.deleteEntry(entryId)
-                currentVaultId?.let { loadEntries(it) }
+                // ✅ FIX: Utiliser FileVaultRepository
+                val result = fileVaultRepository.deleteEntry(entryId)
+                result.onFailure { error ->
+                    _uiState.value = VaultListUiState.Error(error.message ?: "Erreur lors de la suppression")
+                }
+                // Le Flow dans loadEntries() se met à jour automatiquement
             } catch (e: Exception) {
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur lors de la suppression")
             }
@@ -140,16 +158,16 @@ class VaultListViewModel @Inject constructor(
     /**
      * Génère un code TOTP pour une entrée
      */
-    fun generateTotpCode(entry: VaultRepository.DecryptedEntry): TotpGenerator.TotpResult? {
-        if (!entry.hasTOTP || entry.totpSecret.isEmpty()) return null
+    fun generateTotpCode(entry: VaultEntryEntity): TotpGenerator.TotpResult? {
+        if (!entry.hasTOTP() || entry.totpSecret.isNullOrEmpty()) return null
 
         return try {
             totpGenerator.generateTotpResult(
                 TotpGenerator.TotpConfig(
-                    secret = entry.totpSecret,
-                    period = entry.totpPeriod,
-                    digits = entry.totpDigits,
-                    algorithm = entry.totpAlgorithm
+                    secret = entry.totpSecret!!,
+                    period = entry.totpPeriod ?: 30,
+                    digits = entry.totpDigits ?: 6,
+                    algorithm = entry.totpAlgorithm ?: "SHA1"
                 )
             )
         } catch (e: Exception) {
@@ -164,15 +182,15 @@ class VaultListViewModel @Inject constructor(
         _searchQuery.value = ""
         _filterType.value = null
         _showFavoritesOnly.value = false
-        currentVaultId?.let { loadEntries(it) }
+        // Le combine() dans loadEntries() gère automatiquement le filtrage
     }
 }
 
 /**
- * États de l'UI de la liste
+ * États de l'UI de la liste (mis à jour pour nouveau système)
  */
 sealed class VaultListUiState {
     object Loading : VaultListUiState()
-    data class Success(val entries: List<VaultRepository.DecryptedEntry>) : VaultListUiState()
+    data class Success(val entries: List<VaultEntryEntity>) : VaultListUiState()
     data class Error(val message: String) : VaultListUiState()
 }

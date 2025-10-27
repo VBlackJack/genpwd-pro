@@ -15,7 +15,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.EntryType
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
+import com.julien.genpwdpro.domain.model.VaultStatistics
 import kotlinx.coroutines.delay
 
 /**
@@ -286,7 +287,7 @@ fun VaultListScreen(
                                 entry = entry,
                                 onClick = { onEntryClick(entry.id) },
                                 onFavoriteClick = {
-                                    viewModel.toggleFavorite(entry.id, !entry.isFavorite)
+                                    viewModel.toggleFavorite(entry.id)
                                 },
                                 viewModel = viewModel
                             )
@@ -324,12 +325,12 @@ fun VaultListScreen(
 }
 
 /**
- * Card pour afficher une entrée
+ * Card pour afficher une entrée (nouveau système)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EntryCard(
-    entry: VaultRepository.DecryptedEntry,
+    entry: VaultEntryEntity,
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     viewModel: VaultListViewModel
@@ -369,9 +370,9 @@ private fun EntryCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                if (entry.username.isNotEmpty()) {
+                if (!entry.username.isNullOrEmpty()) {
                     Text(
-                        text = entry.username,
+                        text = entry.username!!,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -380,7 +381,7 @@ private fun EntryCard(
                 }
 
                 // TOTP si présent
-                if (entry.hasTOTP) {
+                if (entry.hasTOTP()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     TotpCodeDisplay(
                         entry = entry,
@@ -404,11 +405,11 @@ private fun EntryCard(
 }
 
 /**
- * Affichage du code TOTP avec compte à rebours
+ * Affichage du code TOTP avec compte à rebours (nouveau système)
  */
 @Composable
 private fun TotpCodeDisplay(
-    entry: VaultRepository.DecryptedEntry,
+    entry: VaultEntryEntity,
     viewModel: VaultListViewModel
 ) {
     var totpResult by remember { mutableStateOf<com.julien.genpwdpro.data.crypto.TotpGenerator.TotpResult?>(null) }
@@ -515,11 +516,11 @@ private fun EmptyVaultState(
 }
 
 /**
- * Card des statistiques du vault
+ * Card des statistiques du vault (nouveau système)
  */
 @Composable
 private fun VaultStatisticsCard(
-    statistics: VaultRepository.VaultStatistics,
+    statistics: VaultStatistics,
     modifier: Modifier = Modifier
 ) {
     Card(modifier = modifier) {
