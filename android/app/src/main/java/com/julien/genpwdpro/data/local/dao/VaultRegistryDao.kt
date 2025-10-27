@@ -29,6 +29,12 @@ interface VaultRegistryDao {
     suspend fun getDefaultVault(): VaultRegistryEntry?
 
     /**
+     * Récupère le vault par défaut (Flow)
+     */
+    @Query("SELECT * FROM vault_registry WHERE isDefault = 1 LIMIT 1")
+    fun getDefaultVaultFlow(): Flow<VaultRegistryEntry?>
+
+    /**
      * Récupère les vaults chargés en mémoire
      */
     @Query("SELECT * FROM vault_registry WHERE isLoaded = 1")

@@ -251,7 +251,7 @@ class VaultMigrationManager @Inject constructor(
      */
     private suspend fun extractVaultData(vaultId: String, vaultKey: SecretKey): VaultData {
         // Récupérer le vault entity pour les métadonnées
-        val vaultEntity = vaultDao.getVaultById(vaultId).first()
+        val vaultEntity = vaultDao.getById(vaultId)
             ?: throw IllegalStateException("Vault not found: $vaultId")
 
         // Récupérer toutes les données
@@ -262,7 +262,7 @@ class VaultMigrationManager @Inject constructor(
 
         // Récupérer les relations entry-tag
         val entryTags = entries.flatMap { entry ->
-            vaultEntryDao.getTagsForEntry(entry.id).first().map { tag ->
+            tagDao.getTagsForEntry(entry.id).first().map { tag ->
                 EntryTagCrossRef(entryId = entry.id, tagId = tag.id)
             }
         }

@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.data.vault
+package com.julien.genpwdpro.data.vault
 
 import android.content.Context
 import android.net.Uri

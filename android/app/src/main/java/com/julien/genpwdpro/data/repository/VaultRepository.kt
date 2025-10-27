@@ -42,26 +42,6 @@ class VaultRepository @Inject constructor(
      */
     private val unlockedKeys = mutableMapOf<String, SecretKey>()
 
-    /**
-     * Vérifie si un vault est déverrouillé (clé en mémoire)
-     */
-    fun isVaultUnlocked(vaultId: String): Boolean {
-        return unlockedKeys.containsKey(vaultId)
-    }
-
-    /**
-     * Verrouille un vault (supprime la clé de la mémoire)
-     */
-    fun lockVault(vaultId: String) {
-        unlockedKeys.remove(vaultId)
-    }
-
-    /**
-     * Verrouille tous les vaults
-     */
-    fun lockAllVaults() {
-        unlockedKeys.clear()
-    }
 
     /**
      * Données d'un preset déchiffré

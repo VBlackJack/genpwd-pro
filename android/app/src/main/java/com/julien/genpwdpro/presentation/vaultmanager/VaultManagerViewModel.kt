@@ -36,7 +36,7 @@ class VaultManagerViewModel @Inject constructor(
         )
 
     // Vault par défaut
-    val defaultVault: StateFlow<VaultRegistryEntry?> = vaultRegistryDao.getDefaultVault()
+    val defaultVault: StateFlow<VaultRegistryEntry?> = vaultRegistryDao.getDefaultVaultFlow()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
