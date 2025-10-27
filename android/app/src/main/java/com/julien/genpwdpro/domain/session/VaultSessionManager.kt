@@ -40,7 +40,8 @@ import javax.inject.Singleton
 @Singleton
 class VaultSessionManager @Inject constructor(
     private val vaultFileManager: VaultFileManager,
-    private val vaultRegistryDao: VaultRegistryDao
+    private val vaultRegistryDao: VaultRegistryDao,
+    private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager
 ) {
     companion object {
         private const val TAG = "VaultSessionManager"
@@ -147,16 +148,7 @@ class VaultSessionManager @Inject constructor(
                     vaultFileManager.loadVaultFile(vaultId, masterPassword, vaultRegistry.filePath)
                 }
 
-                // Dériver la clé de chiffrement
-                val salt = com.julien.genpwdpro.data.crypto.VaultCryptoManager::class.java
-                    .getDeclaredMethod("generateSaltFromString", String::class.java)
-                    .also { it.isAccessible = true }
-
-                // Pour l'instant, on va utiliser directement VaultFileManager qui a déjà la clé
-                // On va créer une instance temporaire pour obtenir la clé
-                val cryptoManager = com.julien.genpwdpro.data.crypto.VaultCryptoManager(
-                    android.content.Context::class.java.cast(null)
-                )
+                // Dériver la clé de chiffrement depuis le master password
                 val saltBytes = cryptoManager.generateSaltFromString(vaultId)
                 val vaultKey = cryptoManager.deriveKey(masterPassword, saltBytes)
 
@@ -683,17 +675,12 @@ class VaultSessionManager @Inject constructor(
                     )
                 }
 
-                // Calculer et mettre à jour les statistiques
-                val statistics = calculateStatistics(vaultData)
-                vaultRegistryDao.updateStatistics(session.vaultId, statistics)
-
-                // Mettre à jour lastModified
-                vaultRegistryDao.updateById(session.vaultId) {
-                    it.copy(
-                        lastModified = System.currentTimeMillis(),
-                        fileSize = vaultFileManager.getVaultFileSize(session.filePath)
-                    )
-                }
+                // Mettre à jour lastModified et fileSize dans le registry
+                vaultRegistryDao.updateFileInfo(
+                    vaultId = session.vaultId,
+                    size = vaultFileManager.getVaultFileSize(session.filePath),
+                    timestamp = System.currentTimeMillis()
+                )
 
                 Log.d(TAG, "Vault saved successfully")
                 Result.success(Unit)

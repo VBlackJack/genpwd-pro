@@ -5,6 +5,7 @@ import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -81,9 +82,9 @@ class FileVaultRepository @Inject constructor(
         return getEntries().map { entries ->
             entries.filter { entry ->
                 entry.title.contains(query, ignoreCase = true) ||
-                entry.username.contains(query, ignoreCase = true) ||
-                entry.url.contains(query, ignoreCase = true) ||
-                entry.notes.contains(query, ignoreCase = true)
+                entry.username?.contains(query, ignoreCase = true) == true ||
+                entry.url?.contains(query, ignoreCase = true) == true ||
+                entry.notes?.contains(query, ignoreCase = true) == true
             }
         }
     }
@@ -321,15 +322,18 @@ class FileVaultRepository @Inject constructor(
      * @return Flow de statistiques, se met à jour automatiquement quand le vault change
      */
     fun getStatistics(): Flow<VaultStatistics> {
-        return vaultSessionManager.getVaultData().map { vaultData ->
-            val entries = vaultData.entries
-
+        return combine(
+            vaultSessionManager.getEntries(),
+            vaultSessionManager.getFolders(),
+            vaultSessionManager.getTags(),
+            vaultSessionManager.getPresets()
+        ) { entries, folders, tags, presets ->
             // Compter par type
-            val loginCount = entries.count { it.entryType == com.julien.genpwdpro.data.local.entity.EntryType.LOGIN }
-            val noteCount = entries.count { it.entryType == com.julien.genpwdpro.data.local.entity.EntryType.NOTE }
-            val wifiCount = entries.count { it.entryType == com.julien.genpwdpro.data.local.entity.EntryType.WIFI }
-            val cardCount = entries.count { it.entryType == com.julien.genpwdpro.data.local.entity.EntryType.CARD }
-            val identityCount = entries.count { it.entryType == com.julien.genpwdpro.data.local.entity.EntryType.IDENTITY }
+            val loginCount = entries.count { it.entryType == EntryType.LOGIN.name }
+            val noteCount = entries.count { it.entryType == EntryType.NOTE.name }
+            val wifiCount = entries.count { it.entryType == EntryType.WIFI.name }
+            val cardCount = entries.count { it.entryType == EntryType.CARD.name }
+            val identityCount = entries.count { it.entryType == EntryType.IDENTITY.name }
 
             // Compter favoris et TOTP
             val favoritesCount = entries.count { it.isFavorite }
@@ -337,14 +341,15 @@ class FileVaultRepository @Inject constructor(
 
             // Compter mots de passe faibles (< 8 caractères)
             val weakPasswordCount = entries.count { entry ->
-                !entry.password.isNullOrEmpty() && entry.password!!.length < 8
+                val pwd = entry.password
+                pwd != null && pwd.length < 8
             }
 
             VaultStatistics(
                 entryCount = entries.size,
-                folderCount = vaultData.folders.size,
-                presetCount = vaultData.presets.size,
-                tagCount = vaultData.tags.size,
+                folderCount = folders.size,
+                presetCount = presets.size,
+                tagCount = tags.size,
                 loginCount = loginCount,
                 noteCount = noteCount,
                 wifiCount = wifiCount,
