@@ -100,6 +100,9 @@ fun AppNavGraph(
                 onNavigateToSyncSettings = {
                     navController.navigate(Screen.SyncSettings.route)
                 },
+                onNavigateToSecurity = {
+                    navController.navigate(Screen.SecuritySettings.route)
+                },
                 onSaveToVault = { password ->
                     // Vérifier si un vault est déverrouillé
                     val vaultId = sessionManager.getCurrentVaultId()

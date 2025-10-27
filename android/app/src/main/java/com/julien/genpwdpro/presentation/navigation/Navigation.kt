@@ -82,6 +82,9 @@ fun AppNavigation(
                 onNavigateToSyncSettings = {
                     navController.navigate(Screen.SyncSettings.route)
                 },
+                onNavigateToSecurity = {
+                    navController.navigate(Screen.SecuritySettings.route)
+                },
                 initialMode = generationMode,
                 autoGenerate = quickGenerate
             )

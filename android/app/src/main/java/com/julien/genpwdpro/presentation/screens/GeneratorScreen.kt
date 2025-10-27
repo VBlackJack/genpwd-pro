@@ -31,6 +31,7 @@ fun GeneratorScreen(
     onNavigateToAnalyzer: () -> Unit = {},
     onNavigateToCustomPhrase: () -> Unit = {},
     onNavigateToSyncSettings: () -> Unit = {},
+    onNavigateToSecurity: () -> Unit = {},
     onSaveToVault: ((String) -> Unit)? = null,
     viewModel: GeneratorViewModel = hiltViewModel(),
     initialMode: String? = null,
@@ -97,6 +98,15 @@ fun GeneratorScreen(
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Synchronisation Cloud",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = {
+                        safeNavigate(onNavigateToSecurity, "Sécurité")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = "Sécurité",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
