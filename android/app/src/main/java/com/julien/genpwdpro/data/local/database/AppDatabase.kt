@@ -18,9 +18,10 @@ import com.julien.genpwdpro.data.local.entity.*
         FolderEntity::class,
         TagEntity::class,
         EntryTagCrossRef::class,
-        PresetEntity::class
+        PresetEntity::class,
+        VaultRegistryEntry::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,6 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun folderDao(): FolderDao
     abstract fun tagDao(): TagDao
     abstract fun presetDao(): PresetDao
+    abstract fun vaultRegistryDao(): VaultRegistryDao
 
     companion object {
         const val DATABASE_NAME = "genpwd_database"
@@ -224,6 +226,45 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_vaultId ON presets(vaultId)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_generationMode ON presets(generationMode)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_isDefault ON presets(isDefault)")
+            }
+        }
+
+        /**
+         * Migration 5 → 6: Ajout de la table vault_registry pour le système de fichiers .gpv
+         *
+         * Cette migration introduit un système hybride:
+         * - Les vaults existants restent dans Room (table vaults)
+         * - Les nouveaux vaults peuvent être stockés en fichiers .gpv
+         * - vault_registry indexe tous les vaults (DB + fichiers)
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Créer la table vault_registry
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS vault_registry (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        filePath TEXT NOT NULL,
+                        storageStrategy TEXT NOT NULL,
+                        fileSize INTEGER NOT NULL,
+                        lastModified INTEGER NOT NULL,
+                        lastAccessed INTEGER,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
+                        isLoaded INTEGER NOT NULL DEFAULT 0,
+                        entryCount INTEGER NOT NULL DEFAULT 0,
+                        folderCount INTEGER NOT NULL DEFAULT 0,
+                        presetCount INTEGER NOT NULL DEFAULT 0,
+                        tagCount INTEGER NOT NULL DEFAULT 0,
+                        totalSize INTEGER NOT NULL DEFAULT 0,
+                        description TEXT,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
+
+                // Index pour optimiser les requêtes
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isLoaded ON vault_registry(isLoaded)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
             }
         }
     }

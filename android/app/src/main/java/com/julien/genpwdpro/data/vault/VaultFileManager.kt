@@ -92,7 +92,9 @@ class VaultFileManager @Inject constructor(
         val timestamp = System.currentTimeMillis()
 
         // Créer la clé depuis le master password
-        val vaultKey = cryptoManager.deriveKeyFromPassword(masterPassword, vaultId)
+        // Utilise vaultId comme seed pour un salt déterministe
+        val salt = cryptoManager.generateSaltFromString(vaultId)
+        val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         // Créer les métadonnées initiales
         val metadata = VaultMetadata(
@@ -134,8 +136,10 @@ class VaultFileManager @Inject constructor(
             throw IllegalStateException("Vault file not found: $filePath")
         }
 
-        // Dériver la clé
-        val vaultKey = cryptoManager.deriveKeyFromPassword(masterPassword, vaultId)
+        // Dériver la clé depuis le master password
+        // Utilise vaultId comme seed pour le salt (même salt qu'à la création)
+        val salt = cryptoManager.generateSaltFromString(vaultId)
+        val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         return readVaultFile(file, vaultKey)
     }
