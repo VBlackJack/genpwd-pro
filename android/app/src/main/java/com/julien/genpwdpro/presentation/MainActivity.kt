@@ -58,10 +58,9 @@ class MainActivity : FragmentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // ✅ VaultSelector restauré après migration Lazysodium
-                    AppNavGraph(
+                    // Écran principal avec Dashboard et bottom navigation
+                    MainScreen(
                         navController = navController,
-                        startDestination = Screen.VaultSelector.route,
                         sessionManager = sessionManager
                     )
                 }

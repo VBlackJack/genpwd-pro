@@ -13,11 +13,15 @@ import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.vault.*
+import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 
 /**
  * Routes de navigation de l'application
  */
 sealed class Screen(val route: String) {
+    // Dashboard (écran d'accueil unifié)
+    object Dashboard : Screen("dashboard")
+
     // Générateur (écran existant)
     object Generator : Screen("generator")
 
@@ -93,13 +97,37 @@ sealed class Screen(val route: String) {
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.VaultSelector.route,
+    startDestination: String = Screen.Dashboard.route,
     sessionManager: com.julien.genpwdpro.domain.session.SessionManager
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+        // ========== Dashboard (écran d'accueil unifié) ==========
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(
+                onNavigateToVault = { vaultId ->
+                    navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                },
+                onNavigateToCreateVault = {
+                    navController.navigate(Screen.CreateVault.route)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Screen.History.route)
+                },
+                onNavigateToAnalyzer = {
+                    navController.navigate(Screen.Analyzer.route)
+                },
+                onNavigateToCustomPhrase = {
+                    navController.navigate(Screen.CustomPhrase.route)
+                },
+                onNavigateToPresetManager = { vaultId ->
+                    navController.navigate(Screen.PresetManager.createRoute(vaultId))
+                }
+            )
+        }
+
         // ========== Générateur (écran existant) ==========
         composable(Screen.Generator.route) {
             val currentVaultId = sessionManager.getCurrentVaultId()
