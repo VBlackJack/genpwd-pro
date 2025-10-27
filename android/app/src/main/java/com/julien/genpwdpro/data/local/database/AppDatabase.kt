@@ -203,8 +203,10 @@ abstract class AppDatabase : RoomDatabase() {
          * - Statistics (entry count, folder count, etc.)
          * - Load state and default vault flag
          *
-         * CRITICAL: Column order MUST match VaultRegistryEntry entity field order
-         * for Room schema validation to pass.
+         * CRITICAL:
+         * - Column order MUST match VaultRegistryEntry entity field order
+         * - NO DEFAULT values in SQL (Room expects defaultValue='undefined')
+         * - Default values are handled by Kotlin entity defaults
          */
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
@@ -214,6 +216,9 @@ abstract class AppDatabase : RoomDatabase() {
                 // 2. isDefault, isLoaded
                 // 3. @Embedded VaultStatistics: entryCount, folderCount, presetCount, tagCount, totalSize
                 // 4. description, createdAt
+                //
+                // NOTE: No DEFAULT clauses - Room expects defaultValue='undefined'
+                // Default values are provided by entity class when inserting
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS vault_registry (
                         id TEXT NOT NULL PRIMARY KEY,
@@ -223,13 +228,13 @@ abstract class AppDatabase : RoomDatabase() {
                         fileSize INTEGER NOT NULL,
                         lastModified INTEGER NOT NULL,
                         lastAccessed INTEGER,
-                        isDefault INTEGER NOT NULL DEFAULT 0,
-                        isLoaded INTEGER NOT NULL DEFAULT 0,
-                        entryCount INTEGER NOT NULL DEFAULT 0,
-                        folderCount INTEGER NOT NULL DEFAULT 0,
-                        presetCount INTEGER NOT NULL DEFAULT 0,
-                        tagCount INTEGER NOT NULL DEFAULT 0,
-                        totalSize INTEGER NOT NULL DEFAULT 0,
+                        isDefault INTEGER NOT NULL,
+                        isLoaded INTEGER NOT NULL,
+                        entryCount INTEGER NOT NULL,
+                        folderCount INTEGER NOT NULL,
+                        presetCount INTEGER NOT NULL,
+                        tagCount INTEGER NOT NULL,
+                        totalSize INTEGER NOT NULL,
                         description TEXT,
                         createdAt INTEGER NOT NULL
                     )
