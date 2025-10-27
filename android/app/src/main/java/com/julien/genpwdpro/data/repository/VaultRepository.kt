@@ -43,6 +43,27 @@ class VaultRepository @Inject constructor(
     private val unlockedKeys = mutableMapOf<String, SecretKey>()
 
     /**
+     * Vérifie si un vault est déverrouillé (clé en mémoire)
+     */
+    fun isVaultUnlocked(vaultId: String): Boolean {
+        return unlockedKeys.containsKey(vaultId)
+    }
+
+    /**
+     * Verrouille un vault (supprime la clé de la mémoire)
+     */
+    fun lockVault(vaultId: String) {
+        unlockedKeys.remove(vaultId)
+    }
+
+    /**
+     * Verrouille tous les vaults
+     */
+    fun lockAllVaults() {
+        unlockedKeys.clear()
+    }
+
+    /**
      * Données d'un preset déchiffré
      */
     data class DecryptedPreset(
@@ -1417,8 +1438,15 @@ class VaultRepository @Inject constructor(
 
     /**
      * Récupère tous les presets déchiffrés d'un vault
+     * Retourne un Flow vide si le vault n'est pas déverrouillé
      */
     fun getPresets(vaultId: String): Flow<List<DecryptedPreset>> {
+        // Vérifier si le vault est déverrouillé
+        if (!isVaultUnlocked(vaultId)) {
+            Log.w("VaultRepository", "Attempted to get presets for locked vault: $vaultId")
+            return kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+
         val vaultKey = getVaultKey(vaultId)
         return presetDao.getPresetsByVault(vaultId).map { entities ->
             entities.map { decryptPreset(it, vaultKey) }

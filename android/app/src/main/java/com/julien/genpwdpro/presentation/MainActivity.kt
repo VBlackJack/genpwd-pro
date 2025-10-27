@@ -43,8 +43,17 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var sessionManager: SessionManager
 
+    @Inject
+    lateinit var vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Clear toutes les sessions au démarrage de l'app
+        // Les clés de déchiffrement sont perdues, il faut réauthentifier
+        sessionManager.lockVault()
+        vaultRepository.lockAllVaults()
+        Log.d(TAG, "All vault sessions cleared on app start")
 
         // Gérer les deep links OAuth2 au lancement
         // Temporarily disabled due to OAuthCallbackManager compilation error
