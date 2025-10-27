@@ -43,8 +43,20 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var sessionManager: SessionManager
 
+    @Inject
+    lateinit var vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
+
+    @Inject
+    lateinit var vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Clear toutes les sessions au démarrage de l'app
+        // Les clés de déchiffrement sont perdues, il faut réauthentifier
+        sessionManager.lockVault()
+        vaultRepository.lockAllVaults()
+        Log.d(TAG, "All vault sessions cleared on app start")
 
         // Gérer les deep links OAuth2 au lancement
         // Temporarily disabled due to OAuthCallbackManager compilation error
@@ -58,11 +70,11 @@ class MainActivity : FragmentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // ✅ VaultSelector restauré après migration Lazysodium
-                    AppNavGraph(
+                    // Écran principal avec Dashboard et bottom navigation
+                    MainScreen(
                         navController = navController,
-                        startDestination = Screen.VaultSelector.route,
-                        sessionManager = sessionManager
+                        sessionManager = sessionManager,
+                        vaultSessionManager = vaultSessionManager
                     )
                 }
             }

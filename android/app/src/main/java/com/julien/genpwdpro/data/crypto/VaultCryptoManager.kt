@@ -34,6 +34,8 @@ class VaultCryptoManager @Inject constructor() {
         private const val ARGON2_ITERATIONS = 3
         private const val ARGON2_MEMORY = 65536 // 64 MB (en KB pour libsodium)
         private const val ARGON2_PARALLELISM = 4
+
+        const val IV_LENGTH = GCM_IV_LENGTH // Export pour VaultFileManager
     }
 
     private val lazySodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
@@ -334,6 +336,123 @@ class VaultCryptoManager @Inject constructor() {
     fun base64ToBytes(base64: String): ByteArray {
         return Base64.decode(base64, Base64.NO_WRAP)
     }
+
+    // ========================================
+    // Helper Methods for VaultFileManager
+    // ========================================
+
+    /**
+     * Génère un salt déterministe depuis une chaîne
+     * Utile pour utiliser vaultId comme base du salt
+     *
+     * @param seed Chaîne source (ex: vaultId)
+     * @return Salt de 32 bytes déterministe
+     */
+    fun generateSaltFromString(seed: String): ByteArray {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        return digest.digest(seed.toByteArray(Charsets.UTF_8))
+    }
+
+    /**
+     * Chiffre des bytes avec génération automatique d'IV
+     * Format de retour: IV (12 bytes) + Ciphertext + Tag
+     *
+     * Inspiré de KeePass KDBX: IV inclus dans le fichier chiffré
+     *
+     * @param plaintext Données à chiffrer
+     * @param key Clé de chiffrement
+     * @return IV + données chiffrées (tout-en-un)
+     */
+    fun encryptBytes(plaintext: ByteArray, key: SecretKey): ByteArray {
+        val iv = generateIV()
+        val encrypted = encryptAESGCM(plaintext, key, iv)
+        // Concat: IV + encrypted (ciphertext + tag)
+        return iv + encrypted
+    }
+
+    /**
+     * Déchiffre des bytes (extrait l'IV automatiquement)
+     * Format d'entrée: IV (12 bytes) + Ciphertext + Tag
+     *
+     * @param ciphertext IV + données chiffrées
+     * @param key Clé de déchiffrement
+     * @return Données déchiffrées
+     * @throws javax.crypto.AEADBadTagException si le tag d'authentification est invalide
+     */
+    fun decryptBytes(ciphertext: ByteArray, key: SecretKey): ByteArray {
+        require(ciphertext.size > IV_LENGTH) { "Ciphertext too short (must contain IV)" }
+
+        val iv = ciphertext.copyOfRange(0, IV_LENGTH)
+        val encrypted = ciphertext.copyOfRange(IV_LENGTH, ciphertext.size)
+        return decryptAESGCM(encrypted, key, iv)
+    }
+
+    /**
+     * Hash un fichier avec SHA-256
+     * Utile pour les key files (KeePass-style)
+     *
+     * @param fileContent Contenu du fichier
+     * @return Hash SHA-256 (32 bytes)
+     */
+    fun hashFile(fileContent: ByteArray): ByteArray {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        return digest.digest(fileContent)
+    }
+
+    /**
+     * Dérive une clé avec support optionnel de key file (KeePass-style)
+     *
+     * Si keyFileContent fourni:
+     * 1. Hash le password avec SHA-256
+     * 2. Hash le key file avec SHA-256
+     * 3. Combine les deux hash
+     * 4. Utilise le résultat comme input pour Argon2id
+     *
+     * Inspiré de KeePass: multi-factor authentication
+     *
+     * @param masterPassword Mot de passe maître
+     * @param salt Salt pour Argon2id
+     * @param keyFileContent Contenu du fichier clé optionnel (second facteur)
+     * @param params Paramètres Argon2id
+     * @return Clé dérivée
+     */
+    fun deriveKeyWithKeyFile(
+        masterPassword: String,
+        salt: ByteArray,
+        keyFileContent: ByteArray? = null,
+        params: Argon2Params = Argon2Params()
+    ): SecretKey {
+        require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
+
+        // Créer une composite key si key file fourni
+        val compositePassword = if (keyFileContent != null) {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+
+            // Hash password
+            val passwordHash = digest.digest(masterPassword.toByteArray(Charsets.UTF_8))
+
+            // Hash key file
+            digest.reset()
+            val keyFileHash = digest.digest(keyFileContent)
+
+            // Combine: hash(passwordHash + keyFileHash)
+            digest.reset()
+            val combined = passwordHash + keyFileHash
+            val compositeHash = digest.digest(combined)
+
+            // Convertir en string pour Argon2id
+            bytesToHex(compositeHash)
+        } else {
+            masterPassword
+        }
+
+        // Dériver la clé avec Argon2id
+        return deriveKey(compositePassword, salt, params)
+    }
+
+    // ========================================
+    // Memory Security
+    // ========================================
 
     /**
      * Nettoie la mémoire (wipe les clés sensibles)

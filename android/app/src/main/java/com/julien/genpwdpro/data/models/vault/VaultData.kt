@@ -1,55 +1,48 @@
 package com.julien.genpwdpro.data.models.vault
 
+import com.julien.genpwdpro.data.local.entity.*
+
 /**
- * Storage strategy for vault files
+ * Metadata du vault (stocké dans le fichier .gpv)
  */
-enum class StorageStrategy {
-    /** Internal app storage (default) */
-    INTERNAL,
-
-    /** External storage (SD card) */
-    EXTERNAL,
-
-    /** Custom user-defined location */
-    CUSTOM
-}
+data class VaultMetadata(
+    val vaultId: String,
+    val name: String,
+    val description: String?,
+    val isDefault: Boolean,
+    val createdAt: Long,
+    val modifiedAt: Long,
+    val statistics: VaultStatistics
+)
 
 /**
- * Statistics about vault contents and usage
- * Used as @Embedded in VaultRegistryEntry
+ * Statistiques du vault
  */
 data class VaultStatistics(
-    /** Number of entries in the vault */
     val entryCount: Int = 0,
-
-    /** Number of folders in the vault */
     val folderCount: Int = 0,
-
-    /** Number of presets in the vault */
     val presetCount: Int = 0,
-
-    /** Number of tags in the vault */
     val tagCount: Int = 0,
-
-    /** Total size in bytes (Long to support large vaults) */
     val totalSize: Long = 0
 )
 
 /**
- * Metadata for a vault file (.gpv)
- * This is a domain model (not a Room entity)
+ * Données complètes du vault
+ * Tout ce qui est stocké dans le fichier .gpv
  */
-data class VaultMetadata(
-    val id: String,
-    val name: String,
-    val filePath: String,
-    val storageStrategy: StorageStrategy,
-    val fileSize: Long,
-    val lastModified: Long,
-    val lastAccessed: Long?,
-    val statistics: VaultStatistics,
-    val description: String?,
-    val createdAt: Long,
-    val isDefault: Boolean = false,
-    val isLoaded: Boolean = false
+data class VaultData(
+    val metadata: VaultMetadata,
+    val entries: List<VaultEntryEntity>,
+    val folders: List<FolderEntity>,
+    val tags: List<TagEntity>,
+    val presets: List<PresetEntity>,
+    val entryTags: List<EntryTagCrossRef>
+)
+
+/**
+ * Fichier vault complet
+ */
+data class VaultFile(
+    val header: VaultFileHeader,
+    val data: VaultData
 )

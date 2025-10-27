@@ -13,11 +13,15 @@ import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.vault.*
+import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 
 /**
  * Routes de navigation de l'application
  */
 sealed class Screen(val route: String) {
+    // Dashboard (écran d'accueil unifié)
+    object Dashboard : Screen("dashboard")
+
     // Générateur (écran existant)
     object Generator : Screen("generator")
 
@@ -42,6 +46,14 @@ sealed class Screen(val route: String) {
 
     // Security Settings
     object SecuritySettings : Screen("security_settings")
+
+    // Preset Manager
+    object PresetManager : Screen("preset_manager/{vaultId}") {
+        fun createRoute(vaultId: String) = "preset_manager/$vaultId"
+    }
+
+    // Vault Manager (nouveau système de gestion des vaults)
+    object VaultManager : Screen("vault_manager")
 
     // Vault - Sélection/Création
     object VaultSelector : Screen("vault_selector")
@@ -88,16 +100,45 @@ sealed class Screen(val route: String) {
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.VaultSelector.route,
-    sessionManager: com.julien.genpwdpro.domain.session.SessionManager
+    startDestination: String = Screen.Dashboard.route,
+    sessionManager: com.julien.genpwdpro.domain.session.SessionManager,
+    vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+        // ========== Dashboard (écran d'accueil unifié) ==========
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(
+                onNavigateToVault = { vaultId ->
+                    navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                },
+                onNavigateToCreateVault = {
+                    navController.navigate(Screen.CreateVault.route)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Screen.History.route)
+                },
+                onNavigateToAnalyzer = {
+                    navController.navigate(Screen.Analyzer.route)
+                },
+                onNavigateToCustomPhrase = {
+                    navController.navigate(Screen.CustomPhrase.route)
+                },
+                onNavigateToPresetManager = { vaultId ->
+                    navController.navigate(Screen.PresetManager.createRoute(vaultId))
+                }
+            )
+        }
+
         // ========== Générateur (écran existant) ==========
         composable(Screen.Generator.route) {
+            // ✅ FIX: Utiliser VaultSessionManager (nouveau système file-based)
+            val currentVaultId = vaultSessionManager.getCurrentVaultId()
+
             GeneratorScreen(
+                vaultId = currentVaultId,
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
                 },
@@ -113,9 +154,14 @@ fun AppNavGraph(
                 onNavigateToSecurity = {
                     navController.navigate(Screen.SecuritySettings.route)
                 },
+                onNavigateToPresetManager = {
+                    currentVaultId?.let { vaultId ->
+                        navController.navigate(Screen.PresetManager.createRoute(vaultId))
+                    }
+                },
                 onSaveToVault = { password ->
-                    // Vérifier si un vault est déverrouillé
-                    val vaultId = sessionManager.getCurrentVaultId()
+                    // ✅ FIX: Vérifier si un vault est déverrouillé (nouveau système)
+                    val vaultId = vaultSessionManager.getCurrentVaultId()
                     if (vaultId != null) {
                         // Naviguer vers SelectEntryType avec le mot de passe
                         navController.navigate(
@@ -162,7 +208,31 @@ fun AppNavGraph(
             )
         }
 
-        // ========== Vault Selector ==========
+        // ========== Preset Manager ==========
+        composable(
+            route = Screen.PresetManager.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            com.julien.genpwdpro.presentation.preset.PresetListScreen(
+                vaultId = vaultId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Vault Manager ==========
+        composable(Screen.VaultManager.route) {
+            com.julien.genpwdpro.presentation.vaultmanager.VaultManagerScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Vault Selector (OLD SYSTEM - DISABLED) ==========
+        // Use VaultManager instead for file-based vault management
+        /*
         composable(Screen.VaultSelector.route) {
             VaultSelectorScreen(
                 onVaultSelected = { vault ->
@@ -176,8 +246,11 @@ fun AppNavGraph(
                 }
             )
         }
+        */
 
-        // ========== Create Vault ==========
+        // ========== Create Vault (OLD SYSTEM - DISABLED) ==========
+        // Use VaultManager instead for file-based vault creation
+        /*
         composable(Screen.CreateVault.route) {
             CreateVaultScreen(
                 onVaultCreated = { vaultId ->
@@ -192,6 +265,7 @@ fun AppNavGraph(
                 onBackClick = { navController.popBackStack() }
             )
         }
+        */
 
         // ========== Unlock Vault ==========
         composable(
@@ -239,9 +313,9 @@ fun AppNavGraph(
                     navController.navigate(Screen.SyncSettings.route)
                 },
                 onLockClick = {
-                    // Retourner au vault selector
-                    navController.navigate(Screen.VaultSelector.route) {
-                        popUpTo(Screen.VaultSelector.route) {
+                    // Return to dashboard instead of vault selector
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) {
                             inclusive = true
                         }
                     }

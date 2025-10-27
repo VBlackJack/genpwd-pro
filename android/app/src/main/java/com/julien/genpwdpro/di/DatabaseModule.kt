@@ -41,7 +41,8 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_3_4,
                 AppDatabase.MIGRATION_4_5,
                 AppDatabase.MIGRATION_5_6,
-                AppDatabase.MIGRATION_6_7
+                AppDatabase.MIGRATION_6_7,
+                AppDatabase.MIGRATION_7_8
             )
             .fallbackToDestructiveMigration() // Fallback si migration échoue
             .build()
@@ -114,6 +115,14 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun providePresetDao(
+        database: AppDatabase
+    ): PresetDao {
+        return database.presetDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideVaultRegistryDao(
         database: AppDatabase
     ): VaultRegistryDao {
@@ -139,9 +148,10 @@ object DatabaseModule {
         entryDao: VaultEntryDao,
         folderDao: FolderDao,
         tagDao: TagDao,
+        presetDao: PresetDao,
         cryptoManager: VaultCryptoManager,
         keystoreManager: com.julien.genpwdpro.security.KeystoreManager
     ): VaultRepository {
-        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, cryptoManager, keystoreManager)
+        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
     }
 }

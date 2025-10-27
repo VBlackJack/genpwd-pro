@@ -18,9 +18,10 @@ import com.julien.genpwdpro.data.local.entity.*
         FolderEntity::class,
         TagEntity::class,
         EntryTagCrossRef::class,
+        PresetEntity::class,
         VaultRegistryEntry::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun vaultEntryDao(): VaultEntryDao
     abstract fun folderDao(): FolderDao
     abstract fun tagDao(): TagDao
+    abstract fun presetDao(): PresetDao
     abstract fun vaultRegistryDao(): VaultRegistryDao
 
     companion object {
@@ -195,77 +197,56 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
-         * Migration 4 → 5: Ajout de la table vault_registry
-         *
-         * This migration adds a new table to track vault files (.gpv) on the filesystem.
-         * The vault_registry table maintains metadata about vault files, including:
-         * - File location and storage strategy
-         * - Statistics (entry count, folder count, etc.)
-         * - Load state and default vault flag
-         *
-         * CRITICAL:
-         * - Column order MUST match VaultRegistryEntry entity field order
-         * - NO DEFAULT values in SQL (Room expects defaultValue='undefined')
-         * - Default values are handled by Kotlin entity defaults
+         * Migration 4 → 5: Ajout de la table presets pour les patterns de génération
          */
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Create vault_registry table
-                // Column order matches VaultRegistryEntry entity exactly:
-                // 1. id, name, filePath, storageStrategy, fileSize, lastModified, lastAccessed
-                // 2. isDefault, isLoaded
-                // 3. @Embedded VaultStatistics: entryCount, folderCount, presetCount, tagCount, totalSize
-                // 4. description, createdAt
-                //
-                // NOTE: No DEFAULT clauses - Room expects defaultValue='undefined'
-                // Default values are provided by entity class when inserting
+                // Créer la table presets
                 database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS vault_registry (
+                    CREATE TABLE IF NOT EXISTS presets (
                         id TEXT NOT NULL PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        filePath TEXT NOT NULL,
-                        storageStrategy TEXT NOT NULL,
-                        fileSize INTEGER NOT NULL,
-                        lastModified INTEGER NOT NULL,
-                        lastAccessed INTEGER,
-                        isDefault INTEGER NOT NULL,
-                        isLoaded INTEGER NOT NULL,
-                        entryCount INTEGER NOT NULL,
-                        folderCount INTEGER NOT NULL,
-                        presetCount INTEGER NOT NULL,
-                        tagCount INTEGER NOT NULL,
-                        totalSize INTEGER NOT NULL,
-                        description TEXT,
-                        createdAt INTEGER NOT NULL
+                        vaultId TEXT NOT NULL,
+                        encryptedName TEXT NOT NULL,
+                        nameIv TEXT NOT NULL,
+                        icon TEXT NOT NULL DEFAULT '🔐',
+                        generationMode TEXT NOT NULL,
+                        encryptedSettings TEXT NOT NULL,
+                        settingsIv TEXT NOT NULL,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
+                        isSystemPreset INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        modifiedAt INTEGER NOT NULL,
+                        lastUsedAt INTEGER,
+                        usageCount INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY (vaultId) REFERENCES vaults(id) ON DELETE CASCADE
                     )
                 """)
 
-                // Create indexes for common queries
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_name ON vault_registry(name)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_filePath ON vault_registry(filePath)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_lastAccessed ON vault_registry(lastAccessed)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
+                // Index pour optimiser les requêtes
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_vaultId ON presets(vaultId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_generationMode ON presets(generationMode)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_isDefault ON presets(isDefault)")
             }
         }
 
         /**
-         * Migration 5 → 6: Fix vault_registry schema
+         * Migration 5 → 6: Ajout de la table vault_registry pour le système de fichiers .gpv
          *
-         * This migration fixes the vault_registry table schema by dropping and recreating it.
-         * This is necessary because v5 may have been created with DEFAULT values that don't
-         * match Room's expectations (defaultValue='undefined').
+         * Cette migration introduit un système hybride:
+         * - Les vaults existants restent dans Room (table vaults)
+         * - Les nouveaux vaults peuvent être stockés en fichiers .gpv
+         * - vault_registry indexe tous les vaults (DB + fichiers)
          *
-         * Safe to drop because vault_registry is new and shouldn't contain user data yet.
+         * CRITICAL: NO DEFAULT values in SQL (Room expects defaultValue='undefined')
          */
         val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Drop the table if it exists (safe - it's new and likely empty)
+                // Drop table if exists (safe - it's new)
                 database.execSQL("DROP TABLE IF EXISTS vault_registry")
 
-                // Recreate with correct schema (no DEFAULT clauses)
+                // Create vault_registry table WITHOUT DEFAULT values
                 database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS vault_registry (
+                    CREATE TABLE vault_registry (
                         id TEXT NOT NULL PRIMARY KEY,
                         name TEXT NOT NULL,
                         filePath TEXT NOT NULL,
@@ -285,40 +266,63 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Recreate indexes
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_name ON vault_registry(name)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_filePath ON vault_registry(filePath)")
+                // Create indexes
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_lastAccessed ON vault_registry(lastAccessed)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isLoaded ON vault_registry(isLoaded)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
             }
         }
 
         /**
-         * Migration 6 → 7: Update VaultRegistryEntry entity to declare indices
+         * Migration 6 → 7: Re-validation for VaultRegistryEntry indices
          *
          * This migration doesn't change the database schema - it only updates the entity
          * definition to declare indices that were already created in MIGRATION_5_6.
          *
          * Room requires that indices created in SQL migrations MUST be declared in the
          * @Entity annotation, otherwise schema validation fails.
-         *
-         * No SQL changes needed - indices already exist from v6.
          */
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // No SQL changes needed
-                // Entity annotation updated to include:
-                // @Entity(tableName = "vault_registry", indices = [
-                //     Index(value = ["name"]),
-                //     Index(value = ["filePath"]),
-                //     Index(value = ["isDefault"]),
-                //     Index(value = ["lastAccessed"]),
-                //     Index(value = ["storageStrategy"])
-                // ])
-                //
-                // This migration exists only to bump the version number so Room
-                // re-validates the schema with the updated entity definition.
+                // No SQL changes needed - entity annotation updated to include indices
+            }
+        }
+
+        /**
+         * Migration 7 → 8: Add biometric unlock support to vault_registry
+         *
+         * Adds three columns to enable biometric unlock:
+         * - biometricUnlockEnabled: Boolean flag
+         * - encryptedMasterPassword: Master password encrypted with Android Keystore
+         * - masterPasswordIv: Initialization Vector for decryption
+         *
+         * Biometric unlock flow:
+         * 1. User enables biometric → master password is encrypted with Keystore
+         * 2. User unlocks with biometric → password is decrypted from Keystore
+         * 3. Decrypted password is used to unlock vault normally
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add biometric unlock flag
+                database.execSQL(
+                    "ALTER TABLE vault_registry ADD COLUMN biometricUnlockEnabled INTEGER NOT NULL DEFAULT 0"
+                )
+
+                // Add encrypted master password (BLOB for encrypted bytes)
+                database.execSQL(
+                    "ALTER TABLE vault_registry ADD COLUMN encryptedMasterPassword BLOB"
+                )
+
+                // Add IV for password decryption (BLOB for IV bytes)
+                database.execSQL(
+                    "ALTER TABLE vault_registry ADD COLUMN masterPasswordIv BLOB"
+                )
+
+                // Create index for biometric-enabled vaults (for quick filtering)
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_registry_biometricUnlockEnabled " +
+                    "ON vault_registry(biometricUnlockEnabled)"
+                )
             }
         }
     }

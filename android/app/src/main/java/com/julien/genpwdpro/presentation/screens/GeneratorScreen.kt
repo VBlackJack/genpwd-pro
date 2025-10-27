@@ -33,16 +33,28 @@ fun GeneratorScreen(
     onNavigateToSyncSettings: () -> Unit = {},
     onNavigateToSecurity: () -> Unit = {},
     onSaveToVault: ((String) -> Unit)? = null,
+    onNavigateToPresetManager: () -> Unit = {},
+    vaultId: String? = null,
     viewModel: GeneratorViewModel = hiltViewModel(),
     initialMode: String? = null,
     autoGenerate: Boolean = false
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentPreset by viewModel.currentPreset.collectAsState()
+    val presets by viewModel.presets.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     var showPlacementSheet by remember { mutableStateOf(false) }
+    var showSavePresetDialog by remember { mutableStateOf(false) }
+
+    // Charger les presets si un vaultId est fourni
+    LaunchedEffect(vaultId) {
+        vaultId?.let {
+            viewModel.loadPresets(it)
+        }
+    }
 
     // Fonction helper pour gérer les navigations qui peuvent échouer
     fun safeNavigate(action: () -> Unit, featureName: String) {
@@ -161,6 +173,72 @@ fun GeneratorScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Sélecteur de preset
+            if (vaultId != null && presets.isNotEmpty()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Preset",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                TextButton(
+                                    onClick = {
+                                        safeNavigate(onNavigateToPresetManager, "Gestion des presets")
+                                    }
+                                ) {
+                                    Text("Gérer")
+                                }
+                            }
+
+                            com.julien.genpwdpro.presentation.preset.PresetSelector(
+                                currentPreset = currentPreset,
+                                presets = presets,
+                                onPresetSelected = { preset ->
+                                    viewModel.selectPreset(preset)
+                                },
+                                onCreatePreset = {
+                                    showSavePresetDialog = true
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Bouton "Sauvegarder comme preset" si vault déverrouillé
+            if (vaultId != null) {
+                item {
+                    OutlinedButton(
+                        onClick = { showSavePresetDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Sauvegarder comme preset")
+                    }
+                }
+            }
+
             // Section Options principales
             item {
                 ExpandableSection(
@@ -365,6 +443,166 @@ fun GeneratorScreen(
             onDismiss = { showPlacementSheet = false }
         )
     }
+
+    // Dialog de sauvegarde de preset
+    if (showSavePresetDialog) {
+        SavePresetDialog(
+            currentMode = uiState.settings.mode,
+            onDismiss = { showSavePresetDialog = false },
+            onSave = { name, icon, setAsDefault ->
+                viewModel.saveAsPreset(name, icon, setAsDefault)
+                showSavePresetDialog = false
+                scope.launch {
+                    snackbarHostState.showSnackbar("Preset '$name' créé !")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Dialog de sauvegarde d'un preset
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SavePresetDialog(
+    currentMode: GenerationMode,
+    onDismiss: () -> Unit,
+    onSave: (name: String, icon: String, setAsDefault: Boolean) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var selectedIcon by remember { mutableStateOf("🔐") }
+    var setAsDefault by remember { mutableStateOf(false) }
+
+    val availableIcons = listOf(
+        "🔐", "🔒", "🔑", "🛡️", "⚡",
+        "🏦", "💳", "📱", "🌐", "📧",
+        "🎲", "⭐", "🔥", "💎", "🚀"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Sauvegarder comme preset")
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Mode actuel
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Mode: ${currentMode.name}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                // Nom du preset
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nom du preset") },
+                    placeholder = { Text("Ex: Login Fort, WiFi Simple") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Sélection d'icône
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Icône",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        availableIcons.take(5).forEach { icon ->
+                            FilterChip(
+                                selected = selectedIcon == icon,
+                                onClick = { selectedIcon = icon },
+                                label = { Text(icon, style = MaterialTheme.typography.titleLarge) }
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        availableIcons.drop(5).take(5).forEach { icon ->
+                            FilterChip(
+                                selected = selectedIcon == icon,
+                                onClick = { selectedIcon = icon },
+                                label = { Text(icon, style = MaterialTheme.typography.titleLarge) }
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        availableIcons.drop(10).forEach { icon ->
+                            FilterChip(
+                                selected = selectedIcon == icon,
+                                onClick = { selectedIcon = icon },
+                                label = { Text(icon, style = MaterialTheme.typography.titleLarge) }
+                            )
+                        }
+                    }
+                }
+
+                // Définir par défaut
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Définir par défaut",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Switch(
+                        checked = setAsDefault,
+                        onCheckedChange = { setAsDefault = it }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(name.trim(), selectedIcon, setAsDefault)
+                    }
+                },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Sauvegarder")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
 }
 
 @Composable

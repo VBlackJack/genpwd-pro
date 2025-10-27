@@ -4,6 +4,10 @@ import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.models.CaseMode
+import com.julien.genpwdpro.data.models.CharPolicy
 import com.julien.genpwdpro.security.KeystoreManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,6 +31,7 @@ class VaultRepository @Inject constructor(
     private val entryDao: VaultEntryDao,
     private val folderDao: FolderDao,
     private val tagDao: TagDao,
+    private val presetDao: PresetDao,
     private val cryptoManager: VaultCryptoManager,
     private val keystoreManager: KeystoreManager
 ) {
@@ -36,6 +41,25 @@ class VaultRepository @Inject constructor(
      * Map: vaultId → SecretKey
      */
     private val unlockedKeys = mutableMapOf<String, SecretKey>()
+
+
+    /**
+     * Données d'un preset déchiffré
+     */
+    data class DecryptedPreset(
+        val id: String,
+        val vaultId: String,
+        val name: String,
+        val icon: String,
+        val generationMode: GenerationMode,
+        val settings: Settings,
+        val isDefault: Boolean,
+        val isSystemPreset: Boolean,
+        val createdAt: Long,
+        val modifiedAt: Long,
+        val lastUsedAt: Long?,
+        val usageCount: Int
+    )
 
     /**
      * Données d'une entrée déchiffrée
@@ -135,6 +159,9 @@ class VaultRepository @Inject constructor(
 
         // Stocker la clé déverrouillée en mémoire
         unlockedKeys[vaultId] = vaultResult.derivedKey
+
+        // Initialiser le preset par défaut
+        initializeDefaultPreset(vaultId)
 
         return vaultId
     }
@@ -1294,4 +1321,221 @@ class VaultRepository @Inject constructor(
         val color: String?,
         val createdAt: Long
     )
+
+    // ========== Preset Management ==========
+
+    /**
+     * Crée un nouveau preset chiffré
+     *
+     * @param vaultId ID du vault
+     * @param preset Preset déchiffré à créer
+     * @return ID du preset créé, ou null si limite atteinte
+     */
+    suspend fun createPreset(vaultId: String, preset: DecryptedPreset): String? {
+        val vaultKey = getVaultKey(vaultId)
+
+        // Vérifier la limite de 3 presets par mode (sauf pour les presets système)
+        if (!preset.isSystemPreset) {
+            val existingCount = presetDao.countCustomPresetsByMode(vaultId, preset.generationMode.name)
+            if (existingCount >= 3) {
+                Log.w("VaultRepository", "Cannot create preset: limit of 3 per mode reached")
+                return null
+            }
+        }
+
+        // Chiffrer le nom
+        val nameIv = cryptoManager.generateIV()
+        val encryptedName = cryptoManager.bytesToHex(
+            cryptoManager.encryptString(preset.name, vaultKey, nameIv)
+        )
+
+        // Chiffrer les settings (JSON)
+        val settingsJson = com.google.gson.Gson().toJson(preset.settings)
+        val settingsIv = cryptoManager.generateIV()
+        val encryptedSettings = cryptoManager.bytesToHex(
+            cryptoManager.encryptString(settingsJson, vaultKey, settingsIv)
+        )
+
+        val entity = PresetEntity(
+            id = preset.id,
+            vaultId = vaultId,
+            encryptedName = encryptedName,
+            nameIv = cryptoManager.bytesToHex(nameIv),
+            icon = preset.icon,
+            generationMode = preset.generationMode.name,
+            encryptedSettings = encryptedSettings,
+            settingsIv = cryptoManager.bytesToHex(settingsIv),
+            isDefault = preset.isDefault,
+            isSystemPreset = preset.isSystemPreset,
+            createdAt = preset.createdAt,
+            modifiedAt = preset.modifiedAt,
+            lastUsedAt = preset.lastUsedAt,
+            usageCount = preset.usageCount
+        )
+
+        // Si c'est le preset par défaut, désactiver les autres
+        if (preset.isDefault) {
+            presetDao.clearDefaultFlag(vaultId)
+        }
+
+        presetDao.insert(entity)
+        return preset.id
+    }
+
+    /**
+     * Déchiffre un preset
+     */
+    private fun decryptPreset(entity: PresetEntity, vaultKey: SecretKey): DecryptedPreset {
+        val name = cryptoManager.decryptString(
+            cryptoManager.hexToBytes(entity.encryptedName),
+            vaultKey,
+            cryptoManager.hexToBytes(entity.nameIv)
+        )
+
+        val settingsJson = cryptoManager.decryptString(
+            cryptoManager.hexToBytes(entity.encryptedSettings),
+            vaultKey,
+            cryptoManager.hexToBytes(entity.settingsIv)
+        )
+
+        val settings = com.google.gson.Gson().fromJson(settingsJson, Settings::class.java)
+
+        return DecryptedPreset(
+            id = entity.id,
+            vaultId = entity.vaultId,
+            name = name,
+            icon = entity.icon,
+            generationMode = GenerationMode.valueOf(entity.generationMode),
+            settings = settings,
+            isDefault = entity.isDefault,
+            isSystemPreset = entity.isSystemPreset,
+            createdAt = entity.createdAt,
+            modifiedAt = entity.modifiedAt,
+            lastUsedAt = entity.lastUsedAt,
+            usageCount = entity.usageCount
+        )
+    }
+
+    /**
+     * Récupère tous les presets déchiffrés d'un vault
+     * Retourne un Flow vide si le vault n'est pas déverrouillé
+     */
+    fun getPresets(vaultId: String): Flow<List<DecryptedPreset>> {
+        // Vérifier si le vault est déverrouillé
+        if (!isVaultUnlocked(vaultId)) {
+            Log.w("VaultRepository", "Attempted to get presets for locked vault: $vaultId")
+            return kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+
+        val vaultKey = getVaultKey(vaultId)
+        return presetDao.getPresetsByVault(vaultId).map { entities ->
+            entities.map { decryptPreset(it, vaultKey) }
+        }
+    }
+
+    /**
+     * Récupère le preset par défaut d'un vault
+     */
+    suspend fun getDefaultPreset(vaultId: String): DecryptedPreset? {
+        val vaultKey = getVaultKey(vaultId)
+        val entity = presetDao.getDefaultPreset(vaultId) ?: return null
+        return decryptPreset(entity, vaultKey)
+    }
+
+    /**
+     * Récupère un preset par ID
+     */
+    suspend fun getPresetById(vaultId: String, presetId: String): DecryptedPreset? {
+        val vaultKey = getVaultKey(vaultId)
+        val entity = presetDao.getById(presetId) ?: return null
+        return decryptPreset(entity, vaultKey)
+    }
+
+    /**
+     * Met à jour un preset (re-chiffrement)
+     */
+    suspend fun updatePreset(vaultId: String, preset: DecryptedPreset) {
+        // Supprimer l'ancien et créer le nouveau (pour re-chiffrer)
+        presetDao.deleteById(preset.id)
+        createPreset(vaultId, preset.copy(modifiedAt = System.currentTimeMillis()))
+    }
+
+    /**
+     * Supprime un preset (seulement si non système)
+     */
+    suspend fun deletePreset(presetId: String) {
+        val entity = presetDao.getById(presetId)
+        if (entity != null && !entity.isSystemPreset) {
+            presetDao.delete(entity)
+        } else {
+            Log.w("VaultRepository", "Cannot delete system preset")
+        }
+    }
+
+    /**
+     * Définit un preset comme par défaut
+     */
+    suspend fun setAsDefaultPreset(vaultId: String, presetId: String) {
+        val preset = getPresetById(vaultId, presetId)
+        if (preset != null) {
+            presetDao.clearDefaultFlag(vaultId)
+            updatePreset(vaultId, preset.copy(isDefault = true))
+        }
+    }
+
+    /**
+     * Enregistre l'utilisation d'un preset
+     */
+    suspend fun recordPresetUsage(presetId: String) {
+        presetDao.recordUsage(presetId, System.currentTimeMillis())
+    }
+
+    /**
+     * Initialise le preset système par défaut pour un vault
+     * Appelé automatiquement lors de la création d'un vault
+     */
+    suspend fun initializeDefaultPreset(vaultId: String) {
+        val vaultKey = getVaultKey(vaultId)
+
+        // Vérifier si un preset par défaut existe déjà
+        val existing = presetDao.getDefaultPreset(vaultId)
+        if (existing != null) {
+            Log.d("VaultRepository", "Default preset already exists for vault $vaultId")
+            return
+        }
+
+        // Créer le preset par défaut (Syllables, 20 chars, 2 digits, 2 specials)
+        val defaultPreset = DecryptedPreset(
+            id = UUID.randomUUID().toString(),
+            vaultId = vaultId,
+            name = "Défaut",
+            icon = "🔐",
+            generationMode = GenerationMode.SYLLABLES,
+            settings = Settings(
+                mode = GenerationMode.SYLLABLES,
+                syllablesLength = 20,
+                digitsCount = 2,
+                specialsCount = 2,
+                caseMode = CaseMode.MIXED,
+                policy = CharPolicy.STANDARD
+            ),
+            isDefault = true,
+            isSystemPreset = true,
+            createdAt = System.currentTimeMillis(),
+            modifiedAt = System.currentTimeMillis(),
+            lastUsedAt = null,
+            usageCount = 0
+        )
+
+        createPreset(vaultId, defaultPreset)
+        Log.d("VaultRepository", "Default preset initialized for vault $vaultId")
+    }
+
+    /**
+     * Vérifie si on peut créer un nouveau preset pour un mode donné
+     */
+    suspend fun canCreatePreset(vaultId: String, mode: GenerationMode): Boolean {
+        val count = presetDao.countCustomPresetsByMode(vaultId, mode.name)
+        return count < 3
+    }
 }
