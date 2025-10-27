@@ -174,8 +174,9 @@ data class VaultEntryEntity(
  */
 enum class EntryType {
     LOGIN,      // Identifiant + mot de passe
-    CARD,       // Carte bancaire
+    WIFI,       // Réseau WiFi (SSID + mot de passe + sécurité)
     NOTE,       // Note sécurisée
+    CARD,       // Carte bancaire
     IDENTITY    // Informations d'identité
 }
 

@@ -56,6 +56,16 @@ sealed class Screen(val route: String) {
         fun createRoute(vaultId: String) = "vault_list/$vaultId"
     }
 
+    // Entry - Sélection du type
+    object SelectEntryType : Screen("select_entry_type/{vaultId}?password={password}") {
+        fun createRoute(vaultId: String, password: String? = null) =
+            if (password != null) {
+                "select_entry_type/$vaultId?password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+            } else {
+                "select_entry_type/$vaultId"
+            }
+    }
+
     // Entry - Création/Édition
     object CreateEntry : Screen("create_entry/{vaultId}?type={type}&password={password}") {
         fun createRoute(vaultId: String, type: EntryType = EntryType.LOGIN, password: String? = null) =
@@ -107,11 +117,10 @@ fun AppNavGraph(
                     // Vérifier si un vault est déverrouillé
                     val vaultId = sessionManager.getCurrentVaultId()
                     if (vaultId != null) {
-                        // Naviguer vers CreateEntry avec le mot de passe
+                        // Naviguer vers SelectEntryType avec le mot de passe
                         navController.navigate(
-                            Screen.CreateEntry.createRoute(
+                            Screen.SelectEntryType.createRoute(
                                 vaultId = vaultId,
-                                type = EntryType.LOGIN,
                                 password = password
                             )
                         )
@@ -237,6 +246,37 @@ fun AppNavGraph(
                         }
                     }
                 }
+            )
+        }
+
+        // ========== Select Entry Type ==========
+        composable(
+            route = Screen.SelectEntryType.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType },
+                navArgument("password") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+            val initialPassword = backStackEntry.arguments?.getString("password")
+
+            EntryTypeSelectionScreen(
+                vaultId = vaultId,
+                initialPassword = initialPassword,
+                onTypeSelected = { selectedType ->
+                    navController.navigate(
+                        Screen.CreateEntry.createRoute(
+                            vaultId = vaultId,
+                            type = selectedType,
+                            password = initialPassword
+                        )
+                    )
+                },
+                onBackClick = { navController.popBackStack() }
             )
         }
 

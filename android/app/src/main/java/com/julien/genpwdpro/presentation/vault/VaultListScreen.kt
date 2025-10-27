@@ -118,6 +118,14 @@ fun VaultListScreen(
                                 leadingIcon = { Icon(Icons.Default.Key, null) }
                             )
                             DropdownMenuItem(
+                                text = { Text("WiFi") },
+                                onClick = {
+                                    viewModel.filterByType(EntryType.WIFI)
+                                    showFilterMenu = false
+                                },
+                                leadingIcon = { Icon(Icons.Default.Wifi, null) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Notes") },
                                 onClick = {
                                     viewModel.filterByType(EntryType.NOTE)
@@ -190,6 +198,14 @@ fun VaultListScreen(
                             showAddMenu = false
                         },
                         leadingIcon = { Icon(Icons.Default.Key, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("WiFi") },
+                        onClick = {
+                            onAddEntry(EntryType.WIFI)
+                            showAddMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Wifi, null) }
                     )
                     DropdownMenuItem(
                         text = { Text("Note sécurisée") },
@@ -333,6 +349,7 @@ private fun EntryCard(
             Icon(
                 imageVector = when (entry.entryType) {
                     EntryType.LOGIN -> Icons.Default.Key
+                    EntryType.WIFI -> Icons.Default.Wifi
                     EntryType.NOTE -> Icons.Default.Description
                     EntryType.CARD -> Icons.Default.CreditCard
                     EntryType.IDENTITY -> Icons.Default.Badge
