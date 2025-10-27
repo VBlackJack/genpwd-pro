@@ -52,6 +52,9 @@ sealed class Screen(val route: String) {
         fun createRoute(vaultId: String) = "preset_manager/$vaultId"
     }
 
+    // Vault Manager (nouveau système de gestion des vaults)
+    object VaultManager : Screen("vault_manager")
+
     // Vault - Sélection/Création
     object VaultSelector : Screen("vault_selector")
     object CreateVault : Screen("create_vault")
@@ -214,6 +217,13 @@ fun AppNavGraph(
 
             com.julien.genpwdpro.presentation.preset.PresetListScreen(
                 vaultId = vaultId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Vault Manager ==========
+        composable(Screen.VaultManager.route) {
+            com.julien.genpwdpro.presentation.vaultmanager.VaultManagerScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

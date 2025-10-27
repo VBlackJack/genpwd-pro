@@ -311,6 +311,74 @@ class VaultFileManager @Inject constructor(
     }
 
     /**
+     * Exporte un vault vers une URI (Storage Access Framework)
+     */
+    suspend fun exportVault(
+        vaultId: String,
+        sourceFilePath: String,
+        destinationUri: Uri
+    ): Boolean {
+        return try {
+            val sourceFile = File(sourceFilePath)
+            if (!sourceFile.exists()) {
+                Log.e(TAG, "Source vault file not found: $sourceFilePath")
+                return false
+            }
+
+            context.contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
+                sourceFile.inputStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            Log.d(TAG, "Vault exported to URI: $destinationUri")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error exporting vault to URI", e)
+            false
+        }
+    }
+
+    /**
+     * Importe un vault depuis une URI (Storage Access Framework)
+     */
+    suspend fun importVault(
+        sourceUri: Uri,
+        destinationStrategy: StorageStrategy
+    ): Pair<String, File> {
+        try {
+            // Lire le fichier source
+            val tempFile = File(context.cacheDir, "temp_import_${System.currentTimeMillis()}.gpv")
+
+            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: throw IllegalStateException("Cannot open input stream from URI")
+
+            // Lire le header pour obtenir le vaultId
+            val header = getVaultFileInfo(tempFile.absolutePath)
+                ?: throw IllegalStateException("Invalid vault file")
+
+            val vaultId = header.vaultId
+
+            // Copier vers la destination finale
+            val destDir = getStorageDirectory(destinationStrategy)
+            val destFile = File(destDir, getVaultFileName(vaultId))
+
+            tempFile.copyTo(destFile, overwrite = true)
+            tempFile.delete()
+
+            Log.d(TAG, "Vault imported: $vaultId to ${destFile.absolutePath}")
+            return Pair(vaultId, destFile)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error importing vault", e)
+            throw e
+        }
+    }
+
+    /**
      * Récupère les informations d'un fichier vault sans le déchiffrer
      */
     fun getVaultFileInfo(filePath: String): VaultFileHeader? {
