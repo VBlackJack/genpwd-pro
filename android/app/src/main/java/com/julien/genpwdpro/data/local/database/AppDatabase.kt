@@ -21,7 +21,7 @@ import com.julien.genpwdpro.data.local.entity.*
         PresetEntity::class,
         VaultRegistryEntry::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -285,6 +285,44 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // No SQL changes needed - entity annotation updated to include indices
+            }
+        }
+
+        /**
+         * Migration 7 → 8: Add biometric unlock support to vault_registry
+         *
+         * Adds three columns to enable biometric unlock:
+         * - biometricUnlockEnabled: Boolean flag
+         * - encryptedMasterPassword: Master password encrypted with Android Keystore
+         * - masterPasswordIv: Initialization Vector for decryption
+         *
+         * Biometric unlock flow:
+         * 1. User enables biometric → master password is encrypted with Keystore
+         * 2. User unlocks with biometric → password is decrypted from Keystore
+         * 3. Decrypted password is used to unlock vault normally
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add biometric unlock flag
+                database.execSQL(
+                    "ALTER TABLE vault_registry ADD COLUMN biometricUnlockEnabled INTEGER NOT NULL DEFAULT 0"
+                )
+
+                // Add encrypted master password (BLOB for encrypted bytes)
+                database.execSQL(
+                    "ALTER TABLE vault_registry ADD COLUMN encryptedMasterPassword BLOB"
+                )
+
+                // Add IV for password decryption (BLOB for IV bytes)
+                database.execSQL(
+                    "ALTER TABLE vault_registry ADD COLUMN masterPasswordIv BLOB"
+                )
+
+                // Create index for biometric-enabled vaults (for quick filtering)
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_registry_biometricUnlockEnabled " +
+                    "ON vault_registry(biometricUnlockEnabled)"
+                )
             }
         }
     }

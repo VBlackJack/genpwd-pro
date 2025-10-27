@@ -1,7 +1,7 @@
 # 🚀 Progression de l'Implémentation - Système File-Based
 
-**Dernière mise à jour** : 2025-10-27 18:30
-**Session actuelle** : Session 1 - Fondations
+**Dernière mise à jour** : 2025-10-27 (Session 2 continued)
+**Session actuelle** : Session 2 - Repository & Unlock Flow
 
 ---
 
@@ -9,11 +9,11 @@
 
 | Phase | Tâche | Status | Fichier | Commit |
 |-------|-------|--------|---------|--------|
-| **Phase 1** | VaultSessionManager | ✅ COMPLÉTÉ | `domain/session/VaultSessionManager.kt` | À venir |
-| Phase 2 | BiometricVaultManager | ⏸️ PRÉPARÉ | `security/BiometricVaultManager.kt` | À faire Session 2 |
-| Phase 2 | Biometric fields in Registry | ⏸️ DOC PRÊTE | `VaultRegistryEntry.kt` + MIGRATION_7_8 | À faire Session 2 |
-| Phase 3 | FileVaultRepository | ⏳ À FAIRE | `data/repository/FileVaultRepository.kt` | Session 2 |
-| Phase 4 | UnlockVaultScreen refactor | ⏳ À FAIRE | `presentation/vault/UnlockVaultScreen.kt` | Session 2 |
+| **Phase 1** | VaultSessionManager | ✅ COMPLÉTÉ | `domain/session/VaultSessionManager.kt` | c502b84 |
+| **Phase 2** | BiometricVaultManager | ✅ COMPLÉTÉ | `security/BiometricVaultManager.kt` | À venir |
+| **Phase 2** | Biometric fields in Registry | ✅ COMPLÉTÉ | `VaultRegistryEntry.kt` + MIGRATION_7_8 | À venir |
+| **Phase 3** | FileVaultRepository | ✅ COMPLÉTÉ | `data/repository/FileVaultRepository.kt` | À venir |
+| **Phase 4** | UnlockVaultScreen refactor | ✅ COMPLÉTÉ | `presentation/vault/UnlockVaultScreen.kt` | À venir |
 | Phase 5 | VaultListScreen integration | ⏳ À FAIRE | `presentation/vault/VaultListScreen.kt` | Session 3 |
 | Phase 6 | Entry CRUD integration | ⏳ À FAIRE | Multiple files | Session 3 |
 | Phase 7 | Password save integration | ⏳ À FAIRE | `presentation/navigation/NavGraph.kt` | Session 2 |
@@ -88,61 +88,127 @@ VaultSessionManager
 
 ---
 
-### Phase 2 : Biometric Support ⏸️ PRÉPARATION POUR SESSION 2
+### Phase 2 : Biometric Support ✅ COMPLÉTÉ
 
-#### 📋 Spécification Prête
+**Objectif** : Ajouter le support du déverrouillage biométrique avec Android Keystore
 
-**Ajouts nécessaires à VaultRegistryEntry** :
+#### ✅ Étapes Complétées
+- [x] Ajouter 3 champs biométriques à VaultRegistryEntry.kt
+  - biometricUnlockEnabled: Boolean
+  - encryptedMasterPassword: ByteArray?
+  - masterPasswordIv: ByteArray?
+- [x] Créer MIGRATION_7_8 dans AppDatabase.kt
+  - ALTER TABLE pour 3 nouveaux champs
+  - CREATE INDEX sur biometricUnlockEnabled
+- [x] Mettre à jour DatabaseModule.kt avec MIGRATION_7_8
+- [x] Créer BiometricVaultManager.kt (340+ lignes)
+  - enableBiometric() - Chiffre password avec Keystore
+  - unlockWithBiometric() - Affiche prompt et déchiffre
+  - disableBiometric() - Supprime clé Keystore
+  - isBiometricAvailable() - Vérifie disponibilité
+- [x] Implémenter equals() et hashCode() pour ByteArray dans VaultRegistryEntry
+
+#### 🎯 Réalisations Clés
 ```kotlin
-@Entity(
-    tableName = "vault_registry",
-    indices = [
-        Index(value = ["isDefault"]),
-        Index(value = ["isLoaded"]),
-        Index(value = ["storageStrategy"]),
-        Index(value = ["biometricUnlockEnabled"])  // ⭐ NOUVEAU
-    ]
-)
-data class VaultRegistryEntry(
-    // ... champs existants ...
-
-    // ⭐ NOUVEAUX CHAMPS BIOMÉTRIQUES
-    /** Déverrouillage biométrique activé */
-    val biometricUnlockEnabled: Boolean = false,
-
-    /** Master password chiffré avec Android Keystore */
-    val encryptedMasterPassword: ByteArray? = null,
-
-    /** IV pour le déchiffrement du password */
-    val masterPasswordIv: ByteArray? = null
-)
+// Architecture implémentée:
+BiometricVaultManager
+  ├─ Android Keystore integration (AES-256-GCM)
+  ├─ Key generation per vault (vault_biometric_{vaultId})
+  ├─ BiometricPrompt UI integration
+  ├─ Encrypt master password on enable
+  ├─ Decrypt master password on unlock
+  └─ Hardware-backed security when available
 ```
 
-**Migration requise** : MIGRATION_7_8
-```sql
-ALTER TABLE vault_registry ADD COLUMN biometricUnlockEnabled INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE vault_registry ADD COLUMN encryptedMasterPassword BLOB;
-ALTER TABLE vault_registry ADD COLUMN masterPasswordIv BLOB;
-CREATE INDEX IF NOT EXISTS index_vault_registry_biometricUnlockEnabled
-    ON vault_registry(biometricUnlockEnabled);
-```
+#### 📌 Notes Techniques
+- **Android Keystore** : Clés stockées dans hardware-backed storage si disponible
+- **AES-256-GCM** : Chiffrement avec tag authentication de 128 bits
+- **User Authentication Required** : setUserAuthenticationRequired(true)
+- **IV unique** : Chaque vault a son propre IV stocké dans vault_registry
+- **Invalidation** : setInvalidatedByBiometricEnrollment(true) pour sécurité
+- **FragmentActivity** : BiometricPrompt nécessite FragmentActivity (ComponentActivity)
 
-**BiometricVaultManager à créer** :
+---
+
+### Phase 3 : FileVaultRepository ✅ COMPLÉTÉ
+
+**Objectif** : Créer la couche repository qui fait le pont entre UI et VaultSessionManager
+
+#### ✅ Étapes Complétées
+- [x] Créer FileVaultRepository.kt (360+ lignes)
+- [x] Implémenter Entry operations
+  - getEntries() / searchEntries() / getEntriesByFolder() / getFavoriteEntries()
+  - addEntry() / updateEntry() / deleteEntry() / toggleFavorite()
+- [x] Implémenter Folder operations
+  - getFolders() / addFolder() / updateFolder() / deleteFolder()
+- [x] Implémenter Tag operations
+  - getTags() / addTag() / updateTag() / deleteTag() / getTagsForEntry()
+- [x] Implémenter Preset operations
+  - getPresets() / addPreset() / updatePreset() / deletePreset()
+- [x] Implémenter Session management
+  - unlockVault() / lockVault() / isVaultUnlocked() / getCurrentVaultId()
+- [x] Implémenter Statistics
+  - getStatistics() - Calcule depuis session en cours
+
+#### 🎯 Réalisations Clés
 ```kotlin
-class BiometricVaultManager @Inject constructor(
-    private val context: Context,
-    private val vaultRegistryDao: VaultRegistryDao
-) {
-    // Chiffrer le master password avec Keystore
-    suspend fun enableBiometric(vaultId: String, masterPassword: String): Result<Unit>
-
-    // Déchiffrer et retourner le master password
-    suspend fun unlockWithBiometric(vaultId: String): Result<String>
-
-    // Désactiver la biométrie
-    suspend fun disableBiometric(vaultId: String): Result<Unit>
-}
+// Architecture implémentée:
+FileVaultRepository (Repository Pattern)
+  ├─ Délègue à VaultSessionManager
+  ├─ Fournit API haut niveau pour l'UI
+  ├─ Transforme données si nécessaire
+  ├─ Gère erreurs avec Result<T>
+  ├─ Flows réactifs pour l'UI
+  └─ Statistics en temps réel
 ```
+
+#### 📌 Notes Techniques
+- **Singleton** : Une instance partagée dans toute l'app via Hilt
+- **StateFlow** : Reactive streams pour mises à jour UI automatiques
+- **Result<T>** : Pattern pour gestion d'erreurs explicite
+- **Abstraction** : UI n'a pas besoin de connaître VaultFileManager
+
+---
+
+### Phase 4 : UnlockVaultScreen Refactor ✅ COMPLÉTÉ
+
+**Objectif** : Refactoriser l'écran de déverrouillage pour utiliser le nouveau système
+
+#### ✅ Étapes Complétées
+- [x] Créer UnlockVaultViewModel.kt (180+ lignes)
+  - loadVault() - Charge VaultRegistryEntry depuis DAO
+  - unlockWithPassword() - Via FileVaultRepository
+  - unlockWithBiometric() - Via BiometricVaultManager
+  - isBiometricAvailable() - Check disponibilité
+- [x] Modifier UnlockVaultScreen.kt
+  - Remplacer VaultEntity par VaultRegistryEntry
+  - Remplacer VaultViewModel par UnlockVaultViewModel
+  - Supprimer ancien BiometricHelper
+  - Utiliser BiometricVaultManager via ViewModel
+  - Adapter UI pour nouveaux champs (statistics, lastAccessed)
+- [x] Intégrer biometric UI
+  - Bouton biométrique affiché seulement si activé
+  - Gestion états (Ready/Unlocking/Error/Unlocked)
+  - Prompt biométrique natif Android
+
+#### 🎯 Réalisations Clés
+```kotlin
+// Architecture implémentée:
+UnlockVaultScreen
+  ↓
+UnlockVaultViewModel
+  ├→ FileVaultRepository.unlockVault()
+  └→ BiometricVaultManager.unlockWithBiometric()
+       ↓
+  VaultSessionManager (déverrouillé en mémoire)
+```
+
+#### 📌 Notes Techniques
+- **VaultRegistryEntry** : Métadonnées depuis vault_registry (pas VaultData encore)
+- **ComponentActivity** : Cast nécessaire pour BiometricPrompt
+- **States** : Loading → Ready → Unlocking → Unlocked | Error
+- **Navigation** : Successful unlock → VaultListScreen (via NavGraph)
+- **Error handling** : Tentatives comptées, messages explicites
 
 ---
 
@@ -150,16 +216,20 @@ class BiometricVaultManager @Inject constructor(
 
 ### ✅ Nouveaux Fichiers Créés
 ```
-✅ android/FILE_BASED_VAULT_IMPLEMENTATION.md          [Documentation complète]
-✅ android/IMPLEMENTATION_PROGRESS.md                  [Ce fichier - tracking]
-✅ domain/session/VaultSessionManager.kt               [820 lignes - Phase 1 complète]
+✅ android/FILE_BASED_VAULT_IMPLEMENTATION.md          [Documentation complète - 800+ lignes]
+✅ android/IMPLEMENTATION_PROGRESS.md                  [Ce fichier - tracking - 420+ lignes]
+✅ domain/session/VaultSessionManager.kt               [820 lignes - Phase 1]
+✅ security/BiometricVaultManager.kt                   [340 lignes - Phase 2]
+✅ data/repository/FileVaultRepository.kt              [360 lignes - Phase 3]
+✅ presentation/vault/UnlockVaultViewModel.kt          [180 lignes - Phase 4]
 ```
 
-### 📋 Fichiers Préparés (Session 2)
+### ✅ Fichiers Modifiés
 ```
-⏸️ security/BiometricVaultManager.kt                  [Spéc prête]
-⏸️ data/local/entity/VaultRegistryEntry.kt            [Champs définis]
-⏸️ data/local/database/AppDatabase.kt                 [MIGRATION_7_8 spec]
+✅ data/local/entity/VaultRegistryEntry.kt             [+3 champs biométriques, Phase 2]
+✅ data/local/database/AppDatabase.kt                  [v7→v8, MIGRATION_7_8, Phase 2]
+✅ di/DatabaseModule.kt                                [+MIGRATION_7_8, Phase 2]
+✅ presentation/vault/UnlockVaultScreen.kt             [Refactor complet, Phase 4]
 ```
 
 ---

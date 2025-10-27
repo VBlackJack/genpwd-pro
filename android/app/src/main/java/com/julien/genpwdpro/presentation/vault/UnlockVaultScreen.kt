@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation.vault
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -19,7 +19,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.VaultEntity
+import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 
 /**
  * Écran de déverrouillage d'un vault
@@ -30,36 +30,29 @@ fun UnlockVaultScreen(
     vaultId: String,
     onVaultUnlocked: () -> Unit,
     onBackClick: () -> Unit,
-    viewModel: VaultViewModel = hiltViewModel()
+    viewModel: UnlockVaultViewModel = hiltViewModel()
 ) {
     var masterPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(0) }
-    var vault by remember { mutableStateOf<VaultEntity?>(null) }
-    var biometricErrorMessage by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-
-    // BiometricHelper (nécessite FragmentActivity)
-    val biometricHelper = remember {
-        context.getBiometricHelper()
-    }
+    val vaultRegistry by viewModel.vaultRegistry.collectAsState()
 
     // Charger le vault
     LaunchedEffect(vaultId) {
-        vault = viewModel.getVaultById(vaultId)
+        viewModel.loadVault(vaultId)
     }
 
     // Observer les changements d'état
     LaunchedEffect(uiState) {
-        when (uiState) {
-            is VaultUiState.VaultUnlocked -> {
+        when (val state = uiState) {
+            is UnlockVaultUiState.Unlocked -> {
                 onVaultUnlocked()
             }
-            is VaultUiState.Error -> {
+            is UnlockVaultUiState.Error -> {
                 attempts++
                 masterPassword = "" // Effacer le mot de passe après erreur
             }
@@ -68,8 +61,8 @@ fun UnlockVaultScreen(
     }
 
     // Afficher un loader pendant le chargement du vault
-    val currentVault = vault
-    if (currentVault == null) {
+    val currentVault = vaultRegistry
+    if (currentVault == null || uiState is UnlockVaultUiState.Loading) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -116,7 +109,7 @@ fun UnlockVaultScreen(
                 textAlign = TextAlign.Center
             )
 
-            if (currentVault.description.isNotEmpty()) {
+            if (!currentVault.description.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = currentVault.description,
@@ -135,11 +128,11 @@ fun UnlockVaultScreen(
             ) {
                 VaultStatChip(
                     icon = Icons.Default.Key,
-                    label = "${currentVault.entryCount} entrées"
+                    label = "${currentVault.statistics.entryCount} entrées"
                 )
                 VaultStatChip(
                     icon = Icons.Default.Update,
-                    label = formatLastAccess(currentVault.lastAccessedAt)
+                    label = formatLastAccess(currentVault.lastAccessed ?: currentVault.createdAt)
                 )
             }
 
@@ -164,7 +157,7 @@ fun UnlockVaultScreen(
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = uiState is VaultUiState.Error,
+                isError = uiState is UnlockVaultUiState.Error,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
@@ -173,17 +166,17 @@ fun UnlockVaultScreen(
                     onDone = {
                         focusManager.clearFocus()
                         if (masterPassword.isNotEmpty()) {
-                            viewModel.unlockVault(currentVault.id, masterPassword)
+                            viewModel.unlockWithPassword(currentVault.id, masterPassword)
                         }
                     }
                 )
             )
 
             // Message d'erreur
-            if (uiState is VaultUiState.Error) {
+            if (uiState is UnlockVaultUiState.Error) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = (uiState as VaultUiState.Error).message,
+                    text = (uiState as UnlockVaultUiState.Error).message,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -219,12 +212,12 @@ fun UnlockVaultScreen(
             // Bouton déverrouiller
             Button(
                 onClick = {
-                    viewModel.unlockVault(currentVault.id, masterPassword)
+                    viewModel.unlockWithPassword(currentVault.id, masterPassword)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = masterPassword.isNotEmpty() && uiState !is VaultUiState.Loading
+                enabled = masterPassword.isNotEmpty() && uiState !is UnlockVaultUiState.Unlocking
             ) {
-                if (uiState is VaultUiState.Loading) {
+                if (uiState is UnlockVaultUiState.Unlocking) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary
@@ -236,79 +229,30 @@ fun UnlockVaultScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Afficher le bouton biométrique seulement si activé
+            if (currentVault.biometricUnlockEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Bouton biométrie
-            OutlinedButton(
-                onClick = {
-                    biometricErrorMessage = null
-                    biometricHelper?.showBiometricPrompt(
-                        title = "Déverrouiller le coffre-fort",
-                        subtitle = currentVault.name,
-                        description = "Authentifiez-vous pour accéder à vos mots de passe",
-                        allowDeviceCredentials = true,
-                        onSuccess = {
-                            // Récupérer et déverrouiller le vault avec le master password stocké
-                            coroutineScope.launch {
-                                val masterPassword = viewModel.getBiometricPassword(currentVault.id)
-                                if (masterPassword != null) {
-                                    // Déverrouiller normalement le vault
-                                    viewModel.unlockVault(currentVault.id, masterPassword)
-                                    // La navigation se fera automatiquement via l'observer uiState
-                                } else {
-                                    // Erreur: pas de mot de passe stocké
-                                    biometricErrorMessage = "Aucun mot de passe biométrique configuré. Utilisez le mot de passe maître."
-                                }
-                            }
-                        },
-                        onError = { errorCode, errorMessage ->
-                            // Gérer l'erreur
-                            if (errorCode != BiometricHelper.ERROR_CANCELED &&
-                                errorCode != BiometricHelper.ERROR_USER_CANCELED &&
-                                errorCode != BiometricHelper.ERROR_NEGATIVE_BUTTON
-                            ) {
-                                biometricErrorMessage = BiometricHelper.getErrorMessage(errorCode)
-                            }
+                // Bouton biométrie
+                OutlinedButton(
+                    onClick = {
+                        val activity = context as? ComponentActivity
+                        if (activity != null) {
+                            viewModel.unlockWithBiometric(activity, currentVault.id)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = viewModel.isBiometricAvailable() && uiState !is UnlockVaultUiState.Unlocking
+                ) {
+                    Icon(Icons.Default.Fingerprint, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (viewModel.isBiometricAvailable()) {
+                            "Utiliser la biométrie"
+                        } else {
+                            "Biométrie non disponible"
                         }
                     )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = currentVault.biometricUnlockEnabled && biometricHelper != null && uiState !is VaultUiState.Loading
-            ) {
-                Icon(Icons.Default.Fingerprint, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    when {
-                        biometricHelper == null -> "Biométrie non disponible"
-                        !currentVault.biometricUnlockEnabled -> "Biométrie non configurée"
-                        else -> "Utiliser la biométrie"
-                    }
-                )
-            }
-
-            // Message d'erreur biométrique
-            if (biometricErrorMessage != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Error,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Text(
-                            text = biometricErrorMessage!!,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
                 }
             }
 
