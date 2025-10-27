@@ -256,6 +256,61 @@ fun UnlockVaultScreen(
                 }
             }
 
+            // 🆕 Bouton pour activer la biométrie si pas encore activée
+            if (!currentVault.biometricUnlockEnabled && viewModel.isBiometricAvailable()) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Carte info avec bouton d'activation
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Fingerprint,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                text = "Déverrouillage biométrique",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+
+                        Text(
+                            text = "Gagnez du temps en activant l'authentification par empreinte digitale ou reconnaissance faciale.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+
+                        Button(
+                            onClick = {
+                                // Active la biométrie avec le mot de passe actuel
+                                if (masterPassword.isNotEmpty()) {
+                                    viewModel.enableBiometric(currentVault.id, masterPassword)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = masterPassword.isNotEmpty() && uiState !is UnlockVaultUiState.Unlocking
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Activer maintenant")
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Info sécurité

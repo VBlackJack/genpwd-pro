@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation.vault
 
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,6 +30,10 @@ class UnlockVaultViewModel @Inject constructor(
     private val biometricVaultManager: BiometricVaultManager,
     private val vaultRegistryDao: VaultRegistryDao
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "UnlockVaultViewModel"
+    }
 
     private val _uiState = MutableStateFlow<UnlockVaultUiState>(UnlockVaultUiState.Loading)
     val uiState: StateFlow<UnlockVaultUiState> = _uiState.asStateFlow()
@@ -65,21 +70,33 @@ class UnlockVaultViewModel @Inject constructor(
     fun unlockWithPassword(vaultId: String, masterPassword: String) {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "🔓 Attempting unlock for vault: $vaultId")
+                Log.d(TAG, "📏 Password length: ${masterPassword.length}")
+                Log.d(TAG, "📊 Current UI state: ${_uiState.value::class.simpleName}")
+
                 _uiState.value = UnlockVaultUiState.Unlocking
 
                 val result = fileVaultRepository.unlockVault(vaultId, masterPassword)
 
+                Log.d(TAG, "✅ Unlock result: ${if (result.isSuccess) "SUCCESS" else "FAILURE"}")
+
                 result.fold(
                     onSuccess = {
+                        Log.i(TAG, "✅ Vault unlocked successfully: $vaultId")
                         _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
                     },
                     onFailure = { error ->
+                        Log.e(TAG, "❌ Unlock failed for vault $vaultId", error)
+                        Log.e(TAG, "❌ Error type: ${error::class.simpleName}")
+                        Log.e(TAG, "❌ Error message: ${error.message}")
                         _uiState.value = UnlockVaultUiState.Error(
                             error.message ?: "Mot de passe incorrect"
                         )
                     }
                 )
             } catch (e: Exception) {
+                Log.e(TAG, "💥 Exception during unlock attempt", e)
+                Log.e(TAG, "💥 Exception type: ${e::class.simpleName}")
                 _uiState.value = UnlockVaultUiState.Error(
                     e.message ?: "Erreur lors du déverrouillage"
                 )
@@ -140,6 +157,34 @@ class UnlockVaultViewModel @Inject constructor(
      */
     fun isBiometricAvailable(): Boolean {
         return biometricVaultManager.isBiometricAvailable()
+    }
+
+    /**
+     * Active le déverrouillage biométrique pour un vault
+     * Nécessite que l'utilisateur ait saisi son master password
+     */
+    fun enableBiometric(vaultId: String, masterPassword: String) {
+        viewModelScope.launch {
+            try {
+                val result = biometricVaultManager.enableBiometric(vaultId, masterPassword)
+
+                result.fold(
+                    onSuccess = {
+                        // Recharger le vault pour mettre à jour biometricUnlockEnabled
+                        loadVault(vaultId)
+                    },
+                    onFailure = { error ->
+                        _uiState.value = UnlockVaultUiState.Error(
+                            "Erreur lors de l'activation: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = UnlockVaultUiState.Error(
+                    e.message ?: "Erreur lors de l'activation de la biométrie"
+                )
+            }
+        }
     }
 
     /**
