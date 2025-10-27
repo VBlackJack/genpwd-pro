@@ -106,3 +106,15 @@ interface VaultRegistryDao {
     @Query("SELECT COUNT(*) FROM vault_registry")
     suspend fun count(): Int
 }
+
+/**
+ * Extension function pour mettre à jour un vault par ID avec une lambda
+ * Utilisé par BiometricVaultManager
+ */
+suspend fun VaultRegistryDao.updateById(
+    vaultId: String,
+    block: (VaultRegistryEntry) -> VaultRegistryEntry
+) {
+    val entry = getById(vaultId) ?: return
+    update(block(entry))
+}

@@ -234,7 +234,7 @@ class VaultSessionManager @Inject constructor(
      */
     fun getEntries(): StateFlow<List<VaultEntryEntity>> {
         val session = currentSession
-            ?: return MutableStateFlow(emptyList()).asStateFlow()
+            ?: return MutableStateFlow<List<VaultEntryEntity>>(emptyList()).asStateFlow()
 
         return session.vaultData.map { it.entries }.stateIn<List<VaultEntryEntity>>(
             scope = sessionScope,
@@ -347,7 +347,7 @@ class VaultSessionManager @Inject constructor(
      */
     fun getFolders(): StateFlow<List<FolderEntity>> {
         val session = currentSession
-            ?: return MutableStateFlow(emptyList()).asStateFlow()
+            ?: return MutableStateFlow<List<FolderEntity>>(emptyList()).asStateFlow()
 
         return session.vaultData.map { it.folders }.stateIn<List<FolderEntity>>(
             scope = sessionScope,
@@ -448,7 +448,7 @@ class VaultSessionManager @Inject constructor(
      */
     fun getTags(): StateFlow<List<TagEntity>> {
         val session = currentSession
-            ?: return MutableStateFlow(emptyList()).asStateFlow()
+            ?: return MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
 
         return session.vaultData.map { it.tags }.stateIn<List<TagEntity>>(
             scope = sessionScope,
@@ -547,7 +547,7 @@ class VaultSessionManager @Inject constructor(
      */
     fun getPresets(): StateFlow<List<PresetEntity>> {
         val session = currentSession
-            ?: return MutableStateFlow(emptyList()).asStateFlow()
+            ?: return MutableStateFlow<List<PresetEntity>>(emptyList()).asStateFlow()
 
         return session.vaultData.map { it.presets }.stateIn<List<PresetEntity>>(
             scope = sessionScope,

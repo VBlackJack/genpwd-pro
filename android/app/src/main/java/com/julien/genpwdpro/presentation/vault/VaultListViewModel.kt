@@ -61,7 +61,7 @@ class VaultListViewModel @Inject constructor(
                         }
 
                         val matchesType = typeFilter?.let { type ->
-                            entry.entryType == type
+                            entry.entryType.toEntryType() == type
                         } ?: true
 
                         val matchesFavorites = if (favoritesOnly) {
@@ -127,8 +127,11 @@ class VaultListViewModel @Inject constructor(
     fun toggleFavorite(entryId: String) {
         viewModelScope.launch {
             try {
-                // ✅ FIX: Utiliser FileVaultRepository
-                fileVaultRepository.toggleFavorite(entryId)
+                // Get entry first to determine new favorite status
+                val entry = fileVaultRepository.getEntryById(entryId)
+                if (entry != null) {
+                    fileVaultRepository.toggleFavorite(entryId, !entry.isFavorite)
+                }
                 // Le Flow dans loadEntries() se met à jour automatiquement
             } catch (e: Exception) {
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur")
