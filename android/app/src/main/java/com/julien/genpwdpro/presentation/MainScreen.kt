@@ -6,7 +6,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -14,6 +16,8 @@ import androidx.navigation.NavHostController
 import com.julien.genpwdpro.presentation.navigation.AppNavGraph
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.domain.session.SessionManager
+import com.julien.genpwdpro.domain.session.VaultSessionManager
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 /**
@@ -30,7 +34,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    sessionManager: SessionManager
+    sessionManager: SessionManager,
+    vaultSessionManager: VaultSessionManager
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -158,7 +163,8 @@ fun MainScreen(
                 AppNavGraph(
                     navController = navController,
                     startDestination = Screen.Dashboard.route,
-                    sessionManager = sessionManager
+                    sessionManager = sessionManager,
+                    vaultSessionManager = vaultSessionManager
                 )
             }
         }

@@ -101,7 +101,8 @@ sealed class Screen(val route: String) {
 fun AppNavGraph(
     navController: NavHostController,
     startDestination: String = Screen.Dashboard.route,
-    sessionManager: com.julien.genpwdpro.domain.session.SessionManager
+    sessionManager: com.julien.genpwdpro.domain.session.SessionManager,
+    vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) {
     NavHost(
         navController = navController,
@@ -133,7 +134,8 @@ fun AppNavGraph(
 
         // ========== Générateur (écran existant) ==========
         composable(Screen.Generator.route) {
-            val currentVaultId = sessionManager.getCurrentVaultId()
+            // ✅ FIX: Utiliser VaultSessionManager (nouveau système file-based)
+            val currentVaultId = vaultSessionManager.getCurrentVaultId()
 
             GeneratorScreen(
                 vaultId = currentVaultId,
@@ -158,8 +160,8 @@ fun AppNavGraph(
                     }
                 },
                 onSaveToVault = { password ->
-                    // Vérifier si un vault est déverrouillé
-                    val vaultId = sessionManager.getCurrentVaultId()
+                    // ✅ FIX: Vérifier si un vault est déverrouillé (nouveau système)
+                    val vaultId = vaultSessionManager.getCurrentVaultId()
                     if (vaultId != null) {
                         // Naviguer vers SelectEntryType avec le mot de passe
                         navController.navigate(

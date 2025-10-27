@@ -44,6 +44,9 @@ class MainActivity : FragmentActivity() {
     lateinit var sessionManager: SessionManager
 
     @Inject
+    lateinit var vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
+
+    @Inject
     lateinit var vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,7 +73,8 @@ class MainActivity : FragmentActivity() {
                     // Écran principal avec Dashboard et bottom navigation
                     MainScreen(
                         navController = navController,
-                        sessionManager = sessionManager
+                        sessionManager = sessionManager,
+                        vaultSessionManager = vaultSessionManager
                     )
                 }
             }
