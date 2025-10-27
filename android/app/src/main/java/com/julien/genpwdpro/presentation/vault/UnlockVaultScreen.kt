@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.presentation.vault
 
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -236,7 +236,7 @@ fun UnlockVaultScreen(
                 // Bouton biométrie
                 OutlinedButton(
                     onClick = {
-                        val activity = context as? ComponentActivity
+                        val activity = context as? FragmentActivity
                         if (activity != null) {
                             viewModel.unlockWithBiometric(activity, currentVault.id)
                         }

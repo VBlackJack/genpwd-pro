@@ -236,7 +236,7 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return MutableStateFlow(emptyList()).asStateFlow()
 
-        return session.vaultData.map { it.entries }.stateIn(
+        return session.vaultData.map { it.entries }.stateIn<List<VaultEntryEntity>>(
             scope = sessionScope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = session.vaultData.value.entries
@@ -349,7 +349,7 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return MutableStateFlow(emptyList()).asStateFlow()
 
-        return session.vaultData.map { it.folders }.stateIn(
+        return session.vaultData.map { it.folders }.stateIn<List<FolderEntity>>(
             scope = sessionScope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = session.vaultData.value.folders
@@ -450,7 +450,7 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return MutableStateFlow(emptyList()).asStateFlow()
 
-        return session.vaultData.map { it.tags }.stateIn(
+        return session.vaultData.map { it.tags }.stateIn<List<TagEntity>>(
             scope = sessionScope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = session.vaultData.value.tags
@@ -549,7 +549,7 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return MutableStateFlow(emptyList()).asStateFlow()
 
-        return session.vaultData.map { it.presets }.stateIn(
+        return session.vaultData.map { it.presets }.stateIn<List<PresetEntity>>(
             scope = sessionScope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = session.vaultData.value.presets

@@ -14,8 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.EntryType
-import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
+import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import kotlinx.coroutines.delay
 
@@ -348,7 +347,7 @@ private fun EntryCard(
         ) {
             // Icône
             Icon(
-                imageVector = when (entry.entryType) {
+                imageVector = when (entry.entryType.toEntryType()) {
                     EntryType.LOGIN -> Icons.Default.Key
                     EntryType.WIFI -> Icons.Default.Wifi
                     EntryType.NOTE -> Icons.Default.Description
