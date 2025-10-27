@@ -219,12 +219,28 @@ class EntryViewModel @Inject constructor(
 
         // Validation
         if (_title.value.isEmpty()) {
-            _uiState.value = EntryUiState.Error("Le titre est requis")
+            _uiState.value = EntryUiState.Error(
+                when (_entryType.value) {
+                    EntryType.WIFI -> "Le SSID est requis"
+                    EntryType.NOTE -> "Le titre est requis"
+                    else -> "Le titre est requis"
+                }
+            )
             return
         }
 
         if (_entryType.value == EntryType.LOGIN && _password.value.isEmpty()) {
             _uiState.value = EntryUiState.Error("Le mot de passe est requis")
+            return
+        }
+
+        if (_entryType.value == EntryType.WIFI && _password.value.isEmpty()) {
+            _uiState.value = EntryUiState.Error("Le mot de passe WiFi est requis")
+            return
+        }
+
+        if (_entryType.value == EntryType.NOTE && _notes.value.isEmpty()) {
+            _uiState.value = EntryUiState.Error("Le contenu de la note est requis")
             return
         }
 
@@ -262,6 +278,52 @@ class EntryViewModel @Inject constructor(
                             totpDigits = 6,
                             totpAlgorithm = "SHA1",
                             totpIssuer = _totpIssuer.value,
+                            hasPasskey = false,
+                            passkeyData = "",
+                            passkeyRpId = "",
+                            passkeyRpName = "",
+                            passkeyUserHandle = "",
+                            passkeyCreatedAt = 0,
+                            passkeyLastUsedAt = 0
+                        )
+
+                        if (isEditMode && currentEntryId != null) {
+                            vaultRepository.updateEntry(vaultId, entry)
+                        } else {
+                            vaultRepository.createEntry(vaultId, entry)
+                        }
+                    }
+
+                    EntryType.WIFI -> {
+                        val entry = VaultRepository.DecryptedEntry(
+                            id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
+                            vaultId = vaultId,
+                            folderId = null,
+                            title = _title.value, // SSID
+                            username = _username.value, // Type de sécurité (WPA2, WPA3, etc.)
+                            password = _password.value, // Mot de passe WiFi
+                            url = "",
+                            notes = _notes.value,
+                            customFields = "",
+                            entryType = EntryType.WIFI,
+                            isFavorite = _isFavorite.value,
+                            passwordStrength = _passwordStrength.value,
+                            passwordEntropy = _passwordEntropy.value,
+                            generationMode = null,
+                            createdAt = System.currentTimeMillis(),
+                            modifiedAt = System.currentTimeMillis(),
+                            lastAccessedAt = System.currentTimeMillis(),
+                            passwordExpiresAt = 0,
+                            requiresPasswordChange = false,
+                            usageCount = 0,
+                            icon = "\uD83D\uDCF6", // 📶 icône WiFi
+                            color = null,
+                            hasTOTP = false,
+                            totpSecret = "",
+                            totpPeriod = 30,
+                            totpDigits = 6,
+                            totpAlgorithm = "SHA1",
+                            totpIssuer = "",
                             hasPasskey = false,
                             passkeyData = "",
                             passkeyRpId = "",

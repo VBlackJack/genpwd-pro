@@ -137,6 +137,7 @@ fun EntryEditScreen(
                     Icon(
                         when (currentEntryType) {
                             EntryType.LOGIN -> Icons.Default.Key
+                            EntryType.WIFI -> Icons.Default.Wifi
                             EntryType.NOTE -> Icons.Default.Description
                             EntryType.CARD -> Icons.Default.CreditCard
                             EntryType.IDENTITY -> Icons.Default.Badge
@@ -147,6 +148,7 @@ fun EntryEditScreen(
                     Text(
                         text = when (currentEntryType) {
                             EntryType.LOGIN -> "Identifiant"
+                            EntryType.WIFI -> "Réseau WiFi"
                             EntryType.NOTE -> "Note sécurisée"
                             EntryType.CARD -> "Carte bancaire"
                             EntryType.IDENTITY -> "Document d'identité"
@@ -161,8 +163,24 @@ fun EntryEditScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { viewModel.updateTitle(it) },
-                label = { Text("Titre *") },
-                leadingIcon = { Icon(Icons.Default.Title, null) },
+                label = {
+                    Text(
+                        when (currentEntryType) {
+                            EntryType.WIFI -> "SSID (nom du réseau) *"
+                            EntryType.NOTE -> "Titre de la note *"
+                            else -> "Titre *"
+                        }
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        when (currentEntryType) {
+                            EntryType.WIFI -> Icons.Default.Wifi
+                            else -> Icons.Default.Title
+                        },
+                        null
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -292,19 +310,78 @@ fun EntryEditScreen(
                 }
             }
 
-            // Notes
+            // Champs spécifiques WIFI
+            if (currentEntryType == EntryType.WIFI) {
+                // Mot de passe WiFi
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { viewModel.updatePassword(it) },
+                    label = { Text("Mot de passe WiFi *") },
+                    leadingIcon = { Icon(Icons.Default.Password, null) },
+                    trailingIcon = {
+                        Row {
+                            // Générer mot de passe
+                            IconButton(onClick = { showGeneratorDialog = true }) {
+                                Icon(Icons.Default.AutoAwesome, "Générer")
+                            }
+                            // Afficher/masquer
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(
+                                    if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    "Afficher/masquer"
+                                )
+                            }
+                        }
+                    },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                )
+
+                // Force du mot de passe
+                if (password.isNotEmpty()) {
+                    PasswordStrengthIndicator(
+                        strength = passwordStrength,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Type de sécurité WiFi
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { viewModel.updateUsername(it) },
+                    label = { Text("Type de sécurité") },
+                    leadingIcon = { Icon(Icons.Default.Security, null) },
+                    placeholder = { Text("WPA2, WPA3, WEP...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                )
+            }
+
+            // Notes / Contenu
             OutlinedTextField(
                 value = notes,
                 onValueChange = { viewModel.updateNotes(it) },
                 label = {
                     Text(
-                        if (currentEntryType == EntryType.NOTE) "Contenu *" else "Notes"
+                        when (currentEntryType) {
+                            EntryType.NOTE -> "Contenu *"
+                            EntryType.WIFI -> "Notes (optionnel)"
+                            else -> "Notes"
+                        }
                     )
                 },
                 leadingIcon = { Icon(Icons.Default.Notes, null) },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 4,
-                maxLines = 10,
+                minLines = if (currentEntryType == EntryType.NOTE) 8 else 4,
+                maxLines = if (currentEntryType == EntryType.NOTE) 20 else 10,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Default
