@@ -54,7 +54,8 @@ fun CreateVaultScreen(
     }
 
     // Observer les changements d'état
-    LaunchedEffect(uiState, enableBiometric, masterPassword) {
+    // IMPORTANT: N'observer QUE uiState, pas masterPassword (cause des relances inutiles)
+    LaunchedEffect(uiState) {
         if (uiState is VaultUiState.VaultCreated) {
             val vaultId = (uiState as VaultUiState.VaultCreated).vaultId
 
