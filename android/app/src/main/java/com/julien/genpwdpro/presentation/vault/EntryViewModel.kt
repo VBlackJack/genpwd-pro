@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.local.entity.createVaultEntry
 import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
 import com.julien.genpwdpro.domain.generators.PasswordGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,11 +15,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel pour créer/éditer une entrée de vault
+ * ViewModel pour créer/éditer une entrée de vault (nouveau système file-based)
  */
 @HiltViewModel
 class EntryViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository,
+    private val fileVaultRepository: FileVaultRepository,
     private val passwordGenerator: PasswordGenerator,
     private val passwordAnalyzer: PasswordAnalyzer,
     private val totpGenerator: TotpGenerator
@@ -82,6 +83,7 @@ class EntryViewModel @Inject constructor(
 
     /**
      * Initialise pour éditer une entrée existante
+     * Note: vaultId est conservé pour compatibilité mais FileVaultRepository utilise la session active
      */
     fun initForEdit(vaultId: String, entryId: String) {
         currentVaultId = vaultId
@@ -90,17 +92,17 @@ class EntryViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val entry = vaultRepository.getEntryById(vaultId, entryId)
+                val entry = fileVaultRepository.getEntryById(entryId)
                 if (entry != null) {
-                    _entryType.value = entry.entryType
+                    _entryType.value = entry.entryType.toEntryType() // String → EntryType enum
                     _title.value = entry.title
-                    _username.value = entry.username
-                    _password.value = entry.password
-                    _url.value = entry.url
-                    _notes.value = entry.notes
+                    _username.value = entry.username ?: ""
+                    _password.value = entry.password ?: ""
+                    _url.value = entry.url ?: ""
+                    _notes.value = entry.notes ?: ""
                     _isFavorite.value = entry.isFavorite
-                    _hasTOTP.value = entry.hasTOTP
-                    _totpSecret.value = entry.totpSecret
+                    _hasTOTP.value = entry.hasTOTP()
+                    _totpSecret.value = entry.totpSecret ?: ""
                     _totpIssuer.value = entry.totpIssuer
                     _passwordStrength.value = entry.passwordStrength
                     _passwordEntropy.value = entry.passwordEntropy
@@ -208,7 +210,7 @@ class EntryViewModel @Inject constructor(
     }
 
     /**
-     * Sauvegarde l'entrée
+     * Sauvegarde l'entrée (nouveau système file-based)
      */
     fun saveEntry() {
         val vaultId = currentVaultId
@@ -249,7 +251,7 @@ class EntryViewModel @Inject constructor(
             try {
                 when (_entryType.value) {
                     EntryType.LOGIN -> {
-                        val entry = VaultRepository.DecryptedEntry(
+                        val entry = createVaultEntry(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -264,7 +266,12 @@ class EntryViewModel @Inject constructor(
                             passwordStrength = _passwordStrength.value,
                             passwordEntropy = _passwordEntropy.value,
                             generationMode = null,
-                            createdAt = System.currentTimeMillis(),
+                            createdAt = if (isEditMode) {
+                                // Conserver la date de création originale en mode édition
+                                fileVaultRepository.getEntryById(currentEntryId!!)?.createdAt ?: System.currentTimeMillis()
+                            } else {
+                                System.currentTimeMillis()
+                            },
                             modifiedAt = System.currentTimeMillis(),
                             lastAccessedAt = System.currentTimeMillis(),
                             passwordExpiresAt = 0,
@@ -287,15 +294,20 @@ class EntryViewModel @Inject constructor(
                             passkeyLastUsedAt = 0
                         )
 
-                        if (isEditMode && currentEntryId != null) {
-                            vaultRepository.updateEntry(vaultId, entry)
+                        val result = if (isEditMode && currentEntryId != null) {
+                            fileVaultRepository.updateEntry(entry)
                         } else {
-                            vaultRepository.createEntry(vaultId, entry)
+                            fileVaultRepository.addEntry(entry)
+                        }
+
+                        result.onFailure { error ->
+                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            return@launch
                         }
                     }
 
                     EntryType.WIFI -> {
-                        val entry = VaultRepository.DecryptedEntry(
+                        val entry = createVaultEntry(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -310,7 +322,11 @@ class EntryViewModel @Inject constructor(
                             passwordStrength = _passwordStrength.value,
                             passwordEntropy = _passwordEntropy.value,
                             generationMode = null,
-                            createdAt = System.currentTimeMillis(),
+                            createdAt = if (isEditMode) {
+                                fileVaultRepository.getEntryById(currentEntryId!!)?.createdAt ?: System.currentTimeMillis()
+                            } else {
+                                System.currentTimeMillis()
+                            },
                             modifiedAt = System.currentTimeMillis(),
                             lastAccessedAt = System.currentTimeMillis(),
                             passwordExpiresAt = 0,
@@ -333,20 +349,55 @@ class EntryViewModel @Inject constructor(
                             passkeyLastUsedAt = 0
                         )
 
-                        if (isEditMode && currentEntryId != null) {
-                            vaultRepository.updateEntry(vaultId, entry)
+                        val result = if (isEditMode && currentEntryId != null) {
+                            fileVaultRepository.updateEntry(entry)
                         } else {
-                            vaultRepository.createEntry(vaultId, entry)
+                            fileVaultRepository.addEntry(entry)
+                        }
+
+                        result.onFailure { error ->
+                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            return@launch
                         }
                     }
 
                     EntryType.NOTE -> {
-                        vaultRepository.createSecureNote(
+                        // Créer une note sécurisée
+                        val entry = createVaultEntry(
+                            id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
+                            folderId = null,
                             title = _title.value,
-                            content = _notes.value,
-                            isFavorite = _isFavorite.value
+                            username = "",
+                            password = "",
+                            url = "",
+                            notes = _notes.value,
+                            customFields = "",
+                            entryType = EntryType.NOTE,
+                            isFavorite = _isFavorite.value,
+                            passwordStrength = 0,
+                            passwordEntropy = 0.0,
+                            generationMode = null,
+                            createdAt = if (isEditMode) {
+                                fileVaultRepository.getEntryById(currentEntryId!!)?.createdAt ?: System.currentTimeMillis()
+                            } else {
+                                System.currentTimeMillis()
+                            },
+                            modifiedAt = System.currentTimeMillis(),
+                            lastAccessedAt = System.currentTimeMillis(),
+                            icon = "\uD83D\uDCDD" // 📝 icône note
                         )
+
+                        val result = if (isEditMode && currentEntryId != null) {
+                            fileVaultRepository.updateEntry(entry)
+                        } else {
+                            fileVaultRepository.addEntry(entry)
+                        }
+
+                        result.onFailure { error ->
+                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            return@launch
+                        }
                     }
 
                     EntryType.CARD -> {
@@ -365,6 +416,31 @@ class EntryViewModel @Inject constructor(
                 _uiState.value = EntryUiState.Saved
             } catch (e: Exception) {
                 _uiState.value = EntryUiState.Error(e.message ?: "Erreur lors de la sauvegarde")
+            }
+        }
+    }
+
+    /**
+     * Supprime l'entrée courante
+     */
+    fun deleteEntry() {
+        val entryId = currentEntryId
+        if (entryId == null) {
+            _uiState.value = EntryUiState.Error("Aucune entrée à supprimer")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = EntryUiState.Saving
+            try {
+                val result = fileVaultRepository.deleteEntry(entryId)
+                result.onSuccess {
+                    _uiState.value = EntryUiState.Saved
+                }.onFailure { error ->
+                    _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la suppression")
+                }
+            } catch (e: Exception) {
+                _uiState.value = EntryUiState.Error(e.message ?: "Erreur lors de la suppression")
             }
         }
     }
