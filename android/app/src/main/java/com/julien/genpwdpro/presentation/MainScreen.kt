@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -53,11 +54,12 @@ fun MainScreen(
                             icon = {
                                 Icon(
                                     imageVector = if (selected) item.selectedIcon else item.icon,
-                                    contentDescription = item.label
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             },
-                            label = { Text(item.label) },
                             selected = selected,
+                            alwaysShowLabel = false,
                             onClick = {
                                 if (!selected) {
                                     navController.navigate(item.route) {

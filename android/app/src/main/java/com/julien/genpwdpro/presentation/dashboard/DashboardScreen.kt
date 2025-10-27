@@ -51,30 +51,15 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "GenPwd Pro",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Votre gestionnaire de mots de passe sécurisé",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = "GenPwd Pro",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-                actions = {
-                    IconButton(onClick = { /* Settings */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Paramètres"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.largeTopAppBarColors()
+                colors = TopAppBarDefaults.topAppBarColors()
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
