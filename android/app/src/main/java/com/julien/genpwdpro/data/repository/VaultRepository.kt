@@ -4,6 +4,10 @@ import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.models.CaseMode
+import com.julien.genpwdpro.data.models.CharPolicy
 import com.julien.genpwdpro.security.KeystoreManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

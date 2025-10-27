@@ -73,7 +73,7 @@ class DashboardViewModel @Inject constructor(
                     syllablesLength = 16,
                     digitsCount = 2,
                     specialsCount = 2,
-                    count = 1
+                    quantity = 1
                 )
 
                 val results = generatePasswordUseCase(quickSettings)

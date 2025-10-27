@@ -42,6 +42,7 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadVaults()
@@ -49,7 +50,7 @@ fun DashboardScreen(
     }
 
     Scaffold(
-        topAppBar = {
+        topBar = {
             LargeTopAppBar(
                 title = {
                     Column {
@@ -73,9 +74,7 @@ fun DashboardScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.largeTopAppBarColors()
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -96,7 +95,7 @@ fun DashboardScreen(
                     onCopy = {
                         uiState.quickPassword?.let { password ->
                             ClipboardUtils.copyWithTimeout(
-                                context = androidx.compose.ui.platform.LocalContext.current,
+                                context = context,
                                 text = password,
                                 showToast = false
                             )

@@ -47,7 +47,7 @@ fun PresetListScreen(
     }
 
     Scaffold(
-        topAppBar = {
+        topBar = {
             TopAppBar(
                 title = {
                     Column {
@@ -71,9 +71,7 @@ fun PresetListScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.topAppBarColors()
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
