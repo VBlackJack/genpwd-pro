@@ -239,9 +239,19 @@ abstract class AppDatabase : RoomDatabase() {
          */
         val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Créer la table vault_registry
+                // Vérifier si la table existe déjà
+                val cursor = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='vault_registry'")
+                val tableExists = cursor.count > 0
+                cursor.close()
+
+                if (tableExists) {
+                    // La table existe, faire une migration destructive et recréer
+                    database.execSQL("DROP TABLE IF EXISTS vault_registry")
+                }
+
+                // Créer la table vault_registry avec le schéma correct
                 database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS vault_registry (
+                    CREATE TABLE vault_registry (
                         id TEXT NOT NULL PRIMARY KEY,
                         name TEXT NOT NULL,
                         filePath TEXT NOT NULL,
