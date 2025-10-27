@@ -43,6 +43,11 @@ sealed class Screen(val route: String) {
     // Security Settings
     object SecuritySettings : Screen("security_settings")
 
+    // Preset Manager
+    object PresetManager : Screen("preset_manager/{vaultId}") {
+        fun createRoute(vaultId: String) = "preset_manager/$vaultId"
+    }
+
     // Vault - Sélection/Création
     object VaultSelector : Screen("vault_selector")
     object CreateVault : Screen("create_vault")
@@ -97,7 +102,10 @@ fun AppNavGraph(
     ) {
         // ========== Générateur (écran existant) ==========
         composable(Screen.Generator.route) {
+            val currentVaultId = sessionManager.getCurrentVaultId()
+
             GeneratorScreen(
+                vaultId = currentVaultId,
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
                 },
@@ -112,6 +120,11 @@ fun AppNavGraph(
                 },
                 onNavigateToSecurity = {
                     navController.navigate(Screen.SecuritySettings.route)
+                },
+                onNavigateToPresetManager = {
+                    currentVaultId?.let { vaultId ->
+                        navController.navigate(Screen.PresetManager.createRoute(vaultId))
+                    }
                 },
                 onSaveToVault = { password ->
                     // Vérifier si un vault est déverrouillé
@@ -158,6 +171,21 @@ fun AppNavGraph(
         // ========== Sync Settings ==========
         composable(Screen.SyncSettings.route) {
             SyncSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Preset Manager ==========
+        composable(
+            route = Screen.PresetManager.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            com.julien.genpwdpro.presentation.preset.PresetListScreen(
+                vaultId = vaultId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
