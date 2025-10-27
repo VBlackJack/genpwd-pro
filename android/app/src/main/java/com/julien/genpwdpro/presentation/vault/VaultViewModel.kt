@@ -99,11 +99,10 @@ class VaultViewModel @Inject constructor(
                 val newVault = vaultRepository.getVaultById(vaultId)
                 _selectedVault.value = newVault
 
-                // IMPORTANT: Notifier l'UI AVANT de recharger (sinon race condition)
+                // IMPORTANT: Notifier l'UI et NE PAS recharger immédiatement
+                // loadVaults() changerait l'état avant que CreateVaultScreen ne puisse naviguer
+                // L'écran de destination (VaultList) se chargera lui-même
                 _uiState.value = VaultUiState.VaultCreated(vaultId)
-
-                // Recharger les vaults en arrière-plan (n'affecte pas la navigation)
-                loadVaults()
             } catch (e: Exception) {
                 _uiState.value = VaultUiState.Error(e.message ?: "Erreur lors de la création du vault")
             }
@@ -208,18 +207,13 @@ class VaultViewModel @Inject constructor(
 
     /**
      * Sauvegarde le master password pour déverrouillage biométrique
-     * IMPORTANT: Cette fonction est suspend pour garantir que la sauvegarde est terminée
-     * avant que la navigation ne se produise (évite les race conditions)
+     * IMPORTANT: Ne change PAS l'état pour éviter de bloquer la navigation
      */
     suspend fun saveBiometricPassword(vaultId: String, masterPassword: String): Boolean {
         return try {
-            val success = vaultRepository.saveBiometricPassword(vaultId, masterPassword)
-            if (!success) {
-                _uiState.value = VaultUiState.Error("Échec de la configuration biométrique")
-            }
-            success
+            vaultRepository.saveBiometricPassword(vaultId, masterPassword)
         } catch (e: Exception) {
-            _uiState.value = VaultUiState.Error("Erreur lors de la configuration biométrique")
+            android.util.Log.e("VaultViewModel", "Error saving biometric password", e)
             false
         }
     }
