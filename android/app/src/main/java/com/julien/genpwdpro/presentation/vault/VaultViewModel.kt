@@ -204,6 +204,25 @@ class VaultViewModel @Inject constructor(
     suspend fun getVaultById(vaultId: String): VaultEntity? {
         return vaultRepository.getVaultById(vaultId)
     }
+
+    /**
+     * Sauvegarde le master password pour déverrouillage biométrique
+     */
+    fun saveBiometricPassword(vaultId: String, masterPassword: String) {
+        viewModelScope.launch {
+            val success = vaultRepository.saveBiometricPassword(vaultId, masterPassword)
+            if (!success) {
+                _uiState.value = VaultUiState.Error("Échec de la configuration biométrique")
+            }
+        }
+    }
+
+    /**
+     * Récupère le master password depuis le Keystore (nécessite authentification biométrique)
+     */
+    suspend fun getBiometricPassword(vaultId: String): String? {
+        return vaultRepository.getBiometricPassword(vaultId)
+    }
 }
 
 /**

@@ -54,9 +54,15 @@ fun CreateVaultScreen(
     }
 
     // Observer les changements d'état
-    LaunchedEffect(uiState) {
+    LaunchedEffect(uiState, enableBiometric, masterPassword) {
         if (uiState is VaultUiState.VaultCreated) {
             val vaultId = (uiState as VaultUiState.VaultCreated).vaultId
+
+            // Si biométrie activée, sauvegarder le master password
+            if (enableBiometric && masterPassword.isNotEmpty()) {
+                viewModel.saveBiometricPassword(vaultId, masterPassword)
+            }
+
             onVaultCreated(vaultId)
         }
     }

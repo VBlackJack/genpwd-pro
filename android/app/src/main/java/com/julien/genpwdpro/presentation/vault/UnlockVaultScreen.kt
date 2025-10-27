@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -40,6 +41,7 @@ fun UnlockVaultScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     // BiometricHelper (nécessite FragmentActivity)
     val biometricHelper = remember {
@@ -246,10 +248,18 @@ fun UnlockVaultScreen(
                         description = "Authentifiez-vous pour accéder à vos mots de passe",
                         allowDeviceCredentials = true,
                         onSuccess = {
-                            // Succès : déverrouiller le vault sans master password
-                            // Note: En production, il faudrait stocker le master password
-                            // chiffré avec le keystore Android pour le récupérer ici
-                            onVaultUnlocked()
+                            // Récupérer et déverrouiller le vault avec le master password stocké
+                            coroutineScope.launch {
+                                val masterPassword = viewModel.getBiometricPassword(currentVault.id)
+                                if (masterPassword != null) {
+                                    // Déverrouiller normalement le vault
+                                    viewModel.unlockVault(currentVault.id, masterPassword)
+                                    // La navigation se fera automatiquement via l'observer uiState
+                                } else {
+                                    // Erreur: pas de mot de passe stocké
+                                    biometricErrorMessage = "Aucun mot de passe biométrique configuré. Utilisez le mot de passe maître."
+                                }
+                            }
                         },
                         onError = { errorCode, errorMessage ->
                             // Gérer l'erreur

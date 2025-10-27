@@ -37,7 +37,8 @@ object DatabaseModule {
         )
             .addMigrations(
                 AppDatabase.MIGRATION_1_2,
-                AppDatabase.MIGRATION_2_3
+                AppDatabase.MIGRATION_2_3,
+                AppDatabase.MIGRATION_3_4
             )
             .fallbackToDestructiveMigration() // Fallback si migration échoue
             .build()
@@ -127,8 +128,9 @@ object DatabaseModule {
         entryDao: VaultEntryDao,
         folderDao: FolderDao,
         tagDao: TagDao,
-        cryptoManager: VaultCryptoManager
+        cryptoManager: VaultCryptoManager,
+        keystoreManager: com.julien.genpwdpro.security.KeystoreManager
     ): VaultRepository {
-        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, cryptoManager)
+        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, cryptoManager, keystoreManager)
     }
 }

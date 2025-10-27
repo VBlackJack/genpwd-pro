@@ -4,6 +4,7 @@ import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.security.KeystoreManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -26,7 +27,8 @@ class VaultRepository @Inject constructor(
     private val entryDao: VaultEntryDao,
     private val folderDao: FolderDao,
     private val tagDao: TagDao,
-    private val cryptoManager: VaultCryptoManager
+    private val cryptoManager: VaultCryptoManager,
+    private val keystoreManager: KeystoreManager
 ) {
 
     /**
@@ -191,6 +193,97 @@ class VaultRepository @Inject constructor(
      */
     fun isVaultUnlocked(vaultId: String): Boolean {
         return unlockedKeys.containsKey(vaultId)
+    }
+
+    /**
+     * Sauvegarde le master password chiffré pour déverrouillage biométrique
+     *
+     * @param vaultId ID du vault
+     * @param masterPassword Mot de passe maître en clair
+     * @return true si succès
+     */
+    suspend fun saveBiometricPassword(vaultId: String, masterPassword: String): Boolean {
+        return try {
+            val vault = vaultDao.getById(vaultId) ?: return false
+
+            // Chiffrer le master password avec une clé Keystore unique au vault
+            val alias = "vault_${vaultId}_biometric"
+            val encrypted = keystoreManager.encrypt(
+                data = masterPassword.toByteArray(Charsets.UTF_8),
+                alias = alias
+            )
+
+            // Mettre à jour le vault avec les données chiffrées
+            val updatedVault = vault.copy(
+                encryptedMasterPassword = encrypted.ciphertext,
+                masterPasswordIv = encrypted.iv
+            )
+
+            vaultDao.update(updatedVault)
+            true
+        } catch (e: Exception) {
+            Log.e("VaultRepository", "Error saving biometric password", e)
+            false
+        }
+    }
+
+    /**
+     * Récupère le master password depuis le Keystore (nécessite authentification biométrique)
+     *
+     * @param vaultId ID du vault
+     * @return Master password en clair, ou null si échec
+     */
+    suspend fun getBiometricPassword(vaultId: String): String? {
+        return try {
+            val vault = vaultDao.getById(vaultId) ?: return null
+
+            // Vérifier que les données biométriques existent
+            if (vault.encryptedMasterPassword == null || vault.masterPasswordIv == null) {
+                Log.w("VaultRepository", "No biometric data for vault $vaultId")
+                return null
+            }
+
+            // Déchiffrer le master password avec la clé Keystore
+            val alias = "vault_${vaultId}_biometric"
+            val decrypted = keystoreManager.decrypt(
+                encryptedData = com.julien.genpwdpro.security.EncryptedKeystoreData(
+                    ciphertext = vault.encryptedMasterPassword,
+                    iv = vault.masterPasswordIv,
+                    keyAlias = alias
+                )
+            )
+
+            String(decrypted, Charsets.UTF_8)
+        } catch (e: Exception) {
+            Log.e("VaultRepository", "Error getting biometric password", e)
+            null
+        }
+    }
+
+    /**
+     * Supprime les données biométriques d'un vault
+     *
+     * @param vaultId ID du vault
+     */
+    suspend fun clearBiometricPassword(vaultId: String) {
+        try {
+            val vault = vaultDao.getById(vaultId) ?: return
+
+            // Supprimer la clé du Keystore
+            val alias = "vault_${vaultId}_biometric"
+            keystoreManager.deleteKey(alias)
+
+            // Mettre à jour le vault
+            val updatedVault = vault.copy(
+                biometricUnlockEnabled = false,
+                encryptedMasterPassword = null,
+                masterPasswordIv = null
+            )
+
+            vaultDao.update(updatedVault)
+        } catch (e: Exception) {
+            Log.e("VaultRepository", "Error clearing biometric password", e)
+        }
     }
 
     /**

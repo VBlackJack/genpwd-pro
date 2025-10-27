@@ -19,7 +19,7 @@ import com.julien.genpwdpro.data.local.entity.*
         TagEntity::class,
         EntryTagCrossRef::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -178,6 +178,17 @@ abstract class AppDatabase : RoomDatabase() {
                 """)
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_entry_tag_cross_ref_entryId ON entry_tag_cross_ref(entryId)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_entry_tag_cross_ref_tagId ON entry_tag_cross_ref(tagId)")
+            }
+        }
+
+        /**
+         * Migration 3 → 4: Ajout du stockage du master password pour biométrie
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Ajouter colonnes pour stocker le master password chiffré
+                database.execSQL("ALTER TABLE vaults ADD COLUMN encryptedMasterPassword BLOB")
+                database.execSQL("ALTER TABLE vaults ADD COLUMN masterPasswordIv BLOB")
             }
         }
     }

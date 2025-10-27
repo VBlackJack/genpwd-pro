@@ -58,6 +58,12 @@ data class VaultEntity(
     /** Activer le déverrouillage biométrique */
     val biometricUnlockEnabled: Boolean = false,
 
+    /** Master password chiffré avec Android Keystore (pour biométrie) */
+    val encryptedMasterPassword: ByteArray? = null,
+
+    /** IV utilisé pour chiffrer le master password */
+    val masterPasswordIv: ByteArray? = null,
+
     /** Vault par défaut */
     val isDefault: Boolean = false,
 

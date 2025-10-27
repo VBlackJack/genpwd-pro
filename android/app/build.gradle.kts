@@ -70,6 +70,16 @@ android {
             excludes += "/META-INF/ASL2.0"
         }
     }
+
+    // Configure APK output file names with version
+    applicationVariants.all {
+        outputs.all {
+            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val variantName = name
+            val versionName = defaultConfig.versionName
+            outputImpl.outputFileName = "genpwd-pro-v${versionName}-${variantName}.apk"
+        }
+    }
 }
 
 dependencies {
