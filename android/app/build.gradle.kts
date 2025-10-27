@@ -121,6 +121,9 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    // DocumentFile for Storage Access Framework (SAF)
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
     // Biometric Authentication
     implementation("androidx.biometric:biometric:1.1.0")
 
