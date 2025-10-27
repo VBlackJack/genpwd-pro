@@ -17,9 +17,10 @@ import com.julien.genpwdpro.data.local.entity.*
         VaultEntryEntity::class,
         FolderEntity::class,
         TagEntity::class,
-        EntryTagCrossRef::class
+        EntryTagCrossRef::class,
+        VaultRegistryEntry::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun vaultEntryDao(): VaultEntryDao
     abstract fun folderDao(): FolderDao
     abstract fun tagDao(): TagDao
+    abstract fun vaultRegistryDao(): VaultRegistryDao
 
     companion object {
         const val DATABASE_NAME = "genpwd_database"
@@ -189,6 +191,56 @@ abstract class AppDatabase : RoomDatabase() {
                 // Ajouter colonnes pour stocker le master password chiffré
                 database.execSQL("ALTER TABLE vaults ADD COLUMN encryptedMasterPassword BLOB")
                 database.execSQL("ALTER TABLE vaults ADD COLUMN masterPasswordIv BLOB")
+            }
+        }
+
+        /**
+         * Migration 4 → 5: Ajout de la table vault_registry
+         *
+         * This migration adds a new table to track vault files (.gpv) on the filesystem.
+         * The vault_registry table maintains metadata about vault files, including:
+         * - File location and storage strategy
+         * - Statistics (entry count, folder count, etc.)
+         * - Load state and default vault flag
+         *
+         * CRITICAL: Column order MUST match VaultRegistryEntry entity field order
+         * for Room schema validation to pass.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create vault_registry table
+                // Column order matches VaultRegistryEntry entity exactly:
+                // 1. id, name, filePath, storageStrategy, fileSize, lastModified, lastAccessed
+                // 2. isDefault, isLoaded
+                // 3. @Embedded VaultStatistics: entryCount, folderCount, presetCount, tagCount, totalSize
+                // 4. description, createdAt
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS vault_registry (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        filePath TEXT NOT NULL,
+                        storageStrategy TEXT NOT NULL,
+                        fileSize INTEGER NOT NULL,
+                        lastModified INTEGER NOT NULL,
+                        lastAccessed INTEGER,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
+                        isLoaded INTEGER NOT NULL DEFAULT 0,
+                        entryCount INTEGER NOT NULL DEFAULT 0,
+                        folderCount INTEGER NOT NULL DEFAULT 0,
+                        presetCount INTEGER NOT NULL DEFAULT 0,
+                        tagCount INTEGER NOT NULL DEFAULT 0,
+                        totalSize INTEGER NOT NULL DEFAULT 0,
+                        description TEXT,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
+
+                // Create indexes for common queries
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_name ON vault_registry(name)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_filePath ON vault_registry(filePath)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_lastAccessed ON vault_registry(lastAccessed)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
             }
         }
     }
