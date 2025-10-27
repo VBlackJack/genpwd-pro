@@ -1,0 +1,38 @@
+Tu dois compiler le projet Android genpwd-pro pour générer un APK debug.
+
+**Contexte** :
+- Branche : claude/entry-crud-refactor-011CUYLbVDNVdxF238ZuefAf
+- Projet : Application Android de gestion de mots de passe
+- Phases 1-8 implémentées (système file-based vault complet)
+
+**Tâche** :
+
+1. Vérifie que tu es bien sur la branche :
+```bash
+git branch --show-current
+```
+
+2. Va dans le répertoire Android et compile l'APK :
+```bash
+cd /home/user/genpwd-pro/android
+./gradlew assembleDebug --stacktrace
+```
+
+3. Une fois la compilation terminée, affiche les informations de l'APK :
+```bash
+ls -lh app/build/outputs/apk/debug/app-debug.apk
+sha256sum app/build/outputs/apk/debug/app-debug.apk
+```
+
+**En cas d'erreur** :
+- Si erreur de compilation : affiche `./gradlew assembleDebug --stacktrace 2>&1 | tail -100`
+- Si fichiers manquants : vérifie que ces fichiers existent :
+  - `app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt`
+  - `app/src/main/java/com/julien/genpwdpro/data/local/entity/VaultEntryEntityExt.kt`
+  - `app/src/main/java/com/julien/genpwdpro/presentation/vault/EntryViewModel.kt`
+
+**Résultat attendu** :
+✅ BUILD SUCCESSFUL
+📦 APK à : app/build/outputs/apk/debug/app-debug.apk (5-15 MB)
+
+Affiche-moi le résultat final avec le chemin de l'APK et son checksum SHA256.
