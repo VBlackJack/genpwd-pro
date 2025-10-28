@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -34,6 +35,8 @@ fun VaultManagerScreen(
     val vaults by viewModel.vaults.collectAsState()
     val defaultVault by viewModel.defaultVault.collectAsState()
     val loadedVaults by viewModel.loadedVaults.collectAsState()
+
+    SecureWindow()
 
     // Obtenir l'activité pour le prompt biométrique
     val activity = LocalContext.current as? androidx.fragment.app.FragmentActivity

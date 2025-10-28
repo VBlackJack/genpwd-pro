@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 import kotlinx.coroutines.delay
 
 /**
@@ -40,6 +41,8 @@ fun VaultListScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
+
+    SecureWindow()
 
     // Charger les entrées
     LaunchedEffect(vaultId) {

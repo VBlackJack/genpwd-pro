@@ -13,6 +13,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.VaultEntity
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -28,6 +29,8 @@ fun VaultSelectorScreen(
     viewModel: VaultViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    SecureWindow()
 
     Scaffold(
         topBar = {

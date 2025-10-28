@@ -23,6 +23,7 @@ import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
  * Écran de création/édition d'une entrée
@@ -56,6 +57,8 @@ fun EntryEditScreen(
     var showTotpDialog by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
+
+    SecureWindow()
 
     // Initialiser le ViewModel
     LaunchedEffect(vaultId, entryId, initialPassword) {
