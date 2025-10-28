@@ -235,7 +235,7 @@ class BiometricVaultManager @Inject constructor(
             KEYSTORE_PROVIDER
         )
 
-        val keyGenParameterSpec = KeyGenParameterSpec.Builder(
+        val builder = KeyGenParameterSpec.Builder(
             keyAlias,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         )
@@ -244,7 +244,23 @@ class BiometricVaultManager @Inject constructor(
             .setKeySize(256)
             .setUserAuthenticationRequired(true) // Nécessite biométrie
             .setInvalidatedByBiometricEnrollment(true) // Invalide si biométrie change
-            .build()
+
+        // Permet l'utilisation de la clé pendant 30 secondes après authentification/génération
+        // CRITIQUE: Sans ceci, cipher.init() échoue lors de l'activation (pas d'auth récente)
+        // Avec validity duration, la clé est utilisable pendant 30s après sa génération
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            // API 30+ : utiliser setUserAuthenticationParameters
+            builder.setUserAuthenticationParameters(
+                30,  // 30 secondes de validité après auth
+                KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL
+            )
+        } else {
+            // API 24-29 : utiliser setUserAuthenticationValidityDurationSeconds
+            @Suppress("DEPRECATION")
+            builder.setUserAuthenticationValidityDurationSeconds(30)
+        }
+
+        val keyGenParameterSpec = builder.build()
 
         keyGenerator.init(keyGenParameterSpec)
         return keyGenerator.generateKey()
