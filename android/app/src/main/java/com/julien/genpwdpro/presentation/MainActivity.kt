@@ -16,6 +16,7 @@ import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
+import com.julien.genpwdpro.domain.session.StartupVaultLocker
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -43,8 +44,15 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var vaultSessionManager: VaultSessionManager
 
+    @Inject
+    lateinit var startupVaultLocker: StartupVaultLocker
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            lockAllVaultsOnStartup()
+        }
 
         setupSessionManagement()
         
@@ -80,6 +88,14 @@ class MainActivity : FragmentActivity() {
             }
         }
         lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
+    }
+
+    private suspend fun lockAllVaultsOnStartup() {
+        try {
+            startupVaultLocker.lockAllVaultsOnStartup()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to lock vaults on startup", e)
+        }
     }
 
     /**

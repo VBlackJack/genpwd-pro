@@ -88,6 +88,9 @@ interface VaultRegistryDao {
     @Query("UPDATE vault_registry SET isLoaded = :isLoaded WHERE id = :vaultId")
     suspend fun updateLoadedStatus(vaultId: String, isLoaded: Boolean)
 
+    @Query("UPDATE vault_registry SET isLoaded = 0")
+    suspend fun resetAllLoadedFlags()
+
     /**
      * Met à jour le timestamp de dernier accès
      */
