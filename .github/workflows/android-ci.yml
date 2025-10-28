@@ -1,0 +1,43 @@
+name: Android CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install required SDK components
+        run: |
+          sdkmanager "platforms;android-34" "platform-tools" "build-tools;34.0.0"
+
+      - name: Setup Gradle build cache
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
+
+      - name: Run lintVitalRelease
+        working-directory: android
+        run: ./gradlew :app:lintVitalRelease
+
+      - name: Assemble release build
+        working-directory: android
+        run: ./gradlew :app:assembleRelease
