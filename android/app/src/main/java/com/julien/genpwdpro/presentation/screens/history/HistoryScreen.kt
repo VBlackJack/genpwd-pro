@@ -1,8 +1,5 @@
 package com.julien.genpwdpro.presentation.screens.history
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.presentation.components.PasswordCard
+import com.julien.genpwdpro.presentation.utils.ClipboardUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -150,7 +148,12 @@ fun HistoryScreen(
                         PasswordCard(
                             result = item,
                             onCopy = {
-                                copyToClipboard(context, item.password)
+                                ClipboardUtils.copyWithTimeout(
+                                    context = context,
+                                    text = item.password,
+                                    delayMs = 10_000L,
+                                    showToast = false
+                                )
                                 scope.launch {
                                     snackbarHostState.showSnackbar("Copié !")
                                 }
@@ -196,10 +199,5 @@ fun HistoryScreen(
 }
 
 /**
- * Copie un texte dans le presse-papiers
+ * L'utilisation de ClipboardUtils garantit l'effacement automatique et contextuel du presse-papiers.
  */
-private fun copyToClipboard(context: Context, text: String) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("password", text)
-    clipboard.setPrimaryClip(clip)
-}
