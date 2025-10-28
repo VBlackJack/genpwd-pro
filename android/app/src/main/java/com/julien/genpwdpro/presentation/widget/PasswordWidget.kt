@@ -3,8 +3,6 @@ package com.julien.genpwdpro.presentation.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
@@ -15,6 +13,7 @@ import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.generators.SyllablesGenerator
 import com.julien.genpwdpro.domain.usecases.ApplyCasingUseCase
 import com.julien.genpwdpro.domain.usecases.PlaceCharactersUseCase
+import com.julien.genpwdpro.presentation.utils.ClipboardUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -141,10 +140,12 @@ class PasswordWidget : AppWidgetProvider() {
     private fun copyLastPassword(context: Context) {
         val password = getLastPassword(context)
         if (password.isNotEmpty()) {
-            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("password", password)
-            clipboard.setPrimaryClip(clip)
-
+            ClipboardUtils.copyWithTimeout(
+                context = context,
+                text = password,
+                delayMs = 10_000L,
+                showToast = false
+            )
             Toast.makeText(context, "Copié!", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "Générez d'abord un mot de passe", Toast.LENGTH_SHORT).show()

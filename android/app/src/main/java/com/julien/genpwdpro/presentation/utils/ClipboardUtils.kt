@@ -15,7 +15,7 @@ import androidx.core.content.getSystemService
  */
 object ClipboardUtils {
 
-    private const val DEFAULT_CLEAR_DELAY_MS = 60_000L // 60 secondes
+    private const val DEFAULT_CLEAR_DELAY_MS = 10_000L // 10 secondes
 
     /**
      * Copie du texte dans le presse-papiers avec effacement automatique après délai
@@ -52,16 +52,19 @@ object ClipboardUtils {
         }
 
         // Programmer l'effacement
-        Handler(Looper.getMainLooper()).postDelayed({
-            clearClipboard(context)
-            onCleared?.invoke()
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed({
+            if (clipboardMatchesText(context, text)) {
+                clearClipboard(context)
+                onCleared?.invoke()
 
-            if (showToast) {
-                Toast.makeText(
-                    context,
-                    "Presse-papiers effacé pour sécurité",
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (showToast) {
+                    Toast.makeText(
+                        context,
+                        "Presse-papiers effacé pour sécurité",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }, delayMs)
     }
@@ -129,5 +132,13 @@ object ClipboardUtils {
         }
 
         return null
+    }
+
+    private fun clipboardMatchesText(context: Context, expected: String): Boolean {
+        val clipboard = context.getSystemService<ClipboardManager>() ?: return false
+        val clipData = clipboard.primaryClip ?: return false
+        if (clipData.itemCount == 0) return false
+        val current = clipData.getItemAt(0)?.coerceToText(context)?.toString()
+        return current == expected
     }
 }
