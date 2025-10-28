@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
  * Écran de création d'un nouveau vault
@@ -52,6 +53,8 @@ fun CreateVaultScreen(
     val isBiometricAvailable = remember {
         biometricHelper?.isBiometricOrCredentialsAvailable() == true
     }
+
+    SecureWindow()
 
     // Observer les changements d'état
     // IMPORTANT: N'observer QUE uiState (pas masterPassword/enableBiometric)

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
  * Écran de déverrouillage d'un vault
@@ -42,6 +43,8 @@ fun UnlockVaultScreen(
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
     val vaultRegistry by viewModel.vaultRegistry.collectAsState()
+
+    SecureWindow()
 
     // Charger le vault
     LaunchedEffect(vaultId) {
