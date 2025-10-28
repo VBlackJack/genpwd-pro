@@ -12,17 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
+import com.julien.genpwdpro.domain.session.VaultStartupLocker
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 /**
@@ -47,10 +46,20 @@ class MainActivity : FragmentActivity() {
     lateinit var vaultSessionManager: VaultSessionManager
 
     @Inject
-    lateinit var vaultRegistryDao: VaultRegistryDao
+    lateinit var vaultStartupLocker: VaultStartupLocker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val startupResult = runBlocking { vaultStartupLocker.secureStartup() }
+        if (!startupResult.isSecure) {
+            Log.w(
+                TAG,
+                "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
+                    "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
+                    "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
+            )
+        }
 
         setupSessionManagement()
         
@@ -78,8 +87,6 @@ class MainActivity : FragmentActivity() {
      */
     private fun setupSessionManagement() {
         lifecycleScope.launch {
-            lockAllVaultsOnStartup()
-
             val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
             Log.d(
                 TAG,
@@ -87,27 +94,6 @@ class MainActivity : FragmentActivity() {
             )
         }
         lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
-    }
-
-    private suspend fun lockAllVaultsOnStartup() {
-        Log.d(TAG, "Security: Locking all vaults on app startup")
-
-        try {
-            vaultSessionManager.lockVault()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to lock file-based vault session on startup", e)
-        }
-
-        sessionManager.lockVault()
-
-        try {
-            withContext(Dispatchers.IO) {
-                vaultRegistryDao.resetAllLoadedFlags()
-            }
-            Log.d(TAG, "Vault registry flags reset on startup")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to reset vault registry flags on startup", e)
-        }
     }
 
     /**
