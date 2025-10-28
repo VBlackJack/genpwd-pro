@@ -4,11 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.julien.genpwdpro.BuildConfig
+import com.julien.genpwdpro.data.crypto.TotpGenerator
+import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.database.AppDatabase
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
-import com.julien.genpwdpro.data.crypto.TotpGenerator
-import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.Module
@@ -16,6 +17,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -154,4 +156,9 @@ object DatabaseModule {
     ): VaultRepository {
         return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
     }
+
+    @Provides
+    @Singleton
+    @Named("legacy_sync_enabled")
+    fun provideLegacySyncFlag(): Boolean = BuildConfig.DEBUG
 }

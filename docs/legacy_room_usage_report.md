@@ -10,23 +10,29 @@ script qui repère les références au dépôt Room historique.
 python tools/legacy_room_audit.py --root .
 ```
 
+À chaque exécution, le script sauvegarde automatiquement un couple `.txt` / `.json` dans
+`docs/audit_results/` avec un timestamp UTC (`YYYY-MM-DD_HH-MM-SS`).
+
 Options utiles :
 
-- `--json` : exporte le rapport au format JSON pour être facilement parsé ou archivé.
+- `--json` : exporte le rapport au format JSON sur la sortie standard (en plus du fichier archivé).
 - `--pattern <nom>` : limite l'analyse à un motif spécifique (ex. `legacy_vault_repository`).
 
 ## Résumé du scan
 
 Exécution du 28 octobre 2025 (UTC) depuis la racine du dépôt :
 
-| Motif                         | Description                                             | Occurrences |
-|------------------------------|---------------------------------------------------------|-------------|
-| `legacy_vault_repository`    | Usages de `VaultRepository` (implémentation Room)       | 53          |
-| `app_database_singletons`    | Références directes à `AppDatabase` (Room)              | 19          |
-| `room_annotations`           | Annotations `@Dao`, `@Entity`, `@Query`, `@Database`    | 137         |
-| `room_database_builder`      | Usage direct de `Room.databaseBuilder` / imports Room   | 0           |
+| Motif                      | Description                                                | Occurrences |
+|---------------------------|------------------------------------------------------------|-------------|
+| `app_database_singletons` | Références directes à `AppDatabase` (Room)                 | 19          |
+| `coroutine_dao_calls`     | Fonctions `suspend` retournant des collections Room        | 0           |
+| `flow_vault_entities`     | Flux (`Flow`) exposant des entités Room                    | 7           |
+| `legacy_vault_repository` | Usages de `VaultRepository` (implémentation Room)          | 54          |
+| `room_annotations`        | Annotations `@Dao`, `@Entity`, `@Query`, `@Database`       | 137         |
+| `room_database_builder`   | Usage direct de `Room.databaseBuilder` / imports Room      | 0           |
+| `room_imports`            | Imports explicites de Room/DAO/entités `Vault*`            | 6           |
 
-_Source : sortie textuelle du script (`/tmp/legacy_report.txt`)._
+_Source : `docs/audit_results/2025-10-28_16-03-48_legacy_room_audit.txt` généré automatiquement._
 
 ## Zones encore dépendantes de Room
 

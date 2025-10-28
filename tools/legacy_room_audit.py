@@ -8,6 +8,7 @@ can prioritize follow-up work.
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import re
 import sys
@@ -19,7 +20,8 @@ from typing import Dict, Iterable, Iterator, List, Optional
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EXTENSIONS = {".kt", ".kts", ".java", ".xml"}
-EXCLUDED_DIR_NAMES = {".git", "build", "node_modules", ".gradle"}
+EXCLUDED_DIR_NAMES = {".git", "build", "node_modules", ".gradle", "audit_results"}
+AUDIT_RESULTS_DIRNAME = Path("docs") / "audit_results"
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,12 @@ PATTERNS: List[PatternSpec] = [
         tags=["room", "database"],
     ),
     PatternSpec(
+        name="room_imports",
+        description="Import statements for Room classes",
+        regex=re.compile(r"import.*androidx\\.room|import.*VaultDao|import.*VaultEntity"),
+        tags=["imports", "room"],
+    ),
+    PatternSpec(
         name="room_annotations",
         description="Usage of Room annotations (Entity, Dao, Query, Database)",
         regex=re.compile(r"@Database|@Entity|@Dao|@Query"),
@@ -65,6 +73,18 @@ PATTERNS: List[PatternSpec] = [
         description="References to AppDatabase (Room concrete DB)",
         regex=re.compile(r"\bAppDatabase\b"),
         tags=["room", "database"],
+    ),
+    PatternSpec(
+        name="flow_vault_entities",
+        description="Flow emissions of Room entities",
+        regex=re.compile(r"Flow<.*Vault(Entity|Dao).*>"),
+        tags=["reactive", "room"],
+    ),
+    PatternSpec(
+        name="coroutine_dao_calls",
+        description="Coroutine calls to DAO methods",
+        regex=re.compile(r"suspend\s+fun\s+\w+.*\(.*\).*:\s*(Flow|List)<.*Vault"),
+        tags=["coroutines", "room"],
     ),
 ]
 
@@ -121,39 +141,66 @@ def build_report(root: Path, selected_patterns: Optional[List[str]] = None) -> D
     return report
 
 
+def _ensure_results_dir(root: Path) -> Path:
+    output_dir = root / AUDIT_RESULTS_DIRNAME
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+def _format_human_report(report: Dict[str, object]) -> str:
+    totals: Dict[str, int] = report.get("totals", {})  # type: ignore[assignment]
+    files: Dict[str, Dict[str, List[Dict[str, object]]]] = report.get("files", {})  # type: ignore[assignment]
+    patterns_meta: Dict[str, Dict[str, object]] = report.get("patterns", {})  # type: ignore[assignment]
+
+    lines: List[str] = []
+    lines.append("Legacy Room usage report")
+    lines.append(f"Root: {report.get('root', '?')}")
+    lines.append("")
+    lines.append("Summary by pattern:")
+    for name, count in sorted(totals.items(), key=lambda item: item[0]):
+        meta = patterns_meta.get(name, {})
+        description = meta.get("description", "")
+        lines.append(f"- {name} ({description}): {count}")
+    lines.append("")
+    lines.append("Detailed findings:")
+    if not files:
+        lines.append("  No matches found. 🎉")
+        return "\n".join(lines)
+
+    for file_path, findings in sorted(files.items()):
+        lines.append(f"- {file_path}")
+        for pattern_name, matches in sorted(findings.items()):
+            lines.append(f"  • {pattern_name} ({len(matches)} match(es))")
+            for match in matches:
+                line = match["line"]
+                content = match["content"]
+                lines.append(f"    L{line}: {content}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def persist_report(report: Dict[str, object], root: Path) -> List[Path]:
+    output_dir = _ensure_results_dir(root)
+    timestamp = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    base_name = f"{timestamp}_legacy_room_audit"
+    text_path = output_dir / f"{base_name}.txt"
+    json_path = output_dir / f"{base_name}.json"
+
+    text_path.write_text(_format_human_report(report), encoding="utf-8")
+    with json_path.open("w", encoding="utf-8") as fh:
+        json.dump(report, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+
+    return [text_path, json_path]
+
+
 def print_report(report: Dict[str, object], *, as_json: bool) -> None:
     if as_json:
         json.dump(report, sys.stdout, indent=2, ensure_ascii=False)
         sys.stdout.write("\n")
         return
 
-    totals: Dict[str, int] = report.get("totals", {})  # type: ignore[assignment]
-    files: Dict[str, Dict[str, List[Dict[str, object]]]] = report.get("files", {})  # type: ignore[assignment]
-    patterns_meta: Dict[str, Dict[str, object]] = report.get("patterns", {})  # type: ignore[assignment]
-
-    print("Legacy Room usage report")
-    print("Root:", report.get("root", "?"))
-    print()
-    print("Summary by pattern:")
-    for name, count in sorted(totals.items(), key=lambda item: item[0]):
-        meta = patterns_meta.get(name, {})
-        description = meta.get("description", "")
-        print(f"- {name} ({description}): {count}")
-    print()
-    print("Detailed findings:")
-    if not files:
-        print("  No matches found. 🎉")
-        return
-
-    for file_path, findings in sorted(files.items()):
-        print(f"- {file_path}")
-        for pattern_name, matches in sorted(findings.items()):
-            print(f"  • {pattern_name} ({len(matches)} match(es))")
-            for match in matches:
-                line = match["line"]
-                content = match["content"]
-                print(f"    L{line}: {content}")
-        print()
+    sys.stdout.write(_format_human_report(report))
 
 
 # --- CLI -----------------------------------------------------------------------------------
@@ -192,7 +239,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Failed to build report: {exc}", file=sys.stderr)
         return 1
 
+    saved_paths = persist_report(report, root)
     print_report(report, as_json=args.json)
+    print("Report saved to:")
+    for path in saved_paths:
+        print(f"- {path.relative_to(root)}")
     return 0
 
 
