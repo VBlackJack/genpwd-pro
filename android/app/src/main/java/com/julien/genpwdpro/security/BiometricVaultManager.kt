@@ -72,33 +72,43 @@ class BiometricVaultManager @Inject constructor(
      *
      * Flow :
      * 1. Génère une clé dans Keystore (ou réutilise existante)
-     * 2. Chiffre le master password avec cette clé
-     * 3. Stocke password chiffré + IV dans vault_registry
+     * 2. Affiche un prompt biométrique pour authentifier l'utilisateur
+     * 3. Chiffre le master password avec le cipher authentifié
+     * 4. Stocke password chiffré + IV dans vault_registry
      *
+     * @param activity FragmentActivity nécessaire pour BiometricPrompt
      * @param vaultId ID du vault
      * @param masterPassword Master password en clair (sera chiffré)
-     * @return Result.success si activé, Result.failure si erreur
+     * @return Result.success si activé, Result.failure si erreur/annulé
      */
-    suspend fun enableBiometric(vaultId: String, masterPassword: String): Result<Unit> {
+    suspend fun enableBiometric(
+        activity: FragmentActivity,
+        vaultId: String,
+        masterPassword: String
+    ): Result<Unit> {
         return try {
             Log.d(TAG, "Enabling biometric for vault: $vaultId")
 
             // 1. Obtenir ou créer la clé Keystore
             val secretKey = getOrCreateKey(vaultId)
 
-            // 2. Chiffrer le master password
+            // 2. Préparer le cipher pour chiffrement
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, secretKey)
 
-            val encryptedPassword = cipher.doFinal(masterPassword.toByteArray(Charsets.UTF_8))
-            val iv = cipher.iv
+            // 3. Afficher le prompt biométrique et chiffrer
+            val encryptionResult = showBiometricPromptForEncryption(
+                activity,
+                cipher,
+                masterPassword.toByteArray(Charsets.UTF_8)
+            )
 
-            // 3. Mettre à jour vault_registry
+            // 4. Mettre à jour vault_registry
             vaultRegistryDao.updateById(vaultId) { entry ->
                 entry.copy(
                     biometricUnlockEnabled = true,
-                    encryptedMasterPassword = encryptedPassword,
-                    masterPasswordIv = iv
+                    encryptedMasterPassword = encryptionResult.encryptedData,
+                    masterPasswordIv = encryptionResult.iv
                 )
             }
 
@@ -194,21 +204,21 @@ class BiometricVaultManager @Inject constructor(
     }
 
     /**
-     * Vérifie si la biométrie est disponible sur l'appareil
+     * Vérifie si la biométrie STRONG est disponible sur l'appareil
      *
-     * Accepte BIOMETRIC_STRONG (empreinte Class 3, iris, face 3D) et
-     * BIOMETRIC_WEAK (empreinte Class 2, face 2D) pour une meilleure compatibilité.
+     * IMPORTANT : Nous acceptons UNIQUEMENT BIOMETRIC_STRONG (empreinte Class 3, iris, face 3D)
+     * car les opérations cryptographiques avec CryptoObject ne sont pas supportées
+     * par BIOMETRIC_WEAK (empreinte Class 2, face 2D).
      *
-     * @return true si disponible, false sinon
+     * @return true si BIOMETRIC_STRONG disponible, false sinon
      */
     fun isBiometricAvailable(): Boolean {
         return try {
             val biometricManager = androidx.biometric.BiometricManager.from(context)
             val result = biometricManager.canAuthenticate(
-                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
             )
-            Log.d(TAG, "Biometric availability check result: $result")
+            Log.d(TAG, "Biometric STRONG availability check result: $result")
             result == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
             Log.e(TAG, "Error checking biometric availability", e)
@@ -245,19 +255,20 @@ class BiometricVaultManager @Inject constructor(
             .setUserAuthenticationRequired(true) // Nécessite biométrie
             .setInvalidatedByBiometricEnrollment(true) // Invalide si biométrie change
 
-        // Permet l'utilisation de la clé pendant 30 secondes après authentification/génération
-        // CRITIQUE: Sans ceci, cipher.init() échoue lors de l'activation (pas d'auth récente)
-        // Avec validity duration, la clé est utilisable pendant 30s après sa génération
+        // Configuration de l'authentification biométrique
+        // Timeout = 0 : chaque opération cryptographique nécessite BiometricPrompt
+        // Cela permet d'utiliser le CryptoObject dans BiometricPrompt pour l'encryption ET le déchiffrement
+        // Note: WEAK biometric est configuré dans BiometricPrompt.PromptInfo, pas dans la clé Keystore
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
             // API 30+ : utiliser setUserAuthenticationParameters
             builder.setUserAuthenticationParameters(
-                30,  // 30 secondes de validité après auth
-                KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL
+                0,  // 0 = nécessite BiometricPrompt pour chaque opération
+                KeyProperties.AUTH_BIOMETRIC_STRONG
             )
         } else {
             // API 24-29 : utiliser setUserAuthenticationValidityDurationSeconds
             @Suppress("DEPRECATION")
-            builder.setUserAuthenticationValidityDurationSeconds(30)
+            builder.setUserAuthenticationValidityDurationSeconds(0)
         }
 
         val keyGenParameterSpec = builder.build()
@@ -281,6 +292,86 @@ class BiometricVaultManager @Inject constructor(
      */
     private fun getKeyAlias(vaultId: String): String {
         return "$KEY_PREFIX$vaultId"
+    }
+
+    /**
+     * Résultat du chiffrement avec biométrie
+     */
+    private data class EncryptionResult(
+        val encryptedData: ByteArray,
+        val iv: ByteArray
+    )
+
+    /**
+     * Affiche le prompt biométrique et chiffre les données
+     */
+    private suspend fun showBiometricPromptForEncryption(
+        activity: FragmentActivity,
+        cipher: Cipher,
+        plainData: ByteArray
+    ): EncryptionResult = suspendCancellableCoroutine { continuation ->
+
+        val executor = ContextCompat.getMainExecutor(activity)
+
+        val biometricPrompt = BiometricPrompt(
+            activity,
+            executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+
+                    try {
+                        // Chiffrer les données
+                        val authenticatedCipher = result.cryptoObject?.cipher
+                            ?: throw IllegalStateException("Cipher not available")
+
+                        val encryptedBytes = authenticatedCipher.doFinal(plainData)
+                        val iv = authenticatedCipher.iv
+
+                        continuation.resume(EncryptionResult(encryptedBytes, iv))
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Encryption failed", e)
+                        if (continuation.isActive) {
+                            continuation.cancel(e)
+                        }
+                    }
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Log.w(TAG, "Biometric authentication error: $errString")
+
+                    if (continuation.isActive) {
+                        continuation.cancel(
+                            Exception("Biometric authentication failed: $errString")
+                        )
+                    }
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Log.w(TAG, "Biometric authentication failed")
+                    // Ne pas annuler la continuation ici, l'utilisateur peut réessayer
+                }
+            }
+        )
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Activer le déverrouillage biométrique")
+            .setSubtitle("Authentifiez-vous pour sécuriser votre coffre")
+            .setNegativeButtonText("Annuler")
+            .setAllowedAuthenticators(
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+            )
+            .build()
+
+        val cryptoObject = BiometricPrompt.CryptoObject(cipher)
+        biometricPrompt.authenticate(promptInfo, cryptoObject)
+
+        continuation.invokeOnCancellation {
+            // Cleanup si la coroutine est annulée
+            biometricPrompt.cancelAuthentication()
+        }
     }
 
     /**
@@ -342,8 +433,7 @@ class BiometricVaultManager @Inject constructor(
             .setSubtitle("Utilisez votre biométrie pour déverrouiller")
             .setNegativeButtonText("Annuler")
             .setAllowedAuthenticators(
-                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
             )
             .build()
 

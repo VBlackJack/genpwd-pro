@@ -74,6 +74,7 @@ class VaultManagerViewModel @Inject constructor(
      * Crée un nouveau vault
      */
     fun createVault(
+        activity: androidx.fragment.app.FragmentActivity?,
         name: String,
         masterPassword: String,
         strategy: StorageStrategy,
@@ -145,9 +146,9 @@ class VaultManagerViewModel @Inject constructor(
                 }
 
                 // Sauvegarder la biométrie si demandé
-                if (enableBiometric) {
+                if (enableBiometric && activity != null) {
                     android.util.Log.d("VaultManagerVM", "Enabling biometric for vault $vaultId")
-                    val biometricResult = biometricVaultManager.enableBiometric(vaultId, masterPassword)
+                    val biometricResult = biometricVaultManager.enableBiometric(activity, vaultId, masterPassword)
                     biometricResult.fold(
                         onSuccess = {
                             android.util.Log.i("VaultManagerVM", "✅ Biometric enabled successfully for vault $vaultId")
@@ -156,6 +157,8 @@ class VaultManagerViewModel @Inject constructor(
                             android.util.Log.e("VaultManagerVM", "❌ Failed to save biometric for vault $vaultId: ${error.message}", error)
                         }
                     )
+                } else if (enableBiometric && activity == null) {
+                    android.util.Log.w("VaultManagerVM", "Cannot enable biometric: activity is null")
                 }
 
                 // Auto-déverrouiller le vault nouvellement créé

@@ -35,6 +35,9 @@ fun VaultManagerScreen(
     val defaultVault by viewModel.defaultVault.collectAsState()
     val loadedVaults by viewModel.loadedVaults.collectAsState()
 
+    // Obtenir l'activité pour le prompt biométrique
+    val activity = LocalContext.current as? androidx.fragment.app.FragmentActivity
+
     // Dialogs
     if (uiState.showCreateDialog) {
         CreateVaultDialog(
@@ -42,7 +45,7 @@ fun VaultManagerScreen(
             uiState = uiState,
             onDismiss = { viewModel.hideCreateDialog() },
             onCreate = { name, password, strategy, description, setAsDefault, enableBiometric ->
-                viewModel.createVault(name, password, strategy, description, setAsDefault, enableBiometric)
+                viewModel.createVault(activity, name, password, strategy, description, setAsDefault, enableBiometric)
             }
         )
     }

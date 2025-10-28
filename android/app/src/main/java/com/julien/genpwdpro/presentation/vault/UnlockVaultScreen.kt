@@ -38,6 +38,7 @@ fun UnlockVaultScreen(
     var hasNavigated by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val activity = context as? FragmentActivity
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
     val vaultRegistry by viewModel.vaultRegistry.collectAsState()
@@ -308,8 +309,8 @@ fun UnlockVaultScreen(
                         Button(
                             onClick = {
                                 // Active la biométrie avec le mot de passe actuel
-                                if (masterPassword.isNotEmpty()) {
-                                    viewModel.enableBiometric(currentVault.id, masterPassword)
+                                if (masterPassword.isNotEmpty() && activity != null) {
+                                    viewModel.enableBiometric(activity, currentVault.id, masterPassword)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

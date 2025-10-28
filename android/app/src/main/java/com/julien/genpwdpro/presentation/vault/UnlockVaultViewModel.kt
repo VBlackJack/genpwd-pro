@@ -154,10 +154,14 @@ class UnlockVaultViewModel @Inject constructor(
      * Active le déverrouillage biométrique pour un vault
      * Nécessite que l'utilisateur ait saisi son master password
      */
-    fun enableBiometric(vaultId: String, masterPassword: String) {
+    fun enableBiometric(
+        activity: androidx.fragment.app.FragmentActivity,
+        vaultId: String,
+        masterPassword: String
+    ) {
         viewModelScope.launch {
             try {
-                val result = fileVaultRepository.enableBiometric(vaultId, masterPassword)
+                val result = fileVaultRepository.enableBiometric(activity, vaultId, masterPassword)
 
                 result.fold(
                     onSuccess = {

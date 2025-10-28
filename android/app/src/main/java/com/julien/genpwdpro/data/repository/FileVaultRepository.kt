@@ -463,8 +463,12 @@ class FileVaultRepository @Inject constructor(
     /**
      * Active l'authentification biométrique pour un vault.
      */
-    suspend fun enableBiometric(vaultId: String, masterPassword: String): Result<Unit> {
-        return biometricVaultManager.enableBiometric(vaultId, masterPassword)
+    suspend fun enableBiometric(
+        activity: androidx.fragment.app.FragmentActivity,
+        vaultId: String,
+        masterPassword: String
+    ): Result<Unit> {
+        return biometricVaultManager.enableBiometric(activity, vaultId, masterPassword)
     }
 
     /**
