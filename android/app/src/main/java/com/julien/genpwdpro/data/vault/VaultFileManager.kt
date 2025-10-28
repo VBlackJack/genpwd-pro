@@ -552,6 +552,56 @@ class VaultFileManager @Inject constructor(
     }
 
     /**
+     * Met à jour un fichier vault existant à une URI SAF donnée
+     *
+     * @param fileUri URI du fichier existant
+     * @param data Données du vault à écrire
+     * @param vaultKey Clé de chiffrement dérivée du master password
+     */
+    suspend fun updateVaultFileAtUri(
+        fileUri: Uri,
+        data: VaultData,
+        vaultKey: SecretKey
+    ) {
+        try {
+            val updatedData = data.copy(
+                metadata = data.metadata.copy(
+                    modifiedAt = System.currentTimeMillis()
+                )
+            )
+
+            val dataJson = gson.toJson(updatedData)
+            val encryptedContent = cryptoManager.encryptBytes(
+                dataJson.toByteArray(Charsets.UTF_8),
+                vaultKey
+            )
+
+            val checksum = calculateChecksum(dataJson)
+            val header = VaultFileHeader(
+                vaultId = updatedData.metadata.vaultId,
+                createdAt = updatedData.metadata.createdAt,
+                modifiedAt = updatedData.metadata.modifiedAt,
+                checksum = checksum
+            )
+
+            context.contentResolver.openOutputStream(fileUri, "wt")?.use { outputStream ->
+                val headerJson = gson.toJson(header)
+                val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
+                val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
+                System.arraycopy(headerBytes, 0, paddedHeader, 0, minOf(headerBytes.size, paddedHeader.size))
+                outputStream.write(paddedHeader)
+                outputStream.write(encryptedContent)
+                outputStream.flush()
+            } ?: throw IllegalStateException("Cannot open output stream for URI: $fileUri")
+
+            Log.d(TAG, "Vault file updated at SAF URI: $fileUri")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating vault file at SAF URI", e)
+            throw e
+        }
+    }
+
+    /**
      * Charge un vault depuis une URI SAF
      *
      * @param vaultId ID du vault

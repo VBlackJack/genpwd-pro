@@ -147,8 +147,9 @@ fun DashboardScreen(
                     VaultOverviewCard(
                         vault = vault,
                         isDefault = vault.id == uiState.defaultVaultId,
+                        isActive = vault.id == uiState.activeVaultId,
                         onOpen = {
-                            if (vault.isLoaded) {
+                            if (vault.id == uiState.activeVaultId) {
                                 onNavigateToVaultList(vault.id)
                             } else {
                                 onNavigateToVault(vault.id)
@@ -411,6 +412,7 @@ private fun QuickToolCard(
 private fun VaultOverviewCard(
     vault: VaultRegistryEntry,
     isDefault: Boolean,
+    isActive: Boolean,
     onOpen: () -> Unit,
     onManage: () -> Unit
 ) {
@@ -454,7 +456,7 @@ private fun VaultOverviewCard(
                                 }
                             )
                         }
-                        if (vault.isLoaded) {
+                        if (isActive) {
                             AssistChip(
                                 onClick = {},
                                 label = { Text("Déverrouillé") },
@@ -504,9 +506,12 @@ private fun VaultOverviewCard(
                     onClick = onOpen,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Lock, contentDescription = null)
+                    Icon(
+                        imageVector = if (isActive) Icons.Default.CheckCircle else Icons.Default.Lock,
+                        contentDescription = null
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(if (vault.isLoaded) "Continuer" else "Déverrouiller")
+                    Text(if (isActive) "Continuer" else "Déverrouiller")
                 }
 
                 OutlinedButton(

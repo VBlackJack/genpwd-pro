@@ -1,12 +1,15 @@
 package com.julien.genpwdpro.domain.session
 
+import android.net.Uri
 import android.util.Log
 import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultData
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.domain.exceptions.VaultException
+import com.julien.genpwdpro.data.local.dao.updateById
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.IOException
@@ -57,6 +60,8 @@ class VaultSessionManager @Inject constructor(
         val vaultId: String,
         val vaultKey: SecretKey,
         val filePath: String,
+        val storageStrategy: StorageStrategy,
+        val fileUri: Uri?,
         private val _vaultData: MutableStateFlow<VaultData>,
         val unlockTime: Long = System.currentTimeMillis(),
         var autoLockJob: Job? = null
@@ -82,6 +87,10 @@ class VaultSessionManager @Inject constructor(
 
     // Session courante (null = aucun vault déverrouillé)
     private var currentSession: VaultSession? = null
+
+    // Flux d'observation de la session active
+    private val _activeVaultId = MutableStateFlow<String?>(null)
+    val activeVaultId: StateFlow<String?> = _activeVaultId.asStateFlow()
 
     // Scope pour les coroutines de session
     private val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -122,6 +131,8 @@ class VaultSessionManager @Inject constructor(
                 // Vérifier qu'un vault n'est pas déjà déverrouillé
                 currentSession?.let {
                     if (it.vaultId == vaultId) {
+                        _activeVaultId.value = vaultId
+                        resetAutoLockTimer()
                         Log.w(TAG, "Vault already unlocked: $vaultId")
                         return@withContext Result.success(Unit)
                     } else {
@@ -138,14 +149,19 @@ class VaultSessionManager @Inject constructor(
                     )
 
                 // Charger le fichier .gpv
+                val isSafPath = vaultRegistry.filePath.startsWith("content://")
+                val resolvedUri = if (isSafPath) {
+                    vaultFileManager.pathToUri(vaultRegistry.filePath)
+                        ?: return@withContext Result.failure(
+                            VaultException.FileAccessError("Invalid SAF URI: ${vaultRegistry.filePath}")
+                        )
+                } else {
+                    null
+                }
+
                 val vaultData = try {
-                    if (vaultRegistry.filePath.startsWith("content://")) {
-                        // SAF URI
-                        val uri = vaultFileManager.pathToUri(vaultRegistry.filePath)
-                            ?: return@withContext Result.failure(
-                                VaultException.FileAccessError("Invalid SAF URI: ${vaultRegistry.filePath}")
-                            )
-                        vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, uri)
+                    if (resolvedUri != null) {
+                        vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, resolvedUri)
                     } else {
                         // File path normal
                         vaultFileManager.loadVaultFile(vaultId, masterPassword, vaultRegistry.filePath)
@@ -183,10 +199,32 @@ class VaultSessionManager @Inject constructor(
                     vaultId = vaultId,
                     vaultKey = vaultKey,
                     filePath = vaultRegistry.filePath,
+                    storageStrategy = vaultRegistry.storageStrategy,
+                    fileUri = resolvedUri,
                     _vaultData = MutableStateFlow(vaultData)
                 )
 
                 currentSession = session
+                _activeVaultId.value = vaultId
+
+                // Mettre à jour les statistiques et métadonnées
+                try {
+                    val fileSize = resolvedUri?.let { uri ->
+                        vaultFileManager.getVaultFileSizeFromUri(uri)
+                    } ?: vaultFileManager.getVaultFileSize(vaultRegistry.filePath)
+
+                    val statistics = calculateStatistics(vaultData, fileSize)
+
+                    vaultRegistryDao.updateById(vaultId) { entry ->
+                        entry.copy(
+                            fileSize = fileSize,
+                            lastModified = System.currentTimeMillis(),
+                            statistics = statistics
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to refresh registry metadata for vault: $vaultId", e)
+                }
 
                 // Mettre à jour lastAccessed dans le registry
                 try {
@@ -221,8 +259,11 @@ class VaultSessionManager @Inject constructor(
      * @return Result.success si déverrouillé, Result.failure sinon
      */
     suspend fun unlockVaultWithBiometric(vaultId: String): Result<Unit> {
-        // TODO: Implémenter dans Phase 2 avec BiometricVaultManager
-        return Result.failure(UnsupportedOperationException("Biometric unlock not yet implemented"))
+        return Result.failure(
+            UnsupportedOperationException(
+                "Use FileVaultRepository.unlockVaultWithBiometric() to trigger biometric auth"
+            )
+        )
     }
 
     /**
@@ -249,6 +290,7 @@ class VaultSessionManager @Inject constructor(
                 // Nettoyer la session
                 session.cleanup()
                 currentSession = null
+                _activeVaultId.value = null
 
                 Log.i(TAG, "Vault locked successfully")
 
@@ -257,6 +299,7 @@ class VaultSessionManager @Inject constructor(
                 // Forcer le nettoyage même en cas d'erreur
                 session.cleanup()
                 currentSession = null
+                _activeVaultId.value = null
             }
         }
     }
@@ -686,35 +729,39 @@ class VaultSessionManager @Inject constructor(
                 val vaultData = session.vaultData.value
 
                 // Sauvegarder selon le type de path (SAF ou File)
-                if (session.filePath.startsWith("content://")) {
-                    // SAF URI
-                    val uri = vaultFileManager.pathToUri(session.filePath)
-                        ?: return@withContext Result.failure(
-                            IllegalStateException("Invalid SAF URI")
+                when {
+                    session.fileUri != null -> {
+                        vaultFileManager.updateVaultFileAtUri(
+                            fileUri = session.fileUri,
+                            data = vaultData,
+                            vaultKey = session.vaultKey
                         )
+                    }
 
-                    // Note: saveVaultFileToUri attend un dossier, pas un fichier
-                    // On va utiliser directement la méthode qui écrit sur l'URI du fichier
-                    // Pour l'instant, on va utiliser un workaround
-                    // TODO: Ajouter une méthode updateVaultFileAtUri dans VaultFileManager
-                    Log.w(TAG, "SAF vault save not yet fully implemented")
-                } else {
-                    // File path normal
-                    vaultFileManager.saveVaultFile(
-                        vaultId = session.vaultId,
-                        data = vaultData,
-                        vaultKey = session.vaultKey,
-                        strategy = com.julien.genpwdpro.data.models.vault.StorageStrategy.INTERNAL,
-                        customPath = null
-                    )
+                    else -> {
+                        vaultFileManager.saveVaultFile(
+                            vaultId = session.vaultId,
+                            data = vaultData,
+                            vaultKey = session.vaultKey,
+                            strategy = session.storageStrategy,
+                            customPath = null
+                        )
+                    }
                 }
 
-                // Mettre à jour lastModified et fileSize dans le registry
-                vaultRegistryDao.updateFileInfo(
-                    vaultId = session.vaultId,
-                    size = vaultFileManager.getVaultFileSize(session.filePath),
-                    timestamp = System.currentTimeMillis()
-                )
+                val fileSize = session.fileUri?.let { uri ->
+                    vaultFileManager.getVaultFileSizeFromUri(uri)
+                } ?: vaultFileManager.getVaultFileSize(session.filePath)
+
+                val statistics = calculateStatistics(vaultData, fileSize)
+
+                vaultRegistryDao.updateById(session.vaultId) { entry ->
+                    entry.copy(
+                        fileSize = fileSize,
+                        lastModified = System.currentTimeMillis(),
+                        statistics = statistics
+                    )
+                }
 
                 Log.d(TAG, "Vault saved successfully")
                 Result.success(Unit)
@@ -729,13 +776,13 @@ class VaultSessionManager @Inject constructor(
     /**
      * Calcule les statistiques d'un vault
      */
-    private fun calculateStatistics(vaultData: VaultData): VaultStatistics {
+    private fun calculateStatistics(vaultData: VaultData, totalSizeBytes: Long): VaultStatistics {
         return VaultStatistics(
             entryCount = vaultData.entries.size,
             folderCount = vaultData.folders.size,
             presetCount = vaultData.presets.size,
             tagCount = vaultData.tags.size,
-            totalSize = 0L // TODO: Calculer la taille réelle
+            totalSize = totalSizeBytes
         )
     }
 

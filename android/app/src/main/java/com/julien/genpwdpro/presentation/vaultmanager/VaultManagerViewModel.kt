@@ -8,6 +8,7 @@ import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.data.vault.VaultMigrationManager
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -22,7 +23,8 @@ class VaultManagerViewModel @Inject constructor(
     private val vaultRegistryDao: VaultRegistryDao,
     private val vaultFileManager: VaultFileManager,
     private val migrationManager: VaultMigrationManager,
-    private val biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager
+    private val biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager,
+    private val vaultSessionManager: VaultSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultManagerUiState())
@@ -143,16 +145,12 @@ class VaultManagerViewModel @Inject constructor(
                 }
 
                 // Sauvegarder la biométrie si demandé
-                // IMPORTANT: Ceci doit être fait AVANT de masquer le dialog/naviguer
                 if (enableBiometric) {
                     android.util.Log.d("VaultManagerVM", "Enabling biometric for vault $vaultId")
                     val biometricResult = biometricVaultManager.enableBiometric(vaultId, masterPassword)
                     biometricResult.fold(
                         onSuccess = {
                             android.util.Log.i("VaultManagerVM", "✅ Biometric enabled successfully for vault $vaultId")
-                            // Vérifier que l'update a bien fonctionné
-                            val updatedEntry = vaultRegistryDao.getById(vaultId)
-                            android.util.Log.d("VaultManagerVM", "Biometric status after update: ${updatedEntry?.biometricUnlockEnabled}")
                         },
                         onFailure = { error ->
                             android.util.Log.e("VaultManagerVM", "❌ Failed to save biometric for vault $vaultId: ${error.message}", error)
@@ -160,12 +158,26 @@ class VaultManagerViewModel @Inject constructor(
                     )
                 }
 
+                // Auto-déverrouiller le vault nouvellement créé
+                val autoUnlockResult = try {
+                    vaultSessionManager.unlockVault(vaultId, masterPassword)
+                } catch (unlockError: Exception) {
+                    Result.failure(unlockError)
+                }
+
+                val successMessage = if (autoUnlockResult.isSuccess) {
+                    "Coffre créé et déverrouillé automatiquement"
+                } else {
+                    val reason = autoUnlockResult.exceptionOrNull()?.message ?: "échec du déverrouillage"
+                    "Coffre créé. Déverrouillez-le manuellement ($reason)"
+                }
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         showCreateDialog = false,
                         customFolderUri = null, // Reset après création
-                        successMessage = "Vault created successfully"
+                        successMessage = successMessage
                     )
                 }
 

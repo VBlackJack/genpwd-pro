@@ -174,32 +174,15 @@ fun AppNavGraph(
                         navController.navigate(Screen.PresetManager.createRoute(vaultId))
                     }
                 },
-<<<<<<< HEAD
-                onSaveToVault = if (currentVaultId != null) {
-                    // Vault déverrouillé : autoriser la sauvegarde
-                    { password ->
-                        android.util.Log.d("NavGraph", "Saving password to vault: $currentVaultId")
-                        navController.navigate(
-                            Screen.SelectEntryType.createRoute(
-                                vaultId = currentVaultId,
-=======
                 onSaveToVault = currentVaultId?.let { unlockedVaultId ->
                     { password ->
                         navController.navigate(
                             Screen.SelectEntryType.createRoute(
                                 vaultId = unlockedVaultId,
->>>>>>> origin/codex/analyze-project-for-secure-vault-issues-jcnf34
                                 password = password
                             )
                         )
                     }
-<<<<<<< HEAD
-                } else {
-                    android.util.Log.w("NavGraph", "No vault unlocked, cannot save password")
-                    // Aucun vault déverrouillé : le bouton ne sera pas affiché
-                    null
-=======
->>>>>>> origin/codex/analyze-project-for-secure-vault-issues-jcnf34
                 }
             )
         }
@@ -312,11 +295,10 @@ fun AppNavGraph(
             UnlockVaultScreen(
                 vaultId = vaultId,
                 onVaultUnlocked = {
+                    // Retirer explicitement l'écran de déverrouillage du back stack
+                    navController.popBackStack()
                     navController.navigate(Screen.VaultList.createRoute(vaultId)) {
-                        // Remplacer l'unlock screen
-                        popUpTo(Screen.UnlockVault.route) {
-                            inclusive = true
-                        }
+                        launchSingleTop = true
                     }
                 },
                 onBackClick = { navController.popBackStack() }
