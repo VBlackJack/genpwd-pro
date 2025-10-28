@@ -259,8 +259,11 @@ class VaultSessionManager @Inject constructor(
      * @return Result.success si déverrouillé, Result.failure sinon
      */
     suspend fun unlockVaultWithBiometric(vaultId: String): Result<Unit> {
-        // TODO: Implémenter dans Phase 2 avec BiometricVaultManager
-        return Result.failure(UnsupportedOperationException("Biometric unlock not yet implemented"))
+        return Result.failure(
+            UnsupportedOperationException(
+                "Use FileVaultRepository.unlockVaultWithBiometric() to trigger biometric auth"
+            )
+        )
     }
 
     /**

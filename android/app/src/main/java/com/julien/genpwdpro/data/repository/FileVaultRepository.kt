@@ -1,9 +1,11 @@
 package com.julien.genpwdpro.data.repository
 
+import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
+import com.julien.genpwdpro.security.BiometricVaultManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -35,7 +37,8 @@ import javax.inject.Singleton
 @Singleton
 class FileVaultRepository @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
-    private val vaultRegistryDao: VaultRegistryDao
+    private val vaultRegistryDao: VaultRegistryDao,
+    private val biometricVaultManager: BiometricVaultManager
 ) {
 
     // ========== Entry Operations ==========
@@ -409,5 +412,45 @@ class FileVaultRepository @Inject constructor(
      */
     suspend fun saveVault(): Result<Unit> {
         return vaultSessionManager.saveCurrentVault()
+    }
+
+    // ========== Biometric Support ==========
+
+    /**
+     * Déverrouille un vault via authentification biométrique.
+     */
+    suspend fun unlockVaultWithBiometric(
+        activity: FragmentActivity,
+        vaultId: String
+    ): Result<Unit> {
+        val passwordResult = biometricVaultManager.unlockWithBiometric(activity, vaultId)
+
+        return passwordResult.fold(
+            onSuccess = { masterPassword ->
+                vaultSessionManager.unlockVault(vaultId, masterPassword)
+            },
+            onFailure = { error -> Result.failure(error) }
+        )
+    }
+
+    /**
+     * Active l'authentification biométrique pour un vault.
+     */
+    suspend fun enableBiometric(vaultId: String, masterPassword: String): Result<Unit> {
+        return biometricVaultManager.enableBiometric(vaultId, masterPassword)
+    }
+
+    /**
+     * Désactive l'authentification biométrique pour un vault.
+     */
+    suspend fun disableBiometric(vaultId: String): Result<Unit> {
+        return biometricVaultManager.disableBiometric(vaultId)
+    }
+
+    /**
+     * Vérifie si la biométrie est disponible sur l'appareil.
+     */
+    fun isBiometricAvailable(): Boolean {
+        return biometricVaultManager.isBiometricAvailable()
     }
 }

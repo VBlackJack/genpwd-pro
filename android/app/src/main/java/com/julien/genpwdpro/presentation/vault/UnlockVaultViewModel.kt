@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.repository.FileVaultRepository
-import com.julien.genpwdpro.security.BiometricVaultManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,13 +20,12 @@ import javax.inject.Inject
  * Responsabilités :
  * - Charger les métadonnées du vault depuis vault_registry
  * - Déverrouiller avec mot de passe via FileVaultRepository
- * - Déverrouiller avec biométrie via BiometricVaultManager
+ * - Déverrouiller avec biométrie via FileVaultRepository
  * - Gérer l'état UI (loading, error, success)
  */
 @HiltViewModel
 class UnlockVaultViewModel @Inject constructor(
     private val fileVaultRepository: FileVaultRepository,
-    private val biometricVaultManager: BiometricVaultManager,
     private val vaultRegistryDao: VaultRegistryDao
 ) : ViewModel() {
 
@@ -112,30 +110,15 @@ class UnlockVaultViewModel @Inject constructor(
             try {
                 _uiState.value = UnlockVaultUiState.Unlocking
 
-                // 1. Déchiffrer le master password avec biométrie
-                val passwordResult = biometricVaultManager.unlockWithBiometric(activity, vaultId)
+                val result = fileVaultRepository.unlockVaultWithBiometric(activity, vaultId)
 
-                passwordResult.fold(
-                    onSuccess = { masterPassword ->
-                        // 2. Déverrouiller le vault avec le password récupéré
-                        val unlockResult = fileVaultRepository.unlockVault(vaultId, masterPassword)
-
-                        unlockResult.fold(
-                            onSuccess = {
-                                _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
-                            },
-                            onFailure = { error ->
-                                _uiState.value = UnlockVaultUiState.Error(
-                                    "Erreur de déverrouillage: ${error.message}"
-                                )
-                            }
-                        )
+                result.fold(
+                    onSuccess = {
+                        _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
                     },
                     onFailure = { error ->
-                        // L'utilisateur a annulé ou erreur biométrique
                         val message = error.message ?: "Authentification biométrique échouée"
 
-                        // Si c'est une annulation, revenir à l'état Ready
                         if (message.contains("cancel", ignoreCase = true) ||
                             message.contains("annul", ignoreCase = true)) {
                             _uiState.value = UnlockVaultUiState.Ready
@@ -156,7 +139,7 @@ class UnlockVaultViewModel @Inject constructor(
      * Vérifie si la biométrie est disponible sur l'appareil
      */
     fun isBiometricAvailable(): Boolean {
-        return biometricVaultManager.isBiometricAvailable()
+        return fileVaultRepository.isBiometricAvailable()
     }
 
     /**
@@ -166,7 +149,7 @@ class UnlockVaultViewModel @Inject constructor(
     fun enableBiometric(vaultId: String, masterPassword: String) {
         viewModelScope.launch {
             try {
-                val result = biometricVaultManager.enableBiometric(vaultId, masterPassword)
+                val result = fileVaultRepository.enableBiometric(vaultId, masterPassword)
 
                 result.fold(
                     onSuccess = {
