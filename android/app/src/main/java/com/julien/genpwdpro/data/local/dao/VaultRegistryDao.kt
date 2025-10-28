@@ -89,6 +89,19 @@ interface VaultRegistryDao {
     suspend fun updateLoadedStatus(vaultId: String, isLoaded: Boolean)
 
     /**
+     * Réinitialise le statut de chargement pour tous les coffres.
+     */
+    @Query("UPDATE vault_registry SET isLoaded = 0")
+    suspend fun resetAllLoadedFlags()
+
+    /**
+     * Récupère les identifiants des coffres marqués comme chargés.
+     * Utilisé comme solution de repli lorsque la réinitialisation globale échoue.
+     */
+    @Query("SELECT id FROM vault_registry WHERE isLoaded = 1")
+    suspend fun getLoadedVaultIds(): List<String>
+
+    /**
      * Met à jour le timestamp de dernier accès
      */
     @Query("UPDATE vault_registry SET lastAccessed = :timestamp WHERE id = :vaultId")

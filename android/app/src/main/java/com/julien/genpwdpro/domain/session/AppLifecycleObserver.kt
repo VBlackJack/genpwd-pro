@@ -61,20 +61,11 @@ class AppLifecycleObserver(
      */
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        Log.d(TAG, "App moved to background")
-        backgroundTimestamp = System.currentTimeMillis()
-
-        // Note: On ne lock PAS immédiatement pour permettre un retour rapide
-        // Le lock sera effectué uniquement si le timeout est dépassé
-    }
-
-    /**
-     * Appelé quand l'application est détruite
-     */
-    override fun onDestroy(owner: LifecycleOwner) {
-        super.onDestroy(owner)
-        Log.d(TAG, "App destroyed, locking all vaults")
+        // Android ne garantit pas l'appel à onDestroy() quand l'app est swipée ou tuée,
+        // nous verrouillons donc immédiatement les coffres ici.
+        Log.d(TAG, "App moved to background - locking vaults immediately")
         lockAllVaults()
+        backgroundTimestamp = System.currentTimeMillis()
     }
 
     /**

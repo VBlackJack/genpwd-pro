@@ -5,21 +5,23 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
-import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
+import com.julien.genpwdpro.domain.session.VaultStartupLocker
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 /**
@@ -43,8 +45,21 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var vaultSessionManager: VaultSessionManager
 
+    @Inject
+    lateinit var vaultStartupLocker: VaultStartupLocker
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val startupResult = runBlocking { vaultStartupLocker.secureStartup() }
+        if (!startupResult.isSecure) {
+            Log.w(
+                TAG,
+                "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
+                    "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
+                    "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
+            )
+        }
 
         setupSessionManagement()
         
@@ -73,11 +88,10 @@ class MainActivity : FragmentActivity() {
     private fun setupSessionManagement() {
         lifecycleScope.launch {
             val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
-            if (hasExpired) {
-                Log.d(TAG, "Sessions expirées nettoyées au démarrage.")
-            } else {
-                Log.d(TAG, "Aucune session expirée, le coffre reste déverrouillé.")
-            }
+            Log.d(
+                TAG,
+                "Vérification des sessions terminée après verrouillage initial (sessions nettoyées = $hasExpired)."
+            )
         }
         lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
     }
