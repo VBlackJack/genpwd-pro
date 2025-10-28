@@ -48,16 +48,18 @@ if errorlevel 1 (
 
 echo.
 echo [3/3] Verification...
-if exist "app\build\outputs\apk\release\app-release.apk" (
+REM Detecter l'APK release genere (pattern: genpwd-pro-v*.apk)
+for %%F in (app\build\outputs\apk\release\genpwd-pro-v*-release.apk) do set APK_FILE=%%F
+if defined APK_FILE (
     echo.
     echo ========================================
     echo   SUCCES! APK release genere
     echo ========================================
     echo.
     echo L'APK se trouve dans:
-    echo app\build\outputs\apk\release\app-release.apk
+    echo %APK_FILE%
     echo.
-    for %%A in (app\build\outputs\apk\release\app-release.apk) do echo Taille: %%~zA octets
+    for %%A in (%APK_FILE%) do echo Taille: %%~zA octets
     echo.
     echo Cet APK est signe et pret pour la distribution.
     echo.

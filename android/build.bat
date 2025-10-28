@@ -32,17 +32,19 @@ if errorlevel 1 (
 
 echo.
 echo [3/3] Verification...
-if exist "app\build\outputs\apk\debug\app-debug.apk" (
+REM Detecter l'APK genere (pattern: genpwd-pro-v*.apk)
+for %%F in (app\build\outputs\apk\debug\genpwd-pro-v*-debug.apk) do set APK_FILE=%%F
+if defined APK_FILE (
     echo.
     echo ========================================
     echo   SUCCES! APK genere avec succes
     echo ========================================
     echo.
     echo L'APK se trouve dans:
-    echo app\build\outputs\apk\debug\app-debug.apk
+    echo %APK_FILE%
     echo.
     echo Taille du fichier:
-    for %%A in (app\build\outputs\apk\debug\app-debug.apk) do echo %%~zA octets
+    for %%A in (%APK_FILE%) do echo %%~zA octets
     echo.
     echo Vous pouvez maintenant:
     echo - Installer sur un appareil: install.bat

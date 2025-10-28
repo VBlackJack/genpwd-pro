@@ -5,8 +5,10 @@ echo   GenPwd Pro - Installation APK
 echo ========================================
 echo.
 
-REM Verifier que l'APK existe
-if not exist "app\build\outputs\apk\debug\app-debug.apk" (
+REM Detecter l'APK genere (pattern: genpwd-pro-v*.apk)
+set APK_FILE=
+for %%F in (app\build\outputs\apk\debug\genpwd-pro-v*-debug.apk) do set APK_FILE=%%F
+if not defined APK_FILE (
     echo ERREUR: L'APK n'existe pas!
     echo Executez d'abord build.bat pour compiler l'application.
     pause
@@ -55,7 +57,8 @@ adb devices
 echo.
 
 echo Installation de l'APK...
-adb install -r app\build\outputs\apk\debug\app-debug.apk
+echo Fichier: %APK_FILE%
+adb install -r "%APK_FILE%"
 if errorlevel 1 (
     echo ERREUR lors de l'installation!
     pause
