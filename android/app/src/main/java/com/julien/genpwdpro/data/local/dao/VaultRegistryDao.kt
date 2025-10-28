@@ -89,6 +89,26 @@ interface VaultRegistryDao {
     suspend fun updateLoadedStatus(vaultId: String, isLoaded: Boolean)
 
     /**
+     * Met à jour les informations biométriques d'un vault.
+     *
+     * Permet d'activer ou désactiver le déverrouillage biométrique
+     * ainsi que de stocker/effacer les secrets nécessaires.
+     */
+    @Query(
+        "UPDATE vault_registry SET " +
+            "biometricUnlockEnabled = :enabled, " +
+            "encryptedMasterPassword = :encryptedPassword, " +
+            "masterPasswordIv = :iv " +
+            "WHERE id = :vaultId"
+    )
+    suspend fun updateBiometricData(
+        vaultId: String,
+        enabled: Boolean,
+        encryptedPassword: ByteArray?,
+        iv: ByteArray?
+    )
+
+    /**
      * Réinitialise le statut de chargement pour tous les coffres.
      */
     @Query("UPDATE vault_registry SET isLoaded = 0")

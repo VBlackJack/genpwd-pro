@@ -8,7 +8,6 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.dao.updateById
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.security.KeyStore
@@ -93,14 +92,13 @@ class BiometricVaultManager @Inject constructor(
             val encryptedPassword = cipher.doFinal(masterPassword.toByteArray(Charsets.UTF_8))
             val iv = cipher.iv
 
-            // 3. Mettre à jour vault_registry
-            vaultRegistryDao.updateById(vaultId) { entry ->
-                entry.copy(
-                    biometricUnlockEnabled = true,
-                    encryptedMasterPassword = encryptedPassword,
-                    masterPasswordIv = iv
-                )
-            }
+            // 3. Mettre à jour vault_registry avec les données chiffrées
+            vaultRegistryDao.updateBiometricData(
+                vaultId = vaultId,
+                enabled = true,
+                encryptedPassword = encryptedPassword,
+                iv = iv
+            )
 
             Log.i(TAG, "Biometric enabled successfully for vault: $vaultId")
             Result.success(Unit)
@@ -173,13 +171,12 @@ class BiometricVaultManager @Inject constructor(
             Log.d(TAG, "Disabling biometric for vault: $vaultId")
 
             // Supprimer les données biométriques de vault_registry
-            vaultRegistryDao.updateById(vaultId) { entry ->
-                entry.copy(
-                    biometricUnlockEnabled = false,
-                    encryptedMasterPassword = null,
-                    masterPasswordIv = null
-                )
-            }
+            vaultRegistryDao.updateBiometricData(
+                vaultId = vaultId,
+                enabled = false,
+                encryptedPassword = null,
+                iv = null
+            )
 
             // Supprimer la clé du Keystore
             deleteKey(vaultId)
