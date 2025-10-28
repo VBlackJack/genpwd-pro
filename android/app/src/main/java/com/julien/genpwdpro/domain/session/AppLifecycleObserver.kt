@@ -3,6 +3,7 @@ package com.julien.genpwdpro.domain.session
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import kotlinx.coroutines.runBlocking
 
 /**
  * Observateur du cycle de vie de l'application
@@ -81,8 +82,10 @@ class AppLifecycleObserver(
      */
     private fun lockAllVaults() {
         try {
-            sessionManager.lockVault()
-            vaultSessionManager.lockVault()
+            runBlocking {
+                sessionManager.lockVault()
+                vaultSessionManager.lockVault()
+            }
             Log.d(TAG, "All vaults locked successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error locking vaults", e)
