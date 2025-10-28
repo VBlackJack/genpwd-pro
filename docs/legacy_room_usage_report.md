@@ -122,3 +122,58 @@ Room (migration de données, import d’archives, etc.).
 
 Le script d'audit peut être relancé après chaque migration partielle pour suivre la disparition
 progressive des dépendances Room.
+
+## FAQ – Questions challenges pour Codex
+
+1. **Pourquoi le nom de branche ne correspond pas au contenu ?**
+
+   La branche de travail locale s'appelle `work` car elle agrège les investigations en cours, mais la branche de référence documentée reste `claude/entry-crud-refactor-011CUYLbVDNVdxF238ZuefAf`, qui contient l'implémentation complète file-based et les correctifs biométriques. L'écart vient donc d'une branche d'intégration temporaire par rapport à la branche produit recommandée.【F:BRANCHES_STATUS.md†L3-L198】【3446af†L1-L12】【e22c9b†L1-L2】
+
+2. **Quelle est la stratégie de rollback si la synchronisation legacy cause des problèmes ?**
+
+   `FileVaultRepository` attrape déjà toutes les exceptions lors du verrouillage/déverrouillage synchronisé et continue de s'appuyer sur `VaultSessionManager` (file-based) comme source de vérité. En cas d'échec, seule la partie Room reste verrouillée tandis que le flux file-based continue de fonctionner, ce qui constitue un rollback implicite vers le comportement moderne sans interrompre l'utilisateur.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L397-L485】
+
+3. **Le script d'audit a-t-il été exécuté sur le projet actuel ? Quels sont les résultats ?**
+
+   Oui, l'exécution du `28 octobre 2025` relève `53` usages de `VaultRepository`, `19` références à `AppDatabase`, `137` annotations Room et aucune instanciation directe de `Room.databaseBuilder`. Le détail par fichier est archivé dans `/tmp/audit.txt` pour traçabilité.【F:docs/legacy_room_usage_report.md†L18-L61】【3446af†L1-L86】
+
+4. **Comment tester que les données ne sont pas corrompues pendant la synchronisation ?**
+
+   Les opérations d'écriture passent exclusivement par `VaultSessionManager`, ce qui garantit que les flux réactifs (`Flow`) reflètent les données persistées. Les tests d'intégration doivent vérifier que les collections exposées (`getEntries`, `getPresets`, `getTags`) conservent leurs invariants après un cycle unlock/save/lock, tout en surveillant que `syncLegacyRepositoryUnlock` ne remonte aucune erreur pendant ces scénarios.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L52-L485】
+
+5. **Que se passe-t-il si `legacyVaultRepository` est null ou non initialisé ?**
+
+   L'injection constructeur est annotée `@Inject` et le paramètre est non nullable ; Hilt refusera de démarrer si la dépendance n'est pas fournie. Cela force un état consistant au runtime et empêche tout `null` implicite dans le code Kotlin.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L37-L43】
+
+6. **Faut-il un flag de feature toggle pour cette synchronisation ?**
+
+   Tant que des consommateurs Room existent, la synchronisation d'état (unlock/lock) reste nécessaire ; cependant, un feature flag Hilt (`@Named`/`@BindsInstance`) peut être ajouté pour désactiver l'appel à `syncLegacyRepositoryUnlock` une fois les ViewModels migrés. Cette approche permettra de retirer progressivement la dépendance sans recompiler les anciennes builds.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L400-L485】
+
+7. **Comment gérer les conflits de version entre Room et file-based ?**
+
+   Room n'est plus autorisé à modifier les données pendant que `VaultSessionManager` est maître : la synchronisation se limite au déverrouillage/verrouillage pour maintenir la compatibilité de lecture. Toute divergence structurelle doit être réglée via les migrations existantes d'`AppDatabase` avant l'étape finale de retrait, comme rappelé dans le module DI.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L400-L485】【F:android/app/src/main/java/com/julien/genpwdpro/di/DatabaseModule.kt†L8-L155】
+
+8. **Est-ce que cette synchronisation bidirectionnelle ne crée pas un couplage fort qu'on voulait éviter ?**
+
+   La synchronisation actuelle est strictement unidirectionnelle (file-based ➜ Room) pour signaler l'état de session. Aucun appel Room n'est effectué pour écrire dans la couche file-based, ce qui limite le couplage aux seules opérations d'état et laisse la logique métier concentrée dans `VaultSessionManager`.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L397-L485】
+
+9. **Ne devrait-on pas avoir une migration one-shot plutôt qu'une synchronisation permanente ?**
+
+   Oui : la feuille de route existante préconise de migrer progressivement chaque consommateur Room, puis de retirer la synchronisation. La synchronisation n'est qu'une mesure transitoire pour éviter les régressions tant que les ViewModels et services listés plus haut n'ont pas été refactorés.【F:docs/legacy_room_usage_report.md†L32-L119】
+
+10. **Comment garantir que le script d'audit détecte TOUTES les dépendances Room ?**
+
+    Le script parcourt récursivement les fichiers Kotlin/Java/XML, ignore les répertoires générés et évalue quatre motifs distincts (`VaultRepository`, annotations Room, `AppDatabase`, API `Room`). Les patterns peuvent être étendus au besoin, mais couvrent déjà les points d'entrée standards d'Android Room.【F:tools/legacy_room_audit.py†L17-L116】
+
+11. **Quel est l'impact performance de cette double synchronisation ?**
+
+    La synchronisation ajoute uniquement un appel `unlockVault`/`lockVault` côté Room lorsqu'une session est ouverte ou fermée. Aucune copie de données n'est effectuée pendant les CRUD (`Flow` reste file-based), ce qui limite l'impact à un aller-retour léger sur le thread IO lors des changements d'état.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L397-L485】
+
+12. **Y a-t-il un risque de perte de données pour l'utilisateur ?**
+
+    Non : toutes les écritures passent par `VaultSessionManager` et sont sauvegardées via `saveCurrentVault`. En cas d'échec de la synchronisation legacy, un warning est loggé mais aucune suppression Room n'est déclenchée, ce qui protège les données file-based et legacy simultanément.【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L429-L485】
+
+13. **Comment communiquer cette migration aux utilisateurs existants ?**
+
+    La documentation doit souligner que la migration est transparente, que les coffres existants restent accessibles et que la biométrie est consolidée via `BiometricVaultManager`. Les notes de version peuvent s'appuyer sur ce rapport pour expliquer l'état transitoire et inviter les testeurs à signaler toute divergence sur les écrans encore branchés sur Room.【F:docs/legacy_room_usage_report.md†L32-L119】【F:android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt†L434-L474】
+
