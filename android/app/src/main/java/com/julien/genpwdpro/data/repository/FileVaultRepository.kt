@@ -38,7 +38,8 @@ import javax.inject.Singleton
 class FileVaultRepository @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val biometricVaultManager: BiometricVaultManager
+    private val biometricVaultManager: BiometricVaultManager,
+    private val legacyVaultRepository: VaultRepository
 ) {
 
     // ========== Entry Operations ==========
@@ -394,14 +395,29 @@ class FileVaultRepository @Inject constructor(
      * @return Result.success si déverrouillé, Result.failure si erreur
      */
     suspend fun unlockVault(vaultId: String, masterPassword: String): Result<Unit> {
-        return vaultSessionManager.unlockVault(vaultId, masterPassword)
+        val result = vaultSessionManager.unlockVault(vaultId, masterPassword)
+
+        if (result.isSuccess) {
+            syncLegacyRepositoryUnlock(vaultId, masterPassword)
+        }
+
+        return result
     }
 
     /**
      * Verrouille le vault actuel
      */
     suspend fun lockVault() {
+        val currentVaultId = vaultSessionManager.getCurrentVaultId()
         vaultSessionManager.lockVault()
+
+        currentVaultId?.let { vaultId ->
+            try {
+                legacyVaultRepository.lockVault(vaultId)
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Failed to sync legacy lock for vault $vaultId", e)
+            }
+        }
     }
 
     /**
@@ -427,7 +443,11 @@ class FileVaultRepository @Inject constructor(
 
         return passwordResult.fold(
             onSuccess = { masterPassword ->
-                vaultSessionManager.unlockVault(vaultId, masterPassword)
+                val unlockResult = vaultSessionManager.unlockVault(vaultId, masterPassword)
+                if (unlockResult.isSuccess) {
+                    syncLegacyRepositoryUnlock(vaultId, masterPassword)
+                }
+                unlockResult
             },
             onFailure = { error -> Result.failure(error) }
         )
@@ -452,5 +472,20 @@ class FileVaultRepository @Inject constructor(
      */
     fun isBiometricAvailable(): Boolean {
         return biometricVaultManager.isBiometricAvailable()
+    }
+
+    private fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
+        try {
+            val success = legacyVaultRepository.unlockVault(vaultId, masterPassword)
+            if (!success) {
+                android.util.Log.w(TAG, "Legacy repository did not unlock vault $vaultId")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to sync legacy unlock for vault $vaultId", e)
+        }
+    }
+
+    companion object {
+        private const val TAG = "FileVaultRepository"
     }
 }
