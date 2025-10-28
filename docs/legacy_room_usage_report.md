@@ -53,14 +53,72 @@ Les fichiers suivants concentrent l'essentiel des usages du dépôt Room :
 
 ## Prochaines étapes suggérées
 
-1. **Basculer les ViewModels restants** (`GeneratorViewModel`, `PresetViewModel`,
-   `PasswordHealthViewModel`) vers `FileVaultRepository` et les nouveaux flux de sessions.
-2. **Remplacer les convertisseurs de `SecureNote`** pour qu'ils utilisent des modèles
-domaines indépendants de Room.
-3. **Refactorer `ImportExportRepository` et `VaultSyncManager`** afin qu'ils orchestrent les
-opérations via `VaultSessionManager` au lieu de s'appuyer sur Room.
-4. **Réduire la surface de `DatabaseModule`** en supprimant la fourniture directe de
-`VaultRepository` dès que les consommateurs ci-dessus auront été migrés.
+### 1. Migration des ViewModels vers le dépôt file-based
+
+Objectif : faire transiter les écrans encore couplés à Room (`GeneratorViewModel`,
+`PresetViewModel`, `PasswordHealthViewModel`) vers `FileVaultRepository` et
+`VaultSessionManager`.
+
+Étapes détaillées :
+
+1. **Identifier les méthodes utilisées** dans chaque ViewModel (`getPresets`,
+   `recordPresetUsage`, `getEntries`, etc.) et noter les équivalents côté
+   `FileVaultRepository`.
+2. **Compléter `FileVaultRepository` si nécessaire** (nouveaux flux pour les presets,
+   helpers de filtrage, fonctions `canCreatePreset`, etc.) afin de couvrir le même périmètre
+   fonctionnel que l'ancien `VaultRepository`.
+3. **Mettre à jour l'injection Hilt** des ViewModels pour dépendre de
+   `FileVaultRepository` uniquement.
+4. **Adapter la logique interne** des ViewModels (par exemple la sélection du preset
+   par défaut ou le chargement des statistiques de santé) pour travailler avec les modèles
+   renvoyés par `FileVaultRepository`.
+5. **Supprimer les imports Room inutiles** dans les ViewModels (DAO, entités chiffrées).
+6. **Vérifier la compilation** et les aperçus Compose concernés.
+
+### 2. Convertisseurs domaine sans dépendance Room
+
+Objectif : découpler `SecureNote`, `SecureIdentity`, `SecureCard` et `SecureWifi` du modèle
+`VaultRepository.DecryptedEntry`.
+
+Étapes détaillées :
+
+1. **Créer de nouveaux modèles domaine** (par exemple `VaultEntryModel` et `VaultPresetModel`)
+   exposés par `FileVaultRepository`.
+2. **Réécrire les fonctions `toDecryptedEntry()` / `fromDecryptedEntry()`** pour qu’elles
+   s’appuient sur ces nouveaux modèles et non plus sur `VaultRepository`.
+3. **Mettre à jour les tests** ou exemples d’utilisation pour refléter les nouvelles
+   signatures.
+4. **Supprimer les dépendances résiduelles** vers `VaultRepository` dans le module `domain`.
+
+### 3. Refactor orchestration Sync / Import / Export
+
+Objectif : faire passer `ImportExportRepository`, `VaultSyncManager` (et leurs tests) par
+`VaultSessionManager` plutôt que par Room.
+
+Étapes détaillées :
+
+1. **Remplacer l’accès direct aux DAO** (`VaultDao`, `VaultEntryDao`, etc.) par des appels à
+   `VaultSessionManager` pour récupérer les données déchiffrées.
+2. **Isoler la logique d’import/export** dans des helpers qui consomment les modèles
+   file-based (entries, presets, tags) afin d’éviter tout couplage avec les entités Room.
+3. **Mettre à jour `VaultSyncManagerTest`** pour initialiser une session file-based de test
+   au lieu de préparer une base Room.
+4. **Retirer la dépendance directe** à `VaultRepository` dans ces classes une fois la migration
+   terminée.
+
+### 4. Allègement de `DatabaseModule`
+
+Objectif : ne conserver dans la configuration Dagger/Hilt que les composants réellement utiles à
+Room (migration de données, import d’archives, etc.).
+
+Étapes détaillées :
+
+1. **Supprimer la fourniture de `VaultRepository`** et des DAO non utilisés dans les modules
+   Hilt.
+2. **Documenter les bindings résiduels** (par exemple pour des migrations ponctuelles) pour
+   éviter les regressions.
+3. **Exécuter `legacy_room_audit.py`** afin de s’assurer qu’aucune dépendance non désirée ne
+   persiste.
 
 Le script d'audit peut être relancé après chaque migration partielle pour suivre la disparition
 progressive des dépendances Room.
