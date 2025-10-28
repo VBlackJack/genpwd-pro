@@ -196,14 +196,20 @@ class BiometricVaultManager @Inject constructor(
     /**
      * Vérifie si la biométrie est disponible sur l'appareil
      *
+     * Accepte BIOMETRIC_STRONG (empreinte Class 3, iris, face 3D) et
+     * BIOMETRIC_WEAK (empreinte Class 2, face 2D) pour une meilleure compatibilité.
+     *
      * @return true si disponible, false sinon
      */
     fun isBiometricAvailable(): Boolean {
         return try {
             val biometricManager = androidx.biometric.BiometricManager.from(context)
-            biometricManager.canAuthenticate(
-                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-            ) == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+            val result = biometricManager.canAuthenticate(
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+            )
+            Log.d(TAG, "Biometric availability check result: $result")
+            result == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
             Log.e(TAG, "Error checking biometric availability", e)
             false
@@ -319,6 +325,10 @@ class BiometricVaultManager @Inject constructor(
             .setTitle("Déverrouiller le coffre")
             .setSubtitle("Utilisez votre biométrie pour déverrouiller")
             .setNegativeButtonText("Annuler")
+            .setAllowedAuthenticators(
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+            )
             .build()
 
         val cryptoObject = BiometricPrompt.CryptoObject(cipher)
