@@ -4,7 +4,7 @@ import android.app.Activity
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 
 /**
  * Applique dynamiquement le flag [WindowManager.LayoutParams.FLAG_SECURE] sur la fenêtre
@@ -12,17 +12,18 @@ import androidx.compose.ui.platform.LocalContext
  */
 @Composable
 fun SecureWindow(enabled: Boolean = true) {
-    val activity = LocalContext.current as? Activity
-    val window = activity?.window
+    val view = LocalView.current
 
-    DisposableEffect(window, enabled) {
-        if (window != null && enabled) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    DisposableEffect(view, enabled) {
+        val window = (view.context as? Activity)?.window
+
+        if (enabled) {
+            window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
 
         onDispose {
-            if (window != null && enabled) {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            if (enabled) {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
     }
