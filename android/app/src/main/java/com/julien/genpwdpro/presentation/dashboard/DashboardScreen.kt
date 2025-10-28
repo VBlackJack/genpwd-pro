@@ -46,7 +46,6 @@ import kotlin.math.max
 @Composable
 fun DashboardScreen(
     onNavigateToVault: (String) -> Unit,
-    onNavigateToVaultList: (String) -> Unit,
     onNavigateToVaultManager: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToAnalyzer: () -> Unit,
@@ -147,12 +146,9 @@ fun DashboardScreen(
                     VaultOverviewCard(
                         vault = vault,
                         isDefault = vault.id == uiState.defaultVaultId,
+                        isActive = vault.id == uiState.activeVaultId,
                         onOpen = {
-                            if (vault.isLoaded) {
-                                onNavigateToVaultList(vault.id)
-                            } else {
-                                onNavigateToVault(vault.id)
-                            }
+                            onNavigateToVault(vault.id)
                         },
                         onManage = onNavigateToVaultManager
                     )
@@ -411,6 +407,7 @@ private fun QuickToolCard(
 private fun VaultOverviewCard(
     vault: VaultRegistryEntry,
     isDefault: Boolean,
+    isActive: Boolean,
     onOpen: () -> Unit,
     onManage: () -> Unit
 ) {
@@ -454,7 +451,7 @@ private fun VaultOverviewCard(
                                 }
                             )
                         }
-                        if (vault.isLoaded) {
+                        if (isActive) {
                             AssistChip(
                                 onClick = {},
                                 label = { Text("Déverrouillé") },
@@ -504,9 +501,12 @@ private fun VaultOverviewCard(
                     onClick = onOpen,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Lock, contentDescription = null)
+                    Icon(
+                        imageVector = if (isActive) Icons.Default.CheckCircle else Icons.Default.Lock,
+                        contentDescription = null
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(if (vault.isLoaded) "Continuer" else "Déverrouiller")
+                    Text(if (isActive) "Continuer" else "Déverrouiller")
                 }
 
                 OutlinedButton(

@@ -123,11 +123,6 @@ fun AppNavGraph(
                         navController.navigate(Screen.UnlockVault.createRoute(vaultId))
                     }
                 },
-                onNavigateToVaultList = { vaultId ->
-                    navController.navigate(Screen.VaultList.createRoute(vaultId)) {
-                        launchSingleTop = true
-                    }
-                },
                 onNavigateToVaultManager = {
                     navController.navigate(Screen.VaultManager.route)
                 },

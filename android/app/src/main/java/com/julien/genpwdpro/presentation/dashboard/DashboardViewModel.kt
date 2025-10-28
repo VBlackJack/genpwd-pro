@@ -6,6 +6,7 @@ import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
-    private val vaultRegistryDao: VaultRegistryDao
+    private val vaultRegistryDao: VaultRegistryDao,
+    private val vaultSessionManager: VaultSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -50,17 +52,20 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 vaultRegistryDao.getAllVaults(),
-                vaultRegistryDao.getDefaultVaultFlow()
-            ) { vaults, defaultVault ->
+                vaultRegistryDao.getDefaultVaultFlow(),
+                vaultSessionManager.activeVaultId
+            ) { vaults, defaultVault, activeVaultId ->
                 DashboardVaultState(
                     vaults = vaults,
-                    defaultVaultId = defaultVault?.id
+                    defaultVaultId = defaultVault?.id,
+                    activeVaultId = activeVaultId
                 )
             }.collect { vaultState ->
                 _uiState.update {
                     it.copy(
                         vaults = vaultState.vaults,
-                        defaultVaultId = vaultState.defaultVaultId
+                        defaultVaultId = vaultState.defaultVaultId,
+                        activeVaultId = vaultState.activeVaultId
                     )
                 }
             }
@@ -114,7 +119,8 @@ class DashboardViewModel @Inject constructor(
 
 private data class DashboardVaultState(
     val vaults: List<VaultRegistryEntry>,
-    val defaultVaultId: String?
+    val defaultVaultId: String?,
+    val activeVaultId: String?
 )
 
 /**
@@ -125,5 +131,6 @@ data class DashboardUiState(
     val isGenerating: Boolean = false,
     val error: String? = null,
     val vaults: List<VaultRegistryEntry> = emptyList(),
-    val defaultVaultId: String? = null
+    val defaultVaultId: String? = null,
+    val activeVaultId: String? = null
 )

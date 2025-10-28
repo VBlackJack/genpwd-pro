@@ -83,6 +83,10 @@ class VaultSessionManager @Inject constructor(
     // Session courante (null = aucun vault déverrouillé)
     private var currentSession: VaultSession? = null
 
+    // Flux d'observation de la session active
+    private val _activeVaultId = MutableStateFlow<String?>(null)
+    val activeVaultId: StateFlow<String?> = _activeVaultId.asStateFlow()
+
     // Scope pour les coroutines de session
     private val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -122,6 +126,7 @@ class VaultSessionManager @Inject constructor(
                 // Vérifier qu'un vault n'est pas déjà déverrouillé
                 currentSession?.let {
                     if (it.vaultId == vaultId) {
+                        _activeVaultId.value = vaultId
                         Log.w(TAG, "Vault already unlocked: $vaultId")
                         return@withContext Result.success(Unit)
                     } else {
@@ -187,6 +192,7 @@ class VaultSessionManager @Inject constructor(
                 )
 
                 currentSession = session
+                _activeVaultId.value = vaultId
 
                 // Mettre à jour lastAccessed dans le registry
                 try {
@@ -249,6 +255,7 @@ class VaultSessionManager @Inject constructor(
                 // Nettoyer la session
                 session.cleanup()
                 currentSession = null
+                _activeVaultId.value = null
 
                 Log.i(TAG, "Vault locked successfully")
 
@@ -257,6 +264,7 @@ class VaultSessionManager @Inject constructor(
                 // Forcer le nettoyage même en cas d'erreur
                 session.cleanup()
                 currentSession = null
+                _activeVaultId.value = null
             }
         }
     }
