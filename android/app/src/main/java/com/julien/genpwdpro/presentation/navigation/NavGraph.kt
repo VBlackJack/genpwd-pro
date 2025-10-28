@@ -112,7 +112,21 @@ fun AppNavGraph(
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 onNavigateToVault = { vaultId ->
-                    navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                    val currentVaultId = vaultSessionManager.getCurrentVaultId()
+                    val isUnlocked = vaultSessionManager.isVaultUnlocked()
+
+                    if (isUnlocked && currentVaultId == vaultId) {
+                        navController.navigate(Screen.VaultList.createRoute(vaultId)) {
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                    }
+                },
+                onNavigateToVaultList = { vaultId ->
+                    navController.navigate(Screen.VaultList.createRoute(vaultId)) {
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToVaultManager = {
                     navController.navigate(Screen.VaultManager.route)
@@ -160,6 +174,7 @@ fun AppNavGraph(
                         navController.navigate(Screen.PresetManager.createRoute(vaultId))
                     }
                 },
+<<<<<<< HEAD
                 onSaveToVault = if (currentVaultId != null) {
                     // Vault déverrouillé : autoriser la sauvegarde
                     { password ->
@@ -167,14 +182,24 @@ fun AppNavGraph(
                         navController.navigate(
                             Screen.SelectEntryType.createRoute(
                                 vaultId = currentVaultId,
+=======
+                onSaveToVault = currentVaultId?.let { unlockedVaultId ->
+                    { password ->
+                        navController.navigate(
+                            Screen.SelectEntryType.createRoute(
+                                vaultId = unlockedVaultId,
+>>>>>>> origin/codex/analyze-project-for-secure-vault-issues-jcnf34
                                 password = password
                             )
                         )
                     }
+<<<<<<< HEAD
                 } else {
                     android.util.Log.w("NavGraph", "No vault unlocked, cannot save password")
                     // Aucun vault déverrouillé : le bouton ne sera pas affiché
                     null
+=======
+>>>>>>> origin/codex/analyze-project-for-secure-vault-issues-jcnf34
                 }
             )
         }

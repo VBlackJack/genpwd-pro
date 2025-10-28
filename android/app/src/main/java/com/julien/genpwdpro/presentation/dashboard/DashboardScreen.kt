@@ -46,6 +46,7 @@ import kotlin.math.max
 @Composable
 fun DashboardScreen(
     onNavigateToVault: (String) -> Unit,
+    onNavigateToVaultList: (String) -> Unit,
     onNavigateToVaultManager: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToAnalyzer: () -> Unit,
@@ -146,7 +147,13 @@ fun DashboardScreen(
                     VaultOverviewCard(
                         vault = vault,
                         isDefault = vault.id == uiState.defaultVaultId,
-                        onOpen = { onNavigateToVault(vault.id) },
+                        onOpen = {
+                            if (vault.isLoaded) {
+                                onNavigateToVaultList(vault.id)
+                            } else {
+                                onNavigateToVault(vault.id)
+                            }
+                        },
                         onManage = onNavigateToVaultManager
                     )
                 }
