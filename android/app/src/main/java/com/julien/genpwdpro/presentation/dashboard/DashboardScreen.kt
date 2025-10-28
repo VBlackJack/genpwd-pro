@@ -1,12 +1,27 @@
 package com.julien.genpwdpro.presentation.dashboard
 
-import androidx.compose.animation.*
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.with
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,21 +29,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.presentation.utils.ClipboardUtils
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 /**
  * Dashboard unifié - Page d'accueil de l'application
  *
  * Features:
  * - Générateur rapide intégré
+ * - Aperçu des coffres récents
  * - Outils rapides (Analyser, Historique, Phrases personnalisées)
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun DashboardScreen(
     onNavigateToVault: (String) -> Unit,
-    onNavigateToCreateVault: () -> Unit,
+    onNavigateToVaultManager: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToAnalyzer: () -> Unit,
     onNavigateToCustomPhrase: () -> Unit,
@@ -103,7 +121,45 @@ fun DashboardScreen(
                 )
             }
 
-            // Espace final
+            // Section Coffres récents
+            item {
+                SectionHeader(
+                    title = "Coffres-forts",
+                    subtitle = if (uiState.vaults.isEmpty()) {
+                        "Créez votre premier coffre pour sécuriser vos mots de passe"
+                    } else {
+                        "Déverrouillez un coffre pour enregistrer vos mots de passe"
+                    },
+                    icon = Icons.Default.Lock
+                )
+            }
+
+            if (uiState.vaults.isEmpty()) {
+                item {
+                    VaultsEmptyStateCard(onCreateVault = onNavigateToVaultManager)
+                }
+            } else {
+                items(
+                    items = uiState.vaults.take(3),
+                    key = { it.id }
+                ) { vault ->
+                    VaultOverviewCard(
+                        vault = vault,
+                        isDefault = vault.id == uiState.defaultVaultId,
+                        onOpen = { onNavigateToVault(vault.id) },
+                        onManage = onNavigateToVaultManager
+                    )
+                }
+
+                if (uiState.vaults.size > 3) {
+                    item {
+                        TextButton(onClick = onNavigateToVaultManager) {
+                            Text("Voir tous les coffres")
+                        }
+                    }
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -269,10 +325,10 @@ private fun SectionHeader(
         }
     }
 }
+
 /**
  * Ligne d'outils rapides
  */
-
 @Composable
 private fun QuickToolsRow(
     onNavigateToAnalyzer: () -> Unit,
@@ -284,7 +340,7 @@ private fun QuickToolsRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         QuickToolCard(
-            icon = Icons.Default.Search,
+            icon = Icons.Default.Security,
             label = "Analyser",
             onClick = onNavigateToAnalyzer,
             modifier = Modifier.weight(1f)
@@ -296,7 +352,7 @@ private fun QuickToolsRow(
             modifier = Modifier.weight(1f)
         )
         QuickToolCard(
-            icon = Icons.Default.Edit,
+            icon = Icons.Default.Key,
             label = "Phrases",
             onClick = onNavigateToCustomPhrase,
             modifier = Modifier.weight(1f)
@@ -341,5 +397,204 @@ private fun QuickToolCard(
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
+    }
+}
+
+@Composable
+private fun VaultOverviewCard(
+    vault: VaultRegistryEntry,
+    isDefault: Boolean,
+    onOpen: () -> Unit,
+    onManage: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = vault.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (isDefault) {
+                            AssistChip(
+                                onClick = {},
+                                label = { Text("Défaut") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Home,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                        }
+                        if (vault.isLoaded) {
+                            AssistChip(
+                                onClick = {},
+                                label = { Text("Déverrouillé") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            )
+                        }
+                    }
+
+                    vault.description?.takeIf { it.isNotBlank() }?.let { description ->
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                VaultInfoRow(
+                    icon = Icons.Default.Storage,
+                    label = "${vault.statistics.entryCount} entrée${if (vault.statistics.entryCount > 1) "s" else ""}"
+                )
+                VaultInfoRow(
+                    icon = Icons.Default.History,
+                    label = formatRelativeTime(vault.lastAccessed ?: vault.createdAt)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onOpen,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Lock, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(if (vault.isLoaded) "Continuer" else "Déverrouiller")
+                }
+
+                OutlinedButton(
+                    onClick = onManage,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Storage, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Gérer")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VaultInfoRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun VaultsEmptyStateCard(
+    onCreateVault: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Text(
+                text = "Aucun coffre enregistré",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Text(
+                text = "Créez un coffre-fort pour conserver vos mots de passe en toute sécurité.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Button(onClick = onCreateVault) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Créer un coffre")
+            }
+        }
+    }
+}
+
+private fun formatRelativeTime(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = max(now - timestamp, 0L)
+    val minute = 60_000L
+    val hour = 60 * minute
+    val day = 24 * hour
+    val week = 7 * day
+
+    return when {
+        diff < minute -> "À l'instant"
+        diff < hour -> "Il y a ${diff / minute} min"
+        diff < day -> "Il y a ${diff / hour} h"
+        diff < week -> "Il y a ${diff / day} j"
+        else -> "Il y a ${diff / week} sem"
     }
 }

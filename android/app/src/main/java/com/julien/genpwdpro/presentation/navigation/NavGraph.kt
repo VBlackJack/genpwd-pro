@@ -114,8 +114,8 @@ fun AppNavGraph(
                 onNavigateToVault = { vaultId ->
                     navController.navigate(Screen.UnlockVault.createRoute(vaultId))
                 },
-                onNavigateToCreateVault = {
-                    navController.navigate(Screen.CreateVault.route)
+                onNavigateToVaultManager = {
+                    navController.navigate(Screen.VaultManager.route)
                 },
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
