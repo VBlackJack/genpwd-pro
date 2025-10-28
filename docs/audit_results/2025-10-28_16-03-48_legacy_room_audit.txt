@@ -1,0 +1,337 @@
+Legacy Room usage report
+Root: /workspace/genpwd-pro
+
+Summary by pattern:
+- app_database_singletons (References to AppDatabase (Room concrete DB)): 19
+- coroutine_dao_calls (Coroutine calls to DAO methods): 0
+- flow_vault_entities (Flow emissions of Room entities): 7
+- legacy_vault_repository (References to the Room-backed VaultRepository): 54
+- room_annotations (Usage of Room annotations (Entity, Dao, Query, Database)): 137
+- room_database_builder (Direct references to androidx.room APIs): 0
+- room_imports (Import statements for Room classes): 6
+
+Detailed findings:
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/FolderDao.kt
+  • room_annotations (14 match(es))
+    L10: @Dao
+    L16: @Query("SELECT * FROM folders WHERE vaultId = :vaultId ORDER BY sortOrder ASC, name ASC")
+    L22: @Query("SELECT * FROM folders WHERE vaultId = :vaultId AND parentFolderId IS NULL ORDER BY sortOrder ASC, name ASC")
+    L28: @Query("SELECT * FROM folders WHERE parentFolderId = :parentId ORDER BY sortOrder ASC, name ASC")
+    L34: @Query("SELECT * FROM folders WHERE id = :id")
+    L40: @Query("SELECT * FROM folders WHERE id = :id")
+    L46: @Query("SELECT * FROM folders WHERE vaultId = :vaultId AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    L76: @Query("DELETE FROM folders WHERE id = :id")
+    L82: @Query("DELETE FROM folders WHERE vaultId = :vaultId")
+    L88: @Query("UPDATE folders SET parentFolderId = :parentId, modifiedAt = :timestamp WHERE id = :id")
+    L94: @Query("UPDATE folders SET sortOrder = :order WHERE id = :id")
+    L100: @Query("SELECT COUNT(*) FROM folders WHERE vaultId = :vaultId")
+    L106: @Query("SELECT COUNT(*) FROM folders WHERE parentFolderId = :parentId")
+    L112: @Query("""
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/PasswordHistoryDao.kt
+  • room_annotations (14 match(es))
+    L10: @Dao
+    L16: @Query("SELECT * FROM password_history ORDER BY timestamp DESC")
+    L22: @Query("SELECT * FROM password_history ORDER BY timestamp DESC LIMIT :limit")
+    L28: @Query("SELECT * FROM password_history WHERE id = :id")
+    L34: @Query("SELECT * FROM password_history WHERE password LIKE '%' || :query || '%' ORDER BY timestamp DESC")
+    L58: @Query("DELETE FROM password_history WHERE id = :id")
+    L64: @Query("DELETE FROM password_history")
+    L70: @Query("SELECT COUNT(*) FROM password_history")
+    L76: @Query("DELETE FROM password_history WHERE id IN (SELECT id FROM password_history ORDER BY timestamp ASC LIMIT :count)")
+    L82: @Query("SELECT * FROM password_history WHERE isFavorite = 1 ORDER BY timestamp DESC")
+    L88: @Query("UPDATE password_history SET isFavorite = :isFavorite WHERE id = :id")
+    L94: @Query("UPDATE password_history SET note = :note WHERE id = :id")
+    L100: @Query("""
+    L119: @Query("SELECT COUNT(*) FROM password_history WHERE isFavorite = 1")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/PresetDao.kt
+  • room_annotations (10 match(es))
+    L10: @Dao
+    L15: @Query("SELECT * FROM presets WHERE vaultId = :vaultId ORDER BY isDefault DESC, lastUsedAt DESC, createdAt DESC")
+    L21: @Query("SELECT * FROM presets WHERE vaultId = :vaultId AND isDefault = 1 LIMIT 1")
+    L27: @Query("SELECT * FROM presets WHERE vaultId = :vaultId AND generationMode = :mode ORDER BY createdAt DESC")
+    L33: @Query("SELECT COUNT(*) FROM presets WHERE vaultId = :vaultId AND generationMode = :mode AND isSystemPreset = 0")
+    L39: @Query("SELECT * FROM presets WHERE id = :id")
+    L63: @Query("DELETE FROM presets WHERE id = :id AND isSystemPreset = 0")
+    L69: @Query("UPDATE presets SET isDefault = 0 WHERE vaultId = :vaultId")
+    L75: @Query("UPDATE presets SET lastUsedAt = :timestamp, usageCount = usageCount + 1 WHERE id = :id")
+    L81: @Query("DELETE FROM presets WHERE vaultId = :vaultId")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/TagDao.kt
+  • room_annotations (16 match(es))
+    L12: @Dao
+    L18: @Query("SELECT * FROM tags WHERE vaultId = :vaultId ORDER BY name ASC")
+    L24: @Query("SELECT * FROM tags WHERE id = :id")
+    L30: @Query("SELECT * FROM tags WHERE vaultId = :vaultId AND name = :name")
+    L36: @Query("SELECT * FROM tags WHERE vaultId = :vaultId AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    L42: @Query("""
+    L53: @Query("""
+    L64: @Query("""
+    L102: @Query("DELETE FROM tags WHERE id = :id")
+    L108: @Query("DELETE FROM tags WHERE vaultId = :vaultId")
+    L126: @Query("DELETE FROM entry_tag_cross_ref WHERE entryId = :entryId")
+    L132: @Query("DELETE FROM entry_tag_cross_ref WHERE tagId = :tagId")
+    L138: @Query("SELECT COUNT(*) FROM tags WHERE vaultId = :vaultId")
+    L144: @Query("SELECT COUNT(*) FROM entry_tag_cross_ref WHERE tagId = :tagId")
+    L150: @Query("SELECT COUNT(*) FROM entry_tag_cross_ref WHERE entryId = :entryId")
+    L156: @Query("SELECT COUNT(*) FROM tags WHERE vaultId = :vaultId AND name = :name AND id != :excludeId")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/VaultDao.kt
+  • flow_vault_entities (4 match(es))
+    L17: fun getAllVaults(): Flow<List<VaultEntity>>
+    L29: fun getByIdFlow(id: String): Flow<VaultEntity?>
+    L41: fun getDefaultVaultFlow(): Flow<VaultEntity?>
+    L47: fun searchVaults(query: String): Flow<List<VaultEntity>>
+  • room_annotations (16 match(es))
+    L10: @Dao
+    L16: @Query("SELECT * FROM vaults ORDER BY lastAccessedAt DESC")
+    L22: @Query("SELECT * FROM vaults WHERE id = :id")
+    L28: @Query("SELECT * FROM vaults WHERE id = :id")
+    L34: @Query("SELECT * FROM vaults WHERE isDefault = 1 LIMIT 1")
+    L40: @Query("SELECT * FROM vaults WHERE isDefault = 1 LIMIT 1")
+    L46: @Query("SELECT * FROM vaults WHERE name LIKE '%' || :query || '%' ORDER BY lastAccessedAt DESC")
+    L70: @Query("DELETE FROM vaults WHERE id = :id")
+    L76: @Query("UPDATE vaults SET lastAccessedAt = :timestamp WHERE id = :id")
+    L82: @Query("UPDATE vaults SET entryCount = :count WHERE id = :id")
+    L97: @Query("UPDATE vaults SET isDefault = 0")
+    L103: @Query("UPDATE vaults SET isDefault = 1 WHERE id = :id")
+    L109: @Query("UPDATE vaults SET biometricUnlockEnabled = :enabled WHERE id = :id")
+    L115: @Query("UPDATE vaults SET autoLockTimeout = :timeout WHERE id = :id")
+    L121: @Query("SELECT COUNT(*) FROM vaults")
+    L127: @Query("SELECT COUNT(*) FROM vaults WHERE name = :name AND id != :excludeId")
+  • room_imports (1 match(es))
+    L4: import com.julien.genpwdpro.data.local.entity.VaultEntity
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/VaultEntryDao.kt
+  • room_annotations (24 match(es))
+    L10: @Dao
+    L16: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId ORDER BY modifiedAt DESC")
+    L22: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND folderId = :folderId ORDER BY modifiedAt DESC")
+    L28: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND folderId IS NULL ORDER BY modifiedAt DESC")
+    L34: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND isFavorite = 1 ORDER BY modifiedAt DESC")
+    L40: @Query("SELECT * FROM vault_entries WHERE id = :id")
+    L46: @Query("SELECT * FROM vault_entries WHERE id = :id")
+    L52: @Query("""
+    L66: @Query("""
+    L96: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND hasTOTP = 1 ORDER BY totpIssuer ASC")
+    L102: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND hasPasskey = 1 ORDER BY passkeyRpName ASC")
+    L108: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND requiresPasswordChange = 1 ORDER BY modifiedAt DESC")
+    L114: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND passwordExpiresAt > 0 AND passwordExpiresAt < :now ORDER BY passwordExpiresAt ASC")
+    L120: @Query("SELECT * FROM vault_entries WHERE vaultId = :vaultId AND passwordStrength < :threshold ORDER BY passwordStrength ASC")
+    L150: @Query("DELETE FROM vault_entries WHERE id = :id")
+    L156: @Query("DELETE FROM vault_entries WHERE vaultId = :vaultId")
+    L162: @Query("UPDATE vault_entries SET isFavorite = :isFavorite WHERE id = :id")
+    L168: @Query("UPDATE vault_entries SET lastAccessedAt = :timestamp, usageCount = usageCount + 1 WHERE id = :id")
+    L174: @Query("UPDATE vault_entries SET modifiedAt = :timestamp WHERE id = :id")
+    L180: @Query("UPDATE vault_entries SET folderId = :folderId, modifiedAt = :timestamp WHERE id = :id")
+    L186: @Query("SELECT COUNT(*) FROM vault_entries WHERE vaultId = :vaultId")
+    L192: @Query("SELECT COUNT(*) FROM vault_entries WHERE vaultId = :vaultId AND isFavorite = 1")
+    L198: @Query("SELECT COUNT(*) FROM vault_entries WHERE folderId = :folderId")
+    L204: @Query("""
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/dao/VaultRegistryDao.kt
+  • room_annotations (13 match(es))
+    L10: @Dao
+    L16: @Query("SELECT * FROM vault_registry ORDER BY isDefault DESC, name ASC")
+    L22: @Query("SELECT * FROM vault_registry WHERE id = :vaultId")
+    L28: @Query("SELECT * FROM vault_registry WHERE isDefault = 1 LIMIT 1")
+    L34: @Query("SELECT * FROM vault_registry WHERE isDefault = 1 LIMIT 1")
+    L40: @Query("SELECT * FROM vault_registry WHERE isLoaded = 1")
+    L64: @Query("DELETE FROM vault_registry WHERE id = :vaultId")
+    L79: @Query("UPDATE vault_registry SET isDefault = 0")
+    L82: @Query("UPDATE vault_registry SET isDefault = :isDefault WHERE id = :vaultId")
+    L88: @Query("UPDATE vault_registry SET isLoaded = :isLoaded WHERE id = :vaultId")
+    L94: @Query("UPDATE vault_registry SET lastAccessed = :timestamp WHERE id = :vaultId")
+    L100: @Query("UPDATE vault_registry SET fileSize = :size, lastModified = :timestamp WHERE id = :vaultId")
+    L106: @Query("SELECT COUNT(*) FROM vault_registry")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/database/AppDatabase.kt
+  • app_database_singletons (1 match(es))
+    L27: abstract class AppDatabase : RoomDatabase() {
+  • room_annotations (2 match(es))
+    L13: @Database(
+    L283: * @Entity annotation, otherwise schema validation fails.
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/FolderEntity.kt
+  • room_annotations (1 match(es))
+    L13: @Entity(
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/PasswordHistoryEntity.kt
+  • room_annotations (1 match(es))
+    L10: @Entity(tableName = "password_history")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/PresetEntity.kt
+  • room_annotations (1 match(es))
+    L19: @Entity(
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/TagEntity.kt
+  • room_annotations (2 match(es))
+    L12: @Entity(
+    L47: @Entity(
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/VaultEntity.kt
+  • room_annotations (1 match(es))
+    L11: @Entity(tableName = "vaults")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/VaultEntryEntity.kt
+  • room_annotations (1 match(es))
+    L13: @Entity(
+
+- android/app/src/main/java/com/julien/genpwdpro/data/local/entity/VaultRegistryEntry.kt
+  • room_annotations (1 match(es))
+    L18: @Entity(
+
+- android/app/src/main/java/com/julien/genpwdpro/data/repository/FileVaultRepository.kt
+  • legacy_vault_repository (2 match(es))
+    L37: * Note : Cette classe remplace l'ancien VaultRepository (Room-based)
+    L44: private val legacyVaultRepository: VaultRepository,
+
+- android/app/src/main/java/com/julien/genpwdpro/data/repository/ImportExportRepository.kt
+  • legacy_vault_repository (3 match(es))
+    L41: private val vaultRepository: VaultRepository
+    L177: // Créer l'entrée via VaultRepository
+    L178: val decryptedEntry = VaultRepository.DecryptedEntry(
+  • room_imports (2 match(es))
+    L8: import com.julien.genpwdpro.data.local.dao.VaultDao
+    L11: import com.julien.genpwdpro.data.local.entity.VaultEntity
+
+- android/app/src/main/java/com/julien/genpwdpro/data/repository/VaultRepository.kt
+  • flow_vault_entities (1 match(es))
+    L327: fun getAllVaults(): Flow<List<VaultEntity>> {
+  • legacy_vault_repository (13 match(es))
+    L29: class VaultRepository @Inject constructor(
+    L252: Log.e("VaultRepository", "Error saving biometric password", e)
+    L269: Log.w("VaultRepository", "No biometric data for vault $vaultId")
+    L285: Log.e("VaultRepository", "Error getting biometric password", e)
+    L312: Log.e("VaultRepository", "Error clearing biometric password", e)
+    L1101: Log.e("VaultRepository", "Error exporting vault", e)
+    L1146: Log.d("VaultRepository", "Vault already exists, updating...")
+    L1249: Log.e("VaultRepository", "Error importing vault", e)
+    L1341: Log.w("VaultRepository", "Cannot create preset: limit of 3 per mode reached")
+    L1426: Log.w("VaultRepository", "Attempted to get presets for locked vault: $vaultId")
+    L1471: Log.w("VaultRepository", "Cannot delete system preset")
+    L1503: Log.d("VaultRepository", "Default preset already exists for vault $vaultId")
+    L1531: Log.d("VaultRepository", "Default preset initialized for vault $vaultId")
+
+- android/app/src/main/java/com/julien/genpwdpro/data/sync/VaultSyncManager.kt
+  • legacy_vault_repository (4 match(es))
+    L6: import com.julien.genpwdpro.data.repository.VaultRepository
+    L29: * 1. Exporter vault → Données chiffrées (VaultRepository)
+    L32: * 4. Importer vault → Déchiffrement (VaultRepository)
+    L37: private val vaultRepository: VaultRepository,
+
+- android/app/src/main/java/com/julien/genpwdpro/data/sync/providers/PCloudProvider.kt
+  • room_annotations (20 match(es))
+    L84: @Query("client_id") clientId: String,
+    L85: @Query("client_secret") clientSecret: String,
+    L86: @Query("code") code: String
+    L90: suspend fun getUserInfo(@Query("access_token") token: String): PCloudUserResponse
+    L95: @Query("access_token") token: String,
+    L96: @Query("folderid") folderId: Long = 0,
+    L97: @Query("recursive") recursive: Int = 0
+    L102: @Query("access_token") token: String,
+    L103: @Query("path") path: String
+    L110: @Query("access_token") token: String,
+    L111: @Query("folderid") folderId: Long,
+    L112: @Query("filename") filename: String,
+    L118: @Query("access_token") token: String,
+    L119: @Query("fileid") fileId: Long
+    L124: @Query("access_token") token: String,
+    L125: @Query("fileid") fileId: Long
+    L130: @Query("access_token") token: String,
+    L131: @Query("fileid") fileId: Long
+    L137: @Query("access_token") token: String,
+    L138: @Query("path") path: String
+
+- android/app/src/main/java/com/julien/genpwdpro/di/DatabaseModule.kt
+  • app_database_singletons (18 match(es))
+    L11: import com.julien.genpwdpro.data.local.database.AppDatabase
+    L34: ): AppDatabase {
+    L37: AppDatabase::class.java,
+    L38: AppDatabase.DATABASE_NAME
+    L41: AppDatabase.MIGRATION_1_2,
+    L42: AppDatabase.MIGRATION_2_3,
+    L43: AppDatabase.MIGRATION_3_4,
+    L44: AppDatabase.MIGRATION_4_5,
+    L45: AppDatabase.MIGRATION_5_6,
+    L46: AppDatabase.MIGRATION_6_7,
+    L47: AppDatabase.MIGRATION_7_8
+    L56: database: AppDatabase
+    L89: database: AppDatabase
+    L97: database: AppDatabase
+    L105: database: AppDatabase
+    L113: database: AppDatabase
+    L121: database: AppDatabase
+    L129: database: AppDatabase
+  • legacy_vault_repository (3 match(es))
+    L14: import com.julien.genpwdpro.data.repository.VaultRepository
+    L156: ): VaultRepository {
+    L157: return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
+
+- android/app/src/main/java/com/julien/genpwdpro/domain/model/SecureNote.kt
+  • legacy_vault_repository (8 match(es))
+    L4: import com.julien.genpwdpro.data.repository.VaultRepository
+    L51: fun toDecryptedEntry(): VaultRepository.DecryptedEntry {
+    L52: return VaultRepository.DecryptedEntry(
+    L95: fun fromDecryptedEntry(entry: VaultRepository.DecryptedEntry): SecureNote? {
+    L139: fun toDecryptedEntry(): VaultRepository.DecryptedEntry {
+    L140: return VaultRepository.DecryptedEntry(
+    L215: fun toDecryptedEntry(): VaultRepository.DecryptedEntry {
+    L227: return VaultRepository.DecryptedEntry(
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/analysis/PasswordHealthViewModel.kt
+  • legacy_vault_repository (3 match(es))
+    L6: import com.julien.genpwdpro.data.repository.VaultRepository
+    L26: private val vaultRepository: VaultRepository
+    L49: val passwordMap = mutableMapOf<String, MutableList<VaultRepository.DecryptedEntry>>()
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/preset/PresetListScreen.kt
+  • legacy_vault_repository (1 match(es))
+    L17: import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/preset/PresetSelector.kt
+  • legacy_vault_repository (1 match(es))
+    L15: import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/preset/PresetViewModel.kt
+  • legacy_vault_repository (3 match(es))
+    L7: import com.julien.genpwdpro.data.repository.VaultRepository
+    L8: import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
+    L20: private val vaultRepository: VaultRepository
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/screens/GeneratorViewModel.kt
+  • legacy_vault_repository (7 match(es))
+    L25: private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
+    L31: private val _currentPreset = MutableStateFlow<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset?>(null)
+    L32: val currentPreset: StateFlow<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset?> = _currentPreset.asStateFlow()
+    L34: private val _presets = MutableStateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>>(emptyList())
+    L35: val presets: StateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>> = _presets.asStateFlow()
+    L75: fun selectPreset(preset: com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset) {
+    L108: val preset = com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset(
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/vault/VaultSelectorScreen.kt
+  • room_imports (1 match(es))
+    L15: import com.julien.genpwdpro.data.local.entity.VaultEntity
+
+- android/app/src/main/java/com/julien/genpwdpro/presentation/vault/VaultViewModel.kt
+  • flow_vault_entities (2 match(es))
+    L25: private val _selectedVault = MutableStateFlow<VaultEntity?>(null)
+    L26: val selectedVault: StateFlow<VaultEntity?> = _selectedVault.asStateFlow()
+  • legacy_vault_repository (2 match(es))
+    L6: import com.julien.genpwdpro.data.repository.VaultRepository
+    L18: private val vaultRepository: VaultRepository,
+  • room_imports (1 match(es))
+    L5: import com.julien.genpwdpro.data.local.entity.VaultEntity
+
+- android/app/src/test/java/com/julien/genpwdpro/data/repository/FileVaultRepositoryTest.kt
+  • legacy_vault_repository (1 match(es))
+    L31: private lateinit var legacyVaultRepository: VaultRepository
+
+- android/app/src/test/java/com/julien/genpwdpro/data/sync/VaultSyncManagerTest.kt
+  • legacy_vault_repository (3 match(es))
+    L6: import com.julien.genpwdpro.data.repository.VaultRepository
+    L25: private lateinit var mockVaultRepository: VaultRepository
+    L45: // Mock VaultRepository
+  • room_imports (1 match(es))
+    L5: import com.julien.genpwdpro.data.local.entity.VaultEntity

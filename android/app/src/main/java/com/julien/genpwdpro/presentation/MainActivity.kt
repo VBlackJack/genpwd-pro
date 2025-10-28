@@ -5,13 +5,14 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
-import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
@@ -19,7 +20,9 @@ import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -42,6 +45,9 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var vaultSessionManager: VaultSessionManager
+
+    @Inject
+    lateinit var vaultRegistryDao: VaultRegistryDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,14 +78,36 @@ class MainActivity : FragmentActivity() {
      */
     private fun setupSessionManagement() {
         lifecycleScope.launch {
+            lockAllVaultsOnStartup()
+
             val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
-            if (hasExpired) {
-                Log.d(TAG, "Sessions expirées nettoyées au démarrage.")
-            } else {
-                Log.d(TAG, "Aucune session expirée, le coffre reste déverrouillé.")
-            }
+            Log.d(
+                TAG,
+                "Vérification des sessions terminée après verrouillage initial (sessions nettoyées = $hasExpired)."
+            )
         }
         lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
+    }
+
+    private suspend fun lockAllVaultsOnStartup() {
+        Log.d(TAG, "Security: Locking all vaults on app startup")
+
+        try {
+            vaultSessionManager.lockVault()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to lock file-based vault session on startup", e)
+        }
+
+        sessionManager.lockVault()
+
+        try {
+            withContext(Dispatchers.IO) {
+                vaultRegistryDao.resetAllLoadedFlags()
+            }
+            Log.d(TAG, "Vault registry flags reset on startup")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reset vault registry flags on startup", e)
+        }
     }
 
     /**
