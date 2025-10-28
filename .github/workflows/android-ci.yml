@@ -2,42 +2,47 @@ name: Android CI
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [main, develop, 'feature/**']
   pull_request:
+    branches: [main, develop]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Android SDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses
 
-      - name: Install required SDK components
+      - name: Install required SDK packages
         run: |
-          sdkmanager "platforms;android-34" "platform-tools" "build-tools;34.0.0"
+          sdkmanager "platform-tools" \
+                     "platforms;android-34" \
+                     "build-tools;34.0.0"
 
-      - name: Setup Gradle build cache
+      - name: Configure Gradle cache
         uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
 
-      - name: Run lintVitalRelease
-        working-directory: android
-        run: ./gradlew :app:lintVitalRelease
+      - name: Run lint checks
+        run: |
+          # lintVitalRelease may be unavailable depending on AGP/configuration
+          ./gradlew :app:lintVitalRelease || true
+          ./gradlew :app:lintRelease
 
       - name: Assemble release build
-        working-directory: android
         run: ./gradlew :app:assembleRelease
