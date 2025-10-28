@@ -12,11 +12,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-// Temporarily disabled due to compilation error
-// import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
+import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
+import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
-import com.julien.genpwdpro.presentation.navigation.AppNavGraph
-import com.julien.genpwdpro.presentation.navigation.Screen
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -32,36 +31,56 @@ import javax.inject.Inject
  * Gère également les deep links OAuth2 pour la synchronisation cloud:
  * - genpwdpro://oauth/pcloud - Callback OAuth2 pCloud
  * - genpwdpro://oauth/proton - Callback OAuth2 ProtonDrive
+ *
+ * Améliorations v2:
+ * - Gestion de session avec timeout (24h par défaut)
+ * - Auto-lock après 5 minutes en arrière-plan
+ * - Nettoyage uniquement des sessions expirées
  */
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        private const val SESSION_TIMEOUT_HOURS = 24L
     }
 
     @Inject
     lateinit var sessionManager: SessionManager
 
     @Inject
-    lateinit var vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
-
-    @Inject
-    lateinit var vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
+    lateinit var vaultSessionManager: VaultSessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Clear toutes les sessions au démarrage de l'app
-        // Les clés de déchiffrement sont perdues, il faut réauthentifier
-        sessionManager.lockVault()
-        vaultRepository.lockAllVaults()
-        Log.d(TAG, "All vault sessions cleared on app start")
+        setupSessionManagement()
+        setupContent()
+        handleDeepLinkIfPresent(intent)
+    }
 
-        // Gérer les deep links OAuth2 au lancement
-        // Temporarily disabled due to OAuthCallbackManager compilation error
-        // handleOAuthDeepLink(intent)
+    /**
+     * Configure la gestion de session avec timeout et auto-lock
+     */
+    private fun setupSessionManagement() {
+        lifecycleScope.launch {
+            // Nettoyer uniquement les sessions expirées (pas toutes les sessions)
+            val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
+            if (hasExpired) {
+                Log.d(TAG, "Expired sessions cleared on app start")
+            } else {
+                Log.d(TAG, "No expired sessions - vault remains unlocked")
+            }
+        }
 
+        // Ajouter l'observateur de cycle de vie pour l'auto-lock
+        lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
+    }
+
+    /**
+     * Configure le contenu Compose
+     */
+    private fun setupContent() {
         setContent {
             GenPwdProTheme {
                 Surface(
@@ -82,16 +101,24 @@ class MainActivity : FragmentActivity() {
     }
 
     /**
+     * Gère les deep links OAuth2 si présents dans l'intent
+     */
+    private fun handleDeepLinkIfPresent(intent: Intent?) {
+        intent?.data?.let { uri ->
+            if (uri.scheme == "genpwdpro" && uri.host == "oauth") {
+                handleOAuthDeepLink(uri)
+            }
+        }
+    }
+
+    /**
      * Appelé quand une nouvelle Intent arrive pendant que l'activité est active
      * (grâce à launchMode="singleTask")
-     *
-     * Temporarily disabled due to OAuthCallbackManager compilation error
      */
-    /*
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleOAuthDeepLink(intent)
+        handleDeepLinkIfPresent(intent)
     }
 
     /**
@@ -100,14 +127,12 @@ class MainActivity : FragmentActivity() {
      * Extrait l'URI du deep link et le transmet au OAuthCallbackManager
      * qui notifiera le provider approprié.
      */
-    private fun handleOAuthDeepLink(intent: Intent?) {
-        val data: Uri? = intent?.data
+    private fun handleOAuthDeepLink(uri: Uri) {
+        Log.d(TAG, "Received OAuth deep link: $uri")
 
-        if (data != null && data.scheme == "genpwdpro" && data.host == "oauth") {
-            Log.d(TAG, "Received OAuth deep link: $data")
-
-            lifecycleScope.launch {
-                val handled = OAuthCallbackManager.handleCallback(data)
+        lifecycleScope.launch {
+            try {
+                val handled = OAuthCallbackManager.handleCallback(uri)
 
                 if (handled) {
                     Log.i(TAG, "OAuth callback handled successfully")
@@ -117,8 +142,10 @@ class MainActivity : FragmentActivity() {
                     Log.w(TAG, "OAuth callback was not handled")
                     // TODO: Afficher un message d'erreur à l'utilisateur
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling OAuth callback", e)
+                // TODO: Afficher un message d'erreur à l'utilisateur
             }
         }
     }
-    */
 }

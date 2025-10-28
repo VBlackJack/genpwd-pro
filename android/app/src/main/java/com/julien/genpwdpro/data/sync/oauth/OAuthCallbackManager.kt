@@ -8,7 +8,7 @@ import com.julien.genpwdpro.data.sync.models.CloudProviderType
  * Gestionnaire centralisé des callbacks OAuth2
  *
  * Permet aux providers de s'enregistrer pour recevoir les callbacks
- * depuis les deep links OAuth2 (genpwdpro://oauth/*)
+ * depuis les deep links OAuth2 (genpwdpro://oauth/[provider])
  *
  * Pattern Singleton thread-safe
  */
