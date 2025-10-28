@@ -481,7 +481,7 @@ class FileVaultRepository @Inject constructor(
         return biometricVaultManager.isBiometricAvailable()
     }
 
-    private fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
+    private suspend fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
         if (!legacySyncEnabled) {
             Log.d(TAG, "Legacy sync disabled by feature flag")
             return

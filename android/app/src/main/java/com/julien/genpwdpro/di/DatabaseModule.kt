@@ -159,6 +159,12 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideIoDispatcher(): kotlinx.coroutines.CoroutineDispatcher {
+        return kotlinx.coroutines.Dispatchers.IO
+    }
+
+    @Provides
+    @Singleton
     @Named("legacy_sync_enabled")
     fun provideLegacySyncFlag(): Boolean = BuildConfig.DEBUG
 }
