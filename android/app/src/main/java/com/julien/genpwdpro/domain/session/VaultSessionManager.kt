@@ -6,8 +6,10 @@ import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.data.models.vault.VaultData
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
+import com.julien.genpwdpro.domain.exceptions.VaultException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.io.IOException
 import java.util.UUID
 import javax.crypto.SecretKey
 import javax.inject.Inject
@@ -110,7 +112,7 @@ class VaultSessionManager @Inject constructor(
      *
      * @param vaultId ID du vault à déverrouiller
      * @param masterPassword Master password en clair
-     * @return Result.success si déverrouillé, Result.failure si erreur (mauvais password, etc.)
+     * @return Result.success si déverrouillé, Result.failure avec VaultException spécifique
      */
     suspend fun unlockVault(vaultId: String, masterPassword: String): Result<Unit> {
         return withContext(Dispatchers.IO) {
@@ -132,25 +134,49 @@ class VaultSessionManager @Inject constructor(
                 // Charger les métadonnées du vault
                 val vaultRegistry = vaultRegistryDao.getById(vaultId)
                     ?: return@withContext Result.failure(
-                        IllegalStateException("Vault not found in registry: $vaultId")
+                        VaultException.VaultNotFound(vaultId)
                     )
 
                 // Charger le fichier .gpv
-                val vaultData = if (vaultRegistry.filePath.startsWith("content://")) {
-                    // SAF URI
-                    val uri = vaultFileManager.pathToUri(vaultRegistry.filePath)
-                        ?: return@withContext Result.failure(
-                            IllegalStateException("Invalid SAF URI: ${vaultRegistry.filePath}")
-                        )
-                    vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, uri)
-                } else {
-                    // File path normal
-                    vaultFileManager.loadVaultFile(vaultId, masterPassword, vaultRegistry.filePath)
+                val vaultData = try {
+                    if (vaultRegistry.filePath.startsWith("content://")) {
+                        // SAF URI
+                        val uri = vaultFileManager.pathToUri(vaultRegistry.filePath)
+                            ?: return@withContext Result.failure(
+                                VaultException.FileAccessError("Invalid SAF URI: ${vaultRegistry.filePath}")
+                            )
+                        vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, uri)
+                    } else {
+                        // File path normal
+                        vaultFileManager.loadVaultFile(vaultId, masterPassword, vaultRegistry.filePath)
+                    }
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "Decryption failed for vault: $vaultId", e)
+                    return@withContext Result.failure(
+                        VaultException.DecryptionFailed(cause = e)
+                    )
+                } catch (e: IOException) {
+                    Log.e(TAG, "File access error for vault: $vaultId", e)
+                    return@withContext Result.failure(
+                        VaultException.FileAccessError(cause = e)
+                    )
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Invalid file format for vault: $vaultId", e)
+                    return@withContext Result.failure(
+                        VaultException.InvalidFileFormat(cause = e)
+                    )
                 }
 
                 // Dériver la clé de chiffrement depuis le master password
-                val saltBytes = cryptoManager.generateSaltFromString(vaultId)
-                val vaultKey = cryptoManager.deriveKey(masterPassword, saltBytes)
+                val vaultKey = try {
+                    val saltBytes = cryptoManager.generateSaltFromString(vaultId)
+                    cryptoManager.deriveKey(masterPassword, saltBytes)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Key derivation failed for vault: $vaultId", e)
+                    return@withContext Result.failure(
+                        VaultException.EncryptionFailed("Failed to derive encryption key", e)
+                    )
+                }
 
                 // Créer la session
                 val session = VaultSession(
@@ -163,8 +189,13 @@ class VaultSessionManager @Inject constructor(
                 currentSession = session
 
                 // Mettre à jour lastAccessed dans le registry
-                vaultRegistryDao.updateLastAccessed(vaultId, System.currentTimeMillis())
-                vaultRegistryDao.updateLoadedStatus(vaultId, true)
+                try {
+                    vaultRegistryDao.updateLastAccessed(vaultId, System.currentTimeMillis())
+                    vaultRegistryDao.updateLoadedStatus(vaultId, true)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to update registry for vault: $vaultId", e)
+                    // Non-critical error, don't fail the unlock
+                }
 
                 // Démarrer le timer d'auto-lock
                 startAutoLockTimer(DEFAULT_AUTO_LOCK_MINUTES)
@@ -172,9 +203,12 @@ class VaultSessionManager @Inject constructor(
                 Log.i(TAG, "Vault unlocked successfully: $vaultId")
                 Result.success(Unit)
 
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to unlock vault: $vaultId", e)
+            } catch (e: VaultException) {
+                Log.e(TAG, "Failed to unlock vault: $vaultId - ${e.message}", e)
                 Result.failure(e)
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error unlocking vault: $vaultId", e)
+                Result.failure(VaultException.Unknown(e.message, e))
             }
         }
     }
