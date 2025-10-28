@@ -8,6 +8,7 @@ import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.data.vault.VaultMigrationManager
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,7 +22,8 @@ import javax.inject.Inject
 class VaultManagerViewModel @Inject constructor(
     private val vaultRegistryDao: VaultRegistryDao,
     private val vaultFileManager: VaultFileManager,
-    private val migrationManager: VaultMigrationManager
+    private val migrationManager: VaultMigrationManager,
+    private val vaultSessionManager: VaultSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultManagerUiState())
@@ -137,12 +139,25 @@ class VaultManagerViewModel @Inject constructor(
                     vaultRegistryDao.setAsDefault(vaultId)
                 }
 
+                val autoUnlockResult = try {
+                    vaultSessionManager.unlockVault(vaultId, masterPassword)
+                } catch (unlockError: Exception) {
+                    Result.failure(unlockError)
+                }
+
+                val successMessage = if (autoUnlockResult.isSuccess) {
+                    "Coffre créé et déverrouillé automatiquement"
+                } else {
+                    val reason = autoUnlockResult.exceptionOrNull()?.message ?: "échec du déverrouillage"
+                    "Coffre créé. Déverrouillez-le manuellement ($reason)"
+                }
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         showCreateDialog = false,
                         customFolderUri = null, // Reset après création
-                        successMessage = "Vault created successfully"
+                        successMessage = successMessage
                     )
                 }
 
