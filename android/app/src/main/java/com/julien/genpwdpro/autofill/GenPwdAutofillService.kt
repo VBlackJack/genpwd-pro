@@ -74,24 +74,46 @@ class GenPwdAutofillService : AutofillService() {
                     callback.onSuccess(null)
                     return@launch
                 }
+                
+                // Vérifier si le coffre est déverrouillé
+                val isUnlocked = autofillRepository.isVaultUnlocked()
+                if (!isUnlocked) {
+                    // Coffre verrouillé : proposer de déverrouiller
+                    val response = autofillRepository.createUnlockVaultResponse()
+                    callback.onSuccess(response)
+                    return@launch
+                }
 
-                // Construire la réponse d'auto-remplissage
+                // Coffre déverrouillé : rechercher les correspondances
+                val matchingEntries = autofillRepository.findMatchingEntries(
+                    packageName = autofillFields.packageName
+                ).first()
+
                 val responseBuilder = FillResponse.Builder()
 
-                // Ajouter des datasets avec mots de passe générés
-                val settings = autofillRepository.getSettings().first()
-
-                // Générer 3 options de mots de passe
-                repeat(MAX_DATASETS) { index ->
-                    val passwordResults = generatePasswordUseCase(settings)
-                    val password = passwordResults.firstOrNull()?.password ?: ""
-                    val dataset = createPasswordDataset(
-                        autofillFields = autofillFields,
-                        password = password,
-                        index = index,
-                        settings = settings
-                    )
-                    responseBuilder.addDataset(dataset)
+                if (matchingEntries.isNotEmpty()) {
+                    // Des correspondances ont été trouvées : les proposer
+                    matchingEntries.forEach { entry ->
+                        val dataset = autofillRepository.createCredentialDataset(
+                            entry = entry,
+                            autofillFields = autofillFields
+                        )
+                        responseBuilder.addDataset(dataset)
+                    }
+                } else {
+                    // Aucune correspondance : proposer de générer
+                    val settings = autofillRepository.getSettings().first()
+                    repeat(MAX_DATASETS) { index ->
+                        val passwordResults = generatePasswordUseCase(settings)
+                        val password = passwordResults.firstOrNull()?.password ?: ""
+                        val dataset = createPasswordDataset(
+                            autofillFields = autofillFields,
+                            password = password,
+                            index = index,
+                            settings = settings
+                        )
+                        responseBuilder.addDataset(dataset)
+                    }
                 }
 
                 callback.onSuccess(responseBuilder.build())

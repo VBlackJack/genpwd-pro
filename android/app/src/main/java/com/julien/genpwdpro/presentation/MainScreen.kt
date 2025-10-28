@@ -23,35 +23,28 @@ import kotlinx.coroutines.launch
 /**
  * Écran principal avec Navigation Drawer (barre latérale rétractable)
  *
- * Features:
- * - Swipe depuis le bord gauche pour ouvrir
- * - Fermeture automatique après sélection
- * - Icône hamburger pour ouvrir manuellement
- * - Design Material Design 3
- * - Gain d'espace vertical (pas de bottom bar)
+ * Gère la navigation principale et la structure de l'UI (TopAppBar, Drawer).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavHostController,
     sessionManager: SessionManager,
-    vaultSessionManager: VaultSessionManager
+    vaultSessionManager: VaultSessionManager,
+    startDestination: String = Screen.Dashboard.route // Destination de départ
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // État du drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Routes pour lesquelles afficher le menu hamburger
     val screensWithDrawer = listOf(
         Screen.Dashboard.route,
         Screen.Generator.route,
         Screen.History.route,
         Screen.VaultManager.route
     )
-
     val showDrawer = currentDestination?.route in screensWithDrawer
 
     ModalNavigationDrawer(
@@ -60,39 +53,24 @@ fun MainScreen(
             ModalDrawerSheet(
                 modifier = Modifier.width(280.dp)
             ) {
-                // Header du drawer
                 DrawerHeader()
-
                 Spacer(Modifier.height(12.dp))
 
-                // Items de navigation
                 drawerItems.forEach { item ->
                     val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-
                     NavigationDrawerItem(
-                        icon = {
-                            Icon(
-                                imageVector = if (selected) item.selectedIcon else item.icon,
-                                contentDescription = item.label
-                            )
-                        },
+                        icon = { Icon(if (selected) item.selectedIcon else item.icon, item.label) },
                         label = { Text(item.label) },
                         selected = selected,
                         onClick = {
                             if (!selected) {
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
                             }
-
-                            // Fermer le drawer après sélection
-                            scope.launch {
-                                drawerState.close()
-                            }
+                            scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
@@ -102,57 +80,31 @@ fun MainScreen(
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 Spacer(Modifier.height(8.dp))
 
-                // Items secondaires
                 secondaryDrawerItems.forEach { item ->
                     val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-
                     NavigationDrawerItem(
-                        icon = {
-                            Icon(
-                                imageVector = if (selected) item.selectedIcon else item.icon,
-                                contentDescription = item.label
-                            )
-                        },
+                        icon = { Icon(if (selected) item.selectedIcon else item.icon, item.label) },
                         label = { Text(item.label) },
                         selected = selected,
                         onClick = {
                             navController.navigate(item.route)
-
-                            // Fermer le drawer après sélection
-                            scope.launch {
-                                drawerState.close()
-                            }
+                            scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
             }
         },
-        // Activer le swipe gesture
         gesturesEnabled = showDrawer
     ) {
         Scaffold(
             topBar = {
                 if (showDrawer) {
                     TopAppBar(
-                        title = {
-                            Text(
-                                text = getCurrentScreenTitle(currentDestination?.route),
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                        },
+                        title = { Text(getCurrentScreenTitle(currentDestination?.route)) },
                         navigationIcon = {
-                            IconButton(
-                                onClick = {
-                                    scope.launch {
-                                        drawerState.open()
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Menu"
-                                )
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, "Menu")
                             }
                         }
                     )
@@ -162,7 +114,7 @@ fun MainScreen(
             Box(modifier = Modifier.padding(paddingValues)) {
                 AppNavGraph(
                     navController = navController,
-                    startDestination = Screen.Dashboard.route,
+                    startDestination = startDestination, // Utiliser la destination dynamique
                     sessionManager = sessionManager,
                     vaultSessionManager = vaultSessionManager
                 )
@@ -171,9 +123,6 @@ fun MainScreen(
     }
 }
 
-/**
- * Header du Navigation Drawer
- */
 @Composable
 fun DrawerHeader() {
     Surface(
@@ -181,9 +130,7 @@ fun DrawerHeader() {
         color = MaterialTheme.colorScheme.primaryContainer,
         tonalElevation = 4.dp
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
-        ) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Icon(
                 imageVector = Icons.Default.Lock,
                 contentDescription = null,
@@ -205,9 +152,6 @@ fun DrawerHeader() {
     }
 }
 
-/**
- * Obtient le titre de l'écran actuel
- */
 fun getCurrentScreenTitle(route: String?): String {
     return when (route) {
         Screen.Dashboard.route -> "GenPwd Pro"
@@ -219,9 +163,6 @@ fun getCurrentScreenTitle(route: String?): String {
     }
 }
 
-/**
- * Item du Navigation Drawer
- */
 data class DrawerNavItem(
     val route: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -229,50 +170,14 @@ data class DrawerNavItem(
     val label: String
 )
 
-/**
- * Items principaux du drawer
- */
 private val drawerItems = listOf(
-    DrawerNavItem(
-        route = Screen.Dashboard.route,
-        icon = Icons.Default.Home,
-        selectedIcon = Icons.Default.Home,
-        label = "Accueil"
-    ),
-    DrawerNavItem(
-        route = Screen.Generator.route,
-        icon = Icons.Default.VpnKey,
-        selectedIcon = Icons.Default.VpnKey,
-        label = "Générateur"
-    ),
-    DrawerNavItem(
-        route = Screen.VaultManager.route,
-        icon = Icons.Default.Storage,
-        selectedIcon = Icons.Default.Storage,
-        label = "Gestion des Coffres"
-    ),
-    DrawerNavItem(
-        route = Screen.History.route,
-        icon = Icons.Default.History,
-        selectedIcon = Icons.Default.History,
-        label = "Historique"
-    )
+    DrawerNavItem(Screen.Dashboard.route, Icons.Default.Home, Icons.Default.Home, "Accueil"),
+    DrawerNavItem(Screen.Generator.route, Icons.Default.VpnKey, Icons.Default.VpnKey, "Générateur"),
+    DrawerNavItem(Screen.VaultManager.route, Icons.Default.Storage, Icons.Default.Storage, "Gestion des Coffres"),
+    DrawerNavItem(Screen.History.route, Icons.Default.History, Icons.Default.History, "Historique")
 )
 
-/**
- * Items secondaires du drawer
- */
 private val secondaryDrawerItems = listOf(
-    DrawerNavItem(
-        route = Screen.Analyzer.route,
-        icon = Icons.Default.Security,
-        selectedIcon = Icons.Default.Security,
-        label = "Analyseur"
-    ),
-    DrawerNavItem(
-        route = Screen.SyncSettings.route,
-        icon = Icons.Default.Settings,
-        selectedIcon = Icons.Default.Settings,
-        label = "Paramètres"
-    )
+    DrawerNavItem(Screen.Analyzer.route, Icons.Default.Security, Icons.Default.Security, "Analyseur"),
+    DrawerNavItem(Screen.SyncSettings.route, Icons.Default.Settings, Icons.Default.Settings, "Paramètres")
 )

@@ -136,6 +136,7 @@ fun AppNavGraph(
         composable(Screen.Generator.route) {
             // ✅ FIX: Utiliser VaultSessionManager (nouveau système file-based)
             val currentVaultId = vaultSessionManager.getCurrentVaultId()
+            android.util.Log.d("NavGraph", "Generator - Current vault ID: $currentVaultId")
 
             GeneratorScreen(
                 vaultId = currentVaultId,
@@ -159,19 +160,21 @@ fun AppNavGraph(
                         navController.navigate(Screen.PresetManager.createRoute(vaultId))
                     }
                 },
-                onSaveToVault = { password ->
-                    // ✅ FIX: Vérifier si un vault est déverrouillé (nouveau système)
-                    val vaultId = vaultSessionManager.getCurrentVaultId()
-                    if (vaultId != null) {
-                        // Naviguer vers SelectEntryType avec le mot de passe
+                onSaveToVault = if (currentVaultId != null) {
+                    // Vault déverrouillé : autoriser la sauvegarde
+                    { password ->
+                        android.util.Log.d("NavGraph", "Saving password to vault: $currentVaultId")
                         navController.navigate(
                             Screen.SelectEntryType.createRoute(
-                                vaultId = vaultId,
+                                vaultId = currentVaultId,
                                 password = password
                             )
                         )
                     }
-                    // Sinon, le GeneratorScreen affichera déjà le message d'erreur
+                } else {
+                    android.util.Log.w("NavGraph", "No vault unlocked, cannot save password")
+                    // Aucun vault déverrouillé : le bouton ne sera pas affiché
+                    null
                 }
             )
         }
@@ -226,7 +229,10 @@ fun AppNavGraph(
         // ========== Vault Manager ==========
         composable(Screen.VaultManager.route) {
             com.julien.genpwdpro.presentation.vaultmanager.VaultManagerScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToVault = { vaultId ->
+                    navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                }
             )
         }
 

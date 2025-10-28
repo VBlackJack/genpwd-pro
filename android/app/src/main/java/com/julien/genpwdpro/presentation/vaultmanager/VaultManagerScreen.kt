@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,7 +27,8 @@ import java.util.*
 @Composable
 fun VaultManagerScreen(
     viewModel: VaultManagerViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToVault: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val vaults by viewModel.vaults.collectAsState()
@@ -39,8 +41,8 @@ fun VaultManagerScreen(
             viewModel = viewModel,
             uiState = uiState,
             onDismiss = { viewModel.hideCreateDialog() },
-            onCreate = { name, password, strategy, description, setAsDefault ->
-                viewModel.createVault(name, password, strategy, description, setAsDefault)
+            onCreate = { name, password, strategy, description, setAsDefault, enableBiometric ->
+                viewModel.createVault(name, password, strategy, description, setAsDefault, enableBiometric)
             }
         )
     }
@@ -168,9 +170,13 @@ fun VaultManagerScreen(
                         isDefault = vault.id == defaultVault?.id,
                         isLoaded = loadedVaults.any { it.id == vault.id },
                         onSetDefault = { viewModel.setAsDefault(vault.id) },
-                        onLoad = { viewModel.loadVault(vault.id) },
+                        onLoad = {
+                            viewModel.loadVault(vault.id)
+                            onNavigateToVault(vault.id)
+                        },
                         onUnload = { viewModel.unloadVault(vault.id) },
-                        onDelete = { viewModel.showDeleteConfirmation(vault.id) }
+                        onDelete = { viewModel.showDeleteConfirmation(vault.id) },
+                        onOpen = { onNavigateToVault(vault.id) }
                     )
                 }
             }
@@ -190,7 +196,8 @@ fun VaultCard(
     onSetDefault: () -> Unit,
     onLoad: () -> Unit,
     onUnload: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -314,6 +321,16 @@ fun VaultCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Bouton principal : Ouvrir le vault
+                    Button(
+                        onClick = onOpen,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Open", style = MaterialTheme.typography.labelMedium)
+                    }
+
                     if (!isDefault) {
                         OutlinedButton(
                             onClick = onSetDefault,
@@ -321,27 +338,7 @@ fun VaultCard(
                         ) {
                             Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Set Default", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-
-                    if (isLoaded) {
-                        OutlinedButton(
-                            onClick = onUnload,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Unload", style = MaterialTheme.typography.labelMedium)
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = onLoad,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Load", style = MaterialTheme.typography.labelMedium)
+                            Text("Default", style = MaterialTheme.typography.labelMedium)
                         }
                     }
 
@@ -412,7 +409,7 @@ fun CreateVaultDialog(
     viewModel: VaultManagerViewModel,
     uiState: VaultManagerUiState,
     onDismiss: () -> Unit,
-    onCreate: (String, String, StorageStrategy, String?, Boolean) -> Unit
+    onCreate: (String, String, StorageStrategy, String?, Boolean, Boolean) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -420,7 +417,33 @@ fun CreateVaultDialog(
     var description by remember { mutableStateOf("") }
     var selectedStrategy by remember { mutableStateOf(StorageStrategy.APP_STORAGE) }
     var setAsDefault by remember { mutableStateOf(false) }
+    var enableBiometric by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
+
+    // Vérifier la disponibilité de la biométrie
+    val context = LocalContext.current
+    val isBiometricAvailable = remember {
+        try {
+            val biometricManager = androidx.biometric.BiometricManager.from(context)
+            // Essayer d'abord BIOMETRIC_STRONG, puis fallback sur BIOMETRIC_WEAK | DEVICE_CREDENTIAL
+            val strongResult = biometricManager.canAuthenticate(
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+            )
+            val weakResult = biometricManager.canAuthenticate(
+                androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
+
+            android.util.Log.d("CreateVaultDialog", "Biometric STRONG: $strongResult")
+            android.util.Log.d("CreateVaultDialog", "Biometric WEAK|CREDENTIAL: $weakResult")
+
+            strongResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS ||
+            weakResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+        } catch (e: Exception) {
+            android.util.Log.e("CreateVaultDialog", "Error checking biometric availability", e)
+            false
+        }
+    }
 
     // Folder picker launcher for CUSTOM strategy
     val folderPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -571,6 +594,43 @@ fun CreateVaultDialog(
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
+
+                // Option biométrie
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = enableBiometric,
+                        onCheckedChange = { enableBiometric = it },
+                        enabled = isBiometricAvailable
+                    )
+                    Column(modifier = Modifier.padding(start = 8.dp)) {
+                        Text(
+                            text = "Enable biometric unlock",
+                            color = if (isBiometricAvailable) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                        if (!isBiometricAvailable) {
+                            Text(
+                                text = "Not available on this device",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    if (isBiometricAvailable) {
+                        Spacer(Modifier.weight(1f))
+                        Icon(
+                            Icons.Default.Fingerprint,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -581,7 +641,8 @@ fun CreateVaultDialog(
                         password,
                         selectedStrategy,
                         description.takeIf { it.isNotBlank() },
-                        setAsDefault
+                        setAsDefault,
+                        enableBiometric
                     )
                 },
                 enabled = isValid

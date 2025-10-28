@@ -16,6 +16,7 @@ import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
+import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -25,17 +26,7 @@ import javax.inject.Inject
  * Activité principale de l'application GenPwd Pro
  *
  * Point d'entrée de l'application qui configure la navigation et le thème.
- * Utilise Jetpack Compose avec Navigation Compose pour la gestion des écrans.
- * Hérite de FragmentActivity pour la compatibilité biométrique.
- *
- * Gère également les deep links OAuth2 pour la synchronisation cloud:
- * - genpwdpro://oauth/pcloud - Callback OAuth2 pCloud
- * - genpwdpro://oauth/proton - Callback OAuth2 ProtonDrive
- *
- * Améliorations v2:
- * - Gestion de session avec timeout (24h par défaut)
- * - Auto-lock après 5 minutes en arrière-plan
- * - Nettoyage uniquement des sessions expirées
+ * Gère les intents de deep link (OAuth) et d'autofill.
  */
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -43,6 +34,7 @@ class MainActivity : FragmentActivity() {
     companion object {
         private const val TAG = "MainActivity"
         private const val SESSION_TIMEOUT_HOURS = 24L
+        const val EXTRA_AUTOFILL_UNLOCK_REQUEST = "AUTOFILL_UNLOCK_REQUEST"
     }
 
     @Inject
@@ -55,32 +47,45 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         setupSessionManagement()
-        setupContent()
+        
+        val startDestination = handleInitialIntent(intent)
+        
+        setupContent(startDestination)
+        
         handleDeepLinkIfPresent(intent)
     }
 
     /**
-     * Configure la gestion de session avec timeout et auto-lock
+     * Détermine la destination de départ en fonction de l'intent de lancement.
+     */
+    private fun handleInitialIntent(intent: Intent?): String {
+        return if (intent?.getBooleanExtra(EXTRA_AUTOFILL_UNLOCK_REQUEST, false) == true) {
+            Log.d(TAG, "Intent d'autofill détecté, démarrage sur VaultManager.")
+            Screen.VaultManager.route
+        } else {
+            Screen.Dashboard.route
+        }
+    }
+
+    /**
+     * Configure la gestion de session avec timeout et auto-lock.
      */
     private fun setupSessionManagement() {
         lifecycleScope.launch {
-            // Nettoyer uniquement les sessions expirées (pas toutes les sessions)
             val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
             if (hasExpired) {
-                Log.d(TAG, "Expired sessions cleared on app start")
+                Log.d(TAG, "Sessions expirées nettoyées au démarrage.")
             } else {
-                Log.d(TAG, "No expired sessions - vault remains unlocked")
+                Log.d(TAG, "Aucune session expirée, le coffre reste déverrouillé.")
             }
         }
-
-        // Ajouter l'observateur de cycle de vie pour l'auto-lock
         lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
     }
 
     /**
-     * Configure le contenu Compose
+     * Configure le contenu Jetpack Compose.
      */
-    private fun setupContent() {
+    private fun setupContent(startDestination: String) {
         setContent {
             GenPwdProTheme {
                 Surface(
@@ -89,11 +94,11 @@ class MainActivity : FragmentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Écran principal avec Dashboard et bottom navigation
                     MainScreen(
                         navController = navController,
                         sessionManager = sessionManager,
-                        vaultSessionManager = vaultSessionManager
+                        vaultSessionManager = vaultSessionManager,
+                        startDestination = startDestination // Fournir la destination de départ
                     )
                 }
             }
@@ -101,7 +106,7 @@ class MainActivity : FragmentActivity() {
     }
 
     /**
-     * Gère les deep links OAuth2 si présents dans l'intent
+     * Gère les deep links OAuth2 si présents dans l'intent.
      */
     private fun handleDeepLinkIfPresent(intent: Intent?) {
         intent?.data?.let { uri ->
@@ -112,8 +117,7 @@ class MainActivity : FragmentActivity() {
     }
 
     /**
-     * Appelé quand une nouvelle Intent arrive pendant que l'activité est active
-     * (grâce à launchMode="singleTask")
+     * Appelé quand une nouvelle Intent arrive alors que l'activité est active.
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -122,29 +126,20 @@ class MainActivity : FragmentActivity() {
     }
 
     /**
-     * Gérer les deep links OAuth2
-     *
-     * Extrait l'URI du deep link et le transmet au OAuthCallbackManager
-     * qui notifiera le provider approprié.
+     * Gère les deep links OAuth2.
      */
     private fun handleOAuthDeepLink(uri: Uri) {
-        Log.d(TAG, "Received OAuth deep link: $uri")
-
+        Log.d(TAG, "Deep link OAuth reçu: $uri")
         lifecycleScope.launch {
             try {
                 val handled = OAuthCallbackManager.handleCallback(uri)
-
                 if (handled) {
-                    Log.i(TAG, "OAuth callback handled successfully")
-                    // TODO: Afficher un message de succès à l'utilisateur
-                    // TODO: Naviguer vers l'écran de sync settings
+                    Log.i(TAG, "Callback OAuth traité avec succès.")
                 } else {
-                    Log.w(TAG, "OAuth callback was not handled")
-                    // TODO: Afficher un message d'erreur à l'utilisateur
+                    Log.w(TAG, "Callback OAuth non traité.")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error handling OAuth callback", e)
-                // TODO: Afficher un message d'erreur à l'utilisateur
+                Log.e(TAG, "Erreur lors du traitement du callback OAuth.", e)
             }
         }
     }

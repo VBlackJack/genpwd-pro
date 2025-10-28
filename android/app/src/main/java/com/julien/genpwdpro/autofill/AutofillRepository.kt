@@ -1,12 +1,32 @@
 package com.julien.genpwdpro.autofill
 
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.service.autofill.Dataset
+import android.service.autofill.FillResponse
+import android.view.autofill.AutofillValue
+import android.widget.RemoteViews
+import androidx.annotation.RequiresApi
+import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
+import com.julien.genpwdpro.data.local.entity.password
+import com.julien.genpwdpro.data.local.entity.title
+import com.julien.genpwdpro.data.local.entity.url
+import com.julien.genpwdpro.data.local.entity.username
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.domain.session.VaultSessionManager
+import com.julien.genpwdpro.presentation.MainActivity
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,13 +35,16 @@ import javax.inject.Singleton
  *
  * Responsabilités:
  * - Accès aux paramètres de génération
- * - Sauvegarde dans l'historique
- * - Configuration de l'auto-remplissage
+ * - Recherche d'entrées dans le coffre-fort
+ * - Construction des réponses d'auto-remplissage (Dataset, FillResponse)
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Singleton
 class AutofillRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val settingsDataStore: SettingsDataStore,
-    private val historyRepository: PasswordHistoryRepository
+    private val historyRepository: PasswordHistoryRepository,
+    private val vaultSessionManager: VaultSessionManager
 ) {
 
     /**
@@ -32,11 +55,87 @@ class AutofillRepository @Inject constructor(
     }
 
     /**
+     * Vérifie si un coffre-fort est actuellement déverrouillé
+     */
+    fun isVaultUnlocked(): Boolean {
+        return vaultSessionManager.isVaultUnlocked()
+    }
+
+    /**
+     * Trouve les entrées correspondantes pour une application donnée
+     */
+    fun findMatchingEntries(packageName: String): Flow<List<VaultEntryEntity>> {
+        val session = vaultSessionManager.getCurrentSession()
+        if (session == null) {
+            return kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+
+        return session.vaultData.map { vaultData ->
+            vaultData.entries.filter { entry ->
+                // Logique de correspondance améliorée
+                val formattedUrl = entry.url?.lowercase() ?: ""
+                val formattedPackage = packageName.lowercase()
+                formattedUrl.contains(formattedPackage) || entry.title.lowercase().contains(formattedPackage)
+            }
+        }
+    }
+
+    /**
+     * Crée la réponse pour demander à l'utilisateur de déverrouiller le coffre
+     */
+    fun createUnlockVaultResponse(): FillResponse {
+        val presentation = RemoteViews(context.packageName, R.layout.autofill_item).apply {
+            setTextViewText(R.id.autofill_text, "Déverrouiller GenPwd Pro")
+            setTextViewText(R.id.autofill_subtext, "Touchez pour vous authentifier")
+        }
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra(MainActivity.EXTRA_AUTOFILL_UNLOCK_REQUEST, true)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return FillResponse.Builder()
+            .setAuthentication(emptyArray(), pendingIntent.intentSender, presentation)
+            .build()
+    }
+
+    /**
+     * Crée un Dataset à partir d'une entrée de coffre-fort déchiffrée
+     */
+    fun createCredentialDataset(
+        entry: VaultEntryEntity,
+        autofillFields: AutofillFieldsMetadata
+    ): Dataset {
+        val presentation = RemoteViews(context.packageName, R.layout.autofill_item).apply {
+            setTextViewText(R.id.autofill_text, entry.title)
+            entry.username?.let { setTextViewText(R.id.autofill_subtext, it) }
+        }
+
+        val datasetBuilder = Dataset.Builder(presentation)
+
+        // Remplir le champ username (si non-nul)
+        autofillFields.usernameField?.let { field ->
+            entry.username?.let {
+                datasetBuilder.setValue(field.autofillId, AutofillValue.forText(it))
+            }
+        }
+
+        // Remplir le champ password (si non-nul)
+        autofillFields.passwordField?.let { field ->
+            entry.password?.let {
+                datasetBuilder.setValue(field.autofillId, AutofillValue.forText(it))
+            }
+        }
+
+        return datasetBuilder.build()
+    }
+
+    /**
      * Sauvegarde un mot de passe généré dans l'historique
-     *
-     * @param password Mot de passe généré
-     * @param username Username associé (optionnel)
-     * @param packageName Nom du package de l'application cible
      */
     suspend fun saveToHistory(
         password: String,
@@ -51,9 +150,7 @@ class AutofillRepository @Inject constructor(
             }
         }
 
-        // Récupérer les settings actuels pour le PasswordResult
         val currentSettings = settingsDataStore.settingsFlow.first()
-
         val passwordResult = PasswordResult(
             password = password,
             entropy = calculateEntropy(password),
@@ -62,52 +159,26 @@ class AutofillRepository @Inject constructor(
             note = note,
             isFavorite = false
         )
-
         historyRepository.savePassword(passwordResult)
     }
 
-    /**
-     * Calcule l'entropie approximative d'un mot de passe
-     */
     private fun calculateEntropy(password: String): Double {
         if (password.isEmpty()) return 0.0
-
-        val hasLower = password.any { it.isLowerCase() }
-        val hasUpper = password.any { it.isUpperCase() }
-        val hasDigit = password.any { it.isDigit() }
-        val hasSpecial = password.any { !it.isLetterOrDigit() }
-
-        var poolSize = 0
-        if (hasLower) poolSize += 26
-        if (hasUpper) poolSize += 26
-        if (hasDigit) poolSize += 10
-        if (hasSpecial) poolSize += 32
-
-        return if (poolSize > 0) {
-            password.length * Math.log(poolSize.toDouble()) / Math.log(2.0)
-        } else {
-            0.0
-        }
+        val charPool = mutableSetOf<Char>()
+        password.forEach { charPool.add(it) }
+        val poolSize = charPool.size
+        return if (poolSize > 1) password.length * kotlin.math.log2(poolSize.toDouble()) else 0.0
     }
 
-    /**
-     * Extrait un nom lisible depuis un package name
-     */
     private fun extractAppName(packageName: String): String {
-        return packageName.split(".").lastOrNull()?.capitalize() ?: packageName
+        return packageName.split(".").lastOrNull()?.replaceFirstChar { it.uppercase() } ?: packageName
     }
 
-    /**
-     * Vérifie si l'auto-remplissage est activé
-     */
     suspend fun isAutofillEnabled(): Boolean {
         // TODO: Ajouter un flag dans Settings
         return true
     }
 
-    /**
-     * Active/désactive l'auto-remplissage
-     */
     suspend fun setAutofillEnabled(enabled: Boolean) {
         // TODO: Persister dans DataStore
     }

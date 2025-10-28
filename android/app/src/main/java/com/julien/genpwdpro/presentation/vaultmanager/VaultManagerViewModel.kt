@@ -21,7 +21,8 @@ import javax.inject.Inject
 class VaultManagerViewModel @Inject constructor(
     private val vaultRegistryDao: VaultRegistryDao,
     private val vaultFileManager: VaultFileManager,
-    private val migrationManager: VaultMigrationManager
+    private val migrationManager: VaultMigrationManager,
+    private val biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultManagerUiState())
@@ -75,7 +76,8 @@ class VaultManagerViewModel @Inject constructor(
         masterPassword: String,
         strategy: StorageStrategy,
         description: String? = null,
-        setAsDefault: Boolean = false
+        setAsDefault: Boolean = false,
+        enableBiometric: Boolean = false
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
@@ -116,6 +118,8 @@ class VaultManagerViewModel @Inject constructor(
                 }
 
                 // Créer l'entrée dans le registry
+                // Note: Si biométrie activée, on créé d'abord avec le flag à false,
+                // puis on laisse enableBiometric() le mettre à true après chiffrement
                 val registryEntry = VaultRegistryEntry(
                     id = vaultId,
                     name = name,
@@ -128,13 +132,32 @@ class VaultManagerViewModel @Inject constructor(
                     isLoaded = false,
                     statistics = com.julien.genpwdpro.data.models.vault.VaultStatistics(),
                     description = description,
-                    createdAt = System.currentTimeMillis()
+                    createdAt = System.currentTimeMillis(),
+                    biometricUnlockEnabled = false // Sera mis à true par enableBiometric()
                 )
 
                 vaultRegistryDao.insert(registryEntry)
 
                 if (setAsDefault) {
                     vaultRegistryDao.setAsDefault(vaultId)
+                }
+
+                // Sauvegarder la biométrie si demandé
+                // IMPORTANT: Ceci doit être fait AVANT de masquer le dialog/naviguer
+                if (enableBiometric) {
+                    android.util.Log.d("VaultManagerVM", "Enabling biometric for vault $vaultId")
+                    val biometricResult = biometricVaultManager.enableBiometric(vaultId, masterPassword)
+                    biometricResult.fold(
+                        onSuccess = {
+                            android.util.Log.i("VaultManagerVM", "✅ Biometric enabled successfully for vault $vaultId")
+                            // Vérifier que l'update a bien fonctionné
+                            val updatedEntry = vaultRegistryDao.getById(vaultId)
+                            android.util.Log.d("VaultManagerVM", "Biometric status after update: ${updatedEntry?.biometricUnlockEnabled}")
+                        },
+                        onFailure = { error ->
+                            android.util.Log.e("VaultManagerVM", "❌ Failed to save biometric for vault $vaultId: ${error.message}", error)
+                        }
+                    )
                 }
 
                 _uiState.update {

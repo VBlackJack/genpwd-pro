@@ -83,6 +83,14 @@ class UnlockVaultViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         Log.i(TAG, "✅ Vault unlocked successfully: $vaultId")
+                        // Vérifier que la session est bien créée
+                        val currentVaultId = fileVaultRepository.getCurrentVaultId()
+                        Log.d(TAG, "Current vault ID after unlock: $currentVaultId")
+                        if (currentVaultId == vaultId) {
+                            Log.i(TAG, "✅ Session correctly set to vault: $vaultId")
+                        } else {
+                            Log.w(TAG, "⚠️ Session mismatch! Expected: $vaultId, Got: $currentVaultId")
+                        }
                         _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
                     },
                     onFailure = { error ->

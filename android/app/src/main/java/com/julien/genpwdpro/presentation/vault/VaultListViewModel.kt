@@ -44,6 +44,7 @@ class VaultListViewModel @Inject constructor(
      */
     fun loadEntries(vaultId: String) {
         currentVaultId = vaultId
+        android.util.Log.d("VaultListViewModel", "Loading entries for vault: $vaultId")
         viewModelScope.launch {
             try {
                 // ✅ FIX: Utiliser FileVaultRepository avec searchEntries() pour filtrage réactif
@@ -53,6 +54,7 @@ class VaultListViewModel @Inject constructor(
                     _filterType,
                     _showFavoritesOnly
                 ) { entries, search, typeFilter, favoritesOnly ->
+                    android.util.Log.d("VaultListViewModel", "Received ${entries.size} entries from repository")
                     entries.filter { entry ->
                         val matchesSearch = if (search.isEmpty()) {
                             true
@@ -73,9 +75,11 @@ class VaultListViewModel @Inject constructor(
                         matchesSearch && matchesType && matchesFavorites
                     }
                 }.collect { filteredEntries ->
+                    android.util.Log.d("VaultListViewModel", "Displaying ${filteredEntries.size} filtered entries")
                     _uiState.value = VaultListUiState.Success(filteredEntries)
                 }
             } catch (e: Exception) {
+                android.util.Log.e("VaultListViewModel", "Error loading entries: ${e.message}", e)
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur lors du chargement")
             }
         }
