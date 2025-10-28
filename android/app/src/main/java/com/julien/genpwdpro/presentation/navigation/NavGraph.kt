@@ -112,10 +112,24 @@ fun AppNavGraph(
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 onNavigateToVault = { vaultId ->
-                    navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                    val currentVaultId = vaultSessionManager.getCurrentVaultId()
+                    val isUnlocked = vaultSessionManager.isVaultUnlocked()
+
+                    if (isUnlocked && currentVaultId == vaultId) {
+                        navController.navigate(Screen.VaultList.createRoute(vaultId)) {
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.navigate(Screen.UnlockVault.createRoute(vaultId))
+                    }
                 },
-                onNavigateToCreateVault = {
-                    navController.navigate(Screen.CreateVault.route)
+                onNavigateToVaultList = { vaultId ->
+                    navController.navigate(Screen.VaultList.createRoute(vaultId)) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToVaultManager = {
+                    navController.navigate(Screen.VaultManager.route)
                 },
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
@@ -159,19 +173,15 @@ fun AppNavGraph(
                         navController.navigate(Screen.PresetManager.createRoute(vaultId))
                     }
                 },
-                onSaveToVault = { password ->
-                    // ✅ FIX: Vérifier si un vault est déverrouillé (nouveau système)
-                    val vaultId = vaultSessionManager.getCurrentVaultId()
-                    if (vaultId != null) {
-                        // Naviguer vers SelectEntryType avec le mot de passe
+                onSaveToVault = currentVaultId?.let { unlockedVaultId ->
+                    { password ->
                         navController.navigate(
                             Screen.SelectEntryType.createRoute(
-                                vaultId = vaultId,
+                                vaultId = unlockedVaultId,
                                 password = password
                             )
                         )
                     }
-                    // Sinon, le GeneratorScreen affichera déjà le message d'erreur
                 }
             )
         }
@@ -281,11 +291,10 @@ fun AppNavGraph(
             UnlockVaultScreen(
                 vaultId = vaultId,
                 onVaultUnlocked = {
+                    // Retirer explicitement l'écran de déverrouillage du back stack
+                    navController.popBackStack()
                     navController.navigate(Screen.VaultList.createRoute(vaultId)) {
-                        // Remplacer l'unlock screen
-                        popUpTo(Screen.UnlockVault.route) {
-                            inclusive = true
-                        }
+                        launchSingleTop = true
                     }
                 },
                 onBackClick = { navController.popBackStack() }

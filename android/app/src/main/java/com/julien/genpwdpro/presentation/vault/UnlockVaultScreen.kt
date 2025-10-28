@@ -35,6 +35,7 @@ fun UnlockVaultScreen(
     var masterPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(0) }
+    var hasNavigated by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -43,6 +44,7 @@ fun UnlockVaultScreen(
 
     // Charger le vault
     LaunchedEffect(vaultId) {
+        hasNavigated = false
         viewModel.loadVault(vaultId)
     }
 
@@ -50,7 +52,10 @@ fun UnlockVaultScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is UnlockVaultUiState.Unlocked -> {
-                onVaultUnlocked()
+                if (!hasNavigated) {
+                    hasNavigated = true
+                    onVaultUnlocked()
+                }
             }
             is UnlockVaultUiState.Error -> {
                 attempts++
@@ -70,6 +75,13 @@ fun UnlockVaultScreen(
             CircularProgressIndicator()
         }
         return
+    }
+
+    LaunchedEffect(currentVault.isLoaded) {
+        if (currentVault.isLoaded && !hasNavigated) {
+            hasNavigated = true
+            onVaultUnlocked()
+        }
     }
 
     Scaffold(

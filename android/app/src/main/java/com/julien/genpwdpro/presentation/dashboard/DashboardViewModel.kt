@@ -2,13 +2,16 @@ package com.julien.genpwdpro.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,21 +21,50 @@ import javax.inject.Inject
  *
  * Gère:
  * - Le générateur rapide intégré
- * - L'état global de l'application
+ * - La liste des coffres récents
  */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val generatePasswordUseCase: GeneratePasswordUseCase
+    private val generatePasswordUseCase: GeneratePasswordUseCase,
+    private val vaultRegistryDao: VaultRegistryDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    init {
+        observeVaults()
+    }
 
     /**
      * Charge un mot de passe rapide au démarrage
      */
     fun loadQuickPassword() {
         generateQuickPassword()
+    }
+
+    /**
+     * Observe les coffres disponibles pour alimenter le dashboard
+     */
+    private fun observeVaults() {
+        viewModelScope.launch {
+            combine(
+                vaultRegistryDao.getAllVaults(),
+                vaultRegistryDao.getDefaultVaultFlow()
+            ) { vaults, defaultVault ->
+                DashboardVaultState(
+                    vaults = vaults,
+                    defaultVaultId = defaultVault?.id
+                )
+            }.collect { vaultState ->
+                _uiState.update {
+                    it.copy(
+                        vaults = vaultState.vaults,
+                        defaultVaultId = vaultState.defaultVaultId
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -80,11 +112,18 @@ class DashboardViewModel @Inject constructor(
     }
 }
 
+private data class DashboardVaultState(
+    val vaults: List<VaultRegistryEntry>,
+    val defaultVaultId: String?
+)
+
 /**
  * État du Dashboard
  */
 data class DashboardUiState(
     val quickPassword: String? = null,
     val isGenerating: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val vaults: List<VaultRegistryEntry> = emptyList(),
+    val defaultVaultId: String? = null
 )
