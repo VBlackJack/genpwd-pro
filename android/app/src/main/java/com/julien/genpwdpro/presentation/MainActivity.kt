@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +50,11 @@ class MainActivity : FragmentActivity() {
     lateinit var vaultStartupLocker: VaultStartupLocker
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+
         super.onCreate(savedInstanceState)
 
         val startupResult = runBlocking { vaultStartupLocker.secureStartup() }

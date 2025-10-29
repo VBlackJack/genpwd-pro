@@ -1,12 +1,21 @@
 package com.julien.genpwdpro.presentation.widget
 
+import android.app.KeyguardManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
+import android.os.Build
+import android.os.UserManager
+import android.util.Log
+import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
+import androidx.core.content.getSystemService
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
@@ -30,6 +39,7 @@ import kotlinx.coroutines.launch
 class PasswordWidget : AppWidgetProvider() {
 
     companion object {
+        private const val TAG = "PasswordWidget"
         private const val ACTION_GENERATE = "com.julien.genpwdpro.ACTION_GENERATE"
         private const val ACTION_COPY = "com.julien.genpwdpro.ACTION_COPY"
         private const val PREF_NAME = "PasswordWidget"
@@ -38,16 +48,37 @@ class PasswordWidget : AppWidgetProvider() {
         /**
          * Mise à jour manuelle du widget
          */
-        fun updateWidget(context: Context, appWidgetId: Int, password: String) {
+        fun updateWidget(
+            context: Context,
+            appWidgetId: Int,
+            password: String,
+            isUnlocked: Boolean
+        ) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            val views = getRemoteViews(context, password)
+            val views = getRemoteViews(context, password, isUnlocked)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
-        private fun getRemoteViews(context: Context, password: String): RemoteViews {
+        private fun getRemoteViews(
+            context: Context,
+            password: String,
+            isUnlocked: Boolean
+        ): RemoteViews {
             return RemoteViews(context.packageName, R.layout.widget_password).apply {
-                // Afficher le mot de passe
-                setTextViewText(R.id.widgetPasswordText, password.ifEmpty { "Tap to generate" })
+                // Afficher le mot de passe ou un message sécurisé
+                val displayText = when {
+                    !isUnlocked -> context.getString(R.string.widget_locked_placeholder)
+                    password.isEmpty() -> context.getString(R.string.widget_tap_to_generate)
+                    else -> password
+                }
+                setTextViewText(R.id.widgetPasswordText, displayText)
+
+                val copyVisibility = if (isUnlocked && password.isNotEmpty()) {
+                    View.VISIBLE
+                } else {
+                    View.INVISIBLE
+                }
+                setViewVisibility(R.id.widgetCopyButton, copyVisibility)
 
                 // Intent pour générer
                 val generateIntent = Intent(context, PasswordWidget::class.java).apply {
@@ -79,8 +110,9 @@ class PasswordWidget : AppWidgetProvider() {
     ) {
         // Mise à jour de chaque instance du widget
         appWidgetIds.forEach { appWidgetId ->
-            val lastPassword = getLastPassword(context)
-            updateWidget(context, appWidgetId, lastPassword)
+            val isUnlocked = isDeviceUnlocked(context)
+            val lastPassword = if (isUnlocked) getLastPassword(context) else ""
+            updateWidget(context, appWidgetId, lastPassword, isUnlocked)
         }
     }
 
@@ -100,6 +132,10 @@ class PasswordWidget : AppWidgetProvider() {
     }
 
     private fun generatePassword(context: Context) {
+        if (!ensureUnlocked(context)) {
+            return
+        }
+
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 // Générateur de mots de passe rapide (syllabes)
@@ -138,6 +174,10 @@ class PasswordWidget : AppWidgetProvider() {
     }
 
     private fun copyLastPassword(context: Context) {
+        if (!ensureUnlocked(context)) {
+            return
+        }
+
         val password = getLastPassword(context)
         if (password.isNotEmpty()) {
             ClipboardUtils.copyWithTimeout(
@@ -153,15 +193,11 @@ class PasswordWidget : AppWidgetProvider() {
     }
 
     private fun saveLastPassword(context: Context, password: String) {
-        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(PREF_LAST_PASSWORD, password)
-            .apply()
+        securePreferences(context)?.edit()?.putString(PREF_LAST_PASSWORD, password)?.apply()
     }
 
     private fun getLastPassword(context: Context): String {
-        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .getString(PREF_LAST_PASSWORD, "") ?: ""
+        return securePreferences(context)?.getString(PREF_LAST_PASSWORD, "") ?: ""
     }
 
     private fun updateAllWidgets(context: Context, password: String) {
@@ -170,8 +206,10 @@ class PasswordWidget : AppWidgetProvider() {
             android.content.ComponentName(context, PasswordWidget::class.java)
         )
 
+        val isUnlocked = isDeviceUnlocked(context)
         appWidgetIds.forEach { appWidgetId ->
-            updateWidget(context, appWidgetId, password)
+            val passwordToDisplay = if (isUnlocked) password else ""
+            updateWidget(context, appWidgetId, passwordToDisplay, isUnlocked)
         }
     }
 
@@ -182,9 +220,56 @@ class PasswordWidget : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         // Dernier widget supprimé
-        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .clear()
-            .apply()
+        securePreferences(context)?.edit()?.clear()?.apply()
+    }
+
+    private fun ensureUnlocked(context: Context): Boolean {
+        if (isDeviceUnlocked(context)) {
+            return true
+        }
+
+        Toast.makeText(
+            context,
+            context.getString(R.string.widget_unlock_prompt),
+            Toast.LENGTH_SHORT
+        ).show()
+        updateAllWidgets(context, "")
+        return false
+    }
+
+    private fun isDeviceUnlocked(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val userManager = context.getSystemService<UserManager>()
+            if (userManager != null && !userManager.isUserUnlocked) {
+                return false
+            }
+        }
+
+        val keyguardManager = context.getSystemService<KeyguardManager>()
+        val isLocked = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> keyguardManager?.isDeviceLocked == true
+            else -> keyguardManager?.isKeyguardLocked == true
+        }
+
+        return !isLocked
+    }
+
+    private fun securePreferences(context: Context): SharedPreferences? {
+        return try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            EncryptedSharedPreferences.create(
+                context,
+                "${PREF_NAME}_secure",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Unable to access secure preferences", e)
+            null
+        }
     }
 }
