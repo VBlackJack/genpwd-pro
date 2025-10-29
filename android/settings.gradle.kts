@@ -23,3 +23,4 @@ rootProject.name = "GenPwd Pro"
 include(":app")
 include(":baselineprofile")
 include(":vault-domain")
+include(":tools")
