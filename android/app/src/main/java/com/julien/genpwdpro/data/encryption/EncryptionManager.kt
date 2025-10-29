@@ -1,128 +1,113 @@
 package com.julien.genpwdpro.data.encryption
 
 import android.util.Base64
+import com.julien.genpwdpro.core.crypto.SecretUtils
+import com.julien.genpwdpro.crypto.CryptoEngine
+import com.julien.genpwdpro.crypto.TinkAesGcmCryptoEngine
 import java.security.SecureRandom
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
-import com.julien.genpwdpro.core.crypto.SecretUtils
 
 /**
- * Gestionnaire de chiffrement AES-256-GCM pour la synchronisation cloud
+ * Gestionnaire de chiffrement pour la synchronisation cloud basé sur Google Tink.
  *
- * AES-256-GCM Features:
- * - Authenticated encryption (AEAD)
- * - 256-bit key size
- * - 96-bit IV (Initialization Vector)
- * - 128-bit authentication tag
- * - Secure against tampering and replay attacks
+ * Le moteur sous-jacent ([CryptoEngine]) repose sur AES-256-GCM et gère les clés via les keysets
+ * Tink. Toutes les opérations de chiffrement sont effectuées en mémoire : aucune clé n'est
+ * persistée en clair et le moteur prend en charge la rotation des clés.
  */
 class EncryptionManager @Inject constructor() {
 
     companion object {
         const val CRYPTO_VERSION = 1
-        private const val ALGORITHM = "AES"
-        private const val TRANSFORMATION = "AES/GCM/NoPadding"
-        private const val KEY_SIZE = 256 // bits
-        private const val IV_SIZE = 12 // bytes (96 bits)
-        private const val TAG_SIZE = 128 // bits
         const val KDF_ALGORITHM = "PBKDF2WithHmacSHA256"
         const val MIN_KDF_ITERATIONS = 310_000
         const val DEFAULT_KDF_ITERATIONS = 310_000
+        private const val KEY_SIZE = 256 // bits
+        private const val ALGORITHM = "AES"
     }
 
     /**
-     * Génère une nouvelle clé AES-256 aléatoire
+     * Crée un nouveau moteur de chiffrement avec un keyset AES-256-GCM fraîchement généré.
      */
-    fun generateKey(): SecretKey {
-        val keyGenerator = KeyGenerator.getInstance(ALGORITHM)
-        keyGenerator.init(KEY_SIZE, SecureRandom())
-        return keyGenerator.generateKey()
+    fun createEngine(): CryptoEngine {
+        return TinkAesGcmCryptoEngine.create()
     }
 
     /**
-     * Encode une clé en Base64 pour stockage/transmission
+     * Restaure un moteur depuis un keyset sérialisé.
      */
-    fun encodeKey(key: SecretKey): String {
-        return Base64.encodeToString(key.encoded, Base64.NO_WRAP)
+    fun restoreEngine(serializedKeyset: String): CryptoEngine {
+        return TinkAesGcmCryptoEngine.fromSerialized(serializedKeyset)
     }
 
     /**
-     * Décode une clé depuis Base64
+     * Sérialise le keyset courant du moteur pour stockage sécurisé.
      */
-    fun decodeKey(encodedKey: String): SecretKey {
-        val keyBytes = Base64.decode(encodedKey, Base64.NO_WRAP)
-        return try {
-            SecretKeySpec(keyBytes, ALGORITHM)
-        } finally {
-            SecretUtils.wipe(keyBytes)
-        }
+    fun serializeEngine(engine: CryptoEngine): String {
+        return engine.exportKeyset()
     }
 
     /**
-     * Chiffre des données avec AES-256-GCM
+     * Chiffre des données avec le moteur fourni.
      *
      * @param plaintext Données à chiffrer
-     * @param key Clé de chiffrement AES-256
-     * @return EncryptedData contenant le ciphertext et l'IV
+     * @param engine Moteur Tink (AEAD)
+     * @return EncryptedData contenant le ciphertext
      */
-    fun encrypt(plaintext: ByteArray, key: SecretKey): EncryptedData {
-        // Générer un IV aléatoire unique pour chaque chiffrement
-        val iv = ByteArray(IV_SIZE)
-        SecureRandom().nextBytes(iv)
-
-        // Initialiser le cipher en mode chiffrement
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        val gcmSpec = GCMParameterSpec(TAG_SIZE, iv)
-        cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec)
-
-        // Chiffrer les données
-        val ciphertext = cipher.doFinal(plaintext)
-
+    fun encrypt(
+        plaintext: ByteArray,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): EncryptedData {
+        val ciphertext = engine.encrypt(plaintext, associatedData)
         return EncryptedData(
             ciphertext = ciphertext,
-            iv = iv
+            iv = ByteArray(0)
         )
     }
 
     /**
      * Chiffre une chaîne de caractères
      */
-    fun encryptString(plaintext: String, key: SecretKey): EncryptedData {
+    fun encryptString(
+        plaintext: String,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): EncryptedData {
         val bytes = plaintext.toByteArray(Charsets.UTF_8)
         return try {
-            encrypt(bytes, key)
+            encrypt(bytes, engine, associatedData)
         } finally {
             SecretUtils.wipe(bytes)
         }
     }
 
     /**
-     * Déchiffre des données avec AES-256-GCM
+     * Déchiffre des données avec le moteur fourni
      *
-     * @param encryptedData Données chiffrées avec IV
-     * @param key Clé de déchiffrement AES-256
+     * @param encryptedData Données chiffrées
+     * @param engine Moteur Tink (AEAD)
      * @return Données déchiffrées
      * @throws javax.crypto.AEADBadTagException si les données ont été altérées
      */
-    fun decrypt(encryptedData: EncryptedData, key: SecretKey): ByteArray {
-        // Initialiser le cipher en mode déchiffrement
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        val gcmSpec = GCMParameterSpec(TAG_SIZE, encryptedData.iv)
-        cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec)
-
-        // Déchiffrer les données
-        return cipher.doFinal(encryptedData.ciphertext)
+    fun decrypt(
+        encryptedData: EncryptedData,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): ByteArray {
+        return engine.decrypt(encryptedData.ciphertext, associatedData)
     }
 
     /**
      * Déchiffre une chaîne de caractères
      */
-    fun decryptString(encryptedData: EncryptedData, key: SecretKey): String {
-        val plaintext = decrypt(encryptedData, key)
+    fun decryptString(
+        encryptedData: EncryptedData,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): String {
+        val plaintext = decrypt(encryptedData, engine, associatedData)
         return try {
             String(plaintext, Charsets.UTF_8)
         } finally {
@@ -134,13 +119,24 @@ class EncryptionManager @Inject constructor() {
      * Vérifie l'intégrité des données sans les déchiffrer
      * Utile pour valider avant synchronisation
      */
-    fun verifyIntegrity(encryptedData: EncryptedData, key: SecretKey): Boolean {
+    fun verifyIntegrity(
+        encryptedData: EncryptedData,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): Boolean {
         return try {
-            decrypt(encryptedData, key)
+            decrypt(encryptedData, engine, associatedData)
             true
         } catch (e: Exception) {
             false
         }
+    }
+
+    /**
+     * Effectue une rotation de clé sur le moteur fourni.
+     */
+    fun rotate(engine: CryptoEngine) {
+        engine.rotate()
     }
 
     /**
@@ -188,7 +184,6 @@ class EncryptionManager @Inject constructor() {
      * - nonce/IV (Base64) used for AES-GCM
      */
     fun buildMetadataHeader(iv: ByteArray, salt: ByteArray, iterations: Int = DEFAULT_KDF_ITERATIONS): EncryptionMetadata {
-        require(iv.size == IV_SIZE) { "Nonce must be $IV_SIZE bytes" }
         require(iterations >= MIN_KDF_ITERATIONS) { "KDF iterations below security floor" }
         return EncryptionMetadata(
             version = CRYPTO_VERSION,
@@ -211,10 +206,9 @@ class EncryptionManager @Inject constructor() {
 /**
  * Données chiffrées avec AES-256-GCM.
  *
- * Ce conteneur doit être stocké avec un en-tête structuré (JSON/TLV) généré via
- * [EncryptionManager.buildMetadataHeader] qui encode la version (`v`), la stratégie KDF,
- * le salt et le nonce (IV 96 bits). Aucun Additional Authenticated Data (AAD) n'est utilisé
- * pour l'instant, mais l'en-tête doit être protégé via le tag GCM côté stockage.
+ * Lorsque le chiffrement est effectué par [CryptoEngine], le nonce est déjà encapsulé par Tink
+ * dans le ciphertext. Le champ [iv] est donc conservé pour compatibilité avec les anciens formats
+ * (et peut être vide lorsque Tink est utilisé).
  */
 data class EncryptedData(
     val ciphertext: ByteArray,
