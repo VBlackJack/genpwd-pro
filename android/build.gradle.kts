@@ -3,6 +3,7 @@ buildscript {
     extra.apply {
         set("compose_version", "1.5.4")
         set("kotlin_version", "1.9.21")
+        // Kotlin/Compose pairing per official matrix: https://developer.android.com/jetpack/compose/compiler#kotlin_compatibility
     }
     repositories {
         google()

@@ -65,6 +65,7 @@ android {
     }
 
     composeOptions {
+        // Compose Compiler 1.5.11 is the recommended extension for Kotlin 1.9.21 (see top-level compatibility note).
         kotlinCompilerExtensionVersion = "1.5.11"
     }
 

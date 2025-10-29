@@ -3,12 +3,15 @@ package com.julien.genpwdpro.autofill
 import android.app.assist.AssistStructure
 import android.content.ComponentName
 import android.os.CancellationSignal
+import android.service.autofill.Dataset
 import android.service.autofill.FillCallback
 import android.service.autofill.FillContext
 import android.service.autofill.FillRequest
 import android.service.autofill.FillResponse
 import android.view.View
 import android.view.autofill.AutofillId
+import android.view.autofill.AutofillValue
+import android.util.Log
 import androidx.test.core.app.ServiceScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.julien.genpwdpro.autofill.AutofillRepository
@@ -18,6 +21,8 @@ import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
@@ -55,7 +60,7 @@ class GenPwdAutofillServiceTest {
                 every { repository.findMatchingEntries(any()) } returns flowOf(emptyList())
                 every { repository.getSettings() } returns flowOf(settings)
 
-                val (request, _) = buildFillRequest(windowPackage = TEST_PACKAGE)
+                val (request, passwordId) = buildFillRequest(windowPackage = TEST_PACKAGE)
                 val callback = RecordingFillCallback()
 
                 service.onFillRequest(request, CancellationSignal(), callback)
@@ -66,9 +71,83 @@ class GenPwdAutofillServiceTest {
 
                 val datasets = response.datasetsList()
                 assertEquals(1, datasets.size, "Only one generated dataset should be returned")
+                val dataset = datasets.single() as Dataset
+                val valueMap = dataset.valueMap()
+                assertEquals(setOf(passwordId), valueMap.keys, "Dataset must target the detected password field only")
+                val autofillValue = valueMap[passwordId]
+                requireNotNull(autofillValue)
+                assertTrue(autofillValue.isText)
+                assertEquals("S3cure!Pass", autofillValue.textValue.toString())
             }
         } finally {
             scenario.close()
+        }
+    }
+
+    @Test
+    fun noSensitiveDataLoggedDuringAutofill() {
+        mockkStatic(Log::class)
+        val loggedMessages = mutableListOf<String>()
+
+        fun recordMessage(arg: Any?) {
+            if (arg is String && arg.isNotBlank()) {
+                loggedMessages += arg
+            }
+        }
+
+        try {
+            every { Log.d(any(), any<String>()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.d(any(), any<String>(), any()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.i(any(), any<String>()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.i(any(), any<String>(), any()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.w(any(), any<String>()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.w(any(), any<String>(), any()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.w(any(), any<Throwable>()) } returns 0
+            every { Log.e(any(), any<String>()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.e(any(), any<String>(), any()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.e(any(), any<Throwable>()) } returns 0
+            every { Log.v(any(), any<String>()) } answers { recordMessage(secondArg()); 0 }
+            every { Log.v(any(), any<String>(), any()) } answers { recordMessage(secondArg()); 0 }
+
+            val scenario = ServiceScenario.launch(GenPwdAutofillService::class.java)
+            try {
+                scenario.onService { service ->
+                    val settings = Settings(quantity = 1)
+                    val generateUseCase = mockk<GeneratePasswordUseCase>()
+                    val repository = mockk<AutofillRepository>()
+
+                    service.generatePasswordUseCase = generateUseCase
+                    service.autofillRepository = repository
+
+                    coEvery { generateUseCase.invoke(any()) } returns listOf(
+                        PasswordResult(
+                            password = "UltraSecret#123",
+                            entropy = 95.0,
+                            mode = settings.mode,
+                            settings = settings,
+                            isMasked = false
+                        )
+                    )
+                    every { repository.isVaultUnlocked() } returns true
+                    every { repository.findMatchingEntries(any()) } returns flowOf(emptyList())
+                    every { repository.getSettings() } returns flowOf(settings)
+
+                    val (request, _) = buildFillRequest(windowPackage = TEST_PACKAGE)
+                    val callback = RecordingFillCallback()
+
+                    service.onFillRequest(request, CancellationSignal(), callback)
+
+                    assertTrue(callback.await(), "Autofill callback timed out")
+                }
+            } finally {
+                scenario.close()
+            }
+
+            assertTrue(loggedMessages.isEmpty() || loggedMessages.none { it.contains("UltraSecret#123") }) {
+                "Sensitive autofill data leaked to logs: $loggedMessages"
+            }
+        } finally {
+            unmockkStatic(Log::class)
         }
     }
 
@@ -202,6 +281,21 @@ class GenPwdAutofillServiceTest {
         field.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         return (field.get(this) as? List<Any?>).orEmpty()
+    }
+
+    private fun Dataset.valueMap(): Map<AutofillId, AutofillValue?> {
+        val idField = Dataset::class.java.getDeclaredField("mFieldIds")
+        val valueField = Dataset::class.java.getDeclaredField("mFieldValues")
+        idField.isAccessible = true
+        valueField.isAccessible = true
+
+        val ids = (idField.get(this) as? Array<AutofillId?>) ?: emptyArray()
+        val values = (valueField.get(this) as? Array<AutofillValue?>) ?: emptyArray()
+
+        return ids.mapIndexedNotNull { index, id ->
+            val value = values.getOrNull(index)
+            if (id != null) id to value else null
+        }.toMap()
     }
 
     companion object {

@@ -17,6 +17,7 @@ import java.security.SecureRandom
 import javax.inject.Inject
 import javax.inject.Singleton
 import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SQLiteDatabaseHook
 import net.sqlcipher.database.SupportFactory
 
 interface DatabaseOpenHelperFactoryProvider {
@@ -29,7 +30,24 @@ class SqlCipherDatabaseOpenHelperFactoryProvider @Inject constructor(
 ) : DatabaseOpenHelperFactoryProvider {
     override fun provideFactory(): SupportSQLiteOpenHelper.Factory {
         val passphrase = passphraseProvider.getOrCreatePassphrase()
-        return SupportFactory(passphrase, null, true)
+        return try {
+            SupportFactory(passphrase.copyOf(), cipherHook(), true)
+        } finally {
+            passphrase.fill(0)
+        }
+    }
+
+    private fun cipherHook(): SQLiteDatabaseHook = object : SQLiteDatabaseHook {
+        override fun preKey(database: SQLiteDatabase?) = Unit
+
+        override fun postKey(database: SQLiteDatabase?) {
+            database?.rawExecSQL("PRAGMA cipher_page_size = 4096;")
+            database?.rawExecSQL("PRAGMA cipher_hmac_algorithm = HMAC_SHA512;")
+            database?.rawExecSQL("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA512;")
+            // Higher PBKDF2 iterations harden key stretching at the cost of unlock latency.
+            database?.rawExecSQL("PRAGMA kdf_iter = 256000;")
+            database?.rawExecSQL("PRAGMA cipher_memory_security = ON;")
+        }
     }
 }
 

@@ -78,8 +78,9 @@
 -keep interface dagger.** { *; }
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
--keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+-keep class com.julien.genpwdpro.GenPwdProApplication_GeneratedInjector { *; }
 -keep class com.julien.genpwdpro.di.** { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 
 # Keep Hilt entry points
 -keep @dagger.hilt.android.HiltAndroidApp class * { *; }
@@ -88,18 +89,22 @@
 #===============================================================================
 # ROOM DATABASE
 #===============================================================================
--keep class androidx.room.** { *; }
+-keep class androidx.room.RoomDatabase { *; }
 -keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Database class * { *; }
 -keep @androidx.room.Entity class *
+-keep @androidx.room.Dao class * { *; }
 -keep class androidx.room.migration.Migration { *; }
 -keepclassmembers class * extends androidx.room.migration.Migration {
     public <init>(...);
     public void migrate(androidx.sqlite.db.SupportSQLiteDatabase);
 }
--dontwarn androidx.room.paging.**
--dontwarn androidx.room.**
+-keepclassmembers class ** implements androidx.room.RoomDatabase$Callback { *; }
 -keep class androidx.sqlite.db.SupportSQLiteOpenHelper$Callback { *; }
 -keep class androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory { *; }
+-keep class com.julien.genpwdpro.data.local.entity.** { *; }
+-keep class com.julien.genpwdpro.data.local.dao.** { *; }
+-keep class com.julien.genpwdpro.data.local.migrations.** { *; }
 -keepclassmembers class com.julien.genpwdpro.data.local.database.AppDatabase$Companion {
     public static androidx.room.migration.Migration MIGRATION_1_2;
     public static androidx.room.migration.Migration MIGRATION_2_3;
@@ -109,6 +114,8 @@
     public static androidx.room.migration.Migration MIGRATION_6_7;
     public static androidx.room.migration.Migration MIGRATION_7_8;
 }
+-dontwarn androidx.room.paging.**
+-dontwarn androidx.room.**
 
 #==============================================================================
 # WORKMANAGER
@@ -116,14 +123,20 @@
 -keep class androidx.work.Configuration { *; }
 -keep class androidx.work.WorkerParameters { *; }
 -keep class androidx.work.ListenableWorker { *; }
--keep class androidx.work.impl.foreground.SystemForegroundService { *; }
+-keep class androidx.work.CoroutineWorker { *; }
+-keep class androidx.work.ListenableWorker$Result { *; }
 -keep class androidx.hilt.work.HiltWorkerFactory { *; }
--keep class com.julien.genpwdpro.workers.** { *; }
+-keep class androidx.work.impl.foreground.SystemForegroundService { *; }
 -keep class androidx.work.impl.background.systemjob.SystemJobService { *; }
+-keep class androidx.work.impl.background.systemjob.SystemJobScheduler { *; }
 -keep class androidx.work.impl.background.systemalarm.SystemAlarmService { *; }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy* { *; }
 -keep class androidx.work.impl.utils.ForceStopRunnable { *; }
+-keep class androidx.work.impl.Schedulers { *; }
 -keep class androidx.work.WorkManagerInitializer { *; }
 -keep class androidx.startup.InitializationProvider { *; }
+-keep class com.julien.genpwdpro.workers.** { *; }
+-keep interface com.julien.genpwdpro.workers.** { *; }
 -dontwarn androidx.work.**
 
 #==============================================================================
@@ -133,12 +146,18 @@
 -dontwarn net.sqlcipher.**
 -keep class net.sqlcipher.database.SupportFactory { *; }
 -keep class net.sqlcipher.database.SQLiteDatabase { *; }
+-keep class net.sqlcipher.database.SQLiteDatabaseHook { *; }
+-keep class net.sqlcipher.CursorWindow { *; }
 
 #==============================================================================
 # AUTOFILL SERVICE
 #==============================================================================
 -keep class com.julien.genpwdpro.autofill.GenPwdAutofillService { *; }
--keep class com.julien.genpwdpro.autofill.** { *; }
+-keep class com.julien.genpwdpro.autofill.model.** { *; }
+-keep class com.julien.genpwdpro.autofill.dataset.** { *; }
+-keep class com.julien.genpwdpro.autofill.resolvers.** { *; }
+-keep class com.julien.genpwdpro.autofill.security.** { *; }
+-keep interface com.julien.genpwdpro.autofill.** { *; }
 
 #===============================================================================
 # KOTLIN
