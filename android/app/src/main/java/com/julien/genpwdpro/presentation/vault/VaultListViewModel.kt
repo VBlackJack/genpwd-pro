@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class VaultListViewModel @Inject constructor(
     private val fileVaultRepository: FileVaultRepository,
-    private val totpGenerator: TotpGenerator
+    private val totpGenerator: TotpGenerator,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VaultListUiState>(VaultListUiState.Loading)
@@ -34,6 +36,8 @@ class VaultListViewModel @Inject constructor(
 
     private val _statistics = MutableStateFlow<VaultStatistics?>(null)
     val statistics: StateFlow<VaultStatistics?> = _statistics.asStateFlow()
+
+    val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
 
     private var currentVaultId: String? = null
 

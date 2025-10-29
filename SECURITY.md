@@ -34,3 +34,14 @@ Known trade-offs:
 - Clipboard auto-clear relies on platform timers; some OEMs may ignore scheduled clears.
 - Direct Boot support is limited to placeholder widgets until the user unlocks the device.
 - Fallback to software cryptography occurs on devices lacking hardware-backed AES-GCM, with a warning logged for follow-up.
+
+## OTP Threat Scenarios
+
+We treat one-time-password ingestion as a separate attack surface because QR imports come from untrusted sources. Mitigations in place and under review:
+
+- **Malformed imports:** every otpauth URI is parsed through `OtpUriParser`, which sanitizes secrets, issuers and labels. Inputs that fail validation are rejected with a generic error.
+- **Label collisions:** vault entries carry issuer/label metadata; we warn on duplicates during review and plan to surface better UX cues so users can distinguish entries with similar names.
+- **Secret duplication:** the clipboard sanitizer and copy flows avoid leaking raw secrets. Re-importing an existing OTP secret triggers an update rather than creating multiple copies when the target entry matches.
+- **Namespace confusion:** custom intents and widget broadcasts are protected by `IntentSanitizer` and a signature-level permission (`com.julien.genpwdpro.permission.WIDGET_BROADCAST`) so third-party apps cannot inject forged OTP actions.
+
+Future work includes anomaly detection for repeated import failures, richer issuer metadata (icons/domains) to mitigate phishing lookalikes, and telemetry (opt-in) on TOTP drift to catch clock-skew attacks.

@@ -3,12 +3,14 @@ package com.julien.genpwdpro.autofill
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.os.CancellationSignal
+import android.service.autofill.AutofillService
 import android.service.autofill.Dataset
 import android.service.autofill.FillCallback
 import android.service.autofill.FillRequest
 import android.service.autofill.FillResponse
 import android.service.autofill.SaveCallback
 import android.service.autofill.SaveRequest
+import android.view.View
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
@@ -390,7 +392,7 @@ class AutofillParser(private val structure: AssistStructure) {
         }
 
         val autofillId = node.autofillId
-        if (autofillId != null && node.autofillType != AssistStructure.ViewNode.AUTOFILL_TYPE_NONE) {
+        if (autofillId != null && node.autofillType != View.AUTOFILL_TYPE_NONE) {
             action(node)
         }
 

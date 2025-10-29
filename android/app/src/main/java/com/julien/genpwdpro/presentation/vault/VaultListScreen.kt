@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation.vault
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,11 +12,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import com.julien.genpwdpro.presentation.utils.SecureWindow
 import kotlinx.coroutines.delay
 
@@ -415,6 +420,8 @@ private fun TotpCodeDisplay(
     viewModel: VaultListViewModel
 ) {
     var totpResult by remember { mutableStateOf<com.julien.genpwdpro.data.crypto.TotpGenerator.TotpResult?>(null) }
+    val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -454,6 +461,28 @@ private fun TotpCodeDisplay(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            IconButton(
+                onClick = {
+                    ClipboardUtils.copySensitive(
+                        context = context,
+                        label = context.getString(R.string.action_copy),
+                        value = result.code,
+                        ttlMs = clipboardTtlMs
+                    )
+                    Toast.makeText(
+                        context,
+                        ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = stringResource(R.string.cd_copy_otp_code),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

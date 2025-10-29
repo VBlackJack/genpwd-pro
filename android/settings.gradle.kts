@@ -1,3 +1,8 @@
+val androidSdkFromEnv = System.getenv("ANDROID_SDK_ROOT") ?: System.getenv("ANDROID_HOME")
+if (!androidSdkFromEnv.isNullOrBlank()) {
+    System.setProperty("sdk.dir", androidSdkFromEnv)
+}
+
 pluginManagement {
     repositories {
         google()
