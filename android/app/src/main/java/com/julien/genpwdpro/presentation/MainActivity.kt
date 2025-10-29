@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import com.julien.genpwdpro.core.ipc.IntentSanitizer
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
+import com.julien.genpwdpro.data.inmemory.LegacyMigrationStateStore
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
@@ -56,6 +58,9 @@ class MainActivity : SecureBaseActivity() {
     @Inject
     lateinit var vaultStartupLocker: VaultStartupLocker
 
+    @Inject
+    lateinit var legacyMigrationStateStore: LegacyMigrationStateStore
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -69,6 +74,16 @@ class MainActivity : SecureBaseActivity() {
                     "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
                     "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
             )
+        }
+
+        val pendingReauth = legacyMigrationStateStore.consumePendingReauthenticationVaultIds()
+        if (pendingReauth.isNotEmpty()) {
+            Log.w(TAG, "Legacy migration requires re-authentication for ${pendingReauth.size} vault(s)")
+            Toast.makeText(
+                this,
+                getString(R.string.legacy_migration_reauth_message),
+                Toast.LENGTH_LONG
+            ).show()
         }
 
         setupSessionManagement()
