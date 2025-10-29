@@ -44,6 +44,6 @@ class SensitiveActionPreferences @Inject constructor(
     companion object {
         const val KEY_REQUIRE_BIOMETRIC = "require_biometric_for_sensitive_actions"
         const val KEY_CLIPBOARD_TTL_MS = "clipboard_ttl_ms"
-        const val DEFAULT_CLIPBOARD_TTL_MS = 10_000L
+        const val DEFAULT_CLIPBOARD_TTL_MS = 30_000L
     }
 }

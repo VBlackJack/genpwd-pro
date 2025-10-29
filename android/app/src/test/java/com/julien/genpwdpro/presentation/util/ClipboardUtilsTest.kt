@@ -1,95 +1,99 @@
 package com.julien.genpwdpro.presentation.util
 
 import android.content.Context
-import com.julien.genpwdpro.presentation.util.ClipboardUtils.ClearScheduler
-import com.julien.genpwdpro.presentation.util.ClipboardUtils.ClipboardDelegate
+import com.julien.genpwdpro.core.clipboard.ClipboardSanitizer
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
+import io.mockk.verify
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import org.junit.After
-import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
 class ClipboardUtilsTest {
 
-    private lateinit var fakeDelegate: RecordingClipboardDelegate
-    private lateinit var fakeScheduler: RecordingScheduler
-    private lateinit var originalDelegateFactory: (Context) -> ClipboardDelegate
-    private lateinit var originalSchedulerFactory: () -> ClearScheduler
-    private val context: Context = mockk(relaxed = true)
+    private lateinit var context: Context
 
     @Before
     fun setUp() {
-        originalDelegateFactory = ClipboardUtils.delegateFactory
-        originalSchedulerFactory = ClipboardUtils.schedulerFactory
-        fakeDelegate = RecordingClipboardDelegate()
-        fakeScheduler = RecordingScheduler()
-        ClipboardUtils.delegateFactory = { fakeDelegate }
-        ClipboardUtils.schedulerFactory = { fakeScheduler }
+        context = mockk(relaxed = true)
+        mockkObject(ClipboardSanitizer)
+        every { ClipboardSanitizer.sanitizeLabel(any()) } answers { callOriginal() }
+        every { ClipboardSanitizer.sanitize(any<String>()) } answers { callOriginal() }
+        every { ClipboardSanitizer.sanitize(any<CharArray>()) } answers { callOriginal() }
     }
 
     @After
     fun tearDown() {
-        ClipboardUtils.delegateFactory = originalDelegateFactory
-        ClipboardUtils.schedulerFactory = originalSchedulerFactory
+        unmockkAll()
     }
 
     @Test
-    fun `copySensitive sanitizes payload and clears buffers`() {
-        val original = charArrayOf('a', '\u200B', 'b', '\u202E', 'c')
+    fun `copySensitive sanitizes payload and schedules clear`() {
+        val delegate = RecordingDelegate()
+        val scheduler = RecordingScheduler()
+        val rawLabel = "  pass\u200Bword  "
+        val rawValue = "sec\u200Bret\u202E".toCharArray()
+        val rawValueCopy = rawValue.copyOf()
 
         ClipboardUtils.copySensitive(
             context = context,
-            label = "  password\n",
-            value = original,
-            ttlMs = 0L
+            label = rawLabel,
+            value = rawValue,
+            delegate = delegate,
+            scheduler = scheduler
         )
 
-        assertEquals("password", fakeDelegate.lastLabel)
-        assertEquals("abc", fakeDelegate.lastText)
-        assertArrayEquals(charArrayOf('\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), original)
-    }
+        verify { ClipboardSanitizer.sanitizeLabel(rawLabel) }
+        verify {
+            ClipboardSanitizer.sanitize(match { probe -> probe.contentEquals(rawValueCopy) })
+        }
 
-    @Test
-    fun `copySensitive schedules clipboard clearing`() {
-        val original = charArrayOf('1', '2', '3', '4', '5', '6')
+        val expectedLabel = ClipboardSanitizer.sanitizeLabel(rawLabel)
+        val expectedValue = ClipboardSanitizer.sanitize("sec\u200Bret\u202E")
 
-        ClipboardUtils.copySensitive(
-            context = context,
-            label = "otp",
-            value = original,
-            ttlMs = 1_000L
+        assertEquals(expectedLabel, delegate.publishedLabel)
+        assertEquals(expectedValue, delegate.publishedValue)
+        assertEquals(
+            SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS,
+            scheduler.delayMs.get()
         )
-
-        assertEquals(1, fakeScheduler.scheduledCallbacks.size)
-        fakeScheduler.scheduledCallbacks.first().invoke()
-        assertEquals(true, fakeDelegate.cleared)
+        assertTrue("Clipboard clear callback should run", delegate.cleared.get())
+        assertTrue(rawValue.all { it == '\u0000' })
     }
 
-    private class RecordingClipboardDelegate : ClipboardDelegate {
-        var lastLabel: String? = null
-        var lastText: String? = null
-        var cleared: Boolean = false
+    private class RecordingDelegate : ClipboardUtils.ClipboardDelegate {
+        var publishedLabel: String? = null
+        var publishedValue: String? = null
+        val cleared = AtomicBoolean(false)
+        private val hasClip = AtomicBoolean(false)
 
         override fun setPrimaryClip(label: CharSequence, text: CharSequence) {
-            lastLabel = label.toString()
-            lastText = text.toString()
-            cleared = false
+            publishedLabel = label.toString()
+            publishedValue = text.toString()
+            hasClip.set(true)
         }
 
-        override fun hasPrimaryClip(): Boolean = !cleared && lastText != null
+        override fun hasPrimaryClip(): Boolean = hasClip.get()
 
         override fun clearPrimaryClip() {
-            cleared = true
+            hasClip.set(false)
+            cleared.set(true)
         }
     }
 
-    private class RecordingScheduler : ClearScheduler {
-        val scheduledCallbacks = mutableListOf<() -> Unit>()
+    private class RecordingScheduler : ClipboardUtils.ClearScheduler {
+        val delayMs = AtomicLong(0)
 
         override fun schedule(delayMs: Long, block: () -> Unit) {
-            scheduledCallbacks += block
+            this.delayMs.set(delayMs)
+            block()
         }
     }
-
 }
