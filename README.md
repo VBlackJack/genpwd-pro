@@ -56,7 +56,7 @@ L'application Android est livrée avec un environnement de développement comple
 
 ```bash
 cd android
-./gradlew lint detekt ktlintCheck testDebugUnitTest
+./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
 ```
 
 ### Option 2 — Installation locale
@@ -158,7 +158,7 @@ Un environnement VS Code Dev Container est fourni pour simplifier l'installatio
 
 ```bash
 cd android
-./gradlew lint detekt ktlintCheck testDebugUnitTest
+./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
 ```
 
 ### 🔍 Intégration Android
@@ -166,7 +166,7 @@ cd android
 Le module Android applique des contrôles stricts (Lint, ktlint, Detekt et tests JUnit). Exécutez la commande suivante depuis le dossier `android/` avant toute Pull Request :
 
 ```bash
-./gradlew lint detekt ktlintCheck testDebugUnitTest
+./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
 ```
 
 ## 📄 Licence

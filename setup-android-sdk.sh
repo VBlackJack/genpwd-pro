@@ -20,7 +20,7 @@ PACKAGES=(
 )
 
 echo "Accepting Android SDK licenses..."
-(yes | "${SDKMANAGER}" --sdk_root="${SDK_ROOT}" --licenses >/dev/null) || true
+yes | "${SDKMANAGER}" --sdk_root="${SDK_ROOT}" --licenses >/dev/null
 
 echo "Installing Android SDK packages..."
 "${SDKMANAGER}" --sdk_root="${SDK_ROOT}" "${PACKAGES[@]}"
