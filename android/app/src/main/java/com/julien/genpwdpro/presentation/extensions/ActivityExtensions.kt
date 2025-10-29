@@ -1,7 +1,10 @@
 package com.julien.genpwdpro.presentation.extensions
 
 import android.app.Activity
+import android.os.Build
 import android.view.WindowManager
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import java.util.WeakHashMap
 
 /**
@@ -28,29 +31,121 @@ private object SecureWindowController {
     object NavigationOwner
 
     private val lock = Any()
-    private val registry = WeakHashMap<Activity, MutableSet<Any>>()
+    private val registry = WeakHashMap<Activity, SecureEntry>()
 
     fun register(activity: Activity, owner: Any) {
         synchronized(lock) {
-            val owners = registry.getOrPut(activity) { mutableSetOf() }
-            val wasEmpty = owners.isEmpty()
-            if (owners.add(owner) && wasEmpty) {
-                activity.window.setFlags(
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                    WindowManager.LayoutParams.FLAG_SECURE
-                )
+            val entry = registry[activity]
+            if (entry != null) {
+                val wasEmpty = entry.owners.isEmpty()
+                if (entry.owners.add(owner) && wasEmpty) {
+                    applySecureDecor(activity)
+                }
+                return
             }
+
+            val lifecycleOwner = activity as? LifecycleOwner
+            val owners = mutableSetOf(owner)
+            val observer = lifecycleOwner?.let {
+                SecureLifecycleObserver(activity)
+                    .also { lifecycleOwner.lifecycle.addObserver(it) }
+            }
+
+            registry[activity] = SecureEntry(owners, observer)
+            applySecureDecor(activity)
         }
     }
 
     fun unregister(activity: Activity, owner: Any) {
         synchronized(lock) {
-            val owners = registry[activity] ?: return
-            val removed = owners.remove(owner)
-            if (removed && owners.isEmpty()) {
-                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                registry.remove(activity)
+            val entry = registry[activity] ?: return
+            val removed = entry.owners.remove(owner)
+            if (removed && entry.owners.isEmpty()) {
+                tearDown(activity, entry)
             }
         }
+    }
+
+    private fun applySecureDecor(activity: Activity) {
+        activity.window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+        // Android 14+ allows disabling recents screenshots explicitly in addition to FLAG_SECURE.
+        // On older versions the flag remains the primary mitigation for task previews.
+        activity.disableRecentsScreenshots()
+    }
+
+    private fun tearDown(activity: Activity, entry: SecureEntry) {
+        entry.observer?.let { observer ->
+            (activity as? LifecycleOwner)?.lifecycle?.removeObserver(observer)
+        }
+        clearSecureDecor(activity)
+        registry.remove(activity)
+    }
+
+    private fun clearSecureDecor(activity: Activity) {
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        activity.enableRecentsScreenshots()
+    }
+
+    private fun handleResume(activity: Activity) {
+        synchronized(lock) {
+            if (registry[activity]?.owners?.isNotEmpty() == true) {
+                applySecureDecor(activity)
+            }
+        }
+    }
+
+    private fun handlePause(activity: Activity) {
+        synchronized(lock) {
+            if (registry[activity]?.owners?.isNotEmpty() == true) {
+                // Keep task previews suppressed when entering PiP or multi-window modes.
+                activity.disableRecentsScreenshots()
+            }
+        }
+    }
+
+    private fun handleDestroy(activity: Activity) {
+        synchronized(lock) {
+            val entry = registry.remove(activity) ?: return
+            entry.observer?.let { observer ->
+                (activity as? LifecycleOwner)?.lifecycle?.removeObserver(observer)
+            }
+            clearSecureDecor(activity)
+        }
+    }
+
+    private data class SecureEntry(
+        val owners: MutableSet<Any>,
+        val observer: DefaultLifecycleObserver?
+    )
+
+    private class SecureLifecycleObserver(
+        private val activity: Activity
+    ) : DefaultLifecycleObserver {
+        override fun onResume(owner: LifecycleOwner) {
+            handleResume(activity)
+        }
+
+        override fun onPause(owner: LifecycleOwner) {
+            handlePause(activity)
+        }
+
+        override fun onDestroy(owner: LifecycleOwner) {
+            handleDestroy(activity)
+        }
+    }
+}
+
+private fun Activity.disableRecentsScreenshots() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        runCatching { setRecentsScreenshotEnabled(false) }
+    }
+}
+
+private fun Activity.enableRecentsScreenshots() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        runCatching { setRecentsScreenshotEnabled(true) }
     }
 }
