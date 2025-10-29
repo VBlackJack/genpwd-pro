@@ -23,7 +23,7 @@ import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.generators.SyllablesGenerator
 import com.julien.genpwdpro.domain.usecases.ApplyCasingUseCase
 import com.julien.genpwdpro.domain.usecases.PlaceCharactersUseCase
-import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import com.julien.genpwdpro.presentation.widget.storage.WidgetDeviceStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,6 +103,104 @@ class PasswordWidget : AppWidgetProvider() {
                 setOnClickPendingIntent(R.id.widgetCopyButton, copyPendingIntent)
             }
         }
+
+        fun updateAllWidgets(
+            context: Context,
+            passwordOverride: String? = null,
+            widgetIds: IntArray? = null
+        ) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = widgetIds ?: appWidgetManager.getAppWidgetIds(
+                ComponentName(context, PasswordWidget::class.java)
+            )
+
+            if (appWidgetIds.isEmpty()) {
+                return
+            }
+
+            val isUnlocked = isDeviceUnlocked(context)
+            val passwordToDisplay = if (isUnlocked) {
+                passwordOverride ?: getLastPassword(context)
+            } else {
+                WidgetDeviceStorage.markNeedsRefresh(context)
+                ""
+            }
+
+            appWidgetIds.forEach { appWidgetId ->
+                updateWidget(context, appWidgetId, passwordToDisplay, isUnlocked)
+            }
+        }
+
+        fun handleUserUnlocked(context: Context) {
+            val appContext = context.applicationContext
+            if (WidgetDeviceStorage.consumeNeedsRefresh(appContext) || isDeviceUnlocked(appContext)) {
+                updateAllWidgets(appContext)
+            }
+        }
+
+        fun ensureUnlocked(context: Context): Boolean {
+            if (isDeviceUnlocked(context)) {
+                return true
+            }
+
+            Toast.makeText(
+                context,
+                context.getString(R.string.widget_unlock_prompt),
+                Toast.LENGTH_SHORT
+            ).show()
+            WidgetDeviceStorage.markNeedsRefresh(context)
+            updateAllWidgets(context)
+            return false
+        }
+
+        fun isDeviceUnlocked(context: Context): Boolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val userManager = context.getSystemService<UserManager>()
+                if (userManager != null && !userManager.isUserUnlocked) {
+                    return false
+                }
+            }
+
+            val keyguardManager = context.getSystemService<KeyguardManager>()
+            val isLocked = when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> keyguardManager?.isDeviceLocked == true
+                else -> keyguardManager?.isKeyguardLocked == true
+            }
+
+            return !isLocked
+        }
+
+        fun saveLastPassword(context: Context, password: String) {
+            securePreferences(context)?.edit()?.putString(PREF_LAST_PASSWORD, password)?.apply()
+        }
+
+        fun getLastPassword(context: Context): String {
+            return securePreferences(context)?.getString(PREF_LAST_PASSWORD, "") ?: ""
+        }
+
+        fun securePreferences(context: Context): SharedPreferences? {
+            if (!isDeviceUnlocked(context)) {
+                Log.d(TAG, "Secure preferences unavailable while device is locked")
+                return null
+            }
+
+            return try {
+                val masterKey = MasterKey.Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+
+                EncryptedSharedPreferences.create(
+                    context,
+                    "${PREF_NAME}_secure",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Unable to access secure preferences", e)
+                null
+            }
+        }
     }
 
     override fun onUpdate(
@@ -127,11 +225,6 @@ class PasswordWidget : AppWidgetProvider() {
             ACTION_COPY -> {
                 // Copier le dernier mot de passe
                 copyLastPassword(context)
-            }
-            Intent.ACTION_USER_UNLOCKED -> {
-                if (WidgetDeviceStorage.consumeNeedsRefresh(context) || isDeviceUnlocked(context)) {
-                    updateAllWidgets(context)
-                }
             }
         }
     }
@@ -185,50 +278,15 @@ class PasswordWidget : AppWidgetProvider() {
 
         val password = getLastPassword(context)
         if (password.isNotEmpty()) {
-            ClipboardUtils.copyWithTimeout(
+            ClipboardUtils.copySensitive(
                 context = context,
-                text = password,
-                delayMs = 10_000L,
-                showToast = false
+                label = "password",
+                value = password,
+                ttlMs = 10_000L
             )
             Toast.makeText(context, "Copié!", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "Générez d'abord un mot de passe", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun saveLastPassword(context: Context, password: String) {
-        securePreferences(context)?.edit()?.putString(PREF_LAST_PASSWORD, password)?.apply()
-    }
-
-    private fun getLastPassword(context: Context): String {
-        return securePreferences(context)?.getString(PREF_LAST_PASSWORD, "") ?: ""
-    }
-
-    private fun updateAllWidgets(
-        context: Context,
-        passwordOverride: String? = null,
-        widgetIds: IntArray? = null
-    ) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = widgetIds ?: appWidgetManager.getAppWidgetIds(
-            ComponentName(context, PasswordWidget::class.java)
-        )
-
-        if (appWidgetIds.isEmpty()) {
-            return
-        }
-
-        val isUnlocked = isDeviceUnlocked(context)
-        val passwordToDisplay = if (isUnlocked) {
-            passwordOverride ?: getLastPassword(context)
-        } else {
-            WidgetDeviceStorage.markNeedsRefresh(context)
-            ""
-        }
-
-        appWidgetIds.forEach { appWidgetId ->
-            updateWidget(context, appWidgetId, passwordToDisplay, isUnlocked)
         }
     }
 
@@ -242,59 +300,4 @@ class PasswordWidget : AppWidgetProvider() {
         securePreferences(context)?.edit()?.clear()?.apply()
     }
 
-    private fun ensureUnlocked(context: Context): Boolean {
-        if (isDeviceUnlocked(context)) {
-            return true
-        }
-
-        Toast.makeText(
-            context,
-            context.getString(R.string.widget_unlock_prompt),
-            Toast.LENGTH_SHORT
-        ).show()
-        WidgetDeviceStorage.markNeedsRefresh(context)
-        updateAllWidgets(context)
-        return false
-    }
-
-    private fun isDeviceUnlocked(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val userManager = context.getSystemService<UserManager>()
-            if (userManager != null && !userManager.isUserUnlocked) {
-                return false
-            }
-        }
-
-        val keyguardManager = context.getSystemService<KeyguardManager>()
-        val isLocked = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> keyguardManager?.isDeviceLocked == true
-            else -> keyguardManager?.isKeyguardLocked == true
-        }
-
-        return !isLocked
-    }
-
-    private fun securePreferences(context: Context): SharedPreferences? {
-        if (!isDeviceUnlocked(context)) {
-            Log.d(TAG, "Secure preferences unavailable while device is locked")
-            return null
-        }
-
-        return try {
-            val masterKey = MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-
-            EncryptedSharedPreferences.create(
-                context,
-                "${PREF_NAME}_secure",
-                masterKey,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Unable to access secure preferences", e)
-            null
-        }
-    }
 }

@@ -66,6 +66,18 @@
     <!-- Widget -->
     <string name="widget_description">Générez des mots de passe rapidement depuis votre écran d\'accueil</string>
     <string name="widget_tap_to_generate">Touchez pour générer</string>
-    <string name="widget_locked_placeholder">Appareil verrouillé</string>
-    <string name="widget_unlock_prompt">Déverrouillez l'appareil pour générer et copier un mot de passe.</string>
+    <string name="widget_locked_placeholder">Appareil verrouillé – widget en pause</string>
+    <string name="widget_unlock_prompt">Déverrouillez votre appareil pour générer ou copier un mot de passe.</string>
+    <string name="biometric_prompt_title">Authentifiez-vous pour continuer</string>
+    <string name="biometric_required_message">Authentification biométrique requise</string>
+    <string name="biometric_unavailable_message">Biométrie indisponible dans ce contexte</string>
+    <string name="sensitive_actions_title">Actions sensibles</string>
+    <string name="sensitive_actions_subtitle">Exiger la biométrie pour afficher ou copier un mot de passe</string>
+    <string name="sensitive_actions_state_on">Biométrie requise</string>
+    <string name="sensitive_actions_state_off">Biométrie optionnelle</string>
+    <string name="sensitive_actions_unlock_error">Déverrouillez l'appareil pour modifier cette option</string>
+    <string name="cd_save_password">Sauvegarder dans le coffre</string>
+    <string name="cd_copy_password">Copier le mot de passe</string>
+    <string name="cd_show_password">Afficher le mot de passe</string>
+    <string name="cd_hide_password">Masquer le mot de passe</string>
 </resources>

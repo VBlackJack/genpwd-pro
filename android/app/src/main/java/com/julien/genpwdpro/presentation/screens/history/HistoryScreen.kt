@@ -14,8 +14,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.presentation.components.PasswordCard
-import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
+import com.julien.genpwdpro.presentation.security.BiometricGate
+import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.launch
+import com.julien.genpwdpro.R
 
 /**
  * Écran d'historique des mots de passe générés
@@ -29,11 +32,39 @@ fun HistoryScreen(
     val historyItems by viewModel.historyItems.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val biometricPromptTitle = context.getString(R.string.biometric_prompt_title)
+    val biometricRequiredMessage = context.getString(R.string.biometric_required_message)
+    val biometricUnavailableMessage = context.getString(R.string.biometric_unavailable_message)
 
     var showClearDialog by remember { mutableStateOf(false) }
+
+    fun performSensitiveAction(action: () -> Unit) {
+        if (!requireBiometric) {
+            action()
+            return
+        }
+        val activity = context as? FragmentActivity
+        if (activity != null) {
+            BiometricGate.prompt(
+                activity = activity,
+                title = biometricPromptTitle,
+                onSuccess = action,
+                onFail = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(biometricRequiredMessage)
+                    }
+                }
+            )
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(biometricUnavailableMessage)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -148,14 +179,16 @@ fun HistoryScreen(
                         PasswordCard(
                             result = item,
                             onCopy = {
-                                ClipboardUtils.copyWithTimeout(
-                                    context = context,
-                                    text = item.password,
-                                    delayMs = 10_000L,
-                                    showToast = false
-                                )
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Copié !")
+                                performSensitiveAction {
+                                    ClipboardUtils.copySensitive(
+                                        context = context,
+                                        label = "password",
+                                        value = item.password,
+                                        ttlMs = 10_000L
+                                    )
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Copié !")
+                                    }
                                 }
                             },
                             onToggleMask = { /* Géré localement dans PasswordCard */ }

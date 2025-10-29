@@ -26,11 +26,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
-import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import com.julien.genpwdpro.presentation.security.BiometricGate
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
@@ -55,9 +59,37 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    val biometricPromptTitle = context.getString(R.string.biometric_prompt_title)
+    val biometricRequiredMessage = context.getString(R.string.biometric_required_message)
+    val biometricUnavailableMessage = context.getString(R.string.biometric_unavailable_message)
+
+    fun performSensitiveAction(action: () -> Unit) {
+        if (!requireBiometric) {
+            action()
+            return
+        }
+        val activity = context as? FragmentActivity
+        if (activity != null) {
+            BiometricGate.prompt(
+                activity = activity,
+                title = biometricPromptTitle,
+                onSuccess = action,
+                onFail = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(biometricRequiredMessage)
+                    }
+                }
+            )
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(biometricUnavailableMessage)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadQuickPassword()
@@ -93,13 +125,16 @@ fun DashboardScreen(
                     onGenerate = { viewModel.generateQuickPassword() },
                     onCopy = {
                         uiState.quickPassword?.let { password ->
-                            ClipboardUtils.copyWithTimeout(
-                                context = context,
-                                text = password,
-                                showToast = false
-                            )
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                            performSensitiveAction {
+                                ClipboardUtils.copySensitive(
+                                    context = context,
+                                    label = "password",
+                                    value = password,
+                                    ttlMs = 60_000L
+                                )
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                                }
                             }
                         }
                     }

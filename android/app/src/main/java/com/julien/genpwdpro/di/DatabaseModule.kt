@@ -9,6 +9,8 @@ import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.database.AppDatabase
+import com.julien.genpwdpro.data.local.database.DatabaseOpenHelperFactoryProvider
+import com.julien.genpwdpro.data.local.database.DefaultDatabaseOpenHelperFactoryProvider
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.repository.VaultRepository
@@ -29,10 +31,17 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideDatabaseOpenHelperFactoryProvider(
+        defaultProvider: DefaultDatabaseOpenHelperFactoryProvider
+    ): DatabaseOpenHelperFactoryProvider = defaultProvider
+
+    @Provides
+    @Singleton
     fun provideAppDatabase(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        openHelperFactoryProvider: DatabaseOpenHelperFactoryProvider
     ): AppDatabase {
-        return Room.databaseBuilder(
+        val builder = Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
@@ -47,7 +56,13 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_7_8
             )
             .fallbackToDestructiveMigration() // Fallback si migration échoue
-            .build()
+
+        openHelperFactoryProvider.provideFactory()?.let { factory ->
+            // TODO: Plug SQLCipher factory here when the dependency is added.
+            builder.openHelperFactory(factory)
+        }
+
+        return builder.build()
     }
 
     @Provides

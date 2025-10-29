@@ -15,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.PasswordResult
 
 /**
@@ -82,7 +84,7 @@ fun PasswordCard(
                             IconButton(onClick = onSave) {
                                 Icon(
                                     imageVector = Icons.Default.Save,
-                                    contentDescription = "Sauvegarder dans le vault",
+                                    contentDescription = stringResource(R.string.cd_save_password),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -92,7 +94,11 @@ fun PasswordCard(
                         IconButton(onClick = onToggleMask) {
                             Icon(
                                 imageVector = if (result.isMasked) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (result.isMasked) "Show" else "Hide",
+                                contentDescription = if (result.isMasked) {
+                                    stringResource(R.string.cd_show_password)
+                                } else {
+                                    stringResource(R.string.cd_hide_password)
+                                },
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -101,7 +107,7 @@ fun PasswordCard(
                         IconButton(onClick = onCopy) {
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy",
+                                contentDescription = stringResource(R.string.cd_copy_password),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
