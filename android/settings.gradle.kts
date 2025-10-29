@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "GenPwd Pro"
 include(":app")
 include(":baselineprofile")
+include(":vault-domain")

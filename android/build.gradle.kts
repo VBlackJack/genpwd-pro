@@ -52,7 +52,8 @@ tasks.register("check") {
     dependsOn(
         ":app:lint",
         ":app:detekt",
-        ":app:ktlintCheck"
+        ":app:ktlintCheck",
+        ":vault-domain:check"
     )
 }
 
