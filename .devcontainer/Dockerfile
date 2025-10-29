@@ -9,7 +9,7 @@ ENV ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} \
 USER root
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl unzip zip \
+    && apt-get install -y --no-install-recommends curl unzip zip git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools
@@ -25,4 +25,3 @@ RUN chmod +x /usr/local/share/genpwd/setup-android-sdk.sh \
 
 RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
 RUN setup-android-sdk.sh --sdk-root ${ANDROID_SDK_ROOT} --skip-local-properties
-
