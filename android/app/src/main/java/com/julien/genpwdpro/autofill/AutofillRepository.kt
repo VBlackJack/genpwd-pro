@@ -94,9 +94,8 @@ class AutofillRepository @Inject constructor(
             putExtra(MainActivity.EXTRA_AUTOFILL_UNLOCK_REQUEST, true)
         }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getActivity(context, 0, intent, flags)
 
         return FillResponse.Builder()
             .setAuthentication(emptyArray(), pendingIntent.intentSender, presentation)

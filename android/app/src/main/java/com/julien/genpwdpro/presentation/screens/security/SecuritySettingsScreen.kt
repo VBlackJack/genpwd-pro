@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation.screens.security
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -99,8 +100,17 @@ fun SecuritySettingsScreen(
 
                 SensitiveActionsCard(
                     isEnabled = uiState.requireBiometricForSensitiveActions,
+                    clipboardTtlMs = uiState.clipboardTtlMs,
                     onToggle = { enabled ->
                         val success = viewModel.setSensitiveActionBiometricRequirement(enabled)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    },
+                    onClipboardTtlChange = { ttl ->
+                        val success = viewModel.setClipboardTtlMs(ttl)
                         if (!success) {
                             scope.launch {
                                 snackbarHostState.showSnackbar(unlockErrorMessage)
@@ -271,15 +281,19 @@ private fun AppLockCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SensitiveActionsCard(
     isEnabled: Boolean,
-    onToggle: (Boolean) -> Unit
+    clipboardTtlMs: Long,
+    onToggle: (Boolean) -> Unit,
+    onClipboardTtlChange: (Long) -> Unit
 ) {
     val title = stringResource(R.string.sensitive_actions_title)
     val subtitle = stringResource(R.string.sensitive_actions_subtitle)
     val enabledLabel = stringResource(R.string.sensitive_actions_state_on)
     val disabledLabel = stringResource(R.string.sensitive_actions_state_off)
+    val ttlOptions = listOf(5_000L, 10_000L, 30_000L, 60_000L)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -329,6 +343,32 @@ private fun SensitiveActionsCard(
                     checked = isEnabled,
                     onCheckedChange = onToggle
                 )
+            }
+
+            Text(
+                text = stringResource(R.string.sensitive_actions_clipboard_ttl_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(R.string.sensitive_actions_clipboard_ttl_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ttlOptions.forEach { option ->
+                    FilterChip(
+                        selected = clipboardTtlMs == option,
+                        onClick = { onClipboardTtlChange(option) },
+                        label = {
+                            Text("${option / 1000}s")
+                        }
+                    )
+                }
             }
         }
     }
@@ -595,6 +635,12 @@ class SecuritySettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(requireBiometricForSensitiveActions = required) }
             }
         }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.clipboardTtlMs.collect { ttl ->
+                _uiState.update { it.copy(clipboardTtlMs = ttl) }
+            }
+        }
     }
 
     fun checkBiometricAvailability(context: Context) {
@@ -645,6 +691,14 @@ class SecuritySettingsViewModel @Inject constructor(
         }
     }
 
+    fun setClipboardTtlMs(ttlMs: Long): Boolean {
+        val success = sensitiveActionPreferences.setClipboardTtlMs(ttlMs)
+        if (success) {
+            _uiState.update { it.copy(clipboardTtlMs = ttlMs) }
+        }
+        return success
+    }
+
     fun deleteAllKeys() {
         keystoreManager.deleteAllKeys()
         _uiState.update { it.copy(keystoreKeyCount = 0) }
@@ -669,5 +723,6 @@ data class SecuritySettingsUiState(
     val lockTimeout: Long = AppLockManager.TIMEOUT_1_MINUTE,
     val isHardwareBackedKeystore: Boolean = false,
     val keystoreKeyCount: Int = 0,
-    val requireBiometricForSensitiveActions: Boolean = false
+    val requireBiometricForSensitiveActions: Boolean = false,
+    val clipboardTtlMs: Long = SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
 )

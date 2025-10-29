@@ -43,6 +43,7 @@ fun GeneratorScreen(
     val currentPreset by viewModel.currentPreset.collectAsState()
     val presets by viewModel.presets.collectAsState()
     val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
+    val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -423,10 +424,11 @@ fun GeneratorScreen(
                                     context = context,
                                     label = "password",
                                     value = result.password,
-                                    ttlMs = 60_000L
+                                    ttlMs = clipboardTtlMs
                                 )
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                                    val message = ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs)
+                                    snackbarHostState.showSnackbar(message)
                                 }
                             }
                         },

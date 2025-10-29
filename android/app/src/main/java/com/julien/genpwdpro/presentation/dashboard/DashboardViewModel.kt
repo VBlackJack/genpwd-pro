@@ -30,7 +30,7 @@ class DashboardViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val vaultRegistryDao: VaultRegistryDao,
     private val vaultSessionManager: VaultSessionManager,
-    sensitiveActionPreferences: SensitiveActionPreferences
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -38,6 +38,7 @@ class DashboardViewModel @Inject constructor(
 
     val requireBiometricForSensitiveActions: StateFlow<Boolean> =
         sensitiveActionPreferences.requireBiometricForSensitiveActions
+    val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
 
     init {
         observeVaults()

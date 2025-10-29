@@ -10,7 +10,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.UserManager
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
@@ -18,6 +18,8 @@ import androidx.core.content.getSystemService
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.secure.SecurePrefs
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.generators.SyllablesGenerator
@@ -46,6 +48,8 @@ class PasswordWidget : AppWidgetProvider() {
         private const val ACTION_COPY = "com.julien.genpwdpro.ACTION_COPY"
         private const val PREF_NAME = "PasswordWidget"
         private const val PREF_LAST_PASSWORD = "last_password"
+        private const val DEFAULT_PENDING_INTENT_FLAGS =
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
         /**
          * Mise à jour manuelle du widget
@@ -87,8 +91,10 @@ class PasswordWidget : AppWidgetProvider() {
                     action = ACTION_GENERATE
                 }
                 val generatePendingIntent = PendingIntent.getBroadcast(
-                    context, 0, generateIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    context,
+                    0,
+                    generateIntent,
+                    DEFAULT_PENDING_INTENT_FLAGS
                 )
                 setOnClickPendingIntent(R.id.widgetGenerateButton, generatePendingIntent)
 
@@ -97,8 +103,10 @@ class PasswordWidget : AppWidgetProvider() {
                     action = ACTION_COPY
                 }
                 val copyPendingIntent = PendingIntent.getBroadcast(
-                    context, 1, copyIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    context,
+                    1,
+                    copyIntent,
+                    DEFAULT_PENDING_INTENT_FLAGS
                 )
                 setOnClickPendingIntent(R.id.widgetCopyButton, copyPendingIntent)
             }
@@ -180,7 +188,7 @@ class PasswordWidget : AppWidgetProvider() {
 
         fun securePreferences(context: Context): SharedPreferences? {
             if (!isDeviceUnlocked(context)) {
-                Log.d(TAG, "Secure preferences unavailable while device is locked")
+                SafeLog.d(TAG, "Secure preferences unavailable while device is locked")
                 return null
             }
 
@@ -197,8 +205,18 @@ class PasswordWidget : AppWidgetProvider() {
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "Unable to access secure preferences", e)
+                SafeLog.e(TAG, "Unable to access secure preferences", e)
                 null
+            }
+        }
+
+        private fun resolveClipboardTtlMs(context: Context): Long {
+            return try {
+                val securePrefs = SecurePrefs(context.applicationContext)
+                SensitiveActionPreferences(securePrefs).currentClipboardTtlMs()
+            } catch (e: Exception) {
+                SafeLog.w(TAG, "Falling back to default clipboard TTL", e)
+                SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
             }
         }
     }
@@ -278,13 +296,18 @@ class PasswordWidget : AppWidgetProvider() {
 
         val password = getLastPassword(context)
         if (password.isNotEmpty()) {
+            val ttlMs = resolveClipboardTtlMs(context)
             ClipboardUtils.copySensitive(
                 context = context,
                 label = "password",
                 value = password,
-                ttlMs = 10_000L
+                ttlMs = ttlMs
             )
-            Toast.makeText(context, "Copié!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                ClipboardUtils.buildAutoClearMessage(context, ttlMs),
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
             Toast.makeText(context, "Générez d'abord un mot de passe", Toast.LENGTH_SHORT).show()
         }

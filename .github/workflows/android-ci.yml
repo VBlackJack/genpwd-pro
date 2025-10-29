@@ -17,3 +17,12 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
       - run: ./gradlew :android:app:assembleDebug --no-daemon
+
+  static-checks:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Detekt (placeholder)
+        run: echo "TODO: enable Detekt once configuration is ready"
+      - name: ktlint (placeholder)
+        run: echo "TODO: enable ktlint once configuration is ready"

@@ -33,6 +33,7 @@ fun HistoryScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
+    val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -180,17 +181,18 @@ fun HistoryScreen(
                             result = item,
                             onCopy = {
                                 performSensitiveAction {
-                                    ClipboardUtils.copySensitive(
-                                        context = context,
-                                        label = "password",
-                                        value = item.password,
-                                        ttlMs = 10_000L
-                                    )
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Copié !")
-                                    }
+                                ClipboardUtils.copySensitive(
+                                    context = context,
+                                    label = "password",
+                                    value = item.password,
+                                    ttlMs = clipboardTtlMs
+                                )
+                                scope.launch {
+                                    val message = ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs)
+                                    snackbarHostState.showSnackbar(message)
                                 }
-                            },
+                            }
+                        },
                             onToggleMask = { /* Géré localement dans PasswordCard */ }
                         )
                     }

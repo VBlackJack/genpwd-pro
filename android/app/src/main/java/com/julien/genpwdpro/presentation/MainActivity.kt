@@ -4,14 +4,19 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
@@ -19,6 +24,7 @@ import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.session.VaultStartupLocker
 import com.julien.genpwdpro.presentation.extensions.setSecureScreen
 import com.julien.genpwdpro.presentation.navigation.Screen
+import com.julien.genpwdpro.presentation.navigation.SecureRoutes
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -69,7 +75,13 @@ class MainActivity : FragmentActivity() {
         val startDestination = handleInitialIntent(intent)
         
         setupContent(startDestination)
-        
+
+        WindowCompat.getInsetsController(window, window.decorView)
+        ViewCompat.setImportantForAutofill(
+            window.decorView,
+            View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        )
+
         handleDeepLinkIfPresent(intent)
     }
 
@@ -110,6 +122,23 @@ class MainActivity : FragmentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+                    val activity = this@MainActivity
+                    DisposableEffect(navController) {
+                        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                            val routeId = destination.route ?: destination.label?.toString().orEmpty()
+                            val secure = SecureRoutes.isSensitive(routeId)
+                            activity.setSecureScreen(secure)
+                        }
+                        navController.addOnDestinationChangedListener(listener)
+                        navController.currentBackStackEntry?.destination?.let { destination ->
+                            val initialRoute = destination.route ?: destination.label?.toString().orEmpty()
+                            activity.setSecureScreen(SecureRoutes.isSensitive(initialRoute))
+                        }
+                        onDispose {
+                            navController.removeOnDestinationChangedListener(listener)
+                            activity.setSecureScreen(false)
+                        }
+                    }
 
                     MainScreen(
                         navController = navController,
