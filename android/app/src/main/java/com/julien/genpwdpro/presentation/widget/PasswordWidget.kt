@@ -8,7 +8,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Binder
 import android.os.Build
+import android.os.Process
 import android.os.UserManager
 import android.view.View
 import android.widget.RemoteViews
@@ -46,8 +48,8 @@ class PasswordWidget : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "PasswordWidget"
-        private const val ACTION_GENERATE = "com.julien.genpwdpro.ACTION_GENERATE"
-        private const val ACTION_COPY = "com.julien.genpwdpro.ACTION_COPY"
+        internal const val ACTION_GENERATE = "com.julien.genpwdpro.ACTION_GENERATE"
+        internal const val ACTION_COPY = "com.julien.genpwdpro.ACTION_COPY"
         private const val PREF_NAME = "PasswordWidget"
         private const val PREF_LAST_PASSWORD = "last_password"
         private const val DEFAULT_PENDING_INTENT_FLAGS =
@@ -55,12 +57,22 @@ class PasswordWidget : AppWidgetProvider() {
         private val ALLOWED_ACTIONS = setOf(
             AppWidgetManager.ACTION_APPWIDGET_UPDATE,
             AppWidgetManager.ACTION_APPWIDGET_OPTIONS_CHANGED,
-            AppWidgetManager.ACTION_APPWIDGET_ENABLED,
-            AppWidgetManager.ACTION_APPWIDGET_DISABLED,
-            AppWidgetManager.ACTION_APPWIDGET_DELETED,
             ACTION_GENERATE,
             ACTION_COPY
         )
+
+        internal fun isTrustedSender(
+            sdkInt: Int,
+            callingUid: Int,
+            senderPackage: String?,
+            appPackage: String
+        ): Boolean {
+            return if (sdkInt >= Build.VERSION_CODES.Q) {
+                callingUid == Process.SYSTEM_UID
+            } else {
+                senderPackage == null || senderPackage == appPackage
+            }
+        }
 
         /**
          * Mise à jour manuelle du widget
@@ -276,13 +288,27 @@ class PasswordWidget : AppWidgetProvider() {
             return
         }
 
-        if (senderPackage != null && senderPackage != context.packageName) {
-            SafeLog.w(TAG, "Ignoring widget broadcast from unexpected sender: $senderPackage")
+        val sdkInt = PasswordWidgetGuards.currentSdkInt()
+        val callingUid = PasswordWidgetGuards.callingUid()
+        val appPackage = context.packageName
+
+        if (!isTrustedSender(sdkInt, callingUid, senderPackage, appPackage)) {
+            if (sdkInt >= Build.VERSION_CODES.Q) {
+                SafeLog.w(TAG, "Rejecting widget broadcast from UID: $callingUid")
+            } else {
+                val sender = senderPackage ?: "‹unknown›"
+                SafeLog.w(TAG, "Ignoring widget broadcast from unexpected sender: $sender")
+            }
             return
         }
 
-        if (action != null && !ALLOWED_ACTIONS.contains(action)) {
-            SafeLog.w(TAG, "Ignoring unauthorized widget action: $action")
+        if (action == null) {
+            SafeLog.w(TAG, "Ignoring widget broadcast without action")
+            return
+        }
+
+        if (!ALLOWED_ACTIONS.contains(action)) {
+            SafeLog.w(TAG, "Ignoring widget broadcast with unsupported action: $action")
             return
         }
 
@@ -374,4 +400,9 @@ class PasswordWidget : AppWidgetProvider() {
         securePreferences(context)?.edit()?.clear()?.apply()
     }
 
+}
+
+internal object PasswordWidgetGuards {
+    fun currentSdkInt(): Int = Build.VERSION.SDK_INT
+    fun callingUid(): Int = Binder.getCallingUid()
 }
