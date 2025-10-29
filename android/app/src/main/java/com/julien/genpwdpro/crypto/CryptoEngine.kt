@@ -24,11 +24,6 @@ interface CryptoEngine {
      */
     fun rotate()
 
-    /**
-     * Exports the current keyset in a serialized form so it can be persisted securely.
-     */
-    fun exportKeyset(): String
-
     companion object {
         val EMPTY_AAD: ByteArray = ByteArray(0)
     }

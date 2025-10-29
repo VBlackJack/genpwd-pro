@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.data.encryption
 
+import android.content.Context
 import android.util.Base64
 import com.julien.genpwdpro.core.crypto.SecretUtils
 import com.julien.genpwdpro.crypto.CryptoEngine
@@ -27,25 +28,20 @@ class EncryptionManager @Inject constructor() {
         private const val ALGORITHM = "AES"
     }
 
-    /**
-     * Crée un nouveau moteur de chiffrement avec un keyset AES-256-GCM fraîchement généré.
-     */
-    fun createEngine(): CryptoEngine {
-        return TinkAesGcmCryptoEngine.create()
+    fun obtainEngine(
+        context: Context,
+        keysetName: String,
+        prefFileName: String
+    ): CryptoEngine {
+        return TinkAesGcmCryptoEngine.getOrCreate(context, keysetName, prefFileName)
     }
 
-    /**
-     * Restaure un moteur depuis un keyset sérialisé.
-     */
-    fun restoreEngine(serializedKeyset: String): CryptoEngine {
-        return TinkAesGcmCryptoEngine.fromSerialized(serializedKeyset)
-    }
-
-    /**
-     * Sérialise le keyset courant du moteur pour stockage sécurisé.
-     */
-    fun serializeEngine(engine: CryptoEngine): String {
-        return engine.exportKeyset()
+    fun resetEngine(
+        context: Context,
+        keysetName: String,
+        prefFileName: String
+    ) {
+        TinkAesGcmCryptoEngine.wipe(context, keysetName, prefFileName)
     }
 
     /**
