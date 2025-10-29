@@ -54,5 +54,8 @@
     "testSuiteFile": "tools/test-suite.js",
     "timeout": 60000,
     "retries": 1
+  },
+  "dependencies": {
+    "tink-crypto": "^0.1.1"
   }
 }
