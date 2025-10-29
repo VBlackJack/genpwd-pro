@@ -63,8 +63,12 @@
 # HILT / DAGGER
 #===============================================================================
 -dontwarn com.google.errorprone.annotations.**
+-dontwarn dagger.**
+-dontwarn javax.inject.**
 
 # Keep Hilt generated classes
+-keep class dagger.** { *; }
+-keep interface dagger.** { *; }
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
@@ -76,9 +80,11 @@
 #===============================================================================
 # ROOM DATABASE
 #===============================================================================
+-keep class androidx.room.** { *; }
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
 -dontwarn androidx.room.paging.**
+-dontwarn androidx.room.**
 
 #===============================================================================
 # KOTLIN
@@ -110,6 +116,9 @@
 #===============================================================================
 # COMPOSE
 #===============================================================================
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
 # Keep Compose stable classes
 -keep class androidx.compose.runtime.** { *; }
 -keep class androidx.compose.ui.** { *; }
@@ -133,6 +142,12 @@
     public static *** w(...);
     public static *** e(...);
 }
+
+#===============================================================================
+# ENCRYPTED SHARED PREFS
+#===============================================================================
+-keep class androidx.security.crypto.** { *; }
+-dontwarn androidx.security.crypto.**
 
 #===============================================================================
 # GENERAL ANDROID

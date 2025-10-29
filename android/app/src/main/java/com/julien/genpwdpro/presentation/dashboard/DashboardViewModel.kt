@@ -6,6 +6,7 @@ import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,11 +29,15 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val vaultSessionManager: VaultSessionManager
+    private val vaultSessionManager: VaultSessionManager,
+    sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    val requireBiometricForSensitiveActions: StateFlow<Boolean> =
+        sensitiveActionPreferences.requireBiometricForSensitiveActions
 
     init {
         observeVaults()

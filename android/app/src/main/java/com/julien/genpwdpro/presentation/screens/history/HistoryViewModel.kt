@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,7 +15,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
-    private val historyRepository: PasswordHistoryRepository
+    private val historyRepository: PasswordHistoryRepository,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -22,6 +24,9 @@ class HistoryViewModel @Inject constructor(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
+
+    val requireBiometricForSensitiveActions: StateFlow<Boolean> =
+        sensitiveActionPreferences.requireBiometricForSensitiveActions
 
     /**
      * Liste des mots de passe de l'historique

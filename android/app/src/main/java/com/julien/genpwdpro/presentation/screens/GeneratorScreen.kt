@@ -1,8 +1,5 @@
 package com.julien.genpwdpro.presentation.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,9 +13,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.fragment.app.FragmentActivity
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.presentation.components.*
-import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import com.julien.genpwdpro.presentation.security.BiometricGate
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -42,9 +42,13 @@ fun GeneratorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val currentPreset by viewModel.currentPreset.collectAsState()
     val presets by viewModel.presets.collectAsState()
+    val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val biometricPromptTitle = context.getString(R.string.biometric_prompt_title)
+    val biometricRequiredMessage = context.getString(R.string.biometric_required_message)
+    val biometricUnavailableMessage = context.getString(R.string.biometric_unavailable_message)
 
     var showPlacementSheet by remember { mutableStateOf(false) }
     var showSavePresetDialog by remember { mutableStateOf(false) }
@@ -66,6 +70,30 @@ fun GeneratorScreen(
                     message = "$featureName - Fonctionnalité à venir",
                     duration = SnackbarDuration.Short
                 )
+            }
+        }
+    }
+
+    fun performSensitiveAction(action: () -> Unit) {
+        if (!requireBiometric) {
+            action()
+            return
+        }
+        val activity = context as? FragmentActivity
+        if (activity != null) {
+            BiometricGate.prompt(
+                activity = activity,
+                title = biometricPromptTitle,
+                onSuccess = action,
+                onFail = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(biometricRequiredMessage)
+                    }
+                }
+            )
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(biometricUnavailableMessage)
             }
         }
     }
@@ -390,18 +418,27 @@ fun GeneratorScreen(
                     PasswordCard(
                         result = result,
                         onCopy = {
-                            // Copie sécurisée avec auto-effacement après 60s
-                            ClipboardUtils.copyWithTimeout(
-                                context = context,
-                                text = result.password,
-                                showToast = false
-                            )
-                            // Afficher snackbar
-                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                            performSensitiveAction {
+                                ClipboardUtils.copySensitive(
+                                    context = context,
+                                    label = "password",
+                                    value = result.password,
+                                    ttlMs = 60_000L
+                                )
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                                }
                             }
                         },
-                        onToggleMask = { viewModel.toggleMask(result.id) },
+                        onToggleMask = {
+                            if (result.isMasked) {
+                                performSensitiveAction {
+                                    viewModel.toggleMask(result.id)
+                                }
+                            } else {
+                                viewModel.toggleMask(result.id)
+                            }
+                        },
                         onSave = if (onSaveToVault != null) {
                             { onSaveToVault(result.password) }
                         } else {

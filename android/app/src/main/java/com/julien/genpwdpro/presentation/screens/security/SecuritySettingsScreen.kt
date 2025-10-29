@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
@@ -18,6 +19,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.security.*
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
+import com.julien.genpwdpro.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -41,6 +44,8 @@ fun SecuritySettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val unlockErrorMessage = stringResource(R.string.sensitive_actions_unlock_error)
 
     var showTimeoutDialog by remember { mutableStateOf(false) }
 
@@ -90,6 +95,18 @@ fun SecuritySettingsScreen(
                     },
                     onTimeoutClick = { showTimeoutDialog = true },
                     getTimeoutName = { viewModel.getTimeoutDisplayName(it) }
+                )
+
+                SensitiveActionsCard(
+                    isEnabled = uiState.requireBiometricForSensitiveActions,
+                    onToggle = { enabled ->
+                        val success = viewModel.setSensitiveActionBiometricRequirement(enabled)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    }
                 )
             }
 
@@ -248,6 +265,69 @@ private fun AppLockCard(
                     text = "L'app demandera l'authentification biométrique après ce délai d'inactivité",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SensitiveActionsCard(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    val title = stringResource(R.string.sensitive_actions_title)
+    val subtitle = stringResource(R.string.sensitive_actions_subtitle)
+    val enabledLabel = stringResource(R.string.sensitive_actions_state_on)
+    val disabledLabel = stringResource(R.string.sensitive_actions_state_off)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.VerifiedUser,
+                    contentDescription = null
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (isEnabled) enabledLabel else disabledLabel,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = isEnabled,
+                    onCheckedChange = onToggle
                 )
             }
         }
@@ -475,7 +555,8 @@ private fun TimeoutSelectionDialog(
 class SecuritySettingsViewModel @Inject constructor(
     private val biometricManager: BiometricManager,
     private val keystoreManager: KeystoreManager,
-    private val appLockManager: AppLockManager
+    private val appLockManager: AppLockManager,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SecuritySettingsUiState())
@@ -506,6 +587,12 @@ class SecuritySettingsViewModel @Inject constructor(
                     isHardwareBackedKeystore = isHardware,
                     keystoreKeyCount = keyCount
                 )
+            }
+        }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.requireBiometricForSensitiveActions.collect { required ->
+                _uiState.update { it.copy(requireBiometricForSensitiveActions = required) }
             }
         }
     }
@@ -543,6 +630,15 @@ class SecuritySettingsViewModel @Inject constructor(
         }
     }
 
+    fun setSensitiveActionBiometricRequirement(enabled: Boolean): Boolean {
+        val success = sensitiveActionPreferences.setRequireBiometricForSensitiveActions(enabled)
+        if (!success) {
+            return false
+        }
+        _uiState.update { it.copy(requireBiometricForSensitiveActions = enabled) }
+        return true
+    }
+
     fun setLockTimeout(timeoutMs: Long) {
         viewModelScope.launch {
             appLockManager.setLockTimeout(timeoutMs)
@@ -572,5 +668,6 @@ data class SecuritySettingsUiState(
     val isAppLockEnabled: Boolean = false,
     val lockTimeout: Long = AppLockManager.TIMEOUT_1_MINUTE,
     val isHardwareBackedKeystore: Boolean = false,
-    val keystoreKeyCount: Int = 0
+    val keystoreKeyCount: Int = 0,
+    val requireBiometricForSensitiveActions: Boolean = false
 )

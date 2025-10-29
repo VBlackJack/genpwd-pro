@@ -67,11 +67,19 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.julien.genpwdpro.ACTION_GENERATE" />
                 <action android:name="com.julien.genpwdpro.ACTION_COPY" />
-                <action android:name="android.intent.action.USER_UNLOCKED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".presentation.widget.UserUnlockedReceiver"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.USER_UNLOCKED" />
+            </intent-filter>
         </receiver>
 
         <!-- Autofill Service (Android 8+) -->

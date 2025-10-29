@@ -66,6 +66,18 @@
     <!-- Widget -->
     <string name="widget_description">Generate passwords quickly from your home screen</string>
     <string name="widget_tap_to_generate">Tap to generate</string>
-    <string name="widget_locked_placeholder">Device locked</string>
-    <string name="widget_unlock_prompt">Unlock your device to generate and copy a password.</string>
+    <string name="widget_locked_placeholder">Device locked – widget paused</string>
+    <string name="widget_unlock_prompt">Unlock your device to generate or copy a password.</string>
+    <string name="biometric_prompt_title">Authenticate to continue</string>
+    <string name="biometric_required_message">Biometric authentication required</string>
+    <string name="biometric_unavailable_message">Biometrics unavailable in this context</string>
+    <string name="sensitive_actions_title">Sensitive actions</string>
+    <string name="sensitive_actions_subtitle">Require biometrics to reveal or copy a password</string>
+    <string name="sensitive_actions_state_on">Biometrics required</string>
+    <string name="sensitive_actions_state_off">Biometrics optional</string>
+    <string name="sensitive_actions_unlock_error">Unlock your device to change this setting</string>
+    <string name="cd_save_password">Save to vault</string>
+    <string name="cd_copy_password">Copy password</string>
+    <string name="cd_show_password">Show password</string>
+    <string name="cd_hide_password">Hide password</string>
 </resources>

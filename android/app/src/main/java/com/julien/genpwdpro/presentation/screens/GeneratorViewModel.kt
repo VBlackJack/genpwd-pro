@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.*
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ class GeneratorViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val historyRepository: PasswordHistoryRepository,
     private val settingsDataStore: SettingsDataStore,
-    private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
+    private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
@@ -35,6 +37,9 @@ class GeneratorViewModel @Inject constructor(
     val presets: StateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>> = _presets.asStateFlow()
 
     private var currentVaultId: String? = null
+
+    val requireBiometricForSensitiveActions: StateFlow<Boolean> =
+        sensitiveActionPreferences.requireBiometricForSensitiveActions
 
     init {
         // Charger les settings sauvegardés
