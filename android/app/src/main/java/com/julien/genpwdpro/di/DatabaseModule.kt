@@ -14,11 +14,16 @@ import com.julien.genpwdpro.data.db.database.SqlCipherDatabaseOpenHelperFactoryP
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.session.RoomSessionStore
+import com.julien.genpwdpro.data.session.db.SessionDao
+import com.julien.genpwdpro.data.session.db.SessionDatabase
+import com.julien.genpwdpro.domain.session.SessionStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -62,6 +67,31 @@ object DatabaseModule {
 
         return builder.build()
     }
+
+    @Provides
+    @Singleton
+    fun provideSessionDatabase(
+        @ApplicationContext context: Context,
+        openHelperFactoryProvider: DatabaseOpenHelperFactoryProvider
+    ): SessionDatabase {
+        val builder = Room.databaseBuilder(
+            context,
+            SessionDatabase::class.java,
+            SessionDatabase.DATABASE_NAME
+        )
+            .fallbackToDestructiveMigration()
+            .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+
+        builder.openHelperFactory(openHelperFactoryProvider.provideFactory())
+
+        return builder.build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSessionDao(
+        database: SessionDatabase
+    ): SessionDao = database.sessionDao()
 
     @Provides
     @Singleton
@@ -172,9 +202,25 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideSessionStore(
+        sessionDao: SessionDao,
+        ioDispatcher: kotlinx.coroutines.CoroutineDispatcher,
+        @Named("session_cleanup_interval_ms") cleanupIntervalMillis: Long
+    ): SessionStore {
+        return RoomSessionStore(sessionDao, ioDispatcher, cleanupIntervalMillis)
+    }
+
+    @Provides
+    @Singleton
     fun provideIoDispatcher(): kotlinx.coroutines.CoroutineDispatcher {
         return kotlinx.coroutines.Dispatchers.IO
     }
+
+    @Provides
+    @Singleton
+    @Named("session_cleanup_interval_ms")
+    fun provideSessionCleanupInterval(): Long =
+        TimeUnit.MINUTES.toMillis(15)
 
     @Provides
     @Singleton
