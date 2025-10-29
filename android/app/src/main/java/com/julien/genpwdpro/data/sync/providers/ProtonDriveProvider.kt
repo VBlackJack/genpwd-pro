@@ -395,7 +395,7 @@ class ProtonDriveProvider(
             Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
         )
 
-        Log.d(TAG, "PKCE generated: verifier length=${codeVerifier!!.length}, challenge=$codeChallenge")
+        Log.d(TAG, "PKCE generated: verifier length=${codeVerifier!!.length}")
     }
 
     /**

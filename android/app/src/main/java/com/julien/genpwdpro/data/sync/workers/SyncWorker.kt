@@ -1,11 +1,11 @@
 package com.julien.genpwdpro.data.sync.workers
 
 import android.content.Context
-import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.julien.genpwdpro.data.sync.VaultSyncManager
+import com.julien.genpwdpro.core.log.SafeLog
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -33,6 +33,7 @@ class SyncWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "SyncWorker"
         const val WORK_NAME = "vault_auto_sync"
+        const val ONE_TIME_WORK_TAG = "vault_one_time_sync"
 
         // Paramètres du worker
         const val KEY_VAULT_ID = "vault_id"
@@ -40,12 +41,12 @@ class SyncWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Starting background sync")
+        SafeLog.d(TAG, "Starting background sync")
 
         return try {
             // Vérifier si le provider est authentifié
             if (!vaultSyncManager.isAuthenticated()) {
-                Log.w(TAG, "Provider not authenticated, skipping sync")
+                SafeLog.w(TAG, "Provider not authenticated, skipping sync")
                 return Result.success()
             }
 
@@ -54,7 +55,7 @@ class SyncWorker @AssistedInject constructor(
             val masterPassword = inputData.getString(KEY_MASTER_PASSWORD)
 
             if (vaultId == null || masterPassword == null) {
-                Log.e(TAG, "Missing vault ID or master password")
+                SafeLog.e(TAG, "Missing vault ID or master password")
                 return Result.failure()
             }
 
@@ -63,11 +64,11 @@ class SyncWorker @AssistedInject constructor(
 
             when (result) {
                 is com.julien.genpwdpro.data.sync.models.SyncResult.Success -> {
-                    Log.d(TAG, "Sync completed successfully")
+                    SafeLog.d(TAG, "Sync completed successfully")
                     Result.success()
                 }
                 is com.julien.genpwdpro.data.sync.models.SyncResult.Error -> {
-                    Log.e(TAG, "Sync failed: ${result.message}")
+                    SafeLog.e(TAG, "Sync failed: ${result.message}")
                     // Retry en cas d'erreur
                     if (runAttemptCount < 3) {
                         Result.retry()
@@ -76,13 +77,13 @@ class SyncWorker @AssistedInject constructor(
                     }
                 }
                 is com.julien.genpwdpro.data.sync.models.SyncResult.Conflict -> {
-                    Log.w(TAG, "Conflict detected, manual resolution required")
+                    SafeLog.w(TAG, "Conflict detected, manual resolution required")
                     // Ne pas retry en cas de conflit
                     Result.failure()
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error during sync", e)
+            SafeLog.e(TAG, "Unexpected error during sync", e)
 
             // Retry en cas d'erreur inattendue
             if (runAttemptCount < 3) {

@@ -128,7 +128,7 @@ class AutoSyncScheduler @Inject constructor(
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(constraints)
             .setInputData(inputData)
-            .addTag("one_time_sync")
+            .addTag(SyncWorker.ONE_TIME_WORK_TAG)
             .build()
 
         // Enregistrer le travail
@@ -147,7 +147,7 @@ class AutoSyncScheduler @Inject constructor(
      */
     fun cancelAllSync() {
         workManager.cancelAllWorkByTag(SyncWorker.WORK_NAME)
-        workManager.cancelAllWorkByTag("one_time_sync")
+        workManager.cancelAllWorkByTag(SyncWorker.ONE_TIME_WORK_TAG)
     }
 
     /**

@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import com.julien.genpwdpro.data.local.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.data.sync.models.*
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
+import com.julien.genpwdpro.data.sync.SyncPreferencesManager
+import com.julien.genpwdpro.data.sync.AutoSyncScheduler
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -27,6 +30,9 @@ class VaultSyncManagerTest {
     private lateinit var mockCloudProvider: CloudProvider
     private lateinit var mockPrefs: SharedPreferences
     private lateinit var mockEditor: SharedPreferences.Editor
+    private lateinit var mockCredentialManager: ProviderCredentialManager
+    private lateinit var mockSyncPreferencesManager: SyncPreferencesManager
+    private lateinit var mockAutoSyncScheduler: AutoSyncScheduler
 
     @Before
     fun setup() {
@@ -38,6 +44,7 @@ class VaultSyncManagerTest {
         every { mockContext.getSharedPreferences(any(), any()) } returns mockPrefs
         every { mockPrefs.edit() } returns mockEditor
         every { mockEditor.putString(any(), any()) } returns mockEditor
+        every { mockEditor.remove(any()) } returns mockEditor
         every { mockEditor.apply() } just Runs
         every { mockPrefs.getString("device_id", null) } returns "test-device-123"
         every { mockPrefs.getString("device_name", null) } returns "Test Device"
@@ -51,11 +58,18 @@ class VaultSyncManagerTest {
         // Mock CloudProvider
         mockCloudProvider = mockk(relaxed = true)
 
+        mockCredentialManager = mockk(relaxed = true)
+        mockSyncPreferencesManager = mockk(relaxed = true)
+        mockAutoSyncScheduler = mockk(relaxed = true)
+
         // Créer VaultSyncManager
         syncManager = VaultSyncManager(
             context = mockContext,
             vaultRepository = mockVaultRepository,
-            conflictResolver = mockConflictResolver
+            conflictResolver = mockConflictResolver,
+            credentialManager = mockCredentialManager,
+            syncPreferencesManager = mockSyncPreferencesManager,
+            autoSyncScheduler = mockAutoSyncScheduler
         )
     }
 
@@ -92,6 +106,19 @@ class VaultSyncManagerTest {
 
         assertTrue(isAuth)
         coVerify { mockCloudProvider.isAuthenticated() }
+    }
+
+    @Test
+    fun `disconnect clears credentials and cancels work`() = runTest {
+        syncManager.setProvider(mockCloudProvider, CloudProviderType.GOOGLE_DRIVE)
+
+        syncManager.disconnect()
+
+        verify { mockAutoSyncScheduler.cancelAllSync() }
+        verify { mockCredentialManager.clearProvider(CloudProviderType.GOOGLE_DRIVE) }
+        coVerify { mockSyncPreferencesManager.clearAllCredentials() }
+        verify { mockEditor.remove("provider_type") }
+        assertEquals(SyncStatus.NEVER_SYNCED, syncManager.syncStatus.first())
     }
 
     @Test
