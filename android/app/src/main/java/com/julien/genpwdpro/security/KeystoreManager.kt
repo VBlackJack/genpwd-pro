@@ -120,6 +120,7 @@ class KeystoreManager @Inject constructor() {
         // Configuration de l'authentification utilisateur
         if (requireBiometric || userAuthenticationValiditySeconds > 0) {
             builder.setUserAuthenticationRequired(true)
+            builder.setInvalidatedByBiometricEnrollment(true)
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 // Android 11+: Authentification biométrique forte
@@ -167,14 +168,22 @@ class KeystoreManager @Inject constructor() {
      */
     fun encrypt(data: ByteArray, alias: String = MASTER_KEY_ALIAS): EncryptedKeystoreData {
         val cipher = getEncryptCipher(alias)
-        val ciphertext = cipher.doFinal(data)
-        val iv = cipher.iv
+        val plaintextCopy = data.copyOf()
 
-        return EncryptedKeystoreData(
-            ciphertext = ciphertext,
-            iv = iv,
-            keyAlias = alias
-        )
+        return try {
+            val ciphertext = cipher.doFinal(plaintextCopy)
+            val iv = cipher.iv
+
+            require(iv.size == IV_SIZE) { "GCM IV must be $IV_SIZE bytes" }
+
+            EncryptedKeystoreData(
+                ciphertext = ciphertext,
+                iv = iv,
+                keyAlias = alias
+            )
+        } finally {
+            plaintextCopy.fill(0)
+        }
     }
 
     /**
@@ -189,7 +198,12 @@ class KeystoreManager @Inject constructor() {
      * Chiffre une chaîne de caractères
      */
     fun encryptString(plaintext: String, alias: String = MASTER_KEY_ALIAS): EncryptedKeystoreData {
-        return encrypt(plaintext.toByteArray(Charsets.UTF_8), alias)
+        val plaintextBytes = plaintext.toByteArray(Charsets.UTF_8)
+        return try {
+            encrypt(plaintextBytes, alias)
+        } finally {
+            plaintextBytes.fill(0)
+        }
     }
 
     /**
@@ -197,7 +211,9 @@ class KeystoreManager @Inject constructor() {
      */
     fun decryptString(encryptedData: EncryptedKeystoreData): String {
         val plaintext = decrypt(encryptedData)
-        return String(plaintext, Charsets.UTF_8)
+        val result = String(plaintext, Charsets.UTF_8)
+        plaintext.fill(0)
+        return result
     }
 
     /**

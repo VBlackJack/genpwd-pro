@@ -325,8 +325,15 @@ class BiometricVaultManager @Inject constructor(
                         val authenticatedCipher = result.cryptoObject?.cipher
                             ?: throw IllegalStateException("Cipher not available")
 
-                        val encryptedBytes = authenticatedCipher.doFinal(plainData)
-                        val iv = authenticatedCipher.iv
+                        val encryptedBytes: ByteArray
+                        val iv: ByteArray
+                        try {
+                            encryptedBytes = authenticatedCipher.doFinal(plainData)
+                            iv = authenticatedCipher.iv
+                            require(iv.size == 12) { "GCM IV must be 12 bytes" }
+                        } finally {
+                            plainData.fill(0)
+                        }
 
                         continuation.resume(EncryptionResult(encryptedBytes, iv))
                     } catch (e: Exception) {
@@ -342,6 +349,7 @@ class BiometricVaultManager @Inject constructor(
                     Log.w(TAG, "Biometric authentication error: $errString")
 
                     if (continuation.isActive) {
+                        plainData.fill(0)
                         continuation.cancel(
                             Exception("Biometric authentication failed: $errString")
                         )
@@ -371,6 +379,7 @@ class BiometricVaultManager @Inject constructor(
         continuation.invokeOnCancellation {
             // Cleanup si la coroutine est annulée
             biometricPrompt.cancelAuthentication()
+            plainData.fill(0)
         }
     }
 
@@ -398,7 +407,11 @@ class BiometricVaultManager @Inject constructor(
                             ?: throw IllegalStateException("Cipher not available")
 
                         val decryptedBytes = authenticatedCipher.doFinal(encryptedPassword)
-                        val password = String(decryptedBytes, Charsets.UTF_8)
+                        val password = try {
+                            String(decryptedBytes, Charsets.UTF_8)
+                        } finally {
+                            decryptedBytes.fill(0)
+                        }
 
                         continuation.resume(password)
                     } catch (e: Exception) {
