@@ -24,6 +24,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "DEFAULT_KDF_ALGORITHM", "\"SCRYPT\"")
+        buildConfigField("Int", "SCRYPT_COST", "16384")
+        buildConfigField("Int", "SCRYPT_BLOCK_SIZE", "8")
+        buildConfigField("Int", "SCRYPT_PARALLELIZATION", "1")
+        buildConfigField("Int", "SCRYPT_KEY_LENGTH", "32")
     }
 
     buildTypes {
@@ -213,6 +219,7 @@ dependencies {
     implementation("com.goterl:lazysodium-android:5.1.0@aar")
     implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
+    implementation("com.lambdaworks:scrypt:1.4.0")
 
     // Google Drive API for Cloud Sync
     implementation("com.google.android.gms:play-services-auth:20.7.0")
