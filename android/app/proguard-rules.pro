@@ -46,6 +46,16 @@
 -assumenosideeffects class com.julien.genpwdpro.domain.generators.**
 -assumenosideeffects class com.julien.genpwdpro.domain.usecases.**
 
+# Strip android.util.Log usage from release builds while keeping crash logging elsewhere
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+    public static int wtf(...);
+}
+
 #===============================================================================
 # GSON
 #===============================================================================

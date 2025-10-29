@@ -138,7 +138,17 @@ class PasswordWidget : AppWidgetProvider() {
             }
 
             appWidgetIds.forEach { appWidgetId ->
-                updateWidget(context, appWidgetId, passwordToDisplay, isUnlocked)
+                val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    appWidgetManager.getAppWidgetOptions(appWidgetId)
+                } else {
+                    null
+                }
+                val isKeyguardHost = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY) ==
+                    AppWidgetManager.WIDGET_CATEGORY_KEYGUARD
+                // Never surface vault-derived secrets on the keyguard host; fall back to placeholders until unlocked.
+                val allowSecrets = isUnlocked && !isKeyguardHost
+                val safePassword = if (allowSecrets) passwordToDisplay else ""
+                updateWidget(context, appWidgetId, safePassword, allowSecrets)
             }
         }
 

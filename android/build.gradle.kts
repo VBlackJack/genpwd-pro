@@ -24,6 +24,7 @@ plugins {
     id("com.google.dagger.hilt.android") version "2.48" apply false
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.4" apply false
+    id("androidx.baselineprofile") version "1.2.2" apply false
 }
 
 allprojects {
@@ -35,4 +36,9 @@ allprojects {
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
+}
+
+tasks.register("refreshBaselineProfile") {
+    description = "Generates the baseline profile artifacts via the baselineprofile module."
+    dependsOn(":baselineprofile:generateBaselineProfile")
 }
