@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +17,7 @@ import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.session.VaultStartupLocker
+import com.julien.genpwdpro.presentation.extensions.setSecureScreen
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,12 +50,9 @@ class MainActivity : FragmentActivity() {
     lateinit var vaultStartupLocker: VaultStartupLocker
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
-
         super.onCreate(savedInstanceState)
+
+        setSecureScreen(false)
 
         val startupResult = runBlocking { vaultStartupLocker.secureStartup() }
         if (!startupResult.isSecure) {

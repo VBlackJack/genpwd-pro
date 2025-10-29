@@ -65,4 +65,7 @@
 
     <!-- Widget -->
     <string name="widget_description">Generate passwords quickly from your home screen</string>
+    <string name="widget_tap_to_generate">Tap to generate</string>
+    <string name="widget_locked_placeholder">Device locked</string>
+    <string name="widget_unlock_prompt">Unlock your device to generate and copy a password.</string>
 </resources>
