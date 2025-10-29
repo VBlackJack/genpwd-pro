@@ -18,6 +18,15 @@ SDK_ROOT=${ANDROID_SDK_ROOT:-/opt/android-sdk}
 PROJECT_ROOT=""
 WRITE_LOCAL_PROPERTIES=true
 
+CMDLINE_TOOLS_URL=${CMDLINE_TOOLS_URL:-https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip}
+
+TARGET_ANDROID_API=34
+TARGET_BUILD_TOOLS_VERSION="34.0.0"
+# The next API level/build-tools to prepare for. The installation will be
+# attempted but ignored if not yet published by Google.
+FUTURE_ANDROID_API=35
+FUTURE_BUILD_TOOLS_VERSION="35.0.0"
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --sdk-root)
@@ -50,25 +59,88 @@ if [[ -z "$PROJECT_ROOT" ]]; then
 fi
 
 SDKMANAGER_BIN="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-if [[ ! -x "$SDKMANAGER_BIN" ]]; then
-    echo "Android cmdline-tools not found at $SDKMANAGER_BIN" >&2
-    exit 1
-fi
 
-PACKAGES=(
+ensure_cmdline_tools() {
+    if [[ -x "$SDKMANAGER_BIN" ]]; then
+        return
+    fi
+
+    echo "Android cmdline-tools not found. Downloading from $CMDLINE_TOOLS_URL ..."
+    TMP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TMP_DIR"' EXIT
+    curl -sSL "$CMDLINE_TOOLS_URL" -o "$TMP_DIR/cmdline-tools.zip"
+    mkdir -p "$SDK_ROOT/cmdline-tools"
+    unzip -q "$TMP_DIR/cmdline-tools.zip" -d "$TMP_DIR"
+    rm -rf "$SDK_ROOT/cmdline-tools/latest"
+    mv "$TMP_DIR/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+    rm -f "$TMP_DIR/cmdline-tools.zip"
+    rm -rf "$TMP_DIR"
+    trap - EXIT
+
+    if [[ ! -x "$SDKMANAGER_BIN" ]]; then
+        echo "Failed to install Android cmdline-tools." >&2
+        exit 1
+    fi
+}
+
+ensure_cmdline_tools
+
+normalize_cmdline_tools() {
+    local desired_dir="$SDK_ROOT/cmdline-tools/latest"
+    local newest_dir
+    newest_dir=$(ls -td "$SDK_ROOT"/cmdline-tools/latest* 2>/dev/null | head -n1 || true)
+    if [[ -n "$newest_dir" && "$newest_dir" != "$desired_dir" ]]; then
+        rm -rf "$desired_dir"
+        mv "$newest_dir" "$desired_dir"
+    fi
+    for extra_dir in "$SDK_ROOT"/cmdline-tools/latest-*; do
+        if [[ -d "$extra_dir" && "$extra_dir" != "$desired_dir" ]]; then
+            rm -rf "$extra_dir"
+        fi
+    done
+    SDKMANAGER_BIN="$desired_dir/bin/sdkmanager"
+}
+
+normalize_cmdline_tools
+
+MANDATORY_PACKAGES=(
+    "cmdline-tools;latest"
     "platform-tools"
-    "build-tools;34.0.0"
-    "platforms;android-34"
+    "build-tools;${TARGET_BUILD_TOOLS_VERSION}"
+    "platforms;android-${TARGET_ANDROID_API}"
 )
 
+OPTIONAL_PACKAGES=()
+if [[ -n "${FUTURE_ANDROID_API}" ]]; then
+    OPTIONAL_PACKAGES+=("platforms;android-${FUTURE_ANDROID_API}")
+fi
+if [[ -n "${FUTURE_BUILD_TOOLS_VERSION}" ]]; then
+    OPTIONAL_PACKAGES+=("build-tools;${FUTURE_BUILD_TOOLS_VERSION}")
+fi
+
 echo "Accepting Android SDK licenses..."
-yes | "$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --licenses >/dev/null
+set +o pipefail
+yes | "$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+set -o pipefail
 
 echo "Updating sdkmanager..."
 "$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --update >/dev/null
 
 echo "Installing required Android SDK packages..."
-"$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --install "${PACKAGES[@]}"
+"$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --install "${MANDATORY_PACKAGES[@]}"
+
+normalize_cmdline_tools
+
+if [[ ${#OPTIONAL_PACKAGES[@]} -gt 0 ]]; then
+    echo "Attempting to install optional Android SDK packages: ${OPTIONAL_PACKAGES[*]}"
+    set +e
+    "$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --install "${OPTIONAL_PACKAGES[@]}"
+    if [[ $? -ne 0 ]]; then
+        echo "Optional packages could not be installed (likely not yet available). Continuing..."
+    fi
+    set -e
+    normalize_cmdline_tools
+fi
 
 if [[ "$WRITE_LOCAL_PROPERTIES" == true ]]; then
     mkdir -p "$PROJECT_ROOT"
