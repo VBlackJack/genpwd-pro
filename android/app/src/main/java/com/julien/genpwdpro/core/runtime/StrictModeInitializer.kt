@@ -21,10 +21,11 @@ object StrictModeInitializer {
 
         StrictMode.setVmPolicy(
             StrictMode.VmPolicy.Builder()
-                .detectLeakedClosableObjects()
-                .detectLeakedSqlLiteObjects()
+                .detectAll()
                 .penaltyLog()
                 .build()
         )
+
+        // Expect to surface accidental disk/network calls on the main thread and leaked closables early.
     }
 }
