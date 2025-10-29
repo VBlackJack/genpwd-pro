@@ -51,6 +51,7 @@
     <string name="msg_copied">Copié dans le presse-papiers</string>
     <string name="msg_generated">%d mots de passe générés</string>
     <string name="msg_error">Erreur lors de la génération</string>
+    <string name="sqlcipher_recovery_notice">Clé du coffre réinitialisée. Restaurez votre sauvegarde ou reconnectez vos coffres pour continuer.</string>
 
     <!-- Empty states -->
     <string name="empty_generate">Cliquez sur Générer pour créer vos mots de passe</string>

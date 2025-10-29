@@ -79,6 +79,7 @@
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+-keep class com.julien.genpwdpro.di.** { *; }
 
 # Keep Hilt entry points
 -keep @dagger.hilt.android.HiltAndroidApp class * { *; }
@@ -90,10 +91,24 @@
 -keep class androidx.room.** { *; }
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
+-keep class androidx.room.migration.Migration { *; }
+-keepclassmembers class * extends androidx.room.migration.Migration {
+    public <init>(...);
+    public void migrate(androidx.sqlite.db.SupportSQLiteDatabase);
+}
 -dontwarn androidx.room.paging.**
 -dontwarn androidx.room.**
 -keep class androidx.sqlite.db.SupportSQLiteOpenHelper$Callback { *; }
 -keep class androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory { *; }
+-keepclassmembers class com.julien.genpwdpro.data.local.database.AppDatabase$Companion {
+    public static androidx.room.migration.Migration MIGRATION_1_2;
+    public static androidx.room.migration.Migration MIGRATION_2_3;
+    public static androidx.room.migration.Migration MIGRATION_3_4;
+    public static androidx.room.migration.Migration MIGRATION_4_5;
+    public static androidx.room.migration.Migration MIGRATION_5_6;
+    public static androidx.room.migration.Migration MIGRATION_6_7;
+    public static androidx.room.migration.Migration MIGRATION_7_8;
+}
 
 #==============================================================================
 # WORKMANAGER
@@ -104,6 +119,11 @@
 -keep class androidx.work.impl.foreground.SystemForegroundService { *; }
 -keep class androidx.hilt.work.HiltWorkerFactory { *; }
 -keep class com.julien.genpwdpro.workers.** { *; }
+-keep class androidx.work.impl.background.systemjob.SystemJobService { *; }
+-keep class androidx.work.impl.background.systemalarm.SystemAlarmService { *; }
+-keep class androidx.work.impl.utils.ForceStopRunnable { *; }
+-keep class androidx.work.WorkManagerInitializer { *; }
+-keep class androidx.startup.InitializationProvider { *; }
 -dontwarn androidx.work.**
 
 #==============================================================================
@@ -111,6 +131,8 @@
 #==============================================================================
 -keep class net.sqlcipher.** { *; }
 -dontwarn net.sqlcipher.**
+-keep class net.sqlcipher.database.SupportFactory { *; }
+-keep class net.sqlcipher.database.SQLiteDatabase { *; }
 
 #==============================================================================
 # AUTOFILL SERVICE

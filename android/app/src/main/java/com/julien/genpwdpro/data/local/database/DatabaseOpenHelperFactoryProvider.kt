@@ -1,11 +1,17 @@
 package com.julien.genpwdpro.data.local.database
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
+import android.util.Log
+import android.widget.Toast
 import androidx.sqlite.db.SupportSQLiteOpenHelper
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.secure.SecurePrefs
 import com.julien.genpwdpro.security.EncryptedKeystoreData
 import com.julien.genpwdpro.security.KeystoreManager
+import com.julien.genpwdpro.security.KeystoreAlias
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.SecureRandom
 import javax.inject.Inject
@@ -36,6 +42,8 @@ class SqlCipherPassphraseProvider @Inject constructor(
 
     private val appContext = context.applicationContext
     private val secureRandom = SecureRandom()
+    private val handler = Handler(Looper.getMainLooper())
+    private val sqlCipherAlias = KeystoreAlias.SQL_CIPHER
 
     init {
         SQLiteDatabase.loadLibs(appContext)
@@ -47,17 +55,66 @@ class SqlCipherPassphraseProvider @Inject constructor(
         synchronized(lock) {
             securePrefs.getString(PREF_KEY)?.let { stored ->
                 val encrypted = decode(stored)
-                return keystoreManager.decrypt(encrypted)
+                return recoverPassphrase(encrypted)
             }
 
-            val passphrase = ByteArray(PASSPHRASE_LENGTH)
-            secureRandom.nextBytes(passphrase)
-
-            val encrypted = keystoreManager.encrypt(passphrase, alias = SQLCIPHER_KEY_ALIAS)
-            securePrefs.putString(PREF_KEY, encode(encrypted))
-
-            return passphrase
+            return generateAndStorePassphrase()
         }
+    }
+
+    private fun recoverPassphrase(encrypted: EncryptedKeystoreData): ByteArray {
+        return runCatching {
+            val passphrase = keystoreManager.decrypt(encrypted)
+            securePrefs.putBoolean(PREF_KEY_RECOVERY_NOTICE, false)
+            maybeRewrapAlias(passphrase, encrypted)
+            passphrase
+        }.getOrElse { throwable ->
+            handleInvalidatedKey(throwable)
+        }
+    }
+
+    private fun maybeRewrapAlias(passphrase: ByteArray, encrypted: EncryptedKeystoreData) {
+        if (keystoreManager.isCurrentAlias(encrypted.keyAlias, sqlCipherAlias)) {
+            return
+        }
+
+        val reencrypted = keystoreManager.encrypt(passphrase, alias = sqlCipherAlias.alias)
+        securePrefs.putString(PREF_KEY, encode(reencrypted))
+
+        if (keystoreManager.isLegacyAlias(encrypted.keyAlias, sqlCipherAlias)) {
+            keystoreManager.deleteKey(encrypted.keyAlias)
+        }
+    }
+
+    private fun generateAndStorePassphrase(resetRecoveryFlag: Boolean = true): ByteArray {
+        val passphrase = ByteArray(PASSPHRASE_LENGTH)
+        secureRandom.nextBytes(passphrase)
+
+        val encrypted = keystoreManager.encrypt(passphrase, alias = sqlCipherAlias.alias)
+        securePrefs.putString(PREF_KEY, encode(encrypted))
+        if (resetRecoveryFlag) {
+            securePrefs.putBoolean(PREF_KEY_RECOVERY_NOTICE, false)
+        }
+
+        return passphrase
+    }
+
+    private fun handleInvalidatedKey(throwable: Throwable): ByteArray {
+        Log.w(TAG, "SQLCipher key invalidated, regenerating", throwable)
+
+        if (!securePrefs.getBoolean(PREF_KEY_RECOVERY_NOTICE, false)) {
+            securePrefs.putBoolean(PREF_KEY_RECOVERY_NOTICE, true)
+            handler.post {
+                Toast.makeText(
+                    appContext,
+                    appContext.getString(R.string.sqlcipher_recovery_notice),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+        securePrefs.remove(PREF_KEY)
+        return generateAndStorePassphrase(resetRecoveryFlag = false)
     }
 
     private fun encode(data: EncryptedKeystoreData): String {
@@ -76,8 +133,9 @@ class SqlCipherPassphraseProvider @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "SqlCipherPassphrase"
         private const val PREF_KEY = "sqlcipher_passphrase_encrypted"
-        private const val SQLCIPHER_KEY_ALIAS = "genpwd_sqlcipher_key"
+        private const val PREF_KEY_RECOVERY_NOTICE = "sqlcipher_passphrase_recovery_notice"
         private const val PASSPHRASE_LENGTH = 32
         private const val DELIMITER = ":"
         private val lock = Any()
