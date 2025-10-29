@@ -53,8 +53,9 @@ class SyncManager @Inject constructor(
     companion object {
         private const val PREFS_NAME = "sync_prefs"
         private const val KEY_DEVICE_ID = "device_id"
-        private const val KEY_ENCRYPTION_KEY = "encryption_key"
         private const val KEY_LAST_SYNC = "last_sync_timestamp"
+        private const val KEYSET_PREFS = "sync_encryption_keyset_store"
+        private const val KEYSET_NAME = "sync_encryption_keyset"
     }
 
     /**
@@ -69,15 +70,12 @@ class SyncManager @Inject constructor(
             prefs.edit().putString(KEY_DEVICE_ID, newId).apply()
         }
 
-        // Charger ou générer la clé de chiffrement
-        cryptoEngine = prefs.getString(KEY_ENCRYPTION_KEY, null)?.let { serialized ->
-            encryptionManager.restoreEngine(serialized)
-        } ?: run {
-            val engine = encryptionManager.createEngine()
-            val serialized = encryptionManager.serializeEngine(engine)
-            prefs.edit().putString(KEY_ENCRYPTION_KEY, serialized).apply()
-            engine
-        }
+        // Charger ou générer la clé de chiffrement via Tink
+        cryptoEngine = encryptionManager.obtainEngine(
+            context,
+            KEYSET_NAME,
+            KEYSET_PREFS
+        )
     }
 
     /**

@@ -63,7 +63,7 @@ class SqlCipherPassphraseProvider @Inject constructor(
 
     init {
         SQLiteDatabase.loadLibs(appContext)
-        cryptoEngine = loadOrCreateCryptoEngine()
+        cryptoEngine = createCryptoEngine()
     }
 
     fun getOrCreatePassphrase(): ByteArray {
@@ -114,30 +114,15 @@ class SqlCipherPassphraseProvider @Inject constructor(
 
     private fun resetCryptoEngine(): CryptoEngine {
         return synchronized(engineLock) {
-            val engine = generateAndStoreCryptoEngine()
+            encryptionManager.resetEngine(appContext, KEYSET_NAME, KEYSET_PREFS)
+            val engine = createCryptoEngine()
             cryptoEngine = engine
             engine
         }
     }
 
-    private fun loadOrCreateCryptoEngine(): CryptoEngine {
-        val stored = securePrefs.getString(PREF_KEY_ENGINE)
-        if (stored != null) {
-            return runCatching {
-                encryptionManager.restoreEngine(stored)
-            }.getOrElse { throwable ->
-                Log.w(TAG, "Unable to restore SQLCipher CryptoEngine, regenerating", throwable)
-                generateAndStoreCryptoEngine()
-            }
-        }
-        return generateAndStoreCryptoEngine()
-    }
-
-    private fun generateAndStoreCryptoEngine(): CryptoEngine {
-        val engine = encryptionManager.createEngine()
-        val serialized = encryptionManager.serializeEngine(engine)
-        securePrefs.putString(PREF_KEY_ENGINE, serialized)
-        return engine
+    private fun createCryptoEngine(): CryptoEngine {
+        return encryptionManager.obtainEngine(appContext, KEYSET_NAME, KEYSET_PREFS)
     }
 
     private fun encode(data: EncryptedDataEncoded): String {
@@ -153,7 +138,8 @@ class SqlCipherPassphraseProvider @Inject constructor(
     companion object {
         private const val TAG = "SqlCipherPassphrase"
         private const val PREF_KEY = "sqlcipher_passphrase_encrypted"
-        private const val PREF_KEY_ENGINE = "sqlcipher_passphrase_engine"
+        private const val KEYSET_PREFS = "sqlcipher_passphrase_keyset_store"
+        private const val KEYSET_NAME = "sqlcipher_passphrase_keyset"
         private const val PASSPHRASE_LENGTH = 32
         private const val DELIMITER = ":"
         private val lock = Any()

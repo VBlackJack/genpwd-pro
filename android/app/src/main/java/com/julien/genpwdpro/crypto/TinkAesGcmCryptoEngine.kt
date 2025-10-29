@@ -1,23 +1,17 @@
 package com.julien.genpwdpro.crypto
 
+import android.content.Context
 import com.google.crypto.tink.Aead
-import com.google.crypto.tink.CleartextKeysetHandle
-import com.google.crypto.tink.KeysetHandle
-import com.google.crypto.tink.KeysetManager
 import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.aead.AeadKeyTemplates
-import com.google.crypto.tink.JsonKeysetReader
-import com.google.crypto.tink.JsonKeysetWriter
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.nio.charset.StandardCharsets
+import com.google.crypto.tink.integration.android.AndroidKeysetManager
 import java.security.GeneralSecurityException
 
 /**
  * Google Tink backed implementation of [CryptoEngine] relying on AES-256-GCM keysets.
  */
 class TinkAesGcmCryptoEngine private constructor(
-    private var keysetHandle: KeysetHandle
+    private val keysetManager: AndroidKeysetManager
 ) : CryptoEngine {
 
     private val lock = Any()
@@ -32,23 +26,13 @@ class TinkAesGcmCryptoEngine private constructor(
 
     override fun rotate() {
         synchronized(lock) {
-            val manager = KeysetManager.withKeysetHandle(keysetHandle)
-            manager.rotate(AeadKeyTemplates.AES256_GCM)
-            keysetHandle = manager.keysetHandle
+            keysetManager.rotate(AeadKeyTemplates.AES256_GCM)
         }
-    }
-
-    override fun exportKeyset(): String {
-        val outputStream = ByteArrayOutputStream()
-        synchronized(lock) {
-            CleartextKeysetHandle.write(keysetHandle, JsonKeysetWriter.withOutputStream(outputStream))
-        }
-        return outputStream.toByteArray().toString(StandardCharsets.UTF_8)
     }
 
     private fun aead(): Aead {
         return synchronized(lock) {
-            keysetHandle.getPrimitive(Aead::class.java)
+            keysetManager.keysetHandle.getPrimitive(Aead::class.java)
         }
     }
 
@@ -57,6 +41,8 @@ class TinkAesGcmCryptoEngine private constructor(
     }
 
     companion object {
+        private const val MASTER_KEY_URI = "android-keystore://genpwdpro_master_key"
+
         init {
             try {
                 AeadConfig.register()
@@ -65,21 +51,26 @@ class TinkAesGcmCryptoEngine private constructor(
             }
         }
 
-        /**
-         * Creates a new engine backed by a freshly generated AES-256-GCM keyset.
-         */
-        fun create(): TinkAesGcmCryptoEngine {
-            val handle = KeysetHandle.generateNew(AeadKeyTemplates.AES256_GCM)
-            return TinkAesGcmCryptoEngine(handle)
+        fun getOrCreate(
+            context: Context,
+            keysetName: String,
+            prefFileName: String
+        ): TinkAesGcmCryptoEngine {
+            val manager = AndroidKeysetManager.Builder()
+                .withSharedPref(context, keysetName, prefFileName)
+                .withKeyTemplate(AeadKeyTemplates.AES256_GCM)
+                .withMasterKeyUri(MASTER_KEY_URI)
+                .build()
+            return TinkAesGcmCryptoEngine(manager)
         }
 
-        /**
-         * Restores an engine from a serialized keyset produced by [exportKeyset].
-         */
-        fun fromSerialized(serializedKeyset: String): TinkAesGcmCryptoEngine {
-            val inputStream = ByteArrayInputStream(serializedKeyset.toByteArray(StandardCharsets.UTF_8))
-            val handle = CleartextKeysetHandle.read(JsonKeysetReader.withInputStream(inputStream))
-            return TinkAesGcmCryptoEngine(handle)
+        fun wipe(
+            context: Context,
+            keysetName: String,
+            prefFileName: String
+        ) {
+            val preferences = context.getSharedPreferences(prefFileName, Context.MODE_PRIVATE)
+            preferences.edit().remove(keysetName).apply()
         }
     }
 }
