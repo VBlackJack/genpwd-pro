@@ -151,6 +151,8 @@ dependencies {
 
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.4")
 
+    implementation(project(":vault-domain"))
+
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
