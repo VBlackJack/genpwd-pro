@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -26,6 +25,7 @@ import com.julien.genpwdpro.domain.session.VaultStartupLocker
 import com.julien.genpwdpro.presentation.extensions.setSecureScreen
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.navigation.SecureRoutes
+import com.julien.genpwdpro.presentation.security.SecureBaseActivity
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -39,7 +39,7 @@ import javax.inject.Inject
  * Gère les intents de deep link (OAuth) et d'autofill.
  */
 @AndroidEntryPoint
-class MainActivity : FragmentActivity() {
+class MainActivity : SecureBaseActivity() {
 
     companion object {
         private const val TAG = "MainActivity"

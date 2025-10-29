@@ -4,19 +4,20 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.domain.otp.OtpConfig
 import com.julien.genpwdpro.domain.otp.OtpUriMigrationNotSupportedException
 import com.julien.genpwdpro.domain.otp.OtpUriParser
 import com.julien.genpwdpro.domain.otp.OtpUriParserException
+import com.julien.genpwdpro.presentation.security.SecureBaseActivity
 
-class OtpImportActivity : AppCompatActivity() {
+class OtpImportActivity : SecureBaseActivity() {
 
     private val parser = OtpUriParser()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        secureSensitiveContent(true)
         setResult(Activity.RESULT_CANCELED)
         handleIntent(intent)
     }

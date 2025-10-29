@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.julien.genpwdpro.presentation.extensions.registerSecureWindowOwner
 import com.julien.genpwdpro.presentation.extensions.unregisterSecureWindowOwner
+import com.julien.genpwdpro.presentation.security.SecureDelegateOwner
 
 /**
  * Applique dynamiquement le flag [WindowManager.LayoutParams.FLAG_SECURE] sur la fenêtre
@@ -18,14 +19,23 @@ fun SecureWindow(enabled: Boolean = true) {
 
     DisposableEffect(context, enabled) {
         val activity = context as? android.app.Activity
+        val delegate = (activity as? SecureDelegateOwner)?.secureScreenDelegate
 
         if (enabled && activity != null) {
-            activity.registerSecureWindowOwner(owner)
+            if (delegate != null) {
+                delegate.registerSecureOwner(owner)
+            } else {
+                activity.registerSecureWindowOwner(owner)
+            }
         }
 
         onDispose {
             if (enabled && activity != null) {
-                activity.unregisterSecureWindowOwner(owner)
+                if (delegate != null) {
+                    delegate.unregisterSecureOwner(owner)
+                } else {
+                    activity.unregisterSecureWindowOwner(owner)
+                }
             }
         }
     }

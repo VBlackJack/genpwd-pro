@@ -4,7 +4,7 @@ Thanks for helping us harden GenPwd Pro. This document highlights the workflow a
 
 ## Development workflow
 
-1. Install the Android SDK (command line tools) and JDK 17. The CI workflow provisions the SDK automatically by honouring the `ANDROID_SDK_ROOT`/`ANDROID_HOME` environment variables, so mirroring that setup locally will keep Gradle happy.
+1. Install the Android SDK (command line tools) and JDK 17. You can either reopen the repository with the provided Devcontainer (`.devcontainer/devcontainer.json`) or run `./.devcontainer/setup-android-sdk.sh` locally to download the required packages and generate `android/local.properties`.
 2. Run the full verification suite before sending a change:
    ```bash
    ./gradlew lint detekt ktlintCheck testDebugUnitTest --console=plain

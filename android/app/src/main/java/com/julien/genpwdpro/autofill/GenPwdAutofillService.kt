@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.autofill
 
+import android.app.KeyguardManager
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.os.CancellationSignal
@@ -19,6 +20,8 @@ import androidx.annotation.VisibleForTesting
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
+import com.julien.genpwdpro.autofill.security.AutofillRequestGuard
+import com.julien.genpwdpro.autofill.security.GuardDecision
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,10 +59,19 @@ class GenPwdAutofillService : AutofillService() {
     lateinit var autofillRepository: AutofillRepository
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private lateinit var requestGuard: AutofillRequestGuard
 
     companion object {
         private const val MAX_MATCHING_DATASETS = 2
         private const val MAX_GENERATED_DATASETS = 1
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        requestGuard = AutofillRequestGuard.create(
+            getSystemService(KeyguardManager::class.java),
+            packageManager
+        )
     }
 
     override fun onFillRequest(
@@ -78,19 +90,28 @@ class GenPwdAutofillService : AutofillService() {
 
         serviceScope.launch {
             try {
-                val context = request.fillContexts.lastOrNull()?.structure
-                if (context == null) {
+                val structure = request.fillContexts.lastOrNull()?.structure
+                if (structure == null) {
                     callback.onSuccess(null)
                     return@launch
                 }
 
-                if (context.activityComponent?.packageName.isNullOrEmpty()) {
+                val guardDecision = requestGuard.evaluate(structure.activityComponent?.packageName)
+                val callingPackage = when (guardDecision) {
+                    is GuardDecision.Allowed -> guardDecision.packageName
+                    GuardDecision.DeviceLocked, GuardDecision.Throttled, GuardDecision.UntrustedCaller -> {
+                        callback.onSuccess(null)
+                        return@launch
+                    }
+                }
+
+                if (structure.activityComponent?.packageName.isNullOrEmpty()) {
                     callback.onSuccess(null)
                     return@launch
                 }
 
                 // Parser la structure pour trouver les champs de mot de passe
-                val parser = AutofillParser(context)
+                val parser = AutofillParser(structure)
                 val autofillFields = parser.parseForCredentials()
 
                 if (autofillFields.isEmpty() || autofillFields.passwordField == null) {
@@ -98,7 +119,7 @@ class GenPwdAutofillService : AutofillService() {
                     return@launch
                 }
 
-                if (autofillFields.packageName != context.activityComponent?.packageName) {
+                if (!autofillFields.packageName.equals(callingPackage, ignoreCase = true)) {
                     callback.onSuccess(null)
                     return@launch
                 }
@@ -114,7 +135,7 @@ class GenPwdAutofillService : AutofillService() {
 
                 // Coffre déverrouillé : rechercher les correspondances
                 val matchingEntries = autofillRepository.findMatchingEntries(
-                    packageName = autofillFields.packageName
+                    packageName = callingPackage
                 ).first()
 
                 val responseBuilder = FillResponse.Builder()

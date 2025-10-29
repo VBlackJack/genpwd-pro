@@ -47,7 +47,29 @@ jobs:
 
       - name: Run static analysis and unit tests
         working-directory: android
-        run: ./gradlew lint detekt ktlintCheck testDebugUnitTest --console=plain
+        run: |
+          set -euo pipefail
+          ./gradlew lint detekt ktlintCheck testDebugUnitTest --console=plain
+
+      - name: Verify analysis reports
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f android/app/build/reports/lint-results.xml ] && \
+             grep -q 'severity="Error"' android/app/build/reports/lint-results.xml; then
+            echo "Lint errors detected" >&2
+            exit 1
+          fi
+          if [ -f android/app/build/reports/detekt/detekt.xml ] && \
+             grep -q '<error' android/app/build/reports/detekt/detekt.xml; then
+            echo "Detekt violations detected" >&2
+            exit 1
+          fi
+          if [ -d android/app/build/reports/ktlint ] && \
+             grep -R '<error ' -n android/app/build/reports/ktlint; then
+            echo "ktlint errors detected" >&2
+            exit 1
+          fi
 
       - name: Upload verification reports
         if: always()
