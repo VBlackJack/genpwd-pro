@@ -2,7 +2,7 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.julien.genpwdpro.data.local.entity.VaultEntity
+import com.julien.genpwdpro.data.db.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.data.sync.models.*
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager

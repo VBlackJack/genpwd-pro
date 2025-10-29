@@ -1,4 +1,4 @@
-package com.julien.genpwdpro.data.local.entity
+package com.julien.genpwdpro.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

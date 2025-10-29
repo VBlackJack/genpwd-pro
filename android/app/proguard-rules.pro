@@ -24,7 +24,7 @@
 
 # Keep data models for JSON serialization
 -keep class com.julien.genpwdpro.data.models.** { *; }
--keep class com.julien.genpwdpro.data.local.entity.** { *; }
+-keep class com.julien.genpwdpro.data.db.entity.** { *; }
 
 # Keep ViewModels (accessed by Hilt)
 -keep class * extends androidx.lifecycle.ViewModel {
@@ -112,10 +112,10 @@
 -keepclassmembers class ** implements androidx.room.RoomDatabase$Callback { *; }
 -keep class androidx.sqlite.db.SupportSQLiteOpenHelper$Callback { *; }
 -keep class androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory { *; }
--keep class com.julien.genpwdpro.data.local.entity.** { *; }
--keep class com.julien.genpwdpro.data.local.dao.** { *; }
--keep class com.julien.genpwdpro.data.local.migrations.** { *; }
--keepclassmembers class com.julien.genpwdpro.data.local.database.AppDatabase$Companion {
+-keep class com.julien.genpwdpro.data.db.entity.** { *; }
+-keep class com.julien.genpwdpro.data.db.dao.** { *; }
+-keep class com.julien.genpwdpro.data.db.migrations.** { *; }
+-keepclassmembers class com.julien.genpwdpro.data.db.database.AppDatabase$Companion {
     public static androidx.room.migration.Migration MIGRATION_1_2;
     public static androidx.room.migration.Migration MIGRATION_2_3;
     public static androidx.room.migration.Migration MIGRATION_3_4;

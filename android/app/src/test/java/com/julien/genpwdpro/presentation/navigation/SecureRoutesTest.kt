@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.presentation.navigation
 
-import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.db.entity.EntryType
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

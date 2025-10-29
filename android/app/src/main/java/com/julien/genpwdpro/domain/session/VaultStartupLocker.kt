@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.domain.session
 
 import android.util.Log
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext

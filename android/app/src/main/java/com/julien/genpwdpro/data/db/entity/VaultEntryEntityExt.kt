@@ -1,4 +1,4 @@
-package com.julien.genpwdpro.data.local.entity
+package com.julien.genpwdpro.data.db.entity
 
 /**
  * Extensions pour VaultEntryEntity permettant l'accès aux données en clair

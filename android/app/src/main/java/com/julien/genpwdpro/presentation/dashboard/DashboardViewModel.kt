@@ -2,8 +2,8 @@ package com.julien.genpwdpro.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences

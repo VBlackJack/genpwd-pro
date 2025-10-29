@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.domain.model
 
-import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.db.entity.EntryType
 import com.julien.genpwdpro.data.repository.VaultRepository
 import java.util.UUID
 

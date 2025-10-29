@@ -18,7 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.R
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import com.julien.genpwdpro.presentation.utils.SecureWindow

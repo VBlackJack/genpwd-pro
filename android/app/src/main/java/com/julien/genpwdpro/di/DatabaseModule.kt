@@ -7,10 +7,10 @@ import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.local.dao.*
-import com.julien.genpwdpro.data.local.database.AppDatabase
-import com.julien.genpwdpro.data.local.database.DatabaseOpenHelperFactoryProvider
-import com.julien.genpwdpro.data.local.database.SqlCipherDatabaseOpenHelperFactoryProvider
+import com.julien.genpwdpro.data.db.dao.*
+import com.julien.genpwdpro.data.db.database.AppDatabase
+import com.julien.genpwdpro.data.db.database.DatabaseOpenHelperFactoryProvider
+import com.julien.genpwdpro.data.db.database.SqlCipherDatabaseOpenHelperFactoryProvider
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.repository.VaultRepository

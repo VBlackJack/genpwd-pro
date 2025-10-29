@@ -1,8 +1,8 @@
 package com.julien.genpwd-pro.data.repository
 
 import com.google.gson.Gson
-import com.julien.genpwd-pro.data.local.dao.PasswordHistoryDao
-import com.julien.genpwd-pro.data.local.entity.PasswordHistoryEntity
+import com.julien.genpwd-pro.data.db.dao.PasswordHistoryDao
+import com.julien.genpwd-pro.data.db.entity.PasswordHistoryEntity
 import com.julien.genpwd-pro.data.models.GenerationMode
 import com.julien.genpwd-pro.data.models.PasswordResult
 import com.julien.genpwd-pro.data.models.PasswordStrength

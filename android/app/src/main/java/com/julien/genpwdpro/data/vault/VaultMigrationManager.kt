@@ -3,8 +3,8 @@ package com.julien.genpwdpro.data.vault
 import android.content.Context
 import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.local.dao.*
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.dao.*
+import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.data.models.vault.*
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first

@@ -2,14 +2,14 @@ package com.julien.genpwdpro.domain.session
 
 import android.net.Uri
 import com.julien.genpwdpro.core.log.SafeLog
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultData
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.domain.exceptions.VaultException
-import com.julien.genpwdpro.data.local.dao.updateById
+import com.julien.genpwdpro.data.db.dao.updateById
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.IOException

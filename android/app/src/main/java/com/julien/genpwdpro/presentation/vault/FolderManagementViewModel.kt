@@ -2,8 +2,8 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.dao.FolderDao
-import com.julien.genpwdpro.data.local.entity.FolderEntity
+import com.julien.genpwdpro.data.db.dao.FolderDao
+import com.julien.genpwdpro.data.db.entity.FolderEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

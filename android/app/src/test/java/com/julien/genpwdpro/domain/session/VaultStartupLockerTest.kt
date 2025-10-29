@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.domain.session
 
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
