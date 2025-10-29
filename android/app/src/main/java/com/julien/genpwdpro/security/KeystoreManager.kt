@@ -10,6 +10,28 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
+enum class KeystoreAlias(
+    private val baseAlias: String,
+    private val version: Int
+) {
+    MASTER("genpwd_master_key", 2),
+    SYNC("genpwd_sync_key", 2),
+    APP_LOCK("genpwd_app_lock_key", 2),
+    SQL_CIPHER("genpwd_sqlcipher_key", 2);
+
+    val alias: String = "${baseAlias}_v$version"
+    val legacyAliases: Set<String> = buildSet {
+        add(baseAlias)
+        for (legacyVersion in 1 until version) {
+            add("${baseAlias}_v$legacyVersion")
+        }
+    }
+
+    fun matches(candidate: String): Boolean {
+        return candidate == alias || legacyAliases.contains(candidate)
+    }
+}
+
 /**
  * Gestionnaire Android Keystore
  *
@@ -38,10 +60,9 @@ class KeystoreManager @Inject constructor() {
         private const val TAG_SIZE = 128
         private const val IV_SIZE = 12 // 96 bits
 
-        // Noms des clés dans le Keystore
-        private const val MASTER_KEY_ALIAS = "genpwd_master_key"
-        private const val SYNC_KEY_ALIAS = "genpwd_sync_key"
-        private const val APP_LOCK_KEY_ALIAS = "genpwd_app_lock_key"
+        private val MASTER_KEY_ALIAS = KeystoreAlias.MASTER.alias
+        private val SYNC_KEY_ALIAS = KeystoreAlias.SYNC.alias
+        private val APP_LOCK_KEY_ALIAS = KeystoreAlias.APP_LOCK.alias
     }
 
     private val keyStore: KeyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply {
@@ -60,7 +81,7 @@ class KeystoreManager @Inject constructor() {
         userAuthenticationValiditySeconds: Int = 0
     ): SecretKey {
         return getOrCreateKey(
-            alias = MASTER_KEY_ALIAS,
+            alias = KeystoreAlias.MASTER,
             requireBiometric = requireBiometric,
             userAuthenticationValiditySeconds = userAuthenticationValiditySeconds
         )
@@ -71,7 +92,7 @@ class KeystoreManager @Inject constructor() {
      */
     fun getSyncKey(): SecretKey {
         return getOrCreateKey(
-            alias = SYNC_KEY_ALIAS,
+            alias = KeystoreAlias.SYNC,
             requireBiometric = false
         )
     }
@@ -82,7 +103,7 @@ class KeystoreManager @Inject constructor() {
      */
     fun getAppLockKey(): SecretKey {
         return getOrCreateKey(
-            alias = APP_LOCK_KEY_ALIAS,
+            alias = KeystoreAlias.APP_LOCK,
             requireBiometric = true,
             userAuthenticationValiditySeconds = 30 // Valide 30 secondes après auth
         )
@@ -92,17 +113,33 @@ class KeystoreManager @Inject constructor() {
      * Génère ou récupère une clé depuis le Keystore
      */
     private fun getOrCreateKey(
-        alias: String,
+        alias: KeystoreAlias,
         requireBiometric: Boolean = false,
         userAuthenticationValiditySeconds: Int = 0
     ): SecretKey {
-        // Vérifier si la clé existe déjà
-        if (keyStore.containsAlias(alias)) {
-            val entry = keyStore.getEntry(alias, null) as KeyStore.SecretKeyEntry
-            return entry.secretKey
-        }
+        return getExistingKey(alias.alias) ?: createKey(
+            alias = alias.alias,
+            requireBiometric = requireBiometric,
+            userAuthenticationValiditySeconds = userAuthenticationValiditySeconds
+        )
+    }
 
-        // Créer une nouvelle clé
+    private fun getExistingKey(alias: String): SecretKey? {
+        return runCatching {
+            if (keyStore.containsAlias(alias)) {
+                val entry = keyStore.getEntry(alias, null) as KeyStore.SecretKeyEntry
+                entry.secretKey
+            } else {
+                null
+            }
+        }.getOrElse { throw it }
+    }
+
+    private fun createKey(
+        alias: String,
+        requireBiometric: Boolean,
+        userAuthenticationValiditySeconds: Int
+    ): SecretKey {
         val keyGenerator = KeyGenerator.getInstance(
             ENCRYPTION_ALGORITHM,
             ANDROID_KEYSTORE
@@ -115,21 +152,18 @@ class KeystoreManager @Inject constructor() {
             .setBlockModes(BLOCK_MODE)
             .setEncryptionPaddings(PADDING)
             .setKeySize(KEY_SIZE)
-            .setRandomizedEncryptionRequired(true) // IV aléatoire requis
+            .setRandomizedEncryptionRequired(true)
 
-        // Configuration de l'authentification utilisateur
         if (requireBiometric || userAuthenticationValiditySeconds > 0) {
             builder.setUserAuthenticationRequired(true)
             builder.setInvalidatedByBiometricEnrollment(true)
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                // Android 11+: Authentification biométrique forte
                 builder.setUserAuthenticationParameters(
                     userAuthenticationValiditySeconds,
                     KeyProperties.AUTH_BIOMETRIC_STRONG
                 )
             } else {
-                // Android 9-10: Délai de validité uniquement
                 builder.setUserAuthenticationValidityDurationSeconds(
                     userAuthenticationValiditySeconds
                 )
@@ -146,7 +180,7 @@ class KeystoreManager @Inject constructor() {
      */
     fun getEncryptCipher(alias: String = MASTER_KEY_ALIAS): Cipher {
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        val key = getOrCreateKey(alias)
+        val key = resolveKeyForEncryption(alias)
         cipher.init(Cipher.ENCRYPT_MODE, key)
         return cipher
     }
@@ -157,7 +191,8 @@ class KeystoreManager @Inject constructor() {
      */
     fun getDecryptCipher(alias: String = MASTER_KEY_ALIAS, iv: ByteArray): Cipher {
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        val key = getOrCreateKey(alias)
+        val key = getExistingKey(alias)
+            ?: throw IllegalStateException("Keystore alias $alias introuvable pour le déchiffrement")
         val spec = GCMParameterSpec(TAG_SIZE, iv)
         cipher.init(Cipher.DECRYPT_MODE, key, spec)
         return cipher
@@ -167,7 +202,8 @@ class KeystoreManager @Inject constructor() {
      * Chiffre des données avec une clé du Keystore
      */
     fun encrypt(data: ByteArray, alias: String = MASTER_KEY_ALIAS): EncryptedKeystoreData {
-        val cipher = getEncryptCipher(alias)
+        val canonicalAlias = canonicalAlias(alias)
+        val cipher = getEncryptCipher(canonicalAlias)
         val plaintextCopy = data.copyOf()
 
         return try {
@@ -179,7 +215,7 @@ class KeystoreManager @Inject constructor() {
             EncryptedKeystoreData(
                 ciphertext = ciphertext,
                 iv = iv,
-                keyAlias = alias
+                keyAlias = canonicalAlias
             )
         } finally {
             plaintextCopy.fill(0)
@@ -229,8 +265,10 @@ class KeystoreManager @Inject constructor() {
      * Supprime toutes les clés de l'application
      */
     fun deleteAllKeys() {
-        listOf(MASTER_KEY_ALIAS, SYNC_KEY_ALIAS, APP_LOCK_KEY_ALIAS).forEach { alias ->
-            deleteKey(alias)
+        KeystoreAlias.values().forEach { descriptor ->
+            (descriptor.legacyAliases + descriptor.alias).forEach { alias ->
+                deleteKey(alias)
+            }
         }
     }
 
@@ -248,6 +286,14 @@ class KeystoreManager @Inject constructor() {
         return keyStore.aliases().toList().filter {
             it.startsWith("genpwd_")
         }
+    }
+
+    fun isCurrentAlias(alias: String, descriptor: KeystoreAlias): Boolean {
+        return descriptor.alias == alias
+    }
+
+    fun isLegacyAlias(alias: String, descriptor: KeystoreAlias): Boolean {
+        return descriptor.legacyAliases.contains(alias)
     }
 
     /**
@@ -274,6 +320,31 @@ class KeystoreManager @Inject constructor() {
         } else {
             false
         }
+    }
+
+    private fun resolveKeyForEncryption(alias: String): SecretKey {
+        val descriptor = resolveAliasDescriptor(alias)
+        return if (descriptor != null) {
+            val (requireBiometric, validitySeconds) = defaultConfig(descriptor)
+            getOrCreateKey(descriptor, requireBiometric, validitySeconds)
+        } else {
+            getExistingKey(alias) ?: createKey(alias, false, 0)
+        }
+    }
+
+    private fun resolveAliasDescriptor(alias: String): KeystoreAlias? {
+        return KeystoreAlias.values().firstOrNull { it.matches(alias) }
+    }
+
+    private fun defaultConfig(descriptor: KeystoreAlias): Pair<Boolean, Int> {
+        return when (descriptor) {
+            KeystoreAlias.APP_LOCK -> true to 30
+            else -> false to 0
+        }
+    }
+
+    private fun canonicalAlias(alias: String): String {
+        return resolveAliasDescriptor(alias)?.alias ?: alias
     }
 }
 

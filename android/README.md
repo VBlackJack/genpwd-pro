@@ -242,6 +242,12 @@ Ciphertext + Authentication Tag (128 bits)
 - Entry Fields en clair
 ```
 
+### 5. Gestion du Keystore Android (rotation d'alias)
+
+- **Alias versionnés** : toutes les clés matérielles sont suffixées (`_v2`) pour permettre des rotations transparentes sans fuite d'anciens secrets.
+- **Rechiffrement automatique** : lors du prochain déverrouillage, les secrets SQLCipher sont automatiquement ré-encryptés avec la dernière clé et les alias obsolètes sont supprimés.
+- **Plan de secours utilisateur** : si le Keystore invalide une clé (ex. changement biométrique), l'application génère un nouveau secret chiffré et affiche un avertissement indiquant de restaurer une sauvegarde/coffre.
+
 ### 5. Standards et conformité
 
 - **Argon2id** : RFC 9106 (Password Hashing Competition winner)
