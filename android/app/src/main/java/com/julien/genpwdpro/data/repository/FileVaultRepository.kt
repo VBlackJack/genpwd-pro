@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.data.repository
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.*
@@ -416,13 +416,13 @@ class FileVaultRepository @Inject constructor(
 
         currentVaultId?.let { vaultId ->
             if (!legacySyncEnabled) {
-                Log.d(TAG, "Skipping legacy lock sync for vault $vaultId (flag disabled)")
+                SafeLog.d(TAG, "Skipping legacy lock sync for vault $vaultId (flag disabled)")
                 return@let
             }
             try {
                 legacyVaultRepository.lockVault(vaultId)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to sync legacy lock for vault $vaultId", e)
+                SafeLog.e(TAG, "Failed to sync legacy lock for vault $vaultId", e)
             }
         }
     }
@@ -487,17 +487,17 @@ class FileVaultRepository @Inject constructor(
 
     private suspend fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
         if (!legacySyncEnabled) {
-            Log.d(TAG, "Legacy sync disabled by feature flag")
+            SafeLog.d(TAG, "Legacy sync disabled by feature flag")
             return
         }
 
         try {
             val success = legacyVaultRepository.unlockVault(vaultId, masterPassword)
             if (!success) {
-                Log.w(TAG, "Legacy repository did not unlock vault $vaultId")
+                SafeLog.w(TAG, "Legacy repository did not unlock vault $vaultId")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync legacy unlock for vault $vaultId", e)
+            SafeLog.e(TAG, "Failed to sync legacy unlock for vault $vaultId", e)
         }
     }
 

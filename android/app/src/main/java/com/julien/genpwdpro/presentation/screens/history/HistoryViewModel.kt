@@ -27,6 +27,7 @@ class HistoryViewModel @Inject constructor(
 
     val requireBiometricForSensitiveActions: StateFlow<Boolean> =
         sensitiveActionPreferences.requireBiometricForSensitiveActions
+    val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
 
     /**
      * Liste des mots de passe de l'historique

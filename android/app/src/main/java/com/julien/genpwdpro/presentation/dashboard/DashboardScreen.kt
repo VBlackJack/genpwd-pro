@@ -60,6 +60,7 @@ fun DashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
+    val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -130,10 +131,11 @@ fun DashboardScreen(
                                     context = context,
                                     label = "password",
                                     value = password,
-                                    ttlMs = 60_000L
+                                    ttlMs = clipboardTtlMs
                                 )
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                                    val message = ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs)
+                                    snackbarHostState.showSnackbar(message)
                                 }
                             }
                         }

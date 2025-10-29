@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.domain.session
 
 import android.net.Uri
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
@@ -126,18 +126,18 @@ class VaultSessionManager @Inject constructor(
     suspend fun unlockVault(vaultId: String, masterPassword: String): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Unlocking vault: $vaultId")
+                SafeLog.d(TAG, "Unlocking vault: $vaultId")
 
                 // Vérifier qu'un vault n'est pas déjà déverrouillé
                 currentSession?.let {
                     if (it.vaultId == vaultId) {
                         _activeVaultId.value = vaultId
                         resetAutoLockTimer()
-                        Log.w(TAG, "Vault already unlocked: $vaultId")
+                        SafeLog.w(TAG, "Vault already unlocked: $vaultId")
                         return@withContext Result.success(Unit)
                     } else {
                         // Verrouiller l'ancien vault d'abord
-                        Log.d(TAG, "Locking previous vault: ${it.vaultId}")
+                        SafeLog.d(TAG, "Locking previous vault: ${it.vaultId}")
                         lockVault()
                     }
                 }
@@ -167,17 +167,17 @@ class VaultSessionManager @Inject constructor(
                         vaultFileManager.loadVaultFile(vaultId, masterPassword, vaultRegistry.filePath)
                     }
                 } catch (e: SecurityException) {
-                    Log.e(TAG, "Decryption failed for vault: $vaultId", e)
+                    SafeLog.e(TAG, "Decryption failed for vault: $vaultId", e)
                     return@withContext Result.failure(
                         VaultException.DecryptionFailed(cause = e)
                     )
                 } catch (e: IOException) {
-                    Log.e(TAG, "File access error for vault: $vaultId", e)
+                    SafeLog.e(TAG, "File access error for vault: $vaultId", e)
                     return@withContext Result.failure(
                         VaultException.FileAccessError(cause = e)
                     )
                 } catch (e: IllegalArgumentException) {
-                    Log.e(TAG, "Invalid file format for vault: $vaultId", e)
+                    SafeLog.e(TAG, "Invalid file format for vault: $vaultId", e)
                     return@withContext Result.failure(
                         VaultException.InvalidFileFormat(cause = e)
                     )
@@ -188,7 +188,7 @@ class VaultSessionManager @Inject constructor(
                     val saltBytes = cryptoManager.generateSaltFromString(vaultId)
                     cryptoManager.deriveKey(masterPassword, saltBytes)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Key derivation failed for vault: $vaultId", e)
+                    SafeLog.e(TAG, "Key derivation failed for vault: $vaultId", e)
                     return@withContext Result.failure(
                         VaultException.EncryptionFailed("Failed to derive encryption key", e)
                     )
@@ -223,7 +223,7 @@ class VaultSessionManager @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to refresh registry metadata for vault: $vaultId", e)
+                    SafeLog.e(TAG, "Failed to refresh registry metadata for vault: $vaultId", e)
                 }
 
                 // Mettre à jour lastAccessed dans le registry
@@ -231,21 +231,21 @@ class VaultSessionManager @Inject constructor(
                     vaultRegistryDao.updateLastAccessed(vaultId, System.currentTimeMillis())
                     vaultRegistryDao.updateLoadedStatus(vaultId, true)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to update registry for vault: $vaultId", e)
+                    SafeLog.e(TAG, "Failed to update registry for vault: $vaultId", e)
                     // Non-critical error, don't fail the unlock
                 }
 
                 // Démarrer le timer d'auto-lock
                 startAutoLockTimer(DEFAULT_AUTO_LOCK_MINUTES)
 
-                Log.i(TAG, "Vault unlocked successfully: $vaultId")
+                SafeLog.i(TAG, "Vault unlocked successfully: $vaultId")
                 Result.success(Unit)
 
             } catch (e: VaultException) {
-                Log.e(TAG, "Failed to unlock vault: $vaultId - ${e.message}", e)
+                SafeLog.e(TAG, "Failed to unlock vault: $vaultId - ${e.message}", e)
                 Result.failure(e)
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error unlocking vault: $vaultId", e)
+                SafeLog.e(TAG, "Unexpected error unlocking vault: $vaultId", e)
                 Result.failure(VaultException.Unknown(e.message, e))
             }
         }
@@ -277,11 +277,11 @@ class VaultSessionManager @Inject constructor(
             val session = currentSession ?: return@withContext
 
             try {
-                Log.d(TAG, "Locking vault: ${session.vaultId}")
+                SafeLog.d(TAG, "Locking vault: ${session.vaultId}")
 
                 // Sauvegarder une dernière fois
                 saveCurrentVault().onFailure {
-                    Log.e(TAG, "Failed to save vault before locking", it)
+                    SafeLog.e(TAG, "Failed to save vault before locking", it)
                 }
 
                 // Mettre à jour le statut dans le registry
@@ -292,10 +292,10 @@ class VaultSessionManager @Inject constructor(
                 currentSession = null
                 _activeVaultId.value = null
 
-                Log.i(TAG, "Vault locked successfully")
+                SafeLog.i(TAG, "Vault locked successfully")
 
             } catch (e: Exception) {
-                Log.e(TAG, "Error while locking vault", e)
+                SafeLog.e(TAG, "Error while locking vault", e)
                 // Forcer le nettoyage même en cas d'erreur
                 session.cleanup()
                 currentSession = null
@@ -346,11 +346,11 @@ class VaultSessionManager @Inject constructor(
             saveCurrentVault()
 
             resetAutoLockTimer()
-            Log.d(TAG, "Entry added: ${entry.id}")
+            SafeLog.d(TAG, "Entry added: ${entry.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add entry", e)
+            SafeLog.e(TAG, "Failed to add entry", e)
             Result.failure(e)
         }
     }
@@ -375,11 +375,11 @@ class VaultSessionManager @Inject constructor(
             saveCurrentVault()
 
             resetAutoLockTimer()
-            Log.d(TAG, "Entry updated: ${entry.id}")
+            SafeLog.d(TAG, "Entry updated: ${entry.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update entry", e)
+            SafeLog.e(TAG, "Failed to update entry", e)
             Result.failure(e)
         }
     }
@@ -408,11 +408,11 @@ class VaultSessionManager @Inject constructor(
             saveCurrentVault()
 
             resetAutoLockTimer()
-            Log.d(TAG, "Entry deleted: $entryId")
+            SafeLog.d(TAG, "Entry deleted: $entryId")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete entry", e)
+            SafeLog.e(TAG, "Failed to delete entry", e)
             Result.failure(e)
         }
     }
@@ -449,11 +449,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Folder added: ${folder.id}")
+            SafeLog.d(TAG, "Folder added: ${folder.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add folder", e)
+            SafeLog.e(TAG, "Failed to add folder", e)
             Result.failure(e)
         }
     }
@@ -476,11 +476,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Folder updated: ${folder.id}")
+            SafeLog.d(TAG, "Folder updated: ${folder.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update folder", e)
+            SafeLog.e(TAG, "Failed to update folder", e)
             Result.failure(e)
         }
     }
@@ -509,11 +509,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Folder deleted: $folderId")
+            SafeLog.d(TAG, "Folder deleted: $folderId")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete folder", e)
+            SafeLog.e(TAG, "Failed to delete folder", e)
             Result.failure(e)
         }
     }
@@ -550,11 +550,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Tag added: ${tag.id}")
+            SafeLog.d(TAG, "Tag added: ${tag.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add tag", e)
+            SafeLog.e(TAG, "Failed to add tag", e)
             Result.failure(e)
         }
     }
@@ -577,11 +577,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Tag updated: ${tag.id}")
+            SafeLog.d(TAG, "Tag updated: ${tag.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update tag", e)
+            SafeLog.e(TAG, "Failed to update tag", e)
             Result.failure(e)
         }
     }
@@ -608,11 +608,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Tag deleted: $tagId")
+            SafeLog.d(TAG, "Tag deleted: $tagId")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete tag", e)
+            SafeLog.e(TAG, "Failed to delete tag", e)
             Result.failure(e)
         }
     }
@@ -649,11 +649,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Preset added: ${preset.id}")
+            SafeLog.d(TAG, "Preset added: ${preset.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add preset", e)
+            SafeLog.e(TAG, "Failed to add preset", e)
             Result.failure(e)
         }
     }
@@ -676,11 +676,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Preset updated: ${preset.id}")
+            SafeLog.d(TAG, "Preset updated: ${preset.id}")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update preset", e)
+            SafeLog.e(TAG, "Failed to update preset", e)
             Result.failure(e)
         }
     }
@@ -701,11 +701,11 @@ class VaultSessionManager @Inject constructor(
 
             saveCurrentVault()
             resetAutoLockTimer()
-            Log.d(TAG, "Preset deleted: $presetId")
+            SafeLog.d(TAG, "Preset deleted: $presetId")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete preset", e)
+            SafeLog.e(TAG, "Failed to delete preset", e)
             Result.failure(e)
         }
     }
@@ -724,7 +724,7 @@ class VaultSessionManager @Inject constructor(
 
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Saving vault: ${session.vaultId}")
+                SafeLog.d(TAG, "Saving vault: ${session.vaultId}")
 
                 val vaultData = session.vaultData.value
 
@@ -763,11 +763,11 @@ class VaultSessionManager @Inject constructor(
                     )
                 }
 
-                Log.d(TAG, "Vault saved successfully")
+                SafeLog.d(TAG, "Vault saved successfully")
                 Result.success(Unit)
 
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to save vault", e)
+                SafeLog.e(TAG, "Failed to save vault", e)
                 Result.failure(e)
             }
         }
@@ -797,7 +797,7 @@ class VaultSessionManager @Inject constructor(
         session.autoLockJob?.cancel()
         session.autoLockJob = sessionScope.launch {
             delay(minutes * 60 * 1000L)
-            Log.i(TAG, "Auto-lock triggered after $minutes minutes")
+            SafeLog.i(TAG, "Auto-lock triggered after $minutes minutes")
             lockVault()
         }
     }

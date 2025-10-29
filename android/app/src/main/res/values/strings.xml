@@ -76,6 +76,9 @@
     <string name="sensitive_actions_state_on">Biométrie requise</string>
     <string name="sensitive_actions_state_off">Biométrie optionnelle</string>
     <string name="sensitive_actions_unlock_error">Déverrouillez l'appareil pour modifier cette option</string>
+    <string name="sensitive_actions_clipboard_ttl_title">Durée de vie du presse-papiers</string>
+    <string name="sensitive_actions_clipboard_ttl_subtitle">Choisissez quand le contenu sensible est effacé automatiquement</string>
+    <string name="clipboard_auto_clear_message">Copié ! Auto-effacement dans %1$ds</string>
     <string name="cd_save_password">Sauvegarder dans le coffre</string>
     <string name="cd_copy_password">Copier le mot de passe</string>
     <string name="cd_show_password">Afficher le mot de passe</string>

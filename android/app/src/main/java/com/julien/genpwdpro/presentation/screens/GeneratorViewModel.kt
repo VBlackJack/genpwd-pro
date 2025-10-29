@@ -40,6 +40,7 @@ class GeneratorViewModel @Inject constructor(
 
     val requireBiometricForSensitiveActions: StateFlow<Boolean> =
         sensitiveActionPreferences.requireBiometricForSensitiveActions
+    val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
 
     init {
         // Charger les settings sauvegardés

@@ -19,6 +19,9 @@
 #===============================================================================
 # Only keep what's absolutely necessary
 
+# Ensure runtime annotations/generic signatures are preserved for reflection and DI
+-keepattributes *Annotation*,Signature
+
 # Keep data models for JSON serialization
 -keep class com.julien.genpwdpro.data.models.** { *; }
 -keep class com.julien.genpwdpro.data.local.entity.** { *; }
@@ -58,6 +61,10 @@
 
 # Prevent stripping of generic signatures
 -keepattributes Signature
+
+# TODO: Enable when kotlinx.serialization is adopted
+#-keep class kotlinx.serialization.** { *; }
+#-keepclassmembers class * { @kotlinx.serialization.SerialName <fields>; }
 
 #===============================================================================
 # HILT / DAGGER
