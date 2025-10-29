@@ -2,10 +2,13 @@ package com.julien.genpwdpro.domain.utils
 
 import android.content.Context
 import com.google.gson.Gson
+import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.models.DictionaryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.io.InputStreamReader
 
 /**
@@ -13,6 +16,10 @@ import java.io.InputStreamReader
  * Charge et met en cache les dictionnaires depuis assets/
  */
 class DictionaryManager(private val context: Context) {
+
+    companion object {
+        private const val TAG = "DictionaryManager"
+    }
 
     private val gson = Gson()
     private val cache = mutableMapOf<DictionaryType, List<String>>()
@@ -49,8 +56,12 @@ class DictionaryManager(private val context: Context) {
             val dictionary = loadDictionary(type)
             cache[type] = dictionary
             dictionary
-        } catch (e: Exception) {
+        } catch (ioException: IOException) {
+            SafeLog.w(TAG, "Failed to load dictionary for type=$type", ioException)
             // Fallback sur le dictionnaire français intégré
+            fallbackDictionary
+        } catch (parseException: JsonParseException) {
+            SafeLog.w(TAG, "Invalid dictionary format for type=$type", parseException)
             fallbackDictionary
         }
     }
@@ -81,11 +92,7 @@ class DictionaryManager(private val context: Context) {
      */
     suspend fun preloadAll() = withContext(Dispatchers.IO) {
         DictionaryType.values().forEach { type ->
-            try {
-                getDictionary(type)
-            } catch (e: Exception) {
-                // Ignorer les erreurs de pré-chargement
-            }
+            getDictionary(type)
         }
     }
 

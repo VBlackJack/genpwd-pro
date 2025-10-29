@@ -1,9 +1,10 @@
 package com.julien.genpwdpro.domain.session
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -53,7 +54,7 @@ class SessionManager @Inject constructor() {
         )
         _currentSession.value = sessionInfo
         _currentVaultId.value = vaultId
-        Log.d(TAG, "Vault unlocked: $vaultId at $now")
+        SafeLog.d(TAG, "Vault unlocked: $vaultId at $now")
     }
 
     /**
@@ -63,7 +64,7 @@ class SessionManager @Inject constructor() {
         val vaultId = _currentVaultId.value
         _currentSession.value = null
         _currentVaultId.value = null
-        Log.d(TAG, "Vault locked: $vaultId")
+        SafeLog.d(TAG, "Vault locked: $vaultId")
     }
 
     /**
@@ -98,11 +99,11 @@ class SessionManager @Inject constructor() {
     fun isSessionExpired(timeoutHours: Long = DEFAULT_SESSION_TIMEOUT_HOURS): Boolean {
         val session = _currentSession.value ?: return true
         val now = System.currentTimeMillis()
-        val timeoutMillis = timeoutHours * 60 * 60 * 1000
+        val timeoutMillis = TimeUnit.HOURS.toMillis(timeoutHours)
         val isExpired = (now - session.lastAccessTimestamp) > timeoutMillis
 
         if (isExpired) {
-            Log.d(TAG, "Session expired for vault: ${session.vaultId}")
+            SafeLog.d(TAG, "Session expired for vault: ${session.vaultId}")
         }
 
         return isExpired
@@ -116,11 +117,11 @@ class SessionManager @Inject constructor() {
      */
     suspend fun clearExpiredSessions(timeoutHours: Long = DEFAULT_SESSION_TIMEOUT_HOURS): Boolean {
         return if (isSessionExpired(timeoutHours)) {
-            Log.d(TAG, "Clearing expired session")
+            SafeLog.d(TAG, "Clearing expired session")
             lockVault()
             true
         } else {
-            Log.d(TAG, "No expired sessions to clear")
+            SafeLog.d(TAG, "No expired sessions to clear")
             false
         }
     }
@@ -151,7 +152,7 @@ class SessionManager @Inject constructor() {
     fun getTimeUntilExpiration(timeoutHours: Long = DEFAULT_SESSION_TIMEOUT_HOURS): Long? {
         val session = _currentSession.value ?: return null
         val now = System.currentTimeMillis()
-        val timeoutMillis = timeoutHours * 60 * 60 * 1000
+        val timeoutMillis = TimeUnit.HOURS.toMillis(timeoutHours)
         val elapsed = now - session.lastAccessTimestamp
         return (timeoutMillis - elapsed).coerceAtLeast(0)
     }
