@@ -1,0 +1,33 @@
+{
+  "name": "Android SDK",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/genpwd-pro",
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=android-sdk,target=/opt/android-sdk,type=volume"
+  ],
+  "containerEnv": {
+    "ANDROID_SDK_ROOT": "/opt/android-sdk",
+    "ANDROID_HOME": "/opt/android-sdk"
+  },
+  "postCreateCommand": "./setup-android-sdk.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-17",
+            "path": "/usr/lib/jvm/java-17-openjdk-amd64"
+          }
+        ]
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "android-dev-ext.vscode-android-xml"
+      ]
+    }
+  }
+}
