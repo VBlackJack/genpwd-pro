@@ -82,7 +82,7 @@
 
         <receiver
             android:name=".presentation.widget.UserUnlockedReceiver"
-            android:exported="true"
+            android:exported="false"
             android:directBootAware="true">
             <intent-filter>
                 <action android:name="android.intent.action.USER_UNLOCKED" />
