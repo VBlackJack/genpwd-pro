@@ -18,6 +18,7 @@ import androidx.core.content.getSystemService
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.core.ipc.IntentSanitizer
 import com.julien.genpwdpro.data.secure.SecurePrefs
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.data.models.GenerationMode
@@ -89,6 +90,7 @@ class PasswordWidget : AppWidgetProvider() {
                 // Intent pour générer
                 val generateIntent = Intent(context, PasswordWidget::class.java).apply {
                     action = ACTION_GENERATE
+                    IntentSanitizer.stripAllExcept(this)
                 }
                 val generatePendingIntent = PendingIntent.getBroadcast(
                     context,
@@ -101,6 +103,7 @@ class PasswordWidget : AppWidgetProvider() {
                 // Intent pour copier
                 val copyIntent = Intent(context, PasswordWidget::class.java).apply {
                     action = ACTION_COPY
+                    IntentSanitizer.stripAllExcept(this)
                 }
                 val copyPendingIntent = PendingIntent.getBroadcast(
                     context,
@@ -234,6 +237,10 @@ class PasswordWidget : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
+
+        intent.extras?.let { extras ->
+            IntentSanitizer.sanitize(extras, intent)
+        }
 
         when (intent.action) {
             ACTION_GENERATE -> {

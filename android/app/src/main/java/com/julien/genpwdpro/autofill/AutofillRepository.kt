@@ -10,6 +10,7 @@ import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.core.ipc.IntentSanitizer
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
@@ -92,6 +93,7 @@ class AutofillRepository @Inject constructor(
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(MainActivity.EXTRA_AUTOFILL_UNLOCK_REQUEST, true)
+            IntentSanitizer.stripAllExcept(this, setOf(MainActivity.EXTRA_AUTOFILL_UNLOCK_REQUEST))
         }
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

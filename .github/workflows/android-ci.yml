@@ -26,3 +26,5 @@ jobs:
         run: echo "TODO: enable Detekt once configuration is ready"
       - name: ktlint (placeholder)
         run: echo "TODO: enable ktlint once configuration is ready"
+      # - name: Android Lint (enable when SDK is available on CI runners)
+      #   run: ./gradlew lint

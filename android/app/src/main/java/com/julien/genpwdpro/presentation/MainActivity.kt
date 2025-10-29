@@ -17,6 +17,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import com.julien.genpwdpro.core.ipc.IntentSanitizer
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
@@ -89,7 +90,11 @@ class MainActivity : FragmentActivity() {
      * Détermine la destination de départ en fonction de l'intent de lancement.
      */
     private fun handleInitialIntent(intent: Intent?): String {
-        return if (intent?.getBooleanExtra(EXTRA_AUTOFILL_UNLOCK_REQUEST, false) == true) {
+        val sanitized = intent?.also {
+            IntentSanitizer.stripAllExcept(it, setOf(EXTRA_AUTOFILL_UNLOCK_REQUEST))
+        }
+
+        return if (sanitized?.getBooleanExtra(EXTRA_AUTOFILL_UNLOCK_REQUEST, false) == true) {
             Log.d(TAG, "Intent d'autofill détecté, démarrage sur VaultManager.")
             Screen.VaultManager.route
         } else {
@@ -167,6 +172,7 @@ class MainActivity : FragmentActivity() {
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        IntentSanitizer.stripAllExcept(intent, setOf(EXTRA_AUTOFILL_UNLOCK_REQUEST))
         setIntent(intent)
         handleDeepLinkIfPresent(intent)
     }

@@ -4,6 +4,7 @@ import android.util.Base64
 import com.goterl.lazysodium.LazySodiumAndroid
 import com.goterl.lazysodium.SodiumAndroid
 import com.goterl.lazysodium.interfaces.PwHash
+import com.julien.genpwdpro.core.crypto.SecretUtils
 import com.sun.jna.NativeLong
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -112,28 +113,34 @@ class VaultCryptoManager @Inject constructor() {
         val keyBytes = ByteArray(KEY_LENGTH)
         val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
 
-        // Conversion des paramètres: memory est en KB, libsodium attend des bytes
-        val opsLimit = params.iterations.toLong()  // → long
-        val memLimit = NativeLong(params.memory.toLong() * 1024L)  // → NativeLong (bytes)
+        return try {
+            // Conversion des paramètres: memory est en KB, libsodium attend des bytes
+            val opsLimit = params.iterations.toLong()  // → long
+            val memLimit = NativeLong(params.memory.toLong() * 1024L)  // → NativeLong (bytes)
 
-        // Dérivation de clé avec Argon2id via l'interface Native
-        // Signature: cryptoPwHash(..., long opsLimit, NativeLong memLimit, Alg alg)
-        val success = (lazySodium as PwHash.Native).cryptoPwHash(
-            keyBytes,
-            keyBytes.size,           // int, pas toLong()
-            passwordBytes,
-            passwordBytes.size,      // int, pas toLong()
-            libsodiumSalt,
-            opsLimit,                // long
-            memLimit,                // NativeLong
-            PwHash.Alg.PWHASH_ALG_ARGON2ID13
-        )
+            // Dérivation de clé avec Argon2id via l'interface Native
+            // Signature: cryptoPwHash(..., long opsLimit, NativeLong memLimit, Alg alg)
+            val success = (lazySodium as PwHash.Native).cryptoPwHash(
+                keyBytes,
+                keyBytes.size,           // int, pas toLong()
+                passwordBytes,
+                passwordBytes.size,      // int, pas toLong()
+                libsodiumSalt,
+                opsLimit,                // long
+                memLimit,                // NativeLong
+                PwHash.Alg.PWHASH_ALG_ARGON2ID13
+            )
 
-        if (!success) {
-            throw IllegalStateException("Argon2id key derivation failed")
+            if (!success) {
+                throw IllegalStateException("Argon2id key derivation failed")
+            }
+
+            SecretKeySpec(keyBytes, "AES")
+        } finally {
+            SecretUtils.wipe(passwordBytes)
+            SecretUtils.wipe(libsodiumSalt)
+            SecretUtils.wipe(keyBytes)
         }
-
-        return SecretKeySpec(keyBytes, "AES")
     }
 
     /**
@@ -279,7 +286,12 @@ class VaultCryptoManager @Inject constructor() {
      * Chiffre une chaîne de caractères avec AES-256-GCM
      */
     fun encryptString(plaintext: String, key: SecretKey, iv: ByteArray): ByteArray {
-        return encryptAESGCM(plaintext.toByteArray(Charsets.UTF_8), key, iv)
+        val bytes = plaintext.toByteArray(Charsets.UTF_8)
+        return try {
+            encryptAESGCM(bytes, key, iv)
+        } finally {
+            SecretUtils.wipe(bytes)
+        }
     }
 
     /**
@@ -303,7 +315,11 @@ class VaultCryptoManager @Inject constructor() {
      */
     fun decryptString(ciphertext: ByteArray, key: SecretKey, iv: ByteArray): String {
         val decrypted = decryptAESGCM(ciphertext, key, iv)
-        return String(decrypted, Charsets.UTF_8)
+        return try {
+            String(decrypted, Charsets.UTF_8)
+        } finally {
+            SecretUtils.wipe(decrypted)
+        }
     }
 
     /**
@@ -350,7 +366,12 @@ class VaultCryptoManager @Inject constructor() {
      */
     fun generateSaltFromString(seed: String): ByteArray {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
-        return digest.digest(seed.toByteArray(Charsets.UTF_8))
+        val seedBytes = seed.toByteArray(Charsets.UTF_8)
+        return try {
+            digest.digest(seedBytes)
+        } finally {
+            SecretUtils.wipe(seedBytes)
+        }
     }
 
     /**
@@ -429,7 +450,9 @@ class VaultCryptoManager @Inject constructor() {
             val digest = java.security.MessageDigest.getInstance("SHA-256")
 
             // Hash password
-            val passwordHash = digest.digest(masterPassword.toByteArray(Charsets.UTF_8))
+            val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
+            val passwordHash = digest.digest(passwordBytes)
+            SecretUtils.wipe(passwordBytes)
 
             // Hash key file
             digest.reset()
@@ -440,8 +463,15 @@ class VaultCryptoManager @Inject constructor() {
             val combined = passwordHash + keyFileHash
             val compositeHash = digest.digest(combined)
 
-            // Convertir en string pour Argon2id
-            bytesToHex(compositeHash)
+            try {
+                // Convertir en string pour Argon2id
+                bytesToHex(compositeHash)
+            } finally {
+                SecretUtils.wipe(combined)
+                SecretUtils.wipe(compositeHash)
+                SecretUtils.wipe(passwordHash)
+                SecretUtils.wipe(keyFileHash)
+            }
         } else {
             masterPassword
         }
@@ -458,14 +488,13 @@ class VaultCryptoManager @Inject constructor() {
      * Nettoie la mémoire (wipe les clés sensibles)
      */
     fun wipeKey(key: SecretKey) {
-        val encoded = key.encoded
-        encoded.fill(0)
+        key.encoded?.let { SecretUtils.wipe(it) }
     }
 
     /**
      * Nettoie un char array (pour les mots de passe)
      */
     fun wipePassword(password: CharArray) {
-        password.fill(0.toChar())
+        SecretUtils.wipe(password)
     }
 }

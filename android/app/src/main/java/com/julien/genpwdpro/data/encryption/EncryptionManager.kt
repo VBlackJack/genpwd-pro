@@ -8,6 +8,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
+import com.julien.genpwdpro.core.crypto.SecretUtils
 
 /**
  * Gestionnaire de chiffrement AES-256-GCM pour la synchronisation cloud
@@ -22,11 +23,15 @@ import javax.inject.Inject
 class EncryptionManager @Inject constructor() {
 
     companion object {
+        const val CRYPTO_VERSION = 1
         private const val ALGORITHM = "AES"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val KEY_SIZE = 256 // bits
         private const val IV_SIZE = 12 // bytes (96 bits)
         private const val TAG_SIZE = 128 // bits
+        const val KDF_ALGORITHM = "PBKDF2WithHmacSHA256"
+        const val MIN_KDF_ITERATIONS = 310_000
+        const val DEFAULT_KDF_ITERATIONS = 310_000
     }
 
     /**
@@ -50,7 +55,11 @@ class EncryptionManager @Inject constructor() {
      */
     fun decodeKey(encodedKey: String): SecretKey {
         val keyBytes = Base64.decode(encodedKey, Base64.NO_WRAP)
-        return SecretKeySpec(keyBytes, ALGORITHM)
+        return try {
+            SecretKeySpec(keyBytes, ALGORITHM)
+        } finally {
+            SecretUtils.wipe(keyBytes)
+        }
     }
 
     /**
@@ -83,7 +92,12 @@ class EncryptionManager @Inject constructor() {
      * Chiffre une chaîne de caractères
      */
     fun encryptString(plaintext: String, key: SecretKey): EncryptedData {
-        return encrypt(plaintext.toByteArray(Charsets.UTF_8), key)
+        val bytes = plaintext.toByteArray(Charsets.UTF_8)
+        return try {
+            encrypt(bytes, key)
+        } finally {
+            SecretUtils.wipe(bytes)
+        }
     }
 
     /**
@@ -109,7 +123,11 @@ class EncryptionManager @Inject constructor() {
      */
     fun decryptString(encryptedData: EncryptedData, key: SecretKey): String {
         val plaintext = decrypt(encryptedData, key)
-        return String(plaintext, Charsets.UTF_8)
+        return try {
+            String(plaintext, Charsets.UTF_8)
+        } finally {
+            SecretUtils.wipe(plaintext)
+        }
     }
 
     /**
@@ -129,16 +147,55 @@ class EncryptionManager @Inject constructor() {
      * Dérive une clé depuis un mot de passe utilisateur (PBKDF2)
      * NOTE: Pour production, utiliser plutôt Android Keystore
      */
-    fun deriveKeyFromPassword(password: String, salt: ByteArray, iterations: Int = 100000): SecretKey {
-        val factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+    fun deriveKeyFromPassword(
+        password: String,
+        salt: ByteArray,
+        iterations: Int = DEFAULT_KDF_ITERATIONS
+    ): SecretKey {
+        require(iterations >= MIN_KDF_ITERATIONS) {
+            "KDF iterations ($iterations) below required floor $MIN_KDF_ITERATIONS"
+        }
+
+        val factory = javax.crypto.SecretKeyFactory.getInstance(KDF_ALGORITHM)
+        val passwordChars = password.toCharArray()
         val spec = javax.crypto.spec.PBEKeySpec(
-            password.toCharArray(),
+            passwordChars,
             salt,
             iterations,
             KEY_SIZE
         )
-        val tmp = factory.generateSecret(spec)
-        return SecretKeySpec(tmp.encoded, ALGORITHM)
+        return try {
+            val tmp = factory.generateSecret(spec)
+            val encoded = tmp.encoded
+            try {
+                SecretKeySpec(encoded, ALGORITHM)
+            } finally {
+                SecretUtils.wipe(encoded)
+            }
+        } finally {
+            spec.clearPassword()
+            SecretUtils.wipe(passwordChars)
+        }
+    }
+
+    /**
+     * Build a serialisable metadata header (JSON/TLV/etc.) pairing with [EncryptedData].
+     *
+     * The header must include:
+     * - version ([CRYPTO_VERSION])
+     * - KDF algorithm + iterations
+     * - salt (Base64) used for key derivation
+     * - nonce/IV (Base64) used for AES-GCM
+     */
+    fun buildMetadataHeader(iv: ByteArray, salt: ByteArray, iterations: Int = DEFAULT_KDF_ITERATIONS): EncryptionMetadata {
+        require(iv.size == IV_SIZE) { "Nonce must be $IV_SIZE bytes" }
+        require(iterations >= MIN_KDF_ITERATIONS) { "KDF iterations below security floor" }
+        return EncryptionMetadata(
+            version = CRYPTO_VERSION,
+            kdf = EncryptionMetadata.KdfMetadata(KDF_ALGORITHM, iterations),
+            salt = Base64.encodeToString(salt, Base64.NO_WRAP),
+            nonce = Base64.encodeToString(iv, Base64.NO_WRAP)
+        )
     }
 
     /**
@@ -152,10 +209,12 @@ class EncryptionManager @Inject constructor() {
 }
 
 /**
- * Données chiffrées avec AES-256-GCM
+ * Données chiffrées avec AES-256-GCM.
  *
- * @param ciphertext Données chiffrées (inclut le tag d'authentification)
- * @param iv Vecteur d'initialisation (96 bits)
+ * Ce conteneur doit être stocké avec un en-tête structuré (JSON/TLV) généré via
+ * [EncryptionManager.buildMetadataHeader] qui encode la version (`v`), la stratégie KDF,
+ * le salt et le nonce (IV 96 bits). Aucun Additional Authenticated Data (AAD) n'est utilisé
+ * pour l'instant, mais l'en-tête doit être protégé via le tag GCM côté stockage.
  */
 data class EncryptedData(
     val ciphertext: ByteArray,
@@ -206,4 +265,19 @@ data class EncryptedDataEncoded(
             iv = Base64.decode(iv, Base64.NO_WRAP)
         )
     }
+}
+
+/**
+ * Métadonnées de chiffrement sérialisables pour stocker le contexte de dérivation.
+ */
+data class EncryptionMetadata(
+    val version: Int,
+    val kdf: KdfMetadata,
+    val salt: String,
+    val nonce: String
+) {
+    data class KdfMetadata(
+        val algorithm: String,
+        val iterations: Int
+    )
 }
