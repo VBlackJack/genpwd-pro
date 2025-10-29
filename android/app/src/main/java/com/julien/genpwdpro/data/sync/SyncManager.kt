@@ -101,7 +101,7 @@ class SyncManager @Inject constructor(
                 id = UUID.randomUUID().toString(),
                 deviceId = getDeviceId(),
                 timestamp = System.currentTimeMillis(),
-                version = 1,
+                version = EncryptionManager.CRYPTO_VERSION,
                 dataType = SyncDataType.SETTINGS,
                 encryptedPayload = encryptedData.toBase64(),
                 checksum = calculateChecksum(json)
@@ -145,6 +145,10 @@ class SyncManager @Inject constructor(
 
             // Déchiffrer
             val encryptedData = data.encryptedPayload.toEncryptedData()
+            if (data.version != EncryptionManager.CRYPTO_VERSION) {
+                throw SecurityException("Unsupported crypto version ${data.version}")
+            }
+
             val json = encryptionManager.decryptString(encryptedData, key)
 
             // Vérifier l'intégrité
