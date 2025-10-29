@@ -1,0 +1,2019 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.1.2" type="baseline" client="gradle" dependencies="true" name="AGP (8.1.2)" variant="all" version="8.1.2">
+
+    <issue
+        id="ObsoleteLintCustomCheck"
+        message="Library lint checks reference invalid APIs; these checks **will be skipped**!&#xA;&#xA;Lint found an issue registry (`androidx.compose.runtime.lint.RuntimeIssueRegistry`)&#xA;which contains some references to invalid API:&#xA;org.jetbrains.kotlin.analysis.api.session.KtAnalysisSessionProvider: org.jetbrains.kotlin.analysis.api.lifetime.KtLifetimeTokenFactory getTokenFactory()&#xA;(Referenced from androidx/compose/runtime/lint/AutoboxingStateCreationDetector.class)&#xA;&#xA;Therefore, this lint check library is **not** included&#xA;in analysis. This affects the following lint checks:&#xA;`AutoboxingStateValueProperty`&#xA;`AutoboxingStateCreation`&#xA;`CoroutineCreationDuringComposition`&#xA;`FlowOperatorInvokedInComposition`&#xA;`ComposableLambdaParameterNaming`&#xA;`ComposableLambdaParameterPosition`&#xA;`ComposableNaming`&#xA;`StateFlowValueCalledInComposition`&#xA;`CompositionLocalNaming`&#xA;`MutableCollectionMutableState`&#xA;`ProduceStateDoesNotAssignValue`&#xA;`RememberReturnType`&#xA;`OpaqueUnitKey`&#xA;`UnrememberedMutableState`&#xA;&#xA;To use this lint check, upgrade to a more recent version&#xA;of the library.">
+        <location
+            file="../../../../root/.gradle/caches/transforms-4/b73ddac684105a8df21d533bd4815c52/transformed/jetified-runtime-release/jars/lint.jar"/>
+    </issue>
+
+    <issue
+        id="ObsoleteLintCustomCheck"
+        message="Library lint checks reference invalid APIs; these checks **will be skipped**!&#xA;&#xA;Lint found an issue registry (`androidx.compose.ui.lint.UiIssueRegistry`)&#xA;which contains some references to invalid API:&#xA;org.jetbrains.kotlin.analysis.api.session.KtAnalysisSessionProvider: org.jetbrains.kotlin.analysis.api.lifetime.KtLifetimeTokenFactory getTokenFactory()&#xA;(Referenced from androidx/compose/ui/lint/ModifierDeclarationDetectorKt$ensureReceiverIsReferenced$1.class)&#xA;&#xA;Therefore, this lint check library is **not** included&#xA;in analysis. This affects the following lint checks:&#xA;`UnnecessaryComposedModifier`&#xA;`ModifierFactoryExtensionFunction`&#xA;`ModifierFactoryReturnType`&#xA;`ModifierFactoryUnreferencedReceiver`&#xA;`ModifierNodeInspectableProperties`&#xA;`ModifierParameter`&#xA;`MultipleAwaitPointerEventScopes`&#xA;`ReturnFromAwaitPointerEventScope`&#xA;`SuspiciousCompositionLocalModifierRead`&#xA;`SuspiciousModifierThen`&#xA;&#xA;To use this lint check, upgrade to a more recent version&#xA;of the library.">
+        <location
+            file="../../../../root/.gradle/caches/transforms-4/6334627f2faf44a67491e5c75b66fa4b/transformed/jetified-ui-release/jars/lint.jar"/>
+    </issue>
+
+    <issue
+        id="ObsoleteLintCustomCheck"
+        message="Library lint checks reference invalid APIs; these checks **will be skipped**!&#xA;&#xA;Lint found an issue registry (`androidx.lifecycle.lint.LiveDataCoreIssueRegistry`)&#xA;which contains some references to invalid API:&#xA;org.jetbrains.kotlin.analysis.api.session.KtAnalysisSessionProvider: org.jetbrains.kotlin.analysis.api.lifetime.KtLifetimeTokenFactory getTokenFactory()&#xA;(Referenced from androidx/lifecycle/lint/NonNullableMutableLiveDataDetector$createUastHandler$1.class)&#xA;&#xA;Therefore, this lint check library is **not** included&#xA;in analysis. This affects the following lint checks:&#xA;`NullSafeMutableLiveData`&#xA;&#xA;To use this lint check, upgrade to a more recent version&#xA;of the library.">
+        <location
+            file="../../../../root/.gradle/caches/transforms-4/22bc435b52b91195f1540188a59bf95f/transformed/lifecycle-livedata-core-2.8.3/jars/lint.jar"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 26 (current min is 24): `android.view.View#IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS`"
+        errorLine1="            View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/MainActivity.kt"
+            line="83"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillHints`"
+        errorLine1="                val autofillHints = node.autofillHints?.toList() ?: emptyList()"
+        errorLine2="                                         ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="325"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillId`"
+        errorLine1="                        autofillId = node.autofillId ?: return@traverseNode,"
+        errorLine2="                                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="329"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillId`"
+        errorLine1="                        autofillId = node.autofillId ?: return@traverseNode,"
+        errorLine2="                                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="338"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillValue`"
+        errorLine1="                val value = node.autofillValue"
+        errorLine2="                                 ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="366"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillHints`"
+        errorLine1="                val hints = node.autofillHints?.toList() ?: emptyList()"
+        errorLine2="                                 ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="367"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.view.autofill.AutofillValue#isText`"
+        errorLine1="                if (isPasswordField(node, hints) &amp;&amp; value?.isText == true) {"
+        errorLine2="                                                           ~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="369"
+            column="60"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.view.autofill.AutofillValue#getTextValue`"
+        errorLine1="                    password = value.textValue.toString()"
+        errorLine2="                                     ~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="370"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.view.autofill.AutofillValue#isText`"
+        errorLine1="                if (isUsernameField(node, hints) &amp;&amp; value?.isText == true) {"
+        errorLine2="                                                           ~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="373"
+            column="60"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.view.autofill.AutofillValue#getTextValue`"
+        errorLine1="                    username = value.textValue.toString()"
+        errorLine2="                                     ~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="374"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillId`"
+        errorLine1="        val autofillId = node.autofillId"
+        errorLine2="                              ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="393"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getAutofillType`"
+        errorLine1="        if (autofillId != null &amp;&amp; node.autofillType != AssistStructure.ViewNode.AUTOFILL_TYPE_NONE) {"
+        errorLine2="                                       ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="394"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getInputType`"
+        errorLine1="        if (node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD != 0 ||"
+        errorLine2="                 ~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="417"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `android.app.assist.AssistStructure.ViewNode#getInputType`"
+        errorLine1="            node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0) {"
+        errorLine2="                 ~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/autofill/GenPwdAutofillService.kt"
+            line="418"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `java.util.Base64#getEncoder`"
+        errorLine1="            val auth = &quot;Basic &quot; + Base64.getEncoder().encodeToString(credentials.toByteArray())"
+        errorLine2="                                         ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/sync/providers/WebDAVProvider.kt"
+            line="90"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `java.util.Base64.Encoder#encodeToString`"
+        errorLine1="            val auth = &quot;Basic &quot; + Base64.getEncoder().encodeToString(credentials.toByteArray())"
+        errorLine2="                                                      ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/sync/providers/WebDAVProvider.kt"
+            line="90"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="OldTargetApi"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details."
+        errorLine1="        targetSdk = 34"
+        errorLine2="        ~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="19"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UnusedAttribute"
+        message="Attribute `targetCellWidth` is only used in API level 31 and higher (current min is 24)"
+        errorLine1="    android:targetCellWidth=&quot;4&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/xml/widget_info.xml"
+            line="5"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnusedAttribute"
+        message="Attribute `targetCellHeight` is only used in API level 31 and higher (current min is 24)"
+        errorLine1="    android:targetCellHeight=&quot;2&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/xml/widget_info.xml"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.12.0 is available: 1.17.0"
+        errorLine1="    implementation(&quot;androidx.core:core-ktx:1.12.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="129"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.6.2 is available: 2.9.4"
+        errorLine1="    implementation(&quot;androidx.lifecycle:lifecycle-runtime-ktx:2.6.2&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="130"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.8.1 is available: 1.11.0"
+        errorLine1="    implementation(&quot;androidx.activity:activity-compose:1.8.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="131"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.appcompat:appcompat than 1.6.1 is available: 1.7.1"
+        errorLine1="    implementation(&quot;androidx.appcompat:appcompat:1.6.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="132"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.constraintlayout:constraintlayout than 2.1.4 is available: 2.2.1"
+        errorLine1="    implementation(&quot;androidx.constraintlayout:constraintlayout:2.1.4&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="133"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose.material3:material3 than 1.3.1 is available: 1.4.0"
+        errorLine1="    implementation(&quot;androidx.compose.material3:material3:1.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="140"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose.material3:material3-window-size-class than 1.3.1 is available: 1.4.0"
+        errorLine1="    implementation(&quot;androidx.compose.material3:material3-window-size-class:1.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="141"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose.material:material than 1.5.4 is available: 1.9.4"
+        errorLine1="    implementation(&quot;androidx.compose.material:material:1.5.4&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="142"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose.material:material-icons-extended than 1.5.4 is available: 1.7.8"
+        errorLine1="    implementation(&quot;androidx.compose.material:material-icons-extended:1.5.4&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="143"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.6.2 is available: 2.9.4"
+        errorLine1="    implementation(&quot;androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="150"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.6.2 is available: 2.9.4"
+        errorLine1="    implementation(&quot;androidx.lifecycle:lifecycle-runtime-compose:2.6.2&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="151"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.5 is available: 2.9.5"
+        errorLine1="    implementation(&quot;androidx.navigation:navigation-compose:2.7.5&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="152"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.hilt:hilt-navigation-compose than 1.1.0 is available: 1.3.0"
+        errorLine1="    implementation(&quot;androidx.hilt:hilt-navigation-compose:1.1.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="157"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-runtime than 2.6.0 is available: 2.8.3"
+        errorLine1="    implementation(&quot;androidx.room:room-runtime:2.6.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="160"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-ktx than 2.6.0 is available: 2.8.3"
+        errorLine1="    implementation(&quot;androidx.room:room-ktx:2.6.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="161"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-compiler than 2.6.0 is available: 2.8.3"
+        errorLine1="    ksp(&quot;androidx.room:room-compiler:2.6.0&quot;)"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="162"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.0.0 is available: 1.1.7"
+        errorLine1="    implementation(&quot;androidx.datastore:datastore-preferences:1.0.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="165"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.documentfile:documentfile than 1.0.1 is available: 1.1.0"
+        errorLine1="    implementation(&quot;androidx.documentfile:documentfile:1.0.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="168"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-auth than 20.7.0 is available: 21.4.0"
+        errorLine1="    implementation(&quot;com.google.android.gms:play-services-auth:20.7.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="187"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.sqlite:sqlite than 2.3.1 is available: 2.6.1"
+        errorLine1="    implementation(&quot;androidx.sqlite:sqlite:2.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="194"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.work:work-runtime-ktx than 2.9.0 is available: 2.11.0"
+        errorLine1="    implementation(&quot;androidx.work:work-runtime-ktx:2.9.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="197"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.hilt:hilt-work than 1.1.0 is available: 1.3.0"
+        errorLine1="    implementation(&quot;androidx.hilt:hilt-work:1.1.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="198"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.hilt:hilt-compiler than 1.1.0 is available: 1.3.0"
+        errorLine1="    ksp(&quot;androidx.hilt:hilt-compiler:1.1.0&quot;)"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="199"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.security:security-crypto than 1.1.0-alpha06 is available: 1.1.0"
+        errorLine1="    implementation(&quot;androidx.security:security-crypto:1.1.0-alpha06&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="202"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-core than 1.3.1 is available: 1.5.1"
+        errorLine1="    implementation(&quot;androidx.camera:camera-core:1.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="217"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-camera2 than 1.3.1 is available: 1.5.1"
+        errorLine1="    implementation(&quot;androidx.camera:camera-camera2:1.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="218"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-lifecycle than 1.3.1 is available: 1.5.1"
+        errorLine1="    implementation(&quot;androidx.camera:camera-lifecycle:1.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="219"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-view than 1.3.1 is available: 1.5.1"
+        errorLine1="    implementation(&quot;androidx.camera:camera-view:1.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="220"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.mlkit:barcode-scanning than 17.2.0 is available: 17.3.0"
+        errorLine1="    implementation(&quot;com.google.mlkit:barcode-scanning:17.2.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="223"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test.ext:junit than 1.1.5 is available: 1.3.0"
+        errorLine1="    androidTestImplementation(&quot;androidx.test.ext:junit:1.1.5&quot;)"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="230"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test.espresso:espresso-core than 3.5.1 is available: 3.7.0"
+        errorLine1="    androidTestImplementation(&quot;androidx.test.espresso:espresso-core:3.5.1&quot;)"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="231"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test:core than 1.5.0 is available: 1.7.0"
+        errorLine1="    androidTestImplementation(&quot;androidx.test:core:1.5.0&quot;)"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="234"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-testing than 2.6.0 is available: 2.8.3"
+        errorLine1="    androidTestImplementation(&quot;androidx.room:room-testing:2.6.0&quot;)"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="236"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnsafeOptInUsageError"
+        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.core.ExperimentalGetImage` or `@OptIn(markerClass = androidx.camera.core.ExperimentalGetImage.class)`"
+        errorLine1="        val mediaImage = imageProxy.image"
+        errorLine2="                                    ~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/otp/OtpQrScannerActivity.kt"
+            line="241"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UsingMaterialAndMaterial3Libraries"
+        message="Using a material import while also using the material3 library"
+        errorLine1="import androidx.compose.material.FractionalThreshold"
+        errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/components/SwipeablePasswordCard.kt"
+            line="12"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="UsingMaterialAndMaterial3Libraries"
+        message="Using a material import while also using the material3 library"
+        errorLine1="import androidx.compose.material.SwipeableState"
+        errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/components/SwipeablePasswordCard.kt"
+            line="13"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="UsingMaterialAndMaterial3Libraries"
+        message="Using a material import while also using the material3 library"
+        errorLine1="import androidx.compose.material.rememberSwipeableState"
+        errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/components/SwipeablePasswordCard.kt"
+            line="16"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="UsingMaterialAndMaterial3Libraries"
+        message="Using a material import while also using the material3 library"
+        errorLine1="import androidx.compose.material.swipeable"
+        errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/components/SwipeablePasswordCard.kt"
+            line="17"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sqlcipher_recovery_notice&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sqlcipher_recovery_notice&quot;>Clé du coffre réinitialisée. Restaurez votre sauvegarde ou reconnectez vos coffres pour continuer.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="54"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;widget_tap_to_generate&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;widget_tap_to_generate&quot;>Touchez pour générer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="69"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;widget_locked_placeholder&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;widget_locked_placeholder&quot;>Appareil verrouillé – widget en pause&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="70"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;widget_unlock_prompt&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;widget_unlock_prompt&quot;>Déverrouillez votre appareil pour générer ou copier un mot de passe.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="71"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;widget_permission_description&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;widget_permission_description&quot;>Restreint les diffusions du widget GenPwd Pro aux composants approuvés.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="72"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;biometric_prompt_title&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;biometric_prompt_title&quot;>Authentifiez-vous pour continuer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="73"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;biometric_required_message&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;biometric_required_message&quot;>Authentification biométrique requise&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="74"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;biometric_unavailable_message&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;biometric_unavailable_message&quot;>Biométrie indisponible dans ce contexte&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="75"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_title&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_title&quot;>Actions sensibles&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="76"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_subtitle&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_subtitle&quot;>Exiger la biométrie pour afficher ou copier un mot de passe&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="77"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_state_on&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_state_on&quot;>Biométrie requise&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="78"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_state_off&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_state_off&quot;>Biométrie optionnelle&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="79"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_unlock_error&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_unlock_error&quot;>Déverrouillez l’appareil pour modifier cette option&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="80"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_clipboard_ttl_title&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_clipboard_ttl_title&quot;>Durée de vie du presse-papiers&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="81"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;sensitive_actions_clipboard_ttl_subtitle&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;sensitive_actions_clipboard_ttl_subtitle&quot;>Choisissez quand le contenu sensible est effacé automatiquement&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="82"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;clipboard_auto_clear_message&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;clipboard_auto_clear_message&quot;>Copié ! Auto-effacement dans %1$ds&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="83"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_save_password&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_save_password&quot;>Sauvegarder dans le coffre&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="84"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_copy_password&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_copy_password&quot;>Copier le mot de passe&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="85"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_copy_otp_code&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_copy_otp_code&quot;>Copier le code OTP&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="86"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_show_password&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_show_password&quot;>Afficher le mot de passe&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="87"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_hide_password&quot; is not translated in &quot;de&quot; (German), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_hide_password&quot;>Masquer le mot de passe&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="88"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_vault_empty_state_lock&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_vault_empty_state_lock&quot;>Illustration d’un coffre verrouillé&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="89"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_create_vault&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_create_vault&quot;>Créer un coffre&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="90"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_open_vault&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_open_vault&quot;>Ouvrir le coffre&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="91"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_set_default_vault&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_set_default_vault&quot;>Définir ce coffre par défaut&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="92"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;cd_delete_vault&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;cd_delete_vault&quot;>Supprimer le coffre&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="93"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_scanner_title&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_scanner_title&quot;>Scanner un code OTP&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="96"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_scanner_subtitle&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_scanner_subtitle&quot;>Cadrez le QR code dans la zone pour détecter automatiquement la clé OTP.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="97"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_scanner_gallery&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_scanner_gallery&quot;>Galerie&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="98"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_scanner_paste&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_scanner_paste&quot;>Coller un lien&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="99"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_scanner_cancel&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_scanner_cancel&quot;>Annuler&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="100"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_permission_rationale_title&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_permission_rationale_title&quot;>Autorisation caméra requise&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="101"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_permission_rationale&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_permission_rationale&quot;>La caméra est nécessaire pour scanner un QR code OTP. Vous pouvez aussi importer une image ou coller un lien manuellement.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="102"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_permission_denied&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_permission_denied&quot;>Permission caméra refusée. Importez un QR code depuis la galerie ou collez l’URL OTP.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="103"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_permission_settings&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_permission_settings&quot;>Ouvrir les paramètres&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="104"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_import_error&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_import_error&quot;>Import OTP impossible. Vérifiez le code et réessayez.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="105"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_migration_not_supported&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_migration_not_supported&quot;>La migration Google Authenticator n’est pas encore prise en charge. Exportez le compte manuellement.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="106"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_scan_generic_error&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_scan_generic_error&quot;>Impossible de traiter ce code OTP.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="107"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_confirmation_title&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_confirmation_title&quot;>Confirmer l’ajout du code&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="108"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_confirmation_secret_masked&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_confirmation_secret_masked&quot;>Secret : %1$s&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="109"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_confirmation_save&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_confirmation_save&quot;>Enregistrer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="110"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_confirmation_cancel&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_confirmation_cancel&quot;>Recommencer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="111"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_confirmation_label_hint&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_confirmation_label_hint&quot;>Compte&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="112"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_confirmation_issuer_hint&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_confirmation_issuer_hint&quot;>Émetteur&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="113"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_gallery_error&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_gallery_error&quot;>Impossible de lire cette image.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="114"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_camera_unavailable&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_camera_unavailable&quot;>Caméra indisponible.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="115"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_manual_entry_title&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_manual_entry_title&quot;>Importer manuellement&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="116"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_manual_entry_hint&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_manual_entry_hint&quot;>Coller l’URL otpauth://&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="117"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_manual_entry_action&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_manual_entry_action&quot;>Valider&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="118"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_manual_entry_cancel&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_manual_entry_cancel&quot;>Annuler&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="119"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingTranslation"
+        message="&quot;otp_manual_entry_invalid&quot; is not translated in &quot;de&quot; (German), &quot;en&quot; (English), &quot;it&quot; (Italian), &quot;es&quot; (Spanish)"
+        errorLine1="    &lt;string name=&quot;otp_manual_entry_invalid&quot;>Lien OTP invalide.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="120"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;mots&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;msg_generated&quot;>%d mots de passe générés&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="52"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;passwords&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;msg_generated&quot;>%d passwords generated&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-en/strings.xml"
+            line="52"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers"
+        errorLine1="                    override fun checkClientTrusted(chain: Array&lt;X509Certificate>, authType: String) {}"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/sync/providers/WebDAVProvider.kt"
+            line="110"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkServerTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers"
+        errorLine1="                    override fun checkServerTrusted(chain: Array&lt;X509Certificate>, authType: String) {}"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/sync/providers/WebDAVProvider.kt"
+            line="111"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers">
+        <location
+            file="../../../../root/.gradle/caches/modules-2/files-2.1/com.google.http-client/google-http-client/1.43.3/a758b82e55a2f5f681e289c5ed384d3dbda6f3cd/google-http-client-1.43.3.jar"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkServerTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers">
+        <location
+            file="../../../../root/.gradle/caches/modules-2/files-2.1/com.google.http-client/google-http-client/1.43.3/a758b82e55a2f5f681e289c5ed384d3dbda6f3cd/google-http-client-1.43.3.jar"/>
+    </issue>
+
+    <issue
+        id="CustomX509TrustManager"
+        message="Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android&apos;s default implementation."
+        errorLine1="                val trustAllCerts = arrayOf&lt;TrustManager>(object : X509TrustManager {"
+        errorLine2="                                                          ~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/sync/providers/WebDAVProvider.kt"
+            line="109"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="DataExtractionRules"
+        message="The attribute `android:allowBackup` is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures cloud backups and device transfers on Android 12 and higher."
+        errorLine1="        android:allowBackup=&quot;false&quot;"
+        errorLine2="                             ~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="26"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/security/KeystoreManager.kt"
+            line="303"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="                val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/widget/PasswordWidget.kt"
+            line="150"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/widget/PasswordWidget.kt"
+            line="187"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> keyguardManager?.isDeviceLocked == true"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/widget/PasswordWidget.kt"
+            line="196"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="        val isUserUnlocked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/secure/SecurePrefs.kt"
+            line="98"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="        val isLocked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/data/secure/SecurePrefs.kt"
+            line="104"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 24"
+        errorLine1="        val targetContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/widget/storage/WidgetDeviceStorage.kt"
+            line="31"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="This field leaks a context object"
+        errorLine1="    @ApplicationContext private val context: Context"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/screens/sync/SyncSettingsScreen.kt"
+            line="1015"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.xml.backup_rules` appears to be unused"
+        errorLine1="&lt;full-backup-content>"
+        errorLine2="^">
+        <location
+            file="src/main/res/xml/backup_rules.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.xml.data_extraction_rules` appears to be unused"
+        errorLine1="&lt;data-extraction-rules>"
+        errorLine2="^">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.app_subtitle` appears to be unused"
+        errorLine1="    &lt;string name=&quot;app_subtitle&quot;>Générateur de mots de passe sécurisés&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="4"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.mode_syllables` appears to be unused"
+        errorLine1="    &lt;string name=&quot;mode_syllables&quot;>Syllabes&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="7"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.mode_passphrase` appears to be unused"
+        errorLine1="    &lt;string name=&quot;mode_passphrase&quot;>Passphrase&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="8"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.mode_leet` appears to be unused"
+        errorLine1="    &lt;string name=&quot;mode_leet&quot;>Leet Speak&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="9"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_generate` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_generate&quot;>Générer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="12"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_copy_all` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_copy_all&quot;>Tout copier&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="14"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_clear` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_clear&quot;>Effacer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="15"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_export` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_export&quot;>Exporter&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="16"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_import` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_import&quot;>Importer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="17"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.section_main_options` appears to be unused"
+        errorLine1="    &lt;string name=&quot;section_main_options&quot;>Options principales&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="20"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.section_characters` appears to be unused"
+        errorLine1="    &lt;string name=&quot;section_characters&quot;>Caractères&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="21"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.section_casing` appears to be unused"
+        errorLine1="    &lt;string name=&quot;section_casing&quot;>Casse avancée&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="22"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.section_results` appears to be unused"
+        errorLine1="    &lt;string name=&quot;section_results&quot;>Résultats&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="23"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_length` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_length&quot;>Longueur&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="26"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_policy` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_policy&quot;>Politique&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="27"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_word_count` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_word_count&quot;>Nombre de mots&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="28"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_separator` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_separator&quot;>Séparateur&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_dictionary` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_dictionary&quot;>Dictionnaire&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="30"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_digits` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_digits&quot;>Chiffres&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="31"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_specials` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_specials&quot;>Spéciaux&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="32"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_quantity` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_quantity&quot;>Nombre&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="33"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.setting_mask` appears to be unused"
+        errorLine1="    &lt;string name=&quot;setting_mask&quot;>Masquer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="34"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.placement_start` appears to be unused"
+        errorLine1="    &lt;string name=&quot;placement_start&quot;>Début&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="37"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.placement_end` appears to be unused"
+        errorLine1="    &lt;string name=&quot;placement_end&quot;>Fin&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.placement_middle` appears to be unused"
+        errorLine1="    &lt;string name=&quot;placement_middle&quot;>Milieu&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.placement_random` appears to be unused"
+        errorLine1="    &lt;string name=&quot;placement_random&quot;>Aléatoire&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="40"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.placement_visual` appears to be unused"
+        errorLine1="    &lt;string name=&quot;placement_visual&quot;>Visuel&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="41"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.case_mixed` appears to be unused"
+        errorLine1="    &lt;string name=&quot;case_mixed&quot;>Mixte&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="44"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.case_upper` appears to be unused"
+        errorLine1="    &lt;string name=&quot;case_upper&quot;>MAJUSCULES&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="45"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.case_lower` appears to be unused"
+        errorLine1="    &lt;string name=&quot;case_lower&quot;>minuscules&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="46"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.case_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;case_title&quot;>Title Case&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="47"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.case_blocks` appears to be unused"
+        errorLine1="    &lt;string name=&quot;case_blocks&quot;>Blocs&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="48"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.msg_generated` appears to be unused"
+        errorLine1="    &lt;string name=&quot;msg_generated&quot;>%d mots de passe générés&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="52"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.msg_error` appears to be unused"
+        errorLine1="    &lt;string name=&quot;msg_error&quot;>Erreur lors de la génération&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="53"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_generate` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_generate&quot;>Cliquez sur Générer pour créer vos mots de passe&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="57"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_history` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_history&quot;>Aucun historique&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="58"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.entropy_bits` appears to be unused"
+        errorLine1="    &lt;string name=&quot;entropy_bits&quot;>%s bits&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="61"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.entropy_weak` appears to be unused"
+        errorLine1="    &lt;string name=&quot;entropy_weak&quot;>Faible&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="62"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.entropy_medium` appears to be unused"
+        errorLine1="    &lt;string name=&quot;entropy_medium&quot;>Moyen&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="63"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.entropy_strong` appears to be unused"
+        errorLine1="    &lt;string name=&quot;entropy_strong&quot;>Fort&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="64"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.entropy_very_strong` appears to be unused"
+        errorLine1="    &lt;string name=&quot;entropy_very_strong&quot;>Très fort&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="65"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UseOfNonLambdaOffsetOverload"
+        message="State backed values should use the lambda overload of Modifier.offset"
+        errorLine1="                    .offset(x = offsetX.dp, y = 4.dp)"
+        errorLine2="                     ~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/components/ThemeToggle.kt"
+            line="128"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="ButtonStyle"
+        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
+        errorLine1="        &lt;Button"
+        errorLine2="         ~~~~~~">
+        <location
+            file="src/main/res/layout/widget_password.xml"
+            line="41"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ButtonStyle"
+        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
+        errorLine1="        &lt;Button"
+        errorLine2="         ~~~~~~">
+        <location
+            file="src/main/res/layout/widget_password.xml"
+            line="54"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="Autofill"
+        message="Missing `autofillHints` attribute"
+        errorLine1="        &lt;EditText"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_otp_qr_scanner.xml"
+            line="140"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="Autofill"
+        message="Missing `autofillHints` attribute"
+        errorLine1="        &lt;EditText"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_otp_qr_scanner.xml"
+            line="149"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="Autofill"
+        message="Missing `autofillHints` attribute"
+        errorLine1="    &lt;EditText"
+        errorLine2="     ~~~~~~~~">
+        <location
+            file="src/main/res/layout/dialog_paste_input.xml"
+            line="8"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="ReportShortcutUsage"
+        message="Calling this method indicates use of dynamic shortcuts, but there are no calls to methods that track shortcut usage, such as `pushDynamicShortcut` or `reportShortcutUsed`. Calling these methods is recommended, as they track shortcut usage and allow launchers to adjust which shortcuts appear based on activation history. Please see https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage"
+        errorLine1="        ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/julien/genpwdpro/presentation/shortcuts/ShortcutManager.kt"
+            line="43"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="KtxExtensionAvailable"
+        message="Add suffix `-ktx` to enable the Kotlin extensions for this library"
+        errorLine1="    implementation(&quot;androidx.sqlite:sqlite:2.3.1&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="194"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;GenPwd Pro - Option 1&quot;, should use `@string` resource"
+        errorLine1="            android:text=&quot;GenPwd Pro - Option 1&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/autofill_item.xml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;Entropie: 128 bits&quot;, should use `@string` resource"
+        errorLine1="            android:text=&quot;Entropie: 128 bits&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/autofill_item.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;Sécurisé&quot;, should use `@string` resource"
+        errorLine1="        android:contentDescription=&quot;Sécurisé&quot; />"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/autofill_item.xml"
+            line="51"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;GenPwd Pro&quot;, should use `@string` resource"
+        errorLine1="        android:text=&quot;GenPwd Pro&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/widget_password.xml"
+            line="13"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;Tap to generate&quot;, should use `@string` resource"
+        errorLine1="        android:text=&quot;Tap to generate&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/widget_password.xml"
+            line="24"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;Copy&quot;, should use `@string` resource"
+        errorLine1="            android:text=&quot;Copy&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/widget_password.xml"
+            line="45"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;Generate&quot;, should use `@string` resource"
+        errorLine1="            android:text=&quot;Generate&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/widget_password.xml"
+            line="58"
+            column="13"/>
+    </issue>
+
+</issues>

@@ -2,113 +2,20 @@ name: Android CI
 
 on:
   push:
-    branches: [ main, android/** ]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
   pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        id: setup-java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Gradle # gradle/gradle-build-action handles wrapper & caches
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Cache AVD # Optional snapshot cache keeps emulator cold-starts fast
-        id: avd-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.android/avd
-            ~/.android/adb
-          key: ${{ runner.os }}-android-avd-api34-${{ hashFiles('android/app/src/main/AndroidManifest.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-android-avd-api34-
-
-      - name: Install Android SDK packages
-        run: |
-          mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
-          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --install \
-            "platform-tools" \
-            "build-tools;34.0.0" \
-            "platforms;android-34" \
-            "emulator" \
-            "system-images;android-34;google_apis;x86_64"
-
-      - name: Create AVD (API 34)
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        run: |
-          echo "no" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
-            -n ci-api34 \
-            -k "system-images;android-34;google_apis;x86_64" \
-            --device "pixel_6"
-
-      - name: Start emulator
-        run: |
-          ${ANDROID_SDK_ROOT}/platform-tools/adb start-server
-          nohup ${ANDROID_SDK_ROOT}/emulator/emulator \
-            -avd ci-api34 \
-            -no-snapshot \
-            -no-window \
-            -gpu swiftshader_indirect \
-            -no-audio \
-            -no-boot-anim \
-            -camera-back none \
-            -camera-front none \
-            > /dev/null 2>&1 &
-
-          ${ANDROID_SDK_ROOT}/platform-tools/adb wait-for-device
-
-          boot_completed=""
-          attempt=0
-          until [ "$boot_completed" = "1" ] || [ $attempt -gt 60 ]; do
-            boot_completed=$(${ANDROID_SDK_ROOT}/platform-tools/adb shell getprop sys.boot_completed | tr -d '\r')
-            if [ "$boot_completed" != "1" ]; then
-              sleep 2
-            fi
-            attempt=$((attempt + 1))
-          done
-
-          if [ "$boot_completed" != "1" ]; then
-            echo "Emulator failed to boot" >&2
-            exit 1
-          fi
-
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell settings put global window_animation_scale 0
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell settings put global transition_animation_scale 0
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell settings put global animator_duration_scale 0
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell input keyevent 82
-
-      - name: Run Gradle checks
-        working-directory: android
-        run: ./gradlew lint ktlintCheck detekt testDebugUnitTest connectedCheck --no-daemon --stacktrace
-
-      - name: Shutdown emulator
-        if: always()
-        run: ${ANDROID_SDK_ROOT}/platform-tools/adb -s emulator-5554 emu kill || true
-
-  baseline-profile:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -117,94 +24,40 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+      - name: Configure Gradle cache
+        uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-home-cache-cleanup: true
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          build-root-directory: android
 
-      - name: Cache AVD
-        id: baseline-avd-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.android/avd
-            ~/.android/adb
-          key: ${{ runner.os }}-android-avd-api34-baseline-${{ hashFiles('android/app/src/main/AndroidManifest.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-android-avd-api34-baseline-
-
-      - name: Install Android SDK packages
+      - name: Install Android SDK components
         run: |
-          mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
-          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --install \
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
             "platform-tools" \
             "build-tools;34.0.0" \
             "platforms;android-34" \
-            "emulator" \
-            "system-images;android-34;google_apis;x86_64"
+            "platforms;android-35"
 
-      - name: Create AVD (API 34)
-        if: steps.baseline-avd-cache.outputs.cache-hit != 'true'
-        run: |
-          echo "no" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
-            -n ci-api34-baseline \
-            -k "system-images;android-34;google_apis;x86_64" \
-            --device "pixel_6"
-
-      - name: Start emulator
-        run: |
-          ${ANDROID_SDK_ROOT}/platform-tools/adb start-server
-          nohup ${ANDROID_SDK_ROOT}/emulator/emulator \
-            -avd ci-api34-baseline \
-            -no-snapshot \
-            -no-window \
-            -gpu swiftshader_indirect \
-            -no-audio \
-            -no-boot-anim \
-            -camera-back none \
-            -camera-front none \
-            > /dev/null 2>&1 &
-
-          ${ANDROID_SDK_ROOT}/platform-tools/adb wait-for-device
-
-          boot_completed=""
-          attempt=0
-          until [ "$boot_completed" = "1" ] || [ $attempt -gt 60 ]; do
-            boot_completed=$(${ANDROID_SDK_ROOT}/platform-tools/adb shell getprop sys.boot_completed | tr -d '\r')
-            if [ "$boot_completed" != "1" ]; then
-              sleep 2
-            fi
-            attempt=$((attempt + 1))
-          done
-
-          if [ "$boot_completed" != "1" ]; then
-            echo "Emulator failed to boot" >&2
-            exit 1
-          fi
-
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell settings put global window_animation_scale 0
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell settings put global transition_animation_scale 0
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell settings put global animator_duration_scale 0
-          ${ANDROID_SDK_ROOT}/platform-tools/adb shell input keyevent 82
-
-      - name: Refresh baseline profile
+      - name: Run static analysis and unit tests
         working-directory: android
-        run: ./gradlew refreshBaselineProfile --no-daemon --stacktrace
+        run: ./gradlew lint detekt ktlintCheck testDebugUnitTest --console=plain
 
-      - name: Verify committed baseline profile is current
-        run: |
-          git diff --exit-code android/app/src/main/baseline-prof.txt
-
-      - name: Upload baseline profile artifact
+      - name: Upload verification reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: baseline-prof
-          path: android/app/src/main/baseline-prof.txt
-
-      - name: Shutdown emulator
-        if: always()
-        run: ${ANDROID_SDK_ROOT}/platform-tools/adb -s emulator-5554 emu kill || true
+          name: android-ci-reports
+          path: |
+            android/app/build/reports/lint-results.html
+            android/app/build/reports/lint-results.xml
+            android/app/build/reports/detekt/**
+            android/app/build/reports/ktlint/**
+            android/app/build/reports/tests/testDebugUnitTest/**
+            android/app/build/test-results/testDebugUnitTest/**

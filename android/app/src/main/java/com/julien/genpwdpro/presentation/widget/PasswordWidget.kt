@@ -51,6 +51,15 @@ class PasswordWidget : AppWidgetProvider() {
         private const val PREF_LAST_PASSWORD = "last_password"
         private const val DEFAULT_PENDING_INTENT_FLAGS =
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        private val ALLOWED_ACTIONS = setOf(
+            AppWidgetManager.ACTION_APPWIDGET_UPDATE,
+            AppWidgetManager.ACTION_APPWIDGET_OPTIONS_CHANGED,
+            AppWidgetManager.ACTION_APPWIDGET_ENABLED,
+            AppWidgetManager.ACTION_APPWIDGET_DISABLED,
+            AppWidgetManager.ACTION_APPWIDGET_DELETED,
+            ACTION_GENERATE,
+            ACTION_COPY
+        )
 
         /**
          * Mise à jour manuelle du widget
@@ -143,9 +152,10 @@ class PasswordWidget : AppWidgetProvider() {
                 } else {
                     null
                 }
-                val isKeyguardHost = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY) ==
-                    AppWidgetManager.WIDGET_CATEGORY_KEYGUARD
-                // Never surface vault-derived secrets on the keyguard host; fall back to placeholders until unlocked.
+                val isKeyguardHost =
+                    options?.getInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY) ==
+                        AppWidgetManager.APPWIDGET_HOST_CATEGORY_KEYGUARD
+                // Never surface vault secrets on the keyguard host; fall back to placeholders until unlocked.
                 val allowSecrets = isUnlocked && !isKeyguardHost
                 val safePassword = if (allowSecrets) passwordToDisplay else ""
                 updateWidget(context, appWidgetId, safePassword, allowSecrets)
@@ -154,7 +164,10 @@ class PasswordWidget : AppWidgetProvider() {
 
         fun handleUserUnlocked(context: Context) {
             val appContext = context.applicationContext
-            if (WidgetDeviceStorage.consumeNeedsRefresh(appContext) || isDeviceUnlocked(appContext)) {
+            if (
+                WidgetDeviceStorage.consumeNeedsRefresh(appContext) ||
+                isDeviceUnlocked(appContext)
+            ) {
                 updateAllWidgets(appContext)
             }
         }
@@ -184,7 +197,9 @@ class PasswordWidget : AppWidgetProvider() {
 
             val keyguardManager = context.getSystemService<KeyguardManager>()
             val isLocked = when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> keyguardManager?.isDeviceLocked == true
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
+                    keyguardManager?.isDeviceLocked == true
+
                 else -> keyguardManager?.isKeyguardLocked == true
             }
 
@@ -252,7 +267,19 @@ class PasswordWidget : AppWidgetProvider() {
             IntentSanitizer.sanitize(extras, intent)
         }
 
-        when (intent.action) {
+        val action = intent.action
+        val component = intent.component?.className
+        if (component != null && component != PasswordWidget::class.java.name) {
+            SafeLog.w(TAG, "Ignoring broadcast targeting unexpected component: $component")
+            return
+        }
+
+        if (action != null && !ALLOWED_ACTIONS.contains(action)) {
+            SafeLog.w(TAG, "Ignoring unauthorized widget action: $action")
+            return
+        }
+
+        when (action) {
             ACTION_GENERATE -> {
                 // Générer un nouveau mot de passe
                 generatePassword(context)
