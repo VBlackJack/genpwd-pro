@@ -89,4 +89,31 @@
     <string name="cd_open_vault">Ouvrir le coffre</string>
     <string name="cd_set_default_vault">Définir ce coffre par défaut</string>
     <string name="cd_delete_vault">Supprimer le coffre</string>
+
+    <!-- OTP Import -->
+    <string name="otp_scanner_title">Scanner un code OTP</string>
+    <string name="otp_scanner_subtitle">Cadrez le QR code dans la zone pour détecter automatiquement la clé OTP.</string>
+    <string name="otp_scanner_gallery">Galerie</string>
+    <string name="otp_scanner_paste">Coller un lien</string>
+    <string name="otp_scanner_cancel">Annuler</string>
+    <string name="otp_permission_rationale_title">Autorisation caméra requise</string>
+    <string name="otp_permission_rationale">La caméra est nécessaire pour scanner un QR code OTP. Vous pouvez aussi importer une image ou coller un lien manuellement.</string>
+    <string name="otp_permission_denied">Permission caméra refusée. Importez un QR code depuis la galerie ou collez l\'URL OTP.</string>
+    <string name="otp_permission_settings">Ouvrir les paramètres</string>
+    <string name="otp_import_error">Import OTP impossible. Vérifiez le code et réessayez.</string>
+    <string name="otp_migration_not_supported">La migration Google Authenticator n\'est pas encore prise en charge. Exportez le compte manuellement.</string>
+    <string name="otp_scan_generic_error">Impossible de traiter ce code OTP.</string>
+    <string name="otp_confirmation_title">Confirmer l\'ajout du code</string>
+    <string name="otp_confirmation_secret_masked">Secret : %1$s</string>
+    <string name="otp_confirmation_save">Enregistrer</string>
+    <string name="otp_confirmation_cancel">Recommencer</string>
+    <string name="otp_confirmation_label_hint">Compte</string>
+    <string name="otp_confirmation_issuer_hint">Émetteur</string>
+    <string name="otp_gallery_error">Impossible de lire cette image.</string>
+    <string name="otp_camera_unavailable">Caméra indisponible.</string>
+    <string name="otp_manual_entry_title">Importer manuellement</string>
+    <string name="otp_manual_entry_hint">Coller l\'URL otpauth://</string>
+    <string name="otp_manual_entry_action">Valider</string>
+    <string name="otp_manual_entry_cancel">Annuler</string>
+    <string name="otp_manual_entry_invalid">Lien OTP invalide.</string>
 </resources>
