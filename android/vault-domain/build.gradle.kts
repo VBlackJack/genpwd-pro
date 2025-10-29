@@ -49,5 +49,6 @@ dependencies {
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.4")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.4")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     testImplementation(kotlin("test"))
 }
