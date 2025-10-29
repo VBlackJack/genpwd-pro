@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint-baseline version="1.0">
-    <!-- Baseline placeholder. Regenerate with `./gradlew :app:lintRelease --update-baseline` once Android SDK is available. -->
+    <!-- Baseline placeholder. Après installation du SDK via scripts/install-android-sdk.sh, exécuter
+         `./gradlew :app:updateLintBaselineRelease` pour le régénérer. -->
 </lint-baseline>

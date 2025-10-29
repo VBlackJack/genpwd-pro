@@ -398,6 +398,33 @@ cd genpwd-pro/android
 ./gradlew jacocoTestReport
 ```
 
+### 5. Préparer le SDK Android en CLI
+
+Pour exécuter Lint et les builds en dehors d'Android Studio, installez un SDK Android minimal identique à la CI.
+
+```bash
+cd android
+./scripts/install-android-sdk.sh  # installe les outils dans \$HOME/Android/Sdk par défaut
+cat <<'EOF' > local.properties
+sdk.dir=/chemin/vers/votre/Android/Sdk
+EOF
+```
+
+> 💡 Le script accepte un chemin personnalisé en argument (`./scripts/install-android-sdk.sh /opt/android-sdk`). Il se charge de télécharger les command line tools, d'accepter les licences et d'installer `platforms;android-34`, `build-tools;33.0.1` et `platform-tools`.
+
+### 6. Lancer Lint et mettre à jour la baseline
+
+Une fois le SDK installé :
+
+```bash
+cd android
+./gradlew :app:clean
+./gradlew :app:updateLintBaselineRelease
+./gradlew :app:lintRelease
+```
+
+Le fichier `app/lint-baseline.xml` est ainsi régénéré. Commitez-le dès qu'il change pour garantir que la CI échoue uniquement lorsqu'une nouvelle alerte est introduite.
+
 ---
 
 ## Utilisation
