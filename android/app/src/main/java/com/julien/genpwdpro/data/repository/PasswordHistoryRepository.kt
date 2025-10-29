@@ -1,9 +1,9 @@
 package com.julien.genpwdpro.data.repository
 
 import com.google.gson.Gson
-import com.julien.genpwdpro.data.local.dao.PasswordHistoryDao
-import com.julien.genpwdpro.data.local.entity.PasswordHistoryEntity
-import com.julien.genpwdpro.data.local.entity.toGenerationMode
+import com.julien.genpwdpro.data.db.dao.PasswordHistoryDao
+import com.julien.genpwdpro.data.db.entity.PasswordHistoryEntity
+import com.julien.genpwdpro.data.db.entity.toGenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
 import kotlinx.coroutines.flow.Flow

@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.R
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.presentation.security.BiometricGate
 import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import kotlinx.coroutines.launch

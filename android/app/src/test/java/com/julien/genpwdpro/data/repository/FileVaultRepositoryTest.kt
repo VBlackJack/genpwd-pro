@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.data.repository
 
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.security.BiometricVaultManager
 import io.mockk.MockKAnnotations

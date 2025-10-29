@@ -1,11 +1,11 @@
-package com.julien.genpwdpro.data.local.database
+package com.julien.genpwdpro.data.db.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.julien.genpwdpro.data.local.dao.*
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.dao.*
+import com.julien.genpwdpro.data.db.entity.*
 
 /**
  * Base de données Room de l'application

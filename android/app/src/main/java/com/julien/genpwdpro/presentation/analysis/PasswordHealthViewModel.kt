@@ -2,7 +2,7 @@ package com.julien.genpwdpro.presentation.analysis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.db.entity.EntryType
 import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

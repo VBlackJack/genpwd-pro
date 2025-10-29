@@ -5,11 +5,11 @@ import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.local.dao.VaultDao
-import com.julien.genpwdpro.data.local.dao.VaultEntryDao
-import com.julien.genpwdpro.data.local.entity.EntryType
-import com.julien.genpwdpro.data.local.entity.VaultEntity
-import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
+import com.julien.genpwdpro.data.db.dao.VaultDao
+import com.julien.genpwdpro.data.db.dao.VaultEntryDao
+import com.julien.genpwdpro.data.db.entity.EntryType
+import com.julien.genpwdpro.data.db.entity.VaultEntity
+import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first

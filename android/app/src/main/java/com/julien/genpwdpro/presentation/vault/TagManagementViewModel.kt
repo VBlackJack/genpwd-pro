@@ -2,9 +2,9 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.dao.TagDao
-import com.julien.genpwdpro.data.local.entity.EntryTagCrossRef
-import com.julien.genpwdpro.data.local.entity.TagEntity
+import com.julien.genpwdpro.data.db.dao.TagDao
+import com.julien.genpwdpro.data.db.entity.EntryTagCrossRef
+import com.julien.genpwdpro.data.db.entity.TagEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

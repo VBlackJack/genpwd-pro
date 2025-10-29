@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.data.models.vault
 
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.entity.*
 
 /**
  * Metadata du vault (stocké dans le fichier .gpv)

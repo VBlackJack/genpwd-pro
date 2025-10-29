@@ -3,8 +3,8 @@ package com.julien.genpwdpro.presentation.vault
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.lifecycle.HiltViewModel

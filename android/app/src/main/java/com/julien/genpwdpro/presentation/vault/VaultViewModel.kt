@@ -2,7 +2,7 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.entity.VaultEntity
+import com.julien.genpwdpro.data.db.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.domain.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel

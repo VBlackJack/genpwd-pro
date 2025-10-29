@@ -1,7 +1,7 @@
-package com.julien.genpwdpro.data.local.dao
+package com.julien.genpwdpro.data.db.dao
 
 import androidx.room.*
-import com.julien.genpwdpro.data.local.entity.PresetEntity
+import com.julien.genpwdpro.data.db.entity.PresetEntity
 import kotlinx.coroutines.flow.Flow
 
 /**

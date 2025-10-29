@@ -2,8 +2,8 @@ package com.julien.genpwdpro.data.repository
 
 import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.local.dao.*
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.dao.*
+import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.models.CaseMode
