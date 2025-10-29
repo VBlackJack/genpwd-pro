@@ -2,9 +2,12 @@ package com.julien.genpwdpro.data.sync
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.data.sync.models.*
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
+import com.julien.genpwdpro.data.sync.SyncPreferencesManager
+import com.julien.genpwdpro.data.sync.AutoSyncScheduler
+import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +38,10 @@ import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as Vault
 class VaultSyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val vaultRepository: VaultRepository,
-    private val conflictResolver: ConflictResolver
+    private val conflictResolver: ConflictResolver,
+    private val credentialManager: ProviderCredentialManager,
+    private val syncPreferencesManager: SyncPreferencesManager,
+    private val autoSyncScheduler: AutoSyncScheduler
 ) {
 
     companion object {
@@ -125,11 +131,42 @@ class VaultSyncManager @Inject constructor(
      * Déconnecte du provider
      */
     suspend fun disconnect() {
-        currentProvider?.disconnect()
+        SafeLog.i(TAG, "Disconnecting cloud provider and clearing credentials")
+
+        val providerType = currentProviderType
+
+        try {
+            currentProvider?.disconnect()
+        } catch (e: Exception) {
+            SafeLog.w(TAG, "Error while disconnecting provider", e)
+        }
+
+        runCatching { autoSyncScheduler.cancelAllSync() }
+            .onFailure { SafeLog.w(TAG, "Failed to cancel scheduled sync work", it) }
+
+        if (providerType != CloudProviderType.NONE) {
+            credentialManager.clearProvider(providerType)
+        }
+
+        try {
+            syncPreferencesManager.clearAllCredentials()
+        } catch (e: Exception) {
+            SafeLog.w(TAG, "Failed to clear sync preferences credentials", e)
+        }
+
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
+            .remove(KEY_PROVIDER_TYPE)
+            .apply()
+
+        currentProvider = null
+        currentProviderType = CloudProviderType.NONE
+
         _config.value = _config.value.copy(
             enabled = false,
             providerType = CloudProviderType.NONE
         )
+        _syncStatus.value = SyncStatus.NEVER_SYNCED
     }
 
     /**
@@ -188,7 +225,7 @@ class VaultSyncManager @Inject constructor(
                 VaultSyncResult.Error("Échec de l'upload")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error syncing vault", e)
+            SafeLog.e(TAG, "Error syncing vault", e)
             _syncStatus.value = SyncStatus.ERROR
             VaultSyncResult.Error(e.message ?: "Erreur inconnue", e)
         }
@@ -224,7 +261,7 @@ class VaultSyncManager @Inject constructor(
 
             success
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading vault", e)
+            SafeLog.e(TAG, "Error downloading vault", e)
             _syncStatus.value = SyncStatus.ERROR
             false
         }
@@ -265,7 +302,7 @@ class VaultSyncManager @Inject constructor(
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error resolving conflict", e)
+            SafeLog.e(TAG, "Error resolving conflict", e)
             false
         }
     }
