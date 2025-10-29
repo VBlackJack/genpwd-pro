@@ -1,6 +1,7 @@
 # GenPwd Pro v2.5.1 🔐
 
 [![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
+[![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
 [![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
@@ -42,6 +43,27 @@ npm run dev
 | `npm run test:watch` | Relance les tests en continu via nodemon |
 | `npm run test:browser` | Vérifie l'interface via Puppeteer |
 | `npm run lint` | Analyse statique ESLint sur src/ et tools/ |
+
+## 🧱 Android build tooling
+
+L'application Android est livrée avec un environnement de développement complet prêt à l'emploi.
+
+### Option 1 — Devcontainer (recommandé)
+
+1. Installez [VS Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers).
+2. Ouvrez le dossier racine et choisissez **Reopen in Container**. L'image construit le SDK Android (cmdline-tools, platform-tools, build-tools 34.0.0, platform 34) automatiquement.
+3. Une fois la configuration terminée, exécutez la suite de vérifications :
+
+```bash
+cd android
+./gradlew lint detekt ktlintCheck testDebugUnitTest
+```
+
+### Option 2 — Installation locale
+
+Exécutez le script `./.devcontainer/setup-android-sdk.sh` depuis la racine. Il télécharge les composants du SDK avec `sdkmanager` et génère `android/local.properties` avec `sdk.dir=...`.
+
+Un exemple d'exécution GitHub Actions est disponible dans [`docs/ci/android-ci-sample.txt`](docs/ci/android-ci-sample.txt).
 
 ## 🎮 Utilisation rapide
 

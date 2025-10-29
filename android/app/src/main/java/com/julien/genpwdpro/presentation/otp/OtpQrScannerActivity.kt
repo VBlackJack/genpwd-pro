@@ -11,7 +11,6 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -19,7 +18,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -36,13 +34,14 @@ import com.julien.genpwdpro.domain.otp.OtpConfig
 import com.julien.genpwdpro.domain.otp.OtpUriMigrationNotSupportedException
 import com.julien.genpwdpro.domain.otp.OtpUriParser
 import com.julien.genpwdpro.domain.otp.OtpUriParserException
+import com.julien.genpwdpro.presentation.security.SecureBaseActivity
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
-class OtpQrScannerActivity : AppCompatActivity() {
+class OtpQrScannerActivity : SecureBaseActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var actionsContainer: View
@@ -87,7 +86,7 @@ class OtpQrScannerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        secureSensitiveContent(true)
         setContentView(R.layout.activity_otp_qr_scanner)
         setResult(Activity.RESULT_CANCELED)
 
@@ -155,35 +154,37 @@ class OtpQrScannerActivity : AppCompatActivity() {
     }
 
     private fun showRationaleDialog() {
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.otp_permission_rationale_title)
             .setMessage(R.string.otp_permission_rationale)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                dialog.dismiss()
+            .setPositiveButton(android.R.string.ok) { dialogInterface, _ ->
+                dialogInterface.dismiss()
                 permissionLauncher.launch(Manifest.permission.CAMERA)
             }
-            .setNegativeButton(R.string.otp_manual_entry_cancel) { dialog, _ ->
-                dialog.dismiss()
+            .setNegativeButton(R.string.otp_manual_entry_cancel) { dialogInterface, _ ->
+                dialogInterface.dismiss()
             }
             .show()
+        secureScreenDelegate.secureDialog(dialog)
     }
 
     private fun showPermissionDeniedDialog() {
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setMessage(R.string.otp_permission_denied)
-            .setPositiveButton(R.string.otp_scanner_gallery) { dialog, _ ->
-                dialog.dismiss()
+            .setPositiveButton(R.string.otp_scanner_gallery) { dialogInterface, _ ->
+                dialogInterface.dismiss()
                 launchGallery()
             }
-            .setNegativeButton(R.string.otp_scanner_paste) { dialog, _ ->
-                dialog.dismiss()
+            .setNegativeButton(R.string.otp_scanner_paste) { dialogInterface, _ ->
+                dialogInterface.dismiss()
                 showPasteDialog()
             }
-            .setNeutralButton(R.string.otp_permission_settings) { dialog, _ ->
-                dialog.dismiss()
+            .setNeutralButton(R.string.otp_permission_settings) { dialogInterface, _ ->
+                dialogInterface.dismiss()
                 openAppSettings()
             }
             .show()
+        secureScreenDelegate.secureDialog(dialog)
     }
 
     private fun openAppSettings() {
@@ -375,11 +376,11 @@ class OtpQrScannerActivity : AppCompatActivity() {
     private fun showPasteDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_paste_input, null)
         val inputField = view.findViewById<EditText>(R.id.pasteInput)
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.otp_manual_entry_title)
             .setView(view)
-            .setPositiveButton(R.string.otp_manual_entry_action) { dialog, _ ->
-                dialog.dismiss()
+            .setPositiveButton(R.string.otp_manual_entry_action) { dialogInterface, _ ->
+                dialogInterface.dismiss()
                 val text = inputField.text?.toString()?.trim()
                 if (!text.isNullOrEmpty()) {
                     handleManualUri(text)
@@ -387,10 +388,11 @@ class OtpQrScannerActivity : AppCompatActivity() {
                     showError(getString(R.string.otp_manual_entry_invalid))
                 }
             }
-            .setNegativeButton(R.string.otp_manual_entry_cancel) { dialog, _ ->
-                dialog.dismiss()
+            .setNegativeButton(R.string.otp_manual_entry_cancel) { dialogInterface, _ ->
+                dialogInterface.dismiss()
             }
             .show()
+        secureScreenDelegate.secureDialog(dialog)
     }
 
     private fun handleManualUri(value: String) {

@@ -1,0 +1,33 @@
+{
+  "name": "GenPwd Android",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "ANDROID_SDK_ROOT": "/opt/android-sdk"
+    }
+  },
+  "remoteEnv": {
+    "ANDROID_SDK_ROOT": "/opt/android-sdk",
+    "ANDROID_HOME": "/opt/android-sdk",
+    "JAVA_HOME": "/usr/lib/jvm/msopenjdk-17-amd64"
+  },
+  "postCreateCommand": "setup-android-sdk.sh --project-root ${containerWorkspaceFolder}/android",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-17",
+            "path": "/usr/lib/jvm/msopenjdk-17-amd64"
+          }
+        ],
+        "kotlin.languageServer.enabled": true
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "esafirm.kotlin-formatter",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

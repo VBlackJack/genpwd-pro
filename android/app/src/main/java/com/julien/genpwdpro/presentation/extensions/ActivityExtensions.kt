@@ -5,6 +5,7 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.julien.genpwdpro.presentation.security.SecureDelegateOwner
 import java.util.WeakHashMap
 
 /**
@@ -12,6 +13,10 @@ import java.util.WeakHashMap
  * sur la fenêtre de l'activité hôte.
  */
 fun Activity.setSecureScreen(enabled: Boolean) {
+    if (this is SecureDelegateOwner) {
+        secureScreenDelegate.setNavigationSecure(enabled)
+        return
+    }
     if (enabled) {
         SecureWindowController.register(this, SecureWindowController.NavigationOwner)
     } else {
