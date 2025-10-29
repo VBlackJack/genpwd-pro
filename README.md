@@ -125,12 +125,26 @@ Les contributions sont bienvenues ! Consultez notre guide de contribution pour :
 - Améliorer l'interface utilisateur
 - Optimiser les performances
 
-### 🔍 Intégration Android
+### 🐳 Environnement de développement (Dev Container)
 
-Le module Android applique désormais des contrôles stricts (Lint, ktlint, Detekt et tests JUnit). Exécutez la commande suivante depuis le dossier `android/` avant toute Pull Request :
+Un environnement VS Code Dev Container est fourni pour simplifier l'installation du JDK 17 et du SDK Android.
+
+1. Installez l'extension **Dev Containers** dans VS Code.
+2. Ouvrez ce dépôt puis exécutez `Dev Containers: Reopen in Container`.
+3. Attendez la fin du script `setup-android-sdk.sh` (lancé automatiquement) qui installe les composants `platform-tools`, `build-tools;34.0.0` et `platforms;android-34`, et génère `android/local.properties`.
+4. Les commandes Gradle suivantes sont alors disponibles directement dans le terminal du conteneur :
 
 ```bash
-./gradlew lint ktlintCheck detekt test
+cd android
+./gradlew lint detekt ktlintCheck testDebugUnitTest
+```
+
+### 🔍 Intégration Android
+
+Le module Android applique des contrôles stricts (Lint, ktlint, Detekt et tests JUnit). Exécutez la commande suivante depuis le dossier `android/` avant toute Pull Request :
+
+```bash
+./gradlew lint detekt ktlintCheck testDebugUnitTest
 ```
 
 ## 📄 Licence
