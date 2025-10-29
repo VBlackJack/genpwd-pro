@@ -205,6 +205,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
+    // Tink for AEAD cryptography
+    implementation("com.google.crypto.tink:tink-android:1.11.0")
+
     // Cryptography
     // Lazysodium for Argon2id (Android ARM compatible - replaces argon2-jvm)
     implementation("com.goterl:lazysodium-android:5.1.0@aar")

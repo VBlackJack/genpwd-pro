@@ -2,6 +2,7 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import com.google.gson.Gson
+import com.julien.genpwdpro.crypto.CryptoEngine
 import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.sync.models.SyncStatus
@@ -10,8 +11,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.security.MessageDigest
+import java.nio.charset.StandardCharsets
 import java.util.UUID
-import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,8 +47,8 @@ class SyncManager @Inject constructor(
     private val _syncEvents = MutableStateFlow<SyncEvent>(SyncEvent.Completed)
     val syncEvents: Flow<SyncEvent> = _syncEvents.asStateFlow()
 
-    // Clé de chiffrement stockée en mémoire (rechargée à chaque lancement)
-    private var encryptionKey: SecretKey? = null
+    // Moteur de chiffrement stocké en mémoire (rechargé à chaque lancement)
+    private var cryptoEngine: CryptoEngine? = null
 
     companion object {
         private const val PREFS_NAME = "sync_prefs"
@@ -63,20 +64,19 @@ class SyncManager @Inject constructor(
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
         // Charger ou générer l'ID de l'appareil
-        val deviceId = prefs.getString(KEY_DEVICE_ID, null) ?: run {
+        if (prefs.getString(KEY_DEVICE_ID, null) == null) {
             val newId = UUID.randomUUID().toString()
             prefs.edit().putString(KEY_DEVICE_ID, newId).apply()
-            newId
         }
 
         // Charger ou générer la clé de chiffrement
-        encryptionKey = prefs.getString(KEY_ENCRYPTION_KEY, null)?.let {
-            encryptionManager.decodeKey(it)
+        cryptoEngine = prefs.getString(KEY_ENCRYPTION_KEY, null)?.let { serialized ->
+            encryptionManager.restoreEngine(serialized)
         } ?: run {
-            val newKey = encryptionManager.generateKey()
-            val encodedKey = encryptionManager.encodeKey(newKey)
-            prefs.edit().putString(KEY_ENCRYPTION_KEY, encodedKey).apply()
-            newKey
+            val engine = encryptionManager.createEngine()
+            val serialized = encryptionManager.serializeEngine(engine)
+            prefs.edit().putString(KEY_ENCRYPTION_KEY, serialized).apply()
+            engine
         }
     }
 
@@ -84,7 +84,7 @@ class SyncManager @Inject constructor(
      * Synchronise les paramètres
      */
     suspend fun syncSettings(settings: Settings): SyncResult {
-        val key = encryptionKey ?: return SyncResult.Error("Clé de chiffrement non initialisée")
+        val engine = cryptoEngine ?: return SyncResult.Error("Clé de chiffrement non initialisée")
 
         _syncStatus.value = SyncStatus.SYNCING
         _syncEvents.value = SyncEvent.Started
@@ -94,7 +94,7 @@ class SyncManager @Inject constructor(
             val json = gson.toJson(settings)
 
             // Chiffrer
-            val encryptedData = encryptionManager.encryptString(json, key)
+            val encryptedData = encryptionManager.encryptString(json, engine)
 
             // Créer SyncData
             val syncData = SyncData(
@@ -138,7 +138,7 @@ class SyncManager @Inject constructor(
      * Télécharge et déchiffre les paramètres
      */
     suspend fun downloadSettings(): Settings? {
-        val key = encryptionKey ?: return null
+        val engine = cryptoEngine ?: return null
 
         return try {
             val data = cloudRepository.download(SyncDataType.SETTINGS).firstOrNull() ?: return null
@@ -149,7 +149,7 @@ class SyncManager @Inject constructor(
                 throw SecurityException("Unsupported crypto version ${data.version}")
             }
 
-            val json = encryptionManager.decryptString(encryptedData, key)
+            val json = encryptionManager.decryptString(encryptedData, engine)
 
             // Vérifier l'intégrité
             if (calculateChecksum(json) != data.checksum) {
@@ -241,7 +241,7 @@ class SyncManager @Inject constructor(
      */
     private fun calculateChecksum(data: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
-        val hash = digest.digest(data.toByteArray())
+        val hash = digest.digest(data.toByteArray(StandardCharsets.UTF_8))
         return hash.joinToString("") { "%02x".format(it) }
     }
 
@@ -249,9 +249,9 @@ class SyncManager @Inject constructor(
      * Crée un SyncData depuis des données locales
      */
     private suspend fun createSyncData(settings: Settings, dataType: SyncDataType): SyncData {
-        val key = encryptionKey ?: throw IllegalStateException("Clé non initialisée")
+        val engine = cryptoEngine ?: throw IllegalStateException("Clé non initialisée")
         val json = gson.toJson(settings)
-        val encryptedData = encryptionManager.encryptString(json, key)
+        val encryptedData = encryptionManager.encryptString(json, engine)
 
         return SyncData(
             id = UUID.randomUUID().toString(),
@@ -287,7 +287,7 @@ class SyncManager @Inject constructor(
     suspend fun reset() {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().clear().apply()
-        encryptionKey = null
+        cryptoEngine = null
         _syncStatus.value = SyncStatus.PENDING
     }
 }
