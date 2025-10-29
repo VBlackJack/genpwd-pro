@@ -42,3 +42,13 @@ tasks.register("refreshBaselineProfile") {
     description = "Generates the baseline profile artifacts via the baselineprofile module."
     dependsOn(":baselineprofile:generateBaselineProfile")
 }
+
+tasks.register("check") {
+    group = "verification"
+    description = "Runs Android lint, Detekt, and ktlint checks across modules."
+    dependsOn(
+        ":app:lint",
+        ":app:detekt",
+        ":app:ktlintCheck"
+    )
+}

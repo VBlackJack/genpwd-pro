@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("androidx.baselineprofile")
     id("org.jlleitschuh.gradle.ktlint")
     id("io.gitlab.arturbosch.detekt")
 }
@@ -62,6 +63,7 @@ android {
         checkDependencies = true
         warningsAsErrors = true
         abortOnError = true
+        fatal.addAll(listOf("Security", "Correctness", "Performance"))
     }
 
     composeOptions {
@@ -89,7 +91,7 @@ android {
             val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             val variantName = name
             val versionName = defaultConfig.versionName
-            outputImpl.outputFileName = "genpwd-pro-v${versionName}-${variantName}.apk"
+            outputImpl.outputFileName = "genpwd-pro-v$versionName-$variantName.apk"
         }
     }
 
@@ -107,11 +109,19 @@ ktlint {
 detekt {
     buildUponDefaultConfig = true
     allRules = false
-    config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
+    parallel = true
+    config.setFrom(files(rootProject.file("../config/detekt/detekt.yml")))
+    autoCorrect = false
+}
+
+tasks.named("check") {
+    dependsOn("lint", "detekt", "ktlintCheck")
 }
 
 dependencies {
     baselineProfile(project(":baselineprofile"))
+
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.4")
 
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")

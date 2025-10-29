@@ -33,10 +33,6 @@ android {
     }
 }
 
-baselineProfile {
-    automaticGenerationDuringBuild = false
-}
-
 dependencies {
     implementation(project(":app"))
 

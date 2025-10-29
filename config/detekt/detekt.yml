@@ -7,25 +7,136 @@ config:
 
 processors:
   active: true
+  exclude:
+    - 'DetektProgressListener'
 
 console-reports:
   active: true
+  exclude:
+    - 'ProjectStatisticsReport'
+    - 'FindingsReport'
+
+output-reports:
+  active: true
 
 comments:
-  UndocumentedPublicFunction:
+  active: true
+  CommentOverPrivateFunction:
     active: false
-  UndocumentedPublicClass:
+  EndOfSentenceFormat:
     active: false
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
+    privatePropertyPattern: '_?[A-Za-z][_A-Za-z0-9]*'
 
 style:
+  active: true
   MagicNumber:
-    active: false
+    active: true
+    ignoreEnums: false
+    ignoreConstantDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
   ReturnCount:
+    active: true
     max: 3
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: 'Forbidden FIXME marker; resolve issues before merging.'
+        value: 'FIXME:'
+      - reason: 'Forbidden STOPSHIP marker; resolve issues before release.'
+        value: 'STOPSHIP:'
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      - reason: 'Use structured logging instead of writing directly to stdout.'
+        value: 'kotlin.io.println'
+      - reason: 'Use structured logging instead of writing directly to stdout.'
+        value: 'kotlin.io.print'
+  WildcardImport:
+    active: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+    excludePackageStatements: true
+    excludeImportStatements: true
 
 complexity:
+  active: true
+  LongMethod:
+    active: true
+    threshold: 60
   LongParameterList:
     active: true
-    threshold: 8
-  LargeClass:
-    active: false
+    threshold: 6
+    ignoreDefaultParameters: true
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 20
+    thresholdInObjects: 20
+
+performance:
+  active: true
+  SpreadOperator:
+    active: true
+  ForEachOnRange:
+    active: true
+  UnnecessaryTemporaryInstantiation:
+    active: true
+
+potential-bugs:
+  active: true
+  ImplicitDefaultLocale:
+    active: true
+  UnsafeCallOnNullableType:
+    active: true
+  UnsafeCast:
+    active: true
+  UnreachableCode:
+    active: true
+
+exceptions:
+  active: true
+  ObjectExtendsThrowable:
+    active: true
+  PrintStackTrace:
+    active: true
+  ThrowingExceptionsWithoutMessageOrCause:
+    active: true
+
+libraries:
+  active: true
+  ForbiddenPublicDataClass:
+    active: true
+    ignorePackages:
+      - '*.internal'
+      - '*.internal.*'
+  LibraryCodeMustSpecifyReturnType:
+    active: true
+    allowOmitUnit: false
+  LibraryEntitiesShouldNotBePublic:
+    active: true
+
+coroutines:
+  active: true
+  RedundantSuspendModifier:
+    active: true
+
+formatting:
+  active: true
+  android: true
+  autoCorrect: false
+  ImportOrdering:
+    active: true
+  Indentation:
+    active: true
+    continuationIndentSize: 4
