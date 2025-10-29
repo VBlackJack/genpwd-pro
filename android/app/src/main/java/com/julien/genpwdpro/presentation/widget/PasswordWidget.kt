@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -23,6 +24,7 @@ import com.julien.genpwdpro.domain.generators.SyllablesGenerator
 import com.julien.genpwdpro.domain.usecases.ApplyCasingUseCase
 import com.julien.genpwdpro.domain.usecases.PlaceCharactersUseCase
 import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import com.julien.genpwdpro.presentation.widget.storage.WidgetDeviceStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -108,12 +110,10 @@ class PasswordWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // Mise à jour de chaque instance du widget
-        appWidgetIds.forEach { appWidgetId ->
-            val isUnlocked = isDeviceUnlocked(context)
-            val lastPassword = if (isUnlocked) getLastPassword(context) else ""
-            updateWidget(context, appWidgetId, lastPassword, isUnlocked)
+        if (!isDeviceUnlocked(context)) {
+            WidgetDeviceStorage.markNeedsRefresh(context)
         }
+        updateAllWidgets(context, widgetIds = appWidgetIds)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -127,6 +127,11 @@ class PasswordWidget : AppWidgetProvider() {
             ACTION_COPY -> {
                 // Copier le dernier mot de passe
                 copyLastPassword(context)
+            }
+            Intent.ACTION_USER_UNLOCKED -> {
+                if (WidgetDeviceStorage.consumeNeedsRefresh(context) || isDeviceUnlocked(context)) {
+                    updateAllWidgets(context)
+                }
             }
         }
     }
@@ -158,7 +163,7 @@ class PasswordWidget : AppWidgetProvider() {
 
                 // Sauvegarder et mettre à jour
                 saveLastPassword(context, password)
-                updateAllWidgets(context, password)
+                updateAllWidgets(context, passwordOverride = password)
 
                 // Feedback utilisateur
                 CoroutineScope(Dispatchers.Main).launch {
@@ -200,15 +205,29 @@ class PasswordWidget : AppWidgetProvider() {
         return securePreferences(context)?.getString(PREF_LAST_PASSWORD, "") ?: ""
     }
 
-    private fun updateAllWidgets(context: Context, password: String) {
+    private fun updateAllWidgets(
+        context: Context,
+        passwordOverride: String? = null,
+        widgetIds: IntArray? = null
+    ) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(
-            android.content.ComponentName(context, PasswordWidget::class.java)
+        val appWidgetIds = widgetIds ?: appWidgetManager.getAppWidgetIds(
+            ComponentName(context, PasswordWidget::class.java)
         )
 
+        if (appWidgetIds.isEmpty()) {
+            return
+        }
+
         val isUnlocked = isDeviceUnlocked(context)
+        val passwordToDisplay = if (isUnlocked) {
+            passwordOverride ?: getLastPassword(context)
+        } else {
+            WidgetDeviceStorage.markNeedsRefresh(context)
+            ""
+        }
+
         appWidgetIds.forEach { appWidgetId ->
-            val passwordToDisplay = if (isUnlocked) password else ""
             updateWidget(context, appWidgetId, passwordToDisplay, isUnlocked)
         }
     }
@@ -233,7 +252,8 @@ class PasswordWidget : AppWidgetProvider() {
             context.getString(R.string.widget_unlock_prompt),
             Toast.LENGTH_SHORT
         ).show()
-        updateAllWidgets(context, "")
+        WidgetDeviceStorage.markNeedsRefresh(context)
+        updateAllWidgets(context)
         return false
     }
 
@@ -255,6 +275,11 @@ class PasswordWidget : AppWidgetProvider() {
     }
 
     private fun securePreferences(context: Context): SharedPreferences? {
+        if (!isDeviceUnlocked(context)) {
+            Log.d(TAG, "Secure preferences unavailable while device is locked")
+            return null
+        }
+
         return try {
             val masterKey = MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)

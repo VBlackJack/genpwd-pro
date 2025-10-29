@@ -61,11 +61,13 @@
         <!-- Widget Provider -->
         <receiver
             android:name=".presentation.widget.PasswordWidget"
-            android:exported="true">
+            android:exported="true"
+            android:directBootAware="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.julien.genpwdpro.ACTION_GENERATE" />
                 <action android:name="com.julien.genpwdpro.ACTION_COPY" />
+                <action android:name="android.intent.action.USER_UNLOCKED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

@@ -66,6 +66,6 @@
     <!-- Widget -->
     <string name="widget_description">Générez des mots de passe rapidement depuis votre écran d\'accueil</string>
     <string name="widget_tap_to_generate">Touchez pour générer</string>
-    <string name="widget_locked_placeholder">Déverrouillez pour afficher</string>
-    <string name="widget_unlock_prompt">Déverrouillez l'appareil pour utiliser le widget</string>
+    <string name="widget_locked_placeholder">Appareil verrouillé</string>
+    <string name="widget_unlock_prompt">Déverrouillez l'appareil pour générer et copier un mot de passe.</string>
 </resources>
