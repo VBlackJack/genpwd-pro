@@ -15,6 +15,7 @@ import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.core.content.getSystemService
+import androidx.core.content.IntentCompat
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.julien.genpwdpro.R
@@ -268,9 +269,15 @@ class PasswordWidget : AppWidgetProvider() {
         }
 
         val action = intent.action
+        val senderPackage = IntentCompat.getSenderPackage(intent)
         val component = intent.component?.className
         if (component != null && component != PasswordWidget::class.java.name) {
             SafeLog.w(TAG, "Ignoring broadcast targeting unexpected component: $component")
+            return
+        }
+
+        if (senderPackage != null && senderPackage != context.packageName) {
+            SafeLog.w(TAG, "Ignoring widget broadcast from unexpected sender: $senderPackage")
             return
         }
 
