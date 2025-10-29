@@ -12,9 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.presentation.utils.SecureWindow
@@ -142,7 +144,7 @@ fun VaultManagerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lock,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_vault_empty_state_lock),
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -156,7 +158,7 @@ fun VaultManagerScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Button(onClick = { viewModel.showCreateDialog() }) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_create_vault))
                         Spacer(Modifier.width(8.dp))
                         Text("Create Vault")
                     }
@@ -332,7 +334,11 @@ fun VaultCard(
                         onClick = onOpen,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.LockOpen,
+                            contentDescription = stringResource(R.string.cd_open_vault),
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text("Open", style = MaterialTheme.typography.labelMedium)
                     }
@@ -342,7 +348,11 @@ fun VaultCard(
                             onClick = onSetDefault,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = stringResource(R.string.cd_set_default_vault),
+                                modifier = Modifier.size(18.dp)
+                            )
                             Spacer(Modifier.width(4.dp))
                             Text("Default", style = MaterialTheme.typography.labelMedium)
                         }
@@ -355,7 +365,11 @@ fun VaultCard(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.cd_delete_vault),
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text("Delete", style = MaterialTheme.typography.labelMedium)
                     }

@@ -92,6 +92,31 @@
 -keep @androidx.room.Entity class *
 -dontwarn androidx.room.paging.**
 -dontwarn androidx.room.**
+-keep class androidx.sqlite.db.SupportSQLiteOpenHelper$Callback { *; }
+-keep class androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory { *; }
+
+#==============================================================================
+# WORKMANAGER
+#==============================================================================
+-keep class androidx.work.Configuration { *; }
+-keep class androidx.work.WorkerParameters { *; }
+-keep class androidx.work.ListenableWorker { *; }
+-keep class androidx.work.impl.foreground.SystemForegroundService { *; }
+-keep class androidx.hilt.work.HiltWorkerFactory { *; }
+-keep class com.julien.genpwdpro.workers.** { *; }
+-dontwarn androidx.work.**
+
+#==============================================================================
+# SQLCIPHER
+#==============================================================================
+-keep class net.sqlcipher.** { *; }
+-dontwarn net.sqlcipher.**
+
+#==============================================================================
+# AUTOFILL SERVICE
+#==============================================================================
+-keep class com.julien.genpwdpro.autofill.GenPwdAutofillService { *; }
+-keep class com.julien.genpwdpro.autofill.** { *; }
 
 #===============================================================================
 # KOTLIN
@@ -148,6 +173,12 @@
     public static *** i(...);
     public static *** w(...);
     public static *** e(...);
+}
+-assumenosideeffects class okhttp3.logging.HttpLoggingInterceptor$Logger {
+    public void log(java.lang.String);
+}
+-assumenosideeffects class okhttp3.logging.HttpLoggingInterceptor {
+    public okhttp3.logging.HttpLoggingInterceptor setLevel(okhttp3.logging.HttpLoggingInterceptor$Level);
 }
 
 #===============================================================================

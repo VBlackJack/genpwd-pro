@@ -1,0 +1,31 @@
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+config:
+  validation: true
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+comments:
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicClass:
+    active: false
+
+style:
+  MagicNumber:
+    active: false
+  ReturnCount:
+    max: 3
+
+complexity:
+  LongParameterList:
+    active: true
+    threshold: 8
+  LargeClass:
+    active: false
