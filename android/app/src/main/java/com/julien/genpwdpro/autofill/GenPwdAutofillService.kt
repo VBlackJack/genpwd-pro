@@ -3,11 +3,17 @@ package com.julien.genpwdpro.autofill
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.os.CancellationSignal
-import android.service.autofill.*
+import android.service.autofill.Dataset
+import android.service.autofill.FillCallback
+import android.service.autofill.FillRequest
+import android.service.autofill.FillResponse
+import android.service.autofill.SaveCallback
+import android.service.autofill.SaveRequest
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
@@ -50,7 +56,8 @@ class GenPwdAutofillService : AutofillService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     companion object {
-        private const val MAX_DATASETS = 3 // Nombre max de suggestions
+        private const val MAX_MATCHING_DATASETS = 2
+        private const val MAX_GENERATED_DATASETS = 1
     }
 
     override fun onFillRequest(
@@ -58,6 +65,15 @@ class GenPwdAutofillService : AutofillService() {
         cancellationSignal: CancellationSignal,
         callback: FillCallback
     ) {
+        if (cancellationSignal.isCanceled) {
+            callback.onSuccess(null)
+            return
+        }
+
+        cancellationSignal.setOnCancelListener {
+            serviceScope.launch { callback.onSuccess(null) }
+        }
+
         serviceScope.launch {
             try {
                 val context = request.fillContexts.lastOrNull()?.structure
@@ -66,15 +82,25 @@ class GenPwdAutofillService : AutofillService() {
                     return@launch
                 }
 
+                if (context.activityComponent?.packageName.isNullOrEmpty()) {
+                    callback.onSuccess(null)
+                    return@launch
+                }
+
                 // Parser la structure pour trouver les champs de mot de passe
                 val parser = AutofillParser(context)
                 val autofillFields = parser.parseForCredentials()
 
-                if (autofillFields.isEmpty()) {
+                if (autofillFields.isEmpty() || autofillFields.passwordField == null) {
                     callback.onSuccess(null)
                     return@launch
                 }
-                
+
+                if (autofillFields.packageName != context.activityComponent?.packageName) {
+                    callback.onSuccess(null)
+                    return@launch
+                }
+
                 // Vérifier si le coffre est déverrouillé
                 val isUnlocked = autofillRepository.isVaultUnlocked()
                 if (!isUnlocked) {
@@ -90,36 +116,51 @@ class GenPwdAutofillService : AutofillService() {
                 ).first()
 
                 val responseBuilder = FillResponse.Builder()
+                var hasDataset = false
 
-                if (matchingEntries.isNotEmpty()) {
+                val limitedEntries = matchingEntries.take(MAX_MATCHING_DATASETS)
+
+                if (limitedEntries.isNotEmpty()) {
                     // Des correspondances ont été trouvées : les proposer
-                    matchingEntries.forEach { entry ->
+                    limitedEntries.forEach { entry ->
                         val dataset = autofillRepository.createCredentialDataset(
                             entry = entry,
                             autofillFields = autofillFields
                         )
                         responseBuilder.addDataset(dataset)
-                    }
-                } else {
-                    // Aucune correspondance : proposer de générer
-                    val settings = autofillRepository.getSettings().first()
-                    repeat(MAX_DATASETS) { index ->
-                        val passwordResults = generatePasswordUseCase(settings)
-                        val password = passwordResults.firstOrNull()?.password ?: ""
-                        val dataset = createPasswordDataset(
-                            autofillFields = autofillFields,
-                            password = password,
-                            index = index,
-                            settings = settings
-                        )
-                        responseBuilder.addDataset(dataset)
+                        hasDataset = true
                     }
                 }
 
-                callback.onSuccess(responseBuilder.build())
+                if (!hasDataset) {
+                    // Aucune correspondance : proposer de générer
+                    val settings = autofillRepository.getSettings().first()
+                    repeat(MAX_GENERATED_DATASETS) { index ->
+                        val passwordResults = generatePasswords(settings)
+                        val password = passwordResults.firstOrNull()?.password.orEmpty()
+                        if (password.isBlank()) {
+                            return@repeat
+                        }
+                        responseBuilder.addDataset(
+                            createPasswordDataset(
+                                autofillFields = autofillFields,
+                                password = password,
+                                index = index,
+                                settings = settings
+                            )
+                        )
+                        hasDataset = true
+                    }
+                }
+
+                if (!hasDataset) {
+                    callback.onSuccess(null)
+                } else {
+                    callback.onSuccess(responseBuilder.build())
+                }
 
             } catch (e: Exception) {
-                callback.onFailure(e.message)
+                callback.onFailure(null)
             }
         }
     }
@@ -167,7 +208,8 @@ class GenPwdAutofillService : AutofillService() {
     /**
      * Crée un Dataset avec un mot de passe généré
      */
-    private fun createPasswordDataset(
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    internal open fun createPasswordDataset(
         autofillFields: AutofillFieldsMetadata,
         password: String,
         index: Int,
@@ -196,16 +238,6 @@ class GenPwdAutofillService : AutofillService() {
             )
         }
 
-        // Remplir le champ username si présent (optionnel)
-        autofillFields.usernameField?.let { field ->
-            val username = "user_${System.currentTimeMillis()}" // Placeholder
-            datasetBuilder.setValue(
-                field.autofillId,
-                AutofillValue.forText(username),
-                presentation
-            )
-        }
-
         return datasetBuilder.build()
     }
 
@@ -213,6 +245,8 @@ class GenPwdAutofillService : AutofillService() {
      * Calcule l'entropie approximative pour l'affichage
      */
     private fun calculateEntropy(password: String): Int {
+        if (password.isEmpty()) return 0
+
         val hasLower = password.any { it.isLowerCase() }
         val hasUpper = password.any { it.isUpperCase() }
         val hasDigit = password.any { it.isDigit() }
@@ -224,8 +258,15 @@ class GenPwdAutofillService : AutofillService() {
         if (hasDigit) poolSize += 10
         if (hasSpecial) poolSize += 32
 
+        if (poolSize == 0) {
+            return 0
+        }
+
         return (password.length * kotlin.math.log2(poolSize.toDouble())).toInt()
     }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    internal open suspend fun generatePasswords(settings: Settings) = generatePasswordUseCase(settings)
 }
 
 /**
@@ -273,16 +314,18 @@ class AutofillParser(private val structure: AssistStructure) {
         // Parcourir tous les nœuds
         for (i in 0 until structure.windowNodeCount) {
             val windowNode = structure.getWindowNodeAt(i)
-            packageName = windowNode.rootViewNode.idPackage ?: ""
+            val rootNode = windowNode?.rootViewNode ?: continue
+            val nodePackage = rootNode.idPackage.orEmpty()
+            if (nodePackage.isNotBlank()) {
+                packageName = nodePackage
+            }
 
-            traverseNode(windowNode.rootViewNode) { node ->
+            traverseNode(rootNode) { node ->
                 val autofillHints = node.autofillHints?.toList() ?: emptyList()
-                val autofillType = node.autofillType
-
                 // Chercher le champ de mot de passe
                 if (isPasswordField(node, autofillHints)) {
                     passwordField = AutofillFieldMetadata(
-                        autofillId = node.autofillId!!,
+                        autofillId = node.autofillId ?: return@traverseNode,
                         hints = autofillHints,
                         viewId = node.idEntry
                     )
@@ -291,7 +334,7 @@ class AutofillParser(private val structure: AssistStructure) {
                 // Chercher le champ username
                 if (isUsernameField(node, autofillHints)) {
                     usernameField = AutofillFieldMetadata(
-                        autofillId = node.autofillId!!,
+                        autofillId = node.autofillId ?: return@traverseNode,
                         hints = autofillHints,
                         viewId = node.idEntry
                     )
@@ -342,12 +385,18 @@ class AutofillParser(private val structure: AssistStructure) {
         node: AssistStructure.ViewNode,
         action: (AssistStructure.ViewNode) -> Unit
     ) {
-        if (node.autofillId != null) {
+        if (node.className?.contains("WebView", ignoreCase = true) == true) {
+            return
+        }
+
+        val autofillId = node.autofillId
+        if (autofillId != null && node.autofillType != AssistStructure.ViewNode.AUTOFILL_TYPE_NONE) {
             action(node)
         }
 
         for (i in 0 until node.childCount) {
-            traverseNode(node.getChildAt(i), action)
+            val child = node.getChildAt(i) ?: continue
+            traverseNode(child, action)
         }
     }
 

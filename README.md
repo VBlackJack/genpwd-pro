@@ -125,6 +125,14 @@ Les contributions sont bienvenues ! Consultez notre guide de contribution pour :
 - Améliorer l'interface utilisateur
 - Optimiser les performances
 
+### 🔍 Intégration Android
+
+Le module Android applique désormais des contrôles stricts (Lint, ktlint, Detekt et tests JUnit). Exécutez la commande suivante depuis le dossier `android/` avant toute Pull Request :
+
+```bash
+./gradlew lint ktlintCheck detekt test
+```
+
 ## 📄 Licence
 
 Apache 2.0 © 2025 Julien Bombled

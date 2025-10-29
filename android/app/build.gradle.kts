@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 android {
@@ -57,6 +59,7 @@ android {
 
     lint {
         baseline = file("lint-baseline.xml")
+        checkDependencies = true
         warningsAsErrors = true
         abortOnError = true
     }
@@ -88,6 +91,22 @@ android {
             outputImpl.outputFileName = "genpwd-pro-v${versionName}-${variantName}.apk"
         }
     }
+
+}
+
+ktlint {
+    android.set(true)
+    ignoreFailures.set(false)
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
 }
 
 dependencies {
@@ -153,6 +172,10 @@ dependencies {
     implementation("com.google.http-client:google-http-client-android:1.43.3")
     implementation("com.google.api-client:google-api-client-android:2.2.0")
 
+    // SQLCipher for encrypted Room database
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
+    implementation("androidx.sqlite:sqlite:2.3.1")
+
     // WorkManager for Auto-Sync
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.hilt:hilt-work:1.1.0")
@@ -190,7 +213,12 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.10.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test:core:1.5.0")
+    androidTestImplementation("io.mockk:mockk-android:1.13.8")
+    androidTestImplementation("androidx.room:room-testing:2.6.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.4")
 }

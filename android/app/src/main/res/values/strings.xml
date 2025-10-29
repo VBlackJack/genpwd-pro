@@ -83,4 +83,9 @@
     <string name="cd_copy_password">Copier le mot de passe</string>
     <string name="cd_show_password">Afficher le mot de passe</string>
     <string name="cd_hide_password">Masquer le mot de passe</string>
+    <string name="cd_vault_empty_state_lock">Illustration d\'un coffre verrouillé</string>
+    <string name="cd_create_vault">Créer un coffre</string>
+    <string name="cd_open_vault">Ouvrir le coffre</string>
+    <string name="cd_set_default_vault">Définir ce coffre par défaut</string>
+    <string name="cd_delete_vault">Supprimer le coffre</string>
 </resources>

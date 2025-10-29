@@ -10,7 +10,7 @@ import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.database.AppDatabase
 import com.julien.genpwdpro.data.local.database.DatabaseOpenHelperFactoryProvider
-import com.julien.genpwdpro.data.local.database.DefaultDatabaseOpenHelperFactoryProvider
+import com.julien.genpwdpro.data.local.database.SqlCipherDatabaseOpenHelperFactoryProvider
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.repository.VaultRepository
@@ -32,8 +32,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabaseOpenHelperFactoryProvider(
-        defaultProvider: DefaultDatabaseOpenHelperFactoryProvider
-    ): DatabaseOpenHelperFactoryProvider = defaultProvider
+        sqlCipherProvider: SqlCipherDatabaseOpenHelperFactoryProvider
+    ): DatabaseOpenHelperFactoryProvider = sqlCipherProvider
 
     @Provides
     @Singleton
@@ -56,11 +56,9 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_7_8
             )
             .fallbackToDestructiveMigration() // Fallback si migration échoue
+            .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
 
-        openHelperFactoryProvider.provideFactory()?.let { factory ->
-            // TODO: Plug SQLCipher factory here when the dependency is added.
-            builder.openHelperFactory(factory)
-        }
+        builder.openHelperFactory(openHelperFactoryProvider.provideFactory())
 
         return builder.build()
     }
