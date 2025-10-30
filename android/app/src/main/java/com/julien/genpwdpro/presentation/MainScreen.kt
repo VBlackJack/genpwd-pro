@@ -43,9 +43,15 @@ fun MainScreen(
         Screen.Dashboard.route,
         Screen.Generator.route,
         Screen.History.route,
-        Screen.VaultManager.route
+        Screen.VaultManager.route,
+        // Enable drawer in vault screens for better navigation
+        "vault_list/{vaultId}" // VaultList screen pattern
     )
-    val showDrawer = currentDestination?.route in screensWithDrawer
+    // Check if current route matches any drawer-enabled screen (including parameterized routes)
+    val showDrawer = screensWithDrawer.any { pattern ->
+        currentDestination?.route?.startsWith(pattern.substringBefore("{")) == true ||
+        currentDestination?.route == pattern
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -153,12 +159,13 @@ fun DrawerHeader() {
 }
 
 fun getCurrentScreenTitle(route: String?): String {
-    return when (route) {
-        Screen.Dashboard.route -> "GenPwd Pro"
-        Screen.Generator.route -> "Générateur"
-        Screen.History.route -> "Historique"
-        Screen.VaultManager.route -> "Gestion des Coffres"
-        Screen.Analyzer.route -> "Analyseur"
+    return when {
+        route == Screen.Dashboard.route -> "GenPwd Pro"
+        route == Screen.Generator.route -> "Générateur"
+        route == Screen.History.route -> "Historique"
+        route == Screen.VaultManager.route -> "Gestion des Coffres"
+        route == Screen.Analyzer.route -> "Analyseur"
+        route?.startsWith("vault_list/") == true -> "Coffre-fort"
         else -> "GenPwd Pro"
     }
 }
@@ -178,6 +185,22 @@ private val drawerItems = listOf(
 )
 
 private val secondaryDrawerItems = listOf(
-    DrawerNavItem(Screen.Analyzer.route, Icons.Default.Security, Icons.Default.Security, "Analyseur"),
-    DrawerNavItem(Screen.SyncSettings.route, Icons.Default.Settings, Icons.Default.Settings, "Paramètres")
+    DrawerNavItem(
+        Screen.Analyzer.route,
+        Icons.Default.Security,
+        Icons.Default.Security,
+        "Analyseur"
+    ),
+    DrawerNavItem(
+        Screen.CustomPhrase.route,
+        Icons.Default.Key,
+        Icons.Default.Key,
+        "Phrases personnalisées"
+    ),
+    DrawerNavItem(
+        Screen.SyncSettings.route,
+        Icons.Default.Settings,
+        Icons.Default.Settings,
+        "Paramètres"
+    )
 )

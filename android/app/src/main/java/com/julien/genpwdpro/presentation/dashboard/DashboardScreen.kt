@@ -106,22 +106,6 @@ fun DashboardScreen(
                 )
             }
 
-            // Section Outils Rapides
-            item {
-                SectionHeader(
-                    title = "Outils Rapides",
-                    icon = Icons.Default.Build
-                )
-            }
-
-            item {
-                QuickToolsRow(
-                    onNavigateToAnalyzer = onNavigateToAnalyzer,
-                    onNavigateToHistory = onNavigateToHistory,
-                    onNavigateToCustomPhrase = onNavigateToCustomPhrase
-                )
-            }
-
             // Section Coffres récents
             item {
                 SectionHeader(
