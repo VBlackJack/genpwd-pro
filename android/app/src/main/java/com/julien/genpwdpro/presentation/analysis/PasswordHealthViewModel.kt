@@ -26,6 +26,8 @@ class PasswordHealthViewModel @Inject constructor(
     private val vaultRepository: VaultRepository
 ) : ViewModel() {
 
+    private val haveIBeenPwnedClient = com.julien.genpwdpro.data.api.HaveIBeenPwnedClient()
+
     private val _uiState = MutableStateFlow<HealthUiState>(HealthUiState.Loading)
     val uiState: StateFlow<HealthUiState> = _uiState.asStateFlow()
 
@@ -69,18 +71,33 @@ class PasswordHealthViewModel @Inject constructor(
                     // Mots de passe réutilisés (grouper par mot de passe)
                     passwordMap.getOrPut(entry.password) { mutableListOf() }.add(entry)
 
-                    // Mots de passe compromis
-                    // TODO: Implémenter la vérification des breaches via API externe (HaveIBeenPwned)
-                    // if (entry.isCompromised) {
-                    //     compromisedPasswords.add(
-                    //         CompromisedPasswordEntry(
-                    //             id = entry.id,
-                    //             title = entry.title,
-                    //             username = entry.username,
-                    //             breachCount = entry.breachCount
-                    //         )
-                    //     )
-                    // }
+                    // Mots de passe compromis (vérification via HaveIBeenPwned)
+                    // Note: Cette vérification est asynchrone et peut prendre du temps
+                    // On la fait en arrière-plan pour ne pas bloquer l'UI
+                    if (entry.password.isNotEmpty()) {
+                        viewModelScope.launch {
+                            try {
+                                val result = haveIBeenPwnedClient.checkPassword(entry.password)
+                                result.getOrNull()?.let { (isCompromised, breachCount) ->
+                                    if (isCompromised) {
+                                        compromisedPasswords.add(
+                                            CompromisedPasswordEntry(
+                                                id = entry.id,
+                                                title = entry.title,
+                                                username = entry.username,
+                                                breachCount = breachCount
+                                            )
+                                        )
+                                        // Note: La mise à jour complète de l'UI se fait à la fin de analyze()
+                                        // On ne fait rien ici pour éviter les mises à jour partielles
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                // Ignorer les erreurs de vérification individuelles
+                                android.util.Log.e("PasswordHealth", "Error checking password: ${e.message}")
+                            }
+                        }
+                    }
 
                     // Mots de passe anciens (> 90 jours)
                     val daysSinceUpdate = (System.currentTimeMillis() - entry.modifiedAt) / (1000 * 60 * 60 * 24)

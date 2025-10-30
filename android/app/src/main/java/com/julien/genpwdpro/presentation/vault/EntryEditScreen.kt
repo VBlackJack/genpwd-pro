@@ -19,11 +19,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.db.entity.EntryType
+import android.net.Uri
+import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
  * Écran de création/édition d'une entrée
@@ -51,6 +51,8 @@ fun EntryEditScreen(
     val totpIssuer by viewModel.totpIssuer.collectAsState()
     val passwordStrength by viewModel.passwordStrength.collectAsState()
     val currentEntryType by viewModel.entryType.collectAsState()
+    val selectedTags by viewModel.selectedTags.collectAsState()
+    val availableTags by viewModel.availableTags.collectAsState()
 
     var showPassword by remember { mutableStateOf(false) }
     var showGeneratorDialog by remember { mutableStateOf(false) }
@@ -58,8 +60,6 @@ fun EntryEditScreen(
     var showQrScanner by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
-
-    SecureWindow()
 
     // Initialiser le ViewModel
     LaunchedEffect(vaultId, entryId, initialPassword) {
@@ -102,14 +102,11 @@ fun EntryEditScreen(
                     }
                 },
                 actions = {
-                    // Favori
-                    IconButton(onClick = { viewModel.toggleFavorite() }) {
-                        Icon(
-                            if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
-                            "Favori",
-                            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    // Favori (avec animation)
+                    com.julien.genpwdpro.presentation.components.FavoriteButton(
+                        isFavorite = isFavorite,
+                        onToggle = { viewModel.toggleFavorite() }
+                    )
 
                     // Sauvegarder
                     IconButton(
@@ -199,9 +196,7 @@ fun EntryEditScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                )
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
             )
 
             // Champs spécifiques LOGIN
@@ -217,9 +212,7 @@ fun EntryEditScreen(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
                     ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                    )
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
 
                 OutlinedTextField(
@@ -249,9 +242,7 @@ fun EntryEditScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next
                     ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                    )
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
 
                 // Force du mot de passe
@@ -273,18 +264,14 @@ fun EntryEditScreen(
                         keyboardType = KeyboardType.Uri,
                         imeAction = ImeAction.Next
                     ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                    )
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
 
                 // TOTP Section
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = if (hasTOTP) {
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
+                        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                     } else {
                         CardDefaults.cardColors()
                     }
@@ -305,7 +292,7 @@ fun EntryEditScreen(
                                     tint = if (hasTOTP) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    "Authentification 2FA (TOTP)",
+                                    "Authentification 2FA",
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
@@ -365,9 +352,7 @@ fun EntryEditScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next
                     ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                    )
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
 
                 // Force du mot de passe
@@ -388,9 +373,7 @@ fun EntryEditScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                    )
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
             }
 
@@ -415,6 +398,16 @@ fun EntryEditScreen(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Default
                 )
+            )
+
+            // Tags
+            com.julien.genpwdpro.presentation.components.TagSelector(
+                selectedTags = selectedTags,
+                availableTags = availableTags,
+                onTagAdded = { tag -> viewModel.addTag(tag) },
+                onTagRemoved = { tag -> viewModel.removeTag(tag) },
+                onCreateTag = { name, color -> viewModel.createTag(name, color) },
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Erreur
@@ -467,27 +460,39 @@ fun EntryEditScreen(
                 showTotpDialog = false
             },
             onScanQr = {
-                // Fermer le dialog TOTP et ouvrir le scanner QR
-                showTotpDialog = false
                 showQrScanner = true
+                showTotpDialog = false
             }
         )
     }
 
-    // QR Scanner pour TOTP
+    // Scanner QR pour TOTP
     if (showQrScanner) {
         QrScannerScreen(
-            onQrCodeScanned = { scannedUri ->
-                // Parser l'URI TOTP et remplir les champs
-                viewModel.parseTotpUri(scannedUri)
-                // Fermer le scanner et rouvrir le dialog TOTP avec les champs remplis
+            onQrCodeScanned = { qrData ->
+                // Parser le QR code otpauth://totp/...?secret=XXX&issuer=YYY
+                try {
+                    val uri = Uri.parse(qrData)
+                    if (uri.scheme == "otpauth" && uri.host == "totp") {
+                        val secret = uri.getQueryParameter("secret") ?: ""
+                        val issuer = uri.getQueryParameter("issuer")
+                            ?: uri.pathSegments.firstOrNull()?.substringAfter(":")
+                            ?: ""
+
+                        if (secret.isNotEmpty()) {
+                            viewModel.updateTotpSecret(secret)
+                            viewModel.updateTotpIssuer(issuer)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Log error
+                    android.util.Log.e("EntryEditScreen", "Error parsing QR code", e)
+                }
                 showQrScanner = false
-                showTotpDialog = true
             },
             onDismiss = {
-                // Fermer le scanner et rouvrir le dialog TOTP
                 showQrScanner = false
-                showTotpDialog = true
+                showTotpDialog = true  // Retour à la dialog TOTP
             }
         )
     }

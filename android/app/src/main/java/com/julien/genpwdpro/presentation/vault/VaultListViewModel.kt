@@ -196,6 +196,13 @@ class VaultListViewModel @Inject constructor(
     }
 
     /**
+     * Récupère les tags d'une entrée
+     */
+    fun getTagsForEntry(entryId: String): Flow<List<TagEntity>> {
+        return fileVaultRepository.getTagsForEntry(entryId)
+    }
+
+    /**
      * Réinitialise les filtres
      */
     fun clearFilters() {

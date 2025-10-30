@@ -701,6 +701,131 @@ class VaultSessionManager @Inject constructor(
         }
     }
 
+    // ========== Master Password Management ==========
+
+    /**
+     * Active le déverrouillage biométrique pour le vault actuel
+     *
+     * @param masterPassword Le mot de passe maître (pour le chiffrer avec Keystore)
+     * @return Result indiquant le succès ou l'échec
+     */
+    suspend fun enableBiometricUnlock(masterPassword: String): Result<Unit> {
+        val session = currentSession
+            ?: return Result.failure(IllegalStateException("No vault unlocked"))
+
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Enabling biometric unlock for vault: ${session.vaultId}")
+
+                val keystoreManager = com.julien.genpwdpro.security.KeystoreManager()
+                val keyAlias = "genpwd_vault_${session.vaultId}_biometric"
+
+                // Fixed: Créer la nouvelle clé AVANT de supprimer l'ancienne pour éviter race condition
+                // Si le processus crash entre delete et create, l'utilisateur perdrait l'accès biométrique
+
+                // Étape 1: Chiffrer avec la nouvelle clé (crée automatiquement la clé si inexistante)
+                val encryptedData = keystoreManager.encryptString(masterPassword, keyAlias)
+
+                // Étape 2: La clé existe maintenant, on peut procéder en toute sécurité
+                // Note: Si l'ancienne clé existait, elle a été écrasée automatiquement par encryptString
+
+                // Mettre à jour la registry avec les données biométriques
+                vaultRegistryDao.updateById(session.vaultId) { entry ->
+                    entry.copy(
+                        biometricUnlockEnabled = true,
+                        encryptedMasterPassword = encryptedData.ciphertext,
+                        masterPasswordIv = encryptedData.iv
+                    )
+                }
+
+                Log.d(TAG, "Biometric unlock enabled successfully with new key")
+                Result.success(Unit)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to enable biometric unlock", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Change le mot de passe maître du vault actuel
+     *
+     * @param currentPassword Mot de passe actuel (pour vérification)
+     * @param newPassword Nouveau mot de passe
+     * @return Result indiquant le succès ou l'échec
+     */
+    suspend fun changeMasterPassword(
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit> {
+        val session = currentSession
+            ?: return Result.failure(IllegalStateException("No vault unlocked"))
+
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Changing master password for vault: ${session.vaultId}")
+
+                // 1. Vérifier le mot de passe actuel
+                val currentSalt = cryptoManager.generateSaltFromString(session.vaultId)
+                val currentKey = cryptoManager.deriveKey(currentPassword, currentSalt)
+
+                // Comparer les clés pour vérifier le mot de passe
+                if (!currentKey.encoded.contentEquals(session.vaultKey.encoded)) {
+                    return@withContext Result.failure(Exception("Mot de passe actuel incorrect"))
+                }
+
+                // 2. Dériver la nouvelle clé avec le nouveau mot de passe
+                val newSalt = cryptoManager.generateSaltFromString(session.vaultId)
+                val newKey = cryptoManager.deriveKey(newPassword, newSalt)
+
+                // 3. Créer une nouvelle session avec la nouvelle clé
+                val newSession = session.copy(vaultKey = newKey)
+
+                // 4. Sauvegarder le vault avec la nouvelle clé
+                val vaultData = session.vaultData.value
+
+                when {
+                    newSession.fileUri != null -> {
+                        vaultFileManager.updateVaultFileAtUri(
+                            fileUri = newSession.fileUri,
+                            data = vaultData,
+                            vaultKey = newKey
+                        )
+                    }
+                    else -> {
+                        vaultFileManager.saveVaultFile(
+                            vaultId = newSession.vaultId,
+                            data = vaultData,
+                            vaultKey = newKey,
+                            strategy = newSession.storageStrategy,
+                            customPath = null
+                        )
+                    }
+                }
+
+                // 5. Désactiver la biométrie (l'ancien mot de passe chiffré n'est plus valide)
+                vaultRegistryDao.updateById(session.vaultId) { entry ->
+                    entry.copy(
+                        biometricUnlockEnabled = false,
+                        encryptedMasterPassword = null,
+                        masterPasswordIv = null
+                    )
+                }
+
+                // 6. Mettre à jour la session avec la nouvelle clé
+                currentSession = newSession
+
+                Log.d(TAG, "Master password changed successfully, biometric disabled")
+                Result.success(Unit)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to change master password", e)
+                Result.failure(e)
+            }
+        }
+    }
+
     // ========== Save & Statistics ==========
 
     /**

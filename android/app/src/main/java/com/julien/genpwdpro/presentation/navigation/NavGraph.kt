@@ -1,21 +1,21 @@
 package com.julien.genpwdpro.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.julien.genpwdpro.data.db.entity.EntryType
-import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
+import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
-import com.julien.genpwdpro.presentation.screens.privacy.PrivacyScreen
-import com.julien.genpwdpro.presentation.screens.security.SecuritySettingsScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.vault.*
+import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
+import kotlinx.coroutines.launch
 
 /**
  * Routes de navigation de l'application
@@ -48,7 +48,6 @@ sealed class Screen(val route: String) {
 
     // Security Settings
     object SecuritySettings : Screen("security_settings")
-    object Privacy : Screen("privacy")
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {
@@ -83,16 +82,9 @@ sealed class Screen(val route: String) {
 
     // Entry - Création/Édition
     object CreateEntry : Screen("create_entry/{vaultId}?type={type}&password={password}") {
-        fun createRoute(
-            vaultId: String,
-            type: EntryType = EntryType.LOGIN,
-            password: String? = null
-        ) =
+        fun createRoute(vaultId: String, type: EntryType = EntryType.LOGIN, password: String? = null) =
             if (password != null) {
-                "create_entry/$vaultId?type=${type.name}&password=${java.net.URLEncoder.encode(
-                    password,
-                    "UTF-8"
-                )}"
+                "create_entry/$vaultId?type=${type.name}&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
             } else {
                 "create_entry/$vaultId?type=${type.name}"
             }
@@ -103,9 +95,20 @@ sealed class Screen(val route: String) {
             "edit_entry/$vaultId/$entryId"
     }
 
-    // Import/Export
-    object ImportExport : Screen("import_export/{vaultId}") {
-        fun createRoute(vaultId: String) = "import_export/$vaultId"
+    // Vault Presets (liste des presets dans le vault)
+    object VaultPresets : Screen("vault_presets/{vaultId}") {
+        fun createRoute(vaultId: String) = "vault_presets/$vaultId"
+    }
+
+    // Preset Detail (détail d'un preset)
+    object PresetDetail : Screen("preset_detail/{vaultId}/{presetId}") {
+        fun createRoute(vaultId: String, presetId: String) =
+            "preset_detail/$vaultId/$presetId"
+    }
+
+    // Change Master Password
+    object ChangeMasterPassword : Screen("change_master_password/{vaultId}") {
+        fun createRoute(vaultId: String) = "change_master_password/$vaultId"
     }
 }
 
@@ -119,6 +122,8 @@ fun AppNavGraph(
     sessionManager: com.julien.genpwdpro.domain.session.SessionManager,
     vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) {
+    val navScope = rememberCoroutineScope()
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -190,7 +195,7 @@ fun AppNavGraph(
                     }
                 },
                 onSaveToVault = currentVaultId?.let { unlockedVaultId ->
-                    { password, _ ->
+                    { password ->
                         navController.navigate(
                             Screen.SelectEntryType.createRoute(
                                 vaultId = unlockedVaultId,
@@ -234,19 +239,6 @@ fun AppNavGraph(
             )
         }
 
-        composable(Screen.SecuritySettings.route) {
-            SecuritySettingsScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToPrivacy = { navController.navigate(Screen.Privacy.route) }
-            )
-        }
-
-        composable(Screen.Privacy.route) {
-            PrivacyScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
         // ========== Preset Manager ==========
         composable(
             route = Screen.PresetManager.route,
@@ -272,44 +264,8 @@ fun AppNavGraph(
             )
         }
 
-        // ========== Vault Selector (OLD SYSTEM - DISABLED) ==========
-        // Use VaultManager instead for file-based vault management
-        /*
-        composable(Screen.VaultSelector.route) {
-            VaultSelectorScreen(
-                onVaultSelected = { vault ->
-                    navController.navigate(Screen.UnlockVault.createRoute(vault.id))
-                },
-                onCreateVault = {
-                    navController.navigate(Screen.CreateVault.route)
-                },
-                onNavigateToGenerator = {
-                    navController.navigate(Screen.Generator.route)
-                }
-            )
-        }
-        */
-
-        // ========== Create Vault (OLD SYSTEM - DISABLED) ==========
-        // Use VaultManager instead for file-based vault creation
-        /*
-        composable(Screen.CreateVault.route) {
-            CreateVaultScreen(
-                onVaultCreated = { vaultId ->
-                    // Après création, aller directement à la liste (vault déjà déverrouillé)
-                    navController.navigate(Screen.VaultList.createRoute(vaultId)) {
-                        // Nettoyer le backstack
-                        popUpTo(Screen.VaultSelector.route) {
-                            inclusive = false
-                        }
-                    }
-                },
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-        */
-
         // ========== Unlock Vault ==========
+        // Note: Legacy VaultSelector and CreateVault screens were removed in favor of VaultManager (file-based system)
         composable(
             route = Screen.UnlockVault.route,
             arguments = listOf(
@@ -354,13 +310,39 @@ fun AppNavGraph(
                     navController.navigate(Screen.SyncSettings.route)
                 },
                 onImportExportClick = {
-                    navController.navigate(Screen.ImportExport.createRoute(vaultId))
+                    // TODO: Import/Export feature not available in this build
+                    // navController.navigate(Screen.ImportExport.createRoute(vaultId))
+                },
+                onPresetsClick = {
+                    navController.navigate(Screen.VaultPresets.createRoute(vaultId))
+                },
+                onChangeMasterPasswordClick = {
+                    navController.navigate(Screen.ChangeMasterPassword.createRoute(vaultId))
+                },
+                onVaultManagerClick = {
+                    navController.navigate(Screen.VaultManager.route) {
+                        popUpTo(Screen.Dashboard.route) {
+                            inclusive = false
+                        }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
                 },
                 onLockClick = {
-                    // Return to dashboard instead of vault selector
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.Dashboard.route) {
-                            inclusive = true
+                    // Verrouiller le vault avant de naviguer
+                    navScope.launch {
+                        vaultSessionManager.lockVault()
+                        // Return to dashboard
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Dashboard.route) {
+                                inclusive = true
+                            }
                         }
                     }
                 }
@@ -456,19 +438,62 @@ fun AppNavGraph(
             )
         }
 
-        // ========== Import/Export ==========
+        // ========== Vault Presets ==========
         composable(
-            route = Screen.ImportExport.route,
+            route = Screen.VaultPresets.route,
             arguments = listOf(
                 navArgument("vaultId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
 
-            ImportExportScreen(
+            VaultPresetsScreen(
                 vaultId = vaultId,
-                onBackClick = { navController.popBackStack() },
-                vaultSessionManager = vaultSessionManager
+                onNavigateBack = { navController.popBackStack() },
+                onPresetClick = { presetId ->
+                    navController.navigate(Screen.PresetDetail.createRoute(vaultId, presetId))
+                }
+            )
+        }
+
+        // ========== Preset Detail ==========
+        composable(
+            route = Screen.PresetDetail.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType },
+                navArgument("presetId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+            val presetId = backStackEntry.arguments?.getString("presetId") ?: return@composable
+
+            PresetDetailScreen(
+                vaultId = vaultId,
+                presetId = presetId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Change Master Password ==========
+        composable(
+            route = Screen.ChangeMasterPassword.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            ChangeMasterPasswordScreen(
+                vaultId = vaultId,
+                onNavigateBack = { navController.popBackStack() },
+                onPasswordChanged = {
+                    // Retourner au dashboard (le vault sera verrouillé)
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) {
+                            inclusive = true
+                        }
+                    }
+                }
             )
         }
     }

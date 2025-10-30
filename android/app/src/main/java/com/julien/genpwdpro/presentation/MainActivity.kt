@@ -4,35 +4,25 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.julien.genpwdpro.core.ipc.IntentSanitizer
-import com.julien.genpwdpro.data.inmemory.LegacyMigrationStateStore
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.session.VaultStartupLocker
-import com.julien.genpwdpro.presentation.extensions.setSecureScreen
 import com.julien.genpwdpro.presentation.navigation.Screen
-import com.julien.genpwdpro.presentation.navigation.SecureRoutes
-import com.julien.genpwdpro.presentation.security.SecureBaseActivity
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import javax.inject.Inject
 
 /**
  * Activité principale de l'application GenPwd Pro
@@ -41,7 +31,7 @@ import kotlinx.coroutines.runBlocking
  * Gère les intents de deep link (OAuth) et d'autofill.
  */
 @AndroidEntryPoint
-class MainActivity : SecureBaseActivity() {
+class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
@@ -58,61 +48,37 @@ class MainActivity : SecureBaseActivity() {
     @Inject
     lateinit var vaultStartupLocker: VaultStartupLocker
 
-    @Inject
-    lateinit var legacyMigrationStateStore: LegacyMigrationStateStore
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setSecureScreen(false)
+        // Fixed: Use lifecycleScope instead of runBlocking to avoid blocking main thread
+        // This prevents ANR (Application Not Responding) during startup
+        lifecycleScope.launch {
+            val startupResult = vaultStartupLocker.secureStartup()
+            if (!startupResult.isSecure) {
+                Log.w(
+                    TAG,
+                    "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
+                        "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
+                        "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
+                )
+            }
 
-        val startupResult = runBlocking { vaultStartupLocker.secureStartup() }
-        if (!startupResult.isSecure) {
-            Log.w(
-                TAG,
-                "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
-                    "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
-                    "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
-            )
+            setupSessionManagement()
+
+            val startDestination = handleInitialIntent(intent)
+
+            setupContent(startDestination)
+
+            handleDeepLinkIfPresent(intent)
         }
-
-        val pendingReauth = legacyMigrationStateStore.consumePendingReauthenticationVaultIds()
-        if (pendingReauth.isNotEmpty()) {
-            Log.w(
-                TAG,
-                "Legacy migration requires re-authentication for ${pendingReauth.size} vault(s)"
-            )
-            Toast.makeText(
-                this,
-                getString(R.string.legacy_migration_reauth_message),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-
-        setupSessionManagement()
-
-        val startDestination = handleInitialIntent(intent)
-
-        setupContent(startDestination)
-
-        WindowCompat.getInsetsController(window, window.decorView)
-        ViewCompat.setImportantForAutofill(
-            window.decorView,
-            View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
-        )
-
-        handleDeepLinkIfPresent(intent)
     }
 
     /**
      * Détermine la destination de départ en fonction de l'intent de lancement.
      */
     private fun handleInitialIntent(intent: Intent?): String {
-        val sanitized = intent?.also {
-            IntentSanitizer.stripAllExcept(it, setOf(EXTRA_AUTOFILL_UNLOCK_REQUEST))
-        }
-
-        return if (sanitized?.getBooleanExtra(EXTRA_AUTOFILL_UNLOCK_REQUEST, false) == true) {
+        return if (intent?.getBooleanExtra(EXTRA_AUTOFILL_UNLOCK_REQUEST, false) == true) {
             Log.d(TAG, "Intent d'autofill détecté, démarrage sur VaultManager.")
             Screen.VaultManager.route
         } else {
@@ -145,23 +111,6 @@ class MainActivity : SecureBaseActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val activity = this@MainActivity
-                    DisposableEffect(navController) {
-                        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-                            val routeId = destination.route ?: destination.label?.toString().orEmpty()
-                            val secure = SecureRoutes.isSensitive(routeId)
-                            activity.setSecureScreen(secure)
-                        }
-                        navController.addOnDestinationChangedListener(listener)
-                        navController.currentBackStackEntry?.destination?.let { destination ->
-                            val initialRoute = destination.route ?: destination.label?.toString().orEmpty()
-                            activity.setSecureScreen(SecureRoutes.isSensitive(initialRoute))
-                        }
-                        onDispose {
-                            navController.removeOnDestinationChangedListener(listener)
-                            activity.setSecureScreen(false)
-                        }
-                    }
 
                     MainScreen(
                         navController = navController,
@@ -190,7 +139,6 @@ class MainActivity : SecureBaseActivity() {
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        IntentSanitizer.stripAllExcept(intent, setOf(EXTRA_AUTOFILL_UNLOCK_REQUEST))
         setIntent(intent)
         handleDeepLinkIfPresent(intent)
     }

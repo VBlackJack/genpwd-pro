@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.presentation.vault
 
-import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,16 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.R
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
-import com.julien.genpwdpro.presentation.util.ClipboardUtils
-import com.julien.genpwdpro.presentation.utils.SecureWindow
 import kotlinx.coroutines.delay
 
 /**
@@ -34,6 +29,10 @@ fun VaultListScreen(
     onAddEntry: (EntryType) -> Unit,
     onSettingsClick: () -> Unit,
     onImportExportClick: () -> Unit,
+    onPresetsClick: () -> Unit = {},
+    onChangeMasterPasswordClick: () -> Unit = {},
+    onVaultManagerClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
 ) {
@@ -47,8 +46,6 @@ fun VaultListScreen(
     var showAddMenu by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
-
-    SecureWindow()
 
     // Charger les entrées
     LaunchedEffect(vaultId) {
@@ -82,6 +79,10 @@ fun VaultListScreen(
                             viewModel.searchEntries("")
                         }) {
                             Icon(Icons.Default.ArrowBack, "Retour")
+                        }
+                    } else {
+                        IconButton(onClick = onNavigateToHome) {
+                            Icon(Icons.Default.Home, "Accueil")
                         }
                     }
                 },
@@ -185,6 +186,22 @@ fun VaultListScreen(
                                 onDismissRequest = { showOverflowMenu = false }
                             ) {
                                 DropdownMenuItem(
+                                    text = { Text("Presets de génération") },
+                                    onClick = {
+                                        onPresetsClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Tune, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Gestion des coffres") },
+                                    onClick = {
+                                        onVaultManagerClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Folder, null) }
+                                )
+                                DropdownMenuItem(
                                     text = { Text("Synchronisation cloud") },
                                     onClick = {
                                         onSettingsClick()
@@ -201,6 +218,14 @@ fun VaultListScreen(
                                     leadingIcon = { Icon(Icons.Default.ImportExport, null) }
                                 )
                                 Divider()
+                                DropdownMenuItem(
+                                    text = { Text("Changer le mot de passe") },
+                                    onClick = {
+                                        onChangeMasterPasswordClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.VpnKey, null) }
+                                )
                                 DropdownMenuItem(
                                     text = { Text("Verrouiller") },
                                     onClick = {
@@ -416,6 +441,16 @@ private fun EntryCard(
                     )
                 }
 
+                // Tags
+                val tags by viewModel.getTagsForEntry(entry.id).collectAsState(initial = emptyList())
+                if (tags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    com.julien.genpwdpro.presentation.components.TagsList(
+                        tags = tags,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 // TOTP si présent
                 if (entry.hasTOTP()) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -448,13 +483,7 @@ private fun TotpCodeDisplay(
     entry: VaultEntryEntity,
     viewModel: VaultListViewModel
 ) {
-    var totpResult by remember {
-        mutableStateOf<com.julien.genpwdpro.data.crypto.TotpGenerator.TotpResult?>(
-            null
-        )
-    }
-    val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
-    val context = LocalContext.current
+    var totpResult by remember { mutableStateOf<com.julien.genpwdpro.data.crypto.TotpGenerator.TotpResult?>(null) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -494,28 +523,6 @@ private fun TotpCodeDisplay(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
-            IconButton(
-                onClick = {
-                    ClipboardUtils.copySensitive(
-                        context = context,
-                        label = context.getString(R.string.action_copy),
-                        value = result.code,
-                        ttlMs = clipboardTtlMs
-                    )
-                    Toast.makeText(
-                        context,
-                        ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = stringResource(R.string.cd_copy_otp_code),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
         }
     }
 }

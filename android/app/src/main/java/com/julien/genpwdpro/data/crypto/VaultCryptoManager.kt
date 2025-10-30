@@ -4,7 +4,6 @@ import android.util.Base64
 import com.goterl.lazysodium.LazySodiumAndroid
 import com.goterl.lazysodium.SodiumAndroid
 import com.goterl.lazysodium.interfaces.PwHash
-import com.julien.genpwdpro.core.crypto.SecretUtils
 import com.sun.jna.NativeLong
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -55,11 +54,11 @@ class VaultCryptoManager @Inject constructor() {
      * Résultat de la création d'un vault avec toutes les données nécessaires
      */
     data class VaultCreationResult(
-        val salt: String, // Hex string
-        val masterPasswordHash: String, // Argon2id hash
-        val encryptedKey: String, // Clé de chiffrement chiffrée (hex)
-        val keyIv: String, // IV pour la clé (hex)
-        val derivedKey: SecretKey // Clé dérivée (à ne pas stocker!)
+        val salt: String,                    // Hex string
+        val masterPasswordHash: String,      // Argon2id hash
+        val encryptedKey: String,            // Clé de chiffrement chiffrée (hex)
+        val keyIv: String,                   // IV pour la clé (hex)
+        val derivedKey: SecretKey            // Clé dérivée (à ne pas stocker!)
     )
 
     /**
@@ -113,34 +112,28 @@ class VaultCryptoManager @Inject constructor() {
         val keyBytes = ByteArray(KEY_LENGTH)
         val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
 
-        return try {
-            // Conversion des paramètres: memory est en KB, libsodium attend des bytes
-            val opsLimit = params.iterations.toLong() // → long
-            val memLimit = NativeLong(params.memory.toLong() * 1024L) // → NativeLong (bytes)
+        // Conversion des paramètres: memory est en KB, libsodium attend des bytes
+        val opsLimit = params.iterations.toLong()  // → long
+        val memLimit = NativeLong(params.memory.toLong() * 1024L)  // → NativeLong (bytes)
 
-            // Dérivation de clé avec Argon2id via l'interface Native
-            // Signature: cryptoPwHash(..., long opsLimit, NativeLong memLimit, Alg alg)
-            val success = (lazySodium as PwHash.Native).cryptoPwHash(
-                keyBytes,
-                keyBytes.size, // int, pas toLong()
-                passwordBytes,
-                passwordBytes.size, // int, pas toLong()
-                libsodiumSalt,
-                opsLimit, // long
-                memLimit, // NativeLong
-                PwHash.Alg.PWHASH_ALG_ARGON2ID13
-            )
+        // Dérivation de clé avec Argon2id via l'interface Native
+        // Signature: cryptoPwHash(..., long opsLimit, NativeLong memLimit, Alg alg)
+        val success = (lazySodium as PwHash.Native).cryptoPwHash(
+            keyBytes,
+            keyBytes.size,           // int, pas toLong()
+            passwordBytes,
+            passwordBytes.size,      // int, pas toLong()
+            libsodiumSalt,
+            opsLimit,                // long
+            memLimit,                // NativeLong
+            PwHash.Alg.PWHASH_ALG_ARGON2ID13
+        )
 
-            if (!success) {
-                throw IllegalStateException("Argon2id key derivation failed")
-            }
-
-            SecretKeySpec(keyBytes, "AES")
-        } finally {
-            SecretUtils.wipe(passwordBytes)
-            SecretUtils.wipe(libsodiumSalt)
-            SecretUtils.wipe(keyBytes)
+        if (!success) {
+            throw IllegalStateException("Argon2id key derivation failed")
         }
+
+        return SecretKeySpec(keyBytes, "AES")
     }
 
     /**
@@ -159,16 +152,16 @@ class VaultCryptoManager @Inject constructor() {
         require(salt.size == SALT_LENGTH) { "Salt must be $SALT_LENGTH bytes" }
 
         // Conversion des paramètres: memory est en KB, libsodium attend des bytes
-        val opsLimit = params.iterations.toLong() // → long
-        val memLimit = NativeLong(params.memory.toLong() * 1024L) // → NativeLong (bytes)
+        val opsLimit = params.iterations.toLong()  // → long
+        val memLimit = NativeLong(params.memory.toLong() * 1024L)  // → NativeLong (bytes)
 
         // cryptoPwHashStr génère un hash au format PHC avec salt inclus
         // Le format est: $argon2id$v=19$m=65536,t=3,p=4$[salt]$[hash]
         // Signature: cryptoPwHashStr(String password, long opsLimit, NativeLong memLimit)
         val hashResult = (lazySodium as PwHash.Lazy).cryptoPwHashStr(
             masterPassword,
-            opsLimit, // long
-            memLimit // NativeLong
+            opsLimit,    // long
+            memLimit     // NativeLong
         )
 
         return hashResult ?: throw IllegalStateException("Argon2id password hashing failed")
@@ -286,12 +279,7 @@ class VaultCryptoManager @Inject constructor() {
      * Chiffre une chaîne de caractères avec AES-256-GCM
      */
     fun encryptString(plaintext: String, key: SecretKey, iv: ByteArray): ByteArray {
-        val bytes = plaintext.toByteArray(Charsets.UTF_8)
-        return try {
-            encryptAESGCM(bytes, key, iv)
-        } finally {
-            SecretUtils.wipe(bytes)
-        }
+        return encryptAESGCM(plaintext.toByteArray(Charsets.UTF_8), key, iv)
     }
 
     /**
@@ -315,11 +303,7 @@ class VaultCryptoManager @Inject constructor() {
      */
     fun decryptString(ciphertext: ByteArray, key: SecretKey, iv: ByteArray): String {
         val decrypted = decryptAESGCM(ciphertext, key, iv)
-        return try {
-            String(decrypted, Charsets.UTF_8)
-        } finally {
-            SecretUtils.wipe(decrypted)
-        }
+        return String(decrypted, Charsets.UTF_8)
     }
 
     /**
@@ -359,19 +343,36 @@ class VaultCryptoManager @Inject constructor() {
 
     /**
      * Génère un salt déterministe depuis une chaîne
-     * Utile pour utiliser vaultId comme base du salt
      *
-     * @param seed Chaîne source (ex: vaultId)
-     * @return Salt de 32 bytes déterministe
+     * ⚠️ AVERTISSEMENT DE SÉCURITÉ:
+     * Cette méthode génère un salt DÉTERMINISTE (même seed = même salt).
+     * Cela viole les principes cryptographiques standard où les salts doivent être ALÉATOIRES.
+     *
+     * RISQUES:
+     * 1. Salt prévisible → vulnérable aux attaques rainbow table
+     * 2. Si deux vaults utilisent le même seed → même salt → compromission potentielle
+     * 3. Ne protège pas contre les attaques par dictionnaire
+     *
+     * CAS D'USAGE LÉGITIME:
+     * - Système file-based où le salt doit être dérivable du vaultId sans stockage séparé
+     * - UNIQUEMENT si le vaultId est lui-même un UUID aléatoire et unique
+     * - Accepté comme compromis architectural pour éviter de stocker le salt séparément
+     *
+     * RECOMMANDATION:
+     * Pour une sécurité maximale, utilisez toujours generateSalt() qui génère
+     * un salt VÉRITABLEMENT ALÉATOIRE et stockez-le avec les données chiffrées.
+     *
+     * @param seed Chaîne source (ex: vaultId) - DOIT être unique et non prévisible
+     * @return Salt de 32 bytes déterministe (SHA-256 du seed)
+     * @deprecated Utiliser generateSalt() pour une sécurité optimale
      */
+    @Deprecated(
+        message = "Salt déterministe - risque de sécurité. Utiliser generateSalt() si possible.",
+        level = DeprecationLevel.WARNING
+    )
     fun generateSaltFromString(seed: String): ByteArray {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
-        val seedBytes = seed.toByteArray(Charsets.UTF_8)
-        return try {
-            digest.digest(seedBytes)
-        } finally {
-            SecretUtils.wipe(seedBytes)
-        }
+        return digest.digest(seed.toByteArray(Charsets.UTF_8))
     }
 
     /**
@@ -450,9 +451,7 @@ class VaultCryptoManager @Inject constructor() {
             val digest = java.security.MessageDigest.getInstance("SHA-256")
 
             // Hash password
-            val passwordBytes = masterPassword.toByteArray(Charsets.UTF_8)
-            val passwordHash = digest.digest(passwordBytes)
-            SecretUtils.wipe(passwordBytes)
+            val passwordHash = digest.digest(masterPassword.toByteArray(Charsets.UTF_8))
 
             // Hash key file
             digest.reset()
@@ -463,15 +462,8 @@ class VaultCryptoManager @Inject constructor() {
             val combined = passwordHash + keyFileHash
             val compositeHash = digest.digest(combined)
 
-            try {
-                // Convertir en string pour Argon2id
-                bytesToHex(compositeHash)
-            } finally {
-                SecretUtils.wipe(combined)
-                SecretUtils.wipe(compositeHash)
-                SecretUtils.wipe(passwordHash)
-                SecretUtils.wipe(keyFileHash)
-            }
+            // Convertir en string pour Argon2id
+            bytesToHex(compositeHash)
         } else {
             masterPassword
         }
@@ -485,16 +477,49 @@ class VaultCryptoManager @Inject constructor() {
     // ========================================
 
     /**
-     * Nettoie la mémoire (wipe les clés sensibles)
+     * Tente de nettoyer la mémoire d'une clé secrète
+     *
+     * ⚠️ LIMITATION IMPORTANTE:
+     * Cette méthode a une efficacité limitée car `key.encoded` crée une NOUVELLE copie
+     * du byte array. La copie est effacée, mais le byte array original dans le SecretKey
+     * reste en mémoire et ne peut pas être directement modifié en Java/Kotlin.
+     *
+     * RECOMMANDATION:
+     * Pour une sécurité optimale, utiliser Android Keystore (KeystoreManager) qui stocke
+     * les clés dans le hardware sécurisé au lieu de la mémoire applicative.
+     *
+     * Cette méthode reste utile pour:
+     * - Effacer les copies intermédiaires manipulées manuellement
+     * - Adopter une approche "best effort" de nettoyage mémoire
+     * - Respecter les bonnes pratiques même si l'implémentation est limitée
+     *
+     * @param key La clé à nettoyer (tentative)
      */
     fun wipeKey(key: SecretKey) {
-        key.encoded?.let { SecretUtils.wipe(it) }
+        // Nettoyer la copie retournée par encoded (mais pas l'original dans SecretKey)
+        val encoded = key.encoded
+        encoded.fill(0)
+        // Note: Le garbage collector finira par libérer la mémoire, mais le timing n'est pas garanti
     }
 
     /**
      * Nettoie un char array (pour les mots de passe)
+     * ✅ Cette méthode est efficace car elle modifie directement le tableau
      */
     fun wipePassword(password: CharArray) {
-        SecretUtils.wipe(password)
+        password.fill(0.toChar())
+    }
+
+    /**
+     * Nettoie un byte array (pour les données sensibles)
+     * ✅ Cette méthode est efficace car elle modifie directement le tableau
+     *
+     * Utiliser cette méthode pour effacer:
+     * - Copies de clés (key.encoded)
+     * - Données déchiffrées temporaires
+     * - Salts ou IVs sensibles
+     */
+    fun wipeBytes(bytes: ByteArray) {
+        bytes.fill(0)
     }
 }

@@ -535,7 +535,7 @@ private fun VaultOverviewCard(
                         contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(if (isActive) "Continuer" else "Déverrouiller")
+                    Text(if (isActive) "Continuer" else "Ouvrir")
                 }
 
                 OutlinedButton(

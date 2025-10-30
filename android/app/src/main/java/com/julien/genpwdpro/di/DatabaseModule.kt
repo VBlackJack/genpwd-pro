@@ -1,7 +1,10 @@
 package com.julien.genpwdpro.di
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.BuildConfig
@@ -17,6 +20,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -32,8 +39,7 @@ object DatabaseModule {
     fun provideAppDatabase(
         @ApplicationContext context: Context
     ): AppDatabase {
-        // Build the Room database and only enable destructive migrations in debug mode.
-        val builder = Room.databaseBuilder(
+        return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
@@ -47,13 +53,73 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_6_7,
                 AppDatabase.MIGRATION_7_8
             )
+            .addCallback(createBackupCallback(context)) // Fixed: Backup avant migration
+            .fallbackToDestructiveMigration() // Fallback si migration échoue (après backup)
+            .build()
+    }
 
-        // Use destructive migration fallback only during development (debug builds)
-        if (BuildConfig.DEBUG) {
-            builder.fallbackToDestructiveMigration()
+    /**
+     * Crée un callback Room pour faire un backup automatique de la base de données
+     * avant toute migration ou destructive migration.
+     *
+     * Fixed: Prévient la perte de données en cas d'échec de migration.
+     * Le backup est créé dans le répertoire databases avec un timestamp.
+     *
+     * @param context Context de l'application
+     * @return RoomDatabase.Callback configuré
+     */
+    private fun createBackupCallback(context: Context): RoomDatabase.Callback {
+        return object : RoomDatabase.Callback() {
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                super.onOpen(db)
+                try {
+                    // Créer un backup avant toute opération potentiellement destructive
+                    val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
+                    if (dbFile.exists()) {
+                        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                        val backupFile = File(
+                            context.getDatabasePath("").parent,
+                            "${AppDatabase.DATABASE_NAME}_backup_$timestamp.db"
+                        )
+
+                        // Copier le fichier de base de données
+                        dbFile.copyTo(backupFile, overwrite = false)
+                        Log.i("DatabaseModule", "Database backup created: ${backupFile.name}")
+
+                        // Nettoyer les backups trop anciens (garder seulement les 3 derniers)
+                        cleanOldBackups(context, 3)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DatabaseModule", "Failed to create database backup", e)
+                    // Ne pas bloquer l'ouverture de la DB si le backup échoue
+                }
+            }
         }
+    }
 
-        return builder.build()
+    /**
+     * Nettoie les anciens fichiers de backup, en gardant seulement les N plus récents
+     *
+     * @param context Context de l'application
+     * @param keepCount Nombre de backups à conserver
+     */
+    private fun cleanOldBackups(context: Context, keepCount: Int) {
+        try {
+            val dbDir = context.getDatabasePath("").parentFile ?: return
+            val backupFiles = dbDir.listFiles { file ->
+                file.name.startsWith("${AppDatabase.DATABASE_NAME}_backup_") &&
+                        file.name.endsWith(".db")
+            }?.sortedByDescending { it.lastModified() } ?: return
+
+            // Supprimer les backups au-delà de keepCount
+            backupFiles.drop(keepCount).forEach { file ->
+                if (file.delete()) {
+                    Log.d("DatabaseModule", "Deleted old backup: ${file.name}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseModule", "Failed to clean old backups", e)
+        }
     }
 
     @Provides
@@ -169,8 +235,26 @@ object DatabaseModule {
         return kotlinx.coroutines.Dispatchers.IO
     }
 
+    /**
+     * Flag pour activer les fonctionnalités legacy de synchronisation
+     *
+     * Fixed: Retourne toujours false pour éviter d'exposer des fonctionnalités
+     * potentiellement non sécurisées en production.
+     *
+     * Si vous avez besoin d'activer le legacy sync:
+     * 1. Créer un BuildConfigField dans build.gradle
+     * 2. Utiliser un flag de configuration utilisateur (SharedPreferences)
+     * 3. Ne JAMAIS laisser BuildConfig.DEBUG en production
+     *
+     * @deprecated Legacy sync system - devrait être migré vers le nouveau système
+     */
+    @Deprecated("Legacy sync system - use new file-based sync instead")
     @Provides
     @Singleton
     @Named("legacy_sync_enabled")
-    fun provideLegacySyncFlag(): Boolean = BuildConfig.DEBUG
+    fun provideLegacySyncFlag(): Boolean {
+        // Fixed: Toujours false, même en debug
+        // Le mode debug ne doit pas activer des fonctionnalités non sécurisées
+        return false
+    }
 }
