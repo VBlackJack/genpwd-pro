@@ -494,16 +494,18 @@ fun GeneratorScreen(
     // Bottom sheet de placement
     if (showPlacementSheet) {
         PlacementBottomSheet(
-            digitsPosition = uiState.settings.digitsPosition,
-            specialsPosition = uiState.settings.specialsPosition,
-            onDigitsPositionChange = {
+            digitsPositions = uiState.settings.digitsPositions,
+            specialsPositions = uiState.settings.specialsPositions,
+            digitsCount = uiState.settings.digitsCount,
+            specialsCount = uiState.settings.specialsCount,
+            onDigitsPositionsChange = {
                 viewModel.updateSettings { settings ->
-                    settings.copy(digitsPosition = it)
+                    settings.copy(digitsPositions = it)
                 }
             },
-            onSpecialsPositionChange = {
+            onSpecialsPositionsChange = {
                 viewModel.updateSettings { settings ->
-                    settings.copy(specialsPosition = it)
+                    settings.copy(specialsPositions = it)
                 }
             },
             onDismiss = { showPlacementSheet = false }

@@ -14,10 +14,12 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacementBottomSheet(
-    digitsPosition: Int,
-    specialsPosition: Int,
-    onDigitsPositionChange: (Int) -> Unit,
-    onSpecialsPositionChange: (Int) -> Unit,
+    digitsPositions: List<Int>,
+    specialsPositions: List<Int>,
+    digitsCount: Int,
+    specialsCount: Int,
+    onDigitsPositionsChange: (List<Int>) -> Unit,
+    onSpecialsPositionsChange: (List<Int>) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -39,23 +41,73 @@ fun PlacementBottomSheet(
                 fontWeight = FontWeight.Bold
             )
 
-            // Position des chiffres
-            PlacementSlider(
-                label = "Position des chiffres",
-                position = digitsPosition,
-                onPositionChange = onDigitsPositionChange,
-                color = MaterialTheme.colorScheme.primary
-            )
+            // Positions des chiffres (un slider par chiffre)
+            if (digitsCount > 0) {
+                Text(
+                    text = "Chiffres ($digitsCount)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-            Divider()
+                // Assurer qu'on a le bon nombre de positions
+                val currentDigitsPositions = digitsPositions.let { positions ->
+                    when {
+                        positions.size < digitsCount -> positions + List(digitsCount - positions.size) { 50 }
+                        positions.size > digitsCount -> positions.take(digitsCount)
+                        else -> positions
+                    }
+                }
 
-            // Position des spéciaux
-            PlacementSlider(
-                label = "Position des spéciaux",
-                position = specialsPosition,
-                onPositionChange = onSpecialsPositionChange,
-                color = MaterialTheme.colorScheme.secondary
-            )
+                currentDigitsPositions.forEachIndexed { index, position ->
+                    PlacementSlider(
+                        label = "Chiffre ${index + 1}",
+                        position = position,
+                        onPositionChange = { newPos ->
+                            val newPositions = currentDigitsPositions.toMutableList()
+                            newPositions[index] = newPos
+                            onDigitsPositionsChange(newPositions)
+                        },
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            if (digitsCount > 0 && specialsCount > 0) {
+                HorizontalDivider()
+            }
+
+            // Positions des spéciaux (un slider par spécial)
+            if (specialsCount > 0) {
+                Text(
+                    text = "Spéciaux ($specialsCount)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+
+                // Assurer qu'on a le bon nombre de positions
+                val currentSpecialsPositions = specialsPositions.let { positions ->
+                    when {
+                        positions.size < specialsCount -> positions + List(specialsCount - positions.size) { 50 }
+                        positions.size > specialsCount -> positions.take(specialsCount)
+                        else -> positions
+                    }
+                }
+
+                currentSpecialsPositions.forEachIndexed { index, position ->
+                    PlacementSlider(
+                        label = "Spécial ${index + 1}",
+                        position = position,
+                        onPositionChange = { newPos ->
+                            val newPositions = currentSpecialsPositions.toMutableList()
+                            newPositions[index] = newPos
+                            onSpecialsPositionsChange(newPositions)
+                        },
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
 
             // Explication
             Card(
