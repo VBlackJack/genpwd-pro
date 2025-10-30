@@ -22,7 +22,8 @@ class GeneratorViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val historyRepository: PasswordHistoryRepository,
     private val settingsDataStore: SettingsDataStore,
-    private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository
+    private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository,
+    private val vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
@@ -46,25 +47,63 @@ class GeneratorViewModel @Inject constructor(
     }
 
     /**
-     * Charge les presets d'un vault
+     * Charge les presets d'un vault depuis VaultSessionManager
      */
     fun loadPresets(vaultId: String) {
         currentVaultId = vaultId
         viewModelScope.launch {
             try {
-                // Charger tous les presets du vault
-                vaultRepository.getPresets(vaultId).collect { presetsList ->
-                    _presets.value = presetsList
+                // Vérifier que le vault est déverrouillé
+                if (!vaultSessionManager.isVaultUnlocked()) {
+                    android.util.Log.w("GeneratorViewModel", "Cannot load presets: Vault not unlocked")
+                    return@launch
+                }
+
+                // Charger les presets depuis VaultSessionManager
+                vaultSessionManager.getPresets().collect { presetEntities ->
+                    // Convertir PresetEntity -> DecryptedPreset
+                    val convertedPresets = presetEntities.map { entity ->
+                        // Désérialiser les settings depuis JSON
+                        val settings = try {
+                            com.google.gson.Gson().fromJson(
+                                entity.encryptedSettings,
+                                com.julien.genpwdpro.data.models.Settings::class.java
+                            )
+                        } catch (e: Exception) {
+                            android.util.Log.e("GeneratorViewModel", "Failed to parse settings for preset ${entity.id}", e)
+                            null
+                        }
+
+                        if (settings != null) {
+                            com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset(
+                                id = entity.id,
+                                vaultId = entity.vaultId,
+                                name = entity.encryptedName, // Already decrypted by file-based system
+                                icon = entity.icon,
+                                generationMode = com.julien.genpwdpro.data.models.GenerationMode.valueOf(entity.generationMode),
+                                settings = settings,
+                                isDefault = entity.isDefault,
+                                isSystemPreset = entity.isSystemPreset,
+                                createdAt = entity.createdAt,
+                                modifiedAt = entity.modifiedAt,
+                                lastUsedAt = entity.lastUsedAt,
+                                usageCount = entity.usageCount
+                            )
+                        } else {
+                            null
+                        }
+                    }.filterNotNull()
+
+                    _presets.value = convertedPresets
 
                     // Charger le preset par défaut si aucun preset n'est sélectionné
-                    val defaultPreset = presetsList.firstOrNull { it.isDefault }
+                    val defaultPreset = convertedPresets.firstOrNull { it.isDefault }
                     if (defaultPreset != null && _currentPreset.value == null) {
                         selectPreset(defaultPreset)
                     }
                 }
             } catch (e: Exception) {
-                // Gérer l'erreur silencieusement si le vault n'est pas déverrouillé
-                android.util.Log.w("GeneratorViewModel", "Cannot load presets: ${e.message}")
+                android.util.Log.e("GeneratorViewModel", "Error loading presets: ${e.message}", e)
             }
         }
     }
@@ -76,12 +115,20 @@ class GeneratorViewModel @Inject constructor(
         _currentPreset.value = preset
         _uiState.update { it.copy(settings = preset.settings) }
 
-        // Enregistrer l'utilisation
+        // Enregistrer l'utilisation via VaultSessionManager
         viewModelScope.launch {
             try {
-                vaultRepository.recordPresetUsage(preset.id)
+                if (vaultSessionManager.isVaultUnlocked()) {
+                    vaultSessionManager.getPresets().value.find { it.id == preset.id }?.let { presetEntity ->
+                        val updatedPreset = presetEntity.copy(
+                            lastUsedAt = System.currentTimeMillis(),
+                            usageCount = presetEntity.usageCount + 1
+                        )
+                        vaultSessionManager.updatePreset(updatedPreset)
+                    }
+                }
             } catch (e: Exception) {
-                // Ignorer l'erreur
+                android.util.Log.e("GeneratorViewModel", "Failed to record preset usage: ${e.message}")
             }
         }
     }
@@ -94,24 +141,29 @@ class GeneratorViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val currentSettings = _uiState.value.settings
-
-                // Vérifier qu'on peut créer un preset pour ce mode
-                val canCreate = vaultRepository.canCreatePreset(vaultId, currentSettings.mode)
-                if (!canCreate) {
+                // Vérifier que le vault est déverrouillé
+                if (!vaultSessionManager.isVaultUnlocked()) {
                     _uiState.update {
-                        it.copy(error = "Limite de 3 presets atteinte pour le mode ${currentSettings.mode.name}")
+                        it.copy(error = "Le coffre doit être déverrouillé pour sauvegarder un preset")
                     }
                     return@launch
                 }
 
-                val preset = com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset(
+                val currentSettings = _uiState.value.settings
+
+                // Convertir les settings en JSON
+                val settingsJson = com.google.gson.Gson().toJson(currentSettings)
+
+                // Créer le PresetEntity
+                val preset = com.julien.genpwdpro.data.local.entity.PresetEntity(
                     id = java.util.UUID.randomUUID().toString(),
                     vaultId = vaultId,
-                    name = name,
+                    encryptedName = name, // Stocké en clair car le fichier .gpv est chiffré
+                    nameIv = "", // Pas utilisé avec le système file-based
                     icon = icon,
-                    generationMode = currentSettings.mode,
-                    settings = currentSettings,
+                    generationMode = currentSettings.mode.name,
+                    encryptedSettings = settingsJson, // Stocké en clair car le fichier .gpv est chiffré
+                    settingsIv = "", // Pas utilisé avec le système file-based
                     isDefault = setAsDefault,
                     isSystemPreset = false,
                     createdAt = System.currentTimeMillis(),
@@ -120,11 +172,20 @@ class GeneratorViewModel @Inject constructor(
                     usageCount = 0
                 )
 
-                val createdId = vaultRepository.createPreset(vaultId, preset)
-                if (createdId != null) {
-                    _currentPreset.value = preset
-                    _uiState.update { it.copy(error = null) }
-                }
+                // Ajouter via le session manager
+                val result = vaultSessionManager.addPreset(preset)
+                result.fold(
+                    onSuccess = {
+                        _uiState.update { it.copy(error = null) }
+                        // Recharger les presets
+                        loadPresets(vaultId)
+                    },
+                    onFailure = { exception ->
+                        _uiState.update {
+                            it.copy(error = exception.message ?: "Erreur lors de la création du preset")
+                        }
+                    }
+                )
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(error = e.message ?: "Erreur lors de la création du preset")

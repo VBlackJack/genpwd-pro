@@ -29,6 +29,10 @@ fun VaultListScreen(
     onAddEntry: (EntryType) -> Unit,
     onSettingsClick: () -> Unit,
     onImportExportClick: () -> Unit,
+    onPresetsClick: () -> Unit = {},
+    onChangeMasterPasswordClick: () -> Unit = {},
+    onVaultManagerClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
 ) {
@@ -75,6 +79,10 @@ fun VaultListScreen(
                             viewModel.searchEntries("")
                         }) {
                             Icon(Icons.Default.ArrowBack, "Retour")
+                        }
+                    } else {
+                        IconButton(onClick = onNavigateToHome) {
+                            Icon(Icons.Default.Home, "Accueil")
                         }
                     }
                 },
@@ -178,6 +186,22 @@ fun VaultListScreen(
                                 onDismissRequest = { showOverflowMenu = false }
                             ) {
                                 DropdownMenuItem(
+                                    text = { Text("Presets de génération") },
+                                    onClick = {
+                                        onPresetsClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Tune, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Gestion des coffres") },
+                                    onClick = {
+                                        onVaultManagerClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Folder, null) }
+                                )
+                                DropdownMenuItem(
                                     text = { Text("Synchronisation cloud") },
                                     onClick = {
                                         onSettingsClick()
@@ -194,6 +218,14 @@ fun VaultListScreen(
                                     leadingIcon = { Icon(Icons.Default.ImportExport, null) }
                                 )
                                 Divider()
+                                DropdownMenuItem(
+                                    text = { Text("Changer le mot de passe") },
+                                    onClick = {
+                                        onChangeMasterPasswordClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.VpnKey, null) }
+                                )
                                 DropdownMenuItem(
                                     text = { Text("Verrouiller") },
                                     onClick = {

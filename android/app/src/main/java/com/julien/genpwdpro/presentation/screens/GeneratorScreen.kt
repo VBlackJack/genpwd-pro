@@ -50,6 +50,7 @@ fun GeneratorScreen(
 
     var showPlacementSheet by remember { mutableStateOf(false) }
     var showSavePresetDialog by remember { mutableStateOf(false) }
+    var showOptionsSheet by remember { mutableStateOf(false) }
 
     // Charger les presets si un vaultId est fourni
     LaunchedEffect(vaultId) {
@@ -106,39 +107,13 @@ fun GeneratorScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        safeNavigate(onNavigateToSyncSettings, "Synchronisation Cloud")
-                    }) {
+                    // Bouton d'options (ouvre le panneau latéral)
+                    IconButton(
+                        onClick = { showOptionsSheet = true }
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Synchronisation Cloud",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = {
-                        safeNavigate(onNavigateToSecurity, "Sécurité")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Shield,
-                            contentDescription = "Sécurité",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = {
-                        safeNavigate(onNavigateToCustomPhrase, "Phrases personnalisées")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Phrases personnalisées",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = {
-                        safeNavigate(onNavigateToAnalyzer, "Analyseur")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Analyseur",
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = "Options de génération",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -252,149 +227,44 @@ fun GeneratorScreen(
                 }
             }
 
-            // Bouton "Sauvegarder comme preset" si vault déverrouillé
-            if (vaultId != null) {
-                item {
-                    OutlinedButton(
-                        onClick = { showSavePresetDialog = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Sauvegarder comme preset")
-                    }
-                }
-            }
-
-            // Section Options principales
-            item {
-                ExpandableSection(
-                    title = "Options principales",
-                    expanded = uiState.expandedSections.contains(Section.MAIN_OPTIONS),
-                    onToggle = { viewModel.toggleSection(Section.MAIN_OPTIONS) }
-                ) {
-                    MainOptionsSection(
-                        settings = uiState.settings,
-                        onSettingsChange = { newSettings ->
-                            viewModel.updateSettings { newSettings }
-                        }
-                    )
-                }
-            }
-
-            // Section Caractères
-            item {
-                ExpandableSection(
-                    title = "Caractères",
-                    badge = "${uiState.settings.digitsCount}D + ${uiState.settings.specialsCount}S",
-                    expanded = uiState.expandedSections.contains(Section.CHARACTERS),
-                    onToggle = { viewModel.toggleSection(Section.CHARACTERS) }
-                ) {
-                    CharactersSection(
-                        settings = uiState.settings,
-                        onSettingsChange = { newSettings ->
-                            viewModel.updateSettings { newSettings }
-                        },
-                        onOpenPlacementSheet = { showPlacementSheet = true }
-                    )
-                }
-            }
-
-            // Section Casse avancée
-            item {
-                ExpandableSection(
-                    title = "Casse avancée",
-                    expanded = uiState.expandedSections.contains(Section.CASING),
-                    onToggle = { viewModel.toggleSection(Section.CASING) }
-                ) {
-                    CasingSection(
-                        settings = uiState.settings,
-                        onSettingsChange = { newSettings ->
-                            viewModel.updateSettings { newSettings }
-                        }
-                    )
-                }
-            }
-
-            // Paramètres de résultats
+            // Carte d'information pour les options
             item {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    onClick = { showOptionsSheet = true }
                 ) {
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Options de génération",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Paramètres de résultats",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = "Touchez pour configurer les paramètres",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
-
-                        SettingsSlider(
-                            label = "Nombre de mots de passe",
-                            value = uiState.settings.quantity,
-                            valueRange = 1..20,
-                            onValueChange = { newQuantity ->
-                                viewModel.updateSettings { it.copy(quantity = newQuantity) }
-                            },
-                            icon = Icons.Default.List
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (uiState.settings.maskDisplay)
-                                        Icons.Default.VisibilityOff
-                                    else
-                                        Icons.Default.Visibility,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = "Masquer l'affichage",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                            Switch(
-                                checked = uiState.settings.maskDisplay,
-                                onCheckedChange = {
-                                    viewModel.updateSettings { settings ->
-                                        settings.copy(maskDisplay = it)
-                                    }
-                                }
-                            )
-                        }
                     }
                 }
             }
@@ -525,6 +395,200 @@ fun GeneratorScreen(
                 }
             }
         )
+    }
+
+    // Modal bottom sheet pour les options
+    if (showOptionsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showOptionsSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // En-tête
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Options de génération",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { showOptionsSheet = false }) {
+                            Icon(Icons.Default.Close, "Fermer")
+                        }
+                    }
+                }
+
+                // Bouton "Sauvegarder comme preset" si vault déverrouillé
+                if (vaultId != null) {
+                    item {
+                        OutlinedButton(
+                            onClick = {
+                                showOptionsSheet = false
+                                showSavePresetDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Save,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Sauvegarder comme preset")
+                        }
+                    }
+                }
+
+                // Section Options principales
+                item {
+                    ExpandableSection(
+                        title = "Options principales",
+                        expanded = uiState.expandedSections.contains(Section.MAIN_OPTIONS),
+                        onToggle = { viewModel.toggleSection(Section.MAIN_OPTIONS) }
+                    ) {
+                        MainOptionsSection(
+                            settings = uiState.settings,
+                            onSettingsChange = { newSettings ->
+                                viewModel.updateSettings { newSettings }
+                            }
+                        )
+                    }
+                }
+
+                // Section Caractères
+                item {
+                    ExpandableSection(
+                        title = "Caractères",
+                        badge = "${uiState.settings.digitsCount}D + ${uiState.settings.specialsCount}S",
+                        expanded = uiState.expandedSections.contains(Section.CHARACTERS),
+                        onToggle = { viewModel.toggleSection(Section.CHARACTERS) }
+                    ) {
+                        CharactersSection(
+                            settings = uiState.settings,
+                            onSettingsChange = { newSettings ->
+                                viewModel.updateSettings { newSettings }
+                            },
+                            onOpenPlacementSheet = {
+                                showOptionsSheet = false
+                                // Activer le mode VISUAL pour les chiffres et spéciaux
+                                viewModel.updateSettings { settings ->
+                                    settings.copy(
+                                        digitsPlacement = com.julien.genpwdpro.data.models.Placement.VISUAL,
+                                        specialsPlacement = com.julien.genpwdpro.data.models.Placement.VISUAL
+                                    )
+                                }
+                                showPlacementSheet = true
+                            }
+                        )
+                    }
+                }
+
+                // Section Casse avancée
+                item {
+                    ExpandableSection(
+                        title = "Casse avancée",
+                        expanded = uiState.expandedSections.contains(Section.CASING),
+                        onToggle = { viewModel.toggleSection(Section.CASING) }
+                    ) {
+                        CasingSection(
+                            settings = uiState.settings,
+                            onSettingsChange = { newSettings ->
+                                viewModel.updateSettings { newSettings }
+                            }
+                        )
+                    }
+                }
+
+                // Paramètres de résultats
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "Paramètres de résultats",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            SettingsSlider(
+                                label = "Nombre de mots de passe",
+                                value = uiState.settings.quantity,
+                                valueRange = 1..20,
+                                onValueChange = { newQuantity ->
+                                    viewModel.updateSettings { it.copy(quantity = newQuantity) }
+                                },
+                                icon = Icons.Default.List
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = if (uiState.settings.maskDisplay)
+                                            Icons.Default.VisibilityOff
+                                        else
+                                            Icons.Default.Visibility,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "Masquer l'affichage",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                Switch(
+                                    checked = uiState.settings.maskDisplay,
+                                    onCheckedChange = {
+                                        viewModel.updateSettings { settings ->
+                                            settings.copy(maskDisplay = it)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
