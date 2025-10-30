@@ -55,18 +55,28 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          if [ -f android/app/build/reports/lint-results.xml ] && \
-             grep -q 'severity="Error"' android/app/build/reports/lint-results.xml; then
-            echo "Lint errors detected" >&2
+          shopt -s nullglob
+
+          lint_error=0
+          for report in android/app/build/reports/lint-results*.xml; do
+            if grep -q 'severity="Error"' "$report"; then
+              echo "Lint errors detected in $report" >&2
+              lint_error=1
+            fi
+          done
+          if [ $lint_error -ne 0 ]; then
             exit 1
           fi
-          if [ -f android/app/build/reports/detekt/detekt.xml ] && \
-             grep -q '<error' android/app/build/reports/detekt/detekt.xml; then
+
+          detekt_report=android/app/build/reports/detekt/detekt.xml
+          if [ -f "$detekt_report" ] && grep -q '<error' "$detekt_report"; then
             echo "Detekt violations detected" >&2
             exit 1
           fi
-          if [ -d android/app/build/reports/ktlint ] && \
-             grep -R '<error ' -n android/app/build/reports/ktlint; then
+
+          ktlint_errors=$(grep -R "<error " -n android/app/build/reports/ktlint 2>/dev/null || true)
+          if [ -n "$ktlint_errors" ]; then
+            echo "$ktlint_errors" >&2
             echo "ktlint errors detected" >&2
             exit 1
           fi
@@ -77,9 +87,10 @@ jobs:
         with:
           name: android-ci-reports
           path: |
-            android/app/build/reports/lint-results.html
-            android/app/build/reports/lint-results.xml
+            android/app/build/reports/lint-results*.html
+            android/app/build/reports/lint-results*.xml
             android/app/build/reports/detekt/**
             android/app/build/reports/ktlint/**
             android/app/build/reports/tests/testDebugUnitTest/**
             android/app/build/test-results/testDebugUnitTest/**
+          if-no-files-found: ignore

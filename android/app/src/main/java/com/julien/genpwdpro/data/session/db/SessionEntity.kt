@@ -1,6 +1,5 @@
 package com.julien.genpwdpro.data.session.db
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -8,7 +7,6 @@ import androidx.room.PrimaryKey
 data class SessionEntity(
     @PrimaryKey val sessionId: String,
     val vaultId: String,
-    @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val payload: ByteArray,
     val createdAtEpochMillis: Long,
     val lastAccessAtEpochMillis: Long,
     val ttlMillis: Long,

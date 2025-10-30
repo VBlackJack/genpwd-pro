@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Abstraction for persisting vault session state outside of memory.
  *
- * The store keeps track of the encrypted payload representing the session and
- * exposes TTL metadata so higher layers can implement automatic expiration.
+ * The store keeps track of session metadata for expiration and bookkeeping.
+ * Any secret payloads are kept in memory-only containers.
  */
 interface SessionStore {
 
@@ -45,7 +45,6 @@ interface SessionStore {
     data class SessionState(
         val sessionId: String,
         val vaultId: String,
-        val payload: ByteArray,
         val createdAtEpochMillis: Long,
         val lastAccessAtEpochMillis: Long,
         val ttl: SessionTtlMetadata,
