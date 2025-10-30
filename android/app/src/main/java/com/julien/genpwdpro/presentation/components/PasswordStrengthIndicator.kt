@@ -24,6 +24,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.julien.genpwdpro.data.models.PasswordStrength
+import com.julien.genpwdpro.presentation.theme.PasswordWeakRed
+import com.julien.genpwdpro.presentation.theme.PasswordMediumOrange
+import com.julien.genpwdpro.presentation.theme.PasswordStrongGreen
+import com.julien.genpwdpro.presentation.theme.PasswordVeryStrongCyan
 
 /**
  * Indicateur visuel de la force d'un mot de passe
@@ -155,22 +159,22 @@ private fun getStrengthProperties(
 ): Triple<Color, String, ImageVector> {
     return when (strength) {
         PasswordStrength.WEAK -> Triple(
-            Color(0xFFFF6B6B), // Rouge clair
+            PasswordWeakRed,
             "Faible",
             Icons.Default.Lock
         )
         PasswordStrength.MEDIUM -> Triple(
-            Color(0xFFF59E0B), // Orange
+            PasswordMediumOrange,
             "Moyen",
             Icons.Default.Security
         )
         PasswordStrength.STRONG -> Triple(
-            Color(0xFF10B981), // Vert
+            PasswordStrongGreen,
             "Fort",
             Icons.Default.Security
         )
         PasswordStrength.VERY_STRONG -> Triple(
-            Color(0xFF15BEFF), // Cyan
+            PasswordVeryStrongCyan,
             "Très Fort",
             Icons.Default.Shield
         )

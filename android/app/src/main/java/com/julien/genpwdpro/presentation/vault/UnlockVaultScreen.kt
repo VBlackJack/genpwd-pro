@@ -238,7 +238,7 @@ fun UnlockVaultScreen(
                 } else {
                     Icon(Icons.Default.LockOpen, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Déverrouiller")
+                    Text("Ouvrir")
                 }
             }
 
@@ -261,9 +261,9 @@ fun UnlockVaultScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         if (viewModel.isBiometricAvailable()) {
-                            "Utiliser la biométrie"
+                            "Biométrie"
                         } else {
-                            "Biométrie non disponible"
+                            "Non disponible"
                         }
                     )
                 }

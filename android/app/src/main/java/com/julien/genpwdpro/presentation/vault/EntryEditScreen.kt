@@ -291,7 +291,7 @@ fun EntryEditScreen(
                                     tint = if (hasTOTP) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    "Authentification 2FA (TOTP)",
+                                    "Authentification 2FA",
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
