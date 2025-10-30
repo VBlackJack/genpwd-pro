@@ -7,7 +7,7 @@ import com.julien.genpwdpro.data.session.db.converters.SessionAttributesConverte
 
 @Database(
     entities = [SessionEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(SessionAttributesConverter::class)

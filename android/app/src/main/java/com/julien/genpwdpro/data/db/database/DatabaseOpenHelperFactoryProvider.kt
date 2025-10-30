@@ -40,8 +40,8 @@ class SqlCipherDatabaseOpenHelperFactoryProvider @Inject constructor(
             database?.rawExecSQL("PRAGMA cipher_page_size = 4096;")
             database?.rawExecSQL("PRAGMA cipher_hmac_algorithm = HMAC_SHA512;")
             database?.rawExecSQL("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA512;")
-            // Higher PBKDF2 iterations harden key stretching at the cost of unlock latency.
-            database?.rawExecSQL("PRAGMA kdf_iter = 256000;")
+            // Keep PBKDF2 iterations aligned with SQLCipher 4.x recommendations for compatibility.
+            database?.rawExecSQL("PRAGMA kdf_iter = 64000;")
             database?.rawExecSQL("PRAGMA cipher_memory_security = ON;")
         }
     }

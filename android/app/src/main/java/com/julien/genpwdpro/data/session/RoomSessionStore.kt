@@ -111,7 +111,6 @@ class RoomSessionStore @Inject constructor(
         return SessionStore.SessionState(
             sessionId = sessionId,
             vaultId = vaultId,
-            payload = payload.copyOf(),
             createdAtEpochMillis = createdAtEpochMillis,
             lastAccessAtEpochMillis = lastAccessAtEpochMillis,
             ttl = SessionStore.SessionTtlMetadata(
@@ -127,7 +126,6 @@ class RoomSessionStore @Inject constructor(
         return SessionEntity(
             sessionId = sessionId,
             vaultId = vaultId,
-            payload = payload.copyOf(),
             createdAtEpochMillis = createdAtEpochMillis,
             lastAccessAtEpochMillis = lastAccessAtEpochMillis,
             ttlMillis = ttl.ttlMillis,

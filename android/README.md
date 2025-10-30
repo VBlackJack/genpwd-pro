@@ -1,5 +1,7 @@
 # GenPwd Pro - Android
 
+[![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
+
 **Version:** 2.5.1
 **Application de gestion de mots de passe ultra-sécurisée pour Android**
 
