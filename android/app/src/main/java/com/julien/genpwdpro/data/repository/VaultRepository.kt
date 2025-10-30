@@ -2,28 +2,27 @@ package com.julien.genpwdpro.data.repository
 
 import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.db.dao.*
-import com.julien.genpwdpro.data.db.entity.*
-import com.julien.genpwdpro.data.models.CaseMode
-import com.julien.genpwdpro.data.models.CharPolicy
+import com.julien.genpwdpro.data.local.dao.*
+import com.julien.genpwdpro.data.local.entity.*
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.models.CaseMode
+import com.julien.genpwdpro.data.models.CharPolicy
 import com.julien.genpwdpro.security.KeystoreManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
 /**
- * Repository pour la gestion des vaults et de leurs entrées
- *
- * Gère:
- * - Création et déverrouillage des vaults
- * - Chiffrement/déchiffrement des entrées
- * - CRUD sur les entrées, dossiers et tags
- * - Recherche et statistiques
+ * Repository pour la gestion des vaults et de leurs entrées.
+ * Cette version intègre plusieurs améliorations de sécurité et de performance :
+ * - utilisation de ConcurrentHashMap pour stocker les clés en mémoire
+ * - optimisation de la collecte des flux pour les statistiques
  */
 @Singleton
 class VaultRepository @Inject constructor(
@@ -38,9 +37,31 @@ class VaultRepository @Inject constructor(
 
     /**
      * Clé de vault déverrouillée actuellement (en mémoire, jamais stockée)
-     * Map: vaultId → SecretKey
+     * Map thread‑safe: vaultId → SecretKey
      */
-    private val unlockedKeys = mutableMapOf<String, SecretKey>()
+    private val unlockedKeys: MutableMap<String, SecretKey> = ConcurrentHashMap()
+
+    /**
+     * Compteurs des tentatives de déverrouillage échouées par vault.
+     * Ces cartes sont thread‑safe pour permettre l'accès concurrent.
+     */
+    private val failedUnlockAttempts: MutableMap<String, Int> = ConcurrentHashMap()
+
+    /**
+     * Horodatage de fin de blocage pour chaque vault (en millisecondes depuis l'époque Unix).
+     * Si l'horloge actuelle est inférieure à cette valeur, les tentatives de déverrouillage sont bloquées.
+     */
+    private val lockoutExpiry: MutableMap<String, Long> = ConcurrentHashMap()
+
+    /**
+     * Nombre maximum de tentatives de déverrouillage consécutives autorisées avant de bloquer temporairement.
+     */
+    private val maxUnlockAttempts: Int = 5
+
+    /**
+     * Durée de blocage en millisecondes après dépassement du nombre maximum de tentatives.
+     */
+    private val lockoutDurationMs: Long = 5_000L
 
     /**
      * Données d'un preset déchiffré
@@ -173,6 +194,14 @@ class VaultRepository @Inject constructor(
      * @return true si déverrouillé avec succès
      */
     suspend fun unlockVault(vaultId: String, masterPassword: String): Boolean {
+        // Si le coffre est actuellement verrouillé pour cause de tentatives échouées, refuser immédiatement
+        val lockoutUntil = lockoutExpiry[vaultId]
+        val now = System.currentTimeMillis()
+        if (lockoutUntil != null && now < lockoutUntil) {
+            // blocage en cours : ne pas permettre la dérivation de clé
+            return false
+        }
+
         val vault = vaultDao.getById(vaultId) ?: return false
 
         // Dériver la clé et déchiffrer la clé de vault
@@ -186,7 +215,23 @@ class VaultRepository @Inject constructor(
                 memory = vault.memory,
                 parallelism = vault.parallelism
             )
-        ) ?: return false
+        )
+
+        if (vaultKey == null) {
+            // Mot de passe incorrect : incrémenter le compteur et éventuellement bloquer
+            val attempts = (failedUnlockAttempts[vaultId] ?: 0) + 1
+            failedUnlockAttempts[vaultId] = attempts
+            if (attempts >= maxUnlockAttempts) {
+                // bloquer pour une durée définie puis réinitialiser le compteur
+                lockoutExpiry[vaultId] = now + lockoutDurationMs
+                failedUnlockAttempts.remove(vaultId)
+            }
+            return false
+        }
+
+        // Mot de passe correct : réinitialiser les compteurs d'échec
+        failedUnlockAttempts.remove(vaultId)
+        lockoutExpiry.remove(vaultId)
 
         // Stocker la clé en mémoire
         unlockedKeys[vaultId] = vaultKey
@@ -222,6 +267,38 @@ class VaultRepository @Inject constructor(
     }
 
     /**
+     * Chiffre un champ de type String et renvoie une paire (cipherHex, ivHex).
+     * Génère automatiquement un IV aléatoire via cryptoManager.
+     *
+     * @param value valeur en clair à chiffrer
+     * @param key clé symétrique utilisée pour le chiffrement
+     * @return Pair de chaînes hexadécimales (cipherText, iv)
+     */
+    private fun encryptField(value: String, key: SecretKey): Pair<String, String> {
+        val iv = cryptoManager.generateIV()
+        val encryptedBytes = cryptoManager.encryptString(value, key, iv)
+        val cipherHex = cryptoManager.bytesToHex(encryptedBytes)
+        val ivHex = cryptoManager.bytesToHex(iv)
+        return Pair(cipherHex, ivHex)
+    }
+
+    /**
+     * Déchiffre un champ chiffré (hexadécimal) en utilisant l'IV fourni.
+     * Si l'un des paramètres est vide, une chaîne vide est retournée.
+     *
+     * @param cipherHex texte chiffré en hexadécimal
+     * @param ivHex IV en hexadécimal
+     * @param key clé symétrique utilisée pour le déchiffrement
+     * @return valeur déchiffrée ou chaîne vide si les données sont absentes
+     */
+    private fun decryptField(cipherHex: String, ivHex: String, key: SecretKey): String {
+        if (cipherHex.isEmpty() || ivHex.isEmpty()) return ""
+        val cipherBytes = cryptoManager.hexToBytes(cipherHex)
+        val iv = cryptoManager.hexToBytes(ivHex)
+        return cryptoManager.decryptString(cipherBytes, key, iv)
+    }
+
+    /**
      * Sauvegarde le master password chiffré pour déverrouillage biométrique
      *
      * @param vaultId ID du vault
@@ -233,7 +310,7 @@ class VaultRepository @Inject constructor(
             val vault = vaultDao.getById(vaultId) ?: return false
 
             // Chiffrer le master password avec une clé Keystore unique au vault
-            val alias = "vault_${vaultId}_biometric"
+            val alias = "vault_${'$'}{vaultId}_biometric"
             val encrypted = keystoreManager.encrypt(
                 data = masterPassword.toByteArray(Charsets.UTF_8),
                 alias = alias
@@ -265,12 +342,12 @@ class VaultRepository @Inject constructor(
 
             // Vérifier que les données biométriques existent
             if (vault.encryptedMasterPassword == null || vault.masterPasswordIv == null) {
-                Log.w("VaultRepository", "No biometric data for vault $vaultId")
+                Log.w("VaultRepository", "No biometric data for vault ${'$'}vaultId")
                 return null
             }
 
             // Déchiffrer le master password avec la clé Keystore
-            val alias = "vault_${vaultId}_biometric"
+            val alias = "vault_${'$'}{vaultId}_biometric"
             val decrypted = keystoreManager.decrypt(
                 encryptedData = com.julien.genpwdpro.security.EncryptedKeystoreData(
                     ciphertext = vault.encryptedMasterPassword,
@@ -296,7 +373,7 @@ class VaultRepository @Inject constructor(
             val vault = vaultDao.getById(vaultId) ?: return
 
             // Supprimer la clé du Keystore
-            val alias = "vault_${vaultId}_biometric"
+            val alias = "vault_${'$'}{vaultId}_biometric"
             keystoreManager.deleteKey(alias)
 
             // Mettre à jour le vault
@@ -317,7 +394,7 @@ class VaultRepository @Inject constructor(
      */
     private fun getVaultKey(vaultId: String): SecretKey {
         return unlockedKeys[vaultId]
-            ?: throw IllegalStateException("Vault $vaultId n'est pas déverrouillé")
+            ?: throw IllegalStateException("Vault ${'$'}vaultId n'est pas déverrouillé")
     }
 
     /**
@@ -360,44 +437,46 @@ class VaultRepository @Inject constructor(
     ): String {
         val vaultKey = getVaultKey(vaultId)
 
-        // Chiffrer tous les champs sensibles
-        val titleIv = cryptoManager.generateIV()
-        val usernameIv = cryptoManager.generateIV()
-        val passwordIv = cryptoManager.generateIV()
-        val urlIv = cryptoManager.generateIV()
-        val notesIv = cryptoManager.generateIV()
-        val customFieldsIv = cryptoManager.generateIV()
-        val totpSecretIv = cryptoManager.generateIV()
-        val passkeyDataIv = cryptoManager.generateIV()
+        // Utiliser des fonctions d'assistance pour chiffrer chaque champ et obtenir (cipherHex, ivHex)
+        val (encryptedTitle, titleIvHex) = encryptField(entry.title, vaultKey)
+        val (encryptedUsername, usernameIvHex) = encryptField(entry.username, vaultKey)
+        val (encryptedPassword, passwordIvHex) = encryptField(entry.password, vaultKey)
+        val (encryptedUrl, urlIvHex) = encryptField(entry.url, vaultKey)
+        val (encryptedNotes, notesIvHex) = encryptField(entry.notes, vaultKey)
+        val (encryptedCustomFields, customFieldsIvHex) = encryptField(entry.customFields, vaultKey)
+
+        // TOTP et passkey sont optionnels ; ne chiffrer que si activé
+        var encryptedTotpSecret = ""
+        var totpSecretIvHex = ""
+        if (entry.hasTOTP) {
+            val (encTotp, ivTotp) = encryptField(entry.totpSecret, vaultKey)
+            encryptedTotpSecret = encTotp
+            totpSecretIvHex = ivTotp
+        }
+        var encryptedPasskeyData = ""
+        var passkeyDataIvHex = ""
+        if (entry.hasPasskey) {
+            val (encPasskey, ivPasskey) = encryptField(entry.passkeyData, vaultKey)
+            encryptedPasskeyData = encPasskey
+            passkeyDataIvHex = ivPasskey
+        }
 
         val entity = VaultEntryEntity(
             id = entry.id,
             vaultId = vaultId,
             folderId = entry.folderId,
-            encryptedTitle = cryptoManager.bytesToHex(
-                cryptoManager.encryptString(entry.title, vaultKey, titleIv)
-            ),
-            titleIv = cryptoManager.bytesToHex(titleIv),
-            encryptedUsername = cryptoManager.bytesToHex(
-                cryptoManager.encryptString(entry.username, vaultKey, usernameIv)
-            ),
-            usernameIv = cryptoManager.bytesToHex(usernameIv),
-            encryptedPassword = cryptoManager.bytesToHex(
-                cryptoManager.encryptString(entry.password, vaultKey, passwordIv)
-            ),
-            passwordIv = cryptoManager.bytesToHex(passwordIv),
-            encryptedUrl = cryptoManager.bytesToHex(
-                cryptoManager.encryptString(entry.url, vaultKey, urlIv)
-            ),
-            urlIv = cryptoManager.bytesToHex(urlIv),
-            encryptedNotes = cryptoManager.bytesToHex(
-                cryptoManager.encryptString(entry.notes, vaultKey, notesIv)
-            ),
-            notesIv = cryptoManager.bytesToHex(notesIv),
-            encryptedCustomFields = cryptoManager.bytesToHex(
-                cryptoManager.encryptString(entry.customFields, vaultKey, customFieldsIv)
-            ),
-            customFieldsIv = cryptoManager.bytesToHex(customFieldsIv),
+            encryptedTitle = encryptedTitle,
+            titleIv = titleIvHex,
+            encryptedUsername = encryptedUsername,
+            usernameIv = usernameIvHex,
+            encryptedPassword = encryptedPassword,
+            passwordIv = passwordIvHex,
+            encryptedUrl = encryptedUrl,
+            urlIv = urlIvHex,
+            encryptedNotes = encryptedNotes,
+            notesIv = notesIvHex,
+            encryptedCustomFields = encryptedCustomFields,
+            customFieldsIv = customFieldsIvHex,
             entryType = entry.entryType.name,
             isFavorite = entry.isFavorite,
             passwordStrength = entry.passwordStrength,
@@ -413,28 +492,16 @@ class VaultRepository @Inject constructor(
             color = entry.color,
             // TOTP
             hasTOTP = entry.hasTOTP,
-            encryptedTotpSecret = if (entry.hasTOTP) {
-                cryptoManager.bytesToHex(
-                    cryptoManager.encryptString(entry.totpSecret, vaultKey, totpSecretIv)
-                )
-            } else {
-                ""
-            },
-            totpSecretIv = if (entry.hasTOTP) cryptoManager.bytesToHex(totpSecretIv) else "",
+            encryptedTotpSecret = encryptedTotpSecret,
+            totpSecretIv = totpSecretIvHex,
             totpPeriod = entry.totpPeriod,
             totpDigits = entry.totpDigits,
             totpAlgorithm = entry.totpAlgorithm,
             totpIssuer = entry.totpIssuer,
             // Passkey
             hasPasskey = entry.hasPasskey,
-            encryptedPasskeyData = if (entry.hasPasskey) {
-                cryptoManager.bytesToHex(
-                    cryptoManager.encryptString(entry.passkeyData, vaultKey, passkeyDataIv)
-                )
-            } else {
-                ""
-            },
-            passkeyDataIv = if (entry.hasPasskey) cryptoManager.bytesToHex(passkeyDataIv) else "",
+            encryptedPasskeyData = encryptedPasskeyData,
+            passkeyDataIv = passkeyDataIvHex,
             passkeyRpId = entry.passkeyRpId,
             passkeyRpName = entry.passkeyRpName,
             passkeyUserHandle = entry.passkeyUserHandle,
@@ -458,52 +525,12 @@ class VaultRepository @Inject constructor(
             id = entity.id,
             vaultId = entity.vaultId,
             folderId = entity.folderId,
-            title = cryptoManager.decryptString(
-                cryptoManager.hexToBytes(entity.encryptedTitle),
-                vaultKey,
-                cryptoManager.hexToBytes(entity.titleIv)
-            ),
-            username = if (entity.encryptedUsername.isNotEmpty()) {
-                cryptoManager.decryptString(
-                    cryptoManager.hexToBytes(entity.encryptedUsername),
-                    vaultKey,
-                    cryptoManager.hexToBytes(entity.usernameIv)
-                )
-            } else {
-                ""
-            },
-            password = cryptoManager.decryptString(
-                cryptoManager.hexToBytes(entity.encryptedPassword),
-                vaultKey,
-                cryptoManager.hexToBytes(entity.passwordIv)
-            ),
-            url = if (entity.encryptedUrl.isNotEmpty()) {
-                cryptoManager.decryptString(
-                    cryptoManager.hexToBytes(entity.encryptedUrl),
-                    vaultKey,
-                    cryptoManager.hexToBytes(entity.urlIv)
-                )
-            } else {
-                ""
-            },
-            notes = if (entity.encryptedNotes.isNotEmpty()) {
-                cryptoManager.decryptString(
-                    cryptoManager.hexToBytes(entity.encryptedNotes),
-                    vaultKey,
-                    cryptoManager.hexToBytes(entity.notesIv)
-                )
-            } else {
-                ""
-            },
-            customFields = if (entity.encryptedCustomFields.isNotEmpty()) {
-                cryptoManager.decryptString(
-                    cryptoManager.hexToBytes(entity.encryptedCustomFields),
-                    vaultKey,
-                    cryptoManager.hexToBytes(entity.customFieldsIv)
-                )
-            } else {
-                ""
-            },
+            title = decryptField(entity.encryptedTitle, entity.titleIv, vaultKey),
+            username = decryptField(entity.encryptedUsername, entity.usernameIv, vaultKey),
+            password = decryptField(entity.encryptedPassword, entity.passwordIv, vaultKey),
+            url = decryptField(entity.encryptedUrl, entity.urlIv, vaultKey),
+            notes = decryptField(entity.encryptedNotes, entity.notesIv, vaultKey),
+            customFields = decryptField(entity.encryptedCustomFields, entity.customFieldsIv, vaultKey),
             entryType = entity.entryType.toEntryType(),
             isFavorite = entity.isFavorite,
             passwordStrength = entity.passwordStrength,
@@ -519,30 +546,18 @@ class VaultRepository @Inject constructor(
             color = entity.color,
             // TOTP
             hasTOTP = entity.hasTOTP,
-            totpSecret = if (entity.hasTOTP && entity.encryptedTotpSecret.isNotEmpty()) {
-                cryptoManager.decryptString(
-                    cryptoManager.hexToBytes(entity.encryptedTotpSecret),
-                    vaultKey,
-                    cryptoManager.hexToBytes(entity.totpSecretIv)
-                )
-            } else {
-                ""
-            },
+            totpSecret = if (entity.hasTOTP) {
+                decryptField(entity.encryptedTotpSecret, entity.totpSecretIv, vaultKey)
+            } else "",
             totpPeriod = entity.totpPeriod,
             totpDigits = entity.totpDigits,
             totpAlgorithm = entity.totpAlgorithm,
             totpIssuer = entity.totpIssuer,
             // Passkey
             hasPasskey = entity.hasPasskey,
-            passkeyData = if (entity.hasPasskey && entity.encryptedPasskeyData.isNotEmpty()) {
-                cryptoManager.decryptString(
-                    cryptoManager.hexToBytes(entity.encryptedPasskeyData),
-                    vaultKey,
-                    cryptoManager.hexToBytes(entity.passkeyDataIv)
-                )
-            } else {
-                ""
-            },
+            passkeyData = if (entity.hasPasskey) {
+                decryptField(entity.encryptedPasskeyData, entity.passkeyDataIv, vaultKey)
+            } else "",
             passkeyRpId = entity.passkeyRpId,
             passkeyRpName = entity.passkeyRpName,
             passkeyUserHandle = entity.passkeyUserHandle,
@@ -791,11 +806,11 @@ class VaultRepository @Inject constructor(
 
         val cardData = """
             {
-                "cardNumber": "$cardNumber",
-                "expiryDate": "$expiryDate",
-                "cvv": "$cvv",
-                "pin": "$pin",
-                "cardType": "$cardType"
+                "cardNumber": "${'$'}cardNumber",
+                "expiryDate": "${'$'}expiryDate",
+                "cvv": "${'$'}cvv",
+                "pin": "${'$'}pin",
+                "cardType": "${'$'}cardType"
             }
         """.trimIndent()
 
@@ -803,7 +818,7 @@ class VaultRepository @Inject constructor(
             id = cardId,
             vaultId = vaultId,
             folderId = folderId,
-            title = "$cardType - **** ${cardNumber.takeLast(4)}",
+            title = "${'$'}cardType - **** ${'$'}{cardNumber.takeLast(4)}",
             username = cardholderName,
             password = cvv,
             url = "",
@@ -927,33 +942,25 @@ class VaultRepository @Inject constructor(
 
     /**
      * Récupère les statistiques d'un vault
+     *
+     * Cette implémentation récupère la liste des entrées en appelant `first()`
+     * afin d'éviter de collecter un Flow non terminé, puis compte les types
+     * d'entrée. Elle retourne ensuite les statistiques de mots de passe.
      */
     suspend fun getVaultStatistics(vaultId: String): VaultStatistics {
         val totalEntries = entryDao.getCountByVault(vaultId)
         val favoritesCount = entryDao.getFavoritesCount(vaultId)
         val passwordStats = entryDao.getPasswordStrengthStats(vaultId)
 
-        // Compter par type
-        val allEntries = entryDao.getEntriesByVault(vaultId)
-        var loginCount = 0
-        var noteCount = 0
-        var cardCount = 0
-        var identityCount = 0
-        var totpCount = 0
-        var passkeyCount = 0
+        // Récupérer une fois toutes les entrées du vault
+        val allEntries = entryDao.getEntriesByVault(vaultId).first()
 
-        allEntries.collect { entities ->
-            entities.forEach { entry ->
-                when (entry.entryType) {
-                    "LOGIN" -> loginCount++
-                    "NOTE" -> noteCount++
-                    "CARD" -> cardCount++
-                    "IDENTITY" -> identityCount++
-                }
-                if (entry.hasTOTP) totpCount++
-                if (entry.hasPasskey) passkeyCount++
-            }
-        }
+        val loginCount = allEntries.count { it.entryType == "LOGIN" }
+        val noteCount = allEntries.count { it.entryType == "NOTE" }
+        val cardCount = allEntries.count { it.entryType == "CARD" }
+        val identityCount = allEntries.count { it.entryType == "IDENTITY" }
+        val totpCount = allEntries.count { it.hasTOTP }
+        val passkeyCount = allEntries.count { it.hasPasskey }
 
         return VaultStatistics(
             totalEntries = totalEntries,
@@ -1015,25 +1022,13 @@ class VaultRepository @Inject constructor(
 
             val vaultKey = getVaultKey(vaultId)
 
-            // Récupérer toutes les entrées
-            val entries = mutableListOf<DecryptedEntry>()
-            entryDao.getEntriesByVault(vaultId).collect { entities ->
-                entities.forEach { entity ->
-                    entries.add(decryptEntry(entity, vaultKey))
-                }
-            }
+            // Récupérer toutes les entrées sous forme de liste et les déchiffrer
+            val entriesEntities = entryDao.getEntriesByVault(vaultId).first()
+            val entries = entriesEntities.map { decryptEntry(it, vaultKey) }
 
-            // Récupérer les dossiers
-            val folders = mutableListOf<FolderEntity>()
-            folderDao.getFoldersByVault(vaultId).collect { folderEntities ->
-                folders.addAll(folderEntities)
-            }
-
-            // Récupérer les tags
-            val tags = mutableListOf<TagEntity>()
-            tagDao.getTagsByVault(vaultId).collect { tagEntities ->
-                tags.addAll(tagEntities)
-            }
+            // Récupérer les dossiers et les tags une seule fois
+            val folders = folderDao.getFoldersByVault(vaultId).first()
+            val tags = tagDao.getTagsByVault(vaultId).first()
 
             // Créer l'objet d'export
             val exportData = VaultExportData(
@@ -1351,10 +1346,7 @@ class VaultRepository @Inject constructor(
 
         // Vérifier la limite de 3 presets par mode (sauf pour les presets système)
         if (!preset.isSystemPreset) {
-            val existingCount = presetDao.countCustomPresetsByMode(
-                vaultId,
-                preset.generationMode.name
-            )
+            val existingCount = presetDao.countCustomPresetsByMode(vaultId, preset.generationMode.name)
             if (existingCount >= 3) {
                 Log.w("VaultRepository", "Cannot create preset: limit of 3 per mode reached")
                 return null
@@ -1441,7 +1433,7 @@ class VaultRepository @Inject constructor(
     fun getPresets(vaultId: String): Flow<List<DecryptedPreset>> {
         // Vérifier si le vault est déverrouillé
         if (!isVaultUnlocked(vaultId)) {
-            Log.w("VaultRepository", "Attempted to get presets for locked vault: $vaultId")
+            Log.w("VaultRepository", "Attempted to get presets for locked vault: ${'$'}vaultId")
             return kotlinx.coroutines.flow.flowOf(emptyList())
         }
 
@@ -1518,7 +1510,7 @@ class VaultRepository @Inject constructor(
         // Vérifier si un preset par défaut existe déjà
         val existing = presetDao.getDefaultPreset(vaultId)
         if (existing != null) {
-            Log.d("VaultRepository", "Default preset already exists for vault $vaultId")
+            Log.d("VaultRepository", "Default preset already exists for vault ${'$'}vaultId")
             return
         }
 
@@ -1546,7 +1538,7 @@ class VaultRepository @Inject constructor(
         )
 
         createPreset(vaultId, defaultPreset)
-        Log.d("VaultRepository", "Default preset initialized for vault $vaultId")
+        Log.d("VaultRepository", "Default preset initialized for vault ${'$'}vaultId")
     }
 
     /**
