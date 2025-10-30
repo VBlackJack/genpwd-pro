@@ -45,16 +45,21 @@ class UnlockVaultViewModel @Inject constructor(
     fun loadVault(vaultId: String) {
         viewModelScope.launch {
             try {
+                SafeLog.d(TAG, "Loading vault metadata for $vaultId")
                 _uiState.value = UnlockVaultUiState.Loading
                 val registry = vaultRegistryDao.getById(vaultId)
 
                 if (registry == null) {
+                    SafeLog.w(TAG, "Vault not found: $vaultId")
+                    _vaultRegistry.value = null
                     _uiState.value = UnlockVaultUiState.Error("Vault introuvable")
                 } else {
                     _vaultRegistry.value = registry
                     _uiState.value = UnlockVaultUiState.Ready
+                    SafeLog.d(TAG, "Vault metadata loaded: ${registry.name}")
                 }
             } catch (e: Exception) {
+                SafeLog.e(TAG, "Error loading vault: $vaultId", e)
                 _uiState.value = UnlockVaultUiState.Error(
                     e.message ?: "Erreur lors du chargement du vault"
                 )

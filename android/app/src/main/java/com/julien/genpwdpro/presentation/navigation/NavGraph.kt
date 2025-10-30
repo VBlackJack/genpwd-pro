@@ -185,7 +185,7 @@ fun AppNavGraph(
                     }
                 },
                 onSaveToVault = currentVaultId?.let { unlockedVaultId ->
-                    { password ->
+                    { password, _ ->
                         navController.navigate(
                             Screen.SelectEntryType.createRoute(
                                 vaultId = unlockedVaultId,
