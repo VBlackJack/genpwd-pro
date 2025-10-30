@@ -132,19 +132,32 @@ private fun SyllablesOptions(
     onLengthChange: (Int) -> Unit,
     onPolicyChange: (CharPolicy) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SettingsSlider(
             label = "Longueur",
             value = length,
             valueRange = Settings.MIN_SYLLABLES_LENGTH..Settings.MAX_SYLLABLES_LENGTH,
-            onValueChange = onLengthChange
+            onValueChange = onLengthChange,
+            icon = Icons.Default.Straighten
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = "Politique",
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Policy,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "Politique",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                )
+            }
             PolicyDropdown(
                 selectedPolicy = policy,
                 onPolicySelected = onPolicyChange
@@ -162,24 +175,55 @@ private fun PassphraseOptions(
     onSeparatorChange: (String) -> Unit,
     onDictionaryChange: (DictionaryType) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SettingsSlider(
             label = "Nombre de mots",
             value = wordCount,
             valueRange = Settings.MIN_PASSPHRASE_WORDS..Settings.MAX_PASSPHRASE_WORDS,
-            onValueChange = onWordCountChange
+            onValueChange = onWordCountChange,
+            icon = Icons.Default.Numbers
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Séparateur", style = MaterialTheme.typography.bodyMedium)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Remove,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    "Séparateur",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                )
+            }
             SeparatorDropdown(
                 selectedSeparator = separator,
                 onSeparatorSelected = onSeparatorChange
             )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Dictionnaire", style = MaterialTheme.typography.bodyMedium)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Book,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    "Dictionnaire",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                )
+            }
             DictionaryDropdown(
                 selectedDictionary = dictionary,
                 onDictionarySelected = onDictionaryChange
@@ -197,8 +241,17 @@ private fun LeetOptions(
         value = word,
         onValueChange = onWordChange,
         label = { Text("Mot à transformer") },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Code,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true
+        singleLine = true,
+        placeholder = { Text("password") },
+        supportingText = { Text("Sera converti en: p@ssw0rd") }
     )
 }
 
