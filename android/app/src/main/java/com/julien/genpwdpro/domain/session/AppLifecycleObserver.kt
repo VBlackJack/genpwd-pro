@@ -3,7 +3,10 @@ package com.julien.genpwdpro.domain.session
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Observateur du cycle de vie de l'application
@@ -32,6 +35,10 @@ class AppLifecycleObserver(
     }
 
     private var backgroundTimestamp: Long = 0
+
+    // Fixed: Use dedicated CoroutineScope instead of runBlocking
+    // This prevents blocking the main thread during vault locking
+    private val lockScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Appelé quand l'application passe au premier plan
@@ -70,16 +77,17 @@ class AppLifecycleObserver(
 
     /**
      * Verrouille tous les vaults actifs
+     * Fixed: Uses coroutine scope instead of runBlocking to prevent main thread blocking
      */
     private fun lockAllVaults() {
-        try {
-            runBlocking {
+        lockScope.launch {
+            try {
                 sessionManager.lockVault()
                 vaultSessionManager.lockVault()
+                Log.d(TAG, "All vaults locked successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error locking vaults", e)
             }
-            Log.d(TAG, "All vaults locked successfully")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error locking vaults", e)
         }
     }
 }

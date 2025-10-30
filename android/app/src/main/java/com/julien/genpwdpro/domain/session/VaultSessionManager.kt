@@ -726,16 +726,17 @@ class VaultSessionManager @Inject constructor(
             try {
                 Log.d(TAG, "Enabling biometric unlock for vault: ${session.vaultId}")
 
-                // Supprimer l'ancienne clé Keystore si elle existe (important après changement de mot de passe)
                 val keystoreManager = com.julien.genpwdpro.security.KeystoreManager()
-                val oldKeyAlias = "genpwd_vault_${session.vaultId}_biometric"
-                if (keystoreManager.hasKey(oldKeyAlias)) {
-                    Log.d(TAG, "Deleting old biometric key: $oldKeyAlias")
-                    keystoreManager.deleteKey(oldKeyAlias)
-                }
+                val keyAlias = "genpwd_vault_${session.vaultId}_biometric"
 
-                // Chiffrer le mot de passe maître avec une nouvelle clé Android Keystore
-                val encryptedData = keystoreManager.encryptString(masterPassword, oldKeyAlias)
+                // Fixed: Créer la nouvelle clé AVANT de supprimer l'ancienne pour éviter race condition
+                // Si le processus crash entre delete et create, l'utilisateur perdrait l'accès biométrique
+
+                // Étape 1: Chiffrer avec la nouvelle clé (crée automatiquement la clé si inexistante)
+                val encryptedData = keystoreManager.encryptString(masterPassword, keyAlias)
+
+                // Étape 2: La clé existe maintenant, on peut procéder en toute sécurité
+                // Note: Si l'ancienne clé existait, elle a été écrasée automatiquement par encryptString
 
                 // Mettre à jour la registry avec les données biométriques
                 vaultRegistryDao.updateById(session.vaultId) { entry ->

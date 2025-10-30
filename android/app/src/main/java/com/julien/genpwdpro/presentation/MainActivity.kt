@@ -51,23 +51,27 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val startupResult = runBlocking { vaultStartupLocker.secureStartup() }
-        if (!startupResult.isSecure) {
-            Log.w(
-                TAG,
-                "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
-                    "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
-                    "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
-            )
-        }
+        // Fixed: Use lifecycleScope instead of runBlocking to avoid blocking main thread
+        // This prevents ANR (Application Not Responding) during startup
+        lifecycleScope.launch {
+            val startupResult = vaultStartupLocker.secureStartup()
+            if (!startupResult.isSecure) {
+                Log.w(
+                    TAG,
+                    "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
+                        "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
+                        "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
+                )
+            }
 
-        setupSessionManagement()
-        
-        val startDestination = handleInitialIntent(intent)
-        
-        setupContent(startDestination)
-        
-        handleDeepLinkIfPresent(intent)
+            setupSessionManagement()
+
+            val startDestination = handleInitialIntent(intent)
+
+            setupContent(startDestination)
+
+            handleDeepLinkIfPresent(intent)
+        }
     }
 
     /**

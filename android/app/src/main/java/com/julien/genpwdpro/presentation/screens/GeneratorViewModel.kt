@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -37,10 +38,16 @@ class GeneratorViewModel @Inject constructor(
 
     private var currentVaultId: String? = null
 
+    companion object {
+        private val gson = com.google.gson.Gson()
+        private const val MAX_PRESET_NAME_LENGTH = 50
+    }
+
     init {
         // Charger les settings sauvegardés
+        // Fixed: Use collectLatest to prevent memory leaks
         viewModelScope.launch {
-            settingsDataStore.settingsFlow.collect { savedSettings ->
+            settingsDataStore.settingsFlow.collectLatest { savedSettings ->
                 _uiState.update { it.copy(settings = savedSettings) }
             }
         }
@@ -48,6 +55,7 @@ class GeneratorViewModel @Inject constructor(
 
     /**
      * Charge les presets d'un vault depuis VaultSessionManager
+     * Fixed: Uses collectLatest to prevent memory leaks
      */
     fun loadPresets(vaultId: String) {
         currentVaultId = vaultId
@@ -60,28 +68,32 @@ class GeneratorViewModel @Inject constructor(
                 }
 
                 // Charger les presets depuis VaultSessionManager
-                vaultSessionManager.getPresets().collect { presetEntities ->
+                // Use collectLatest instead of collect to cancel previous collection
+                vaultSessionManager.getPresets().collectLatest { presetEntities ->
+                    val corruptedPresets = mutableListOf<String>()
+
                     // Convertir PresetEntity -> DecryptedPreset
-                    val convertedPresets = presetEntities.map { entity ->
+                    val convertedPresets = presetEntities.mapNotNull { entity ->
                         // Désérialiser les settings depuis JSON
                         val settings = try {
-                            com.google.gson.Gson().fromJson(
+                            gson.fromJson(
                                 entity.encryptedSettings,
                                 com.julien.genpwdpro.data.models.Settings::class.java
                             )
                         } catch (e: Exception) {
                             android.util.Log.e("GeneratorViewModel", "Failed to parse settings for preset ${entity.id}", e)
+                            corruptedPresets.add(entity.encryptedName)
                             null
                         }
 
-                        if (settings != null) {
+                        settings?.let {
                             com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset(
                                 id = entity.id,
                                 vaultId = entity.vaultId,
                                 name = entity.encryptedName, // Already decrypted by file-based system
                                 icon = entity.icon,
                                 generationMode = com.julien.genpwdpro.data.models.GenerationMode.valueOf(entity.generationMode),
-                                settings = settings,
+                                settings = it,
                                 isDefault = entity.isDefault,
                                 isSystemPreset = entity.isSystemPreset,
                                 createdAt = entity.createdAt,
@@ -89,12 +101,17 @@ class GeneratorViewModel @Inject constructor(
                                 lastUsedAt = entity.lastUsedAt,
                                 usageCount = entity.usageCount
                             )
-                        } else {
-                            null
                         }
-                    }.filterNotNull()
+                    }
 
                     _presets.value = convertedPresets
+
+                    // Notifier l'utilisateur des presets corrompus
+                    if (corruptedPresets.isNotEmpty()) {
+                        _uiState.update {
+                            it.copy(error = "Presets corrompus ignorés: ${corruptedPresets.joinToString(", ")}")
+                        }
+                    }
 
                     // Charger le preset par défaut si aucun preset n'est sélectionné
                     val defaultPreset = convertedPresets.firstOrNull { it.isDefault }
@@ -104,6 +121,9 @@ class GeneratorViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 android.util.Log.e("GeneratorViewModel", "Error loading presets: ${e.message}", e)
+                _uiState.update {
+                    it.copy(error = "Erreur lors du chargement des presets: ${e.message}")
+                }
             }
         }
     }
@@ -135,8 +155,24 @@ class GeneratorViewModel @Inject constructor(
 
     /**
      * Sauvegarde les settings actuels comme nouveau preset
+     * Fixed: Added validation and uses singleton Gson instance
      */
     fun saveAsPreset(name: String, icon: String, setAsDefault: Boolean = false): Boolean {
+        // Validate preset name
+        val trimmedName = name.trim()
+        when {
+            trimmedName.isBlank() -> {
+                _uiState.update { it.copy(error = "Le nom du preset ne peut pas être vide") }
+                return false
+            }
+            trimmedName.length > MAX_PRESET_NAME_LENGTH -> {
+                _uiState.update {
+                    it.copy(error = "Le nom est trop long (max $MAX_PRESET_NAME_LENGTH caractères)")
+                }
+                return false
+            }
+        }
+
         val vaultId = currentVaultId ?: return false
 
         viewModelScope.launch {
@@ -152,13 +188,13 @@ class GeneratorViewModel @Inject constructor(
                 val currentSettings = _uiState.value.settings
 
                 // Convertir les settings en JSON
-                val settingsJson = com.google.gson.Gson().toJson(currentSettings)
+                val settingsJson = gson.toJson(currentSettings)
 
                 // Créer le PresetEntity
                 val preset = com.julien.genpwdpro.data.local.entity.PresetEntity(
                     id = java.util.UUID.randomUUID().toString(),
                     vaultId = vaultId,
-                    encryptedName = name, // Stocké en clair car le fichier .gpv est chiffré
+                    encryptedName = trimmedName, // Stocké en clair car le fichier .gpv est chiffré
                     nameIv = "", // Pas utilisé avec le système file-based
                     icon = icon,
                     generationMode = currentSettings.mode.name,

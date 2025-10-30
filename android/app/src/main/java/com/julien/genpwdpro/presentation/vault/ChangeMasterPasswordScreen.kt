@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -18,13 +19,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.domain.session.VaultSessionManager
-// PasswordStrengthCalculator import removed for simplification
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/**
+ * Data class for password strength evaluation
+ */
+private data class PasswordStrength(
+    val score: Int,
+    val label: String,
+    val color: Color
+)
 
 /**
  * Écran de changement du mot de passe maître
@@ -42,6 +51,11 @@ fun ChangeMasterPasswordScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Check biometric availability
+    val biometricAvailable = remember(activity) {
+        activity != null
+    }
+
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -50,26 +64,12 @@ fun ChangeMasterPasswordScreen(
     var showNewPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
 
-    // Calcul simplifié de la force du mot de passe
-    data class PasswordStrength(val score: Int, val label: String)
-
+    // Calcul amélioré de la force du mot de passe avec complexité
     val passwordStrength = remember(newPassword) {
-        if (newPassword.isEmpty()) null
-        else {
-            val calculatedScore = when {
-                newPassword.length < 8 -> 20
-                newPassword.length < 12 -> 40
-                newPassword.length < 16 -> 60
-                newPassword.length < 20 -> 80
-                else -> 100
-            }
-            val strengthLabel = when {
-                calculatedScore < 40 -> "Faible"
-                calculatedScore < 60 -> "Moyen"
-                calculatedScore < 80 -> "Bon"
-                else -> "Excellent"
-            }
-            PasswordStrength(calculatedScore, strengthLabel)
+        if (newPassword.isEmpty()) {
+            null
+        } else {
+            calculatePasswordStrength(newPassword)
         }
     }
 
@@ -262,7 +262,8 @@ fun ChangeMasterPasswordScreen(
                             Text(
                                 text = "Force : ${strength.label}",
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = strength.color
                             )
                             Text(
                                 text = "${strength.score}/100",
@@ -271,7 +272,8 @@ fun ChangeMasterPasswordScreen(
                         }
                         LinearProgressIndicator(
                             progress = strength.score / 100f,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            color = strength.color
                         )
                     }
                 }
@@ -350,18 +352,29 @@ fun ChangeMasterPasswordScreen(
                 icon = { Icon(Icons.Default.Fingerprint, null, tint = MaterialTheme.colorScheme.primary) },
                 title = { Text("Réactiver la biométrie ?") },
                 text = {
-                    Text(
-                        "Le déverrouillage biométrique a été désactivé suite au changement de mot de passe. " +
-                                "Voulez-vous le réactiver maintenant avec votre nouveau mot de passe ?"
-                    )
+                    if (biometricAvailable) {
+                        Text(
+                            "Le déverrouillage biométrique a été désactivé suite au changement de mot de passe. " +
+                                    "Voulez-vous le réactiver maintenant avec votre nouveau mot de passe ?"
+                        )
+                    } else {
+                        Text(
+                            text = "La biométrie n'est pas disponible sur cet appareil ou dans ce contexte.",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             activity?.let {
                                 viewModel.enableBiometric(it, vaultId, password)
+                            } ?: run {
+                                // Show error if activity is null
+                                viewModel.dismissBiometricDialog()
                             }
-                        }
+                        },
+                        enabled = biometricAvailable
                     ) {
                         Icon(Icons.Default.Fingerprint, null)
                         Spacer(Modifier.width(8.dp))
@@ -376,6 +389,40 @@ fun ChangeMasterPasswordScreen(
             )
         }
     }
+}
+
+/**
+ * Calculate password strength with proper complexity check
+ * Evaluates length, lowercase, uppercase, digits, and special characters
+ */
+private fun calculatePasswordStrength(password: String): PasswordStrength {
+    var score = 0
+
+    // Length scoring (max 60 points)
+    score += when {
+        password.length < 8 -> 10
+        password.length < 12 -> 25
+        password.length < 16 -> 40
+        password.length < 20 -> 50
+        else -> 60
+    }
+
+    // Complexity scoring (10 points each, max 40 points)
+    if (password.any { it.isLowerCase() }) score += 10
+    if (password.any { it.isUpperCase() }) score += 10
+    if (password.any { it.isDigit() }) score += 10
+    if (password.any { !it.isLetterOrDigit() }) score += 10
+
+    // Determine label and color based on score
+    val (label, color) = when {
+        score < 30 -> Pair("Très faible", Color(0xFFD32F2F)) // Red
+        score < 50 -> Pair("Faible", Color(0xFFFF6B6B)) // Light Red
+        score < 70 -> Pair("Moyen", Color(0xFFFFA500)) // Orange
+        score < 90 -> Pair("Bon", Color(0xFF66BB6A)) // Light Green
+        else -> Pair("Excellent", Color(0xFF4CAF50)) // Green
+    }
+
+    return PasswordStrength(score, label, color)
 }
 
 /**

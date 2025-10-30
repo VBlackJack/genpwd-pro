@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Bottom sheet pour le placement visuel des caractères
+ * Optimized: Uses remember to prevent unnecessary recompositions
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,6 +28,15 @@ fun PlacementBottomSheet(
 ) {
     val scrollState = androidx.compose.foundation.rememberScrollState()
 
+    // Optimize: Memoize adjusted positions to prevent recomputation
+    val adjustedDigitsPositions = remember(digitsPositions, digitsCount) {
+        adjustPositionsList(digitsPositions, digitsCount)
+    }
+
+    val adjustedSpecialsPositions = remember(specialsPositions, specialsCount) {
+        adjustPositionsList(specialsPositions, specialsCount)
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
@@ -35,7 +45,7 @@ fun PlacementBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 600.dp)
+                .heightIn(max = Constants.MAX_BOTTOM_SHEET_HEIGHT)
                 .verticalScroll(scrollState)
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -49,34 +59,13 @@ fun PlacementBottomSheet(
 
             // Positions des chiffres (un slider par chiffre)
             if (digitsCount > 0) {
-                Text(
-                    text = "Chiffres ($digitsCount)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+                PlacementSection(
+                    title = "Chiffres ($digitsCount)",
+                    positions = adjustedDigitsPositions,
+                    onPositionsChange = onDigitsPositionsChange,
+                    color = MaterialTheme.colorScheme.primary,
+                    labelPrefix = "Chiffre"
                 )
-
-                // Assurer qu'on a le bon nombre de positions
-                val currentDigitsPositions = digitsPositions.let { positions ->
-                    when {
-                        positions.size < digitsCount -> positions + List(digitsCount - positions.size) { 50 }
-                        positions.size > digitsCount -> positions.take(digitsCount)
-                        else -> positions
-                    }
-                }
-
-                currentDigitsPositions.forEachIndexed { index, position ->
-                    PlacementSlider(
-                        label = "Chiffre ${index + 1}",
-                        position = position,
-                        onPositionChange = { newPos ->
-                            val newPositions = currentDigitsPositions.toMutableList()
-                            newPositions[index] = newPos
-                            onDigitsPositionsChange(newPositions)
-                        },
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
 
             if (digitsCount > 0 && specialsCount > 0) {
@@ -85,34 +74,13 @@ fun PlacementBottomSheet(
 
             // Positions des spéciaux (un slider par spécial)
             if (specialsCount > 0) {
-                Text(
-                    text = "Spéciaux ($specialsCount)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.secondary
+                PlacementSection(
+                    title = "Spéciaux ($specialsCount)",
+                    positions = adjustedSpecialsPositions,
+                    onPositionsChange = onSpecialsPositionsChange,
+                    color = MaterialTheme.colorScheme.secondary,
+                    labelPrefix = "Spécial"
                 )
-
-                // Assurer qu'on a le bon nombre de positions
-                val currentSpecialsPositions = specialsPositions.let { positions ->
-                    when {
-                        positions.size < specialsCount -> positions + List(specialsCount - positions.size) { 50 }
-                        positions.size > specialsCount -> positions.take(specialsCount)
-                        else -> positions
-                    }
-                }
-
-                currentSpecialsPositions.forEachIndexed { index, position ->
-                    PlacementSlider(
-                        label = "Spécial ${index + 1}",
-                        position = position,
-                        onPositionChange = { newPos ->
-                            val newPositions = currentSpecialsPositions.toMutableList()
-                            newPositions[index] = newPos
-                            onSpecialsPositionsChange(newPositions)
-                        },
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
             }
 
             // Explication
@@ -138,6 +106,62 @@ fun PlacementBottomSheet(
             }
         }
     }
+}
+
+/**
+ * Reusable placement section component
+ * Extracts duplicate code for digits and specials sections
+ */
+@Composable
+private fun PlacementSection(
+    title: String,
+    positions: List<Int>,
+    onPositionsChange: (List<Int>) -> Unit,
+    color: androidx.compose.ui.graphics.Color,
+    labelPrefix: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = color
+        )
+
+        positions.forEachIndexed { index, position ->
+            PlacementSlider(
+                label = "$labelPrefix ${index + 1}",
+                position = position,
+                onPositionChange = { newPos ->
+                    val newPositions = positions.toMutableList()
+                    newPositions[index] = newPos
+                    onPositionsChange(newPositions)
+                },
+                color = color
+            )
+        }
+    }
+}
+
+/**
+ * Adjust positions list to match target count
+ * Extracts duplicate logic for digits and specials
+ */
+private fun adjustPositionsList(
+    positions: List<Int>,
+    targetCount: Int,
+    defaultValue: Int = Constants.DEFAULT_POSITION_PERCENT
+): List<Int> = when {
+    positions.size < targetCount ->
+        positions + List(targetCount - positions.size) { defaultValue }
+    positions.size > targetCount ->
+        positions.take(targetCount)
+    else ->
+        positions
 }
 
 @Composable
@@ -178,7 +202,7 @@ private fun PlacementSlider(
             value = position.toFloat(),
             onValueChange = { onPositionChange(it.toInt()) },
             valueRange = 0f..100f,
-            steps = 9, // 10% increments
+            steps = Constants.SLIDER_STEPS, // 10% increments
             colors = SliderDefaults.colors(
                 thumbColor = color,
                 activeTrackColor = color,
@@ -208,4 +232,14 @@ private fun PlacementSlider(
             )
         }
     }
+}
+
+/**
+ * Constants for PlacementBottomSheet
+ * Extracts magic numbers for better maintainability
+ */
+private object Constants {
+    const val DEFAULT_POSITION_PERCENT = 50
+    val MAX_BOTTOM_SHEET_HEIGHT = 600.dp
+    const val SLIDER_STEPS = 9 // 10% increments (0, 10, 20, ..., 100)
 }

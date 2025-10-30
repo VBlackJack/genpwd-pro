@@ -10,6 +10,7 @@ import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.CharPolicy
 import com.julien.genpwdpro.security.KeystoreManager
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.crypto.SecretKey
@@ -37,8 +38,27 @@ class VaultRepository @Inject constructor(
 ) {
 
     /**
-     * Clé de vault déverrouillée actuellement (en mémoire, jamais stockée)
+     * Clés de vault déverrouillées actuellement (stockées en mémoire, jamais persistées)
      * Map: vaultId → SecretKey
+     *
+     * ⚠️ RISQUE DE SÉCURITÉ IDENTIFIÉ:
+     * Les clés sont stockées en mémoire applicative (heap) et sont vulnérables à:
+     * 1. Memory dumps (via debugging ou accès root)
+     * 2. Persistence non contrôlée jusqu'au garbage collection
+     * 3. Potentielles copies lors de manipulations
+     *
+     * AMÉLIORATION RECOMMANDÉE:
+     * Migrer vers Android Keystore pour stocker les clés de session:
+     * - Stockage dans hardware sécurisé (TEE/StrongBox si disponible)
+     * - Protection contre les dumps mémoire
+     * - Effacement garanti lors du verrouillage
+     *
+     * MITIGATION ACTUELLE:
+     * - Les clés sont wipées avec cryptoManager.wipeKey() lors du lockVault()
+     * - Timeout auto-lock après 5 minutes d'inactivité (AppLifecycleObserver)
+     * - Verrouillage immédiat lors du passage en background
+     *
+     * TODO: Implémenter migration vers Keystore pour la v2.0
      */
     private val unlockedKeys = mutableMapOf<String, SecretKey>()
 
@@ -538,12 +558,15 @@ class VaultRepository @Inject constructor(
 
     /**
      * Récupère toutes les entrées déchiffrées d'un vault
+     * Fixed: Uses flowOn(Dispatchers.IO) to offload decryption from main thread
      */
     fun getEntries(vaultId: String): Flow<List<DecryptedEntry>> {
         val vaultKey = getVaultKey(vaultId)
-        return entryDao.getEntriesByVault(vaultId).map { entities ->
-            entities.map { decryptEntry(it, vaultKey) }
-        }
+        return entryDao.getEntriesByVault(vaultId)
+            .map { entities ->
+                entities.map { decryptEntry(it, vaultKey) }
+            }
+            .flowOn(kotlinx.coroutines.Dispatchers.IO)
     }
 
     /**
@@ -722,14 +745,17 @@ class VaultRepository @Inject constructor(
 
     /**
      * Récupère toutes les notes sécurisées d'un vault
+     * Fixed: Uses flowOn(Dispatchers.IO) to offload decryption from main thread
      */
     fun getSecureNotes(vaultId: String): Flow<List<DecryptedEntry>> {
         val vaultKey = getVaultKey(vaultId)
-        return entryDao.getEntriesByVault(vaultId).map { entities ->
-            entities
-                .filter { it.entryType == EntryType.NOTE.name }
-                .map { decryptEntry(it, vaultKey) }
-        }
+        return entryDao.getEntriesByVault(vaultId)
+            .map { entities ->
+                entities
+                    .filter { it.entryType == EntryType.NOTE.name }
+                    .map { decryptEntry(it, vaultKey) }
+            }
+            .flowOn(kotlinx.coroutines.Dispatchers.IO)
     }
 
     /**
@@ -743,15 +769,18 @@ class VaultRepository @Inject constructor(
     /**
      * Recherche dans les notes sécurisées (par titre)
      * Note: Le contenu ne peut pas être recherché car il est chiffré
+     * Fixed: Uses flowOn(Dispatchers.IO) to offload decryption from main thread
      */
     fun searchSecureNotes(vaultId: String, query: String): Flow<List<DecryptedEntry>> {
         val vaultKey = getVaultKey(vaultId)
-        return entryDao.getEntriesByVault(vaultId).map { entities ->
-            entities
-                .filter { it.entryType == EntryType.NOTE.name }
-                .map { decryptEntry(it, vaultKey) }
-                .filter { it.title.contains(query, ignoreCase = true) }
-        }
+        return entryDao.getEntriesByVault(vaultId)
+            .map { entities ->
+                entities
+                    .filter { it.entryType == EntryType.NOTE.name }
+                    .map { decryptEntry(it, vaultKey) }
+                    .filter { it.title.contains(query, ignoreCase = true) }
+            }
+            .flowOn(kotlinx.coroutines.Dispatchers.IO)
     }
 
     // ========== Card Management ==========
@@ -828,14 +857,17 @@ class VaultRepository @Inject constructor(
 
     /**
      * Récupère toutes les cartes bancaires d'un vault
+     * Fixed: Uses flowOn(Dispatchers.IO) to offload decryption from main thread
      */
     fun getSecureCards(vaultId: String): Flow<List<DecryptedEntry>> {
         val vaultKey = getVaultKey(vaultId)
-        return entryDao.getEntriesByVault(vaultId).map { entities ->
-            entities
-                .filter { it.entryType == EntryType.CARD.name }
-                .map { decryptEntry(it, vaultKey) }
-        }
+        return entryDao.getEntriesByVault(vaultId)
+            .map { entities ->
+                entities
+                    .filter { it.entryType == EntryType.CARD.name }
+                    .map { decryptEntry(it, vaultKey) }
+            }
+            .flowOn(kotlinx.coroutines.Dispatchers.IO)
     }
 
     // ========== Identity Management ==========
@@ -898,14 +930,17 @@ class VaultRepository @Inject constructor(
 
     /**
      * Récupère toutes les identités d'un vault
+     * Fixed: Uses flowOn(Dispatchers.IO) to offload decryption from main thread
      */
     fun getSecureIdentities(vaultId: String): Flow<List<DecryptedEntry>> {
         val vaultKey = getVaultKey(vaultId)
-        return entryDao.getEntriesByVault(vaultId).map { entities ->
-            entities
-                .filter { it.entryType == EntryType.IDENTITY.name }
-                .map { decryptEntry(it, vaultKey) }
-        }
+        return entryDao.getEntriesByVault(vaultId)
+            .map { entities ->
+                entities
+                    .filter { it.entryType == EntryType.IDENTITY.name }
+                    .map { decryptEntry(it, vaultKey) }
+            }
+            .flowOn(kotlinx.coroutines.Dispatchers.IO)
     }
 
     // ========== Statistics ==========
@@ -1419,6 +1454,7 @@ class VaultRepository @Inject constructor(
     /**
      * Récupère tous les presets déchiffrés d'un vault
      * Retourne un Flow vide si le vault n'est pas déverrouillé
+     * Fixed: Uses flowOn(Dispatchers.IO) to offload decryption from main thread
      */
     fun getPresets(vaultId: String): Flow<List<DecryptedPreset>> {
         // Vérifier si le vault est déverrouillé
@@ -1428,9 +1464,11 @@ class VaultRepository @Inject constructor(
         }
 
         val vaultKey = getVaultKey(vaultId)
-        return presetDao.getPresetsByVault(vaultId).map { entities ->
-            entities.map { decryptPreset(it, vaultKey) }
-        }
+        return presetDao.getPresetsByVault(vaultId)
+            .map { entities ->
+                entities.map { decryptPreset(it, vaultKey) }
+            }
+            .flowOn(kotlinx.coroutines.Dispatchers.IO)
     }
 
     /**
@@ -1538,4 +1576,24 @@ class VaultRepository @Inject constructor(
         val count = presetDao.countCustomPresetsByMode(vaultId, mode.name)
         return count < 3
     }
+
+    /**
+     * Change le mot de passe maître d'un vault
+     * NOTE: Cette méthode n'est pas utilisée - utiliser VaultSessionManager.changeMasterPassword() à la place
+     *
+     * @param vaultId ID du vault
+     * @param currentPassword Mot de passe actuel
+     * @param newPassword Nouveau mot de passe
+     * @return Result indiquant le succès ou l'échec
+     */
+    /*
+    suspend fun changeMasterPassword(
+        vaultId: String,
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit> {
+        // Cette méthode est obsolète - utiliser VaultSessionManager.changeMasterPassword()
+        return Result.failure(Exception("Utilisez VaultSessionManager.changeMasterPassword()"))
+    }
+    */
 }
