@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.presentation.components.*
 import com.julien.genpwdpro.presentation.security.BiometricGate
 import com.julien.genpwdpro.presentation.util.ClipboardUtils
@@ -32,7 +33,7 @@ fun GeneratorScreen(
     onNavigateToCustomPhrase: () -> Unit = {},
     onNavigateToSyncSettings: () -> Unit = {},
     onNavigateToSecurity: () -> Unit = {},
-    onSaveToVault: ((String) -> Unit)? = null,
+    onSaveToVault: ((String, Settings) -> Unit)? = null,
     onNavigateToPresetManager: () -> Unit = {},
     vaultId: String? = null,
     viewModel: GeneratorViewModel = hiltViewModel(),
@@ -442,7 +443,7 @@ fun GeneratorScreen(
                             }
                         },
                         onSave = if (onSaveToVault != null) {
-                            { onSaveToVault(result.password) }
+                            { onSaveToVault(result.password, uiState.settings) }
                         } else {
                             {
                                 scope.launch {
