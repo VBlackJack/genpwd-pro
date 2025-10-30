@@ -1,6 +1,8 @@
 package com.julien.genpwdpro.presentation.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -8,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.julien.genpwdpro.data.models.*
 
@@ -102,6 +105,16 @@ private fun ModeDropdown(
             GenerationMode.values().forEach { mode ->
                 DropdownMenuItem(
                     text = { Text(getModeLabel(mode)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = getModeIcon(mode),
+                            contentDescription = null,
+                            tint = if (mode == selectedMode)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    },
                     onClick = {
                         onModeSelected(mode)
                         expanded = false
@@ -310,6 +323,13 @@ private fun DictionaryDropdown(
             }
         }
     }
+}
+
+private fun getModeIcon(mode: GenerationMode): ImageVector = when (mode) {
+    GenerationMode.SYLLABLES -> Icons.Default.TextFields
+    GenerationMode.PASSPHRASE -> Icons.Default.FormatQuote
+    GenerationMode.LEET -> Icons.Default.Code
+    GenerationMode.CUSTOM_PHRASE -> Icons.Default.Edit
 }
 
 private fun getModeLabel(mode: GenerationMode): String = when (mode) {

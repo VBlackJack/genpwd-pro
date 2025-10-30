@@ -3,6 +3,7 @@ package com.julien.genpwdpro.presentation.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -157,10 +159,39 @@ fun GeneratorScreen(
             )
         },
         floatingActionButton = {
+            // Animation de pulsation pendant la génération
+            val infiniteTransition = rememberInfiniteTransition(label = "fabPulse")
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = if (uiState.isGenerating) 1.05f else 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "scale"
+            )
+
             ExtendedFloatingActionButton(
-                onClick = { viewModel.generatePasswords() },
-                icon = { Icon(Icons.Default.Lock, "Generate") },
-                text = { Text("Générer") },
+                onClick = {
+                    if (!uiState.isGenerating) {
+                        viewModel.generatePasswords()
+                    }
+                },
+                modifier = Modifier.scale(scale),
+                icon = {
+                    if (uiState.isGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Lock, "Generate")
+                    }
+                },
+                text = {
+                    Text(if (uiState.isGenerating) "Génération..." else "Générer")
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             )
         },

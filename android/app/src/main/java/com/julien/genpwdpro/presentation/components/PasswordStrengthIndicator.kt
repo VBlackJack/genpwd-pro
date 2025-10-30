@@ -3,7 +3,10 @@ package com.julien.genpwdpro.presentation.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
@@ -15,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -214,5 +218,48 @@ private fun getStrengthDescription(strength: PasswordStrength): String {
         PasswordStrength.MEDIUM -> "Cassable en quelques jours. Protection basique."
         PasswordStrength.STRONG -> "Cassable en plusieurs années. Bonne protection."
         PasswordStrength.VERY_STRONG -> "Cassable en plusieurs siècles. Excellente protection."
+    }
+}
+
+/**
+ * Barre de force segmentée (style "force meter")
+ * Alternative moderne à la barre de progression linéaire
+ */
+@Composable
+fun SegmentedStrengthBar(
+    strength: PasswordStrength,
+    modifier: Modifier = Modifier
+) {
+    val segments = 4
+    val (color, _, _) = getStrengthProperties(strength)
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        repeat(segments) { index ->
+            val isActive = index < strength.ordinal + 1
+
+            // Animation de la hauteur pour effet dynamique
+            val height by animateDpAsState(
+                targetValue = if (isActive) 8.dp else 6.dp,
+                animationSpec = tween(durationMillis = 300),
+                label = "segmentHeight"
+            )
+
+            val animatedColor by animateColorAsState(
+                targetValue = if (isActive) color else MaterialTheme.colorScheme.surfaceVariant,
+                animationSpec = tween(durationMillis = 300),
+                label = "segmentColor"
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(height)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(animatedColor)
+            )
+        }
     }
 }
