@@ -8,13 +8,12 @@ import android.service.autofill.FillCallback
 import android.service.autofill.FillContext
 import android.service.autofill.FillRequest
 import android.service.autofill.FillResponse
+import android.util.Log
 import android.view.View
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
-import android.util.Log
 import androidx.test.core.app.ServiceScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.julien.genpwdpro.autofill.AutofillRepository
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
@@ -73,7 +72,11 @@ class GenPwdAutofillServiceTest {
                 assertEquals(1, datasets.size, "Only one generated dataset should be returned")
                 val dataset = datasets.single() as Dataset
                 val valueMap = dataset.valueMap()
-                assertEquals(setOf(passwordId), valueMap.keys, "Dataset must target the detected password field only")
+                assertEquals(
+                    setOf(passwordId),
+                    valueMap.keys,
+                    "Dataset must target the detected password field only"
+                )
                 val autofillValue = valueMap[passwordId]
                 requireNotNull(autofillValue)
                 assertTrue(autofillValue.isText)
@@ -143,7 +146,9 @@ class GenPwdAutofillServiceTest {
                 scenario.close()
             }
 
-            assertTrue(loggedMessages.isEmpty() || loggedMessages.none { it.contains("UltraSecret#123") }) {
+            assertTrue(
+                loggedMessages.isEmpty() || loggedMessages.none { it.contains("UltraSecret#123") }
+            ) {
                 "Sensitive autofill data leaked to logs: $loggedMessages"
             }
         } finally {
@@ -177,7 +182,10 @@ class GenPwdAutofillServiceTest {
                 service.onFillRequest(request, CancellationSignal(), callback)
 
                 assertTrue(callback.await(), "Autofill callback timed out")
-                assertNull(callback.result, "No response should be provided when package names differ")
+                assertNull(
+                    callback.result,
+                    "No response should be provided when package names differ"
+                )
                 assertNull(callback.failure)
             }
         } finally {
@@ -200,7 +208,9 @@ class GenPwdAutofillServiceTest {
                 every { repository.isVaultUnlocked() } returns true
                 every { repository.findMatchingEntries(any()) } returns flowOf(emptyList())
                 every { repository.getSettings() } returns flowOf(settings)
-                coEvery { generateUseCase.invoke(any()) } throws IllegalStateException("Sensitive stack trace")
+                coEvery { generateUseCase.invoke(any()) } throws IllegalStateException(
+                    "Sensitive stack trace"
+                )
 
                 val (request, _) = buildFillRequest(windowPackage = TEST_PACKAGE)
                 val callback = RecordingFillCallback()

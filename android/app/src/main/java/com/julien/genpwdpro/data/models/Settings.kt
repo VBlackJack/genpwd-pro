@@ -70,8 +70,14 @@ data class Settings(
             digitsPosition = digitsPosition.coerceIn(0, 100),
             specialsPosition = specialsPosition.coerceIn(0, 100),
             syllablesLength = syllablesLength.coerceIn(MIN_SYLLABLES_LENGTH, MAX_SYLLABLES_LENGTH),
-            passphraseWordCount = passphraseWordCount.coerceIn(MIN_PASSPHRASE_WORDS, MAX_PASSPHRASE_WORDS),
-            customPhraseWordCount = customPhraseWordCount.coerceIn(MIN_CUSTOM_PHRASE_WORDS, MAX_CUSTOM_PHRASE_WORDS),
+            passphraseWordCount = passphraseWordCount.coerceIn(
+                MIN_PASSPHRASE_WORDS,
+                MAX_PASSPHRASE_WORDS
+            ),
+            customPhraseWordCount = customPhraseWordCount.coerceIn(
+                MIN_CUSTOM_PHRASE_WORDS,
+                MAX_CUSTOM_PHRASE_WORDS
+            ),
             caseBlocks = if (caseBlocks.isEmpty()) listOf(CaseBlock.T, CaseBlock.L) else caseBlocks
         )
 

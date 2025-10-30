@@ -192,7 +192,9 @@ class KeystoreManager @Inject constructor() {
     fun getDecryptCipher(alias: String = MASTER_KEY_ALIAS, iv: ByteArray): Cipher {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         val key = getExistingKey(alias)
-            ?: throw IllegalStateException("Keystore alias $alias introuvable pour le déchiffrement")
+            ?: throw IllegalStateException(
+                "Keystore alias $alias introuvable pour le déchiffrement"
+            )
         val spec = GCMParameterSpec(TAG_SIZE, iv)
         cipher.init(Cipher.DECRYPT_MODE, key, spec)
         return cipher

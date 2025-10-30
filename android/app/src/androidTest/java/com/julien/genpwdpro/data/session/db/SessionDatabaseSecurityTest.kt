@@ -32,7 +32,11 @@ class SessionDatabaseSecurityTest {
         context.deleteDatabase(SessionDatabase.DATABASE_NAME)
 
         val encryptionManager = EncryptionManager()
-        val passphraseProvider = SqlCipherPassphraseProvider(context, securePrefs, encryptionManager)
+        val passphraseProvider = SqlCipherPassphraseProvider(
+            context,
+            securePrefs,
+            encryptionManager
+        )
         val factoryProvider = SqlCipherDatabaseOpenHelperFactoryProvider(passphraseProvider)
 
         database = Room.databaseBuilder(
@@ -100,16 +104,18 @@ class SessionDatabaseSecurityTest {
             val columnCount = cursor.columnCount
             for (index in 0 until columnCount) {
                 val columnName = cursor.getColumnName(index)
-                assertTrue(columnName in setOf(
-                    "sessionId",
-                    "vaultId",
-                    "createdAtEpochMillis",
-                    "lastAccessAtEpochMillis",
-                    "ttlMillis",
-                    "expiresAtEpochMillis",
-                    "lastExtendedAtEpochMillis",
-                    "attributes"
-                ))
+                assertTrue(
+                    columnName in setOf(
+                        "sessionId",
+                        "vaultId",
+                        "createdAtEpochMillis",
+                        "lastAccessAtEpochMillis",
+                        "ttlMillis",
+                        "expiresAtEpochMillis",
+                        "lastExtendedAtEpochMillis",
+                        "attributes"
+                    )
+                )
                 if (columnName == "sessionId") {
                     assertEquals(sessionId, cursor.getString(index))
                 }

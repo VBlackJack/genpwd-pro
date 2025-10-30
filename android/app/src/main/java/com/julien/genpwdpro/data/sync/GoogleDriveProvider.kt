@@ -15,11 +15,11 @@ import com.google.api.services.drive.model.File
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Implémentation Google Drive pour la synchronisation cloud
@@ -79,7 +79,9 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
     /**
      * À appeler depuis onActivityResult de l'Activity
      */
-    suspend fun handleSignInResult(data: Intent?, activity: Activity): Boolean = withContext(Dispatchers.IO) {
+    suspend fun handleSignInResult(data: Intent?, activity: Activity): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.result
@@ -113,7 +115,9 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         driveService = null
     }
 
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(Dispatchers.IO) {
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val service = driveService ?: return@withContext null
 
@@ -153,7 +157,9 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         }
     }
 
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(Dispatchers.IO) {
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val service = driveService ?: return@withContext null
 
@@ -181,7 +187,9 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         }
     }
 
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val file = findVaultFile(vaultId) ?: return@withContext false
             val cloudTimestamp = file.modifiedTime?.value ?: 0
@@ -191,7 +199,9 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         }
     }
 
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val file = findVaultFile(vaultId) ?: return@withContext null
 
@@ -278,7 +288,9 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
 
         // Chercher le dossier existant
         val result = service.files().list()
-            .setQ("name='$FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false")
+            .setQ(
+                "name='$FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            )
             .setSpaces("drive")
             .setFields("files(id)")
             .execute()

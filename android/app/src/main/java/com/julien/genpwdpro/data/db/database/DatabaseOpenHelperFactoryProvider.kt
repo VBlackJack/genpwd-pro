@@ -3,15 +3,15 @@ package com.julien.genpwdpro.data.db.database
 import android.content.Context
 import android.util.Log
 import androidx.sqlite.db.SupportSQLiteOpenHelper
+import com.julien.genpwdpro.crypto.CryptoEngine
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
 import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.secure.SecurePrefs
-import com.julien.genpwdpro.crypto.CryptoEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.SecureRandom
-import kotlin.jvm.Volatile
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.jvm.Volatile
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SQLiteDatabaseHook
 import net.sqlcipher.database.SupportFactory

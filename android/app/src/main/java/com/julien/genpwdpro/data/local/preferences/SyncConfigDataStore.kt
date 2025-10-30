@@ -6,14 +6,16 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 
-private val Context.syncConfigDataStore: DataStore<Preferences> by preferencesDataStore(name = "sync_config")
+private val Context.syncConfigDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "sync_config"
+)
 
 /**
  * Gestion de la persistence de la configuration de synchronisation

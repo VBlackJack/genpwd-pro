@@ -4,10 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.julien.genpwdpro.data.db.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
-import com.julien.genpwdpro.data.sync.models.*
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
-import com.julien.genpwdpro.data.sync.SyncPreferencesManager
-import com.julien.genpwdpro.data.sync.AutoSyncScheduler
+import com.julien.genpwdpro.data.sync.models.*
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -301,8 +299,8 @@ class VaultSyncManagerTest {
 
         val quota = StorageQuota(
             totalBytes = 15_000_000_000, // 15 GB
-            usedBytes = 5_000_000_000,   // 5 GB
-            freeBytes = 10_000_000_000   // 10 GB
+            usedBytes = 5_000_000_000, // 5 GB
+            freeBytes = 10_000_000_000 // 10 GB
         )
         coEvery { mockCloudProvider.getStorageQuota() } returns quota
 

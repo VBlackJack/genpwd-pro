@@ -7,10 +7,10 @@ import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel pour la gestion des presets de génération
@@ -169,7 +169,9 @@ class PresetViewModel @Inject constructor(
                 _uiState.update { it.copy(error = null) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(error = e.message ?: "Erreur lors de la définition du preset par défaut")
+                    it.copy(
+                        error = e.message ?: "Erreur lors de la définition du preset par défaut"
+                    )
                 }
             }
         }

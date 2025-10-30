@@ -11,13 +11,12 @@ import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.core.ipc.IntentSanitizer
-import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
-import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
 import com.julien.genpwdpro.data.db.entity.password
 import com.julien.genpwdpro.data.db.entity.title
 import com.julien.genpwdpro.data.db.entity.url
 import com.julien.genpwdpro.data.db.entity.username
+import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
@@ -25,11 +24,11 @@ import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.presentation.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Repository pour gérer les données d'auto-remplissage
@@ -76,7 +75,9 @@ class AutofillRepository @Inject constructor(
                 // Logique de correspondance améliorée
                 val formattedUrl = entry.url?.lowercase() ?: ""
                 val formattedPackage = packageName.lowercase()
-                formattedUrl.contains(formattedPackage) || entry.title.lowercase().contains(formattedPackage)
+                formattedUrl.contains(formattedPackage) || entry.title.lowercase().contains(
+                    formattedPackage
+                )
             }
         }
     }

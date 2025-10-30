@@ -4,17 +4,17 @@ import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.db.dao.*
 import com.julien.genpwdpro.data.db.entity.*
-import com.julien.genpwdpro.data.models.GenerationMode
-import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.CharPolicy
+import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.security.KeystoreManager
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository pour la gestion des vaults et de leurs entrées
@@ -41,7 +41,6 @@ class VaultRepository @Inject constructor(
      * Map: vaultId → SecretKey
      */
     private val unlockedKeys = mutableMapOf<String, SecretKey>()
-
 
     /**
      * Données d'un preset déchiffré
@@ -418,7 +417,9 @@ class VaultRepository @Inject constructor(
                 cryptoManager.bytesToHex(
                     cryptoManager.encryptString(entry.totpSecret, vaultKey, totpSecretIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             totpSecretIv = if (entry.hasTOTP) cryptoManager.bytesToHex(totpSecretIv) else "",
             totpPeriod = entry.totpPeriod,
             totpDigits = entry.totpDigits,
@@ -430,7 +431,9 @@ class VaultRepository @Inject constructor(
                 cryptoManager.bytesToHex(
                     cryptoManager.encryptString(entry.passkeyData, vaultKey, passkeyDataIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             passkeyDataIv = if (entry.hasPasskey) cryptoManager.bytesToHex(passkeyDataIv) else "",
             passkeyRpId = entry.passkeyRpId,
             passkeyRpName = entry.passkeyRpName,
@@ -466,7 +469,9 @@ class VaultRepository @Inject constructor(
                     vaultKey,
                     cryptoManager.hexToBytes(entity.usernameIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             password = cryptoManager.decryptString(
                 cryptoManager.hexToBytes(entity.encryptedPassword),
                 vaultKey,
@@ -478,21 +483,27 @@ class VaultRepository @Inject constructor(
                     vaultKey,
                     cryptoManager.hexToBytes(entity.urlIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             notes = if (entity.encryptedNotes.isNotEmpty()) {
                 cryptoManager.decryptString(
                     cryptoManager.hexToBytes(entity.encryptedNotes),
                     vaultKey,
                     cryptoManager.hexToBytes(entity.notesIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             customFields = if (entity.encryptedCustomFields.isNotEmpty()) {
                 cryptoManager.decryptString(
                     cryptoManager.hexToBytes(entity.encryptedCustomFields),
                     vaultKey,
                     cryptoManager.hexToBytes(entity.customFieldsIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             entryType = entity.entryType.toEntryType(),
             isFavorite = entity.isFavorite,
             passwordStrength = entity.passwordStrength,
@@ -514,7 +525,9 @@ class VaultRepository @Inject constructor(
                     vaultKey,
                     cryptoManager.hexToBytes(entity.totpSecretIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             totpPeriod = entity.totpPeriod,
             totpDigits = entity.totpDigits,
             totpAlgorithm = entity.totpAlgorithm,
@@ -527,7 +540,9 @@ class VaultRepository @Inject constructor(
                     vaultKey,
                     cryptoManager.hexToBytes(entity.passkeyDataIv)
                 )
-            } else "",
+            } else {
+                ""
+            },
             passkeyRpId = entity.passkeyRpId,
             passkeyRpName = entity.passkeyRpName,
             passkeyUserHandle = entity.passkeyUserHandle,
@@ -1336,7 +1351,10 @@ class VaultRepository @Inject constructor(
 
         // Vérifier la limite de 3 presets par mode (sauf pour les presets système)
         if (!preset.isSystemPreset) {
-            val existingCount = presetDao.countCustomPresetsByMode(vaultId, preset.generationMode.name)
+            val existingCount = presetDao.countCustomPresetsByMode(
+                vaultId,
+                preset.generationMode.name
+            )
             if (existingCount >= 3) {
                 Log.w("VaultRepository", "Cannot create preset: limit of 3 per mode reached")
                 return null

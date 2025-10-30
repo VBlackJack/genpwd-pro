@@ -18,6 +18,7 @@ object SecureRoutes {
         Screen.SyncHistory.route,
         Screen.AutofillSettings.route,
         Screen.SecuritySettings.route,
+        Screen.Privacy.route,
         Screen.VaultManager.route,
         Screen.VaultList.route,
         Screen.UnlockVault.route,

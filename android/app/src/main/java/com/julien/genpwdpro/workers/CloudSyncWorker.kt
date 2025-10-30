@@ -9,8 +9,8 @@ import com.julien.genpwdpro.data.sync.SyncManager
 import com.julien.genpwdpro.data.sync.SyncResult
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.first
 
 /**
  * Worker pour la synchronisation automatique en arrière-plan

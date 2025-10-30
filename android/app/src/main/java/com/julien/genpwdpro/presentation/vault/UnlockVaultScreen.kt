@@ -1,6 +1,5 @@
 package com.julien.genpwdpro.presentation.vault
 
-import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,8 +17,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
@@ -313,7 +312,11 @@ fun UnlockVaultScreen(
                             onClick = {
                                 // Active la biométrie avec le mot de passe actuel
                                 if (masterPassword.isNotEmpty() && activity != null) {
-                                    viewModel.enableBiometric(activity, currentVault.id, masterPassword)
+                                    viewModel.enableBiometric(
+                                        activity,
+                                        currentVault.id,
+                                        masterPassword
+                                    )
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

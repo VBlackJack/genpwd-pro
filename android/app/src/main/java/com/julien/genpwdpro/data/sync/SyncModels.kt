@@ -1,7 +1,6 @@
 package com.julien.genpwdpro.data.sync
 
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
-import com.julien.genpwdpro.data.sync.models.VaultSyncData
 
 // NOTE: ConflictResolutionStrategy is also defined in models/SyncStatus.kt
 // But we keep a local copy for CloudSyncRepository to use with SyncData
@@ -29,10 +28,10 @@ data class SyncData(
  * Types de données synchronisables
  */
 enum class SyncDataType {
-    SETTINGS,           // Paramètres de l'application
-    HISTORY,            // Historique des mots de passe générés
-    CUSTOM_WORDS,       // Listes de mots personnalisés
-    FAVORITES           // Mots de passe favoris (si fonctionnalité ajoutée)
+    SETTINGS, // Paramètres de l'application
+    HISTORY, // Historique des mots de passe générés
+    CUSTOM_WORDS, // Listes de mots personnalisés
+    FAVORITES // Mots de passe favoris (si fonctionnalité ajoutée)
 }
 
 /**
@@ -49,11 +48,11 @@ sealed class SyncResult {
  * NOTE: VaultSyncManager uses the version from models/SyncStatus.kt
  */
 enum class ConflictResolutionStrategy {
-    LOCAL_WINS,         // Garder les données locales
-    REMOTE_WINS,        // Garder les données distantes
-    NEWEST_WINS,        // Garder la version la plus récente (timestamp)
-    MERGE,              // Fusionner (si possible)
-    MANUAL              // Demander à l'utilisateur
+    LOCAL_WINS, // Garder les données locales
+    REMOTE_WINS, // Garder les données distantes
+    NEWEST_WINS, // Garder la version la plus récente (timestamp)
+    MERGE, // Fusionner (si possible)
+    MANUAL // Demander à l'utilisateur
 }
 
 /**

@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.repository
 
-import com.julien.genpwdpro.core.log.SafeLog
 import androidx.fragment.app.FragmentActivity
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository pour les opérations sur les vaults file-based
@@ -90,9 +93,9 @@ class FileVaultRepository @Inject constructor(
         return getEntries().map { entries ->
             entries.filter { entry ->
                 entry.title.contains(query, ignoreCase = true) ||
-                entry.username?.contains(query, ignoreCase = true) == true ||
-                entry.url?.contains(query, ignoreCase = true) == true ||
-                entry.notes?.contains(query, ignoreCase = true) == true
+                    entry.username?.contains(query, ignoreCase = true) == true ||
+                    entry.url?.contains(query, ignoreCase = true) == true ||
+                    entry.notes?.contains(query, ignoreCase = true) == true
             }
         }
     }

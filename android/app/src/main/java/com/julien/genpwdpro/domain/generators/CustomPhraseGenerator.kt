@@ -2,7 +2,6 @@ package com.julien.genpwdpro.domain.generators
 
 import com.julien.genpwdpro.data.models.Settings
 import javax.inject.Inject
-import kotlin.random.Random
 
 /**
  * Générateur de phrases personnalisées
@@ -49,8 +48,11 @@ class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
             }
             CustomPhraseFormat.CAMEL_CASE -> {
                 selectedWords.mapIndexed { index, word ->
-                    if (index == 0) word.lowercase()
-                    else word.replaceFirstChar { c -> c.uppercase() }
+                    if (index == 0) {
+                        word.lowercase()
+                    } else {
+                        word.replaceFirstChar { c -> c.uppercase() }
+                    }
                 }.joinToString("")
             }
             CustomPhraseFormat.SNAKE_CASE -> {
@@ -148,11 +150,11 @@ class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
  * Format de la phrase personnalisée
  */
 enum class CustomPhraseFormat {
-    SEPARATED,      // mots séparés: "mot1-mot2-mot3"
-    CAPITALIZED,    // capitalisé: "Mot1Mot2Mot3"
-    CAMEL_CASE,     // camelCase: "mot1Mot2Mot3"
-    SNAKE_CASE,     // snake_case: "mot1_mot2_mot3"
-    KEBAB_CASE      // kebab-case: "mot1-mot2-mot3"
+    SEPARATED, // mots séparés: "mot1-mot2-mot3"
+    CAPITALIZED, // capitalisé: "Mot1Mot2Mot3"
+    CAMEL_CASE, // camelCase: "mot1Mot2Mot3"
+    SNAKE_CASE, // snake_case: "mot1_mot2_mot3"
+    KEBAB_CASE // kebab-case: "mot1-mot2-mot3"
 }
 
 /**
@@ -163,6 +165,6 @@ data class WordListValidation(
     val error: String?,
     val wordCount: Int,
     val averageLength: Double,
-    val minEntropy: Double,  // Entropie avec 2 mots
-    val maxEntropy: Double   // Entropie avec 10 mots
+    val minEntropy: Double, // Entropie avec 2 mots
+    val maxEntropy: Double // Entropie avec 10 mots
 )

@@ -193,13 +193,13 @@ class BiometricManager @Inject constructor() {
  * Disponibilité de la biométrie
  */
 enum class BiometricAvailability {
-    AVAILABLE,                      // Disponible et prêt
-    NO_HARDWARE,                    // Pas de capteur biométrique
-    HARDWARE_UNAVAILABLE,           // Capteur temporairement indisponible
-    NONE_ENROLLED,                  // Pas de biométrie enregistrée
-    SECURITY_UPDATE_REQUIRED,       // Mise à jour système requise
-    UNSUPPORTED,                    // Non supporté
-    UNKNOWN                         // État inconnu
+    AVAILABLE, // Disponible et prêt
+    NO_HARDWARE, // Pas de capteur biométrique
+    HARDWARE_UNAVAILABLE, // Capteur temporairement indisponible
+    NONE_ENROLLED, // Pas de biométrie enregistrée
+    SECURITY_UPDATE_REQUIRED, // Mise à jour système requise
+    UNSUPPORTED, // Non supporté
+    UNKNOWN // État inconnu
 }
 
 /**

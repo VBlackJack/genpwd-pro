@@ -1,9 +1,9 @@
-package com.julien.genpwd-pro.presentation.screens
+package com.julien.genpwdpro.presentation.screens
 
-import com.julien.genpwd-pro.data.local.preferences.SettingsDataStore
-import com.julien.genpwd-pro.data.models.*
-import com.julien.genpwd-pro.data.repository.PasswordHistoryRepository
-import com.julien.genpwd-pro.domain.usecases.GeneratePasswordUseCase
+import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.models.*
+import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.db.dao.FolderDao
 import com.julien.genpwdpro.data.db.entity.FolderEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel pour la gestion des dossiers

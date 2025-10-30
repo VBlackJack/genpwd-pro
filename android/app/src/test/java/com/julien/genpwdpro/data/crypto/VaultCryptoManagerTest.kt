@@ -3,7 +3,6 @@ package com.julien.genpwdpro.data.crypto
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import javax.crypto.SecretKey
 
 /**
  * Tests unitaires pour VaultCryptoManager
@@ -337,7 +336,16 @@ class VaultCryptoManagerTest {
 
     @Test
     fun `bytesToHex and hexToBytes roundtrip works`() {
-        val original = byteArrayOf(0x01, 0x23, 0x45, 0x67, 0x89.toByte(), 0xAB.toByte(), 0xCD.toByte(), 0xEF.toByte())
+        val original = byteArrayOf(
+            0x01,
+            0x23,
+            0x45,
+            0x67,
+            0x89.toByte(),
+            0xAB.toByte(),
+            0xCD.toByte(),
+            0xEF.toByte()
+        )
 
         val hex = cryptoManager.bytesToHex(original)
         val restored = cryptoManager.hexToBytes(hex)

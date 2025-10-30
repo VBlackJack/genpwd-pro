@@ -293,19 +293,19 @@ data class ProviderInfo(
  * Statut d'implémentation d'un provider
  */
 enum class ImplementationStatus {
-    PRODUCTION_READY,   // Prêt pour la production
-    TEMPLATE,           // Template/placeholder (nécessite configuration)
-    IN_DEVELOPMENT,     // En développement
-    NOT_APPLICABLE      // Non applicable (ex: NONE)
+    PRODUCTION_READY, // Prêt pour la production
+    TEMPLATE, // Template/placeholder (nécessite configuration)
+    IN_DEVELOPMENT, // En développement
+    NOT_APPLICABLE // Non applicable (ex: NONE)
 }
 
 /**
  * Niveau de confidentialité du provider
  */
 enum class PrivacyLevel {
-    MAXIMUM,            // Privacy maximale (ex: Proton Drive)
-    HIGH,               // Privacy élevée (ex: pCloud)
-    STANDARD,           // Privacy standard (ex: Google Drive, OneDrive)
-    CONFIGURABLE,       // Dépend de la configuration (ex: WebDAV auto-hébergé)
-    NOT_APPLICABLE      // Non applicable
+    MAXIMUM, // Privacy maximale (ex: Proton Drive)
+    HIGH, // Privacy élevée (ex: pCloud)
+    STANDARD, // Privacy standard (ex: Google Drive, OneDrive)
+    CONFIGURABLE, // Dépend de la configuration (ex: WebDAV auto-hébergé)
+    NOT_APPLICABLE // Non applicable
 }

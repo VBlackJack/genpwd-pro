@@ -4,16 +4,13 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.sync.AutoSyncScheduler
-import com.julien.genpwdpro.data.sync.VaultSyncManager
 import com.julien.genpwdpro.data.sync.SyncPreferencesManager
+import com.julien.genpwdpro.data.sync.VaultSyncManager
 import com.julien.genpwdpro.data.sync.models.*
-import com.julien.genpwdpro.data.sync.providers.GoogleDriveProvider
-import com.julien.genpwdpro.data.sync.providers.OneDriveProvider
-import com.julien.genpwdpro.data.sync.providers.WebDAVProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour la gestion de la synchronisation des vaults
@@ -466,7 +463,9 @@ class VaultSyncViewModel @Inject constructor(
                     val quota = testProvider.getStorageQuota()
                     onResult(
                         true,
-                        "Connexion réussie! Espace: ${formatBytes(quota.usedBytes)} / ${formatBytes(quota.totalBytes)}"
+                        "Connexion réussie! Espace: ${formatBytes(quota.usedBytes)} / ${formatBytes(
+                            quota.totalBytes
+                        )}"
                     )
                 } else {
                     onResult(false, "Échec de l'authentification. Vérifiez vos identifiants.")

@@ -19,7 +19,13 @@ class KeystoreConfigurationInstrumentedTest {
         val factory = javax.crypto.SecretKeyFactory.getInstance(key.algorithm, "AndroidKeyStore")
         val keyInfo = factory.getKeySpec(key, android.security.keystore.KeyInfo::class.java) as android.security.keystore.KeyInfo
 
-        assertTrue(keyInfo.isUserAuthenticationRequired, "App lock key must require user authentication")
-        assertTrue(keyInfo.isInvalidatedByBiometricEnrollment, "App lock key must invalidate when biometrics change")
+        assertTrue(
+            keyInfo.isUserAuthenticationRequired,
+            "App lock key must require user authentication"
+        )
+        assertTrue(
+            keyInfo.isInvalidatedByBiometricEnrollment,
+            "App lock key must invalidate when biometrics change"
+        )
     }
 }

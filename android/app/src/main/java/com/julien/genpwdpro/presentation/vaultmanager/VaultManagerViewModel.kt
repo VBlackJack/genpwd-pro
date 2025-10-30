@@ -10,10 +10,10 @@ import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.data.vault.VaultMigrationManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel pour la gestion des vaults
@@ -148,17 +148,31 @@ class VaultManagerViewModel @Inject constructor(
                 // Sauvegarder la biométrie si demandé
                 if (enableBiometric && activity != null) {
                     android.util.Log.d("VaultManagerVM", "Enabling biometric for vault $vaultId")
-                    val biometricResult = biometricVaultManager.enableBiometric(activity, vaultId, masterPassword)
+                    val biometricResult = biometricVaultManager.enableBiometric(
+                        activity,
+                        vaultId,
+                        masterPassword
+                    )
                     biometricResult.fold(
                         onSuccess = {
-                            android.util.Log.i("VaultManagerVM", "✅ Biometric enabled successfully for vault $vaultId")
+                            android.util.Log.i(
+                                "VaultManagerVM",
+                                "✅ Biometric enabled successfully for vault $vaultId"
+                            )
                         },
                         onFailure = { error ->
-                            android.util.Log.e("VaultManagerVM", "❌ Failed to save biometric for vault $vaultId: ${error.message}", error)
+                            android.util.Log.e(
+                                "VaultManagerVM",
+                                "❌ Failed to save biometric for vault $vaultId: ${error.message}",
+                                error
+                            )
                         }
                     )
                 } else if (enableBiometric && activity == null) {
-                    android.util.Log.w("VaultManagerVM", "Cannot enable biometric: activity is null")
+                    android.util.Log.w(
+                        "VaultManagerVM",
+                        "Cannot enable biometric: activity is null"
+                    )
                 }
 
                 // Auto-déverrouiller le vault nouvellement créé
@@ -183,7 +197,6 @@ class VaultManagerViewModel @Inject constructor(
                         successMessage = successMessage
                     )
                 }
-
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -264,7 +277,6 @@ class VaultManagerViewModel @Inject constructor(
                 vaultRegistryDao.deleteById(vaultId)
 
                 _uiState.update { it.copy(isLoading = false, confirmDeleteVaultId = null) }
-
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -303,7 +315,6 @@ class VaultManagerViewModel @Inject constructor(
                 } else {
                     throw Exception("Export failed")
                 }
-
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -362,7 +373,6 @@ class VaultManagerViewModel @Inject constructor(
                         successMessage = "Vault imported successfully"
                     )
                 }
-
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -469,5 +479,5 @@ data class VaultManagerUiState(
     val confirmDeleteVaultId: String? = null,
     val isMigrating: Boolean = false,
     val migrationProgress: VaultMigrationManager.MigrationProgress? = null,
-    val customFolderUri: Uri? = null  // URI du dossier sélectionné pour CUSTOM storage
+    val customFolderUri: Uri? = null // URI du dossier sélectionné pour CUSTOM storage
 )

@@ -6,18 +6,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.NavHostController
-import com.julien.genpwdpro.presentation.navigation.AppNavGraph
-import com.julien.genpwdpro.presentation.navigation.Screen
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
-import dagger.hilt.android.EntryPointAccessors
+import com.julien.genpwdpro.presentation.navigation.AppNavGraph
+import com.julien.genpwdpro.presentation.navigation.Screen
 import kotlinx.coroutines.launch
 
 /**
@@ -173,11 +170,26 @@ data class DrawerNavItem(
 private val drawerItems = listOf(
     DrawerNavItem(Screen.Dashboard.route, Icons.Default.Home, Icons.Default.Home, "Accueil"),
     DrawerNavItem(Screen.Generator.route, Icons.Default.VpnKey, Icons.Default.VpnKey, "Générateur"),
-    DrawerNavItem(Screen.VaultManager.route, Icons.Default.Storage, Icons.Default.Storage, "Gestion des Coffres"),
+    DrawerNavItem(
+        Screen.VaultManager.route,
+        Icons.Default.Storage,
+        Icons.Default.Storage,
+        "Gestion des Coffres"
+    ),
     DrawerNavItem(Screen.History.route, Icons.Default.History, Icons.Default.History, "Historique")
 )
 
 private val secondaryDrawerItems = listOf(
-    DrawerNavItem(Screen.Analyzer.route, Icons.Default.Security, Icons.Default.Security, "Analyseur"),
-    DrawerNavItem(Screen.SyncSettings.route, Icons.Default.Settings, Icons.Default.Settings, "Paramètres")
+    DrawerNavItem(
+        Screen.Analyzer.route,
+        Icons.Default.Security,
+        Icons.Default.Security,
+        "Analyseur"
+    ),
+    DrawerNavItem(
+        Screen.SyncSettings.route,
+        Icons.Default.Settings,
+        Icons.Default.Settings,
+        "Paramètres"
+    )
 )

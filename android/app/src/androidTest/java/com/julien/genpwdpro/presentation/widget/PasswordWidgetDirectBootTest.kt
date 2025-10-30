@@ -9,7 +9,9 @@ import org.junit.runner.RunWith
 class PasswordWidgetDirectBootTest {
 
     @Test
-    @Ignore("TODO: validate widget behaviour under Direct Boot lock state once device emulation is wired")
+    @Ignore(
+        "TODO: validate widget behaviour under Direct Boot lock state once device emulation is wired"
+    )
     fun widgetShowsPlaceholderWhileDeviceLocked() {
         // Placeholder: will assert widget hides secrets when the user storage is locked.
     }

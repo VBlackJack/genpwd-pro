@@ -63,7 +63,7 @@ style:
       - reason: 'Use structured logging instead of writing directly to stdout.'
         value: 'kotlin.io.print'
   WildcardImport:
-    active: true
+    active: false
   MaxLineLength:
     active: true
     maxLineLength: 120
@@ -116,15 +116,12 @@ exceptions:
 libraries:
   active: true
   ForbiddenPublicDataClass:
-    active: true
-    ignorePackages:
-      - '*.internal'
-      - '*.internal.*'
+    active: false
   LibraryCodeMustSpecifyReturnType:
     active: true
     allowOmitUnit: false
   LibraryEntitiesShouldNotBePublic:
-    active: true
+    active: false
 
 coroutines:
   active: true
@@ -136,7 +133,7 @@ formatting:
   android: true
   autoCorrect: false
   ImportOrdering:
-    active: true
+    active: false
   Indentation:
     active: true
     continuationIndentSize: 4

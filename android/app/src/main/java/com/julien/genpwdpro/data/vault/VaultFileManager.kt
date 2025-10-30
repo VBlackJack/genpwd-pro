@@ -158,7 +158,9 @@ class VaultFileManager @Inject constructor(
     ): File {
         if (strategy == StorageStrategy.CUSTOM && customPath != null) {
             // Utiliser SAF pour custom paths
-            throw UnsupportedOperationException("Use createVaultFileToUri for custom paths - this returns Uri, not File")
+            throw UnsupportedOperationException(
+                "Use createVaultFileToUri for custom paths - this returns Uri, not File"
+            )
         }
 
         val dir = getStorageDirectory(strategy)
@@ -251,7 +253,13 @@ class VaultFileManager @Inject constructor(
                 val headerJson = gson.toJson(header)
                 val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
                 val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
-                System.arraycopy(headerBytes, 0, paddedHeader, 0, minOf(headerBytes.size, paddedHeader.size))
+                System.arraycopy(
+                    headerBytes,
+                    0,
+                    paddedHeader,
+                    0,
+                    minOf(headerBytes.size, paddedHeader.size)
+                )
                 fos.write(paddedHeader)
 
                 // Écrire le contenu chiffré
@@ -260,7 +268,6 @@ class VaultFileManager @Inject constructor(
 
             Log.d(TAG, "Vault file written successfully: ${file.absolutePath}")
             return file
-
         } catch (e: Exception) {
             Log.e(TAG, "Error writing vault file", e)
             throw e
@@ -286,7 +293,7 @@ class VaultFileManager @Inject constructor(
                 file.delete()
             } else {
                 Log.w(TAG, "Vault file not found for deletion: $filePath")
-                true  // Already deleted
+                true // Already deleted
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting vault file", e)
@@ -373,7 +380,6 @@ class VaultFileManager @Inject constructor(
 
             Log.d(TAG, "Vault imported: $vaultId to ${destFile.absolutePath}")
             return Pair(vaultId, destFile)
-
         } catch (e: Exception) {
             Log.e(TAG, "Error importing vault", e)
             throw e
@@ -534,7 +540,13 @@ class VaultFileManager @Inject constructor(
                 val headerJson = gson.toJson(header)
                 val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
                 val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
-                System.arraycopy(headerBytes, 0, paddedHeader, 0, minOf(headerBytes.size, paddedHeader.size))
+                System.arraycopy(
+                    headerBytes,
+                    0,
+                    paddedHeader,
+                    0,
+                    minOf(headerBytes.size, paddedHeader.size)
+                )
                 outputStream.write(paddedHeader)
 
                 // Écrire le contenu chiffré
@@ -544,7 +556,6 @@ class VaultFileManager @Inject constructor(
 
             Log.d(TAG, "Vault file written to SAF URI: ${vaultFile.uri}")
             return vaultFile.uri
-
         } catch (e: Exception) {
             Log.e(TAG, "Error writing vault file to SAF", e)
             throw e
@@ -588,7 +599,13 @@ class VaultFileManager @Inject constructor(
                 val headerJson = gson.toJson(header)
                 val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
                 val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
-                System.arraycopy(headerBytes, 0, paddedHeader, 0, minOf(headerBytes.size, paddedHeader.size))
+                System.arraycopy(
+                    headerBytes,
+                    0,
+                    paddedHeader,
+                    0,
+                    minOf(headerBytes.size, paddedHeader.size)
+                )
                 outputStream.write(paddedHeader)
                 outputStream.write(encryptedContent)
                 outputStream.flush()
@@ -649,7 +666,6 @@ class VaultFileManager @Inject constructor(
 
                 return vaultData
             } ?: throw IllegalStateException("Cannot open input stream from URI")
-
         } catch (e: Exception) {
             Log.e(TAG, "Error reading vault file from SAF", e)
             throw e

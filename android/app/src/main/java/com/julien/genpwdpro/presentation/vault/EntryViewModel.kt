@@ -9,9 +9,9 @@ import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
 import com.julien.genpwdpro.domain.generators.PasswordGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour créer/éditer une entrée de vault (nouveau système file-based)
@@ -300,7 +300,9 @@ class EntryViewModel @Inject constructor(
                         }
 
                         result.onFailure { error ->
-                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            _uiState.value = EntryUiState.Error(
+                                error.message ?: "Erreur lors de la sauvegarde"
+                            )
                             return@launch
                         }
                     }
@@ -355,7 +357,9 @@ class EntryViewModel @Inject constructor(
                         }
 
                         result.onFailure { error ->
-                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            _uiState.value = EntryUiState.Error(
+                                error.message ?: "Erreur lors de la sauvegarde"
+                            )
                             return@launch
                         }
                     }
@@ -394,7 +398,9 @@ class EntryViewModel @Inject constructor(
                         }
 
                         result.onFailure { error ->
-                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            _uiState.value = EntryUiState.Error(
+                                error.message ?: "Erreur lors de la sauvegarde"
+                            )
                             return@launch
                         }
                     }
@@ -402,12 +408,16 @@ class EntryViewModel @Inject constructor(
                     EntryType.CARD -> {
                         // Pour les cartes, parser customFields si c'est une édition
                         // Sinon créer une nouvelle carte
-                        _uiState.value = EntryUiState.Error("La gestion des cartes n'est pas encore implémentée dans l'UI")
+                        _uiState.value = EntryUiState.Error(
+                            "La gestion des cartes n'est pas encore implémentée dans l'UI"
+                        )
                         return@launch
                     }
 
                     EntryType.IDENTITY -> {
-                        _uiState.value = EntryUiState.Error("La gestion des identités n'est pas encore implémentée dans l'UI")
+                        _uiState.value = EntryUiState.Error(
+                            "La gestion des identités n'est pas encore implémentée dans l'UI"
+                        )
                         return@launch
                     }
                 }
@@ -436,7 +446,9 @@ class EntryViewModel @Inject constructor(
                 result.onSuccess {
                     _uiState.value = EntryUiState.Saved
                 }.onFailure { error ->
-                    _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la suppression")
+                    _uiState.value = EntryUiState.Error(
+                        error.message ?: "Erreur lors de la suppression"
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = EntryUiState.Error(e.message ?: "Erreur lors de la suppression")

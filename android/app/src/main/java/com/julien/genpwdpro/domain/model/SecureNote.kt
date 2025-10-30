@@ -54,9 +54,9 @@ data class SecureNote(
             vaultId = vaultId,
             folderId = folderId,
             title = title,
-            username = "",  // Pas utilisé pour les notes
-            password = "",  // Pas utilisé pour les notes
-            url = "",       // Pas utilisé pour les notes
+            username = "", // Pas utilisé pour les notes
+            password = "", // Pas utilisé pour les notes
+            url = "", // Pas utilisé pour les notes
             notes = content, // Le contenu est stocké dans le champ notes
             customFields = "",
             entryType = EntryType.NOTE,

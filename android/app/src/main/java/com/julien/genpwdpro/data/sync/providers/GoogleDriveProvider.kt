@@ -16,10 +16,10 @@ import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Provider pour Google Drive
@@ -92,7 +92,9 @@ class GoogleDriveProvider : CloudProvider {
      * Callback pour gérer le résultat du sign-in
      * À appeler depuis l'Activity après onActivityResult
      */
-    suspend fun handleSignInResult(activity: Activity, account: GoogleSignInAccount?): Boolean = withContext(Dispatchers.IO) {
+    suspend fun handleSignInResult(activity: Activity, account: GoogleSignInAccount?): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             if (account != null) {
                 setupDriveService(activity, account)
@@ -142,10 +144,12 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Upload un vault chiffré vers Google Drive
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(Dispatchers.IO) {
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val service = driveService ?: return@withContext null
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
 
             // Chercher si le fichier existe déjà
             val existingFile = findVaultFile(vaultId)
@@ -189,7 +193,9 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Télécharge un vault depuis Google Drive
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(Dispatchers.IO) {
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val service = driveService ?: return@withContext null
             val file = findVaultFile(vaultId) ?: return@withContext null
@@ -223,7 +229,9 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Vérifie si une version plus récente existe sur le cloud
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
@@ -256,7 +264,9 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Récupère les métadonnées d'un fichier cloud
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val file = findVaultFile(vaultId) ?: return@withContext null
 
@@ -343,7 +353,7 @@ class GoogleDriveProvider : CloudProvider {
     private fun findVaultFile(vaultId: String): File? {
         return try {
             val service = driveService ?: return null
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
 
             val result = service.files()
                 .list()

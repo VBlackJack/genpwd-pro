@@ -19,7 +19,12 @@ class SensitiveActionPreferencesTest {
     fun setUp() {
         securePrefs = mockk(relaxed = true)
         every { securePrefs.getBoolean(SensitiveActionPreferences.KEY_REQUIRE_BIOMETRIC, false) } returns false
-        every { securePrefs.getLong(SensitiveActionPreferences.KEY_CLIPBOARD_TTL_MS, SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS) } returns SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
+        every {
+            securePrefs.getLong(
+                SensitiveActionPreferences.KEY_CLIPBOARD_TTL_MS,
+                SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
+            )
+        } returns SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
     }
 
     @Test
@@ -28,7 +33,10 @@ class SensitiveActionPreferencesTest {
 
         val prefs = SensitiveActionPreferences(securePrefs)
 
-        assertEquals(SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS, prefs.currentClipboardTtlMs())
+        assertEquals(
+            SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS,
+            prefs.currentClipboardTtlMs()
+        )
     }
 
     @Test
@@ -52,7 +60,10 @@ class SensitiveActionPreferencesTest {
         val prefs = SensitiveActionPreferences(securePrefs)
 
         assertFalse(prefs.setClipboardTtlMs(2_000L))
-        assertEquals(SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS, prefs.currentClipboardTtlMs())
+        assertEquals(
+            SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS,
+            prefs.currentClipboardTtlMs()
+        )
         verify(exactly = 0) { securePrefs.putLong(any(), any()) }
     }
 }

@@ -1,5 +1,8 @@
 package com.julien.genpwdpro.presentation.screens.sync
 
+import android.app.Activity
+import android.content.Context
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,32 +25,27 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.data.sync.*
-import android.app.Activity
-import android.content.Context
-import android.util.Log
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
+import com.julien.genpwdpro.data.sync.*
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.SyncStatus
-import com.julien.genpwdpro.data.sync.models.SyncInterval
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import javax.inject.Inject
 
 /**
  * Écran de configuration de la synchronisation cloud
@@ -210,7 +208,12 @@ fun SyncSettingsScreen(
                             selectedProviderForConfig = null
                         },
                         onTestConnection = { serverUrl, username, password, validateSSL ->
-                            viewModel.testWebDAVConnection(serverUrl, username, password, validateSSL)
+                            viewModel.testWebDAVConnection(
+                                serverUrl,
+                                username,
+                                password,
+                                validateSSL
+                            )
                         },
                         isTestingConnection = uiState.isTestingConnection,
                         testConnectionResult = uiState.testConnectionResult
@@ -285,7 +288,7 @@ private fun ConflictResolutionDialog(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     "Vos paramètres ont été modifiés localement et sur le cloud. " +
-                            "Quelle version souhaitez-vous conserver ?",
+                        "Quelle version souhaitez-vous conserver ?",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -457,9 +460,17 @@ private fun SyncStatusCard(
     metadata: LocalSyncMetadata
 ) {
     val (statusColor, statusIcon, statusText) = when (status) {
-        SyncStatus.NEVER_SYNCED -> Triple(Color(0xFF9CA3AF), Icons.Default.CloudOff, "Jamais synchronisé")
+        SyncStatus.NEVER_SYNCED -> Triple(
+            Color(0xFF9CA3AF),
+            Icons.Default.CloudOff,
+            "Jamais synchronisé"
+        )
         SyncStatus.PENDING -> Triple(Color(0xFF9CA3AF), Icons.Default.CloudOff, "En attente")
-        SyncStatus.SYNCING -> Triple(Color(0xFF3B82F6), Icons.Default.CloudSync, "Synchronisation...")
+        SyncStatus.SYNCING -> Triple(
+            Color(0xFF3B82F6),
+            Icons.Default.CloudSync,
+            "Synchronisation..."
+        )
         SyncStatus.SYNCED -> Triple(Color(0xFF10B981), Icons.Default.CloudDone, "Synchronisé")
         SyncStatus.ERROR -> Triple(Color(0xFFEF4444), Icons.Default.CloudOff, "Erreur")
         SyncStatus.CONFLICT -> Triple(Color(0xFFF59E0B), Icons.Default.Warning, "Conflit détecté")
@@ -614,10 +625,11 @@ private fun ProviderOption(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        color = if (isSelected)
+        color = if (isSelected) {
             MaterialTheme.colorScheme.primaryContainer
-        else
-            MaterialTheme.colorScheme.surface,
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
         tonalElevation = if (isSelected) 0.dp else 1.dp
     ) {
         Row(
@@ -643,8 +655,12 @@ private fun ProviderOption(
                         )
                         // Privacy badge
                         val privacyColor = when (provider.privacyLevel) {
-                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> Color(0xFF10B981)
-                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> Color(0xFF3B82F6)
+                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> Color(
+                                0xFF10B981
+                            )
+                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> Color(
+                                0xFF3B82F6
+                            )
                             else -> Color(0xFF9CA3AF)
                         }
                         Surface(
@@ -1086,7 +1102,12 @@ class SyncSettingsViewModel @Inject constructor(
         }
     }
 
-    fun testWebDAVConnection(serverUrl: String, username: String, password: String, validateSSL: Boolean) {
+    fun testWebDAVConnection(
+        serverUrl: String,
+        username: String,
+        password: String,
+        validateSSL: Boolean
+    ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isTestingConnection = true) }
             try {
@@ -1095,14 +1116,18 @@ class SyncSettingsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isTestingConnection = false,
-                        testConnectionResult = TestConnectionResult.Success("Connexion WebDAV réussie!")
+                        testConnectionResult = TestConnectionResult.Success(
+                            "Connexion WebDAV réussie!"
+                        )
                     )
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isTestingConnection = false,
-                        testConnectionResult = TestConnectionResult.Failure(e.message ?: "Erreur inconnue")
+                        testConnectionResult = TestConnectionResult.Failure(
+                            e.message ?: "Erreur inconnue"
+                        )
                     )
                 }
             }
@@ -1163,14 +1188,18 @@ class SyncSettingsViewModel @Inject constructor(
                             state.copy(
                                 config = state.config.copy(providerType = providerType),
                                 isAuthenticating = false,
-                                authenticationResult = AuthenticationResult.Success("Authentification réussie!")
+                                authenticationResult = AuthenticationResult.Success(
+                                    "Authentification réussie!"
+                                )
                             )
                         }
                     } else {
                         _uiState.update {
                             it.copy(
                                 isAuthenticating = false,
-                                authenticationResult = AuthenticationResult.Failure("Authentification échouée")
+                                authenticationResult = AuthenticationResult.Failure(
+                                    "Authentification échouée"
+                                )
                             )
                         }
                     }
@@ -1178,7 +1207,9 @@ class SyncSettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isAuthenticating = false,
-                            authenticationResult = AuthenticationResult.Failure("Provider non supporté")
+                            authenticationResult = AuthenticationResult.Failure(
+                                "Provider non supporté"
+                            )
                         )
                     }
                 }
@@ -1186,7 +1217,9 @@ class SyncSettingsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isAuthenticating = false,
-                        authenticationResult = AuthenticationResult.Failure(e.message ?: "Erreur inconnue")
+                        authenticationResult = AuthenticationResult.Failure(
+                            e.message ?: "Erreur inconnue"
+                        )
                     )
                 }
             }
@@ -1200,7 +1233,10 @@ class SyncSettingsViewModel @Inject constructor(
 
             if (newAutoSync) {
                 // Activer la synchronisation automatique
-                Log.d("SyncSettingsViewModel", "Enabling auto-sync with interval: ${_uiState.value.config.syncInterval}")
+                Log.d(
+                    "SyncSettingsViewModel",
+                    "Enabling auto-sync with interval: ${_uiState.value.config.syncInterval}"
+                )
                 CloudSyncWorker.schedule(
                     context = context,
                     intervalMillis = _uiState.value.config.syncInterval,
@@ -1331,7 +1367,9 @@ class SyncSettingsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isTestingConnection = false,
-                        testConnectionResult = TestConnectionResult.Failure(e.message ?: "Erreur inconnue")
+                        testConnectionResult = TestConnectionResult.Failure(
+                            e.message ?: "Erreur inconnue"
+                        )
                     )
                 }
             }
@@ -1412,7 +1450,9 @@ class SyncSettingsViewModel @Inject constructor(
                     it.copy(
                         status = SyncStatus.ERROR,
                         metadata = it.metadata.copy(
-                            syncErrors = listOf(e.message ?: "Erreur lors de la résolution du conflit")
+                            syncErrors = listOf(
+                                e.message ?: "Erreur lors de la résolution du conflit"
+                            )
                         )
                     )
                 }
@@ -1432,7 +1472,6 @@ class SyncSettingsViewModel @Inject constructor(
             )
         }
     }
-
 }
 
 /**

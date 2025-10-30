@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.google.crypto.tink.aead.AeadConfig
+import com.julien.genpwdpro.core.crash.RedactingUncaughtExceptionHandler
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.core.runtime.StrictModeInitializer
 import com.julien.genpwdpro.data.inmemory.LegacyInMemoryMigrationManager
@@ -32,12 +33,16 @@ class GenPwdProApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
 
+        installCrashHandler()
         initializeTink()
 
         runBlocking {
             when (val result = legacyMigrationManager.migrateIfNeeded()) {
                 is LegacyMigrationResult.Success -> {
-                    SafeLog.i(TAG, "Legacy data migrated: vaults=${result.importedVaults}, entries=${result.importedEntries}")
+                    SafeLog.i(
+                        TAG,
+                        "Legacy data migrated: vaults=${result.importedVaults}, entries=${result.importedEntries}"
+                    )
                 }
                 is LegacyMigrationResult.PartialSuccess -> {
                     SafeLog.w(
@@ -78,6 +83,13 @@ class GenPwdProApplication : Application(), Configuration.Provider {
             .onFailure { error ->
                 throw IllegalStateException("Unable to initialise Tink AEAD configuration", error)
             }
+    }
+
+    private fun installCrashHandler() {
+        val current = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler(
+            RedactingUncaughtExceptionHandler(current)
+        )
     }
 
     companion object {

@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.fragment.app.FragmentActivity
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
@@ -229,7 +229,10 @@ fun GeneratorScreen(
                                 )
                                 TextButton(
                                     onClick = {
-                                        safeNavigate(onNavigateToPresetManager, "Gestion des presets")
+                                        safeNavigate(
+                                            onNavigateToPresetManager,
+                                            "Gestion des presets"
+                                        )
                                     }
                                 ) {
                                     Text("Gérer")
@@ -428,7 +431,10 @@ fun GeneratorScreen(
                                     ttlMs = clipboardTtlMs
                                 )
                                 scope.launch {
-                                    val message = ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs)
+                                    val message = ClipboardUtils.buildAutoClearMessage(
+                                        context,
+                                        clipboardTtlMs
+                                    )
                                     snackbarHostState.showSnackbar(message)
                                 }
                             }

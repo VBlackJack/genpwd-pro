@@ -8,12 +8,12 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.impl.annotations.MockK
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FileVaultRepositoryTest {
@@ -63,7 +63,9 @@ class FileVaultRepositoryTest {
         val password = "SecurePass123!"
 
         coEvery { vaultSessionManager.unlockVault(vaultId, password) } returns Result.success(Unit)
-        coEvery { legacyVaultRepository.unlockVault(any(), any()) } throws RuntimeException("Room crash")
+        coEvery { legacyVaultRepository.unlockVault(any(), any()) } throws RuntimeException(
+            "Room crash"
+        )
 
         val result = repository.unlockVault(vaultId, password)
 

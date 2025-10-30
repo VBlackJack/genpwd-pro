@@ -2,18 +2,20 @@ package com.julien.genpwdpro.presentation.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.models.*
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
-import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
+import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour l'écran de génération de mots de passe
@@ -23,18 +25,18 @@ class GeneratorViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val historyRepository: PasswordHistoryRepository,
     private val settingsDataStore: SettingsDataStore,
-    private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository,
+    private val vaultRepository: VaultRepository,
     private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
     val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
 
-    private val _currentPreset = MutableStateFlow<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset?>(null)
-    val currentPreset: StateFlow<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset?> = _currentPreset.asStateFlow()
+    private val _currentPreset = MutableStateFlow<DecryptedPreset?>(null)
+    val currentPreset: StateFlow<DecryptedPreset?> = _currentPreset.asStateFlow()
 
-    private val _presets = MutableStateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>>(emptyList())
-    val presets: StateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>> = _presets.asStateFlow()
+    private val _presets = MutableStateFlow<List<DecryptedPreset>>(emptyList())
+    val presets: StateFlow<List<DecryptedPreset>> = _presets.asStateFlow()
 
     private var currentVaultId: String? = null
 
@@ -78,7 +80,7 @@ class GeneratorViewModel @Inject constructor(
     /**
      * Sélectionne un preset et applique ses settings
      */
-    fun selectPreset(preset: com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset) {
+    fun selectPreset(preset: DecryptedPreset) {
         _currentPreset.value = preset
         _uiState.update { it.copy(settings = preset.settings) }
 
@@ -106,12 +108,14 @@ class GeneratorViewModel @Inject constructor(
                 val canCreate = vaultRepository.canCreatePreset(vaultId, currentSettings.mode)
                 if (!canCreate) {
                     _uiState.update {
-                        it.copy(error = "Limite de 3 presets atteinte pour le mode ${currentSettings.mode.name}")
+                        it.copy(
+                            error = "Limite de 3 presets atteinte pour le mode ${currentSettings.mode.name}"
+                        )
                     }
                     return@launch
                 }
 
-                val preset = com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset(
+                val preset = DecryptedPreset(
                     id = java.util.UUID.randomUUID().toString(),
                     vaultId = vaultId,
                     name = name,

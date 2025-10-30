@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.inmemory
 
 import android.content.Context
+import androidx.room.withTransaction
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.FolderDao
 import com.julien.genpwdpro.data.db.dao.PresetDao
@@ -13,7 +14,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.room.withTransaction
 
 /**
  * Coordinates the one-off data migration from the legacy in-memory/cache representation
@@ -21,30 +21,25 @@ import androidx.room.withTransaction
  * application has been upgraded to the SQLCipher build.
  */
 @Singleton
+class LegacyMigrationDaos @Inject constructor(
+    val vaultDao: VaultDao,
+    val entryDao: VaultEntryDao,
+    val folderDao: FolderDao,
+    val tagDao: TagDao,
+    val presetDao: PresetDao
+)
+
+@Singleton
 class LegacyInMemoryMigrationManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appDatabase: AppDatabase,
-    private val vaultDao: VaultDao,
-    private val entryDao: VaultEntryDao,
-    private val folderDao: FolderDao,
-    private val tagDao: TagDao,
-    private val presetDao: PresetDao,
+    private val daos: LegacyMigrationDaos,
     private val legacyStore: LegacyInMemoryStore,
     private val migrationStateStore: LegacyMigrationStateStore
 ) {
 
     suspend fun migrateIfNeeded(): LegacyMigrationResult = withContext(Dispatchers.IO) {
-        if (migrationStateStore.isMigrationCompleted()) {
-            SafeLog.d(TAG, "Legacy migration already completed")
-            return@withContext LegacyMigrationResult.AlreadyMigrated
-        }
-
-        val databasePresent = context.getDatabasePath(AppDatabase.DATABASE_NAME)?.let { it.exists() && it.length() > 0L } == true
-        if (databasePresent && !legacyStore.hasLegacyState()) {
-            migrationStateStore.markMigrationCompleted()
-            SafeLog.d(TAG, "SQLCipher database detected and no legacy cache found; marking migration as complete")
-            return@withContext LegacyMigrationResult.AlreadyMigrated
-        }
+        resolvePreMigrationOutcome()?.let { return@withContext it }
 
         val snapshots = legacyStore.loadSnapshots()
         if (snapshots.isEmpty()) {
@@ -53,76 +48,147 @@ class LegacyInMemoryMigrationManager @Inject constructor(
             return@withContext LegacyMigrationResult.NoLegacyData
         }
 
-        val failures = mutableListOf<String>()
-        val successfulSnapshots = mutableListOf<LegacyVaultSnapshot>()
-        var importedVaults = 0
-        var importedEntries = 0
+        performMigration(snapshots)
+    }
 
+    private fun resolvePreMigrationOutcome(): LegacyMigrationResult? {
+        if (migrationStateStore.isMigrationCompleted()) {
+            SafeLog.d(TAG, "Legacy migration already completed")
+            return LegacyMigrationResult.AlreadyMigrated
+        }
+
+        val databasePresent = context
+            .getDatabasePath(AppDatabase.DATABASE_NAME)
+            ?.let { it.exists() && it.length() > 0L } == true
+        if (databasePresent && !legacyStore.hasLegacyState()) {
+            migrationStateStore.markMigrationCompleted()
+            SafeLog.d(
+                TAG,
+                "SQLCipher database detected and no legacy cache found; marking migration as complete"
+            )
+            return LegacyMigrationResult.AlreadyMigrated
+        }
+        return null
+    }
+
+    private suspend fun performMigration(
+        snapshots: List<LegacyVaultSnapshot>
+    ): LegacyMigrationResult {
+        val accumulator = MigrationAccumulator()
         try {
             appDatabase.withTransaction {
                 snapshots.forEach { snapshot ->
-                    val vault = snapshot.vault
-                    if (vault == null) {
-                        SafeLog.w(TAG, "Skipping legacy snapshot for vault ${snapshot.vaultId} (metadata missing)")
-                        failures += snapshot.vaultId
-                        return@forEach
-                    }
-
-                    runCatching {
-                        vaultDao.insert(vault)
-                        if (snapshot.folders.isNotEmpty()) {
-                            folderDao.insertAll(snapshot.folders)
-                        }
-                        if (snapshot.tags.isNotEmpty()) {
-                            tagDao.insertAll(snapshot.tags)
-                        }
-                        if (snapshot.presets.isNotEmpty()) {
-                            snapshot.presets.forEach { preset ->
-                                presetDao.insert(preset)
-                            }
-                        }
-                        if (snapshot.entries.isNotEmpty()) {
-                            entryDao.insertAll(snapshot.entries)
-                        }
-                        if (snapshot.entryTags.isNotEmpty()) {
-                            snapshot.entryTags.forEach { crossRef ->
-                                tagDao.addTagToEntry(crossRef)
-                            }
-                        }
-                        importedVaults += 1
-                        importedEntries += snapshot.entries.size
-                        successfulSnapshots += snapshot
-                    }.onFailure { throwable ->
-                        SafeLog.e(TAG, "Failed to import legacy vault ${snapshot.vaultId}", throwable)
-                        failures += snapshot.vaultId
-                    }
+                    importSnapshot(snapshot, accumulator)
                 }
             }
-        } catch (throwable: Throwable) {
-            SafeLog.e(TAG, "Legacy migration failed", throwable)
+        } catch (exception: Exception) {
+            SafeLog.e(TAG, "Legacy migration failed", exception)
             migrationStateStore.markReauthenticationRequired(snapshots.map { it.vaultId })
-            return@withContext LegacyMigrationResult.Failure("transaction_failed", throwable)
+            return LegacyMigrationResult.Failure("transaction_failed", exception)
         }
 
-        return@withContext when {
+        return accumulator.buildResult(snapshots)
+    }
+
+    private suspend fun importSnapshot(
+        snapshot: LegacyVaultSnapshot,
+        accumulator: MigrationAccumulator
+    ) {
+        val vault = snapshot.vault
+        if (vault == null) {
+            SafeLog.w(
+                TAG,
+                "Skipping legacy snapshot for vault ${snapshot.vaultId} (metadata missing)"
+            )
+            accumulator.recordFailure(snapshot.vaultId)
+            return
+        }
+
+        runCatching {
+            daos.vaultDao.insert(vault)
+            if (snapshot.folders.isNotEmpty()) {
+                daos.folderDao.insertAll(snapshot.folders)
+            }
+            if (snapshot.tags.isNotEmpty()) {
+                daos.tagDao.insertAll(snapshot.tags)
+            }
+            if (snapshot.presets.isNotEmpty()) {
+                snapshot.presets.forEach { preset ->
+                    daos.presetDao.insert(preset)
+                }
+            }
+            if (snapshot.entries.isNotEmpty()) {
+                daos.entryDao.insertAll(snapshot.entries)
+            }
+            if (snapshot.entryTags.isNotEmpty()) {
+                snapshot.entryTags.forEach { crossRef ->
+                    daos.tagDao.addTagToEntry(crossRef)
+                }
+            }
+        }.onSuccess {
+            accumulator.recordSuccess(snapshot)
+        }.onFailure { throwable ->
+            SafeLog.e(
+                TAG,
+                "Failed to import legacy vault ${snapshot.vaultId}",
+                throwable
+            )
+            accumulator.recordFailure(snapshot.vaultId)
+        }
+    }
+
+    private fun MigrationAccumulator.buildResult(
+        allSnapshots: List<LegacyVaultSnapshot>
+    ): LegacyMigrationResult {
+        return when {
             failures.isEmpty() -> {
                 legacyStore.secureWipe(successfulSnapshots)
                 migrationStateStore.clearReauthenticationRequired()
                 migrationStateStore.markMigrationCompleted()
-                SafeLog.i(TAG, "Legacy migration completed: imported=$importedVaults vault(s), entries=$importedEntries")
+                SafeLog.i(
+                    TAG,
+                    "Legacy migration completed: imported=$importedVaults vault(s), entries=$importedEntries"
+                )
                 LegacyMigrationResult.Success(importedVaults, importedEntries)
             }
-            failures.size == snapshots.size -> {
+            failures.size == allSnapshots.size -> {
                 migrationStateStore.markReauthenticationRequired(failures)
-                SafeLog.w(TAG, "Legacy migration failed for all vaults; user re-authentication required")
+                SafeLog.w(
+                    TAG,
+                    "Legacy migration failed for all vaults; user re-authentication required"
+                )
                 LegacyMigrationResult.Failure("all_vaults_failed")
             }
             else -> {
                 legacyStore.secureWipe(successfulSnapshots)
                 migrationStateStore.markReauthenticationRequired(failures)
-                SafeLog.w(TAG, "Legacy migration partially completed; ${failures.size} vault(s) require re-authentication")
-                LegacyMigrationResult.PartialSuccess(importedVaults, importedEntries, failures.toSet())
+                SafeLog.w(
+                    TAG,
+                    "Legacy migration partially completed; ${failures.size} vault(s) require re-authentication"
+                )
+                LegacyMigrationResult.PartialSuccess(
+                    importedVaults,
+                    importedEntries,
+                    failures.toSet()
+                )
             }
+        }
+    }
+
+    private class MigrationAccumulator {
+        val failures = mutableListOf<String>()
+        val successfulSnapshots = mutableListOf<LegacyVaultSnapshot>()
+        var importedVaults: Int = 0
+        var importedEntries: Int = 0
+
+        fun recordSuccess(snapshot: LegacyVaultSnapshot) {
+            importedVaults += 1
+            importedEntries += snapshot.entries.size
+            successfulSnapshots += snapshot
+        }
+
+        fun recordFailure(vaultId: String) {
+            failures += vaultId
         }
     }
 

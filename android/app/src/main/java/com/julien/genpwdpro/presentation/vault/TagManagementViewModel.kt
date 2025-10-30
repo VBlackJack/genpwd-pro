@@ -6,10 +6,10 @@ import com.julien.genpwdpro.data.db.dao.TagDao
 import com.julien.genpwdpro.data.db.entity.EntryTagCrossRef
 import com.julien.genpwdpro.data.db.entity.TagEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel pour la gestion des tags

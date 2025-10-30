@@ -19,13 +19,14 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.security.*
-import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
+import com.julien.genpwdpro.security.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Écran de configuration de la sécurité
@@ -40,6 +41,7 @@ import javax.inject.Inject
 @Composable
 fun SecuritySettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToPrivacy: () -> Unit = {},
     viewModel: SecuritySettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -50,11 +52,37 @@ fun SecuritySettingsScreen(
 
     var showTimeoutDialog by remember { mutableStateOf(false) }
 
-    // Vérifier le statut biométrique au démarrage
     LaunchedEffect(Unit) {
         viewModel.checkBiometricAvailability(context)
     }
 
+    SecuritySettingsLayout(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onNavigateToPrivacy = onNavigateToPrivacy,
+        snackbarHostState = snackbarHostState,
+        unlockErrorMessage = unlockErrorMessage,
+        showTimeoutDialog = showTimeoutDialog,
+        onShowTimeoutDialogChange = { showTimeoutDialog = it },
+        viewModel = viewModel,
+        context = context,
+        scope = scope
+    )
+}
+
+@Composable
+private fun SecuritySettingsLayout(
+    uiState: SecuritySettingsUiState,
+    onNavigateBack: () -> Unit,
+    onNavigateToPrivacy: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    unlockErrorMessage: String,
+    showTimeoutDialog: Boolean,
+    onShowTimeoutDialogChange: (Boolean) -> Unit,
+    viewModel: SecuritySettingsViewModel,
+    context: Context,
+    scope: CoroutineScope
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,13 +104,11 @@ fun SecuritySettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // État de la biométrie
             BiometricStatusCard(
                 availability = uiState.biometricAvailability,
                 isEnabled = uiState.isBiometricEnabled
             )
 
-            // Verrouillage de l'application
             if (uiState.biometricAvailability == BiometricAvailability.AVAILABLE) {
                 AppLockCard(
                     isEnabled = uiState.isAppLockEnabled,
@@ -94,7 +120,7 @@ fun SecuritySettingsScreen(
                             viewModel.toggleAppLock(context, false)
                         }
                     },
-                    onTimeoutClick = { showTimeoutDialog = true },
+                    onTimeoutClick = { onShowTimeoutDialogChange(true) },
                     getTimeoutName = { viewModel.getTimeoutDisplayName(it) }
                 )
 
@@ -120,35 +146,33 @@ fun SecuritySettingsScreen(
                 )
             }
 
-            // Informations Keystore
             KeystoreInfoCard(
                 isHardwareBacked = uiState.isHardwareBackedKeystore,
                 keyCount = uiState.keystoreKeyCount
             )
 
-            // Actions de sécurité
             SecurityActionsCard(
                 onDeleteKeys = {
                     viewModel.deleteAllKeys()
-                    kotlinx.coroutines.GlobalScope.launch {
+                    scope.launch {
                         snackbarHostState.showSnackbar("Toutes les clés ont été supprimées")
                     }
                 }
             )
 
-            // Bonnes pratiques de sécurité
             SecurityTipsCard()
+
+            PrivacySummaryCard(onNavigateToPrivacy)
         }
 
-        // Dialogue de sélection du délai
         if (showTimeoutDialog) {
             TimeoutSelectionDialog(
                 currentTimeout = uiState.lockTimeout,
                 timeouts = viewModel.getAllTimeouts(),
-                onDismiss = { showTimeoutDialog = false },
+                onDismiss = { onShowTimeoutDialogChange(false) },
                 onSelect = { timeout ->
                     viewModel.setLockTimeout(timeout)
-                    showTimeoutDialog = false
+                    onShowTimeoutDialogChange(false)
                 }
             )
         }
@@ -481,7 +505,11 @@ private fun SecurityActionsCard(
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = { Text("Confirmer la suppression") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer toutes les clés de chiffrement ? Cette action est irréversible.") },
+            text = {
+                Text(
+                    "Êtes-vous sûr de vouloir supprimer toutes les clés de chiffrement ? Cette action est irréversible."
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -543,6 +571,44 @@ private fun SecurityTipsCard() {
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 2.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrivacySummaryCard(onNavigateToPrivacy: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.PrivacyTip, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.privacy_summary_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = stringResource(R.string.privacy_summary_body),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Button(
+                onClick = onNavigateToPrivacy
+            ) {
+                Text(stringResource(R.string.privacy_summary_cta))
             }
         }
     }

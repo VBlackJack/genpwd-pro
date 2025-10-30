@@ -1,12 +1,12 @@
 package com.julien.genpwdpro.presentation.dashboard
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,8 +15,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
@@ -35,8 +35,8 @@ import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.presentation.security.BiometricGate
 import com.julien.genpwdpro.presentation.util.ClipboardUtils
-import kotlinx.coroutines.launch
 import kotlin.math.max
+import kotlinx.coroutines.launch
 
 /**
  * Dashboard unifié - Page d'accueil de l'application
@@ -134,7 +134,10 @@ fun DashboardScreen(
                                     ttlMs = clipboardTtlMs
                                 )
                                 scope.launch {
-                                    val message = ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs)
+                                    val message = ClipboardUtils.buildAutoClearMessage(
+                                        context,
+                                        clipboardTtlMs
+                                    )
                                     snackbarHostState.showSnackbar(message)
                                 }
                             }
@@ -259,7 +262,7 @@ private fun QuickGeneratorCard(
                 targetState = password,
                 transitionSpec = {
                     fadeIn(animationSpec = spring(stiffness = Spring.StiffnessHigh)) with
-                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh))
+                        fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh))
                 },
                 label = "password_animation"
             ) { currentPassword ->

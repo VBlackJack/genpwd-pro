@@ -3,16 +3,16 @@ package com.julien.genpwdpro.presentation.vault
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.repository.FileVaultRepository
-import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour l'écran de déverrouillage d'un vault
@@ -74,7 +74,10 @@ class UnlockVaultViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 SafeLog.d(TAG, "🔓 Attempting unlock for vault: $vaultId")
-                SafeLog.d(TAG, "📏 Master password received for unlock: ${SafeLog.redact(masterPassword)}")
+                SafeLog.d(
+                    TAG,
+                    "📏 Master password received for unlock: ${SafeLog.redact(masterPassword)}"
+                )
                 SafeLog.d(TAG, "📊 Current UI state: ${_uiState.value::class.simpleName}")
 
                 _uiState.value = UnlockVaultUiState.Unlocking
@@ -92,7 +95,10 @@ class UnlockVaultViewModel @Inject constructor(
                         if (currentVaultId == vaultId) {
                             SafeLog.i(TAG, "✅ Session correctly set to vault: $vaultId")
                         } else {
-                            SafeLog.w(TAG, "⚠️ Session mismatch! Expected: $vaultId, Got: $currentVaultId")
+                            SafeLog.w(
+                                TAG,
+                                "⚠️ Session mismatch! Expected: $vaultId, Got: $currentVaultId"
+                            )
                         }
                         _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
                     },
@@ -133,7 +139,8 @@ class UnlockVaultViewModel @Inject constructor(
                         val message = error.message ?: "Authentification biométrique échouée"
 
                         if (message.contains("cancel", ignoreCase = true) ||
-                            message.contains("annul", ignoreCase = true)) {
+                            message.contains("annul", ignoreCase = true)
+                        ) {
                             _uiState.value = UnlockVaultUiState.Ready
                         } else {
                             _uiState.value = UnlockVaultUiState.Error(message)

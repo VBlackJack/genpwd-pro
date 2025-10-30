@@ -66,7 +66,10 @@ fun CreateVaultScreen(
             if (enableBiometric && masterPassword.isNotEmpty()) {
                 val success = viewModel.saveBiometricPassword(vaultId, masterPassword)
                 if (!success) {
-                    android.util.Log.w("CreateVaultScreen", "Failed to save biometric password for vault $vaultId")
+                    android.util.Log.w(
+                        "CreateVaultScreen",
+                        "Failed to save biometric password for vault $vaultId"
+                    )
                 }
             }
 
@@ -225,7 +228,9 @@ fun CreateVaultScreen(
                 isError = confirmPassword.isNotEmpty() && confirmPassword != masterPassword,
                 supportingText = if (confirmPassword.isNotEmpty() && confirmPassword != masterPassword) {
                     { Text("Les mots de passe ne correspondent pas") }
-                } else null,
+                } else {
+                    null
+                },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
@@ -322,10 +327,10 @@ fun CreateVaultScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = name.isNotEmpty() &&
-                        masterPassword.isNotEmpty() &&
-                        masterPassword == confirmPassword &&
-                        masterPassword.length >= 8 &&
-                        uiState !is VaultUiState.Loading
+                    masterPassword.isNotEmpty() &&
+                    masterPassword == confirmPassword &&
+                    masterPassword.length >= 8 &&
+                    uiState !is VaultUiState.Loading
             ) {
                 if (uiState is VaultUiState.Loading) {
                     CircularProgressIndicator(

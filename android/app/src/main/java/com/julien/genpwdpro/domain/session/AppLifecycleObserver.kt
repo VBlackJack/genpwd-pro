@@ -46,7 +46,10 @@ class AppLifecycleObserver(
             val timeoutMillis = BACKGROUND_LOCK_TIMEOUT_MINUTES * 60 * 1000
 
             if (backgroundDuration > timeoutMillis) {
-                Log.d(TAG, "Background timeout exceeded ($backgroundDuration ms > $timeoutMillis ms), locking vaults")
+                Log.d(
+                    TAG,
+                    "Background timeout exceeded ($backgroundDuration ms > $timeoutMillis ms), locking vaults"
+                )
                 lockAllVaults()
             } else {
                 Log.d(TAG, "Background duration within timeout: $backgroundDuration ms")

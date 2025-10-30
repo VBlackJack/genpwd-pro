@@ -3,20 +3,19 @@ package com.julien.genpwdpro.domain.session
 import android.net.Uri
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.dao.updateById
 import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultData
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.domain.exceptions.VaultException
-import com.julien.genpwdpro.data.db.dao.updateById
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import java.io.IOException
-import java.util.UUID
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 /**
  * Gestionnaire de session pour le système de coffres file-based
@@ -153,7 +152,9 @@ class VaultSessionManager @Inject constructor(
                 val resolvedUri = if (isSafPath) {
                     vaultFileManager.pathToUri(vaultRegistry.filePath)
                         ?: return@withContext Result.failure(
-                            VaultException.FileAccessError("Invalid SAF URI: ${vaultRegistry.filePath}")
+                            VaultException.FileAccessError(
+                                "Invalid SAF URI: ${vaultRegistry.filePath}"
+                            )
                         )
                 } else {
                     null
@@ -164,7 +165,11 @@ class VaultSessionManager @Inject constructor(
                         vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, resolvedUri)
                     } else {
                         // File path normal
-                        vaultFileManager.loadVaultFile(vaultId, masterPassword, vaultRegistry.filePath)
+                        vaultFileManager.loadVaultFile(
+                            vaultId,
+                            masterPassword,
+                            vaultRegistry.filePath
+                        )
                     }
                 } catch (e: SecurityException) {
                     SafeLog.e(TAG, "Decryption failed for vault: $vaultId", e)
@@ -240,7 +245,6 @@ class VaultSessionManager @Inject constructor(
 
                 SafeLog.i(TAG, "Vault unlocked successfully: $vaultId")
                 Result.success(Unit)
-
             } catch (e: VaultException) {
                 SafeLog.e(TAG, "Failed to unlock vault: $vaultId - ${e.message}", e)
                 Result.failure(e)
@@ -293,7 +297,6 @@ class VaultSessionManager @Inject constructor(
                 _activeVaultId.value = null
 
                 SafeLog.i(TAG, "Vault locked successfully")
-
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error while locking vault", e)
                 // Forcer le nettoyage même en cas d'erreur
@@ -348,7 +351,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Entry added: ${entry.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to add entry", e)
             Result.failure(e)
@@ -377,7 +379,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Entry updated: ${entry.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to update entry", e)
             Result.failure(e)
@@ -410,7 +411,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Entry deleted: $entryId")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to delete entry", e)
             Result.failure(e)
@@ -451,7 +451,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Folder added: ${folder.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to add folder", e)
             Result.failure(e)
@@ -478,7 +477,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Folder updated: ${folder.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to update folder", e)
             Result.failure(e)
@@ -511,7 +509,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Folder deleted: $folderId")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to delete folder", e)
             Result.failure(e)
@@ -552,7 +549,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Tag added: ${tag.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to add tag", e)
             Result.failure(e)
@@ -579,7 +575,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Tag updated: ${tag.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to update tag", e)
             Result.failure(e)
@@ -610,7 +605,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Tag deleted: $tagId")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to delete tag", e)
             Result.failure(e)
@@ -651,7 +645,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Preset added: ${preset.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to add preset", e)
             Result.failure(e)
@@ -678,7 +671,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Preset updated: ${preset.id}")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to update preset", e)
             Result.failure(e)
@@ -703,7 +695,6 @@ class VaultSessionManager @Inject constructor(
             resetAutoLockTimer()
             SafeLog.d(TAG, "Preset deleted: $presetId")
             Result.success(Unit)
-
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to delete preset", e)
             Result.failure(e)
@@ -765,7 +756,6 @@ class VaultSessionManager @Inject constructor(
 
                 SafeLog.d(TAG, "Vault saved successfully")
                 Result.success(Unit)
-
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Failed to save vault", e)
                 Result.failure(e)

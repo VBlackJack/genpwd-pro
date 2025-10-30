@@ -32,6 +32,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("TooManyFunctions") // Module intentionally aggregates related providers for Room and encryption wiring.
 object DatabaseModule {
 
     @Provides
@@ -197,7 +198,15 @@ object DatabaseModule {
         cryptoManager: VaultCryptoManager,
         keystoreManager: com.julien.genpwdpro.security.KeystoreManager
     ): VaultRepository {
-        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
+        return VaultRepository(
+            vaultDao,
+            entryDao,
+            folderDao,
+            tagDao,
+            presetDao,
+            cryptoManager,
+            keystoreManager
+        )
     }
 
     @Provides
@@ -220,10 +229,12 @@ object DatabaseModule {
     @Singleton
     @Named("session_cleanup_interval_ms")
     fun provideSessionCleanupInterval(): Long =
-        TimeUnit.MINUTES.toMillis(15)
+        TimeUnit.MINUTES.toMillis(SESSION_CLEANUP_INTERVAL_MINUTES)
 
     @Provides
     @Singleton
     @Named("legacy_sync_enabled")
     fun provideLegacySyncFlag(): Boolean = BuildConfig.DEBUG
 }
+
+private const val SESSION_CLEANUP_INTERVAL_MINUTES = 15L

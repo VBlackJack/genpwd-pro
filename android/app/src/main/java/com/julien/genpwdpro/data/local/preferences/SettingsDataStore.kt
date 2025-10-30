@@ -5,10 +5,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.julien.genpwdpro.data.models.*
+import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import java.io.IOException
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -59,17 +59,32 @@ class SettingsDataStore(private val context: Context) {
                 digitsCount = preferences[PreferencesKeys.DIGITS_COUNT] ?: 2,
                 specialsCount = preferences[PreferencesKeys.SPECIALS_COUNT] ?: 2,
                 customSpecials = preferences[PreferencesKeys.CUSTOM_SPECIALS] ?: "_+-=.@#%",
-                digitsPlacement = preferences[PreferencesKeys.DIGITS_PLACEMENT]?.let { Placement.valueOf(it) } ?: Placement.RANDOM,
-                specialsPlacement = preferences[PreferencesKeys.SPECIALS_PLACEMENT]?.let { Placement.valueOf(it) } ?: Placement.RANDOM,
+                digitsPlacement = preferences[PreferencesKeys.DIGITS_PLACEMENT]?.let {
+                    Placement.valueOf(
+                        it
+                    )
+                } ?: Placement.RANDOM,
+                specialsPlacement = preferences[PreferencesKeys.SPECIALS_PLACEMENT]?.let {
+                    Placement.valueOf(
+                        it
+                    )
+                } ?: Placement.RANDOM,
                 digitsPosition = preferences[PreferencesKeys.DIGITS_POSITION] ?: 50,
                 specialsPosition = preferences[PreferencesKeys.SPECIALS_POSITION] ?: 50,
                 caseMode = preferences[PreferencesKeys.CASE_MODE]?.let { CaseMode.valueOf(it) } ?: CaseMode.MIXED,
-                caseBlocks = preferences[PreferencesKeys.CASE_BLOCKS]?.let { parseCaseBlocks(it) } ?: listOf(CaseBlock.T, CaseBlock.L),
+                caseBlocks = preferences[PreferencesKeys.CASE_BLOCKS]?.let { parseCaseBlocks(it) } ?: listOf(
+                    CaseBlock.T,
+                    CaseBlock.L
+                ),
                 syllablesLength = preferences[PreferencesKeys.SYLLABLES_LENGTH] ?: 20,
                 policy = preferences[PreferencesKeys.POLICY]?.let { CharPolicy.valueOf(it) } ?: CharPolicy.STANDARD,
                 passphraseWordCount = preferences[PreferencesKeys.PASSPHRASE_WORD_COUNT] ?: 5,
                 passphraseSeparator = preferences[PreferencesKeys.PASSPHRASE_SEPARATOR] ?: "-",
-                dictionary = preferences[PreferencesKeys.DICTIONARY]?.let { DictionaryType.valueOf(it) } ?: DictionaryType.FRENCH,
+                dictionary = preferences[PreferencesKeys.DICTIONARY]?.let {
+                    DictionaryType.valueOf(
+                        it
+                    )
+                } ?: DictionaryType.FRENCH,
                 leetWord = preferences[PreferencesKeys.LEET_WORD] ?: "password"
             )
         }

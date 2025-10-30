@@ -11,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.julien.genpwdpro"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.julien.genpwdpro"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 2
         versionName = "1.1.0"
 
@@ -74,8 +74,8 @@ android {
     }
 
     composeOptions {
-        // Compose Compiler 1.5.11 pairs with Kotlin 1.9.23 per the official compatibility map.
-        kotlinCompilerExtensionVersion = "1.5.11"
+        // Compose Compiler 1.5.14 pairs with Kotlin 1.9.24 per the official compatibility map.
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {

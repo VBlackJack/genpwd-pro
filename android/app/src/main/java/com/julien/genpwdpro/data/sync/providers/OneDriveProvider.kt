@@ -9,18 +9,14 @@ import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
-import java.io.IOException
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
 
 /**
  * Provider Microsoft OneDrive avec implémentation complète Microsoft Graph API
@@ -158,7 +154,10 @@ class OneDriveProvider(
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
             Log.w(TAG, "MSAL authentication requires MSAL library dependency")
-            Log.w(TAG, "Add to build.gradle.kts: implementation(\"com.microsoft.identity.client:msal:4.+\")")
+            Log.w(
+                TAG,
+                "Add to build.gradle.kts: implementation(\"com.microsoft.identity.client:msal:4.+\")"
+            )
 
             // TODO: Uncomment when MSAL dependency is added
             /*
@@ -307,7 +306,7 @@ class OneDriveProvider(
                 }
 
                 val folderId = ensureFolder()
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
 
                 // Upload simple (< 4MB)
                 if (syncData.encryptedData.size < 4 * 1024 * 1024) {
@@ -315,7 +314,11 @@ class OneDriveProvider(
 
                     val request = Request.Builder()
                         .url(uploadUrl)
-                        .put(syncData.encryptedData.toRequestBody("application/octet-stream".toMediaType()))
+                        .put(
+                            syncData.encryptedData.toRequestBody(
+                                "application/octet-stream".toMediaType()
+                            )
+                        )
                         .build()
 
                     httpClient.newCall(request).execute().use { response ->
@@ -333,7 +336,10 @@ class OneDriveProvider(
                     }
                 } else {
                     // TODO: Implémenter chunked upload pour fichiers > 4MB
-                    Log.w(TAG, "File too large for simple upload, chunked upload not yet implemented")
+                    Log.w(
+                        TAG,
+                        "File too large for simple upload, chunked upload not yet implemented"
+                    )
                     null
                 }
             } catch (e: Exception) {
@@ -353,7 +359,7 @@ class OneDriveProvider(
                 }
 
                 // Trouver le fileId depuis vaultId
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
                 val metadata = listVaults().find { it.fileName == fileName }
                     ?: return@withContext null
                 val cloudFileId = metadata.fileId
@@ -549,7 +555,9 @@ class OneDriveProvider(
     /**
      * Vérifie si une version plus récente existe sur le cloud
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
@@ -562,9 +570,11 @@ class OneDriveProvider(
     /**
      * Récupère les métadonnées d'un fichier cloud
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val metadata = listVaults().find { it.fileName == fileName }
             metadata
         } catch (e: Exception) {
