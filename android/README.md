@@ -9,8 +9,21 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 
 ---
 
+## ⚠️ Architecture Actuelle (Post-Migration)
+
+**IMPORTANT :** GenPwd Pro utilise un **système de fichiers .gpv** (GenPwd Vault) pour stocker les données sensibles.
+
+- ✅ **Production** : Fichiers `.gpv` chiffrés (JSON portable)
+- ✅ **Room Database** : Uniquement pour métadonnées (registre, historique)
+- ❌ **Ancien système Room-based** : Déprécié (DEBUG only)
+
+📖 **Pour une compréhension complète de l'architecture, consultez [ARCHITECTURE.md](ARCHITECTURE.md)**
+
+---
+
 ## Table des matières
 
+- [Architecture Actuelle](#architecture-actuelle-post-migration)
 - [Fonctionnalités](#fonctionnalités)
 - [Architecture de sécurité](#architecture-de-sécurité)
 - [Pile technologique](#pile-technologique)
