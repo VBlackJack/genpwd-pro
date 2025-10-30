@@ -152,39 +152,124 @@ class BiometricManager @Inject constructor() {
     }
 
     /**
-     * Obtient un message d'erreur lisible
+     * Obtient un message d'erreur détaillé et actionnable
      */
     fun getErrorMessage(errorCode: Int): String {
         return when (errorCode) {
             BiometricPrompt.ERROR_HW_UNAVAILABLE ->
-                "Matériel biométrique indisponible"
+                "Capteur biométrique temporairement indisponible.\n\n" +
+                "Le capteur est peut-être utilisé par une autre application. Réessayez dans quelques instants."
+
             BiometricPrompt.ERROR_UNABLE_TO_PROCESS ->
-                "Impossible de traiter l'authentification"
+                "Impossible de traiter votre biométrie.\n\n" +
+                "Le capteur n'a pas pu lire correctement votre empreinte ou votre visage. Assurez-vous que le capteur est propre et bien positionné, puis réessayez."
+
             BiometricPrompt.ERROR_TIMEOUT ->
-                "Délai d'attente dépassé"
+                "Temps d'authentification expiré.\n\n" +
+                "L'authentification n'a pas été complétée dans le délai imparti. Veuillez réessayer."
+
             BiometricPrompt.ERROR_NO_SPACE ->
-                "Espace insuffisant"
+                "Espace de stockage insuffisant.\n\n" +
+                "Votre appareil manque d'espace pour effectuer cette opération. Libérez de l'espace et réessayez."
+
             BiometricPrompt.ERROR_CANCELED ->
-                "Opération annulée"
+                "Opération annulée."
+
             BiometricPrompt.ERROR_LOCKOUT ->
-                "Trop de tentatives. Réessayez plus tard"
+                "Trop de tentatives échouées.\n\n" +
+                "Pour votre sécurité, la biométrie est temporairement bloquée. Attendez 30 secondes avant de réessayer."
+
             BiometricPrompt.ERROR_VENDOR ->
-                "Erreur du fabricant"
+                "Erreur du capteur biométrique.\n\n" +
+                "Le capteur a rencontré une erreur spécifique au fabricant. Redémarrez votre appareil et réessayez."
+
             BiometricPrompt.ERROR_LOCKOUT_PERMANENT ->
-                "Verrouillage permanent. Utilisez votre code PIN"
+                "Biométrie verrouillée après trop de tentatives.\n\n" +
+                "Déverrouillez d'abord votre appareil avec votre code PIN ou mot de passe, puis réessayez."
+
             BiometricPrompt.ERROR_USER_CANCELED ->
-                "Annulé par l'utilisateur"
+                "Authentification annulée.\n\n" +
+                "Vous pouvez réessayer ou utiliser votre mot de passe principal."
+
             BiometricPrompt.ERROR_NO_BIOMETRICS ->
-                "Aucune biométrie configurée"
+                "Aucune biométrie enregistrée.\n\n" +
+                "Pour utiliser cette fonction, configurez d'abord une empreinte digitale ou reconnaissance faciale dans les paramètres de votre appareil."
+
             BiometricPrompt.ERROR_HW_NOT_PRESENT ->
-                "Pas de matériel biométrique"
+                "Capteur biométrique non disponible.\n\n" +
+                "Votre appareil ne dispose pas de capteur biométrique. Utilisez votre mot de passe principal."
+
             BiometricPrompt.ERROR_NEGATIVE_BUTTON ->
-                "Bouton Annuler appuyé"
+                "Authentification annulée."
+
             BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL ->
-                "Aucun code PIN configuré"
+                "Aucun code de sécurité configuré.\n\n" +
+                "Pour utiliser cette fonction, configurez un code PIN, schéma ou mot de passe dans les paramètres de sécurité de votre appareil."
+
             BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED ->
-                "Mise à jour de sécurité requise"
-            else -> "Erreur d'authentification ($errorCode)"
+                "Mise à jour de sécurité requise.\n\n" +
+                "Pour des raisons de sécurité, vous devez mettre à jour votre système Android avant d'utiliser la biométrie."
+
+            else ->
+                "Échec de l'authentification biométrique.\n\n" +
+                "Une erreur inattendue s'est produite (code: $errorCode). Utilisez votre mot de passe principal."
+        }
+    }
+
+    /**
+     * Obtient un message court pour affichage dans un Snackbar
+     */
+    fun getShortErrorMessage(errorCode: Int): String {
+        return when (errorCode) {
+            BiometricPrompt.ERROR_HW_UNAVAILABLE -> "Capteur temporairement indisponible"
+            BiometricPrompt.ERROR_UNABLE_TO_PROCESS -> "Impossible de lire la biométrie"
+            BiometricPrompt.ERROR_TIMEOUT -> "Temps expiré"
+            BiometricPrompt.ERROR_NO_SPACE -> "Espace insuffisant"
+            BiometricPrompt.ERROR_CANCELED -> "Opération annulée"
+            BiometricPrompt.ERROR_LOCKOUT -> "Trop de tentatives"
+            BiometricPrompt.ERROR_VENDOR -> "Erreur du capteur"
+            BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> "Biométrie verrouillée"
+            BiometricPrompt.ERROR_USER_CANCELED -> "Annulé"
+            BiometricPrompt.ERROR_NO_BIOMETRICS -> "Aucune biométrie enregistrée"
+            BiometricPrompt.ERROR_HW_NOT_PRESENT -> "Pas de capteur biométrique"
+            BiometricPrompt.ERROR_NEGATIVE_BUTTON -> "Annulé"
+            BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> "Aucun code PIN"
+            BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED -> "Mise à jour requise"
+            else -> "Échec de l'authentification"
+        }
+    }
+
+    /**
+     * Obtient un message descriptif pour l'état de disponibilité biométrique
+     */
+    fun getAvailabilityMessage(availability: BiometricAvailability): String {
+        return when (availability) {
+            BiometricAvailability.AVAILABLE ->
+                "Biométrie disponible et prête à l'emploi"
+
+            BiometricAvailability.NO_HARDWARE ->
+                "Votre appareil ne dispose pas de capteur biométrique.\n\n" +
+                "Vous ne pourrez pas utiliser le déverrouillage par empreinte digitale ou reconnaissance faciale."
+
+            BiometricAvailability.HARDWARE_UNAVAILABLE ->
+                "Capteur biométrique temporairement indisponible.\n\n" +
+                "Le capteur est peut-être en cours d'utilisation. Réessayez dans quelques instants."
+
+            BiometricAvailability.NONE_ENROLLED ->
+                "Aucune biométrie enregistrée.\n\n" +
+                "Pour activer le déverrouillage biométrique, configurez d'abord une empreinte digitale ou reconnaissance faciale dans les paramètres de votre appareil."
+
+            BiometricAvailability.SECURITY_UPDATE_REQUIRED ->
+                "Mise à jour de sécurité requise.\n\n" +
+                "Votre système Android nécessite une mise à jour de sécurité avant de pouvoir utiliser la biométrie."
+
+            BiometricAvailability.UNSUPPORTED ->
+                "Biométrie non supportée.\n\n" +
+                "Votre appareil ou version Android ne supporte pas l'authentification biométrique forte."
+
+            BiometricAvailability.UNKNOWN ->
+                "État de la biométrie inconnu.\n\n" +
+                "Impossible de déterminer si la biométrie est disponible sur cet appareil."
         }
     }
 }

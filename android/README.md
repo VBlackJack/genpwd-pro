@@ -1,6 +1,6 @@
 # GenPwd Pro - Android
 
-**Version:** 2.5.1
+**Version:** 1.2.0-alpha.7
 **Application de gestion de mots de passe ultra-sécurisée pour Android**
 
 GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-fort chiffré (Vault), générateur de mots de passe avancé, support TOTP/2FA, et synchronisation cloud. Conçu avec les dernières technologies Android et une architecture de sécurité militaire (Argon2id + AES-256-GCM).
@@ -30,7 +30,12 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 - **Chiffrement militaire** : Argon2id (dérivation de clé) + AES-256-GCM (chiffrement authentifié)
 - **Multi-vaults** : Créez plusieurs coffres-forts indépendants avec master passwords différents
 - **Architecture zero-knowledge** : Vos données ne sont jamais accessibles sans master password
-- **Déverrouillage biométrique** : Support empreinte digitale et reconnaissance faciale
+- **Déverrouillage biométrique** ✨ **IMPROVED in alpha.7** :
+  - Support empreinte digitale et reconnaissance faciale (BIOMETRIC_STRONG)
+  - Messages d'erreur détaillés avec guidance actionnable
+  - Prompts contextuels adaptés au vault
+  - Variantes courtes/longues pour différents contextes UI
+  - Messages d'état de disponibilité biométrique
 - **Auto-lock** : Verrouillage automatique après inactivité (configurable 1-60 min)
 - **In-memory keys** : Clés de chiffrement stockées uniquement en RAM (wiped on lock)
 
@@ -97,7 +102,20 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 - ✅ **Placement visuel** : Contrôle précis des chiffres et spéciaux (0-100%)
 - ✅ **Calcul d'entropie** : Jusqu'à 140 bits
 
-### 📊 Analyse de sécurité
+### 📊 Analyse de sécurité ✨ **NEW in alpha.7**
+
+**Dashboard de santé des mots de passe :**
+- **Score global animé** : Gauge circulaire 0-100 avec animations fluides
+- **Détection automatique** des problèmes de sécurité :
+  - Mots de passe faibles (< 60%) avec raisons détaillées
+  - Mots de passe réutilisés (groupés par fréquence)
+  - Mots de passe compromis (Have I Been Pwned API)
+  - Mots de passe anciens (> 90 jours sans mise à jour)
+- **Statistiques rapides** : Total, moyenne de force
+- **Actions recommandées** : Cartes cliquables pour corriger les problèmes
+- **Navigation intégrée** : Accessible depuis le menu du vault
+
+**Analyse de sécurité additionnelle :**
 
 - **Password Analysis Tool** : Analyse approfondie de sécurité
 - **Détection des mots de passe faibles** : Score < 60/100
@@ -160,8 +178,13 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 
 - **Jetpack Compose 100%** : UI déclarative et performante
 - **Material Design 3** : Interface moderne et cohérente
-- **Dark theme** : Thème sombre élégant
-- **Material You** : Dynamic colors (Android 12+)
+- **Dark theme** : Thème sombre élégant avec transitions fluides
+- **Material You** ✨ **ENHANCED in alpha.7** :
+  - **Activé par défaut** sur Android 12+ (API 31+)
+  - Extraction automatique des couleurs du fond d'écran
+  - Palette harmonieuse personnalisée pour chaque utilisateur
+  - Fallback gracieux vers couleurs custom sur Android 11 et antérieur
+  - Documentation complète de l'implémentation (Theme.kt, Color.kt)
 - **Sections repliables** : Organisation intelligente sur mobile
 - **Animations fluides** : Transitions et micro-interactions
 
@@ -680,15 +703,28 @@ android/
 - [ ] KeePass KDBX Import (prévu Phase 5)
 - [ ] Tests utilisateurs complets
 
-### Phase 3 : Advanced Features ⏳ IN PROGRESS (60%)
-- [x] QR Code Scanner (TOTP setup) ✨ **NEW**
+### Phase 3 : Advanced Features ✅ DONE (100%)
+- [x] QR Code Scanner (TOTP setup) ✨
 - [x] Biometric unlock (BiometricPrompt integration)
 - [x] Folder management UI
 - [x] Tag management UI
 - [x] Password health analysis (intégré)
 - [x] Breach detection (Have I Been Pwned API)
-- [ ] Password health dashboard (UI visuelle)
-- [ ] Material You dynamic colors (améliorations)
+- [x] **Password health dashboard** (UI visuelle complète) ✨ **v1.2.0-alpha.7**
+  - Circular animated health gauge (score 0-100)
+  - Weak, reused, compromised, old password cards
+  - Navigation intégrée dans VaultListScreen menu
+  - HaveIBeenPwned API integration
+- [x] **Biometric UX improvements** ✨ **v1.2.0-alpha.7**
+  - Enhanced error messages with actionable guidance
+  - Context-aware prompts with detailed descriptions
+  - Short and long message variants
+  - Availability state messages
+- [x] **Material You dynamic colors** ✨ **v1.2.0-alpha.7**
+  - Automatic activation on Android 12+ (API 31+)
+  - Wallpaper-based color extraction
+  - Graceful fallback to custom colors
+  - Comprehensive documentation
 
 ### Phase 4 : Polish & Testing ⏳ TODO (2-3 heures)
 - [ ] Unit tests (target 90% coverage)

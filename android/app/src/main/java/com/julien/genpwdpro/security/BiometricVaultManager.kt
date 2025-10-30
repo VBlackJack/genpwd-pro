@@ -358,7 +358,8 @@ class BiometricVaultManager @Inject constructor(
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Activer le déverrouillage biométrique")
-            .setSubtitle("Authentifiez-vous pour sécuriser votre coffre")
+            .setSubtitle("Protection de votre coffre-fort")
+            .setDescription("Votre mot de passe principal sera chiffré de manière sécurisée avec votre biométrie. Vous pourrez ensuite déverrouiller ce coffre avec votre empreinte ou votre visage.")
             .setNegativeButtonText("Annuler")
             .setAllowedAuthenticators(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
@@ -429,9 +430,10 @@ class BiometricVaultManager @Inject constructor(
         )
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Déverrouiller le coffre")
-            .setSubtitle("Utilisez votre biométrie pour déverrouiller")
-            .setNegativeButtonText("Annuler")
+            .setTitle("Déverrouiller le coffre-fort")
+            .setSubtitle("Accès sécurisé à vos mots de passe")
+            .setDescription("Utilisez votre empreinte digitale ou reconnaissance faciale pour déchiffrer votre coffre.")
+            .setNegativeButtonText("Utiliser le mot de passe")
             .setAllowedAuthenticators(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
             )

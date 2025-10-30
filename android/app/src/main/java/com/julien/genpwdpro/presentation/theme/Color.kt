@@ -2,6 +2,18 @@ package com.julien.genpwdpro.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Palette de couleurs personnalisée GenPwd Pro
+ *
+ * Ces couleurs sont utilisées:
+ * - Sur Android 11 et antérieur (pas de Material You)
+ * - Quand l'utilisateur désactive les couleurs dynamiques
+ * - Comme fallback si les couleurs dynamiques échouent
+ *
+ * Sur Android 12+ avec Material You activé (par défaut), ces couleurs
+ * sont remplacées par une palette générée depuis le fond d'écran.
+ */
+
 // Couleurs principales (port du thème web)
 val PrimaryCyan = Color(0xFF15BEFF)
 val PrimaryCyanDark = Color(0xFF0891C7) // Version plus sombre pour le light theme
