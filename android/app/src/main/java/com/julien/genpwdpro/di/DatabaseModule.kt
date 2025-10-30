@@ -7,23 +7,16 @@ import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.db.dao.*
-import com.julien.genpwdpro.data.db.database.AppDatabase
-import com.julien.genpwdpro.data.db.database.DatabaseOpenHelperFactoryProvider
-import com.julien.genpwdpro.data.db.database.SqlCipherDatabaseOpenHelperFactoryProvider
+import com.julien.genpwdpro.data.local.dao.*
+import com.julien.genpwdpro.data.local.database.AppDatabase
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.repository.VaultRepository
-import com.julien.genpwdpro.data.session.RoomSessionStore
-import com.julien.genpwdpro.data.session.db.SessionDao
-import com.julien.genpwdpro.data.session.db.SessionDatabase
-import com.julien.genpwdpro.domain.session.SessionStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -32,21 +25,14 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-@Suppress("TooManyFunctions") // Module intentionally aggregates related providers for Room and encryption wiring.
 object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabaseOpenHelperFactoryProvider(
-        sqlCipherProvider: SqlCipherDatabaseOpenHelperFactoryProvider
-    ): DatabaseOpenHelperFactoryProvider = sqlCipherProvider
-
-    @Provides
-    @Singleton
     fun provideAppDatabase(
-        @ApplicationContext context: Context,
-        openHelperFactoryProvider: DatabaseOpenHelperFactoryProvider
+        @ApplicationContext context: Context
     ): AppDatabase {
+        // Build the Room database and only enable destructive migrations in debug mode.
         val builder = Room.databaseBuilder(
             context,
             AppDatabase::class.java,
@@ -61,38 +47,14 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_6_7,
                 AppDatabase.MIGRATION_7_8
             )
-            .fallbackToDestructiveMigration() // Fallback si migration échoue
-            .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
 
-        builder.openHelperFactory(openHelperFactoryProvider.provideFactory())
-
-        return builder.build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideSessionDatabase(
-        @ApplicationContext context: Context,
-        openHelperFactoryProvider: DatabaseOpenHelperFactoryProvider
-    ): SessionDatabase {
-        val builder = Room.databaseBuilder(
-            context,
-            SessionDatabase::class.java,
-            SessionDatabase.DATABASE_NAME
-        )
-            .fallbackToDestructiveMigration()
-            .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-
-        builder.openHelperFactory(openHelperFactoryProvider.provideFactory())
+        // Use destructive migration fallback only during development (debug builds)
+        if (BuildConfig.DEBUG) {
+            builder.fallbackToDestructiveMigration()
+        }
 
         return builder.build()
     }
-
-    @Provides
-    @Singleton
-    fun provideSessionDao(
-        database: SessionDatabase
-    ): SessionDao = database.sessionDao()
 
     @Provides
     @Singleton
@@ -198,25 +160,7 @@ object DatabaseModule {
         cryptoManager: VaultCryptoManager,
         keystoreManager: com.julien.genpwdpro.security.KeystoreManager
     ): VaultRepository {
-        return VaultRepository(
-            vaultDao,
-            entryDao,
-            folderDao,
-            tagDao,
-            presetDao,
-            cryptoManager,
-            keystoreManager
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideSessionStore(
-        sessionDao: SessionDao,
-        ioDispatcher: kotlinx.coroutines.CoroutineDispatcher,
-        @Named("session_cleanup_interval_ms") cleanupIntervalMillis: Long
-    ): SessionStore {
-        return RoomSessionStore(sessionDao, ioDispatcher, cleanupIntervalMillis)
+        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
     }
 
     @Provides
@@ -227,14 +171,6 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    @Named("session_cleanup_interval_ms")
-    fun provideSessionCleanupInterval(): Long =
-        TimeUnit.MINUTES.toMillis(SESSION_CLEANUP_INTERVAL_MINUTES)
-
-    @Provides
-    @Singleton
     @Named("legacy_sync_enabled")
     fun provideLegacySyncFlag(): Boolean = BuildConfig.DEBUG
 }
-
-private const val SESSION_CLEANUP_INTERVAL_MINUTES = 15L
