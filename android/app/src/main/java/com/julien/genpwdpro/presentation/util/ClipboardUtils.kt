@@ -4,8 +4,8 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.VisibleForTesting
-import com.julien.genpwdpro.core.clipboard.ClipboardSanitizer
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.core.clipboard.ClipboardSanitizer
 import com.julien.genpwdpro.core.crypto.SecretUtils
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 
@@ -77,7 +77,9 @@ object ClipboardUtils {
     }
 
     private class SystemClipboardDelegate(context: Context) : ClipboardDelegate {
-        private val clipboardManager = context.getSystemService(android.content.ClipboardManager::class.java)
+        private val clipboardManager = context.getSystemService(
+            android.content.ClipboardManager::class.java
+        )
 
         override fun setPrimaryClip(label: CharSequence, text: CharSequence) {
             clipboardManager?.setPrimaryClip(android.content.ClipData.newPlainText(label, text))

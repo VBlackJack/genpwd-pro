@@ -1,12 +1,11 @@
-package com.julien.genpwd-pro.data.repository
+package com.julien.genpwdpro.data.repository
 
 import com.google.gson.Gson
-import com.julien.genpwd-pro.data.db.dao.PasswordHistoryDao
-import com.julien.genpwd-pro.data.db.entity.PasswordHistoryEntity
-import com.julien.genpwd-pro.data.models.GenerationMode
-import com.julien.genpwd-pro.data.models.PasswordResult
-import com.julien.genpwd-pro.data.models.PasswordStrength
-import com.julien.genpwd-pro.data.models.Settings
+import com.julien.genpwdpro.data.db.dao.PasswordHistoryDao
+import com.julien.genpwdpro.data.db.entity.PasswordHistoryEntity
+import com.julien.genpwdpro.data.models.GenerationMode
+import com.julien.genpwdpro.data.models.PasswordResult
+import com.julien.genpwdpro.data.models.Settings
 import io.mockk.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf

@@ -12,14 +12,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import com.julien.genpwdpro.core.ipc.IntentSanitizer
-import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.data.inmemory.LegacyMigrationStateStore
+import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
 import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
@@ -30,9 +30,9 @@ import com.julien.genpwdpro.presentation.navigation.SecureRoutes
 import com.julien.genpwdpro.presentation.security.SecureBaseActivity
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import javax.inject.Inject
 
 /**
  * Activité principale de l'application GenPwd Pro
@@ -78,7 +78,10 @@ class MainActivity : SecureBaseActivity() {
 
         val pendingReauth = legacyMigrationStateStore.consumePendingReauthenticationVaultIds()
         if (pendingReauth.isNotEmpty()) {
-            Log.w(TAG, "Legacy migration requires re-authentication for ${pendingReauth.size} vault(s)")
+            Log.w(
+                TAG,
+                "Legacy migration requires re-authentication for ${pendingReauth.size} vault(s)"
+            )
             Toast.makeText(
                 this,
                 getString(R.string.legacy_migration_reauth_message),
@@ -87,9 +90,9 @@ class MainActivity : SecureBaseActivity() {
         }
 
         setupSessionManagement()
-        
+
         val startDestination = handleInitialIntent(intent)
-        
+
         setupContent(startDestination)
 
         WindowCompat.getInsetsController(window, window.decorView)

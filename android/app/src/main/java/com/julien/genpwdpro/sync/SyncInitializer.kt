@@ -9,13 +9,13 @@ import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Initialise le système de synchronisation au démarrage de l'application
@@ -56,7 +56,10 @@ class SyncInitializer @Inject constructor(
 
                 // 2. Charger la configuration sauvegardée
                 val config = syncConfigDataStore.syncConfigFlow.first()
-                Log.d(TAG, "Loaded sync config: enabled=${config.enabled}, provider=${config.providerType}, autoSync=${config.autoSync}")
+                Log.d(
+                    TAG,
+                    "Loaded sync config: enabled=${config.enabled}, provider=${config.providerType}, autoSync=${config.autoSync}"
+                )
 
                 // 3. Si sync activée et provider configuré, restaurer le provider
                 if (config.enabled && config.providerType != CloudProviderType.NONE) {
@@ -102,17 +105,26 @@ class SyncInitializer @Inject constructor(
                 }
                 CloudProviderType.PCLOUD -> {
                     // pCloud nécessite appKey et appSecret - on skip pour l'instant
-                    Log.w(TAG, "pCloud provider restoration not yet implemented (needs appKey/appSecret)")
+                    Log.w(
+                        TAG,
+                        "pCloud provider restoration not yet implemented (needs appKey/appSecret)"
+                    )
                     null
                 }
                 CloudProviderType.PROTON_DRIVE -> {
                     // ProtonDrive nécessite clientId et clientSecret - on skip pour l'instant
-                    Log.w(TAG, "ProtonDrive provider restoration not yet implemented (needs clientId/clientSecret)")
+                    Log.w(
+                        TAG,
+                        "ProtonDrive provider restoration not yet implemented (needs clientId/clientSecret)"
+                    )
                     null
                 }
                 CloudProviderType.WEBDAV -> {
                     // WebDAV nécessite URL, username, password - on skip pour l'instant
-                    Log.w(TAG, "WebDAV provider restoration not yet implemented (needs credentials)")
+                    Log.w(
+                        TAG,
+                        "WebDAV provider restoration not yet implemented (needs credentials)"
+                    )
                     null
                 }
                 else -> {

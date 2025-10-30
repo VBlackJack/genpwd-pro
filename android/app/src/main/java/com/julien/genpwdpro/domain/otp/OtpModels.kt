@@ -14,7 +14,12 @@ enum class OtpAlgorithm(val value: String) {
     SHA512("SHA512");
 
     companion object {
-        fun from(value: String): OtpAlgorithm = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+        fun from(value: String): OtpAlgorithm = entries.firstOrNull {
+            it.value.equals(
+                value,
+                ignoreCase = true
+            )
+        }
             ?: throw OtpUriParserException("Unsupported algorithm")
     }
 }

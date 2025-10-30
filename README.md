@@ -51,8 +51,8 @@ L'application Android est livrée avec un environnement de développement comple
 ### Option 1 — Devcontainer (recommandé)
 
 1. Installez [VS Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers).
-2. Ouvrez le dossier racine et choisissez **Reopen in Container**. L'image construit le SDK Android (cmdline-tools, platform-tools, build-tools 34.0.0, platform 34) automatiquement.
-3. Une fois la configuration terminée, exécutez la suite de vérifications :
+2. Ouvrez le dossier racine et choisissez **Reopen in Container**. L'image installe automatiquement le SDK Android (cmdline-tools, platform-tools, build-tools 34.0.0, platforms 35 et 34).
+3. Une fois la configuration terminée, ouvrez un terminal **dans le devcontainer** et exécutez les vérifications suivantes :
 
 ```bash
 cd android
@@ -153,8 +153,8 @@ Un environnement VS Code Dev Container est fourni pour simplifier l'installatio
 
 1. Installez l'extension **Dev Containers** dans VS Code.
 2. Ouvrez ce dépôt puis exécutez `Dev Containers: Reopen in Container`.
-3. Attendez la fin du script `setup-android-sdk.sh` (lancé automatiquement) qui installe les composants `platform-tools`, `build-tools;34.0.0` et `platforms;android-34`, et génère `android/local.properties`.
-4. Les commandes Gradle suivantes sont alors disponibles directement dans le terminal du conteneur :
+3. Attendez la fin du script `setup-android-sdk.sh` (lancé automatiquement) qui installe `platform-tools`, `build-tools;34.0.0` ainsi que `platforms;android-35` et `platforms;android-34`, puis génère `android/local.properties`.
+4. Depuis le terminal du conteneur, exécutez :
 
 ```bash
 cd android

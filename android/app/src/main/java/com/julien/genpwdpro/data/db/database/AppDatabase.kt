@@ -43,10 +43,14 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Ajouter la colonne isFavorite avec valeur par défaut 0 (false)
-                database.execSQL("ALTER TABLE password_history ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0")
+                database.execSQL(
+                    "ALTER TABLE password_history ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0"
+                )
 
                 // Ajouter la colonne note avec valeur par défaut ''
-                database.execSQL("ALTER TABLE password_history ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+                database.execSQL(
+                    "ALTER TABLE password_history ADD COLUMN note TEXT NOT NULL DEFAULT ''"
+                )
             }
         }
 
@@ -56,7 +60,8 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Table vaults
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS vaults (
                         id TEXT NOT NULL PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -78,10 +83,12 @@ abstract class AppDatabase : RoomDatabase() {
                         icon TEXT NOT NULL DEFAULT '🔐',
                         color TEXT NOT NULL DEFAULT '#1976D2'
                     )
-                """)
+                """
+                )
 
                 // Table folders
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS folders (
                         id TEXT NOT NULL PRIMARY KEY,
                         vaultId TEXT NOT NULL,
@@ -95,13 +102,19 @@ abstract class AppDatabase : RoomDatabase() {
                         FOREIGN KEY (vaultId) REFERENCES vaults(id) ON DELETE CASCADE,
                         FOREIGN KEY (parentFolderId) REFERENCES folders(id) ON DELETE CASCADE
                     )
-                """)
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_folders_vaultId ON folders(vaultId)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_folders_parentFolderId ON folders(parentFolderId)")
+                """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_folders_vaultId ON folders(vaultId)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_folders_parentFolderId ON folders(parentFolderId)"
+                )
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_folders_name ON folders(name)")
 
                 // Table vault_entries
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS vault_entries (
                         id TEXT NOT NULL PRIMARY KEY,
                         vaultId TEXT NOT NULL,
@@ -149,15 +162,27 @@ abstract class AppDatabase : RoomDatabase() {
                         FOREIGN KEY (vaultId) REFERENCES vaults(id) ON DELETE CASCADE,
                         FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE SET NULL
                     )
-                """)
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_vaultId ON vault_entries(vaultId)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_folderId ON vault_entries(folderId)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_isFavorite ON vault_entries(isFavorite)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_createdAt ON vault_entries(createdAt)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_modifiedAt ON vault_entries(modifiedAt)")
+                """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_entries_vaultId ON vault_entries(vaultId)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_entries_folderId ON vault_entries(folderId)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_entries_isFavorite ON vault_entries(isFavorite)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_entries_createdAt ON vault_entries(createdAt)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_entries_modifiedAt ON vault_entries(modifiedAt)"
+                )
 
                 // Table tags
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS tags (
                         id TEXT NOT NULL PRIMARY KEY,
                         vaultId TEXT NOT NULL,
@@ -166,12 +191,14 @@ abstract class AppDatabase : RoomDatabase() {
                         createdAt INTEGER NOT NULL,
                         FOREIGN KEY (vaultId) REFERENCES vaults(id) ON DELETE CASCADE
                     )
-                """)
+                """
+                )
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_tags_vaultId ON tags(vaultId)")
                 database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_name ON tags(name)")
 
                 // Table entry_tag_cross_ref
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS entry_tag_cross_ref (
                         entryId TEXT NOT NULL,
                         tagId TEXT NOT NULL,
@@ -179,9 +206,14 @@ abstract class AppDatabase : RoomDatabase() {
                         FOREIGN KEY (entryId) REFERENCES vault_entries(id) ON DELETE CASCADE,
                         FOREIGN KEY (tagId) REFERENCES tags(id) ON DELETE CASCADE
                     )
-                """)
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_entry_tag_cross_ref_entryId ON entry_tag_cross_ref(entryId)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_entry_tag_cross_ref_tagId ON entry_tag_cross_ref(tagId)")
+                """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_entry_tag_cross_ref_entryId ON entry_tag_cross_ref(entryId)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_entry_tag_cross_ref_tagId ON entry_tag_cross_ref(tagId)"
+                )
             }
         }
 
@@ -202,7 +234,8 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Créer la table presets
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS presets (
                         id TEXT NOT NULL PRIMARY KEY,
                         vaultId TEXT NOT NULL,
@@ -220,12 +253,19 @@ abstract class AppDatabase : RoomDatabase() {
                         usageCount INTEGER NOT NULL DEFAULT 0,
                         FOREIGN KEY (vaultId) REFERENCES vaults(id) ON DELETE CASCADE
                     )
-                """)
+                """
+                )
 
                 // Index pour optimiser les requêtes
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_vaultId ON presets(vaultId)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_generationMode ON presets(generationMode)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_presets_isDefault ON presets(isDefault)")
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_presets_vaultId ON presets(vaultId)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_presets_generationMode ON presets(generationMode)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_presets_isDefault ON presets(isDefault)"
+                )
             }
         }
 
@@ -245,7 +285,8 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("DROP TABLE IF EXISTS vault_registry")
 
                 // Create vault_registry table WITHOUT DEFAULT values
-                database.execSQL("""
+                database.execSQL(
+                    """
                     CREATE TABLE vault_registry (
                         id TEXT NOT NULL PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -264,12 +305,19 @@ abstract class AppDatabase : RoomDatabase() {
                         description TEXT,
                         createdAt INTEGER NOT NULL
                     )
-                """)
+                """
+                )
 
                 // Create indexes
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_isLoaded ON vault_registry(isLoaded)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)")
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_registry_isDefault ON vault_registry(isDefault)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_registry_isLoaded ON vault_registry(isLoaded)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_vault_registry_storageStrategy ON vault_registry(storageStrategy)"
+                )
             }
         }
 
@@ -321,7 +369,7 @@ abstract class AppDatabase : RoomDatabase() {
                 // Create index for biometric-enabled vaults (for quick filtering)
                 database.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_vault_registry_biometricUnlockEnabled " +
-                    "ON vault_registry(biometricUnlockEnabled)"
+                        "ON vault_registry(biometricUnlockEnabled)"
                 )
             }
         }

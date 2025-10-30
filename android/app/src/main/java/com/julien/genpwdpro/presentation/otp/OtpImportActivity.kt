@@ -63,7 +63,9 @@ class OtpImportActivity : SecureBaseActivity() {
 
     private fun resolveErrorMessage(error: OtpUriParserException): String {
         return when (error) {
-            is OtpUriMigrationNotSupportedException -> getString(R.string.otp_migration_not_supported)
+            is OtpUriMigrationNotSupportedException -> getString(
+                R.string.otp_migration_not_supported
+            )
             else -> getString(R.string.otp_import_error)
         }
     }

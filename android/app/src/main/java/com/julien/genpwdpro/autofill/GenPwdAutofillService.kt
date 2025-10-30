@@ -18,18 +18,18 @@ import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.julien.genpwdpro.R
-import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import com.julien.genpwdpro.autofill.security.AutofillRequestGuard
 import com.julien.genpwdpro.autofill.security.GuardDecision
+import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Service d'auto-remplissage pour GenPwd Pro
@@ -89,103 +89,119 @@ class GenPwdAutofillService : AutofillService() {
         }
 
         serviceScope.launch {
-            try {
-                val structure = request.fillContexts.lastOrNull()?.structure
-                if (structure == null) {
-                    callback.onSuccess(null)
-                    return@launch
-                }
-
-                val guardDecision = requestGuard.evaluate(structure.activityComponent?.packageName)
-                val callingPackage = when (guardDecision) {
-                    is GuardDecision.Allowed -> guardDecision.packageName
-                    GuardDecision.DeviceLocked, GuardDecision.Throttled, GuardDecision.UntrustedCaller -> {
-                        callback.onSuccess(null)
-                        return@launch
-                    }
-                }
-
-                if (structure.activityComponent?.packageName.isNullOrEmpty()) {
-                    callback.onSuccess(null)
-                    return@launch
-                }
-
-                // Parser la structure pour trouver les champs de mot de passe
-                val parser = AutofillParser(structure)
-                val autofillFields = parser.parseForCredentials()
-
-                if (autofillFields.isEmpty() || autofillFields.passwordField == null) {
-                    callback.onSuccess(null)
-                    return@launch
-                }
-
-                if (!autofillFields.packageName.equals(callingPackage, ignoreCase = true)) {
-                    callback.onSuccess(null)
-                    return@launch
-                }
-
-                // Vérifier si le coffre est déverrouillé
-                val isUnlocked = autofillRepository.isVaultUnlocked()
-                if (!isUnlocked) {
-                    // Coffre verrouillé : proposer de déverrouiller
-                    val response = autofillRepository.createUnlockVaultResponse()
-                    callback.onSuccess(response)
-                    return@launch
-                }
-
-                // Coffre déverrouillé : rechercher les correspondances
-                val matchingEntries = autofillRepository.findMatchingEntries(
-                    packageName = callingPackage
-                ).first()
-
-                val responseBuilder = FillResponse.Builder()
-                var hasDataset = false
-
-                val limitedEntries = matchingEntries.take(MAX_MATCHING_DATASETS)
-
-                if (limitedEntries.isNotEmpty()) {
-                    // Des correspondances ont été trouvées : les proposer
-                    limitedEntries.forEach { entry ->
-                        val dataset = autofillRepository.createCredentialDataset(
-                            entry = entry,
-                            autofillFields = autofillFields
-                        )
-                        responseBuilder.addDataset(dataset)
-                        hasDataset = true
-                    }
-                }
-
-                if (!hasDataset) {
-                    // Aucune correspondance : proposer de générer
-                    val settings = autofillRepository.getSettings().first()
-                    repeat(MAX_GENERATED_DATASETS) { index ->
-                        val passwordResults = generatePasswords(settings)
-                        val password = passwordResults.firstOrNull()?.password.orEmpty()
-                        if (password.isBlank()) {
-                            return@repeat
-                        }
-                        responseBuilder.addDataset(
-                            createPasswordDataset(
-                                autofillFields = autofillFields,
-                                password = password,
-                                index = index,
-                                settings = settings
-                            )
-                        )
-                        hasDataset = true
-                    }
-                }
-
-                if (!hasDataset) {
-                    callback.onSuccess(null)
-                } else {
-                    callback.onSuccess(responseBuilder.build())
-                }
-
-            } catch (e: Exception) {
-                callback.onFailure(null)
-            }
+            runCatching { processFillRequest(request, callback) }
+                .onFailure { callback.onFailure(null) }
         }
+    }
+
+    private suspend fun processFillRequest(request: FillRequest, callback: FillCallback) {
+        val structure = request.fillContexts.lastOrNull()?.structure ?: run {
+            callback.onSuccess(null)
+            return
+        }
+
+        val callingPackage = guardCaller(structure) ?: run {
+            callback.onSuccess(null)
+            return
+        }
+
+        val autofillFields = parseAutofillFields(structure, callingPackage) ?: run {
+            callback.onSuccess(null)
+            return
+        }
+
+        if (!autofillRepository.isVaultUnlocked()) {
+            val response = autofillRepository.createUnlockVaultResponse()
+            callback.onSuccess(response)
+            return
+        }
+
+        val response = buildFillResponse(callingPackage, autofillFields)
+        callback.onSuccess(response)
+    }
+
+    private fun guardCaller(structure: AssistStructure): String? {
+        val componentPackage = structure.activityComponent?.packageName ?: return null
+        val decision = requestGuard.evaluate(componentPackage)
+        return when (decision) {
+            is GuardDecision.Allowed -> decision.packageName
+            GuardDecision.DeviceLocked,
+            GuardDecision.Throttled,
+            GuardDecision.UntrustedCaller -> null
+        }
+    }
+
+    private fun parseAutofillFields(
+        structure: AssistStructure,
+        callingPackage: String
+    ): AutofillFieldsMetadata? {
+        val fields = AutofillParser(structure).parseForCredentials()
+        if (fields.isEmpty() || fields.passwordField == null) {
+            return null
+        }
+        if (!fields.packageName.equals(callingPackage, ignoreCase = true)) {
+            return null
+        }
+        return fields
+    }
+
+    private suspend fun buildFillResponse(
+        callingPackage: String,
+        autofillFields: AutofillFieldsMetadata
+    ): FillResponse? {
+        val responseBuilder = FillResponse.Builder()
+        var hasDataset = addMatchingDatasets(responseBuilder, callingPackage, autofillFields)
+        if (!hasDataset) {
+            hasDataset = addGeneratedDatasets(responseBuilder, autofillFields)
+        }
+        return if (hasDataset) responseBuilder.build() else null
+    }
+
+    private suspend fun addMatchingDatasets(
+        responseBuilder: FillResponse.Builder,
+        callingPackage: String,
+        autofillFields: AutofillFieldsMetadata
+    ): Boolean {
+        val matchingEntries = autofillRepository.findMatchingEntries(
+            packageName = callingPackage
+        ).first()
+        var hasDataset = false
+        matchingEntries
+            .take(MAX_MATCHING_DATASETS)
+            .forEach { entry ->
+                val dataset = autofillRepository.createCredentialDataset(
+                    entry = entry,
+                    autofillFields = autofillFields
+                )
+                responseBuilder.addDataset(dataset)
+                hasDataset = true
+            }
+        return hasDataset
+    }
+
+    private suspend fun addGeneratedDatasets(
+        responseBuilder: FillResponse.Builder,
+        autofillFields: AutofillFieldsMetadata
+    ): Boolean {
+        val settings = autofillRepository.getSettings().first()
+        var hasDataset = false
+        repeat(MAX_GENERATED_DATASETS) { index ->
+            val passwordResults = generatePasswords(settings)
+            val password = passwordResults.firstOrNull()?.password.orEmpty()
+            if (password.isBlank()) {
+                return@repeat
+            }
+            responseBuilder.addDataset(
+                createPasswordDataset(
+                    autofillFields = autofillFields,
+                    password = password,
+                    index = index,
+                    settings = settings
+                )
+            )
+            hasDataset = true
+        }
+        return hasDataset
     }
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
@@ -211,7 +227,6 @@ class GenPwdAutofillService : AutofillService() {
                 }
 
                 callback.onSuccess()
-
             } catch (e: Exception) {
                 callback.onFailure(e.message)
             }
@@ -289,7 +304,9 @@ class GenPwdAutofillService : AutofillService() {
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    internal open suspend fun generatePasswords(settings: Settings) = generatePasswordUseCase(settings)
+    internal open suspend fun generatePasswords(settings: Settings) = generatePasswordUseCase(
+        settings
+    )
 }
 
 /**
@@ -437,7 +454,8 @@ class AutofillParser(private val structure: AssistStructure) {
 
         // Vérifier l'input type
         if (node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD != 0 ||
-            node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0) {
+            node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0
+        ) {
             return true
         }
 
@@ -460,9 +478,10 @@ class AutofillParser(private val structure: AssistStructure) {
         // Vérifier les hints
         if (hints.any {
             it.contains("username", ignoreCase = true) ||
-            it.contains("email", ignoreCase = true) ||
-            it.contains("login", ignoreCase = true)
-        }) {
+                it.contains("email", ignoreCase = true) ||
+                it.contains("login", ignoreCase = true)
+        }
+        ) {
             return true
         }
 

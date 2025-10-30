@@ -6,12 +6,6 @@ import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.logging.HttpLoggingInterceptor
 import java.io.IOException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
@@ -22,6 +16,12 @@ import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.logging.HttpLoggingInterceptor
 
 /**
  * Provider WebDAV générique - PRODUCTION READY
@@ -115,7 +115,10 @@ class WebDAVProvider(
                 val sslContext = SSLContext.getInstance("TLS")
                 sslContext.init(null, trustAllCerts, SecureRandom())
 
-                builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                builder.sslSocketFactory(
+                    sslContext.socketFactory,
+                    trustAllCerts[0] as X509TrustManager
+                )
                 builder.hostnameVerifier { _, _ -> true }
             } catch (e: Exception) {
                 Log.e(TAG, "Error configuring SSL", e)
@@ -180,14 +183,18 @@ class WebDAVProvider(
     /**
      * Upload un vault chiffré vers le serveur WebDAV
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(Dispatchers.IO) {
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val folderPath = ensureFolderExists()
             val fileUrl = "$folderPath/$fileName"
 
             // Upload avec PUT
-            val requestBody = syncData.encryptedData.toRequestBody("application/octet-stream".toMediaType())
+            val requestBody = syncData.encryptedData.toRequestBody(
+                "application/octet-stream".toMediaType()
+            )
 
             val request = Request.Builder()
                 .url(fileUrl)
@@ -212,9 +219,11 @@ class WebDAVProvider(
     /**
      * Télécharge un vault depuis le serveur WebDAV
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(Dispatchers.IO) {
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val folderPath = ensureFolderExists()
             val fileUrl = "$folderPath/$fileName"
 
@@ -254,7 +263,9 @@ class WebDAVProvider(
     /**
      * Vérifie si une version plus récente existe sur le serveur
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
@@ -269,7 +280,7 @@ class WebDAVProvider(
      */
     override suspend fun deleteVault(vaultId: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val folderPath = ensureFolderExists()
             val fileUrl = "$folderPath/$fileName"
 
@@ -297,9 +308,11 @@ class WebDAVProvider(
     /**
      * Récupère les métadonnées d'un fichier
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val folderPath = ensureFolderExists()
             val fileUrl = "$folderPath/$fileName"
 
@@ -332,7 +345,11 @@ class WebDAVProvider(
 
                 // Parser le XML
                 val size = extractFromXml(xml, "<d:getcontentlength>", "</d:getcontentlength>")?.toLongOrNull() ?: 0L
-                val lastModified = extractFromXml(xml, "<d:getlastmodified>", "</d:getlastmodified>")
+                val lastModified = extractFromXml(
+                    xml,
+                    "<d:getlastmodified>",
+                    "</d:getlastmodified>"
+                )
                 val etag = extractFromXml(xml, "<d:getetag>", "</d:getetag>") ?: ""
 
                 // Convertir lastModified en timestamp
@@ -421,14 +438,16 @@ class WebDAVProvider(
                     System.currentTimeMillis() // Simplified for now
                 } ?: System.currentTimeMillis()
 
-                files.add(CloudFileMetadata(
-                    fileId = href,
-                    fileName = fileName,
-                    size = size,
-                    modifiedTime = lastModified,
-                    checksum = null,
-                    version = null
-                ))
+                files.add(
+                    CloudFileMetadata(
+                        fileId = href,
+                        fileName = fileName,
+                        size = size,
+                        modifiedTime = lastModified,
+                        checksum = null,
+                        version = null
+                    )
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing file metadata", e)
             }
@@ -494,7 +513,11 @@ class WebDAVProvider(
                     freeBytes = -1
                 )
 
-                val available = extractFromXml(xml, "<d:quota-available-bytes>", "</d:quota-available-bytes>")?.toLongOrNull() ?: -1L
+                val available = extractFromXml(
+                    xml,
+                    "<d:quota-available-bytes>",
+                    "</d:quota-available-bytes>"
+                )?.toLongOrNull() ?: -1L
                 val used = extractFromXml(xml, "<d:quota-used-bytes>", "</d:quota-used-bytes>")?.toLongOrNull() ?: 0L
 
                 StorageQuota(
@@ -605,8 +628,8 @@ class WebDAVProvider(
         return try {
             val formats = listOf(
                 "EEE, dd MMM yyyy HH:mm:ss z", // RFC 1123
-                "EEEE, dd-MMM-yy HH:mm:ss z",  // RFC 1036
-                "EEE MMM dd HH:mm:ss yyyy"      // ANSI C
+                "EEEE, dd-MMM-yy HH:mm:ss z", // RFC 1036
+                "EEE MMM dd HH:mm:ss yyyy" // ANSI C
             )
 
             for (format in formats) {

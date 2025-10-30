@@ -45,7 +45,9 @@ class OtpUriParser {
             uri.getQueryParameter(key)?.trim()
         }
 
-        val secret = sanitizeSecret(queryParams["secret"]) ?: throw OtpUriParserException("Missing secret parameter")
+        val secret = sanitizeSecret(queryParams["secret"]) ?: throw OtpUriParserException(
+            "Missing secret parameter"
+        )
         validateSecret(secret)
 
         val algorithmParam = queryParams["algorithm"]?.uppercase(Locale.US)
@@ -79,7 +81,9 @@ class OtpUriParser {
         if (rawDigits.isNullOrBlank()) {
             return DEFAULT_DIGITS
         }
-        val parsed = rawDigits.toIntOrNull() ?: throw OtpUriParserException("Invalid digits parameter")
+        val parsed = rawDigits.toIntOrNull() ?: throw OtpUriParserException(
+            "Invalid digits parameter"
+        )
         if (parsed !in ALLOWED_DIGITS) {
             throw OtpUriParserException("Unsupported digits parameter")
         }
@@ -93,7 +97,9 @@ class OtpUriParser {
         if (rawPeriod.isNullOrBlank()) {
             return DEFAULT_PERIOD
         }
-        val parsed = rawPeriod.toIntOrNull() ?: throw OtpUriParserException("Invalid period parameter")
+        val parsed = rawPeriod.toIntOrNull() ?: throw OtpUriParserException(
+            "Invalid period parameter"
+        )
         if (parsed !in 1..MAX_PERIOD_SECONDS) {
             throw OtpUriParserException("Unsupported period parameter")
         }

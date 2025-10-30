@@ -357,7 +357,6 @@ class PasswordWidget : AppWidgetProvider() {
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(context, "Mot de passe généré!", Toast.LENGTH_SHORT).show()
                 }
-
             } catch (e: Exception) {
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(context, "Erreur de génération", Toast.LENGTH_SHORT).show()
@@ -399,7 +398,6 @@ class PasswordWidget : AppWidgetProvider() {
         // Dernier widget supprimé
         securePreferences(context)?.edit()?.clear()?.apply()
     }
-
 }
 
 internal object PasswordWidgetGuards {

@@ -1,13 +1,13 @@
 package com.julien.genpwdpro.data.crypto
 
-import org.apache.commons.codec.binary.Base32
+import com.julien.genpwdpro.core.crypto.SecretUtils
 import java.nio.ByteBuffer
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.pow
-import com.julien.genpwdpro.core.crypto.SecretUtils
+import org.apache.commons.codec.binary.Base32
 
 /**
  * Générateur de codes TOTP (Time-based One-Time Password)
@@ -28,7 +28,7 @@ class TotpGenerator @Inject constructor() {
      * Configuration TOTP
      */
     data class TotpConfig(
-        val secret: String,              // Secret en Base32
+        val secret: String, // Secret en Base32
         val period: Int = DEFAULT_PERIOD,
         val digits: Int = DEFAULT_DIGITS,
         val algorithm: String = DEFAULT_ALGORITHM

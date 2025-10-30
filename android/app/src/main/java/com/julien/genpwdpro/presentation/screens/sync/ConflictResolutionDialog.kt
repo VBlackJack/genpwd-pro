@@ -314,15 +314,17 @@ private fun StrategyOption(
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
+            containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer
-            else
+            } else {
                 MaterialTheme.colorScheme.surface
+            }
         ),
-        border = if (isSelected)
+        border = if (isSelected) {
             androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-        else
+        } else {
             null
+        }
     ) {
         Row(
             modifier = Modifier

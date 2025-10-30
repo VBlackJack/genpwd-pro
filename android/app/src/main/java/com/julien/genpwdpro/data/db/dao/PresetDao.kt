@@ -12,7 +12,9 @@ interface PresetDao {
     /**
      * Récupère tous les presets d'un vault
      */
-    @Query("SELECT * FROM presets WHERE vaultId = :vaultId ORDER BY isDefault DESC, lastUsedAt DESC, createdAt DESC")
+    @Query(
+        "SELECT * FROM presets WHERE vaultId = :vaultId ORDER BY isDefault DESC, lastUsedAt DESC, createdAt DESC"
+    )
     fun getPresetsByVault(vaultId: String): Flow<List<PresetEntity>>
 
     /**
@@ -24,13 +26,17 @@ interface PresetDao {
     /**
      * Récupère les presets par mode de génération
      */
-    @Query("SELECT * FROM presets WHERE vaultId = :vaultId AND generationMode = :mode ORDER BY createdAt DESC")
+    @Query(
+        "SELECT * FROM presets WHERE vaultId = :vaultId AND generationMode = :mode ORDER BY createdAt DESC"
+    )
     suspend fun getPresetsByMode(vaultId: String, mode: String): List<PresetEntity>
 
     /**
      * Compte le nombre de presets personnalisés pour un mode donné
      */
-    @Query("SELECT COUNT(*) FROM presets WHERE vaultId = :vaultId AND generationMode = :mode AND isSystemPreset = 0")
+    @Query(
+        "SELECT COUNT(*) FROM presets WHERE vaultId = :vaultId AND generationMode = :mode AND isSystemPreset = 0"
+    )
     suspend fun countCustomPresetsByMode(vaultId: String, mode: String): Int
 
     /**

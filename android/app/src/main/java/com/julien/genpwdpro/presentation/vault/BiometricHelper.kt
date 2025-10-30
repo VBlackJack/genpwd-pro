@@ -25,7 +25,11 @@ class BiometricHelper(private val activity: FragmentActivity) {
      */
     fun isBiometricAvailable(): Boolean {
         val biometricManager = BiometricManager.from(activity)
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        return when (
+            biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+            )
+        ) {
             BiometricManager.BIOMETRIC_SUCCESS -> true
             else -> false
         }
@@ -36,10 +40,12 @@ class BiometricHelper(private val activity: FragmentActivity) {
      */
     fun isBiometricOrCredentialsAvailable(): Boolean {
         val biometricManager = BiometricManager.from(activity)
-        return when (biometricManager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        )) {
+        return when (
+            biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
+        ) {
             BiometricManager.BIOMETRIC_SUCCESS -> true
             else -> false
         }
@@ -95,7 +101,7 @@ class BiometricHelper(private val activity: FragmentActivity) {
                     // Permet PIN/Pattern comme fallback
                     setAllowedAuthenticators(
                         BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                            BiometricManager.Authenticators.DEVICE_CREDENTIAL
                     )
                 } else {
                     // Biométrie uniquement

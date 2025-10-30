@@ -29,6 +29,7 @@ tasks.register("doctor") {
 
         println("sdk.dir = ${sdkDirFromProperties ?: "<not set>"}")
         println("ANDROID_SDK_ROOT = ${envSdkRoot ?: "<not set>"}")
+        println("ANDROID_HOME = ${envAndroidHome ?: "<not set>"}")
 
         if (sdkDirFromProperties == null) {
             throw GradleException("Unable to determine sdk.dir. Set ANDROID_SDK_ROOT/ANDROID_HOME or create android/local.properties.")
@@ -65,7 +66,7 @@ tasks.register("doctor") {
             }
         }
 
-        val requiredPlatforms = listOf("android-34")
+        val requiredPlatforms = listOf("android-35", "android-34")
         requiredPlatforms.forEach { api ->
             if (api !in platforms) {
                 errors += "Required platforms;$api is missing."

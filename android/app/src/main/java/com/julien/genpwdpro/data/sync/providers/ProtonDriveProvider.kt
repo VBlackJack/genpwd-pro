@@ -1,12 +1,9 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
@@ -16,14 +13,12 @@ import com.julien.genpwdpro.data.sync.models.VaultSyncData
 // Temporarily disabled due to OAuthCallbackManager compilation error
 // import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -32,7 +27,6 @@ import java.io.File
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
 
 /**
  * Provider Proton Drive avec implémentation complète OAuth2 + PKCE et API REST
@@ -328,7 +322,10 @@ class ProtonDriveProvider(
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
             // Temporarily disabled due to OAuthCallbackManager compilation error
-            Log.e(TAG, "OAuth authentication temporarily disabled - OAuthCallbackManager not available")
+            Log.e(
+                TAG,
+                "OAuth authentication temporarily disabled - OAuthCallbackManager not available"
+            )
             false
 
             /* ORIGINAL CODE - Disabled temporarily
@@ -530,7 +527,7 @@ class ProtonDriveProvider(
             try {
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
                 val share = ensureShare()
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
 
                 // Créer un fichier temporaire
                 val tempFile = File.createTempFile("upload_", ".enc")
@@ -538,7 +535,9 @@ class ProtonDriveProvider(
 
                 try {
                     // Créer le multipart body
-                    val requestFile = tempFile.asRequestBody("application/octet-stream".toMediaType())
+                    val requestFile = tempFile.asRequestBody(
+                        "application/octet-stream".toMediaType()
+                    )
                     val body = MultipartBody.Part.createFormData("file", fileName, requestFile)
 
                     // Upload
@@ -577,7 +576,7 @@ class ProtonDriveProvider(
                 val share = ensureShare()
 
                 // Trouver le fileId depuis vaultId
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
                 val metadata = listVaults().find { it.fileName == fileName }
                     ?: return@withContext null
                 val cloudFileId = metadata.fileId
@@ -701,10 +700,13 @@ class ProtonDriveProvider(
             StorageQuota(0, 0, 0)
         }
     }
+
     /**
      * Vérifie si une version plus récente existe sur le cloud
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
@@ -717,9 +719,11 @@ class ProtonDriveProvider(
     /**
      * Récupère les métadonnées d'un fichier cloud
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val metadata = listVaults().find { it.fileName == fileName }
             metadata
         } catch (e: Exception) {

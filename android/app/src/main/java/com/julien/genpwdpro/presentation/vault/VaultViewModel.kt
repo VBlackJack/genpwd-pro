@@ -6,9 +6,9 @@ import com.julien.genpwdpro.data.db.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.domain.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour la gestion des vaults
@@ -104,7 +104,9 @@ class VaultViewModel @Inject constructor(
                 // L'écran de destination (VaultList) se chargera lui-même
                 _uiState.value = VaultUiState.VaultCreated(vaultId)
             } catch (e: Exception) {
-                _uiState.value = VaultUiState.Error(e.message ?: "Erreur lors de la création du vault")
+                _uiState.value = VaultUiState.Error(
+                    e.message ?: "Erreur lors de la création du vault"
+                )
             }
         }
     }

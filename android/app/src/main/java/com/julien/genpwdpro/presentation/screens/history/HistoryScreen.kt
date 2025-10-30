@@ -12,13 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.presentation.components.PasswordCard
-import com.julien.genpwdpro.presentation.util.ClipboardUtils
-import com.julien.genpwdpro.presentation.security.BiometricGate
 import androidx.fragment.app.FragmentActivity
-import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.presentation.components.PasswordCard
+import com.julien.genpwdpro.presentation.security.BiometricGate
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
+import kotlinx.coroutines.launch
 
 /**
  * Écran d'historique des mots de passe générés
@@ -94,7 +94,11 @@ fun HistoryScreen(
                 actions = {
                     if (historyItems.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }) {
-                            Icon(Icons.Default.Delete, "Tout effacer", tint = MaterialTheme.colorScheme.error)
+                            Icon(
+                                Icons.Default.Delete,
+                                "Tout effacer",
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 },
@@ -119,7 +123,11 @@ fun HistoryScreen(
                     .padding(16.dp),
                 placeholder = { Text("Rechercher dans l'historique...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, "Rechercher", tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        Icons.Default.Search,
+                        "Rechercher",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -181,18 +189,21 @@ fun HistoryScreen(
                             result = item,
                             onCopy = {
                                 performSensitiveAction {
-                                ClipboardUtils.copySensitive(
-                                    context = context,
-                                    label = "password",
-                                    value = item.password,
-                                    ttlMs = clipboardTtlMs
-                                )
-                                scope.launch {
-                                    val message = ClipboardUtils.buildAutoClearMessage(context, clipboardTtlMs)
-                                    snackbarHostState.showSnackbar(message)
+                                    ClipboardUtils.copySensitive(
+                                        context = context,
+                                        label = "password",
+                                        value = item.password,
+                                        ttlMs = clipboardTtlMs
+                                    )
+                                    scope.launch {
+                                        val message = ClipboardUtils.buildAutoClearMessage(
+                                            context,
+                                            clipboardTtlMs
+                                        )
+                                        snackbarHostState.showSnackbar(message)
+                                    }
                                 }
-                            }
-                        },
+                            },
                             onToggleMask = { /* Géré localement dans PasswordCard */ }
                         )
                     }
@@ -207,7 +218,11 @@ fun HistoryScreen(
             onDismissRequest = { showClearDialog = false },
             icon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Effacer l'historique ?") },
-            text = { Text("Cette action supprimera tous les mots de passe de l'historique. Cette action est irréversible.") },
+            text = {
+                Text(
+                    "Cette action supprimera tous les mots de passe de l'historique. Cette action est irréversible."
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {

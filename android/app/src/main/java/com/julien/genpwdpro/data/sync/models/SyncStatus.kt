@@ -4,12 +4,12 @@ package com.julien.genpwdpro.data.sync.models
  * État de synchronisation d'un vault
  */
 enum class SyncStatus {
-    NEVER_SYNCED,    // Jamais synchronisé
-    SYNCED,          // Synchronisé, à jour
-    SYNCING,         // Synchronisation en cours
-    PENDING,         // Modifications en attente
-    ERROR,           // Erreur de sync
-    CONFLICT         // Conflit détecté
+    NEVER_SYNCED, // Jamais synchronisé
+    SYNCED, // Synchronisé, à jour
+    SYNCING, // Synchronisation en cours
+    PENDING, // Modifications en attente
+    ERROR, // Erreur de sync
+    CONFLICT // Conflit détecté
 }
 
 /**
@@ -20,7 +20,7 @@ enum class CloudProviderType {
     ONEDRIVE,
     PROTON_DRIVE,
     PCLOUD,
-    WEBDAV,      // Serveur WebDAV personnalisé
+    WEBDAV, // Serveur WebDAV personnalisé
     NONE
 }
 
@@ -28,12 +28,12 @@ enum class CloudProviderType {
  * Intervalle de synchronisation automatique
  */
 enum class SyncInterval {
-    MANUAL,         // Synchronisation manuelle uniquement
-    REALTIME,       // Temps réel (après chaque modification)
-    EVERY_15_MIN,   // Toutes les 15 minutes
-    EVERY_30_MIN,   // Toutes les 30 minutes
-    HOURLY,         // Toutes les heures
-    DAILY           // Une fois par jour
+    MANUAL, // Synchronisation manuelle uniquement
+    REALTIME, // Temps réel (après chaque modification)
+    EVERY_15_MIN, // Toutes les 15 minutes
+    EVERY_30_MIN, // Toutes les 30 minutes
+    HOURLY, // Toutes les heures
+    DAILY // Une fois par jour
 }
 
 /**
@@ -59,12 +59,12 @@ data class SyncConfig(
  */
 data class VaultSyncData(
     val vaultId: String,
-    val vaultName: String,           // Nom en clair (pour l'utilisateur)
-    val encryptedData: ByteArray,    // Vault + entrées chiffrées
-    val timestamp: Long,              // Date de dernière modification
-    val version: Int,                 // Version du format
-    val deviceId: String,             // ID de l'appareil ayant créé cette version
-    val checksum: String              // SHA-256 pour intégrité
+    val vaultName: String, // Nom en clair (pour l'utilisateur)
+    val encryptedData: ByteArray, // Vault + entrées chiffrées
+    val timestamp: Long, // Date de dernière modification
+    val version: Int, // Version du format
+    val deviceId: String, // ID de l'appareil ayant créé cette version
+    val checksum: String // SHA-256 pour intégrité
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -103,7 +103,7 @@ data class SyncMetadata(
     val status: SyncStatus = SyncStatus.NEVER_SYNCED,
     val lastSyncTimestamp: Long = 0,
     val lastSuccessfulSync: Long = 0,
-    val cloudFileId: String? = null,          // ID du fichier sur le cloud
+    val cloudFileId: String? = null, // ID du fichier sur le cloud
     val cloudModifiedTime: Long = 0,
     val localModifiedTime: Long = 0,
     val errorMessage: String? = null,
@@ -156,9 +156,9 @@ sealed class SyncResult {
  * Stratégie de résolution de conflits
  */
 enum class ConflictResolutionStrategy {
-    LOCAL_WINS,     // Garder la version locale
-    REMOTE_WINS,    // Garder la version cloud
-    NEWEST_WINS,    // Garder la plus récente (timestamp)
-    SMART_MERGE,    // Fusion intelligente (si possible)
-    MANUAL          // Demander à l'utilisateur
+    LOCAL_WINS, // Garder la version locale
+    REMOTE_WINS, // Garder la version cloud
+    NEWEST_WINS, // Garder la plus récente (timestamp)
+    SMART_MERGE, // Fusion intelligente (si possible)
+    MANUAL // Demander à l'utilisateur
 }

@@ -33,35 +33,42 @@ interface TagDao {
     /**
      * Recherche des tags par nom
      */
-    @Query("SELECT * FROM tags WHERE vaultId = :vaultId AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    @Query(
+        "SELECT * FROM tags WHERE vaultId = :vaultId AND name LIKE '%' || :query || '%' ORDER BY name ASC"
+    )
     fun searchTags(vaultId: String, query: String): Flow<List<TagEntity>>
 
     /**
      * Récupère les tags d'une entrée
      */
-    @Query("""
+    @Query(
+        """
         SELECT tags.* FROM tags
         INNER JOIN entry_tag_cross_ref ON tags.id = entry_tag_cross_ref.tagId
         WHERE entry_tag_cross_ref.entryId = :entryId
         ORDER BY tags.name ASC
-    """)
+    """
+    )
     fun getTagsForEntry(entryId: String): Flow<List<TagEntity>>
 
     /**
      * Récupère les entrées avec un tag spécifique
      */
-    @Query("""
+    @Query(
+        """
         SELECT vault_entries.* FROM vault_entries
         INNER JOIN entry_tag_cross_ref ON vault_entries.id = entry_tag_cross_ref.entryId
         WHERE entry_tag_cross_ref.tagId = :tagId
         ORDER BY vault_entries.modifiedAt DESC
-    """)
+    """
+    )
     fun getEntriesWithTag(tagId: String): Flow<List<VaultEntryEntity>>
 
     /**
      * Récupère les tags populaires (les plus utilisés)
      */
-    @Query("""
+    @Query(
+        """
         SELECT tags.*, COUNT(entry_tag_cross_ref.entryId) as usage_count
         FROM tags
         LEFT JOIN entry_tag_cross_ref ON tags.id = entry_tag_cross_ref.tagId
@@ -69,7 +76,8 @@ interface TagDao {
         GROUP BY tags.id
         ORDER BY usage_count DESC, tags.name ASC
         LIMIT :limit
-    """)
+    """
+    )
     fun getPopularTags(vaultId: String, limit: Int = 10): Flow<List<TagEntity>>
 
     /**
@@ -153,6 +161,8 @@ interface TagDao {
     /**
      * Vérifie si un nom de tag existe déjà
      */
-    @Query("SELECT COUNT(*) FROM tags WHERE vaultId = :vaultId AND name = :name AND id != :excludeId")
+    @Query(
+        "SELECT COUNT(*) FROM tags WHERE vaultId = :vaultId AND name = :name AND id != :excludeId"
+    )
     suspend fun countByName(vaultId: String, name: String, excludeId: String = ""): Int
 }

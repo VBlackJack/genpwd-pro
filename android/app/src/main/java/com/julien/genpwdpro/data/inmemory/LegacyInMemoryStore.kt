@@ -99,8 +99,8 @@ class LegacyInMemoryStore @Inject constructor(
         } catch (ioe: IOException) {
             SafeLog.e(TAG, "Unable to read legacy cache ${file.absolutePath}", ioe)
             null
-        } catch (throwable: Throwable) {
-            SafeLog.e(TAG, "Unable to parse legacy cache ${file.absolutePath}", throwable)
+        } catch (exception: Exception) {
+            SafeLog.e(TAG, "Unable to parse legacy cache ${file.absolutePath}", exception)
             null
         }
     }

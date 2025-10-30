@@ -123,4 +123,3 @@ data class VaultRegistryEntry(
         return result
     }
 }
-

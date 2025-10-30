@@ -31,7 +31,9 @@ interface PasswordHistoryDao {
     /**
      * Recherche dans l'historique
      */
-    @Query("SELECT * FROM password_history WHERE password LIKE '%' || :query || '%' ORDER BY timestamp DESC")
+    @Query(
+        "SELECT * FROM password_history WHERE password LIKE '%' || :query || '%' ORDER BY timestamp DESC"
+    )
     fun searchHistory(query: String): Flow<List<PasswordHistoryEntity>>
 
     /**
@@ -73,7 +75,9 @@ interface PasswordHistoryDao {
     /**
      * Supprime les entrées les plus anciennes si dépassement de la limite
      */
-    @Query("DELETE FROM password_history WHERE id IN (SELECT id FROM password_history ORDER BY timestamp ASC LIMIT :count)")
+    @Query(
+        "DELETE FROM password_history WHERE id IN (SELECT id FROM password_history ORDER BY timestamp ASC LIMIT :count)"
+    )
     suspend fun deleteOldest(count: Int)
 
     /**
@@ -97,7 +101,8 @@ interface PasswordHistoryDao {
     /**
      * Recherche avancée avec filtres
      */
-    @Query("""
+    @Query(
+        """
         SELECT * FROM password_history
         WHERE (:query = '' OR password LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%')
         AND (:favoritesOnly = 0 OR isFavorite = 1)
@@ -105,7 +110,8 @@ interface PasswordHistoryDao {
         ORDER BY
             CASE WHEN :sortByFavorites = 1 THEN isFavorite END DESC,
             timestamp DESC
-    """)
+    """
+    )
     fun searchWithFilters(
         query: String = "",
         favoritesOnly: Boolean = false,

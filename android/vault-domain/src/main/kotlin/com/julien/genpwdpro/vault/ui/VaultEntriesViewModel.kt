@@ -4,11 +4,11 @@ import com.julien.genpwdpro.vault.domain.InMemoryVaultRepository
 import com.julien.genpwdpro.vault.domain.VaultEntry
 import com.julien.genpwdpro.vault.domain.VaultGroup
 import com.julien.genpwdpro.vault.domain.VaultRepository
-import java.time.Instant
-import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.time.Instant
+import java.util.UUID
 
 /**
  * Lightweight ViewModel-like facade that exposes vault entry data to the UI layer.

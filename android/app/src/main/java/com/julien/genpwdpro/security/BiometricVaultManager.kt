@@ -10,7 +10,6 @@ import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.dao.updateById
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.suspendCancellableCoroutine
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -19,6 +18,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Gestionnaire pour le déverrouillage biométrique des vaults
@@ -58,8 +58,8 @@ class BiometricVaultManager @Inject constructor(
         private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
         private const val KEY_PREFIX = "vault_biometric_"
         private const val TRANSFORMATION = "${KeyProperties.KEY_ALGORITHM_AES}/" +
-                "${KeyProperties.BLOCK_MODE_GCM}/" +
-                "${KeyProperties.ENCRYPTION_PADDING_NONE}"
+            "${KeyProperties.BLOCK_MODE_GCM}/" +
+            "${KeyProperties.ENCRYPTION_PADDING_NONE}"
         private const val GCM_TAG_LENGTH = 128
     }
 
@@ -114,7 +114,6 @@ class BiometricVaultManager @Inject constructor(
 
             Log.i(TAG, "Biometric enabled successfully for vault: $vaultId")
             Result.success(Unit)
-
         } catch (e: Exception) {
             Log.e(TAG, "Failed to enable biometric for vault: $vaultId", e)
             Result.failure(e)
@@ -146,7 +145,9 @@ class BiometricVaultManager @Inject constructor(
                 ?: return Result.failure(IllegalStateException("Vault not found: $vaultId"))
 
             if (!vaultRegistry.biometricUnlockEnabled) {
-                return Result.failure(IllegalStateException("Biometric not enabled for vault: $vaultId"))
+                return Result.failure(
+                    IllegalStateException("Biometric not enabled for vault: $vaultId")
+                )
             }
 
             val encryptedPassword = vaultRegistry.encryptedMasterPassword
@@ -165,7 +166,6 @@ class BiometricVaultManager @Inject constructor(
 
             Log.i(TAG, "Vault unlocked successfully with biometric: $vaultId")
             Result.success(decryptedPassword)
-
         } catch (e: Exception) {
             Log.e(TAG, "Failed to unlock with biometric: $vaultId", e)
             Result.failure(e)
@@ -196,7 +196,6 @@ class BiometricVaultManager @Inject constructor(
 
             Log.i(TAG, "Biometric disabled successfully for vault: $vaultId")
             Result.success(Unit)
-
         } catch (e: Exception) {
             Log.e(TAG, "Failed to disable biometric for vault: $vaultId", e)
             Result.failure(e)
@@ -262,7 +261,7 @@ class BiometricVaultManager @Inject constructor(
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
             // API 30+ : utiliser setUserAuthenticationParameters
             builder.setUserAuthenticationParameters(
-                0,  // 0 = nécessite BiometricPrompt pour chaque opération
+                0, // 0 = nécessite BiometricPrompt pour chaque opération
                 KeyProperties.AUTH_BIOMETRIC_STRONG
             )
         } else {

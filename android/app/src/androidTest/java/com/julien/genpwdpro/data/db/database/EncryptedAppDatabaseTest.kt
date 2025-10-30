@@ -9,6 +9,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.julien.genpwdpro.data.db.entity.PasswordHistoryEntity
 import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.secure.SecurePrefs
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import net.sqlcipher.database.SQLiteException
 import net.sqlcipher.database.SupportFactory
@@ -16,9 +19,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedAppDatabaseTest {
@@ -167,7 +167,11 @@ class EncryptedAppDatabaseTest {
 
     private fun createFactoryProvider(): SqlCipherDatabaseOpenHelperFactoryProvider {
         val encryptionManager = EncryptionManager()
-        val passphraseProvider = SqlCipherPassphraseProvider(context, securePrefs, encryptionManager)
+        val passphraseProvider = SqlCipherPassphraseProvider(
+            context,
+            securePrefs,
+            encryptionManager
+        )
         return SqlCipherDatabaseOpenHelperFactoryProvider(passphraseProvider)
     }
 

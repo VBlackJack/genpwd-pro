@@ -2,7 +2,6 @@ package com.julien.genpwdpro.presentation.vault
 
 import android.widget.Toast
 import androidx.compose.animation.*
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -419,7 +418,11 @@ private fun TotpCodeDisplay(
     entry: VaultEntryEntity,
     viewModel: VaultListViewModel
 ) {
-    var totpResult by remember { mutableStateOf<com.julien.genpwdpro.data.crypto.TotpGenerator.TotpResult?>(null) }
+    var totpResult by remember {
+        mutableStateOf<com.julien.genpwdpro.data.crypto.TotpGenerator.TotpResult?>(
+            null
+        )
+    }
     val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
     val context = LocalContext.current
 

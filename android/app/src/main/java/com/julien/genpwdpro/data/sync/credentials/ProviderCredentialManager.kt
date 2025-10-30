@@ -1,10 +1,10 @@
 package com.julien.genpwdpro.data.sync.credentials
 
 import com.google.gson.Gson
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.secure.SecurePrefs
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.PCloudProvider
-import com.julien.genpwdpro.data.secure.SecurePrefs
-import com.julien.genpwdpro.core.log.SafeLog
 import javax.inject.Inject
 import javax.inject.Singleton
 

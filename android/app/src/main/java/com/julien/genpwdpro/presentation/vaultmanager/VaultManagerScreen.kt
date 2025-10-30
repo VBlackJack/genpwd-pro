@@ -50,7 +50,15 @@ fun VaultManagerScreen(
             uiState = uiState,
             onDismiss = { viewModel.hideCreateDialog() },
             onCreate = { name, password, strategy, description, setAsDefault, enableBiometric ->
-                viewModel.createVault(activity, name, password, strategy, description, setAsDefault, enableBiometric)
+                viewModel.createVault(
+                    activity,
+                    name,
+                    password,
+                    strategy,
+                    description,
+                    setAsDefault,
+                    enableBiometric
+                )
             }
         )
     }
@@ -158,7 +166,10 @@ fun VaultManagerScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Button(onClick = { viewModel.showCreateDialog() }) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_create_vault))
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.cd_create_vault)
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text("Create Vault")
                     }
@@ -243,7 +254,12 @@ fun VaultCard(
                         if (isDefault) {
                             AssistChip(
                                 onClick = { },
-                                label = { Text("Default", style = MaterialTheme.typography.labelSmall) },
+                                label = {
+                                    Text(
+                                        "Default",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.Star,
@@ -257,7 +273,12 @@ fun VaultCard(
                         if (isLoaded) {
                             AssistChip(
                                 onClick = { },
-                                label = { Text("Loaded", style = MaterialTheme.typography.labelSmall) },
+                                label = {
+                                    Text(
+                                        "Loaded",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.CheckCircle,
@@ -451,14 +472,14 @@ fun CreateVaultDialog(
             )
             val weakResult = biometricManager.canAuthenticate(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
-                androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                    androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
 
             android.util.Log.d("CreateVaultDialog", "Biometric STRONG: $strongResult")
             android.util.Log.d("CreateVaultDialog", "Biometric WEAK|CREDENTIAL: $weakResult")
 
             strongResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS ||
-            weakResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+                weakResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
             android.util.Log.e("CreateVaultDialog", "Error checking biometric availability", e)
             false
@@ -473,10 +494,10 @@ fun CreateVaultDialog(
     }
 
     val isValid = name.isNotBlank() &&
-            password.isNotBlank() &&
-            password == confirmPassword &&
-            password.length >= 8 &&
-            (selectedStrategy != StorageStrategy.CUSTOM || uiState.customFolderUri != null)
+        password.isNotBlank() &&
+        password == confirmPassword &&
+        password.length >= 8 &&
+        (selectedStrategy != StorageStrategy.CUSTOM || uiState.customFolderUri != null)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -597,7 +618,9 @@ fun CreateVaultDialog(
                     isError = confirmPassword.isNotBlank() && password != confirmPassword,
                     supportingText = if (confirmPassword.isNotBlank() && password != confirmPassword) {
                         { Text("Passwords don't match") }
-                    } else null,
+                    } else {
+                        null
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -698,7 +721,9 @@ fun ConfirmDeleteDialog(
         },
         title = { Text("Delete Vault?") },
         text = {
-            Text("Are you sure you want to delete \"$vaultName\"? This action cannot be undone and all data will be permanently lost.")
+            Text(
+                "Are you sure you want to delete \"$vaultName\"? This action cannot be undone and all data will be permanently lost."
+            )
         },
         confirmButton = {
             Button(
@@ -744,7 +769,9 @@ fun MigrationDialog(
                     LinearProgressIndicator(
                         progress = if (progress.totalVaults > 0) {
                             progress.currentVault.toFloat() / progress.totalVaults
-                        } else 0f,
+                        } else {
+                            0f
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
@@ -753,7 +780,9 @@ fun MigrationDialog(
                     )
                 }
             } else {
-                Text("Your vaults will be migrated to the new file-based storage system. This is a one-time operation and may take a few moments.")
+                Text(
+                    "Your vaults will be migrated to the new file-based storage system. This is a one-time operation and may take a few moments."
+                )
             }
         },
         confirmButton = {

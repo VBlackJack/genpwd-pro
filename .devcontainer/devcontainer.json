@@ -13,7 +13,8 @@
     "ANDROID_HOME": "/opt/android-sdk",
     "JAVA_HOME": "/usr/lib/jvm/msopenjdk-17-amd64"
   },
-  "postCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/setup-android-sdk.sh --project-root ${containerWorkspaceFolder}/android",
+  "postCreateCommand": "bash .devcontainer/setup-android-sdk.sh && yes | sdkmanager --licenses",
+  "postStartCommand": "bash .devcontainer/setup-android-sdk.sh",
   "customizations": {
     "vscode": {
       "settings": {

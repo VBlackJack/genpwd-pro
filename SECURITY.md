@@ -30,6 +30,12 @@ GenPwd Pro safeguards user secrets across several surfaces:
 - Widgets and notifications default to redacted states while the device is locked.
 - Network stack pins to system trust anchors with custom overrides only for debug builds.
 
+## Data handling guarantees
+- **Clés Tink protégées par Keystore** : le `CryptoEngine` s’appuie sur `AndroidKeysetManager` et un URI maître `android-keystore://genpwdpro_master_key`. Les clés symétriques ne quittent jamais le keystore matériel.
+- **SessionStore volatile** : aucune donnée secrète (mots de passe, OTP) n’est persistée dans `SessionStore`. Les sessions ne contiennent que des identifiants opaques.
+- **SQLCipher** : la base Room applique les PRAGMA `cipher_page_size`, `cipher_memory_security` et `cipher_plaintext_header_size` pour renforcer le stockage chiffré.
+- **Presse-papiers & FLAG_SECURE** : le contenu copié est effacé automatiquement, masqué dans les notifications et toutes les surfaces sensibles appliquent `FLAG_SECURE` (y compris les feuilles, dialogues et activités OTP).
+
 Known trade-offs:
 - Clipboard auto-clear relies on platform timers; some OEMs may ignore scheduled clears.
 - Direct Boot support is limited to placeholder widgets until the user unlocks the device.

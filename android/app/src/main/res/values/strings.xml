@@ -119,4 +119,21 @@
     <string name="otp_manual_entry_action">Valider</string>
     <string name="otp_manual_entry_cancel">Annuler</string>
     <string name="otp_manual_entry_invalid">Lien OTP invalide.</string>
+
+    <!-- Privacy screen -->
+    <string name="privacy_screen_title">Confidentialité &amp; sécurité</string>
+    <string name="privacy_screen_intro">GenPwd Pro limite strictement l’accès aux données sensibles : voici les engagements clés en matière de confidentialité.</string>
+    <string name="privacy_camera_title">Caméra pour OTP uniquement</string>
+    <string name="privacy_camera_body">La caméra sert exclusivement à scanner des QR codes OTP en local. Aucun flux n’est envoyé vers des serveurs tiers.</string>
+    <string name="privacy_images_title">Aucune sauvegarde d’images OTP</string>
+    <string name="privacy_images_body">Les images lues depuis la galerie restent en mémoire volatile. Aucun fichier n’est écrit, ni dans le stockage interne, ni dans les journaux.</string>
+    <string name="privacy_encryption_title">Chiffrement au repos</string>
+    <string name="privacy_encryption_body">Les coffres reposent sur SQLCipher et les clés symétriques Tink sont protégées par l’Android Keystore matériel.</string>
+    <string name="privacy_clipboard_title">Presse-papiers éphémère</string>
+    <string name="privacy_clipboard_body">Les secrets copiés sont masqués et effacés automatiquement après un délai configurable.</string>
+    <string name="privacy_backup_title">Pas de sauvegarde des secrets</string>
+    <string name="privacy_backup_body">Les secrets ne sont jamais inclus dans les sauvegardes système ou cloud. Seules des métadonnées chiffrées peuvent être synchronisées.</string>
+    <string name="privacy_summary_title">Charte de confidentialité</string>
+    <string name="privacy_summary_body">Récapitulatif de l’usage de la caméra, du stockage chiffré, du presse-papiers et des politiques de sauvegarde.</string>
+    <string name="privacy_summary_cta">Consulter</string>
 </resources>

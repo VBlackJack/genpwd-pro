@@ -2,15 +2,15 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.julien.genpwdpro.data.secure.SecurePrefs
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.models.SyncInterval
-import com.julien.genpwdpro.data.secure.SecurePrefs
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Gestionnaire de préférences pour la synchronisation cloud

@@ -2,22 +2,20 @@ package com.julien.genpwdpro.data.sync
 
 import android.app.Activity
 import android.content.Context
-import com.julien.genpwdpro.data.repository.VaultRepository
-import com.julien.genpwdpro.data.sync.models.*
-import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
-import com.julien.genpwdpro.data.sync.SyncPreferencesManager
-import com.julien.genpwdpro.data.sync.AutoSyncScheduler
 import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
+import com.julien.genpwdpro.data.sync.models.*
+import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as VaultConflictResolutionStrategy
+import com.julien.genpwdpro.data.sync.models.SyncResult as VaultSyncResult
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.julien.genpwdpro.data.sync.models.SyncResult as VaultSyncResult
-import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as VaultConflictResolutionStrategy
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Gestionnaire de synchronisation des vaults avec le cloud

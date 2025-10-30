@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.db.entity.EntryType
 import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour le dashboard de santé des mots de passe

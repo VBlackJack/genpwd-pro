@@ -1,6 +1,5 @@
 package com.julien.genpwdpro.domain.generators
 
-import com.julien.genpwdpro.data.models.DictionaryType
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.utils.DictionaryManager
 

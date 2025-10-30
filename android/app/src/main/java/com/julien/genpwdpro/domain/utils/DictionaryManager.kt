@@ -6,10 +6,10 @@ import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.models.DictionaryType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.io.InputStreamReader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Gestionnaire de dictionnaires multilingues

@@ -1,7 +1,6 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import com.google.gson.annotations.SerializedName
@@ -13,7 +12,6 @@ import com.julien.genpwdpro.data.sync.models.VaultSyncData
 // Temporarily disabled due to OAuthCallbackManager compilation error
 // import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -21,13 +19,11 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import java.io.File
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
 
 /**
  * Provider pCloud avec implémentation complète OAuth2 et REST API
@@ -285,7 +281,10 @@ class PCloudProvider(
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
             // Temporarily disabled due to OAuthCallbackManager compilation error
-            Log.e(TAG, "OAuth authentication temporarily disabled - OAuthCallbackManager not available")
+            Log.e(
+                TAG,
+                "OAuth authentication temporarily disabled - OAuthCallbackManager not available"
+            )
             false
 
             /* ORIGINAL CODE - Disabled temporarily
@@ -406,7 +405,7 @@ class PCloudProvider(
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
                 val folderId = ensureFolder()
 
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
 
                 // Créer un fichier temporaire
                 val tempFile = File.createTempFile("upload_", ".enc")
@@ -414,7 +413,9 @@ class PCloudProvider(
 
                 try {
                     // Créer le multipart body
-                    val requestFile = tempFile.asRequestBody("application/octet-stream".toMediaType())
+                    val requestFile = tempFile.asRequestBody(
+                        "application/octet-stream".toMediaType()
+                    )
                     val body = MultipartBody.Part.createFormData("file", fileName, requestFile)
 
                     // Upload
@@ -447,10 +448,12 @@ class PCloudProvider(
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
 
                 // Trouver le fileId depuis vaultId
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
                 val metadata = listVaults().find { it.fileName == fileName }
                     ?: return@withContext null
-                val fileId = metadata.fileId.toLongOrNull() ?: throw IllegalArgumentException("Invalid file ID")
+                val fileId = metadata.fileId.toLongOrNull() ?: throw IllegalArgumentException(
+                    "Invalid file ID"
+                )
 
                 // Download le fichier
                 val responseBody = api.downloadFile(token, fileId)
@@ -525,7 +528,9 @@ class PCloudProvider(
     override suspend fun deleteVault(cloudFileId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val token = accessToken ?: throw IllegalStateException("Not authenticated")
-            val fileId = cloudFileId.toLongOrNull() ?: throw IllegalArgumentException("Invalid file ID")
+            val fileId = cloudFileId.toLongOrNull() ?: throw IllegalArgumentException(
+                "Invalid file ID"
+            )
 
             val response = api.deleteFile(token, fileId)
 
@@ -566,10 +571,13 @@ class PCloudProvider(
             StorageQuota(0, 0, 0)
         }
     }
+
     /**
      * Vérifie si une version plus récente existe sur le cloud
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
@@ -582,9 +590,11 @@ class PCloudProvider(
     /**
      * Récupère les métadonnées d'un fichier cloud
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val metadata = listVaults().find { it.fileName == fileName }
             metadata
         } catch (e: Exception) {

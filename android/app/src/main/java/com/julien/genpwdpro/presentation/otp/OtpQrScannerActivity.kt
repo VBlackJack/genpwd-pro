@@ -41,6 +41,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
+@Suppress("TooManyFunctions") // Activity coordinates camera, gallery, and manual flows in a single lifecycle scope.
 class OtpQrScannerActivity : SecureBaseActivity() {
 
     private lateinit var previewView: PreviewView
@@ -70,7 +71,9 @@ class OtpQrScannerActivity : SecureBaseActivity() {
     private var currentResult: OtpConfig? = null
     private var permissionRequested = false
 
-    private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
         if (granted) {
             startCamera()
         } else {
@@ -208,7 +211,11 @@ class OtpQrScannerActivity : SecureBaseActivity() {
 
     private fun bindCamera(provider: ProcessCameraProvider) {
         cameraProvider = provider
-        val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+        val preview = Preview.Builder().build().also {
+            it.setSurfaceProvider(
+                previewView.surfaceProvider
+            )
+        }
         val analysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
@@ -305,7 +312,10 @@ class OtpQrScannerActivity : SecureBaseActivity() {
         statusText.setText(R.string.otp_confirmation_title)
         issuerInput.setText(config.issuer.orEmpty())
         labelInput.setText(config.label.orEmpty())
-        secretView.text = getString(R.string.otp_confirmation_secret_masked, maskSecret(config.secret))
+        secretView.text = getString(
+            R.string.otp_confirmation_secret_masked,
+            maskSecret(config.secret)
+        )
     }
 
     private fun resetScanner() {
@@ -416,7 +426,9 @@ class OtpQrScannerActivity : SecureBaseActivity() {
 
     private fun resolveErrorMessage(error: OtpUriParserException): String {
         return when (error) {
-            is OtpUriMigrationNotSupportedException -> getString(R.string.otp_migration_not_supported)
+            is OtpUriMigrationNotSupportedException -> getString(
+                R.string.otp_migration_not_supported
+            )
             else -> getString(R.string.otp_import_error)
         }
     }

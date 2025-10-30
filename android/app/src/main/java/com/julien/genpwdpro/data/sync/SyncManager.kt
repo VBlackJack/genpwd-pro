@@ -7,14 +7,14 @@ import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.sync.models.SyncStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.security.MessageDigest
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Gestionnaire de synchronisation cloud avec chiffrement E2E

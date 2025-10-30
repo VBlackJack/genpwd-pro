@@ -4,7 +4,7 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 buildscript {
     extra.apply {
         set("compose_version", "1.5.4")
-        set("kotlin_version", "1.9.23")
+        set("kotlin_version", "1.9.24")
         // Kotlin/Compose pairing per official matrix: https://developer.android.com/jetpack/compose/compiler#kotlin_compatibility
     }
     repositories {
@@ -12,21 +12,21 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.1.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+        classpath("com.android.tools.build:gradle:8.5.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
         classpath("com.google.dagger:hilt-android-gradle-plugin:2.48")
     }
 }
 
 plugins {
-    id("com.android.application") version "8.1.2" apply false
-    id("com.android.library") version "8.1.2" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.23" apply false
-    id("com.google.devtools.ksp") version "1.9.23-1.0.19" apply false
+    id("com.android.application") version "8.5.1" apply false
+    id("com.android.library") version "8.5.1" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+    id("com.google.devtools.ksp") version "1.9.24-1.0.20" apply false
     id("com.google.dagger.hilt.android") version "2.48" apply false
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.4" apply false
-    id("androidx.baselineprofile") version "1.2.2" apply false
+    id("androidx.baselineprofile") version "1.3.0" apply false
     id("com.github.ben-manes.versions") version "0.49.0"
 }
 

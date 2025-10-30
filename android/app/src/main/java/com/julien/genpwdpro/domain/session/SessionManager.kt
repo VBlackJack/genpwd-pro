@@ -1,12 +1,12 @@
 package com.julien.genpwdpro.domain.session
 
 import com.julien.genpwdpro.core.log.SafeLog
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Gestionnaire de session pour tracker le vault actuellement déverrouillé

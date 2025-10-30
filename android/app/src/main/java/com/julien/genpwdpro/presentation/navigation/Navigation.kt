@@ -17,14 +17,15 @@ import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.autofill.AutofillSettingsScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
+import com.julien.genpwdpro.presentation.screens.privacy.PrivacyScreen
 import com.julien.genpwdpro.presentation.screens.security.SecuritySettingsScreen
-import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncHistoryScreen
+import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * NOTE: Screen sealed class is now defined in NavGraph.kt
@@ -161,6 +162,17 @@ fun AppNavigation(
         // Écran Security Settings
         composable(Screen.SecuritySettings.route) {
             SecuritySettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToPrivacy = {
+                    navController.navigate(Screen.Privacy.route)
+                }
+            )
+        }
+
+        composable(Screen.Privacy.route) {
+            PrivacyScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

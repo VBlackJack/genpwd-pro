@@ -146,8 +146,11 @@ class ApplyCasingUseCase {
             CaseBlock.U -> word.uppercase()
             CaseBlock.L -> word.lowercase()
             CaseBlock.T -> {
-                if (word.isEmpty()) word
-                else word.first().uppercaseChar() + word.drop(1).lowercase()
+                if (word.isEmpty()) {
+                    word
+                } else {
+                    word.first().uppercaseChar() + word.drop(1).lowercase()
+                }
             }
         }
     }

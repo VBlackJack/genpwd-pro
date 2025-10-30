@@ -179,7 +179,11 @@ class EncryptionManager @Inject constructor() {
      * - salt (Base64) used for key derivation
      * - nonce/IV (Base64) used for AES-GCM
      */
-    fun buildMetadataHeader(iv: ByteArray, salt: ByteArray, iterations: Int = DEFAULT_KDF_ITERATIONS): EncryptionMetadata {
+    fun buildMetadataHeader(
+        iv: ByteArray,
+        salt: ByteArray,
+        iterations: Int = DEFAULT_KDF_ITERATIONS
+    ): EncryptionMetadata {
         require(iterations >= MIN_KDF_ITERATIONS) { "KDF iterations below security floor" }
         return EncryptionMetadata(
             version = CRYPTO_VERSION,

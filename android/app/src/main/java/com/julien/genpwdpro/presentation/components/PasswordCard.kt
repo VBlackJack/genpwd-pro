@@ -165,7 +165,9 @@ fun PasswordCard(
                     // Masquer/Afficher
                     DropdownMenuItem(
                         text = {
-                            Text(if (result.isMasked) "Afficher le mot de passe" else "Masquer le mot de passe")
+                            Text(
+                                if (result.isMasked) "Afficher le mot de passe" else "Masquer le mot de passe"
+                            )
                         },
                         onClick = {
                             onToggleMask()

@@ -6,10 +6,10 @@ import com.julien.genpwdpro.data.db.entity.PasswordHistoryEntity
 import com.julien.genpwdpro.data.db.entity.toGenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository pour l'historique des mots de passe

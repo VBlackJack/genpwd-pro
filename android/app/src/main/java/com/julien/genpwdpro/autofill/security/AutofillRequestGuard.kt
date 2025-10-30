@@ -100,7 +100,10 @@ class PackageManagerValidator(
         if (packageName.isNullOrBlank()) return null
         return try {
             val info: ApplicationInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0))
+                packageManager.getApplicationInfo(
+                    packageName,
+                    PackageManager.ApplicationInfoFlags.of(0)
+                )
             } else {
                 @Suppress("DEPRECATION")
                 packageManager.getApplicationInfo(packageName, 0)

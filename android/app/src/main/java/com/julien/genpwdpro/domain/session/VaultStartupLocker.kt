@@ -2,10 +2,10 @@ package com.julien.genpwdpro.domain.session
 
 import android.util.Log
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 /**
  * Coordonne le verrouillage initial des coffres lors du démarrage de l'application.

@@ -110,7 +110,9 @@ interface VaultRegistryDao {
     /**
      * Met à jour la taille du fichier
      */
-    @Query("UPDATE vault_registry SET fileSize = :size, lastModified = :timestamp WHERE id = :vaultId")
+    @Query(
+        "UPDATE vault_registry SET fileSize = :size, lastModified = :timestamp WHERE id = :vaultId"
+    )
     suspend fun updateFileInfo(vaultId: String, size: Long, timestamp: Long)
 
     /**

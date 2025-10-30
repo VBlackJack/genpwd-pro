@@ -19,13 +19,17 @@ interface FolderDao {
     /**
      * Récupère les dossiers racine (sans parent)
      */
-    @Query("SELECT * FROM folders WHERE vaultId = :vaultId AND parentFolderId IS NULL ORDER BY sortOrder ASC, name ASC")
+    @Query(
+        "SELECT * FROM folders WHERE vaultId = :vaultId AND parentFolderId IS NULL ORDER BY sortOrder ASC, name ASC"
+    )
     fun getRootFolders(vaultId: String): Flow<List<FolderEntity>>
 
     /**
      * Récupère les sous-dossiers d'un dossier
      */
-    @Query("SELECT * FROM folders WHERE parentFolderId = :parentId ORDER BY sortOrder ASC, name ASC")
+    @Query(
+        "SELECT * FROM folders WHERE parentFolderId = :parentId ORDER BY sortOrder ASC, name ASC"
+    )
     fun getSubFolders(parentId: String): Flow<List<FolderEntity>>
 
     /**
@@ -43,7 +47,9 @@ interface FolderDao {
     /**
      * Recherche des dossiers par nom
      */
-    @Query("SELECT * FROM folders WHERE vaultId = :vaultId AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    @Query(
+        "SELECT * FROM folders WHERE vaultId = :vaultId AND name LIKE '%' || :query || '%' ORDER BY name ASC"
+    )
     fun searchFolders(vaultId: String, query: String): Flow<List<FolderEntity>>
 
     /**
@@ -86,7 +92,11 @@ interface FolderDao {
      * Met à jour le parent d'un dossier
      */
     @Query("UPDATE folders SET parentFolderId = :parentId, modifiedAt = :timestamp WHERE id = :id")
-    suspend fun updateParent(id: String, parentId: String?, timestamp: Long = System.currentTimeMillis())
+    suspend fun updateParent(
+        id: String,
+        parentId: String?,
+        timestamp: Long = System.currentTimeMillis()
+    )
 
     /**
      * Met à jour l'ordre de tri
@@ -109,12 +119,19 @@ interface FolderDao {
     /**
      * Vérifie si un nom de dossier existe déjà dans le même parent
      */
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM folders
         WHERE vaultId = :vaultId
         AND name = :name
         AND COALESCE(parentFolderId, '') = COALESCE(:parentId, '')
         AND id != :excludeId
-    """)
-    suspend fun countByName(vaultId: String, name: String, parentId: String?, excludeId: String = ""): Int
+    """
+    )
+    suspend fun countByName(
+        vaultId: String,
+        name: String,
+        parentId: String?,
+        excludeId: String = ""
+    ): Int
 }

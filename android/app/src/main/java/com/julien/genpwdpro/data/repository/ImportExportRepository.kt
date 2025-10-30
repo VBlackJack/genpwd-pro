@@ -11,9 +11,6 @@ import com.julien.genpwdpro.data.db.entity.EntryType
 import com.julien.genpwdpro.data.db.entity.VaultEntity
 import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -22,6 +19,9 @@ import java.util.*
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /**
  * Repository pour l'import/export de données
@@ -60,7 +60,9 @@ class ImportExportRepository @Inject constructor(
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
                     // Header CSV
-                    writer.write("title,username,password,url,notes,type,totp_secret,favorite,icon,folder,tags,created_at,updated_at\n")
+                    writer.write(
+                        "title,username,password,url,notes,type,totp_secret,favorite,icon,folder,tags,created_at,updated_at\n"
+                    )
 
                     // Écrire chaque entrée
                     var count = 0
@@ -78,7 +80,9 @@ class ImportExportRepository @Inject constructor(
                                 vaultKey,
                                 cryptoManager.hexToBytes(entry.usernameIv)
                             )
-                        } else ""
+                        } else {
+                            ""
+                        }
 
                         val password = if (entry.encryptedPassword.isNotEmpty()) {
                             cryptoManager.decryptString(
@@ -86,7 +90,9 @@ class ImportExportRepository @Inject constructor(
                                 vaultKey,
                                 cryptoManager.hexToBytes(entry.passwordIv)
                             )
-                        } else ""
+                        } else {
+                            ""
+                        }
 
                         val url = if (entry.encryptedUrl.isNotEmpty()) {
                             cryptoManager.decryptString(
@@ -94,7 +100,9 @@ class ImportExportRepository @Inject constructor(
                                 vaultKey,
                                 cryptoManager.hexToBytes(entry.urlIv)
                             )
-                        } else ""
+                        } else {
+                            ""
+                        }
 
                         val notes = if (entry.encryptedNotes.isNotEmpty()) {
                             cryptoManager.decryptString(
@@ -102,7 +110,9 @@ class ImportExportRepository @Inject constructor(
                                 vaultKey,
                                 cryptoManager.hexToBytes(entry.notesIv)
                             )
-                        } else ""
+                        } else {
+                            ""
+                        }
 
                         val totpSecret = if (entry.hasTOTP && entry.encryptedTotpSecret.isNotEmpty()) {
                             cryptoManager.decryptString(
@@ -110,23 +120,25 @@ class ImportExportRepository @Inject constructor(
                                 vaultKey,
                                 cryptoManager.hexToBytes(entry.totpSecretIv)
                             )
-                        } else ""
+                        } else {
+                            ""
+                        }
 
                         // Écrire la ligne CSV (échapper les guillemets et virgules)
                         writer.write(
                             "${escapeCsv(title)}," +
-                            "${escapeCsv(username)}," +
-                            "${escapeCsv(password)}," +
-                            "${escapeCsv(url)}," +
-                            "${escapeCsv(notes)}," +
-                            "${entry.entryType}," +
-                            "${escapeCsv(totpSecret)}," +
-                            "${entry.isFavorite}," +
-                            "${entry.icon}," +
-                            "${entry.folderId ?: ""}," +
-                            "," + // tags (à implémenter)
-                            "${entry.createdAt}," +
-                            "${entry.modifiedAt}\n"
+                                "${escapeCsv(username)}," +
+                                "${escapeCsv(password)}," +
+                                "${escapeCsv(url)}," +
+                                "${escapeCsv(notes)}," +
+                                "${entry.entryType}," +
+                                "${escapeCsv(totpSecret)}," +
+                                "${entry.isFavorite}," +
+                                "${entry.icon}," +
+                                "${entry.folderId ?: ""}," +
+                                "," + // tags (à implémenter)
+                                "${entry.createdAt}," +
+                                "${entry.modifiedAt}\n"
                         )
                         count++
                     }

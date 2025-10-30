@@ -24,7 +24,6 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.julien.genpwdpro.presentation.utils.SecureWindow
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
@@ -139,7 +138,9 @@ fun QrScannerScreen(
                     ) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                                containerColor = MaterialTheme.colorScheme.surface.copy(
+                                    alpha = 0.9f
+                                )
                             )
                         ) {
                             Text(

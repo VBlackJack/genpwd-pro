@@ -7,13 +7,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.julien.genpwdpro.data.db.entity.EntryType
+import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
+import com.julien.genpwdpro.presentation.screens.privacy.PrivacyScreen
+import com.julien.genpwdpro.presentation.screens.security.SecuritySettingsScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.vault.*
-import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 
 /**
  * Routes de navigation de l'application
@@ -46,6 +48,7 @@ sealed class Screen(val route: String) {
 
     // Security Settings
     object SecuritySettings : Screen("security_settings")
+    object Privacy : Screen("privacy")
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {
@@ -80,9 +83,16 @@ sealed class Screen(val route: String) {
 
     // Entry - Création/Édition
     object CreateEntry : Screen("create_entry/{vaultId}?type={type}&password={password}") {
-        fun createRoute(vaultId: String, type: EntryType = EntryType.LOGIN, password: String? = null) =
+        fun createRoute(
+            vaultId: String,
+            type: EntryType = EntryType.LOGIN,
+            password: String? = null
+        ) =
             if (password != null) {
-                "create_entry/$vaultId?type=${type.name}&password=${java.net.URLEncoder.encode(password, "UTF-8")}"
+                "create_entry/$vaultId?type=${type.name}&password=${java.net.URLEncoder.encode(
+                    password,
+                    "UTF-8"
+                )}"
             } else {
                 "create_entry/$vaultId?type=${type.name}"
             }
@@ -215,6 +225,19 @@ fun AppNavGraph(
         // ========== Sync Settings ==========
         composable(Screen.SyncSettings.route) {
             SyncSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.SecuritySettings.route) {
+            SecuritySettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPrivacy = { navController.navigate(Screen.Privacy.route) }
+            )
+        }
+
+        composable(Screen.Privacy.route) {
+            PrivacyScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

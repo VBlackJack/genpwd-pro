@@ -3,16 +3,25 @@ package com.julien.genpwdpro.data.vault
 import android.content.Context
 import android.util.Log
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.db.dao.*
-import com.julien.genpwdpro.data.db.entity.*
-import com.julien.genpwdpro.data.models.vault.*
+import com.julien.genpwdpro.data.db.dao.FolderDao
+import com.julien.genpwdpro.data.db.dao.PresetDao
+import com.julien.genpwdpro.data.db.dao.TagDao
+import com.julien.genpwdpro.data.db.dao.VaultDao
+import com.julien.genpwdpro.data.db.dao.VaultEntryDao
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.EntryTagCrossRef
+import com.julien.genpwdpro.data.db.entity.VaultEntity
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.models.vault.StorageStrategy
+import com.julien.genpwdpro.data.models.vault.VaultData
+import com.julien.genpwdpro.data.models.vault.VaultMetadata
+import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
 import java.io.File
-import java.util.UUID
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 
 /**
  * Gestionnaire de migration des vaults
@@ -99,7 +108,10 @@ class VaultMigrationManager @Inject constructor(
         val registryVaults = vaultRegistryDao.getAllVaults().first()
 
         val needed = registryVaults.isEmpty()
-        Log.d(TAG, "Migration needed: $needed (Room: ${roomVaults.size}, Registry: ${registryVaults.size})")
+        Log.d(
+            TAG,
+            "Migration needed: $needed (Room: ${roomVaults.size}, Registry: ${registryVaults.size})"
+        )
 
         return needed
     }
@@ -114,78 +126,77 @@ class VaultMigrationManager @Inject constructor(
         masterPasswords: Map<String, String>,
         progressCallback: ((MigrationProgress) -> Unit)? = null
     ): MigrationResult {
-        try {
-            // 1. Vérifier si migration nécessaire
-            progressCallback?.invoke(MigrationProgress(0, 0, "", MigrationStatus.DETECTING))
+        return try {
+            progressCallback.notify(MigrationStatus.DETECTING, total = 0)
 
-            if (!isMigrationNeeded()) {
-                return MigrationResult.NotNeeded
-            }
+            val roomVaults = prepareMigration() ?: return MigrationResult.NotNeeded
+            progressCallback.notify(MigrationStatus.BACKING_UP, total = roomVaults.size)
 
-            // 2. Récupérer tous les vaults Room
-            val roomVaults = vaultDao.getAllVaults().first()
-            Log.i(TAG, "Starting migration of ${roomVaults.size} vaults")
-
-            // 3. Créer backup
-            progressCallback?.invoke(MigrationProgress(roomVaults.size, 0, "", MigrationStatus.BACKING_UP))
             val backupDir = createBackup(roomVaults)
             Log.i(TAG, "Backup created at: ${backupDir.absolutePath}")
 
-            // 4. Migrer chaque vault
-            var migratedCount = 0
-            roomVaults.forEachIndexed { index, vaultEntity ->
-                val masterPassword = masterPasswords[vaultEntity.id]
-                if (masterPassword == null) {
-                    Log.w(TAG, "Skipping vault ${vaultEntity.name} - no password provided")
-                    return@forEachIndexed
-                }
+            val migratedCount = migrateVaults(roomVaults, masterPasswords, progressCallback)
 
-                progressCallback?.invoke(
-                    MigrationProgress(
-                        totalVaults = roomVaults.size,
-                        currentVault = index + 1,
-                        vaultName = vaultEntity.name,
-                        status = MigrationStatus.MIGRATING
-                    )
-                )
+            markMigrationCompleted()
+            progressCallback.notify(
+                status = MigrationStatus.COMPLETED,
+                total = roomVaults.size,
+                current = roomVaults.size
+            )
+            Log.i(
+                TAG,
+                "Migration completed: $migratedCount/${roomVaults.size} vaults migrated"
+            )
+            MigrationResult.Success(migratedCount)
+        } catch (exception: Exception) {
+            Log.e(TAG, "Migration failed", exception)
+            progressCallback.notify(
+                status = MigrationStatus.ERROR,
+                total = 0,
+                current = 0,
+                error = exception.message
+            )
+            MigrationResult.Error(exception.message ?: "Unknown error", exception)
+        }
+    }
 
-                val result = migrateVault(vaultEntity, masterPassword)
-                if (result) {
-                    migratedCount++
-                    Log.i(TAG, "Migrated vault: ${vaultEntity.name}")
-                } else {
-                    Log.e(TAG, "Failed to migrate vault: ${vaultEntity.name}")
-                }
+    private suspend fun prepareMigration(): List<VaultEntity>? {
+        if (!isMigrationNeeded()) {
+            return null
+        }
+        val roomVaults = vaultDao.getAllVaults().first()
+        Log.i(TAG, "Starting migration of ${roomVaults.size} vaults")
+        return roomVaults
+    }
+
+    private suspend fun migrateVaults(
+        roomVaults: List<VaultEntity>,
+        masterPasswords: Map<String, String>,
+        progressCallback: ((MigrationProgress) -> Unit)?
+    ): Int {
+        var migratedCount = 0
+        roomVaults.forEachIndexed { index, vaultEntity ->
+            val masterPassword = masterPasswords[vaultEntity.id]
+            if (masterPassword == null) {
+                Log.w(TAG, "Skipping vault ${vaultEntity.name} - no password provided")
+                return@forEachIndexed
             }
 
-            // 5. Marquer migration comme complétée
-            markMigrationCompleted()
-
-            progressCallback?.invoke(
-                MigrationProgress(
-                    totalVaults = roomVaults.size,
-                    currentVault = roomVaults.size,
-                    vaultName = "",
-                    status = MigrationStatus.COMPLETED
-                )
+            progressCallback.notify(
+                status = MigrationStatus.MIGRATING,
+                total = roomVaults.size,
+                current = index + 1,
+                vaultName = vaultEntity.name
             )
 
-            Log.i(TAG, "Migration completed: $migratedCount/${roomVaults.size} vaults migrated")
-            return MigrationResult.Success(migratedCount)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Migration failed", e)
-            progressCallback?.invoke(
-                MigrationProgress(
-                    totalVaults = 0,
-                    currentVault = 0,
-                    vaultName = "",
-                    status = MigrationStatus.ERROR,
-                    error = e.message
-                )
-            )
-            return MigrationResult.Error(e.message ?: "Unknown error", e)
+            if (migrateVault(vaultEntity, masterPassword)) {
+                migratedCount++
+                Log.i(TAG, "Migrated vault: ${vaultEntity.name}")
+            } else {
+                Log.e(TAG, "Failed to migrate vault: ${vaultEntity.name}")
+            }
         }
+        return migratedCount
     }
 
     /**
@@ -239,7 +250,6 @@ class VaultMigrationManager @Inject constructor(
 
             Log.d(TAG, "Successfully migrated vault: ${vaultEntity.name} (${file.length()} bytes)")
             true
-
         } catch (e: Exception) {
             Log.e(TAG, "Error migrating vault: ${vaultEntity.name}", e)
             false
@@ -332,6 +342,24 @@ class VaultMigrationManager @Inject constructor(
     private fun markMigrationCompleted() {
         val prefs = context.getSharedPreferences("vault_migration", Context.MODE_PRIVATE)
         prefs.edit().putBoolean(MIGRATION_PREF_KEY, true).apply()
+    }
+
+    private fun ((MigrationProgress) -> Unit)?.notify(
+        status: MigrationStatus,
+        total: Int,
+        current: Int = 0,
+        vaultName: String = "",
+        error: String? = null
+    ) {
+        this?.invoke(
+            MigrationProgress(
+                totalVaults = total,
+                currentVault = current,
+                vaultName = vaultName,
+                status = status,
+                error = error
+            )
+        )
     }
 
     /**

@@ -12,7 +12,7 @@ data class VaultFileHeader(
     val vaultId: String,
     val createdAt: Long,
     val modifiedAt: Long,
-    val checksum: String,           // SHA-256 du contenu déchiffré
+    val checksum: String, // SHA-256 du contenu déchiffré
     val keyFileHash: String? = null // SHA-256 du key file (optionnel, KeePass-style)
 ) {
     companion object {
