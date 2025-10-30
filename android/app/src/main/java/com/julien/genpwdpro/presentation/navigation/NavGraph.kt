@@ -353,6 +353,9 @@ fun AppNavGraph(
                 onSettingsClick = {
                     navController.navigate(Screen.SyncSettings.route)
                 },
+                onImportExportClick = {
+                    navController.navigate(Screen.ImportExport.createRoute(vaultId))
+                },
                 onLockClick = {
                     // Return to dashboard instead of vault selector
                     navController.navigate(Screen.Dashboard.route) {

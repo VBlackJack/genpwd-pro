@@ -679,7 +679,7 @@ android/
 - ✅ TOTP/2FA (100%)
 - ✅ Password Generator (100%)
 - ✅ Security Analysis (100%)
-- ✅ **Cloud Sync** (100%) ✨ **NEW**
+- ✅ **Cloud Sync** (100%) ✨
   - ✅ Google Drive Provider (100%)
   - ✅ WebDAV Provider (100%)
   - ⚠️ OneDrive/pCloud/ProtonDrive (Templates - 40%)
@@ -690,9 +690,20 @@ android/
 - ✅ Onboarding (100%)
 - ✅ Autofill (100%)
 - ✅ Navigation (100%)
-- ⏳ Import/Export (0%)
-- ⏳ QR Scanner (0%)
-- ⏳ Biometric (50%)
+- ✅ **Import/Export (95%)** ✨ **NEW**
+  - ✅ Backend (CSV & JSON) (100%)
+  - ✅ UI complète avec tabs (100%)
+  - ✅ Navigation intégrée (100%)
+  - ⏳ Tests utilisateurs (0%)
+- ✅ **QR Scanner (95%)** ✨ **NEW**
+  - ✅ Backend CameraX + ML Kit (100%)
+  - ✅ Intégration TOTP (100%)
+  - ✅ Parsing otpauth:// URIs (100%)
+  - ⏳ Tests sur devices variés (0%)
+- ⚠️ Biometric (70%)
+  - ✅ Déverrouillage fonctionnel (100%)
+  - ⏳ UX à améliorer (50%)
+  - ⏳ Gestion erreurs robuste (60%)
 
 ---
 
@@ -707,21 +718,25 @@ android/
 - [x] Navigation (NavGraph + routes)
 - [x] Icons (adaptive launcher icons)
 
-### Phase 2 : Import/Export ⏳ TODO (3-4 heures)
-- [ ] CSV Import (generic mapping)
-- [ ] CSV Export (unencrypted warning)
-- [ ] JSON Export (encrypted)
-- [ ] KeePass KDBX Import (basic)
-- [ ] Backup/Restore local
+### Phase 2 : Import/Export ✅ DONE (95%)
+- [x] CSV Import (generic mapping)
+- [x] CSV Export (unencrypted warning)
+- [x] JSON Export (encrypted)
+- [x] JSON Import (encrypted)
+- [x] UI complète avec Material 3
+- [x] Navigation intégrée dans VaultListScreen
+- [ ] KeePass KDBX Import (prévu Phase 5)
+- [ ] Tests utilisateurs complets
 
-### Phase 3 : Advanced Features ⏳ TODO (5-6 heures)
-- [ ] QR Code Scanner (TOTP setup)
-- [ ] Biometric unlock (BiometricPrompt integration)
-- [ ] Folder management UI
-- [ ] Tag management UI
-- [ ] Password health dashboard
-- [ ] Breach detection (Have I Been Pwned API)
-- [ ] Material You dynamic colors
+### Phase 3 : Advanced Features ⏳ IN PROGRESS (60%)
+- [x] QR Code Scanner (TOTP setup) ✨ **NEW**
+- [x] Biometric unlock (BiometricPrompt integration)
+- [x] Folder management UI
+- [x] Tag management UI
+- [x] Password health analysis (intégré)
+- [x] Breach detection (Have I Been Pwned API)
+- [ ] Password health dashboard (UI visuelle)
+- [ ] Material You dynamic colors (améliorations)
 
 ### Phase 4 : Polish & Testing ⏳ TODO (2-3 heures)
 - [ ] Unit tests (target 90% coverage)
