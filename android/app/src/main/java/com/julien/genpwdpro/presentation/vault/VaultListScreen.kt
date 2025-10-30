@@ -28,6 +28,7 @@ fun VaultListScreen(
     onEntryClick: (String) -> Unit,
     onAddEntry: (EntryType) -> Unit,
     onSettingsClick: () -> Unit,
+    onImportExportClick: () -> Unit,
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
 ) {
@@ -40,6 +41,7 @@ fun VaultListScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
 
     // Charger les entrées
     LaunchedEffect(vaultId) {
@@ -165,14 +167,42 @@ fun VaultListScreen(
                             )
                         }
 
-                        // Verrouiller
-                        IconButton(onClick = onLockClick) {
-                            Icon(Icons.Default.Lock, "Verrouiller")
-                        }
+                        // Menu overflow
+                        Box {
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(Icons.Default.MoreVert, "Menu")
+                            }
 
-                        // Paramètres
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(Icons.Default.Settings, "Paramètres")
+                            DropdownMenu(
+                                expanded = showOverflowMenu,
+                                onDismissRequest = { showOverflowMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Synchronisation cloud") },
+                                    onClick = {
+                                        onSettingsClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Cloud, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import / Export") },
+                                    onClick = {
+                                        onImportExportClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.ImportExport, null) }
+                                )
+                                Divider()
+                                DropdownMenuItem(
+                                    text = { Text("Verrouiller") },
+                                    onClick = {
+                                        onLockClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Lock, null) }
+                                )
+                            }
                         }
                     }
                 }
