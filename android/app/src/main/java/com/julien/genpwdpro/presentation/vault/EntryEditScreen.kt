@@ -55,6 +55,7 @@ fun EntryEditScreen(
     var showPassword by remember { mutableStateOf(false) }
     var showGeneratorDialog by remember { mutableStateOf(false) }
     var showTotpDialog by remember { mutableStateOf(false) }
+    var showQrScanner by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
 
@@ -466,8 +467,27 @@ fun EntryEditScreen(
                 showTotpDialog = false
             },
             onScanQr = {
-                // TODO: Ouvrir le scanner QR
+                // Fermer le dialog TOTP et ouvrir le scanner QR
                 showTotpDialog = false
+                showQrScanner = true
+            }
+        )
+    }
+
+    // QR Scanner pour TOTP
+    if (showQrScanner) {
+        QrScannerScreen(
+            onQrCodeScanned = { scannedUri ->
+                // Parser l'URI TOTP et remplir les champs
+                viewModel.parseTotpUri(scannedUri)
+                // Fermer le scanner et rouvrir le dialog TOTP avec les champs remplis
+                showQrScanner = false
+                showTotpDialog = true
+            },
+            onDismiss = {
+                // Fermer le scanner et rouvrir le dialog TOTP
+                showQrScanner = false
+                showTotpDialog = true
             }
         )
     }

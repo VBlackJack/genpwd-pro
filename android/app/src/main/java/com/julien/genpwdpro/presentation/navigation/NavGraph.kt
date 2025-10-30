@@ -102,6 +102,11 @@ sealed class Screen(val route: String) {
         fun createRoute(vaultId: String, entryId: String) =
             "edit_entry/$vaultId/$entryId"
     }
+
+    // Import/Export
+    object ImportExport : Screen("import_export/{vaultId}") {
+        fun createRoute(vaultId: String) = "import_export/$vaultId"
+    }
 }
 
 /**
@@ -445,6 +450,22 @@ fun AppNavGraph(
                     navController.popBackStack()
                 },
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Import/Export ==========
+        composable(
+            route = Screen.ImportExport.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            ImportExportScreen(
+                vaultId = vaultId,
+                onBackClick = { navController.popBackStack() },
+                vaultSessionManager = vaultSessionManager
             )
         }
     }
