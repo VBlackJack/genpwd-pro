@@ -9,6 +9,7 @@ import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.security.BiometricVaultManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Named
@@ -335,22 +336,34 @@ class FileVaultRepository @Inject constructor(
             vaultSessionManager.getTags(),
             vaultSessionManager.getPresets()
         ) { entries, folders, tags, presets ->
-            // Compter par type
             val loginCount = entries.count { it.entryType == EntryType.LOGIN.name }
             val noteCount = entries.count { it.entryType == EntryType.NOTE.name }
             val wifiCount = entries.count { it.entryType == EntryType.WIFI.name }
             val cardCount = entries.count { it.entryType == EntryType.CARD.name }
             val identityCount = entries.count { it.entryType == EntryType.IDENTITY.name }
 
-            // Compter favoris et TOTP
             val favoritesCount = entries.count { it.isFavorite }
             val totpCount = entries.count { it.hasTOTP() }
 
-            // Compter mots de passe faibles (< 8 caractères)
             val weakPasswordCount = entries.count { entry ->
-                val pwd = entry.password
-                pwd != null && pwd.length < 8
+                val password = entry.password
+                if (password.isNullOrEmpty()) {
+                    false
+                } else {
+                    when (entry.entryType.toEntryType()) {
+                        EntryType.LOGIN, EntryType.WIFI -> password.isWeakPassword()
+                        else -> false
+                    }
+                }
             }
+
+            val estimatedSize = vaultSessionManager.getCurrentSession()
+                ?.vaultData
+                ?.value
+                ?.metadata
+                ?.statistics
+                ?.totalSize
+                ?: estimateVaultSize(entries, folders, tags, presets)
 
             VaultStatistics(
                 entryCount = entries.size,
@@ -365,9 +378,93 @@ class FileVaultRepository @Inject constructor(
                 favoritesCount = favoritesCount,
                 totpCount = totpCount,
                 weakPasswordCount = weakPasswordCount,
-                sizeInBytes = 0L // TODO: Calculate real size
+                sizeInBytes = estimatedSize
             )
-        }
+        }.distinctUntilChanged()
+    }
+
+    private fun String.isWeakPassword(): Boolean {
+        if (length < 12) return true
+
+        val diversity = listOf<(Char) -> Boolean>(
+            { it.isLowerCase() },
+            { it.isUpperCase() },
+            { it.isDigit() },
+            { !it.isLetterOrDigit() }
+        ).count { predicate -> any(predicate) }
+
+        return diversity < 3
+    }
+
+    private fun estimateVaultSize(
+        entries: List<VaultEntryEntity>,
+        folders: List<FolderEntity>,
+        tags: List<TagEntity>,
+        presets: List<PresetEntity>
+    ): Long {
+        val entriesSize = entries.sumOf { it.estimatedSize() }
+        val foldersSize = folders.sumOf { it.estimatedSize() }
+        val tagsSize = tags.sumOf { it.estimatedSize() }
+        val presetsSize = presets.sumOf { it.estimatedSize() }
+
+        return entriesSize + foldersSize + tagsSize + presetsSize
+    }
+
+    private fun VaultEntryEntity.estimatedSize(): Long {
+        val stringSizes = listOf(
+            encryptedTitle,
+            encryptedUsername,
+            encryptedPassword,
+            encryptedUrl,
+            encryptedNotes,
+            encryptedCustomFields,
+            entryType,
+            encryptedTotpSecret,
+            encryptedPasskeyData,
+            passkeyRpId,
+            passkeyRpName,
+            passkeyUserHandle,
+            icon ?: "",
+            color ?: ""
+        ).sumOf { it.length.toLong() }
+
+        val numericFieldsOverhead = 8L * 12 // Rough estimation for timestamps & flags
+
+        return stringSizes + numericFieldsOverhead
+    }
+
+    private fun FolderEntity.estimatedSize(): Long {
+        val stringSizes = listOf(
+            name,
+            icon,
+            color ?: ""
+        ).sumOf { it.length.toLong() }
+
+        val numericFieldsOverhead = 8L * 4
+
+        return stringSizes + numericFieldsOverhead
+    }
+
+    private fun TagEntity.estimatedSize(): Long {
+        val stringSizes = listOf(name, color).sumOf { it.length.toLong() }
+        val numericFieldsOverhead = 8L * 2
+
+        return stringSizes + numericFieldsOverhead
+    }
+
+    private fun PresetEntity.estimatedSize(): Long {
+        val stringSizes = listOf(
+            encryptedName,
+            nameIv,
+            icon,
+            generationMode,
+            encryptedSettings,
+            settingsIv
+        ).sumOf { it.length.toLong() }
+
+        val numericFieldsOverhead = 8L * 6
+
+        return stringSizes + numericFieldsOverhead
     }
 
     // ========== Session Management ==========
