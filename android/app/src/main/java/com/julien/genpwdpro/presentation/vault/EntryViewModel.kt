@@ -48,6 +48,13 @@ class EntryViewModel @Inject constructor(
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
 
+    // Tags
+    private val _selectedTags = MutableStateFlow<List<TagEntity>>(emptyList())
+    val selectedTags: StateFlow<List<TagEntity>> = _selectedTags.asStateFlow()
+
+    private val _availableTags = MutableStateFlow<List<TagEntity>>(emptyList())
+    val availableTags: StateFlow<List<TagEntity>> = _availableTags.asStateFlow()
+
     // TOTP
     private val _hasTOTP = MutableStateFlow(false)
     val hasTOTP: StateFlow<Boolean> = _hasTOTP.asStateFlow()
@@ -78,6 +85,7 @@ class EntryViewModel @Inject constructor(
         isEditMode = false
         _entryType.value = type
         clearFields()
+        loadAvailableTags()
     }
 
     /**
@@ -88,6 +96,7 @@ class EntryViewModel @Inject constructor(
         currentVaultId = vaultId
         currentEntryId = entryId
         isEditMode = true
+        loadAvailableTags()
 
         viewModelScope.launch {
             try {
@@ -105,6 +114,11 @@ class EntryViewModel @Inject constructor(
                     _totpIssuer.value = entry.totpIssuer
                     _passwordStrength.value = entry.passwordStrength
                     _passwordEntropy.value = entry.passwordEntropy
+
+                    // Charger les tags de l'entrée
+                    fileVaultRepository.getTagsForEntry(entryId).collect { tags ->
+                        _selectedTags.value = tags
+                    }
                 } else {
                     _uiState.value = EntryUiState.Error("Entrée introuvable")
                 }
@@ -460,6 +474,52 @@ class EntryViewModel @Inject constructor(
         _passwordStrength.value = 0
         _passwordEntropy.value = 0.0
         _uiState.value = EntryUiState.Editing
+    }
+
+    /**
+     * Charge tous les tags disponibles du vault
+     */
+    fun loadAvailableTags() {
+        viewModelScope.launch {
+            fileVaultRepository.getTags().collect { tags ->
+                _availableTags.value = tags
+            }
+        }
+    }
+
+    /**
+     * Ajoute un tag à l'entrée
+     */
+    fun addTag(tag: TagEntity) {
+        val current = _selectedTags.value.toMutableList()
+        if (!current.any { it.id == tag.id }) {
+            current.add(tag)
+            _selectedTags.value = current
+        }
+    }
+
+    /**
+     * Retire un tag de l'entrée
+     */
+    fun removeTag(tag: TagEntity) {
+        _selectedTags.value = _selectedTags.value.filter { it.id != tag.id }
+    }
+
+    /**
+     * Crée un nouveau tag
+     */
+    fun createTag(name: String, color: String) {
+        viewModelScope.launch {
+            val tag = TagEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                vaultId = currentVaultId ?: return@launch,
+                name = name,
+                color = color
+            )
+            fileVaultRepository.addTag(tag).onSuccess {
+                // Le tag sera automatiquement ajouté via le flow de loadAvailableTags
+            }
+        }
     }
 }
 

@@ -447,6 +447,65 @@ class VaultManagerViewModel @Inject constructor(
         _uiState.update { it.copy(showMigrationDialog = false) }
     }
 
+    fun showExportDialog(vaultId: String) {
+        _uiState.update { it.copy(exportVaultId = vaultId) }
+    }
+
+    fun hideExportDialog() {
+        _uiState.update { it.copy(exportVaultId = null) }
+    }
+
+    /**
+     * Importe un coffre depuis un fichier .gpv (sans mot de passe)
+     */
+    fun importVaultFromFile(fileUri: Uri, vaultName: String = "Coffre importé") {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                // Importer le fichier vers le stockage interne
+                val (vaultId, vaultFile) = vaultFileManager.importVault(
+                    sourceUri = fileUri,
+                    destinationStrategy = StorageStrategy.INTERNAL
+                )
+
+                // Créer une entrée dans le registry avec les paramètres corrects
+                val registryEntry = VaultRegistryEntry(
+                    id = vaultId,
+                    name = vaultName,
+                    filePath = vaultFile.absolutePath,
+                    storageStrategy = StorageStrategy.INTERNAL,
+                    fileSize = vaultFile.length(),
+                    lastModified = vaultFile.lastModified(),
+                    lastAccessed = null,
+                    isDefault = false,
+                    isLoaded = false,
+                    statistics = com.julien.genpwdpro.data.models.vault.VaultStatistics(),
+                    description = null,
+                    createdAt = System.currentTimeMillis(),
+                    biometricUnlockEnabled = false
+                )
+
+                vaultRegistryDao.insert(registryEntry)
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Coffre importé avec succès",
+                        showImportDialog = false
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("VaultManagerViewModel", "Import error", e)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erreur lors de l'import: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
@@ -467,6 +526,7 @@ data class VaultManagerUiState(
     val showImportDialog: Boolean = false,
     val showMigrationDialog: Boolean = false,
     val confirmDeleteVaultId: String? = null,
+    val exportVaultId: String? = null,  // ID du coffre à exporter
     val isMigrating: Boolean = false,
     val migrationProgress: VaultMigrationManager.MigrationProgress? = null,
     val customFolderUri: Uri? = null  // URI du dossier sélectionné pour CUSTOM storage

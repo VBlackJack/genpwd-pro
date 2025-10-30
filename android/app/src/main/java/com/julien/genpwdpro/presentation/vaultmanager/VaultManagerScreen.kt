@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation.vaultmanager
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,6 +49,31 @@ fun VaultManagerScreen(
                 viewModel.createVault(activity, name, password, strategy, description, setAsDefault, enableBiometric)
             }
         )
+    }
+
+    if (uiState.showImportDialog) {
+        ImportVaultDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.hideImportDialog() },
+            onImport = { fileUri, vaultName ->
+                viewModel.importVaultFromFile(fileUri, vaultName)
+            }
+        )
+    }
+
+    // Dialog d'export
+    uiState.exportVaultId?.let { vaultId ->
+        val vault = vaults.find { it.id == vaultId }
+        vault?.let {
+            ExportVaultDialog(
+                vaultName = vault.name,
+                onDismiss = { viewModel.hideExportDialog() },
+                onExport = { destinationUri ->
+                    viewModel.exportVault(vaultId, destinationUri)
+                    viewModel.hideExportDialog()
+                }
+            )
+        }
     }
 
     if (uiState.showMigrationDialog) {
@@ -104,6 +130,12 @@ fun VaultManagerScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    // Bouton pour importer un coffre
+                    IconButton(onClick = { viewModel.showImportDialog() }) {
+                        Icon(Icons.Default.FileOpen, contentDescription = "Importer un coffre")
                     }
                 }
             )
@@ -179,7 +211,8 @@ fun VaultManagerScreen(
                         },
                         onUnload = { viewModel.unloadVault(vault.id) },
                         onDelete = { viewModel.showDeleteConfirmation(vault.id) },
-                        onOpen = { onNavigateToVault(vault.id) }
+                        onOpen = { onNavigateToVault(vault.id) },
+                        onExport = { viewModel.showExportDialog(vault.id) }
                     )
                 }
             }
@@ -200,7 +233,8 @@ fun VaultCard(
     onLoad: () -> Unit,
     onUnload: () -> Unit,
     onDelete: () -> Unit,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    onExport: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -343,6 +377,22 @@ fun VaultCard(
                             Spacer(Modifier.width(4.dp))
                             Text("Default", style = MaterialTheme.typography.labelMedium)
                         }
+                    }
+                }
+
+                // Deuxième ligne d'actions
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onExport,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Export", style = MaterialTheme.typography.labelMedium)
                     }
 
                     OutlinedButton(
@@ -756,6 +806,104 @@ fun MigrationDialog(
     )
 }
 
+/**
+ * Dialog d'import de vault depuis un fichier .gpv
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ImportVaultDialog(
+    viewModel: VaultManagerViewModel,
+    onDismiss: () -> Unit,
+    onImport: (Uri, String) -> Unit
+) {
+    var vaultName by remember { mutableStateOf("") }
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+    // File picker launcher pour sélectionner le fichier .gpv
+    val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        selectedFileUri = uri
+        // Essayer d'extraire un nom depuis l'URI
+        uri?.let {
+            // Si aucun nom n'est défini, utiliser le nom du fichier
+            if (vaultName.isBlank()) {
+                vaultName = "Coffre importé"
+            }
+        }
+    }
+
+    val isValid = vaultName.isNotBlank() && selectedFileUri != null
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Importer un coffre") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Bouton de sélection de fichier
+                Button(
+                    onClick = {
+                        filePickerLauncher.launch(arrayOf(
+                            "application/octet-stream",
+                            "*/*"  // Accepter tous les fichiers au cas où
+                        ))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Folder, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(selectedFileUri?.let { "Fichier sélectionné" } ?: "Sélectionner un fichier .gpv")
+                }
+
+                selectedFileUri?.let { uri ->
+                    // Afficher le chemin du fichier sélectionné
+                    Text(
+                        text = uri.lastPathSegment ?: uri.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+
+                // Nom du coffre
+                OutlinedTextField(
+                    value = vaultName,
+                    onValueChange = { vaultName = it },
+                    label = { Text("Nom du coffre") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Text(
+                    text = "Le coffre sera importé dans le stockage interne de l'application.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    selectedFileUri?.let { uri ->
+                        onImport(uri, vaultName)
+                    }
+                },
+                enabled = isValid
+            ) {
+                Text("Importer")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
+}
+
 // Utility functions
 private fun formatDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
@@ -768,4 +916,65 @@ private fun formatFileSize(bytes: Long): String {
         bytes < 1024 * 1024 -> "${bytes / 1024} KB"
         else -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
     }
+}
+
+/**
+ * Dialog pour exporter un coffre
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExportVaultDialog(
+    vaultName: String,
+    onDismiss: () -> Unit,
+    onExport: (Uri) -> Unit
+) {
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+    // File picker launcher pour sélectionner la destination
+    val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedFileUri = it
+            onExport(it)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        // Ouvrir automatiquement le sélecteur de fichiers avec le nom suggéré
+        val suggestedName = "$vaultName-${System.currentTimeMillis()}.gpv"
+        filePickerLauncher.launch(suggestedName)
+    }
+
+    // Dialog d'information pendant la sélection
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Exporter le coffre") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Coffre: $vaultName",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Sélectionnez l'emplacement où vous souhaitez sauvegarder le fichier .gpv",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "⚠️ Ce fichier contient vos données chiffrées. Conservez-le en lieu sûr.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
 }

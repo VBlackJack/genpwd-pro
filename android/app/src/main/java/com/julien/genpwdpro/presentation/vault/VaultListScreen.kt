@@ -441,6 +441,16 @@ private fun EntryCard(
                     )
                 }
 
+                // Tags
+                val tags by viewModel.getTagsForEntry(entry.id).collectAsState(initial = emptyList())
+                if (tags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    com.julien.genpwdpro.presentation.components.TagsList(
+                        tags = tags,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 // TOTP si présent
                 if (entry.hasTOTP()) {
                     Spacer(modifier = Modifier.height(4.dp))

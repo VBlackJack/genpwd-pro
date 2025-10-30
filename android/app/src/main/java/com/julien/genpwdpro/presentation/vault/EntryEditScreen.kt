@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.net.Uri
 import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.GenerationMode
@@ -50,10 +51,13 @@ fun EntryEditScreen(
     val totpIssuer by viewModel.totpIssuer.collectAsState()
     val passwordStrength by viewModel.passwordStrength.collectAsState()
     val currentEntryType by viewModel.entryType.collectAsState()
+    val selectedTags by viewModel.selectedTags.collectAsState()
+    val availableTags by viewModel.availableTags.collectAsState()
 
     var showPassword by remember { mutableStateOf(false) }
     var showGeneratorDialog by remember { mutableStateOf(false) }
     var showTotpDialog by remember { mutableStateOf(false) }
+    var showQrScanner by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
 
@@ -98,14 +102,11 @@ fun EntryEditScreen(
                     }
                 },
                 actions = {
-                    // Favori
-                    IconButton(onClick = { viewModel.toggleFavorite() }) {
-                        Icon(
-                            if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
-                            "Favori",
-                            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    // Favori (avec animation)
+                    com.julien.genpwdpro.presentation.components.FavoriteButton(
+                        isFavorite = isFavorite,
+                        onToggle = { viewModel.toggleFavorite() }
+                    )
 
                     // Sauvegarder
                     IconButton(
@@ -399,6 +400,16 @@ fun EntryEditScreen(
                 )
             )
 
+            // Tags
+            com.julien.genpwdpro.presentation.components.TagSelector(
+                selectedTags = selectedTags,
+                availableTags = availableTags,
+                onTagAdded = { tag -> viewModel.addTag(tag) },
+                onTagRemoved = { tag -> viewModel.removeTag(tag) },
+                onCreateTag = { name, color -> viewModel.createTag(name, color) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             // Erreur
             if (uiState is EntryUiState.Error) {
                 Card(
@@ -449,8 +460,39 @@ fun EntryEditScreen(
                 showTotpDialog = false
             },
             onScanQr = {
-                // TODO: Ouvrir le scanner QR
+                showQrScanner = true
                 showTotpDialog = false
+            }
+        )
+    }
+
+    // Scanner QR pour TOTP
+    if (showQrScanner) {
+        QrScannerScreen(
+            onQrCodeScanned = { qrData ->
+                // Parser le QR code otpauth://totp/...?secret=XXX&issuer=YYY
+                try {
+                    val uri = Uri.parse(qrData)
+                    if (uri.scheme == "otpauth" && uri.host == "totp") {
+                        val secret = uri.getQueryParameter("secret") ?: ""
+                        val issuer = uri.getQueryParameter("issuer")
+                            ?: uri.pathSegments.firstOrNull()?.substringAfter(":")
+                            ?: ""
+
+                        if (secret.isNotEmpty()) {
+                            viewModel.updateTotpSecret(secret)
+                            viewModel.updateTotpIssuer(issuer)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Log error
+                    android.util.Log.e("EntryEditScreen", "Error parsing QR code", e)
+                }
+                showQrScanner = false
+            },
+            onDismiss = {
+                showQrScanner = false
+                showTotpDialog = true  // Retour à la dialog TOTP
             }
         )
     }
