@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
@@ -175,7 +176,10 @@ fun AppNavGraph(
         composable(Screen.Generator.route) {
             // ✅ FIX: Utiliser VaultSessionManager (nouveau système file-based)
             val currentVaultId = vaultSessionManager.getCurrentVaultId()
-            android.util.Log.d("NavGraph", "Generator - Current vault ID: $currentVaultId")
+            SafeLog.d(
+                "NavGraph",
+                "Generator - Current vault ID: ${SafeLog.redact(currentVaultId)}"
+            )
 
             GeneratorScreen(
                 vaultId = currentVaultId,

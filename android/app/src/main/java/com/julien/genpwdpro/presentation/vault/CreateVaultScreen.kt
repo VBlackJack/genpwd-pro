@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
@@ -66,9 +67,9 @@ fun CreateVaultScreen(
             if (enableBiometric && masterPassword.isNotEmpty()) {
                 val success = viewModel.saveBiometricPassword(vaultId, masterPassword)
                 if (!success) {
-                    android.util.Log.w(
+                    SafeLog.w(
                         "CreateVaultScreen",
-                        "Failed to save biometric password for vault $vaultId"
+                        "Failed to save biometric password for vault ${SafeLog.redact(vaultId)}"
                     )
                 }
             }

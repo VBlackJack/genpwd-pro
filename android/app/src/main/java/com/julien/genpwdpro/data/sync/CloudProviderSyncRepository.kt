@@ -2,7 +2,7 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
@@ -61,7 +61,7 @@ class CloudProviderSyncRepository @Inject constructor(
      * @param provider Instance du provider (déjà configuré)
      */
     fun setActiveProvider(providerType: CloudProviderType, provider: CloudProvider) {
-        Log.d(TAG, "Setting active provider: $providerType")
+        SafeLog.d(TAG, "Setting active provider: $providerType")
         activeProviderType = providerType
         activeProvider = provider
 
@@ -85,10 +85,10 @@ class CloudProviderSyncRepository @Inject constructor(
             try {
                 val providerType = CloudProviderType.valueOf(savedProviderName)
                 activeProviderType = providerType
-                Log.d(TAG, "Loaded active provider type: $providerType")
+                SafeLog.d(TAG, "Loaded active provider type: $providerType")
                 // Le provider sera instancié quand nécessaire
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to load active provider: $savedProviderName", e)
+                SafeLog.w(TAG, "Failed to load active provider: $savedProviderName", e)
             }
         }
     }
@@ -97,7 +97,7 @@ class CloudProviderSyncRepository @Inject constructor(
      * Effacer le provider actif
      */
     fun clearActiveProvider() {
-        Log.d(TAG, "Clearing active provider")
+        SafeLog.d(TAG, "Clearing active provider")
         activeProvider = null
         activeProviderType = null
         prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()
@@ -108,7 +108,7 @@ class CloudProviderSyncRepository @Inject constructor(
      */
     private fun ensureProviderAvailable(): Boolean {
         if (activeProvider == null) {
-            Log.w(TAG, "No active provider configured")
+            SafeLog.w(TAG, "No active provider configured")
             return false
         }
         return true
@@ -122,7 +122,7 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         return try {
-            Log.d(TAG, "Uploading data: ${data.id} (${data.dataType})")
+            SafeLog.d(TAG, "Uploading data: ${SafeLog.redact(data.id)} (${data.dataType})")
 
             // Convertir EncryptedDataEncoded → ByteArray
             // EncryptedDataEncoded contient les données en Base64, on doit les décoder
@@ -146,14 +146,14 @@ class CloudProviderSyncRepository @Inject constructor(
             val fileId = activeProvider!!.uploadVault(data.id, vaultSyncData)
 
             if (fileId != null) {
-                Log.d(TAG, "Upload successful: $fileId")
+                SafeLog.d(TAG, "Upload successful: ${SafeLog.redact(fileId)}")
                 SyncResult.Success
             } else {
-                Log.w(TAG, "Upload failed: provider returned null fileId")
+                SafeLog.w(TAG, "Upload failed: provider returned null fileId")
                 SyncResult.Error("Échec de l'upload")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Upload error", e)
+            SafeLog.e(TAG, "Upload error", e)
             SyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
@@ -164,7 +164,7 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         return try {
-            Log.d(TAG, "Downloading data for type: $dataType")
+            SafeLog.d(TAG, "Downloading data for type: $dataType")
 
             // Lister tous les vaults
             val files = activeProvider!!.listVaults()
@@ -203,12 +203,12 @@ class CloudProviderSyncRepository @Inject constructor(
                         null
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error downloading file: ${metadata.fileName}", e)
+                    SafeLog.e(TAG, "Error downloading file: ${SafeLog.redact(metadata.fileName)}", e)
                     null
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Download error", e)
+            SafeLog.e(TAG, "Download error", e)
             emptyList()
         }
     }
@@ -219,7 +219,7 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         return try {
-            Log.d(TAG, "Downloading vault by ID: $id")
+            SafeLog.d(TAG, "Downloading vault by ID: ${SafeLog.redact(id)}")
 
             val vaultData = activeProvider!!.downloadVault(id)
 
@@ -246,7 +246,7 @@ class CloudProviderSyncRepository @Inject constructor(
                 null
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Download by ID error", e)
+            SafeLog.e(TAG, "Download by ID error", e)
             null
         }
     }
@@ -257,19 +257,19 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         return try {
-            Log.d(TAG, "Deleting vault: $id")
+            SafeLog.d(TAG, "Deleting vault: ${SafeLog.redact(id)}")
 
             val success = activeProvider!!.deleteVault(id)
 
             if (success) {
-                Log.d(TAG, "Delete successful")
+                SafeLog.d(TAG, "Delete successful")
                 SyncResult.Success
             } else {
-                Log.w(TAG, "Delete failed")
+                SafeLog.w(TAG, "Delete failed")
                 SyncResult.Error("Échec de la suppression")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Delete error", e)
+            SafeLog.e(TAG, "Delete error", e)
             SyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
@@ -280,14 +280,14 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         return try {
-            Log.d(TAG, "Checking for newer data (local timestamp: $localTimestamp)")
+            SafeLog.d(TAG, "Checking for newer data (local timestamp: $localTimestamp)")
 
             val files = activeProvider!!.listVaults()
 
             // Vérifier si au moins un fichier est plus récent
             files.any { it.modifiedTime > localTimestamp }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking for newer data", e)
+            SafeLog.e(TAG, "Error checking for newer data", e)
             false
         }
     }
@@ -295,7 +295,7 @@ class CloudProviderSyncRepository @Inject constructor(
     override fun observeChanges(dataType: SyncDataType): Flow<SyncEvent> {
         // La plupart des providers ne supportent pas le temps réel
         // On retourne un flow vide pour l'instant
-        Log.d(TAG, "observeChanges not implemented for cloud providers")
+        SafeLog.d(TAG, "observeChanges not implemented for cloud providers")
         return flowOf()
     }
 
@@ -303,7 +303,7 @@ class CloudProviderSyncRepository @Inject constructor(
         conflict: SyncResult.Conflict,
         strategy: ConflictResolutionStrategy
     ): SyncData {
-        Log.d(TAG, "Resolving conflict with strategy: $strategy")
+        SafeLog.d(TAG, "Resolving conflict with strategy: $strategy")
 
         return when (strategy) {
             ConflictResolutionStrategy.LOCAL_WINS -> conflict.localData
@@ -343,12 +343,12 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         return try {
-            Log.d(TAG, "Testing connection to cloud provider")
+            SafeLog.d(TAG, "Testing connection to cloud provider")
 
             // Vérifier l'authentification
             activeProvider!!.isAuthenticated()
         } catch (e: Exception) {
-            Log.e(TAG, "Connection test failed", e)
+            SafeLog.e(TAG, "Connection test failed", e)
             false
         }
     }
@@ -359,7 +359,7 @@ class CloudProviderSyncRepository @Inject constructor(
         }
 
         try {
-            Log.d(TAG, "Cleaning up data older than: $olderThan")
+            SafeLog.d(TAG, "Cleaning up data older than: $olderThan")
 
             // Lister tous les vaults
             val files = activeProvider!!.listVaults()
@@ -373,13 +373,13 @@ class CloudProviderSyncRepository @Inject constructor(
                             .removeSuffix(".enc")
 
                         activeProvider!!.deleteVault(vaultId)
-                        Log.d(TAG, "Deleted old vault: $vaultId")
+                        SafeLog.d(TAG, "Deleted old vault: ${SafeLog.redact(vaultId)}")
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error deleting old file: ${metadata.fileName}", e)
+                        SafeLog.e(TAG, "Error deleting old file: ${SafeLog.redact(metadata.fileName)}", e)
                     }
                 }
         } catch (e: Exception) {
-            Log.e(TAG, "Cleanup error", e)
+            SafeLog.e(TAG, "Cleanup error", e)
         }
     }
 
@@ -387,7 +387,7 @@ class CloudProviderSyncRepository @Inject constructor(
      * Désactiver la synchronisation cloud
      */
     fun disableSync() {
-        Log.d(TAG, "Disabling cloud sync")
+        SafeLog.d(TAG, "Disabling cloud sync")
         activeProvider = null
         activeProviderType = null
         prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()

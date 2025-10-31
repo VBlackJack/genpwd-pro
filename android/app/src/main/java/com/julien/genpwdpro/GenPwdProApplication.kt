@@ -12,7 +12,12 @@ import com.julien.genpwdpro.data.inmemory.LegacyMigrationResult
 import com.julien.genpwdpro.sync.SyncInitializer
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Application class pour GenPwd Pro
@@ -20,6 +25,18 @@ import kotlinx.coroutines.runBlocking
  */
 @HiltAndroidApp
 class GenPwdProApplication : Application(), Configuration.Provider {
+
+    private val applicationScope = CoroutineScope(
+        SupervisorJob() +
+            Dispatchers.IO +
+            CoroutineExceptionHandler { _, throwable ->
+                if (throwable is CancellationException) {
+                    SafeLog.d(TAG, "Application scope cancelled: ${throwable.message}")
+                } else {
+                    SafeLog.e(TAG, "Unhandled exception in application scope", throwable)
+                }
+            }
+    )
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -36,7 +53,7 @@ class GenPwdProApplication : Application(), Configuration.Provider {
         installCrashHandler()
         initializeTink()
 
-        runBlocking {
+        applicationScope.launch {
             when (val result = legacyMigrationManager.migrateIfNeeded()) {
                 is LegacyMigrationResult.Success -> {
                     SafeLog.i(

@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.sync.oauth
 
 import android.net.Uri
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 
 /**
@@ -31,7 +31,7 @@ object OAuthCallbackManager {
         providerType: CloudProviderType,
         callback: suspend (Uri) -> Boolean
     ) {
-        Log.d(TAG, "Registering OAuth callback for $providerType")
+        SafeLog.d(TAG, "Registering OAuth callback for $providerType")
         callbacks[providerType] = callback
     }
 
@@ -41,7 +41,7 @@ object OAuthCallbackManager {
      * @param providerType Type de provider à désenregistrer
      */
     fun unregisterCallback(providerType: CloudProviderType) {
-        Log.d(TAG, "Unregistering OAuth callback for $providerType")
+        SafeLog.d(TAG, "Unregistering OAuth callback for $providerType")
         callbacks.remove(providerType)
     }
 
@@ -54,15 +54,15 @@ object OAuthCallbackManager {
     suspend fun handleCallback(uri: Uri): Boolean {
         val path = uri.path ?: return false
 
-        Log.d(TAG, "Handling OAuth callback: $uri")
-        Log.d(TAG, "Path: $path, Query: ${uri.query}")
+        SafeLog.d(TAG, "Handling OAuth callback: ${SafeLog.redact(uri)}")
+        SafeLog.d(TAG, "Path: $path, Query: ${SafeLog.redact(uri.query)}")
 
         // Déterminer le provider depuis le path
         val providerType = when (path) {
             "/pcloud" -> CloudProviderType.PCLOUD
             "/proton" -> CloudProviderType.PROTON_DRIVE
             else -> {
-                Log.w(TAG, "Unknown OAuth callback path: $path")
+                SafeLog.w(TAG, "Unknown OAuth callback path: $path")
                 return false
             }
         }
@@ -70,16 +70,16 @@ object OAuthCallbackManager {
         // Trouver et exécuter le callback
         val callback = callbacks[providerType]
         if (callback == null) {
-            Log.w(TAG, "No callback registered for $providerType")
+            SafeLog.w(TAG, "No callback registered for $providerType")
             return false
         }
 
         return try {
             val success = callback(uri)
-            Log.d(TAG, "OAuth callback for $providerType: ${if (success) "SUCCESS" else "FAILED"}")
+            SafeLog.d(TAG, "OAuth callback for $providerType: ${if (success) "SUCCESS" else "FAILED"}")
             success
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling OAuth callback for $providerType", e)
+            SafeLog.e(TAG, "Error handling OAuth callback for $providerType", e)
             false
         }
     }
@@ -95,7 +95,7 @@ object OAuthCallbackManager {
      * Nettoyer tous les callbacks (utile pour les tests ou le cleanup)
      */
     fun clearAllCallbacks() {
-        Log.d(TAG, "Clearing all OAuth callbacks")
+        SafeLog.d(TAG, "Clearing all OAuth callbacks")
         callbacks.clear()
     }
 }

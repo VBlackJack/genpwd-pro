@@ -2,7 +2,7 @@ package com.julien.genpwdpro.presentation.screens.sync
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1233,7 +1233,7 @@ class SyncSettingsViewModel @Inject constructor(
 
             if (newAutoSync) {
                 // Activer la synchronisation automatique
-                Log.d(
+                SafeLog.d(
                     "SyncSettingsViewModel",
                     "Enabling auto-sync with interval: ${_uiState.value.config.syncInterval}"
                 )
@@ -1244,7 +1244,7 @@ class SyncSettingsViewModel @Inject constructor(
                 )
             } else {
                 // Désactiver la synchronisation automatique
-                Log.d("SyncSettingsViewModel", "Disabling auto-sync")
+                SafeLog.d("SyncSettingsViewModel", "Disabling auto-sync")
                 CloudSyncWorker.cancel(context)
             }
 
@@ -1262,7 +1262,7 @@ class SyncSettingsViewModel @Inject constructor(
 
             // Si auto-sync est activé, reprogrammer avec le nouvel intervalle
             if (_uiState.value.config.autoSync) {
-                Log.d("SyncSettingsViewModel", "Updating sync interval to: $interval")
+                SafeLog.d("SyncSettingsViewModel", "Updating sync interval to: $interval")
                 CloudSyncWorker.schedule(
                     context = context,
                     intervalMillis = interval,
@@ -1282,7 +1282,7 @@ class SyncSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(status = SyncStatus.SYNCING) }
-                Log.d("SyncSettingsViewModel", "Starting full sync...")
+                SafeLog.d("SyncSettingsViewModel", "Starting full sync...")
 
                 // Initialize SyncManager (ensures encryption key is ready)
                 syncManager.initialize()
@@ -1296,7 +1296,7 @@ class SyncSettingsViewModel @Inject constructor(
 
                 when (result) {
                     is SyncResult.Success -> {
-                        Log.d("SyncSettingsViewModel", "Sync successful")
+                        SafeLog.d("SyncSettingsViewModel", "Sync successful")
 
                         // Sauvegarder le timestamp de dernière sync
                         syncConfigDataStore.updateLastSyncTimestamp()
@@ -1309,7 +1309,7 @@ class SyncSettingsViewModel @Inject constructor(
                         }
                     }
                     is SyncResult.Conflict -> {
-                        Log.w("SyncSettingsViewModel", "Conflict detected during sync")
+                        SafeLog.w("SyncSettingsViewModel", "Conflict detected during sync")
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.CONFLICT,
@@ -1321,7 +1321,7 @@ class SyncSettingsViewModel @Inject constructor(
                         }
                     }
                     is SyncResult.Error -> {
-                        Log.e("SyncSettingsViewModel", "Sync error: ${result.message}")
+                        SafeLog.e("SyncSettingsViewModel", "Sync error: ${result.message}")
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.ERROR,
@@ -1333,7 +1333,7 @@ class SyncSettingsViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.e("SyncSettingsViewModel", "Sync failed with exception", e)
+                SafeLog.e("SyncSettingsViewModel", "Sync failed with exception", e)
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.ERROR,
@@ -1414,7 +1414,7 @@ class SyncSettingsViewModel @Inject constructor(
             val conflict = _uiState.value.currentConflict ?: return@launch
 
             try {
-                Log.d("SyncSettingsViewModel", "Resolving conflict with strategy: $strategy")
+                SafeLog.d("SyncSettingsViewModel", "Resolving conflict with strategy: $strategy")
 
                 // Résoudre le conflit
                 val resolved = syncManager.resolveConflict(conflict, strategy)
@@ -1427,13 +1427,13 @@ class SyncSettingsViewModel @Inject constructor(
                     val remoteSettings = syncManager.downloadSettings()
                     if (remoteSettings != null) {
                         settingsDataStore.saveSettings(remoteSettings)
-                        Log.d("SyncSettingsViewModel", "Applied remote settings")
+                        SafeLog.d("SyncSettingsViewModel", "Applied remote settings")
                     }
                 } else {
                     // Uploader les paramètres locaux
                     val currentSettings = settingsDataStore.settingsFlow.first()
                     syncManager.syncSettings(currentSettings)
-                    Log.d("SyncSettingsViewModel", "Uploaded local settings")
+                    SafeLog.d("SyncSettingsViewModel", "Uploaded local settings")
                 }
 
                 // Mettre à jour l'état
@@ -1445,7 +1445,7 @@ class SyncSettingsViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("SyncSettingsViewModel", "Error resolving conflict", e)
+                SafeLog.e("SyncSettingsViewModel", "Error resolving conflict", e)
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.ERROR,

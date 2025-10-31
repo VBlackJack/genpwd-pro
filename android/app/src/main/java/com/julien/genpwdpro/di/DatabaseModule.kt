@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.di
 
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -84,13 +84,13 @@ object DatabaseModule {
 
                         // Copier le fichier de base de données
                         dbFile.copyTo(backupFile, overwrite = false)
-                        Log.i("DatabaseModule", "Database backup created: ${backupFile.name}")
+                        SafeLog.i("DatabaseModule", "Database backup created: ${SafeLog.redact(backupFile.name)}")
 
                         // Nettoyer les backups trop anciens (garder seulement les 3 derniers)
                         cleanOldBackups(context, 3)
                     }
                 } catch (e: Exception) {
-                    Log.e("DatabaseModule", "Failed to create database backup", e)
+                    SafeLog.e("DatabaseModule", "Failed to create database backup", e)
                     // Ne pas bloquer l'ouverture de la DB si le backup échoue
                 }
             }
@@ -114,11 +114,11 @@ object DatabaseModule {
             // Supprimer les backups au-delà de keepCount
             backupFiles.drop(keepCount).forEach { file ->
                 if (file.delete()) {
-                    Log.d("DatabaseModule", "Deleted old backup: ${file.name}")
+                    SafeLog.d("DatabaseModule", "Deleted old backup: ${SafeLog.redact(file.name)}")
                 }
             }
         } catch (e: Exception) {
-            Log.e("DatabaseModule", "Failed to clean old backups", e)
+            SafeLog.e("DatabaseModule", "Failed to clean old backups", e)
         }
     }
 

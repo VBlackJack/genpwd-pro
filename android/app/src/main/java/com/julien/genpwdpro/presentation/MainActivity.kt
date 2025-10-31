@@ -3,7 +3,6 @@ package com.julien.genpwdpro.presentation
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -20,8 +19,8 @@ import com.julien.genpwdpro.domain.session.VaultStartupLocker
 import com.julien.genpwdpro.presentation.navigation.Screen
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
+import com.julien.genpwdpro.core.log.SafeLog
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 /**
@@ -56,11 +55,11 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch {
             val startupResult = vaultStartupLocker.secureStartup()
             if (!startupResult.isSecure) {
-                Log.w(
+                SafeLog.w(
                     TAG,
                     "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
                         "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
-                        "fallback=${startupResult.fallbackApplied}). Errors=${startupResult.errors}"
+                        "fallback=${startupResult.fallbackApplied}). Errors=${SafeLog.redact(startupResult.errors)}"
                 )
             }
 
@@ -79,7 +78,7 @@ class MainActivity : FragmentActivity() {
      */
     private fun handleInitialIntent(intent: Intent?): String {
         return if (intent?.getBooleanExtra(EXTRA_AUTOFILL_UNLOCK_REQUEST, false) == true) {
-            Log.d(TAG, "Intent d'autofill détecté, démarrage sur VaultManager.")
+            SafeLog.d(TAG, "Intent d'autofill détecté, démarrage sur VaultManager.")
             Screen.VaultManager.route
         } else {
             Screen.Dashboard.route
@@ -92,7 +91,7 @@ class MainActivity : FragmentActivity() {
     private fun setupSessionManagement() {
         lifecycleScope.launch {
             val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
-            Log.d(
+            SafeLog.d(
                 TAG,
                 "Vérification des sessions terminée après verrouillage initial (sessions nettoyées = $hasExpired)."
             )
@@ -147,17 +146,17 @@ class MainActivity : FragmentActivity() {
      * Gère les deep links OAuth2.
      */
     private fun handleOAuthDeepLink(uri: Uri) {
-        Log.d(TAG, "Deep link OAuth reçu: $uri")
+        SafeLog.d(TAG, "Deep link OAuth reçu: ${SafeLog.redact(uri)}")
         lifecycleScope.launch {
             try {
                 val handled = OAuthCallbackManager.handleCallback(uri)
                 if (handled) {
-                    Log.i(TAG, "Callback OAuth traité avec succès.")
+                    SafeLog.i(TAG, "Callback OAuth traité avec succès.")
                 } else {
-                    Log.w(TAG, "Callback OAuth non traité.")
+                    SafeLog.w(TAG, "Callback OAuth non traité.")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Erreur lors du traitement du callback OAuth.", e)
+                SafeLog.e(TAG, "Erreur lors du traitement du callback OAuth.", e)
             }
         }
     }

@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.sync
 
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.SyncManager
@@ -46,17 +46,17 @@ class SyncInitializer @Inject constructor(
      * Doit être appelé dans Application.onCreate()
      */
     fun initialize() {
-        Log.d(TAG, "Initializing sync system...")
+        SafeLog.d(TAG, "Initializing sync system...")
 
         scope.launch {
             try {
                 // 1. Initialiser SyncManager (clé de chiffrement)
                 syncManager.initialize()
-                Log.d(TAG, "SyncManager initialized")
+                SafeLog.d(TAG, "SyncManager initialized")
 
                 // 2. Charger la configuration sauvegardée
                 val config = syncConfigDataStore.syncConfigFlow.first()
-                Log.d(
+                SafeLog.d(
                     TAG,
                     "Loaded sync config: enabled=${config.enabled}, provider=${config.providerType}, autoSync=${config.autoSync}"
                 )
@@ -73,12 +73,12 @@ class SyncInitializer @Inject constructor(
                         intervalMillis = config.syncInterval,
                         wifiOnly = config.syncOnWifiOnly
                     )
-                    Log.d(TAG, "Auto-sync scheduled: interval=${config.syncInterval}ms")
+                    SafeLog.d(TAG, "Auto-sync scheduled: interval=${config.syncInterval}ms")
                 }
 
-                Log.i(TAG, "Sync system initialized successfully")
+                SafeLog.i(TAG, "Sync system initialized successfully")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize sync system", e)
+                SafeLog.e(TAG, "Failed to initialize sync system", e)
             }
         }
     }
@@ -88,7 +88,7 @@ class SyncInitializer @Inject constructor(
      */
     private suspend fun restoreProvider(providerType: CloudProviderType) {
         try {
-            Log.d(TAG, "Restoring provider: $providerType")
+            SafeLog.d(TAG, "Restoring provider: $providerType")
 
             // Les credentials sont déjà chargés par les providers via ProviderCredentialManager
             // On doit juste créer l'instance du provider qui chargera automatiquement ses credentials
@@ -100,12 +100,12 @@ class SyncInitializer @Inject constructor(
                 CloudProviderType.ONEDRIVE -> {
                     // OneDrive nécessite un clientId - on le récupère des credentials ou config
                     // Pour l'instant on skip car on n'a pas sauvegardé le clientId
-                    Log.w(TAG, "OneDrive provider restoration not yet implemented (needs clientId)")
+                    SafeLog.w(TAG, "OneDrive provider restoration not yet implemented (needs clientId)")
                     null
                 }
                 CloudProviderType.PCLOUD -> {
                     // pCloud nécessite appKey et appSecret - on skip pour l'instant
-                    Log.w(
+                    SafeLog.w(
                         TAG,
                         "pCloud provider restoration not yet implemented (needs appKey/appSecret)"
                     )
@@ -113,7 +113,7 @@ class SyncInitializer @Inject constructor(
                 }
                 CloudProviderType.PROTON_DRIVE -> {
                     // ProtonDrive nécessite clientId et clientSecret - on skip pour l'instant
-                    Log.w(
+                    SafeLog.w(
                         TAG,
                         "ProtonDrive provider restoration not yet implemented (needs clientId/clientSecret)"
                     )
@@ -121,14 +121,14 @@ class SyncInitializer @Inject constructor(
                 }
                 CloudProviderType.WEBDAV -> {
                     // WebDAV nécessite URL, username, password - on skip pour l'instant
-                    Log.w(
+                    SafeLog.w(
                         TAG,
                         "WebDAV provider restoration not yet implemented (needs credentials)"
                     )
                     null
                 }
                 else -> {
-                    Log.w(TAG, "Unknown provider type: $providerType")
+                    SafeLog.w(TAG, "Unknown provider type: $providerType")
                     null
                 }
             }
@@ -137,12 +137,12 @@ class SyncInitializer @Inject constructor(
                 // Les tokens OAuth2 sont automatiquement chargés via ProviderCredentialManager
                 // On définit juste le provider comme actif
                 cloudRepository.setActiveProvider(providerType, provider)
-                Log.i(TAG, "Provider restored successfully: $providerType")
+                SafeLog.i(TAG, "Provider restored successfully: $providerType")
             } else {
-                Log.w(TAG, "Could not restore provider: $providerType (not yet implemented)")
+                SafeLog.w(TAG, "Could not restore provider: $providerType (not yet implemented)")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to restore provider: $providerType", e)
+            SafeLog.e(TAG, "Failed to restore provider: $providerType", e)
         }
     }
 }

@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.entity.VaultEntity
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.domain.session.SessionManager
@@ -215,7 +216,7 @@ class VaultViewModel @Inject constructor(
         return try {
             vaultRepository.saveBiometricPassword(vaultId, masterPassword)
         } catch (e: Exception) {
-            android.util.Log.e("VaultViewModel", "Error saving biometric password", e)
+            SafeLog.e("VaultViewModel", "Error saving biometric password", e)
             false
         }
     }

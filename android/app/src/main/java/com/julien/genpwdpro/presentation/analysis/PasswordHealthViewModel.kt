@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation.analysis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.entity.EntryType
 import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,7 +95,10 @@ class PasswordHealthViewModel @Inject constructor(
                                 }
                             } catch (e: Exception) {
                                 // Ignorer les erreurs de vérification individuelles
-                                android.util.Log.e("PasswordHealth", "Error checking password: ${e.message}")
+                                com.julien.genpwdpro.core.log.SafeLog.e(
+                                    "PasswordHealth",
+                                    "Error checking password: ${e.message}"
+                                )
                             }
                         }
                     }

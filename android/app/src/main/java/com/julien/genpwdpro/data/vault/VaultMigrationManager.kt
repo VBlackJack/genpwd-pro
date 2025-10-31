@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.vault
 
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.db.dao.FolderDao
 import com.julien.genpwdpro.data.db.dao.PresetDao
@@ -93,14 +93,14 @@ class VaultMigrationManager @Inject constructor(
         // Vérifier si migration déjà effectuée
         val prefs = context.getSharedPreferences("vault_migration", Context.MODE_PRIVATE)
         if (prefs.getBoolean(MIGRATION_PREF_KEY, false)) {
-            Log.d(TAG, "Migration already completed")
+            SafeLog.d(TAG, "Migration already completed")
             return false
         }
 
         // Compter les vaults dans Room
         val roomVaults = vaultDao.getAllVaults().first()
         if (roomVaults.isEmpty()) {
-            Log.d(TAG, "No vaults in Room, migration not needed")
+            SafeLog.d(TAG, "No vaults in Room, migration not needed")
             return false
         }
 
@@ -108,7 +108,7 @@ class VaultMigrationManager @Inject constructor(
         val registryVaults = vaultRegistryDao.getAllVaults().first()
 
         val needed = registryVaults.isEmpty()
-        Log.d(
+        SafeLog.d(
             TAG,
             "Migration needed: $needed (Room: ${roomVaults.size}, Registry: ${registryVaults.size})"
         )
@@ -133,7 +133,7 @@ class VaultMigrationManager @Inject constructor(
             progressCallback.notify(MigrationStatus.BACKING_UP, total = roomVaults.size)
 
             val backupDir = createBackup(roomVaults)
-            Log.i(TAG, "Backup created at: ${backupDir.absolutePath}")
+            SafeLog.i(TAG, "Backup created at: ${SafeLog.redact(backupDir.absolutePath)}")
 
             val migratedCount = migrateVaults(roomVaults, masterPasswords, progressCallback)
 
@@ -143,13 +143,13 @@ class VaultMigrationManager @Inject constructor(
                 total = roomVaults.size,
                 current = roomVaults.size
             )
-            Log.i(
+            SafeLog.i(
                 TAG,
                 "Migration completed: $migratedCount/${roomVaults.size} vaults migrated"
             )
             MigrationResult.Success(migratedCount)
         } catch (exception: Exception) {
-            Log.e(TAG, "Migration failed", exception)
+            SafeLog.e(TAG, "Migration failed", exception)
             progressCallback.notify(
                 status = MigrationStatus.ERROR,
                 total = 0,
@@ -165,7 +165,7 @@ class VaultMigrationManager @Inject constructor(
             return null
         }
         val roomVaults = vaultDao.getAllVaults().first()
-        Log.i(TAG, "Starting migration of ${roomVaults.size} vaults")
+        SafeLog.i(TAG, "Starting migration of ${roomVaults.size} vaults")
         return roomVaults
     }
 
@@ -178,7 +178,10 @@ class VaultMigrationManager @Inject constructor(
         roomVaults.forEachIndexed { index, vaultEntity ->
             val masterPassword = masterPasswords[vaultEntity.id]
             if (masterPassword == null) {
-                Log.w(TAG, "Skipping vault ${vaultEntity.name} - no password provided")
+                SafeLog.w(
+                    TAG,
+                    "Skipping vault ${SafeLog.redact(vaultEntity.id)} - no password provided"
+                )
                 return@forEachIndexed
             }
 
@@ -191,9 +194,9 @@ class VaultMigrationManager @Inject constructor(
 
             if (migrateVault(vaultEntity, masterPassword)) {
                 migratedCount++
-                Log.i(TAG, "Migrated vault: ${vaultEntity.name}")
+                SafeLog.i(TAG, "Migrated vault: ${SafeLog.redact(vaultEntity.id)}")
             } else {
-                Log.e(TAG, "Failed to migrate vault: ${vaultEntity.name}")
+                SafeLog.e(TAG, "Failed to migrate vault: ${SafeLog.redact(vaultEntity.id)}")
             }
         }
         return migratedCount
@@ -214,7 +217,7 @@ class VaultMigrationManager @Inject constructor(
                 encryptedKey = vaultEntity.encryptedKey,
                 keyIv = vaultEntity.keyIv
             ) ?: run {
-                Log.e(TAG, "Failed to unlock vault: ${vaultEntity.name}")
+                SafeLog.e(TAG, "Failed to unlock vault: ${SafeLog.redact(vaultEntity.id)}")
                 return false
             }
 
@@ -248,10 +251,13 @@ class VaultMigrationManager @Inject constructor(
 
             vaultRegistryDao.insert(registryEntry)
 
-            Log.d(TAG, "Successfully migrated vault: ${vaultEntity.name} (${file.length()} bytes)")
+            SafeLog.d(
+                TAG,
+                "Successfully migrated vault: ${SafeLog.redact(vaultEntity.id)} (${file.length()} bytes)"
+            )
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Error migrating vault: ${vaultEntity.name}", e)
+            SafeLog.e(TAG, "Error migrating vault: ${SafeLog.redact(vaultEntity.id)}", e)
             false
         }
     }
@@ -332,7 +338,7 @@ class VaultMigrationManager @Inject constructor(
 
         backupFile.writeText(gson.toJson(backupData))
 
-        Log.i(TAG, "Backup created: ${backupFile.absolutePath}")
+        SafeLog.i(TAG, "Backup created: ${SafeLog.redact(backupFile.absolutePath)}")
         return backupFile
     }
 

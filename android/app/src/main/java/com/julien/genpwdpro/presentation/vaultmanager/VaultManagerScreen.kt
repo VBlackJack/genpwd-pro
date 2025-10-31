@@ -21,6 +21,7 @@ import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.presentation.utils.SecureWindow
+import com.julien.genpwdpro.core.log.SafeLog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -525,13 +526,23 @@ fun CreateVaultDialog(
                     androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
 
-            android.util.Log.d("CreateVaultDialog", "Biometric STRONG: $strongResult")
-            android.util.Log.d("CreateVaultDialog", "Biometric WEAK|CREDENTIAL: $weakResult")
+            com.julien.genpwdpro.core.log.SafeLog.d(
+                "CreateVaultDialog",
+                "Biometric STRONG: $strongResult"
+            )
+            com.julien.genpwdpro.core.log.SafeLog.d(
+                "CreateVaultDialog",
+                "Biometric WEAK|CREDENTIAL: $weakResult"
+            )
 
             strongResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS ||
                 weakResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
-            android.util.Log.e("CreateVaultDialog", "Error checking biometric availability", e)
+            com.julien.genpwdpro.core.log.SafeLog.e(
+                "CreateVaultDialog",
+                "Error checking biometric availability",
+                e
+            )
             false
         }
     }

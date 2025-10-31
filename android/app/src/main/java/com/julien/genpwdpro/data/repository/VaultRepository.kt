@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.data.repository
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.local.dao.*
 import com.julien.genpwdpro.data.local.entity.*
@@ -269,7 +269,7 @@ class VaultRepository @Inject constructor(
             vaultDao.update(updatedVault)
             true
         } catch (e: Exception) {
-            Log.e("VaultRepository", "Error saving biometric password", e)
+            SafeLog.e("VaultRepository", "Error saving biometric password", e)
             false
         }
     }
@@ -286,7 +286,7 @@ class VaultRepository @Inject constructor(
 
             // Vérifier que les données biométriques existent
             if (vault.encryptedMasterPassword == null || vault.masterPasswordIv == null) {
-                Log.w("VaultRepository", "No biometric data for vault $vaultId")
+                SafeLog.w("VaultRepository", "No biometric data for vault ${SafeLog.redact(vaultId)}")
                 return null
             }
 
@@ -302,7 +302,7 @@ class VaultRepository @Inject constructor(
 
             String(decrypted, Charsets.UTF_8)
         } catch (e: Exception) {
-            Log.e("VaultRepository", "Error getting biometric password", e)
+            SafeLog.e("VaultRepository", "Error getting biometric password", e)
             null
         }
     }
@@ -329,7 +329,7 @@ class VaultRepository @Inject constructor(
 
             vaultDao.update(updatedVault)
         } catch (e: Exception) {
-            Log.e("VaultRepository", "Error clearing biometric password", e)
+            SafeLog.e("VaultRepository", "Error clearing biometric password", e)
         }
     }
 
@@ -1133,7 +1133,7 @@ class VaultRepository @Inject constructor(
             // Combiner IV + données chiffrées
             iv + encryptedData
         } catch (e: Exception) {
-            Log.e("VaultRepository", "Error exporting vault", e)
+            SafeLog.e("VaultRepository", "Error exporting vault", e)
             null
         }
     }
@@ -1178,7 +1178,7 @@ class VaultRepository @Inject constructor(
             val existingVault = vaultDao.getById(importData.vault.id)
             if (existingVault != null) {
                 // Vault déjà importé, mettre à jour
-                Log.d("VaultRepository", "Vault already exists, updating...")
+                SafeLog.d("VaultRepository", "Vault already exists, updating...")
             }
 
             // Créer le vault avec les mêmes paramètres cryptographiques
@@ -1281,7 +1281,7 @@ class VaultRepository @Inject constructor(
 
             true
         } catch (e: Exception) {
-            Log.e("VaultRepository", "Error importing vault", e)
+            SafeLog.e("VaultRepository", "Error importing vault", e)
             false
         }
     }
@@ -1373,7 +1373,7 @@ class VaultRepository @Inject constructor(
         if (!preset.isSystemPreset) {
             val existingCount = presetDao.countCustomPresetsByMode(vaultId, preset.generationMode.name)
             if (existingCount >= 3) {
-                Log.w("VaultRepository", "Cannot create preset: limit of 3 per mode reached")
+                SafeLog.w("VaultRepository", "Cannot create preset: limit of 3 per mode reached")
                 return null
             }
         }
@@ -1459,7 +1459,10 @@ class VaultRepository @Inject constructor(
     fun getPresets(vaultId: String): Flow<List<DecryptedPreset>> {
         // Vérifier si le vault est déverrouillé
         if (!isVaultUnlocked(vaultId)) {
-            Log.w("VaultRepository", "Attempted to get presets for locked vault: $vaultId")
+            SafeLog.w(
+                "VaultRepository",
+                "Attempted to get presets for locked vault: ${SafeLog.redact(vaultId)}"
+            )
             return kotlinx.coroutines.flow.flowOf(emptyList())
         }
 
@@ -1506,7 +1509,7 @@ class VaultRepository @Inject constructor(
         if (entity != null && !entity.isSystemPreset) {
             presetDao.delete(entity)
         } else {
-            Log.w("VaultRepository", "Cannot delete system preset")
+            SafeLog.w("VaultRepository", "Cannot delete system preset")
         }
     }
 
@@ -1538,7 +1541,7 @@ class VaultRepository @Inject constructor(
         // Vérifier si un preset par défaut existe déjà
         val existing = presetDao.getDefaultPreset(vaultId)
         if (existing != null) {
-            Log.d("VaultRepository", "Default preset already exists for vault $vaultId")
+            SafeLog.d("VaultRepository", "Default preset already exists for vault ${SafeLog.redact(vaultId)}")
             return
         }
 
@@ -1566,7 +1569,7 @@ class VaultRepository @Inject constructor(
         )
 
         createPreset(vaultId, defaultPreset)
-        Log.d("VaultRepository", "Default preset initialized for vault $vaultId")
+        SafeLog.d("VaultRepository", "Default preset initialized for vault ${SafeLog.redact(vaultId)}")
     }
 
     /**

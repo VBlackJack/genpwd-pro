@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.models.*
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
@@ -63,7 +64,7 @@ class GeneratorViewModel @Inject constructor(
             try {
                 // Vérifier que le vault est déverrouillé
                 if (!vaultSessionManager.isVaultUnlocked()) {
-                    android.util.Log.w("GeneratorViewModel", "Cannot load presets: Vault not unlocked")
+                    SafeLog.w("GeneratorViewModel", "Cannot load presets: Vault not unlocked")
                     return@launch
                 }
 
@@ -81,7 +82,11 @@ class GeneratorViewModel @Inject constructor(
                                 com.julien.genpwdpro.data.models.Settings::class.java
                             )
                         } catch (e: Exception) {
-                            android.util.Log.e("GeneratorViewModel", "Failed to parse settings for preset ${entity.id}", e)
+                            SafeLog.e(
+                                "GeneratorViewModel",
+                                "Failed to parse settings for preset ${SafeLog.redact(entity.id)}",
+                                e
+                            )
                             corruptedPresets.add(entity.encryptedName)
                             null
                         }
@@ -120,7 +125,7 @@ class GeneratorViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("GeneratorViewModel", "Error loading presets: ${e.message}", e)
+                SafeLog.e("GeneratorViewModel", "Error loading presets: ${e.message}", e)
                 _uiState.update {
                     it.copy(error = "Erreur lors du chargement des presets: ${e.message}")
                 }
@@ -148,7 +153,7 @@ class GeneratorViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("GeneratorViewModel", "Failed to record preset usage: ${e.message}")
+                SafeLog.e("GeneratorViewModel", "Failed to record preset usage: ${e.message}")
             }
         }
     }
