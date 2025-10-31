@@ -1,0 +1,48 @@
+🔍 URGENT: GenPwd Pro - Room Migration Schema Mismatch
+
+CONTEXT:
+- Android app (GenPwd Pro) has red error messages after installing APK
+- Issue: vault_registry table migration (v5→v6) schema mismatch
+- APK builds successfully but fails at runtime on device
+- Branch: claude/android-ux-design-011CUXbWzXbED17n7GUmyX47
+
+PROBLEM:
+Room database error - expected schema ≠ detected schema for vault_registry table
+
+FILES TO ANALYZE:
+1. android/app/src/main/java/com/julien/genpwdpro/data/local/database/AppDatabase.kt (lines 240-279)
+   - MIGRATION_5_6 SQL CREATE TABLE statement
+
+2. android/app/src/main/java/com/julien/genpwdpro/data/local/entity/VaultRegistryEntry.kt
+   - Entity definition with @Embedded VaultStatistics
+
+3. android/app/src/main/java/com/julien/genpwdpro/data/models/vault/VaultData.kt
+   - VaultStatistics data class (5 fields)
+
+KEY ISSUE:
+VaultRegistryEntry uses @Embedded for VaultStatistics:
+- entryCount: Int
+- folderCount: Int
+- presetCount: Int
+- tagCount: Int
+- totalSize: Long  ← Potential mismatch (Long vs INTEGER)
+
+MIGRATION_5_6 creates columns as INTEGER for all stats fields.
+Room may expect different type affinity for Long.
+
+TASKS:
+1. Read all 3 files above
+2. Compare SQL column order vs entity field order
+3. Check if INTEGER type is correct for Kotlin Long
+4. Verify @Embedded fields match SQL (5 columns)
+5. Provide corrected MIGRATION_5_6 code
+
+EXPECTED OUTPUT:
+- Root cause explanation
+- Column-by-column comparison table
+- Fixed migration code
+- Alternative solution if needed
+
+PROJECT PATH: C:\dev\genpwd-pro\android
+
+Please analyze and provide the fix for the schema mismatch.

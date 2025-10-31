@@ -110,6 +110,11 @@ sealed class Screen(val route: String) {
     object ChangeMasterPassword : Screen("change_master_password/{vaultId}") {
         fun createRoute(vaultId: String) = "change_master_password/$vaultId"
     }
+
+    // Password Health Analysis
+    object PasswordHealth : Screen("password_health/{vaultId}") {
+        fun createRoute(vaultId: String) = "password_health/$vaultId"
+    }
 }
 
 /**
@@ -319,6 +324,9 @@ fun AppNavGraph(
                 onChangeMasterPasswordClick = {
                     navController.navigate(Screen.ChangeMasterPassword.createRoute(vaultId))
                 },
+                onPasswordHealthClick = {
+                    navController.navigate(Screen.PasswordHealth.createRoute(vaultId))
+                },
                 onVaultManagerClick = {
                     navController.navigate(Screen.VaultManager.route) {
                         popUpTo(Screen.Dashboard.route) {
@@ -493,6 +501,24 @@ fun AppNavGraph(
                             inclusive = true
                         }
                     }
+                }
+            )
+        }
+
+        // ========== Password Health Analysis ==========
+        composable(
+            route = Screen.PasswordHealth.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            com.julien.genpwdpro.presentation.analysis.PasswordHealthScreen(
+                vaultId = vaultId,
+                onBackClick = { navController.popBackStack() },
+                onEntryClick = { entryId ->
+                    navController.navigate(Screen.EditEntry.createRoute(vaultId, entryId))
                 }
             )
         }

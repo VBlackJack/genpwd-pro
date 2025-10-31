@@ -32,6 +32,7 @@ fun VaultListScreen(
     onPresetsClick: () -> Unit = {},
     onChangeMasterPasswordClick: () -> Unit = {},
     onVaultManagerClick: () -> Unit = {},
+    onPasswordHealthClick: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
@@ -216,6 +217,14 @@ fun VaultListScreen(
                                         showOverflowMenu = false
                                     },
                                     leadingIcon = { Icon(Icons.Default.ImportExport, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Santé des mots de passe") },
+                                    onClick = {
+                                        onPasswordHealthClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.HealthAndSafety, null) }
                                 )
                                 Divider()
                                 DropdownMenuItem(
