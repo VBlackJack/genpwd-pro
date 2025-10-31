@@ -1,7 +1,6 @@
 package com.julien.genpwdpro.data.repository
 
 import androidx.fragment.app.FragmentActivity
-import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
@@ -12,11 +11,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
 /**
  * Repository pour les opérations sur les vaults file-based
@@ -44,9 +39,7 @@ import kotlinx.coroutines.flow.map
 class FileVaultRepository @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val biometricVaultManager: BiometricVaultManager,
-    private val legacyVaultRepository: VaultRepository,
-    @Named("legacy_sync_enabled") private val legacySyncEnabled: Boolean
+    private val biometricVaultManager: BiometricVaultManager
 ) {
 
     // ========== Entry Operations ==========
@@ -498,33 +491,14 @@ class FileVaultRepository @Inject constructor(
      * @return Result.success si déverrouillé, Result.failure si erreur
      */
     suspend fun unlockVault(vaultId: String, masterPassword: String): Result<Unit> {
-        val result = vaultSessionManager.unlockVault(vaultId, masterPassword)
-
-        if (result.isSuccess) {
-            syncLegacyRepositoryUnlock(vaultId, masterPassword)
-        }
-
-        return result
+        return vaultSessionManager.unlockVault(vaultId, masterPassword)
     }
 
     /**
      * Verrouille le vault actuel
      */
     suspend fun lockVault() {
-        val currentVaultId = vaultSessionManager.getCurrentVaultId()
         vaultSessionManager.lockVault()
-
-        currentVaultId?.let { vaultId ->
-            if (!legacySyncEnabled) {
-                SafeLog.d(TAG, "Skipping legacy lock sync for vault $vaultId (flag disabled)")
-                return@let
-            }
-            try {
-                legacyVaultRepository.lockVault(vaultId)
-            } catch (e: Exception) {
-                SafeLog.e(TAG, "Failed to sync legacy lock for vault $vaultId", e)
-            }
-        }
     }
 
     /**
@@ -550,11 +524,7 @@ class FileVaultRepository @Inject constructor(
 
         return passwordResult.fold(
             onSuccess = { masterPassword ->
-                val unlockResult = vaultSessionManager.unlockVault(vaultId, masterPassword)
-                if (unlockResult.isSuccess) {
-                    syncLegacyRepositoryUnlock(vaultId, masterPassword)
-                }
-                unlockResult
+                vaultSessionManager.unlockVault(vaultId, masterPassword)
             },
             onFailure = { error -> Result.failure(error) }
         )
@@ -585,23 +555,4 @@ class FileVaultRepository @Inject constructor(
         return biometricVaultManager.isBiometricAvailable()
     }
 
-    private suspend fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
-        if (!legacySyncEnabled) {
-            SafeLog.d(TAG, "Legacy sync disabled by feature flag")
-            return
-        }
-
-        try {
-            val success = legacyVaultRepository.unlockVault(vaultId, masterPassword)
-            if (!success) {
-                SafeLog.w(TAG, "Legacy repository did not unlock vault $vaultId")
-            }
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to sync legacy unlock for vault $vaultId", e)
-        }
-    }
-
-    companion object {
-        private const val TAG = "FileVaultRepository"
-    }
 }

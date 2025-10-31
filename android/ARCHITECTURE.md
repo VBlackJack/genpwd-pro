@@ -157,9 +157,10 @@ data class PasswordHistoryEntity(
 - Générateur rapide du Dashboard
 - Statistiques de génération
 
-### Entités Legacy (DEBUG uniquement)
+### Entités Legacy (conservées pour migration)
 
-Les entités suivantes sont **désactivées en production** :
+Les artefacts Room historiques demeurent dans le dépôt pour faciliter les migrations ponctuelles et la rétro-ingénierie des
+anciens coffres :
 
 - `VaultEntity` - Ancien système de vault Room
 - `VaultEntryEntity` - Anciennes entrées Room
@@ -167,16 +168,8 @@ Les entités suivantes sont **désactivées en production** :
 - `TagEntity` - Anciens tags Room
 - `PresetEntity` - Anciens presets Room
 
-**Flag de contrôle :**
-```kotlin
-@Named("legacy_sync_enabled")
-fun provideLegacySyncFlag(): Boolean = BuildConfig.DEBUG
-```
-
-**Raison de conservation :**
-- Migration des anciennes données utilisateurs (si besoin)
-- Tests de compatibilité
-- Possibilité de rollback en cas d'urgence
+Ils ne sont plus injectés dans Hilt ni accessibles en runtime. Toute réutilisation nécessite un wiring manuel explicite dans une
+branche dédiée à la migration.
 
 ---
 

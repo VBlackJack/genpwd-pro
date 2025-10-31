@@ -24,7 +24,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -235,26 +234,4 @@ object DatabaseModule {
         return kotlinx.coroutines.Dispatchers.IO
     }
 
-    /**
-     * Flag pour activer les fonctionnalités legacy de synchronisation
-     *
-     * Fixed: Retourne toujours false pour éviter d'exposer des fonctionnalités
-     * potentiellement non sécurisées en production.
-     *
-     * Si vous avez besoin d'activer le legacy sync:
-     * 1. Créer un BuildConfigField dans build.gradle
-     * 2. Utiliser un flag de configuration utilisateur (SharedPreferences)
-     * 3. Ne JAMAIS laisser BuildConfig.DEBUG en production
-     *
-     * @deprecated Legacy sync system - devrait être migré vers le nouveau système
-     */
-    @Deprecated("Legacy sync system - use new file-based sync instead")
-    @Provides
-    @Singleton
-    @Named("legacy_sync_enabled")
-    fun provideLegacySyncFlag(): Boolean {
-        // Fixed: Toujours false, même en debug
-        // Le mode debug ne doit pas activer des fonctionnalités non sécurisées
-        return false
-    }
 }

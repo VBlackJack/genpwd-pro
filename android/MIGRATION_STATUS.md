@@ -16,8 +16,8 @@ La migration du système de stockage **Room-based** (SQLite) vers le système **
 - ✅ Architecture → `FileVaultRepository` + `VaultSessionManager`
 
 **Système legacy :**
-- ⚠️ Entités Room de vaults (`VaultEntity`, `VaultEntryEntity`, etc.) → **DEBUG uniquement**
-- ⚠️ Flag de contrôle : `@Named("legacy_sync_enabled") = BuildConfig.DEBUG`
+- ⚠️ Entités Room de vaults (`VaultEntity`, `VaultEntryEntity`, etc.) conservées pour migration manuelle
+- ℹ️ Non câblé dans les builds runtime (aucun flag Hilt)
 
 ---
 
@@ -68,14 +68,14 @@ La migration du système de stockage **Room-based** (SQLite) vers le système **
 
 | Composant | Fichier | Statut |
 |-----------|---------|--------|
-| VaultRepository | `data/repository/VaultRepository.kt` | ⚠️ DEBUG only |
-| VaultEntity | `data/db/entity/VaultEntity.kt` | ⚠️ DEBUG only |
-| VaultEntryEntity | `data/db/entity/VaultEntryEntity.kt` | ⚠️ DEBUG only |
-| FolderEntity | `data/db/entity/FolderEntity.kt` | ⚠️ DEBUG only |
-| TagEntity | `data/db/entity/TagEntity.kt` | ⚠️ DEBUG only |
-| PresetEntity | `data/db/entity/PresetEntity.kt` | ⚠️ DEBUG only |
-| VaultDao | `data/db/dao/VaultDao.kt` | ⚠️ DEBUG only |
-| VaultEntryDao | `data/db/dao/VaultEntryDao.kt` | ⚠️ DEBUG only |
+| VaultRepository | `data/repository/VaultRepository.kt` | ⚠️ Conservé (hors injection) |
+| VaultEntity | `data/db/entity/VaultEntity.kt` | ⚠️ Conservé (hors injection) |
+| VaultEntryEntity | `data/db/entity/VaultEntryEntity.kt` | ⚠️ Conservé (hors injection) |
+| FolderEntity | `data/db/entity/FolderEntity.kt` | ⚠️ Conservé (hors injection) |
+| TagEntity | `data/db/entity/TagEntity.kt` | ⚠️ Conservé (hors injection) |
+| PresetEntity | `data/db/entity/PresetEntity.kt` | ⚠️ Conservé (hors injection) |
+| VaultDao | `data/db/dao/VaultDao.kt` | ⚠️ Conservé (hors injection) |
+| VaultEntryDao | `data/db/dao/VaultEntryDao.kt` | ⚠️ Conservé (hors injection) |
 
 **Raison de conservation :**
 - Migration de données pour anciens utilisateurs (si nécessaire)
@@ -255,8 +255,8 @@ La migration du système de stockage **Room-based** (SQLite) vers le système **
 3. **Nettoyage du code legacy**
    - [ ] Supprimer entités Room inutilisées (après période de grâce)
    - [ ] Supprimer DAOs inutilisés
-   - [ ] Nettoyer DatabaseModule.kt
-   - [ ] Mettre à jour les tests
+   - [x] Nettoyer DatabaseModule.kt
+   - [x] Mettre à jour les tests
 
 4. **Optimisations**
    - [ ] Compression des fichiers .gpv (gzip optionnel)

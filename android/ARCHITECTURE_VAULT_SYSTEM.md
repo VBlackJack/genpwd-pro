@@ -165,8 +165,7 @@ Système basé sur des fichiers `.gpv` (GenPwd Vault) chiffrés en JSON, stocké
 
 **Room (Legacy)** :
 - ❌ **N'est PLUS utilisé pour les vaults en production**
-- ⚠️ Actif uniquement en mode DEBUG (`legacy_sync_enabled = BuildConfig.DEBUG`)
-- ✅ Conservé pour migration des anciens utilisateurs (outil en développement)
+- ⚠️ Conservé dans le dépôt pour migration des anciens utilisateurs (outil en développement)
 - ✅ Utilisé uniquement pour métadonnées : `VaultRegistryEntry`, `PasswordHistoryEntity`
 
 **File-Based (Nouveau)** :
