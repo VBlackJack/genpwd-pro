@@ -10,6 +10,7 @@ import com.julien.genpwdpro.data.models.vault.VaultData
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.domain.exceptions.VaultException
+import com.julien.genpwdpro.security.KeystoreManager
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import javax.crypto.SecretKey
@@ -46,7 +47,8 @@ import kotlinx.coroutines.flow.*
 class VaultSessionManager @Inject constructor(
     private val vaultFileManager: VaultFileManager,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager
+    private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager,
+    private val keystoreManager: KeystoreManager
 ) {
     companion object {
         private const val TAG = "VaultSessionManager"
@@ -94,7 +96,52 @@ class VaultSessionManager @Inject constructor(
     val activeVaultId: StateFlow<String?> = _activeVaultId.asStateFlow()
 
     // Scope pour les coroutines de session
-    private val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var sessionScope = newSessionScope()
+
+    private fun newSessionScope(): CoroutineScope {
+        return CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    }
+
+    private suspend fun persistSessionMutation(
+        session: VaultSession,
+        operationName: String,
+        mutate: (VaultData) -> VaultData,
+        successLog: () -> Unit = {}
+    ): Result<Unit> {
+        val previousData = session.vaultData.value
+        return try {
+            val updatedData = mutate(previousData)
+            session.updateData(updatedData)
+
+            val saveResult = saveCurrentVault()
+            if (saveResult.isFailure) {
+                session.updateData(previousData)
+                val cause = saveResult.exceptionOrNull()
+                SafeLog.e(
+                    TAG,
+                    "Failed to save vault after $operationName: vaultId=${SafeLog.redact(session.vaultId)}",
+                    cause
+                )
+                Result.failure(
+                    VaultException.SaveFailed(
+                        message = "Failed to save vault after $operationName.",
+                        cause = cause
+                    )
+                )
+            } else {
+                resetAutoLockTimer()
+                successLog()
+                Result.success(Unit)
+            }
+        } catch (e: CancellationException) {
+            session.updateData(previousData)
+            throw e
+        } catch (e: Exception) {
+            session.updateData(previousData)
+            SafeLog.e(TAG, "Failed to $operationName", e)
+            Result.failure(e)
+        }
+    }
 
     /**
      * Vérifie si un vault est actuellement déverrouillé
@@ -392,26 +439,19 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedEntries = currentData.entries + entry
-
-            val updatedData = currentData.copy(entries = updatedEntries)
-            session.updateData(updatedData)
-
-            // Auto-save
-            saveCurrentVault()
-
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Entry added: entryId=${SafeLog.redact(entry.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to add entry", e)
-            Result.failure(e)
-        }
+        return persistSessionMutation(
+            session = session,
+            operationName = "add entry ${SafeLog.redact(entry.id)}",
+            mutate = { currentData ->
+                currentData.copy(entries = currentData.entries + entry)
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Entry added: entryId=${SafeLog.redact(entry.id)}"
+                )
+            }
+        )
     }
 
     /**
@@ -421,28 +461,23 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedEntries = currentData.entries.map {
-                if (it.id == entry.id) entry else it
+        return persistSessionMutation(
+            session = session,
+            operationName = "update entry ${SafeLog.redact(entry.id)}",
+            mutate = { currentData ->
+                currentData.copy(
+                    entries = currentData.entries.map { existing ->
+                        if (existing.id == entry.id) entry else existing
+                    }
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Entry updated: entryId=${SafeLog.redact(entry.id)}"
+                )
             }
-
-            val updatedData = currentData.copy(entries = updatedEntries)
-            session.updateData(updatedData)
-
-            // Auto-save
-            saveCurrentVault()
-
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Entry updated: entryId=${SafeLog.redact(entry.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to update entry", e)
-            Result.failure(e)
-        }
+        )
     }
 
     /**
@@ -452,32 +487,25 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedEntries = currentData.entries.filter { it.id != entryId }
+        return persistSessionMutation(
+            session = session,
+            operationName = "delete entry ${SafeLog.redact(entryId)}",
+            mutate = { currentData ->
+                val updatedEntries = currentData.entries.filter { it.id != entryId }
+                val updatedEntryTags = currentData.entryTags.filter { it.entryId != entryId }
 
-            // Supprimer aussi les associations de tags
-            val updatedEntryTags = currentData.entryTags.filter { it.entryId != entryId }
-
-            val updatedData = currentData.copy(
-                entries = updatedEntries,
-                entryTags = updatedEntryTags
-            )
-            session.updateData(updatedData)
-
-            // Auto-save
-            saveCurrentVault()
-
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Entry deleted: entryId=${SafeLog.redact(entryId)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to delete entry", e)
-            Result.failure(e)
-        }
+                currentData.copy(
+                    entries = updatedEntries,
+                    entryTags = updatedEntryTags
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Entry deleted: entryId=${SafeLog.redact(entryId)}"
+                )
+            }
+        )
     }
 
     // ========== Folder Operations ==========
@@ -503,24 +531,19 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedFolders = currentData.folders + folder
-
-            val updatedData = currentData.copy(folders = updatedFolders)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Folder added: folderId=${SafeLog.redact(folder.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to add folder", e)
-            Result.failure(e)
-        }
+        return persistSessionMutation(
+            session = session,
+            operationName = "add folder ${SafeLog.redact(folder.id)}",
+            mutate = { currentData ->
+                currentData.copy(folders = currentData.folders + folder)
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Folder added: folderId=${SafeLog.redact(folder.id)}"
+                )
+            }
+        )
     }
 
     /**
@@ -530,26 +553,23 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedFolders = currentData.folders.map {
-                if (it.id == folder.id) folder else it
+        return persistSessionMutation(
+            session = session,
+            operationName = "update folder ${SafeLog.redact(folder.id)}",
+            mutate = { currentData ->
+                currentData.copy(
+                    folders = currentData.folders.map { existing ->
+                        if (existing.id == folder.id) folder else existing
+                    }
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Folder updated: folderId=${SafeLog.redact(folder.id)}"
+                )
             }
-
-            val updatedData = currentData.copy(folders = updatedFolders)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Folder updated: folderId=${SafeLog.redact(folder.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to update folder", e)
-            Result.failure(e)
-        }
+        )
     }
 
     /**
@@ -559,32 +579,27 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedFolders = currentData.folders.filter { it.id != folderId }
+        return persistSessionMutation(
+            session = session,
+            operationName = "delete folder ${SafeLog.redact(folderId)}",
+            mutate = { currentData ->
+                val updatedFolders = currentData.folders.filter { it.id != folderId }
+                val updatedEntries = currentData.entries.map { entry ->
+                    if (entry.folderId == folderId) entry.copy(folderId = null) else entry
+                }
 
-            // Retirer le folderId des entries qui l'utilisaient
-            val updatedEntries = currentData.entries.map {
-                if (it.folderId == folderId) it.copy(folderId = null) else it
+                currentData.copy(
+                    folders = updatedFolders,
+                    entries = updatedEntries
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Folder deleted: folderId=${SafeLog.redact(folderId)}"
+                )
             }
-
-            val updatedData = currentData.copy(
-                folders = updatedFolders,
-                entries = updatedEntries
-            )
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Folder deleted: folderId=${SafeLog.redact(folderId)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to delete folder", e)
-            Result.failure(e)
-        }
+        )
     }
 
     // ========== Tag Operations ==========
@@ -610,24 +625,19 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedTags = currentData.tags + tag
-
-            val updatedData = currentData.copy(tags = updatedTags)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Tag added: tagId=${SafeLog.redact(tag.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to add tag", e)
-            Result.failure(e)
-        }
+        return persistSessionMutation(
+            session = session,
+            operationName = "add tag ${SafeLog.redact(tag.id)}",
+            mutate = { currentData ->
+                currentData.copy(tags = currentData.tags + tag)
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Tag added: tagId=${SafeLog.redact(tag.id)}"
+                )
+            }
+        )
     }
 
     /**
@@ -637,26 +647,23 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedTags = currentData.tags.map {
-                if (it.id == tag.id) tag else it
+        return persistSessionMutation(
+            session = session,
+            operationName = "update tag ${SafeLog.redact(tag.id)}",
+            mutate = { currentData ->
+                currentData.copy(
+                    tags = currentData.tags.map { existing ->
+                        if (existing.id == tag.id) tag else existing
+                    }
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Tag updated: tagId=${SafeLog.redact(tag.id)}"
+                )
             }
-
-            val updatedData = currentData.copy(tags = updatedTags)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Tag updated: tagId=${SafeLog.redact(tag.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to update tag", e)
-            Result.failure(e)
-        }
+        )
     }
 
     /**
@@ -666,30 +673,25 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedTags = currentData.tags.filter { it.id != tagId }
+        return persistSessionMutation(
+            session = session,
+            operationName = "delete tag ${SafeLog.redact(tagId)}",
+            mutate = { currentData ->
+                val updatedTags = currentData.tags.filter { it.id != tagId }
+                val updatedEntryTags = currentData.entryTags.filter { it.tagId != tagId }
 
-            // Supprimer aussi les associations entry-tag
-            val updatedEntryTags = currentData.entryTags.filter { it.tagId != tagId }
-
-            val updatedData = currentData.copy(
-                tags = updatedTags,
-                entryTags = updatedEntryTags
-            )
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Tag deleted: tagId=${SafeLog.redact(tagId)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to delete tag", e)
-            Result.failure(e)
-        }
+                currentData.copy(
+                    tags = updatedTags,
+                    entryTags = updatedEntryTags
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Tag deleted: tagId=${SafeLog.redact(tagId)}"
+                )
+            }
+        )
     }
 
     // ========== Preset Operations ==========
@@ -715,24 +717,19 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedPresets = currentData.presets + preset
-
-            val updatedData = currentData.copy(presets = updatedPresets)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Preset added: presetId=${SafeLog.redact(preset.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to add preset", e)
-            Result.failure(e)
-        }
+        return persistSessionMutation(
+            session = session,
+            operationName = "add preset ${SafeLog.redact(preset.id)}",
+            mutate = { currentData ->
+                currentData.copy(presets = currentData.presets + preset)
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Preset added: presetId=${SafeLog.redact(preset.id)}"
+                )
+            }
+        )
     }
 
     /**
@@ -742,26 +739,23 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedPresets = currentData.presets.map {
-                if (it.id == preset.id) preset else it
+        return persistSessionMutation(
+            session = session,
+            operationName = "update preset ${SafeLog.redact(preset.id)}",
+            mutate = { currentData ->
+                currentData.copy(
+                    presets = currentData.presets.map { existing ->
+                        if (existing.id == preset.id) preset else existing
+                    }
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Preset updated: presetId=${SafeLog.redact(preset.id)}"
+                )
             }
-
-            val updatedData = currentData.copy(presets = updatedPresets)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Preset updated: presetId=${SafeLog.redact(preset.id)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to update preset", e)
-            Result.failure(e)
-        }
+        )
     }
 
     /**
@@ -771,24 +765,19 @@ class VaultSessionManager @Inject constructor(
         val session = currentSession
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
-        return try {
-            val currentData = session.vaultData.value
-            val updatedPresets = currentData.presets.filter { it.id != presetId }
-
-            val updatedData = currentData.copy(presets = updatedPresets)
-            session.updateData(updatedData)
-
-            saveCurrentVault()
-            resetAutoLockTimer()
-            SafeLog.d(
-                TAG,
-                "Preset deleted: presetId=${SafeLog.redact(presetId)}"
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to delete preset", e)
-            Result.failure(e)
-        }
+        return persistSessionMutation(
+            session = session,
+            operationName = "delete preset ${SafeLog.redact(presetId)}",
+            mutate = { currentData ->
+                currentData.copy(presets = currentData.presets.filter { it.id != presetId })
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Preset deleted: presetId=${SafeLog.redact(presetId)}"
+                )
+            }
+        )
     }
 
     // ========== Master Password Management ==========
@@ -810,7 +799,6 @@ class VaultSessionManager @Inject constructor(
                     "Enabling biometric unlock for vault: vaultId=${SafeLog.redact(session.vaultId)}"
                 )
 
-                val keystoreManager = com.julien.genpwdpro.security.KeystoreManager()
                 val keyAlias = "genpwd_vault_${session.vaultId}_biometric"
 
                 // Fixed: Créer la nouvelle clé AVANT de supprimer l'ancienne pour éviter race condition
@@ -1068,7 +1056,9 @@ class VaultSessionManager @Inject constructor(
      */
     fun cleanup() {
         sessionScope.cancel()
+        sessionScope = newSessionScope()
         currentSession?.cleanup()
         currentSession = null
+        _activeVaultId.value = null
     }
 }
