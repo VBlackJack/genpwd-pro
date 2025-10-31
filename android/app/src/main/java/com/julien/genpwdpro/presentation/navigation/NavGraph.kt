@@ -125,7 +125,6 @@ sealed class Screen(val route: String) {
 fun AppNavGraph(
     navController: NavHostController,
     startDestination: String = Screen.Dashboard.route,
-    sessionManager: com.julien.genpwdpro.domain.session.SessionManager,
     vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) {
     val navScope = rememberCoroutineScope()

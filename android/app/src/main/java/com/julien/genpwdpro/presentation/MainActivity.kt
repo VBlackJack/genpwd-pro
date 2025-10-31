@@ -13,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import com.julien.genpwdpro.domain.session.AppLifecycleObserver
-import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.session.VaultStartupLocker
 import com.julien.genpwdpro.presentation.navigation.Screen
@@ -39,9 +38,6 @@ class MainActivity : FragmentActivity() {
     }
 
     @Inject
-    lateinit var sessionManager: SessionManager
-
-    @Inject
     lateinit var vaultSessionManager: VaultSessionManager
 
     @Inject
@@ -58,8 +54,8 @@ class MainActivity : FragmentActivity() {
                 SafeLog.w(
                     TAG,
                     "Startup lockdown completed with warnings (fileLocked=${startupResult.fileSessionLocked}, " +
-                        "legacyLocked=${startupResult.legacySessionLocked}, registryReset=${startupResult.registryResetSucceeded}, " +
-                        "fallback=${startupResult.fallbackApplied}). Errors=${SafeLog.redact(startupResult.errors)}"
+                        "registryReset=${startupResult.registryResetSucceeded}, fallback=${startupResult.fallbackApplied}). " +
+                        "Errors=${SafeLog.redact(startupResult.errors)}"
                 )
             }
 
@@ -90,13 +86,13 @@ class MainActivity : FragmentActivity() {
      */
     private fun setupSessionManagement() {
         lifecycleScope.launch {
-            val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
+            val lockedExpiredSession = vaultSessionManager.clearExpiredSession(SESSION_TIMEOUT_HOURS)
             SafeLog.d(
                 TAG,
-                "Vérification des sessions terminée après verrouillage initial (sessions nettoyées = $hasExpired)."
+                "Expired session check completed after startup lockdown (locked=$lockedExpiredSession)."
             )
         }
-        lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
+        lifecycle.addObserver(AppLifecycleObserver(vaultSessionManager))
     }
 
     /**
@@ -113,7 +109,6 @@ class MainActivity : FragmentActivity() {
 
                     MainScreen(
                         navController = navController,
-                        sessionManager = sessionManager,
                         vaultSessionManager = vaultSessionManager,
                         startDestination = startDestination // Fournir la destination de départ
                     )

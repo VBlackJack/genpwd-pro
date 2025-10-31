@@ -10,13 +10,12 @@ import kotlinx.coroutines.withContext
 /**
  * Coordonne le verrouillage initial des coffres lors du démarrage de l'application.
  *
- * - Verrouille la session file-based et la session legacy en mémoire.
+ * - Verrouille la session file-based en mémoire.
  * - Réinitialise les indicateurs `isLoaded` du registre Room.
  * - Retente automatiquement en cas d'erreur et applique une solution de repli granulaire.
  */
 class VaultStartupLocker @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
-    private val sessionManager: SessionManager,
     private val vaultRegistryDao: VaultRegistryDao,
     private val ioDispatcher: CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO
 ) {
@@ -29,13 +28,12 @@ class VaultStartupLocker @Inject constructor(
 
     data class StartupLockResult(
         val fileSessionLocked: Boolean,
-        val legacySessionLocked: Boolean,
         val registryResetSucceeded: Boolean,
         val fallbackApplied: Boolean,
         val errors: List<String>
     ) {
         val isSecure: Boolean
-            get() = fileSessionLocked && legacySessionLocked && (registryResetSucceeded || fallbackApplied)
+            get() = fileSessionLocked && (registryResetSucceeded || fallbackApplied)
     }
 
     /**
@@ -49,13 +47,6 @@ class VaultStartupLocker @Inject constructor(
         }.onFailure { throwable ->
             errors += "File vault lock failed: ${throwable.message}"
             SafeLog.e(TAG, "Unable to lock file-based vault session", throwable)
-        }.isSuccess
-
-        val legacySessionLocked = runCatching {
-            sessionManager.lockVault()
-        }.onFailure { throwable ->
-            errors += "Legacy session lock failed: ${throwable.message}"
-            SafeLog.e(TAG, "Unable to lock legacy session", throwable)
         }.isSuccess
 
         var registryResetSucceeded = false
@@ -85,7 +76,6 @@ class VaultStartupLocker @Inject constructor(
 
         return StartupLockResult(
             fileSessionLocked = fileSessionLocked,
-            legacySessionLocked = legacySessionLocked,
             registryResetSucceeded = registryResetSucceeded,
             fallbackApplied = fallbackApplied,
             errors = errors

@@ -11,8 +11,8 @@ retirement of the legacy in-memory cache.
 - **Vault files (`.gpv`)** – `VaultFileManager` persists encrypted vault
   payloads to disk using the storage strategy selected by the user
   (application-private directory or Storage Access Framework document).
-- **Session management** – `VaultSessionManager` and `SessionManager`
-  coordinate unlock / lock events for the file-based vaults.
+- **Session management** – `VaultSessionManager` coordinates unlock / lock
+  events for the file-based vaults and enforces inactivity timeouts.
 - **Cloud synchronisation** – `SyncInitializer` and
   `CloudProviderSyncRepository` orchestrate remote providers and background
   workers.
@@ -24,8 +24,8 @@ retirement of the legacy in-memory cache.
 2. `SyncInitializer.initialize()` runs on a background dispatcher to restore
    any configured provider, reschedule sync workers and prime `SyncManager`.
 3. `VaultStartupLocker.secureStartup()` (triggered from the UI layer) ensures
-   local sessions are locked and that registry flags are reset before the user
-   interacts with the vault list.
+   the in-memory session is locked and that registry flags are reset before the
+   user interacts with the vault list.
 
 ## Legacy Migration
 

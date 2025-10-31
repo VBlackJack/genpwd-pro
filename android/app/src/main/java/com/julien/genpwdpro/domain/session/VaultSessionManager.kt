@@ -11,6 +11,7 @@ import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.domain.exceptions.VaultException
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -63,7 +64,8 @@ class VaultSessionManager @Inject constructor(
         val fileUri: Uri?,
         private val _vaultData: MutableStateFlow<VaultData>,
         val unlockTime: Long = System.currentTimeMillis(),
-        var autoLockJob: Job? = null
+        var autoLockJob: Job? = null,
+        var lastInteractionTimestamp: Long = unlockTime
     ) {
         val vaultData: StateFlow<VaultData> = _vaultData.asStateFlow()
 
@@ -909,6 +911,7 @@ class VaultSessionManager @Inject constructor(
     private fun startAutoLockTimer(minutes: Int) {
         val session = currentSession ?: return
 
+        session.lastInteractionTimestamp = System.currentTimeMillis()
         session.autoLockJob?.cancel()
         session.autoLockJob = sessionScope.launch {
             delay(minutes * 60 * 1000L)
@@ -927,7 +930,40 @@ class VaultSessionManager @Inject constructor(
     }
 
     /**
-     * Nettoie les ressources du SessionManager
+     * Indique si la session courante est expirée selon un délai en heures.
+     */
+    fun isSessionExpired(timeoutHours: Long): Boolean {
+        val session = currentSession ?: return true
+        val now = System.currentTimeMillis()
+        val timeoutMillis = TimeUnit.HOURS.toMillis(timeoutHours)
+        val expired = (now - session.lastInteractionTimestamp) > timeoutMillis
+
+        if (expired) {
+            SafeLog.d(
+                TAG,
+                "Session expired for vault: ${SafeLog.redact(session.vaultId)}"
+            )
+        }
+
+        return expired
+    }
+
+    /**
+     * Nettoie la session si elle est expirée.
+     * @return true si un verrouillage a été effectué
+     */
+    suspend fun clearExpiredSession(timeoutHours: Long): Boolean {
+        return if (isSessionExpired(timeoutHours)) {
+            SafeLog.d(TAG, "Clearing expired session after timeout of $timeoutHours hours")
+            lockVault()
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Nettoie les ressources de session et annule les tâches actives.
      */
     fun cleanup() {
         sessionScope.cancel()

@@ -16,11 +16,10 @@ import kotlinx.coroutines.launch
  *
  * Usage:
  * ```
- * lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
+ * lifecycle.addObserver(AppLifecycleObserver(vaultSessionManager))
  * ```
  */
 class AppLifecycleObserver(
-    private val sessionManager: SessionManager,
     private val vaultSessionManager: VaultSessionManager
 ) : DefaultLifecycleObserver {
 
@@ -85,11 +84,10 @@ class AppLifecycleObserver(
     private fun lockAllVaults() {
         lockScope.launch {
             try {
-                sessionManager.lockVault()
                 vaultSessionManager.lockVault()
-                SafeLog.d(TAG, "All vaults locked successfully")
+                SafeLog.d(TAG, "Vault locked successfully on lifecycle transition")
             } catch (e: Exception) {
-                SafeLog.e(TAG, "Error locking vaults", e)
+                SafeLog.e(TAG, "Error locking vault", e)
             }
         }
     }
