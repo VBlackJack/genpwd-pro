@@ -168,6 +168,14 @@ class CloudProviderSyncRepository @Inject constructor(
         return ensureActiveProvider() != null
     }
 
+    fun getStoredProviderType(): CloudProviderType? {
+        return activeProviderType ?: readStoredProviderType()
+    }
+
+    suspend fun getOrCreateActiveProvider(): CloudProvider? {
+        return ensureActiveProvider()
+    }
+
     private suspend fun ensureActiveProvider(): CloudProvider? {
         activeProvider?.let { return it }
 

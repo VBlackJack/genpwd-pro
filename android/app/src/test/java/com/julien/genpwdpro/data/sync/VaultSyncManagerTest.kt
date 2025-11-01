@@ -3,7 +3,9 @@ package com.julien.genpwdpro.data.sync
 import android.content.Context
 import android.content.SharedPreferences
 import com.julien.genpwdpro.data.db.entity.VaultEntity
+import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
 import io.mockk.*
@@ -31,6 +33,7 @@ class VaultSyncManagerTest {
     private lateinit var mockCredentialManager: ProviderCredentialManager
     private lateinit var mockSyncPreferencesManager: SyncPreferencesManager
     private lateinit var mockAutoSyncScheduler: AutoSyncScheduler
+    private lateinit var mockCloudRepository: CloudProviderSyncRepository
 
     @Before
     fun setup() {
@@ -60,6 +63,29 @@ class VaultSyncManagerTest {
         mockSyncPreferencesManager = mockk(relaxed = true)
         mockAutoSyncScheduler = mockk(relaxed = true)
 
+        mockCloudRepository = mockk(relaxed = true)
+
+        var storedProviderType: CloudProviderType? = null
+
+        every { mockCloudRepository.setActiveProvider(any(), any(), any()) } answers {
+            storedProviderType = firstArg()
+        }
+        every { mockCloudRepository.getActiveProviderType() } answers { storedProviderType }
+        every { mockCloudRepository.getStoredProviderType() } answers { storedProviderType }
+        coEvery { mockCloudRepository.rehydrateActiveProvider(any()) } answers {
+            val expected = firstArg<CloudProviderType?>()
+            if (expected != null && expected != CloudProviderType.NONE) {
+                storedProviderType = expected
+            }
+            true
+        }
+        coEvery { mockCloudRepository.getOrCreateActiveProvider() } answers {
+            if (storedProviderType == null || storedProviderType == CloudProviderType.NONE) null else mockCloudProvider
+        }
+        every { mockCloudRepository.clearActiveProvider() } answers {
+            storedProviderType = null
+        }
+
         // Créer VaultSyncManager
         syncManager = VaultSyncManager(
             context = mockContext,
@@ -67,7 +93,8 @@ class VaultSyncManagerTest {
             conflictResolver = mockConflictResolver,
             credentialManager = mockCredentialManager,
             syncPreferencesManager = mockSyncPreferencesManager,
-            autoSyncScheduler = mockAutoSyncScheduler
+            autoSyncScheduler = mockAutoSyncScheduler,
+            cloudRepository = mockCloudRepository
         )
     }
 
@@ -86,6 +113,7 @@ class VaultSyncManagerTest {
         assertEquals(CloudProviderType.GOOGLE_DRIVE, config.providerType)
         assertEquals("test-device-123", config.deviceId)
         verify { mockEditor.putString("provider_type", "GOOGLE_DRIVE") }
+        verify { mockCloudRepository.setActiveProvider(CloudProviderType.GOOGLE_DRIVE, mockCloudProvider, null) }
     }
 
     @Test
@@ -115,6 +143,7 @@ class VaultSyncManagerTest {
         verify { mockAutoSyncScheduler.cancelAllSync() }
         verify { mockCredentialManager.clearProvider(CloudProviderType.GOOGLE_DRIVE) }
         coVerify { mockSyncPreferencesManager.clearAllCredentials() }
+        verify { mockCloudRepository.clearActiveProvider() }
         verify { mockEditor.remove("provider_type") }
         assertEquals(SyncStatus.NEVER_SYNCED, syncManager.syncStatus.first())
     }

@@ -4,13 +4,18 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.sync.AutoSyncScheduler
+import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.SyncPreferencesManager
 import com.julien.genpwdpro.data.sync.VaultSyncManager
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
+import com.julien.genpwdpro.data.sync.providers.PCloudProvider
 import com.julien.genpwdpro.data.sync.models.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.text.toBooleanStrictOrNull
 
 /**
  * ViewModel pour la gestion de la synchronisation des vaults
@@ -27,7 +32,8 @@ class VaultSyncViewModel @Inject constructor(
     private val vaultSyncManager: VaultSyncManager,
     private val autoSyncScheduler: AutoSyncScheduler,
     private val providerFactory: com.julien.genpwdpro.data.sync.providers.CloudProviderFactory,
-    private val preferencesManager: SyncPreferencesManager
+    private val preferencesManager: SyncPreferencesManager,
+    private val credentialManager: ProviderCredentialManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultSyncUiState())
@@ -67,6 +73,84 @@ class VaultSyncViewModel @Inject constructor(
         _uiState.update { it.copy(selectedProvider = providerType) }
     }
 
+    private suspend fun instantiateProviderForType(
+        providerType: CloudProviderType
+    ): Pair<CloudProvider?, ProviderConfig?> {
+        return when (providerType) {
+            CloudProviderType.GOOGLE_DRIVE -> {
+                providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE) to null
+            }
+
+            CloudProviderType.ONEDRIVE -> {
+                val config = credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
+                val clientId = config?.customSettings?.get("clientId")
+
+                if (clientId.isNullOrBlank()) {
+                    null to null
+                } else {
+                    providerFactory.createOneDriveProvider(clientId) to config
+                }
+            }
+
+            CloudProviderType.PROTON_DRIVE -> {
+                val config = credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
+                val clientId = config?.customSettings?.get("clientId")
+                val clientSecret = config?.customSettings?.get("clientSecret")
+
+                if (clientId.isNullOrBlank() || clientSecret.isNullOrBlank()) {
+                    null to null
+                } else {
+                    providerFactory.createProtonDriveProvider(clientId, clientSecret) to config
+                }
+            }
+
+            CloudProviderType.PCLOUD -> {
+                val config = credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
+                val appKey = config?.customSettings?.get("appKey")
+                val appSecret = config?.customSettings?.get("appSecret")
+                val region = config?.customSettings?.get("region")
+                    ?.let { runCatching { PCloudProvider.PCloudRegion.valueOf(it) }.getOrNull() }
+                    ?: PCloudProvider.PCloudRegion.EU
+
+                if (appKey.isNullOrBlank() || appSecret.isNullOrBlank()) {
+                    null to null
+                } else {
+                    providerFactory.createPCloudProvider(appKey, appSecret, region) to config
+                }
+            }
+
+            CloudProviderType.WEBDAV -> {
+                var config = credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
+
+                if (config == null) {
+                    val credentials = preferencesManager.getWebDAVCredentials()
+                    if (credentials != null) {
+                        config = ProviderConfig(
+                            serverUrl = credentials.serverUrl,
+                            username = credentials.username,
+                            password = credentials.password,
+                            customSettings = mapOf("validateSSL" to credentials.validateSSL.toString())
+                        )
+                        credentialManager.saveProviderConfig(providerType, config!!)
+                    }
+                }
+
+                val serverUrl = config?.serverUrl
+                val username = config?.username
+                val password = config?.password
+                val validateSSL = config?.customSettings?.get("validateSSL")?.toBooleanStrictOrNull() ?: true
+
+                if (serverUrl.isNullOrBlank() || username.isNullOrBlank() || password.isNullOrBlank()) {
+                    null to null
+                } else {
+                    providerFactory.createWebDAVProvider(serverUrl, username, password, validateSSL) to config
+                }
+            }
+
+            CloudProviderType.NONE -> null to null
+        }
+    }
+
     /**
      * Connecte au provider sélectionné
      */
@@ -75,14 +159,14 @@ class VaultSyncViewModel @Inject constructor(
             _uiState.update { it.copy(isConnecting = true, errorMessage = null) }
 
             try {
-                // Créer le provider via la factory
-                val provider = providerFactory.createProvider(providerType)
+                // Créer (ou réhydrater) le provider avec sa configuration
+                val (provider, providerConfig) = instantiateProviderForType(providerType)
 
                 if (provider == null) {
                     _uiState.update {
                         it.copy(
                             isConnecting = false,
-                            errorMessage = "Provider non supporté"
+                            errorMessage = "Configuration du provider requise"
                         )
                     }
                     return@launch
@@ -101,7 +185,7 @@ class VaultSyncViewModel @Inject constructor(
                 }
 
                 // Configurer le provider
-                vaultSyncManager.setProvider(provider, providerType)
+                vaultSyncManager.setProvider(provider, providerType, providerConfig)
 
                 // Authentifier
                 val success = vaultSyncManager.authenticate(activity)
@@ -402,6 +486,14 @@ class VaultSyncViewModel @Inject constructor(
                     validateSSL = validateSSL
                 )
 
+                val providerConfig = ProviderConfig(
+                    serverUrl = serverUrl,
+                    username = username,
+                    password = password,
+                    customSettings = mapOf("validateSSL" to validateSSL.toString())
+                )
+                credentialManager.saveProviderConfig(CloudProviderType.WEBDAV, providerConfig)
+
                 // Créer le provider WebDAV
                 val webDAVProvider = providerFactory.createWebDAVProvider(
                     serverUrl = serverUrl,
@@ -411,10 +503,7 @@ class VaultSyncViewModel @Inject constructor(
                 )
 
                 // Configurer le manager
-                vaultSyncManager.setProvider(webDAVProvider, CloudProviderType.WEBDAV)
-
-                // Mettre à jour le provider actuel
-                preferencesManager.setCurrentProvider(CloudProviderType.WEBDAV)
+                vaultSyncManager.setProvider(webDAVProvider, CloudProviderType.WEBDAV, providerConfig)
 
                 _uiState.update {
                     it.copy(

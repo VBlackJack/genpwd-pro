@@ -5,6 +5,7 @@ import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.SyncManager
+import com.julien.genpwdpro.data.sync.VaultSyncManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -30,7 +31,8 @@ class SyncInitializer @Inject constructor(
     @ApplicationContext private val context: Context,
     private val syncManager: SyncManager,
     private val syncConfigDataStore: SyncConfigDataStore,
-    private val cloudRepository: CloudProviderSyncRepository
+    private val cloudRepository: CloudProviderSyncRepository,
+    private val vaultSyncManager: VaultSyncManager
 ) {
 
     companion object {
@@ -90,7 +92,12 @@ class SyncInitializer @Inject constructor(
             val restored = cloudRepository.rehydrateActiveProvider(providerType)
 
             if (restored) {
-                SafeLog.i(TAG, "Provider restored successfully: $providerType")
+                val managerBound = vaultSyncManager.rehydrateActiveProvider()
+                if (managerBound) {
+                    SafeLog.i(TAG, "Provider restored successfully: $providerType")
+                } else {
+                    SafeLog.w(TAG, "Provider rehydrated but VaultSyncManager could not bind to it")
+                }
             } else {
                 SafeLog.w(TAG, "Provider rehydration failed for $providerType")
             }

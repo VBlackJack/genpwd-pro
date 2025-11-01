@@ -44,6 +44,12 @@ class SyncWorker @AssistedInject constructor(
         SafeLog.d(TAG, "Starting background sync")
 
         return try {
+            val providerReady = vaultSyncManager.rehydrateActiveProvider()
+            if (!providerReady) {
+                SafeLog.w(TAG, "No active provider configured, skipping sync")
+                return Result.success()
+            }
+
             // Vérifier si le provider est authentifié
             if (!vaultSyncManager.isAuthenticated()) {
                 SafeLog.w(TAG, "Provider not authenticated, skipping sync")
