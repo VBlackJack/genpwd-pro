@@ -3,7 +3,8 @@ package com.julien.genpwdpro.domain.usecases
 import com.julien.genpwdpro.data.models.Placement
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.utils.CharacterSets
-import kotlin.random.Random
+import com.julien.genpwdpro.domain.utils.SecureRandomProvider
+import com.julien.genpwdpro.domain.utils.secureRandom
 
 /**
  * Use case pour placer les chiffres et caractères spéciaux
@@ -44,7 +45,7 @@ class PlaceCharactersUseCase {
      */
     private fun generateDigits(count: Int): String {
         return (1..count).map {
-            CharacterSets.DIGITS.random()
+            CharacterSets.DIGITS.secureRandom()
         }.joinToString("")
     }
 
@@ -59,7 +60,7 @@ class PlaceCharactersUseCase {
         }
 
         return (1..count).map {
-            specials.random()
+            specials.secureRandom()
         }.joinToString("")
     }
 
@@ -82,7 +83,7 @@ class PlaceCharactersUseCase {
             Placement.RANDOM -> {
                 val chars = password.toMutableList()
                 characters.forEach { char ->
-                    val randomPos = Random.nextInt(0, chars.size + 1)
+                    val randomPos = SecureRandomProvider.nextInt(chars.size + 1)
                     chars.add(randomPos, char)
                 }
                 chars.joinToString("")

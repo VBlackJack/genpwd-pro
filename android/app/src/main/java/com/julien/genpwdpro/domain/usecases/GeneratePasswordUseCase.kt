@@ -84,7 +84,7 @@ class GeneratePasswordUseCase(
             GenerationMode.CUSTOM_PHRASE -> {
                 // Entropie basée sur la taille de la liste personnalisée
                 customPhraseGenerator.calculateEntropy(
-                    wordListSize = settings.customPhraseWords.size.coerceAtLeast(10),
+                    wordListSize = settings.customPhraseWords.size.coerceAtLeast(CustomPhraseGenerator.MIN_WORD_LIST_SIZE),
                     wordCount = settings.customPhraseWordCount
                 )
             }
