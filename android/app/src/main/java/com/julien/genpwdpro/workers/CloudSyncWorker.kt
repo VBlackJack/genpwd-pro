@@ -13,13 +13,13 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 
 /**
- * Worker pour la synchronisation automatique en arrière-plan
+ * Worker WorkManager dédié à la synchronisation des paramètres applicatifs
+ * (préférences, configuration, politiques de génération).
  *
- * Fonctionnalités:
- * - Synchronisation périodique des paramètres
- * - Respect des contraintes WiFi-only
- * - Gestion des erreurs et retry
- * - Intégration avec SyncManager pour chiffrement E2E
+ * Il fonctionne en parallèle de [com.julien.genpwdpro.data.sync.workers.SyncWorker]
+ * qui gère, lui, la synchronisation des coffres chiffrés. Les deux workers sont
+ * planifiés séparément afin d'éviter qu'une tâche lourde sur les vaults bloque
+ * la propagation des paramètres.
  */
 @HiltWorker
 class CloudSyncWorker @AssistedInject constructor(

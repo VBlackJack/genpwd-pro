@@ -17,6 +17,25 @@ retirement of the legacy in-memory cache.
   `CloudProviderSyncRepository` orchestrate remote providers and background
   workers.
 
+### Background synchronisation workers
+
+Two distinct WorkManager tasks handle cloud synchronisation to minimise
+coupling:
+
+- `com.julien.genpwdpro.workers.CloudSyncWorker` propagates application
+  settings (preferences, generator policies, autofill configuration). It can
+  run even when no vault is unlocked and therefore keeps the UI in sync with
+  remote configuration changes.
+- `com.julien.genpwdpro.data.sync.workers.SyncWorker` synchronises vault
+  contents. Before performing any upload or download it rehydrate the active
+  provider through `VaultSyncManager`, validates authentication and uses the
+  stored master password. The worker deliberately bails out when no provider is
+  configured so that periodic jobs do not fail noisily.
+
+Both workers are scheduled independently by `AutoSyncScheduler` and
+`SyncInitializer`, which prevents heavy vault transfers from starving settings
+updates or vice versa.
+
 ## Startup Flow
 
 1. `GenPwdProApplication` installs strict-mode policies, crash handling and

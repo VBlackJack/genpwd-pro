@@ -50,6 +50,16 @@ class CloudProviderSyncRepository @Inject constructor(
     private val credentialManager: ProviderCredentialManager
 ) : CloudSyncRepository {
 
+    sealed class ProviderPreparationResult {
+        data class Success(
+            val provider: CloudProvider,
+            val providerConfig: ProviderConfig?
+        ) : ProviderPreparationResult()
+
+        object MissingConfiguration : ProviderPreparationResult()
+        object UnsupportedProvider : ProviderPreparationResult()
+    }
+
     companion object {
         private const val TAG = "CloudProviderSyncRepo"
         private const val PREFS_NAME = "cloud_sync_prefs"
@@ -123,6 +133,22 @@ class CloudProviderSyncRepository @Inject constructor(
      * Obtenir le type de provider actif
      */
     fun getActiveProviderType(): CloudProviderType? = activeProviderType
+
+    fun getProviderConfig(providerType: CloudProviderType): ProviderConfig? {
+        return credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
+    }
+
+    fun prepareConfiguredProvider(providerType: CloudProviderType): ProviderPreparationResult {
+        if (providerType == CloudProviderType.NONE) {
+            return ProviderPreparationResult.UnsupportedProvider
+        }
+
+        val provider = instantiateProvider(providerType)
+            ?: return ProviderPreparationResult.MissingConfiguration
+
+        val providerConfig = credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
+        return ProviderPreparationResult.Success(provider, providerConfig)
+    }
 
     /**
      * Charger le provider actif depuis les préférences
