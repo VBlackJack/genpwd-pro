@@ -111,6 +111,16 @@ class VaultSessionManager @Inject constructor(
         val previousData = session.vaultData.value
         return try {
             val updatedData = mutate(previousData)
+
+            if (updatedData == previousData) {
+                SafeLog.d(
+                    TAG,
+                    "No changes detected after $operationName – skipping persistence"
+                )
+                resetAutoLockTimer()
+                return Result.success(Unit)
+            }
+
             session.updateData(updatedData)
 
             val saveResult = saveCurrentVault()
@@ -136,6 +146,13 @@ class VaultSessionManager @Inject constructor(
         } catch (e: CancellationException) {
             session.updateData(previousData)
             throw e
+        } catch (e: VaultException) {
+            session.updateData(previousData)
+            SafeLog.w(
+                TAG,
+                "Business rule failed during $operationName: ${e.message}"
+            )
+            Result.failure(e)
         } catch (e: Exception) {
             session.updateData(previousData)
             SafeLog.e(TAG, "Failed to $operationName", e)
@@ -443,6 +460,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "add entry ${SafeLog.redact(entry.id)}",
             mutate = { currentData ->
+                if (currentData.entries.any { it.id == entry.id }) {
+                    throw VaultException.EntryAlreadyExists(entry.id)
+                }
                 currentData.copy(entries = currentData.entries + entry)
             },
             successLog = {
@@ -465,6 +485,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "update entry ${SafeLog.redact(entry.id)}",
             mutate = { currentData ->
+                if (currentData.entries.none { it.id == entry.id }) {
+                    throw VaultException.EntryNotFound(entry.id)
+                }
                 currentData.copy(
                     entries = currentData.entries.map { existing ->
                         if (existing.id == entry.id) entry else existing
@@ -491,6 +514,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "delete entry ${SafeLog.redact(entryId)}",
             mutate = { currentData ->
+                if (currentData.entries.none { it.id == entryId }) {
+                    throw VaultException.EntryNotFound(entryId)
+                }
                 val updatedEntries = currentData.entries.filter { it.id != entryId }
                 val updatedEntryTags = currentData.entryTags.filter { it.entryId != entryId }
 
@@ -535,6 +561,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "add folder ${SafeLog.redact(folder.id)}",
             mutate = { currentData ->
+                if (currentData.folders.any { it.id == folder.id }) {
+                    throw VaultException.FolderAlreadyExists(folder.id)
+                }
                 currentData.copy(folders = currentData.folders + folder)
             },
             successLog = {
@@ -557,6 +586,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "update folder ${SafeLog.redact(folder.id)}",
             mutate = { currentData ->
+                if (currentData.folders.none { it.id == folder.id }) {
+                    throw VaultException.FolderNotFound(folder.id)
+                }
                 currentData.copy(
                     folders = currentData.folders.map { existing ->
                         if (existing.id == folder.id) folder else existing
@@ -583,6 +615,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "delete folder ${SafeLog.redact(folderId)}",
             mutate = { currentData ->
+                if (currentData.folders.none { it.id == folderId }) {
+                    throw VaultException.FolderNotFound(folderId)
+                }
                 val updatedFolders = currentData.folders.filter { it.id != folderId }
                 val updatedEntries = currentData.entries.map { entry ->
                     if (entry.folderId == folderId) entry.copy(folderId = null) else entry
@@ -629,6 +664,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "add tag ${SafeLog.redact(tag.id)}",
             mutate = { currentData ->
+                if (currentData.tags.any { it.id == tag.id }) {
+                    throw VaultException.TagAlreadyExists(tag.id)
+                }
                 currentData.copy(tags = currentData.tags + tag)
             },
             successLog = {
@@ -651,6 +689,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "update tag ${SafeLog.redact(tag.id)}",
             mutate = { currentData ->
+                if (currentData.tags.none { it.id == tag.id }) {
+                    throw VaultException.TagNotFound(tag.id)
+                }
                 currentData.copy(
                     tags = currentData.tags.map { existing ->
                         if (existing.id == tag.id) tag else existing
@@ -677,6 +718,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "delete tag ${SafeLog.redact(tagId)}",
             mutate = { currentData ->
+                if (currentData.tags.none { it.id == tagId }) {
+                    throw VaultException.TagNotFound(tagId)
+                }
                 val updatedTags = currentData.tags.filter { it.id != tagId }
                 val updatedEntryTags = currentData.entryTags.filter { it.tagId != tagId }
 
@@ -721,6 +765,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "add preset ${SafeLog.redact(preset.id)}",
             mutate = { currentData ->
+                if (currentData.presets.any { it.id == preset.id }) {
+                    throw VaultException.PresetAlreadyExists(preset.id)
+                }
                 currentData.copy(presets = currentData.presets + preset)
             },
             successLog = {
@@ -743,6 +790,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "update preset ${SafeLog.redact(preset.id)}",
             mutate = { currentData ->
+                if (currentData.presets.none { it.id == preset.id }) {
+                    throw VaultException.PresetNotFound(preset.id)
+                }
                 currentData.copy(
                     presets = currentData.presets.map { existing ->
                         if (existing.id == preset.id) preset else existing
@@ -769,6 +819,9 @@ class VaultSessionManager @Inject constructor(
             session = session,
             operationName = "delete preset ${SafeLog.redact(presetId)}",
             mutate = { currentData ->
+                if (currentData.presets.none { it.id == presetId }) {
+                    throw VaultException.PresetNotFound(presetId)
+                }
                 currentData.copy(presets = currentData.presets.filter { it.id != presetId })
             },
             successLog = {
