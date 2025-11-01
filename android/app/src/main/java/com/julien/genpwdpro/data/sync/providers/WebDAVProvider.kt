@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
@@ -121,7 +121,7 @@ class WebDAVProvider(
                 )
                 builder.hostnameVerifier { _, _ -> true }
             } catch (e: Exception) {
-                Log.e(TAG, "Error configuring SSL", e)
+                SafeLog.e(TAG, "Error configuring SSL", e)
             }
         }
 
@@ -147,7 +147,7 @@ class WebDAVProvider(
                 response.isSuccessful && (response.code == 207 || response.code == 200)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking authentication", e)
+            SafeLog.e(TAG, "Error checking authentication", e)
             false
         }
     }
@@ -163,7 +163,7 @@ class WebDAVProvider(
             // Pour WebDAV, vérifier simplement la connexion
             isAuthenticated()
         } catch (e: Exception) {
-            Log.e(TAG, "Error during authentication", e)
+            SafeLog.e(TAG, "Error during authentication", e)
             false
         }
     }
@@ -177,7 +177,7 @@ class WebDAVProvider(
     override suspend fun disconnect() {
         // Pas d'action nécessaire pour WebDAV
         // Les credentials seront supprimés quand l'instance sera détruite
-        Log.d(TAG, "WebDAV disconnected")
+        SafeLog.d(TAG, "WebDAV disconnected")
     }
 
     /**
@@ -203,15 +203,15 @@ class WebDAVProvider(
 
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 201 || response.code == 204) {
-                    Log.d(TAG, "Successfully uploaded vault $vaultId")
+                    SafeLog.d(TAG, "Successfully uploaded vault $vaultId")
                     fileName
                 } else {
-                    Log.e(TAG, "Upload failed with code: ${response.code}")
+                    SafeLog.e(TAG, "Upload failed with code: ${response.code}")
                     null
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error uploading vault", e)
+            SafeLog.e(TAG, "Error uploading vault", e)
             null
         }
     }
@@ -235,7 +235,7 @@ class WebDAVProvider(
 
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "Download failed with code: ${response.code}")
+                    SafeLog.e(TAG, "Download failed with code: ${response.code}")
                     return@withContext null
                 }
 
@@ -255,7 +255,7 @@ class WebDAVProvider(
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading vault", e)
+            SafeLog.e(TAG, "Error downloading vault", e)
             null
         }
     }
@@ -270,7 +270,7 @@ class WebDAVProvider(
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking version", e)
+            SafeLog.e(TAG, "Error checking version", e)
             false
         }
     }
@@ -292,15 +292,15 @@ class WebDAVProvider(
 
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 204 || response.code == 404) {
-                    Log.d(TAG, "Successfully deleted vault $vaultId")
+                    SafeLog.d(TAG, "Successfully deleted vault $vaultId")
                     true
                 } else {
-                    Log.e(TAG, "Delete failed with code: ${response.code}")
+                    SafeLog.e(TAG, "Delete failed with code: ${response.code}")
                     false
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting vault", e)
+            SafeLog.e(TAG, "Error deleting vault", e)
             false
         }
     }
@@ -365,7 +365,7 @@ class WebDAVProvider(
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting metadata", e)
+            SafeLog.e(TAG, "Error getting metadata", e)
             null
         }
     }
@@ -410,7 +410,7 @@ class WebDAVProvider(
                     .filter { it.fileName.startsWith("vault_") && it.fileName.endsWith(".enc") }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing vaults", e)
+            SafeLog.e(TAG, "Error listing vaults", e)
             emptyList()
         }
     }
@@ -449,7 +449,7 @@ class WebDAVProvider(
                     )
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "Error parsing file metadata", e)
+                SafeLog.e(TAG, "Error parsing file metadata", e)
             }
         }
 
@@ -527,7 +527,7 @@ class WebDAVProvider(
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting storage quota", e)
+            SafeLog.e(TAG, "Error getting storage quota", e)
             // Return default quota on error
             StorageQuota(
                 totalBytes = -1,
@@ -572,9 +572,9 @@ class WebDAVProvider(
                 }
             }
 
-            Log.d(TAG, "Created folder: $FOLDER_NAME")
+            SafeLog.d(TAG, "Created folder: $FOLDER_NAME")
         } catch (e: Exception) {
-            Log.e(TAG, "Error ensuring folder exists", e)
+            SafeLog.e(TAG, "Error ensuring folder exists", e)
             // Continue anyway, might work
         }
 

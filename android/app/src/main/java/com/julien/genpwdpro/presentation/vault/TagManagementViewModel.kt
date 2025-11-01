@@ -2,9 +2,8 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.db.dao.TagDao
-import com.julien.genpwdpro.data.db.entity.EntryTagCrossRef
-import com.julien.genpwdpro.data.db.entity.TagEntity
+import com.julien.genpwdpro.data.repository.FileVaultRepository
+import com.julien.genpwdpro.data.models.vault.TagEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
@@ -12,39 +11,42 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel pour la gestion des tags
+ * ViewModel for tag management (file-based system)
  *
- * Gère :
- * - CRUD des tags
- * - Association tags ↔ entrées (many-to-many)
- * - Couleurs personnalisées
- * - Statistiques d'utilisation
+ * Handles:
+ * - Tag CRUD operations
+ * - Tag ↔ entry associations (many-to-many)
+ * - Custom colors
+ * - Usage statistics
+ *
+ * Migrated to use FileVaultRepository
  */
 @HiltViewModel
 class TagManagementViewModel @Inject constructor(
-    private val tagDao: TagDao
+    private val fileVaultRepository: FileVaultRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TagUiState>(TagUiState.Loading)
     val uiState: StateFlow<TagUiState> = _uiState.asStateFlow()
 
     /**
-     * Charge tous les tags d'un vault
+     * Loads all tags for a vault
+     * Note: vaultId kept for backward compatibility, uses active session
      */
     fun loadTags(vaultId: String) {
         viewModelScope.launch {
             try {
-                tagDao.getTagsByVault(vaultId).collect { tags ->
+                fileVaultRepository.getTags().collect { tags ->
                     _uiState.value = TagUiState.Success(tags)
                 }
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de chargement")
+                _uiState.value = TagUiState.Error(e.message ?: "Error loading tags")
             }
         }
     }
 
     /**
-     * Crée un nouveau tag
+     * Creates a new tag
      */
     fun createTag(
         vaultId: String,
@@ -60,130 +62,120 @@ class TagManagementViewModel @Inject constructor(
                     color = color,
                     createdAt = System.currentTimeMillis()
                 )
-                tagDao.insert(tag)
+                fileVaultRepository.addTag(tag)
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de création")
+                _uiState.value = TagUiState.Error(e.message ?: "Error creating tag")
             }
         }
     }
 
     /**
-     * Met à jour un tag
+     * Updates a tag
      */
     fun updateTag(tag: TagEntity) {
         viewModelScope.launch {
             try {
-                tagDao.update(tag)
+                fileVaultRepository.updateTag(tag)
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de mise à jour")
+                _uiState.value = TagUiState.Error(e.message ?: "Error updating tag")
             }
         }
     }
 
     /**
-     * Supprime un tag
+     * Deletes a tag
      *
-     * Les associations avec les entrées sont supprimées automatiquement (CASCADE).
+     * Entry associations are removed automatically.
      */
     fun deleteTag(tagId: String) {
         viewModelScope.launch {
             try {
-                tagDao.deleteById(tagId)
+                fileVaultRepository.deleteTag(tagId)
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de suppression")
+                _uiState.value = TagUiState.Error(e.message ?: "Error deleting tag")
             }
         }
     }
 
     /**
-     * Ajoute un tag à une entrée
+     * Adds a tag to an entry
      */
     fun addTagToEntry(entryId: String, tagId: String) {
         viewModelScope.launch {
             try {
-                tagDao.addTagToEntry(
-                    EntryTagCrossRef(
-                        entryId = entryId,
-                        tagId = tagId
-                    )
-                )
+                fileVaultRepository.addTagToEntry(entryId, tagId)
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur d'ajout")
+                _uiState.value = TagUiState.Error(e.message ?: "Error adding tag to entry")
             }
         }
     }
 
     /**
-     * Retire un tag d'une entrée
+     * Removes a tag from an entry
      */
     fun removeTagFromEntry(entryId: String, tagId: String) {
         viewModelScope.launch {
             try {
-                tagDao.removeTagFromEntry(
-                    EntryTagCrossRef(
-                        entryId = entryId,
-                        tagId = tagId
-                    )
-                )
+                fileVaultRepository.removeTagFromEntry(entryId, tagId)
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de retrait")
+                _uiState.value = TagUiState.Error(e.message ?: "Error removing tag from entry")
             }
         }
     }
 
     /**
-     * Charge les statistiques des tags (nombre d'entrées par tag)
+     * Loads tag statistics (entry count per tag)
      */
     fun loadTagStatistics(vaultId: String) {
         viewModelScope.launch {
             try {
-                tagDao.getTagsByVault(vaultId).collect { tags ->
+                fileVaultRepository.getTags().collect { tags ->
                     val statistics = tags.map { tag ->
-                        val count = tagDao.getEntryCountForTag(tag.id)
+                        val count = fileVaultRepository.getEntryCountForTag(tag.id)
                         TagStatistic(tag, count)
                     }.sortedByDescending { it.count }
 
                     _uiState.value = TagUiState.SuccessWithStats(tags, statistics)
                 }
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de chargement")
+                _uiState.value = TagUiState.Error(e.message ?: "Error loading statistics")
             }
         }
     }
 
     /**
-     * Charge les tags d'une entrée spécifique
+     * Loads tags for a specific entry
      */
     fun loadTagsForEntry(entryId: String) {
         viewModelScope.launch {
             try {
-                tagDao.getTagsForEntry(entryId).collect { tags ->
+                fileVaultRepository.getTagsForEntry(entryId).collect { tags ->
                     _uiState.value = TagUiState.Success(tags)
                 }
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de chargement")
+                _uiState.value = TagUiState.Error(e.message ?: "Error loading tags")
             }
         }
     }
 
     /**
-     * Recherche des tags par nom
+     * Searches tags by name
      */
     fun searchTags(vaultId: String, query: String) {
         viewModelScope.launch {
             try {
-                tagDao.searchTags(vaultId, "%$query%").collect { tags ->
+                fileVaultRepository.searchTags(query).collect { tags ->
                     _uiState.value = TagUiState.Success(tags)
                 }
             } catch (e: Exception) {
-                _uiState.value = TagUiState.Error(e.message ?: "Erreur de recherche")
+                _uiState.value = TagUiState.Error(e.message ?: "Error searching tags")
             }
         }
     }
 }
 
 /**
- * Statistique d'un tag
+ * Tag statistic
  */
 data class TagStatistic(
     val tag: TagEntity,
@@ -191,7 +183,7 @@ data class TagStatistic(
 )
 
 /**
- * États UI pour la gestion des tags
+ * UI states for tag management
  */
 sealed class TagUiState {
     object Loading : TagUiState()

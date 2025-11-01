@@ -3,7 +3,9 @@ package com.julien.genpwdpro.data.sync
 import android.app.Activity
 import android.content.Context
 import com.julien.genpwdpro.core.log.SafeLog
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
+import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
 import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as VaultConflictResolutionStrategy
@@ -16,30 +18,36 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
- * Gestionnaire de synchronisation des vaults avec le cloud
+ * Cloud sync manager for vaults (file-based system)
  *
- * Fonctionnalités:
- * - Synchronisation bidirectionnelle des vaults
- * - Gestion multi-providers (Google Drive, OneDrive, etc.)
- * - Détection et résolution de conflits
- * - Chiffrement end-to-end
+ * Features:
+ * - Bidirectional vault synchronization
+ * - Multi-provider support (Google Drive, OneDrive, etc.)
+ * - Conflict detection and resolution
+ * - End-to-end encryption
  *
  * Workflow:
- * 1. Exporter vault → Données chiffrées (VaultRepository)
- * 2. Upload vers cloud (CloudProvider)
- * 3. Download depuis cloud (CloudProvider)
- * 4. Importer vault → Déchiffrement (VaultRepository)
+ * 1. Export vault → Encrypted data (.gpv file)
+ * 2. Upload to cloud (CloudProvider)
+ * 3. Download from cloud (CloudProvider)
+ * 4. Import vault → Decryption (.gpv file)
+ *
+ * TODO: This class needs redesign for .gpv file-based sync.
+ * Currently uses stub implementations for compilation.
  */
 @Singleton
 class VaultSyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val vaultRepository: VaultRepository,
+    private val fileVaultRepository: FileVaultRepository,
     private val conflictResolver: ConflictResolver,
     private val credentialManager: ProviderCredentialManager,
     private val syncPreferencesManager: SyncPreferencesManager,
-    private val autoSyncScheduler: AutoSyncScheduler
+    private val autoSyncScheduler: AutoSyncScheduler,
+    private val cloudRepository: CloudProviderSyncRepository
 ) {
 
     companion object {
@@ -58,6 +66,7 @@ class VaultSyncManager @Inject constructor(
 
     private var currentProvider: CloudProvider? = null
     private var currentProviderType: CloudProviderType = CloudProviderType.NONE
+    private val providerMutex = Mutex()
 
     /**
      * ID de cet appareil (unique)
@@ -89,12 +98,19 @@ class VaultSyncManager @Inject constructor(
      * @param provider Instance du provider (GoogleDriveProvider, etc.)
      * @param type Type du provider
      */
-    fun setProvider(provider: CloudProvider, type: CloudProviderType) {
+    fun setProvider(
+        provider: CloudProvider,
+        type: CloudProviderType,
+        providerConfig: ProviderConfig? = null
+    ) {
         currentProvider = provider
         currentProviderType = type
 
+        cloudRepository.setActiveProvider(type, provider, providerConfig)
+
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_PROVIDER_TYPE, type.name).apply()
+        syncPreferencesManager.setCurrentProvider(type)
 
         _config.value = _config.value.copy(
             enabled = true,
@@ -104,18 +120,76 @@ class VaultSyncManager @Inject constructor(
         )
     }
 
+    suspend fun rehydrateActiveProvider(): Boolean {
+        return ensureProvider() != null
+    }
+
+    private fun readStoredProviderType(): CloudProviderType? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val stored = prefs.getString(KEY_PROVIDER_TYPE, null) ?: return null
+        return runCatching { CloudProviderType.valueOf(stored) }
+            .onFailure { prefs.edit().remove(KEY_PROVIDER_TYPE).apply() }
+            .getOrNull()
+    }
+
+    private suspend fun ensureProvider(): CloudProvider? {
+        return providerMutex.withLock {
+            currentProvider?.let { return it }
+
+            val persistedType = currentProviderType.takeIf { it != CloudProviderType.NONE }
+                ?: cloudRepository.getActiveProviderType()?.takeIf { it != CloudProviderType.NONE }
+                ?: cloudRepository.getStoredProviderType()
+                ?: readStoredProviderType()
+
+            val providerType = persistedType ?: CloudProviderType.NONE
+            if (providerType == CloudProviderType.NONE) {
+                SafeLog.w(TAG, "No active cloud provider configured")
+                return null
+            }
+
+            val restored = cloudRepository.rehydrateActiveProvider(providerType)
+            if (!restored) {
+                SafeLog.w(TAG, "Failed to rehydrate cloud provider: $providerType")
+                return null
+            }
+
+            val provider = cloudRepository.getOrCreateActiveProvider()
+            if (provider == null) {
+                SafeLog.w(TAG, "Cloud provider instance unavailable after rehydration: $providerType")
+                return null
+            }
+
+            currentProvider = provider
+            currentProviderType = providerType
+
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(KEY_PROVIDER_TYPE, providerType.name).apply()
+            syncPreferencesManager.setCurrentProvider(providerType)
+
+            _config.value = _config.value.copy(
+                enabled = true,
+                providerType = providerType,
+                deviceId = deviceId,
+                deviceName = deviceName
+            )
+
+            provider
+        }
+    }
+
     /**
      * Vérifie si le provider est authentifié
      */
     suspend fun isAuthenticated(): Boolean {
-        return currentProvider?.isAuthenticated() ?: false
+        val provider = ensureProvider() ?: return false
+        return provider.isAuthenticated()
     }
 
     /**
      * Authentifie auprès du provider
      */
     suspend fun authenticate(activity: Activity): Boolean {
-        val provider = currentProvider ?: return false
+        val provider = ensureProvider() ?: return false
         val success = provider.authenticate(activity)
 
         if (success) {
@@ -131,10 +205,15 @@ class VaultSyncManager @Inject constructor(
     suspend fun disconnect() {
         SafeLog.i(TAG, "Disconnecting cloud provider and clearing credentials")
 
-        val providerType = currentProviderType
+        val providerType = currentProviderType.takeIf { it != CloudProviderType.NONE }
+            ?: cloudRepository.getActiveProviderType()?.takeIf { it != CloudProviderType.NONE }
+            ?: readStoredProviderType()
+            ?: CloudProviderType.NONE
+
+        val provider = currentProvider ?: ensureProvider()
 
         try {
-            currentProvider?.disconnect()
+            provider?.disconnect()
         } catch (e: Exception) {
             SafeLog.w(TAG, "Error while disconnecting provider", e)
         }
@@ -151,6 +230,9 @@ class VaultSyncManager @Inject constructor(
         } catch (e: Exception) {
             SafeLog.w(TAG, "Failed to clear sync preferences credentials", e)
         }
+
+        cloudRepository.clearActiveProvider()
+        syncPreferencesManager.setCurrentProvider(CloudProviderType.NONE)
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit()
@@ -175,18 +257,22 @@ class VaultSyncManager @Inject constructor(
      * @return Résultat de la synchronisation
      */
     suspend fun syncVault(vaultId: String, masterPassword: String): VaultSyncResult {
-        val provider = currentProvider ?: return VaultSyncResult.Error("Aucun provider configuré")
+        val provider = ensureProvider() ?: return VaultSyncResult.Error("Aucun provider configuré")
 
         _syncStatus.value = SyncStatus.SYNCING
 
-        return try {
-            // 1. Exporter le vault (chiffré)
-            val encryptedData = vaultRepository.exportVault(vaultId, masterPassword)
-                ?: return VaultSyncResult.Error("Impossible d'exporter le vault")
+        // TODO: Implement .gpv file export for sync
+        // Need to read .gpv file directly from VaultFileManager
+        SafeLog.w(TAG, "exportVault not yet implemented for .gpv files")
+        return VaultSyncResult.Error("Sync not yet implemented for file-based vaults")
 
-            // 2. Obtenir les métadonnées du vault
-            val vault = vaultRepository.getVaultById(vaultId)
-                ?: return VaultSyncResult.Error("Vault non trouvé")
+        /*
+        return try {
+            // 1. Export vault (encrypted) - needs .gpv file access
+            val encryptedData = TODO("Read .gpv file from VaultFileManager")
+
+            // 2. Get vault metadata - needs VaultRegistryDao
+            val vaultName = TODO("Get vault name from VaultRegistryDao")
 
             // 3. Calculer le checksum
             val checksum = calculateChecksum(encryptedData)
@@ -227,6 +313,7 @@ class VaultSyncManager @Inject constructor(
             _syncStatus.value = SyncStatus.ERROR
             VaultSyncResult.Error(e.message ?: "Erreur inconnue", e)
         }
+        */
     }
 
     /**
@@ -237,19 +324,26 @@ class VaultSyncManager @Inject constructor(
      * @return true si le téléchargement a réussi
      */
     suspend fun downloadVault(vaultId: String, masterPassword: String): Boolean {
-        val provider = currentProvider ?: return false
+        val provider = ensureProvider() ?: return false
 
         _syncStatus.value = SyncStatus.SYNCING
 
         return try {
-            // 1. Télécharger depuis le cloud
+            // TODO: Implement .gpv file import for sync
+            // Need to write .gpv file directly via VaultFileManager
+            SafeLog.w(TAG, "importVault not yet implemented for .gpv files")
+            _syncStatus.value = SyncStatus.ERROR
+            return false
+
+            /*
+            // 1. Download from cloud
             val syncData = provider.downloadVault(vaultId)
                 ?: return false.also {
                     _syncStatus.value = SyncStatus.ERROR
                 }
 
-            // 2. Importer le vault (déchiffré)
-            val success = vaultRepository.importVault(syncData.encryptedData, masterPassword)
+            // 2. Import vault - needs .gpv file writing
+            val success = TODO("Write .gpv file via VaultFileManager")
 
             _syncStatus.value = if (success) {
                 SyncStatus.SYNCED
@@ -258,6 +352,7 @@ class VaultSyncManager @Inject constructor(
             }
 
             success
+            */
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error downloading vault", e)
             _syncStatus.value = SyncStatus.ERROR
@@ -280,18 +375,24 @@ class VaultSyncManager @Inject constructor(
         strategy: VaultConflictResolutionStrategy,
         masterPassword: String
     ): Boolean {
-        val provider = currentProvider ?: return false
+        val provider = ensureProvider() ?: return false
 
         return try {
+            // TODO: Implement conflict resolution for .gpv files
+            SafeLog.w(TAG, "Conflict resolution not yet implemented for .gpv files")
+            _syncStatus.value = SyncStatus.ERROR
+            return false
+
+            /*
             val resolvedData = conflictResolver.resolve(local, remote, strategy)
 
-            // Upload de la version résolue
+            // Upload resolved version
             val fileId = provider.uploadVault(resolvedData.vaultId, resolvedData)
 
             if (fileId != null) {
-                // Importer localement si nécessaire
+                // Import locally if needed - TODO: .gpv file writing
                 if (resolvedData != local) {
-                    vaultRepository.importVault(resolvedData.encryptedData, masterPassword)
+                    TODO("Write .gpv file via VaultFileManager")
                 }
 
                 _syncStatus.value = SyncStatus.SYNCED
@@ -299,6 +400,7 @@ class VaultSyncManager @Inject constructor(
             } else {
                 false
             }
+            */
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error resolving conflict", e)
             false
@@ -309,14 +411,16 @@ class VaultSyncManager @Inject constructor(
      * Liste tous les vaults synchronisés sur le cloud
      */
     suspend fun listCloudVaults(): List<String> {
-        return currentProvider?.listVaults()?.map { it.fileId } ?: emptyList()
+        val provider = ensureProvider() ?: return emptyList()
+        return provider.listVaults().map { it.fileId }
     }
 
     /**
      * Récupère le quota de stockage
      */
     suspend fun getStorageQuota(): StorageQuota? {
-        return currentProvider?.getStorageQuota()
+        val provider = ensureProvider() ?: return null
+        return provider.getStorageQuota()
     }
 
     /**

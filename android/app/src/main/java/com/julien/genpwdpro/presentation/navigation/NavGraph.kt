@@ -7,7 +7,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.presentation.screens.GeneratorScreen
 import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
@@ -48,6 +49,7 @@ sealed class Screen(val route: String) {
 
     // Security Settings
     object SecuritySettings : Screen("security_settings")
+    object Privacy : Screen("privacy")
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {
@@ -124,7 +126,6 @@ sealed class Screen(val route: String) {
 fun AppNavGraph(
     navController: NavHostController,
     startDestination: String = Screen.Dashboard.route,
-    sessionManager: com.julien.genpwdpro.domain.session.SessionManager,
     vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) {
     val navScope = rememberCoroutineScope()
@@ -175,7 +176,10 @@ fun AppNavGraph(
         composable(Screen.Generator.route) {
             // ✅ FIX: Utiliser VaultSessionManager (nouveau système file-based)
             val currentVaultId = vaultSessionManager.getCurrentVaultId()
-            android.util.Log.d("NavGraph", "Generator - Current vault ID: $currentVaultId")
+            SafeLog.d(
+                "NavGraph",
+                "Generator - Current vault ID: ${SafeLog.redact(currentVaultId)}"
+            )
 
             GeneratorScreen(
                 vaultId = currentVaultId,

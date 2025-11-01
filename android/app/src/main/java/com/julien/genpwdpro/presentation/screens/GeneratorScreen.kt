@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.presentation.components.*
-import com.julien.genpwdpro.presentation.utils.ClipboardUtils
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -327,10 +327,11 @@ fun GeneratorScreen(
                         result = result,
                         onCopy = {
                             // Copie sécurisée avec auto-effacement après 60s
-                            ClipboardUtils.copyWithTimeout(
+                            ClipboardUtils.copySensitive(
                                 context = context,
-                                text = result.password,
-                                showToast = false
+                                label = "Password",
+                                value = result.password,
+                                ttlMs = 60000L
                             )
                             // Afficher snackbar
                             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {

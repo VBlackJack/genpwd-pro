@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -54,7 +54,7 @@ class GoogleDriveProvider : CloudProvider {
         try {
             driveService != null && currentAccount != null
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking authentication", e)
+            SafeLog.e(TAG, "Error checking authentication", e)
             false
         }
     }
@@ -83,7 +83,7 @@ class GoogleDriveProvider : CloudProvider {
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error during authentication", e)
+            SafeLog.e(TAG, "Error during authentication", e)
             false
         }
     }
@@ -103,7 +103,7 @@ class GoogleDriveProvider : CloudProvider {
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling sign-in result", e)
+            SafeLog.e(TAG, "Error handling sign-in result", e)
             false
         }
     }
@@ -137,7 +137,7 @@ class GoogleDriveProvider : CloudProvider {
             driveService = null
             currentAccount = null
         } catch (e: Exception) {
-            Log.e(TAG, "Error during disconnect", e)
+            SafeLog.e(TAG, "Error during disconnect", e)
         }
     }
 
@@ -179,13 +179,13 @@ class GoogleDriveProvider : CloudProvider {
                     .execute()
             }
 
-            Log.d(TAG, "Vault uploaded: ${file.id}")
+            SafeLog.d(TAG, "Vault uploaded: ${file.id}")
             file.id
         } catch (e: IOException) {
-            Log.e(TAG, "Error uploading vault", e)
+            SafeLog.e(TAG, "Error uploading vault", e)
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error uploading vault", e)
+            SafeLog.e(TAG, "Unexpected error uploading vault", e)
             null
         }
     }
@@ -218,10 +218,10 @@ class GoogleDriveProvider : CloudProvider {
                 checksum = file.md5Checksum ?: ""
             )
         } catch (e: IOException) {
-            Log.e(TAG, "Error downloading vault", e)
+            SafeLog.e(TAG, "Error downloading vault", e)
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error downloading vault", e)
+            SafeLog.e(TAG, "Unexpected error downloading vault", e)
             null
         }
     }
@@ -236,7 +236,7 @@ class GoogleDriveProvider : CloudProvider {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking version", e)
+            SafeLog.e(TAG, "Error checking version", e)
             false
         }
     }
@@ -250,13 +250,13 @@ class GoogleDriveProvider : CloudProvider {
             val file = findVaultFile(vaultId) ?: return@withContext false
 
             service.files().delete(file.id).execute()
-            Log.d(TAG, "Vault deleted: $vaultId")
+            SafeLog.d(TAG, "Vault deleted: $vaultId")
             true
         } catch (e: IOException) {
-            Log.e(TAG, "Error deleting vault", e)
+            SafeLog.e(TAG, "Error deleting vault", e)
             false
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error deleting vault", e)
+            SafeLog.e(TAG, "Unexpected error deleting vault", e)
             false
         }
     }
@@ -279,7 +279,7 @@ class GoogleDriveProvider : CloudProvider {
                 version = file.version?.toString()
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting metadata", e)
+            SafeLog.e(TAG, "Error getting metadata", e)
             null
         }
     }
@@ -309,10 +309,10 @@ class GoogleDriveProvider : CloudProvider {
                 )
             }
         } catch (e: IOException) {
-            Log.e(TAG, "Error listing vaults", e)
+            SafeLog.e(TAG, "Error listing vaults", e)
             emptyList()
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error listing vaults", e)
+            SafeLog.e(TAG, "Unexpected error listing vaults", e)
             emptyList()
         }
     }
@@ -336,10 +336,10 @@ class GoogleDriveProvider : CloudProvider {
                 freeBytes = (quota.limit ?: 0L) - (quota.usage ?: 0L)
             )
         } catch (e: IOException) {
-            Log.e(TAG, "Error getting storage quota", e)
+            SafeLog.e(TAG, "Error getting storage quota", e)
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error getting storage quota", e)
+            SafeLog.e(TAG, "Unexpected error getting storage quota", e)
             null
         }
     }
@@ -364,7 +364,7 @@ class GoogleDriveProvider : CloudProvider {
 
             result.files.firstOrNull()
         } catch (e: Exception) {
-            Log.e(TAG, "Error finding vault file", e)
+            SafeLog.e(TAG, "Error finding vault file", e)
             null
         }
     }

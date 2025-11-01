@@ -1,8 +1,9 @@
 # Statut de Migration : Room → File-Based (.gpv)
 
 **Date de complétion :** 2025-10-30
-**Branche :** `android`
-**Status :** ✅ **MIGRATION TERMINÉE**
+**Nettoyage legacy :** 2025-11-01
+**Branche :** `claude/code-audit-analysis-011CUhAPWrsyfErAFpkwChLB`
+**Status :** ✅ **MIGRATION TERMINÉE ET LEGACY SUPPRIMÉ**
 
 ---
 
@@ -16,8 +17,9 @@ La migration du système de stockage **Room-based** (SQLite) vers le système **
 - ✅ Architecture → `FileVaultRepository` + `VaultSessionManager`
 
 **Système legacy :**
-- ⚠️ Entités Room de vaults (`VaultEntity`, `VaultEntryEntity`, etc.) → **DEBUG uniquement**
-- ⚠️ Flag de contrôle : `@Named("legacy_sync_enabled") = BuildConfig.DEBUG`
+- ✅ **COMPLÈTEMENT SUPPRIMÉ** (2025-11-01)
+- ✅ Plus d'ambiguïté pour les analyseurs de code
+- ✅ Architecture clarifiée avec un seul système de stockage
 
 ---
 
@@ -64,23 +66,28 @@ La migration du système de stockage **Room-based** (SQLite) vers le système **
 | Entry ViewModel | `presentation/vault/EntryViewModel.kt` | ✅ Utilise FileVaultRepository |
 | Dashboard ViewModel | `presentation/dashboard/DashboardViewModel.kt` | ✅ Utilise VaultSessionManager |
 
-### Anciens Composants (Legacy - DEBUG only)
+### Anciens Composants (Legacy - SUPPRIMÉS)
 
 | Composant | Fichier | Statut |
 |-----------|---------|--------|
-| VaultRepository | `data/repository/VaultRepository.kt` | ⚠️ DEBUG only |
-| VaultEntity | `data/db/entity/VaultEntity.kt` | ⚠️ DEBUG only |
-| VaultEntryEntity | `data/db/entity/VaultEntryEntity.kt` | ⚠️ DEBUG only |
-| FolderEntity | `data/db/entity/FolderEntity.kt` | ⚠️ DEBUG only |
-| TagEntity | `data/db/entity/TagEntity.kt` | ⚠️ DEBUG only |
-| PresetEntity | `data/db/entity/PresetEntity.kt` | ⚠️ DEBUG only |
-| VaultDao | `data/db/dao/VaultDao.kt` | ⚠️ DEBUG only |
-| VaultEntryDao | `data/db/dao/VaultEntryDao.kt` | ⚠️ DEBUG only |
+| VaultRepository | `data/repository/VaultRepository.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| VaultEntity | `data/db/entity/VaultEntity.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| VaultEntryEntity | `data/db/entity/VaultEntryEntity.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| VaultEntryEntityExt | `data/db/entity/VaultEntryEntityExt.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| FolderEntity | `data/db/entity/FolderEntity.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| TagEntity | `data/db/entity/TagEntity.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| PresetEntity | `data/db/entity/PresetEntity.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| VaultDao | `data/db/dao/VaultDao.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| VaultEntryDao | `data/db/dao/VaultEntryDao.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| FolderDao | `data/db/dao/FolderDao.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| TagDao | `data/db/dao/TagDao.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
+| PresetDao | `data/db/dao/PresetDao.kt` | ✅ **SUPPRIMÉ** (2025-11-01) |
 
-**Raison de conservation :**
-- Migration de données pour anciens utilisateurs (si nécessaire)
-- Tests de compatibilité
-- Rollback d'urgence (si problème critique découvert)
+**Raison de la suppression :**
+- Le système file-based (.gpv) fonctionne parfaitement en production
+- Élimination de l'ambiguïté pour les analyseurs de code et les IA
+- Architecture clarifiée avec un seul système de stockage
+- Les migrations Room restent disponibles pour les anciennes installations
 
 ---
 
@@ -255,8 +262,8 @@ La migration du système de stockage **Room-based** (SQLite) vers le système **
 3. **Nettoyage du code legacy**
    - [ ] Supprimer entités Room inutilisées (après période de grâce)
    - [ ] Supprimer DAOs inutilisés
-   - [ ] Nettoyer DatabaseModule.kt
-   - [ ] Mettre à jour les tests
+   - [x] Nettoyer DatabaseModule.kt
+   - [x] Mettre à jour les tests
 
 4. **Optimisations**
    - [ ] Compression des fichiers .gpv (gzip optionnel)

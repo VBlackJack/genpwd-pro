@@ -3,11 +3,11 @@ package com.julien.genpwdpro.presentation.vaultmanager
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.vault.VaultFileManager
-import com.julien.genpwdpro.data.vault.VaultMigrationManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
@@ -22,7 +22,6 @@ import kotlinx.coroutines.launch
 class VaultManagerViewModel @Inject constructor(
     private val vaultRegistryDao: VaultRegistryDao,
     private val vaultFileManager: VaultFileManager,
-    private val migrationManager: VaultMigrationManager,
     private val biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager,
     private val vaultSessionManager: VaultSessionManager
 ) : ViewModel() {
@@ -54,21 +53,7 @@ class VaultManagerViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    init {
-        checkMigrationNeeded()
-    }
-
-    /**
-     * Vérifie si une migration est nécessaire
-     */
-    private fun checkMigrationNeeded() {
-        viewModelScope.launch {
-            val needed = migrationManager.isMigrationNeeded()
-            if (needed) {
-                _uiState.update { it.copy(showMigrationDialog = true) }
-            }
-        }
-    }
+    // Migration removed - Room to .gpv migration is no longer needed
 
     /**
      * Crée un nouveau vault
@@ -147,7 +132,7 @@ class VaultManagerViewModel @Inject constructor(
 
                 // Sauvegarder la biométrie si demandé
                 if (enableBiometric && activity != null) {
-                    android.util.Log.d("VaultManagerVM", "Enabling biometric for vault $vaultId")
+                    SafeLog.d("VaultManagerVM", "Enabling biometric for vault=${SafeLog.redact(vaultId)}")
                     val biometricResult = biometricVaultManager.enableBiometric(
                         activity,
                         vaultId,
@@ -155,21 +140,21 @@ class VaultManagerViewModel @Inject constructor(
                     )
                     biometricResult.fold(
                         onSuccess = {
-                            android.util.Log.i(
+                            SafeLog.i(
                                 "VaultManagerVM",
-                                "✅ Biometric enabled successfully for vault $vaultId"
+                                "✅ Biometric enabled successfully for vault ${SafeLog.redact(vaultId)}"
                             )
                         },
                         onFailure = { error ->
-                            android.util.Log.e(
+                            SafeLog.e(
                                 "VaultManagerVM",
-                                "❌ Failed to save biometric for vault $vaultId: ${error.message}",
+                                "❌ Failed to save biometric for vault ${SafeLog.redact(vaultId)}: ${error.message}",
                                 error
                             )
                         }
                     )
                 } else if (enableBiometric && activity == null) {
-                    android.util.Log.w(
+                    SafeLog.w(
                         "VaultManagerVM",
                         "Cannot enable biometric: activity is null"
                     )
@@ -384,49 +369,7 @@ class VaultManagerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Lance la migration Room → .gpv
-     */
-    fun startMigration(masterPasswords: Map<String, String>) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isMigrating = true, migrationProgress = null) }
-
-            val result = migrationManager.migrateAllVaults(
-                masterPasswords = masterPasswords,
-                progressCallback = { progress ->
-                    _uiState.update { it.copy(migrationProgress = progress) }
-                }
-            )
-
-            when (result) {
-                is VaultMigrationManager.MigrationResult.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isMigrating = false,
-                            showMigrationDialog = false,
-                            successMessage = "${result.migratedCount} vaults migrated successfully"
-                        )
-                    }
-                }
-                is VaultMigrationManager.MigrationResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isMigrating = false,
-                            error = result.message
-                        )
-                    }
-                }
-                VaultMigrationManager.MigrationResult.NotNeeded -> {
-                    _uiState.update {
-                        it.copy(
-                            isMigrating = false,
-                            showMigrationDialog = false
-                        )
-                    }
-                }
-            }
-        }
-    }
+    // Migration removed - Room to .gpv migration is no longer needed
 
     // UI Actions
     fun showCreateDialog() {
@@ -453,9 +396,7 @@ class VaultManagerViewModel @Inject constructor(
         _uiState.update { it.copy(confirmDeleteVaultId = null) }
     }
 
-    fun hideMigrationDialog() {
-        _uiState.update { it.copy(showMigrationDialog = false) }
-    }
+    // Migration dialog removed - no longer needed
 
     fun showExportDialog(vaultId: String) {
         _uiState.update { it.copy(exportVaultId = vaultId) }
@@ -505,7 +446,7 @@ class VaultManagerViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                android.util.Log.e("VaultManagerViewModel", "Import error", e)
+                SafeLog.e("VaultManagerViewModel", "Import error", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -534,10 +475,7 @@ data class VaultManagerUiState(
     val successMessage: String? = null,
     val showCreateDialog: Boolean = false,
     val showImportDialog: Boolean = false,
-    val showMigrationDialog: Boolean = false,
     val confirmDeleteVaultId: String? = null,
     val exportVaultId: String? = null,  // ID du coffre à exporter
-    val isMigrating: Boolean = false,
-    val migrationProgress: VaultMigrationManager.MigrationProgress? = null,
     val customFolderUri: Uri? = null // URI du dossier sélectionné pour CUSTOM storage
 )

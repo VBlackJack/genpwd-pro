@@ -3,7 +3,7 @@ package com.julien.genpwdpro.presentation.vault
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
@@ -264,7 +264,7 @@ class EntryViewModel @Inject constructor(
             try {
                 when (_entryType.value) {
                     EntryType.LOGIN -> {
-                        val entry = createVaultEntry(
+                        val entry = VaultEntryEntity(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -274,7 +274,7 @@ class EntryViewModel @Inject constructor(
                             url = _url.value,
                             notes = _notes.value,
                             customFields = "",
-                            entryType = EntryType.LOGIN,
+                            entryType = EntryType.LOGIN.name,
                             isFavorite = _isFavorite.value,
                             passwordStrength = _passwordStrength.value,
                             passwordEntropy = _passwordEntropy.value,
@@ -322,7 +322,7 @@ class EntryViewModel @Inject constructor(
                     }
 
                     EntryType.WIFI -> {
-                        val entry = createVaultEntry(
+                        val entry = VaultEntryEntity(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -332,7 +332,7 @@ class EntryViewModel @Inject constructor(
                             url = "",
                             notes = _notes.value,
                             customFields = "",
-                            entryType = EntryType.WIFI,
+                            entryType = EntryType.WIFI.name,
                             isFavorite = _isFavorite.value,
                             passwordStrength = _passwordStrength.value,
                             passwordEntropy = _passwordEntropy.value,
@@ -380,7 +380,7 @@ class EntryViewModel @Inject constructor(
 
                     EntryType.NOTE -> {
                         // Créer une note sécurisée
-                        val entry = createVaultEntry(
+                        val entry = VaultEntryEntity(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -390,7 +390,7 @@ class EntryViewModel @Inject constructor(
                             url = "",
                             notes = _notes.value,
                             customFields = "",
-                            entryType = EntryType.NOTE,
+                            entryType = EntryType.NOTE.name,
                             isFavorite = _isFavorite.value,
                             passwordStrength = 0,
                             passwordEntropy = 0.0,

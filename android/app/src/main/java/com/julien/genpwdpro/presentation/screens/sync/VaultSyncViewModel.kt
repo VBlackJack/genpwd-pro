@@ -1,13 +1,19 @@
 package com.julien.genpwdpro.presentation.screens.sync
 
 import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.sync.AutoSyncScheduler
+import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.SyncPreferencesManager
 import com.julien.genpwdpro.data.sync.VaultSyncManager
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -27,7 +33,10 @@ class VaultSyncViewModel @Inject constructor(
     private val vaultSyncManager: VaultSyncManager,
     private val autoSyncScheduler: AutoSyncScheduler,
     private val providerFactory: com.julien.genpwdpro.data.sync.providers.CloudProviderFactory,
-    private val preferencesManager: SyncPreferencesManager
+    private val preferencesManager: SyncPreferencesManager,
+    private val credentialManager: ProviderCredentialManager,
+    private val cloudRepository: CloudProviderSyncRepository,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VaultSyncUiState())
@@ -67,6 +76,82 @@ class VaultSyncViewModel @Inject constructor(
         _uiState.update { it.copy(selectedProvider = providerType) }
     }
 
+    private fun prepareProvider(
+        providerType: CloudProviderType
+    ): CloudProviderSyncRepository.ProviderPreparationResult {
+        return cloudRepository.prepareConfiguredProvider(providerType)
+    }
+
+    private fun formatErrorMessage(detail: String?): String {
+        val message = detail?.ifBlank { null }
+        return if (message == null) {
+            appContext.getString(R.string.sync_error_unknown)
+        } else {
+            appContext.getString(R.string.sync_error_with_detail, message)
+        }
+    }
+
+    private fun formatDisconnectError(detail: String?): String {
+        val message = detail?.ifBlank { null }
+        return if (message == null) {
+            appContext.getString(R.string.sync_disconnect_error_generic)
+        } else {
+            appContext.getString(R.string.sync_disconnect_error_with_detail, message)
+        }
+    }
+
+    private fun formatConflictResolutionMessage(success: Boolean): Pair<String?, String?> {
+        return if (success) {
+            appContext.getString(R.string.sync_conflict_resolved) to null
+        } else {
+            null to appContext.getString(R.string.sync_conflict_resolution_unavailable)
+        }
+    }
+
+    private fun formatDownloadMessage(success: Boolean): Pair<String?, String?> {
+        return if (success) {
+            appContext.getString(R.string.sync_download_success) to null
+        } else {
+            appContext.getString(R.string.sync_download_failure) to appContext.getString(R.string.sync_download_unavailable)
+        }
+    }
+
+    private fun formatOperationError(detail: String?): String {
+        val message = detail?.ifBlank { null }
+        return if (message == null) {
+            appContext.getString(R.string.sync_error_unknown)
+        } else {
+            appContext.getString(R.string.sync_error_with_detail, message)
+        }
+    }
+
+    private fun formatWebDavConnectionError(detail: String?): String {
+        val message = detail?.ifBlank { null } ?: appContext.getString(R.string.sync_webdav_connection_unreachable)
+        return appContext.getString(R.string.sync_webdav_connection_error, message)
+    }
+
+    private fun formatWebDavDisconnectError(detail: String?): String {
+        val message = detail?.ifBlank { null }
+        return if (message == null) {
+            appContext.getString(R.string.sync_webdav_disconnect_unknown)
+        } else {
+            appContext.getString(R.string.sync_webdav_disconnect_error, message)
+        }
+    }
+
+    private fun formatQuotaMessage(used: String, total: String): String {
+        return appContext.getString(R.string.sync_webdav_connection_success_detail, used, total)
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        return when {
+            bytes < 1024 -> appContext.getString(R.string.sync_bytes_format_b, bytes)
+            bytes < 1024 * 1024 -> appContext.getString(R.string.sync_bytes_format_kb, bytes / 1024)
+            bytes < 1024 * 1024 * 1024 -> appContext.getString(R.string.sync_bytes_format_mb, bytes / (1024 * 1024))
+            else -> appContext.getString(R.string.sync_bytes_format_gb, bytes / (1024.0 * 1024.0 * 1024.0))
+        }
+    }
+
     /**
      * Connecte au provider sélectionné
      */
@@ -75,53 +160,69 @@ class VaultSyncViewModel @Inject constructor(
             _uiState.update { it.copy(isConnecting = true, errorMessage = null) }
 
             try {
-                // Créer le provider via la factory
-                val provider = providerFactory.createProvider(providerType)
+                when (val preparation = prepareProvider(providerType)) {
+                    is CloudProviderSyncRepository.ProviderPreparationResult.Success -> {
+                        val providerInfo = providerFactory.getProviderInfo(providerType)
+                        if (providerInfo.implementationStatus != com.julien.genpwdpro.data.sync.providers.ImplementationStatus.PRODUCTION_READY) {
+                            _uiState.update {
+                                it.copy(
+                                    isConnecting = false,
+                                    errorMessage = appContext.getString(
+                                        R.string.sync_provider_not_ready,
+                                        providerInfo.name,
+                                        providerInfo.implementationStatus
+                                    )
+                                )
+                            }
+                            return@launch
+                        }
 
-                if (provider == null) {
-                    _uiState.update {
-                        it.copy(
-                            isConnecting = false,
-                            errorMessage = "Provider non supporté"
+                        vaultSyncManager.setProvider(
+                            preparation.provider,
+                            providerType,
+                            preparation.providerConfig
                         )
+
+                        val success = vaultSyncManager.authenticate(activity)
+
+                        _uiState.update {
+                            it.copy(
+                                isConnecting = false,
+                                isAuthenticated = success,
+                                errorMessage = if (success) null else appContext.getString(R.string.sync_authentication_failed)
+                            )
+                        }
+
+                        if (success) {
+                            loadStorageQuota()
+                        }
                     }
-                    return@launch
-                }
 
-                // Vérifier le statut d'implémentation
-                val providerInfo = providerFactory.getProviderInfo(providerType)
-                if (providerInfo.implementationStatus != com.julien.genpwdpro.data.sync.providers.ImplementationStatus.PRODUCTION_READY) {
-                    _uiState.update {
-                        it.copy(
-                            isConnecting = false,
-                            errorMessage = "${providerInfo.name} n'est pas encore complètement implémenté. Status: ${providerInfo.implementationStatus}"
-                        )
+                    CloudProviderSyncRepository.ProviderPreparationResult.MissingConfiguration -> {
+                        _uiState.update {
+                            it.copy(
+                                isConnecting = false,
+                                errorMessage = appContext.getString(R.string.sync_provider_configuration_required)
+                            )
+                        }
+                        return@launch
                     }
-                    return@launch
-                }
 
-                // Configurer le provider
-                vaultSyncManager.setProvider(provider, providerType)
-
-                // Authentifier
-                val success = vaultSyncManager.authenticate(activity)
-
-                _uiState.update {
-                    it.copy(
-                        isConnecting = false,
-                        isAuthenticated = success,
-                        errorMessage = if (success) null else "Échec de l'authentification"
-                    )
-                }
-
-                if (success) {
-                    loadStorageQuota()
+                    CloudProviderSyncRepository.ProviderPreparationResult.UnsupportedProvider -> {
+                        _uiState.update {
+                            it.copy(
+                                isConnecting = false,
+                                errorMessage = appContext.getString(R.string.sync_error_unknown)
+                            )
+                        }
+                        return@launch
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isConnecting = false,
-                        errorMessage = e.message ?: "Erreur inconnue"
+                        errorMessage = formatErrorMessage(e.message)
                     )
                 }
             }
@@ -160,7 +261,7 @@ class VaultSyncViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = "Erreur lors de la déconnexion: ${e.message}")
+                    it.copy(errorMessage = formatDisconnectError(e.message))
                 }
             }
         }
@@ -181,7 +282,7 @@ class VaultSyncViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isSyncing = false,
-                                lastSyncMessage = "Synchronisation réussie"
+                                lastSyncMessage = appContext.getString(R.string.sync_manual_success)
                             )
                         }
                         loadStorageQuota()
@@ -194,7 +295,7 @@ class VaultSyncViewModel @Inject constructor(
                                     local = result.localVersion,
                                     remote = result.remoteVersion
                                 ),
-                                errorMessage = "Conflit détecté - résolution requise"
+                                errorMessage = appContext.getString(R.string.sync_conflict_requires_resolution)
                             )
                         }
                     }
@@ -202,7 +303,7 @@ class VaultSyncViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isSyncing = false,
-                                errorMessage = "Erreur: ${result.message}"
+                                errorMessage = formatOperationError(result.message)
                             )
                         }
                     }
@@ -211,7 +312,7 @@ class VaultSyncViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        errorMessage = "Erreur: ${e.message}"
+                        errorMessage = formatOperationError(e.message)
                     )
                 }
             }
@@ -228,18 +329,20 @@ class VaultSyncViewModel @Inject constructor(
             try {
                 val success = vaultSyncManager.downloadVault(vaultId, masterPassword)
 
+                val (message, error) = formatDownloadMessage(success)
+
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        lastSyncMessage = if (success) "Téléchargement réussi" else "Échec du téléchargement",
-                        errorMessage = if (!success) "Impossible de télécharger le vault" else null
+                        lastSyncMessage = message,
+                        errorMessage = error
                     )
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        errorMessage = "Erreur: ${e.message}"
+                        errorMessage = formatOperationError(e.message)
                     )
                 }
             }
@@ -263,12 +366,14 @@ class VaultSyncViewModel @Inject constructor(
                     masterPassword
                 )
 
+                val (message, error) = formatConflictResolutionMessage(success)
+
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
                         conflictData = if (success) null else conflictData,
-                        lastSyncMessage = if (success) "Conflit résolu" else "Échec de la résolution",
-                        errorMessage = if (!success) "Impossible de résoudre le conflit" else null
+                        lastSyncMessage = message,
+                        errorMessage = error
                     )
                 }
 
@@ -279,7 +384,7 @@ class VaultSyncViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        errorMessage = "Erreur: ${e.message}"
+                        errorMessage = formatOperationError(e.message)
                     )
                 }
             }
@@ -356,7 +461,7 @@ class VaultSyncViewModel @Inject constructor(
                 _uiState.update { it.copy(cloudVaults = vaultIds) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = "Erreur lors du listage: ${e.message}")
+                    it.copy(errorMessage = appContext.getString(R.string.sync_listing_error, e.message ?: appContext.getString(R.string.sync_error_unknown)))
                 }
             }
         }
@@ -402,6 +507,14 @@ class VaultSyncViewModel @Inject constructor(
                     validateSSL = validateSSL
                 )
 
+                val providerConfig = ProviderConfig(
+                    serverUrl = serverUrl,
+                    username = username,
+                    password = password,
+                    customSettings = mapOf("validateSSL" to validateSSL.toString())
+                )
+                credentialManager.saveProviderConfig(CloudProviderType.WEBDAV, providerConfig)
+
                 // Créer le provider WebDAV
                 val webDAVProvider = providerFactory.createWebDAVProvider(
                     serverUrl = serverUrl,
@@ -411,10 +524,7 @@ class VaultSyncViewModel @Inject constructor(
                 )
 
                 // Configurer le manager
-                vaultSyncManager.setProvider(webDAVProvider, CloudProviderType.WEBDAV)
-
-                // Mettre à jour le provider actuel
-                preferencesManager.setCurrentProvider(CloudProviderType.WEBDAV)
+                vaultSyncManager.setProvider(webDAVProvider, CloudProviderType.WEBDAV, providerConfig)
 
                 _uiState.update {
                     it.copy(
@@ -425,7 +535,12 @@ class VaultSyncViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = "Erreur de configuration WebDAV: ${e.message}")
+                    it.copy(
+                        errorMessage = appContext.getString(
+                            R.string.sync_webdav_configuration_error,
+                            e.message ?: appContext.getString(R.string.sync_error_unknown)
+                        )
+                    )
                 }
             }
         }
@@ -460,22 +575,16 @@ class VaultSyncViewModel @Inject constructor(
 
                 if (isAuthenticated) {
                     // Essayer de récupérer le quota pour vérifier complètement
-                    val quota = testProvider.getStorageQuota()
-                    onResult(
-                        true,
-                        "Connexion réussie! Espace: ${formatBytes(quota.usedBytes)} / ${formatBytes(
-                            quota.totalBytes
-                        )}"
-                    )
+                val quota = testProvider.getStorageQuota()
+                    val used = formatBytes(quota.usedBytes)
+                    val total = formatBytes(quota.totalBytes)
+                    onResult(true, formatQuotaMessage(used, total))
                 } else {
-                    onResult(false, "Échec de l'authentification. Vérifiez vos identifiants.")
+                    onResult(false, appContext.getString(R.string.sync_webdav_authentication_failed))
                 }
             } catch (e: Exception) {
                 _syncProgressState.value = SyncProgressState.Idle
-                onResult(
-                    false,
-                    "Erreur de connexion: ${e.message ?: "Impossible d'accéder au serveur"}"
-                )
+                onResult(false, formatWebDavConnectionError(e.message))
             }
         }
     }
@@ -509,7 +618,7 @@ class VaultSyncViewModel @Inject constructor(
                 _storageQuota.value = null
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = "Erreur de déconnexion: ${e.message}")
+                    it.copy(errorMessage = formatWebDavDisconnectError(e.message))
                 }
             }
         }
@@ -559,17 +668,6 @@ class VaultSyncViewModel @Inject constructor(
         _syncProgressState.value = state
     }
 
-    /**
-     * Formate les bytes en format lisible
-     */
-    private fun formatBytes(bytes: Long): String {
-        return when {
-            bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-            bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-            else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-        }
-    }
 }
 
 /**

@@ -430,7 +430,7 @@ class SyncPreferencesManager @Inject constructor(
      */
     suspend fun resetAll() = withContext(Dispatchers.IO) {
         configPrefs.edit().clear().apply()
-        credentialPrefs.edit().clear().apply()
+        securePrefs.clearAll()
         historyPrefs.edit().clear().apply()
     }
 }

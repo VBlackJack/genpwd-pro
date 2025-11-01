@@ -2,8 +2,9 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.crypto.TotpGenerator
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.model.VaultStatistics
@@ -48,7 +49,7 @@ class VaultListViewModel @Inject constructor(
      */
     fun loadEntries(vaultId: String) {
         currentVaultId = vaultId
-        android.util.Log.d("VaultListViewModel", "Loading entries for vault: $vaultId")
+        SafeLog.d("VaultListViewModel", "Loading entries for vault: ${SafeLog.redact(vaultId)}")
         viewModelScope.launch {
             try {
                 // ✅ FIX: Utiliser FileVaultRepository avec searchEntries() pour filtrage réactif
@@ -58,7 +59,7 @@ class VaultListViewModel @Inject constructor(
                     _filterType,
                     _showFavoritesOnly
                 ) { entries, search, typeFilter, favoritesOnly ->
-                    android.util.Log.d(
+                    SafeLog.d(
                         "VaultListViewModel",
                         "Received ${entries.size} entries from repository"
                     )
@@ -82,14 +83,14 @@ class VaultListViewModel @Inject constructor(
                         matchesSearch && matchesType && matchesFavorites
                     }
                 }.collect { filteredEntries ->
-                    android.util.Log.d(
+                    SafeLog.d(
                         "VaultListViewModel",
                         "Displaying ${filteredEntries.size} filtered entries"
                     )
                     _uiState.value = VaultListUiState.Success(filteredEntries)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("VaultListViewModel", "Error loading entries: ${e.message}", e)
+                SafeLog.e("VaultListViewModel", "Error loading entries: ${e.message}", e)
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur lors du chargement")
             }
         }

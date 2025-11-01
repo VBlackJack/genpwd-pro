@@ -167,7 +167,7 @@ class PasswordWidget : AppWidgetProvider() {
                 }
                 val isKeyguardHost =
                     options?.getInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY) ==
-                        AppWidgetManager.APPWIDGET_HOST_CATEGORY_KEYGUARD
+                        android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD
                 // Never surface vault secrets on the keyguard host; fall back to placeholders until unlocked.
                 val allowSecrets = isUnlocked && !isKeyguardHost
                 val safePassword = if (allowSecrets) passwordToDisplay else ""
@@ -281,7 +281,7 @@ class PasswordWidget : AppWidgetProvider() {
         }
 
         val action = intent.action
-        val senderPackage = IntentCompat.getSenderPackage(intent)
+        val senderPackage = intent.getPackage()  // Use Intent.getPackage() instead
         val component = intent.component?.className
         if (component != null && component != PasswordWidget::class.java.name) {
             SafeLog.w(TAG, "Ignoring broadcast targeting unexpected component: $component")

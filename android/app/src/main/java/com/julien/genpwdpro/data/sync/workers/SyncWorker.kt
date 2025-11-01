@@ -10,18 +10,18 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
 /**
- * Worker pour la synchronisation automatique en arrière-plan
+ * Worker WorkManager responsable de la synchronisation des coffres chiffrés.
  *
- * Fonctionnalités:
- * - Synchronisation périodique des vaults
- * - Respect des contraintes réseau (WiFi uniquement)
- * - Gestion de la batterie
- * - Retry automatique en cas d'échec
+ * Cette tâche de fond s'exécute uniquement pour synchroniser le contenu des vaults
+ * (fichiers, entrées, pièces jointes) lorsque un fournisseur cloud et un mot de
+ * passe maître sont disponibles. Elle complète [com.julien.genpwdpro.workers.CloudSyncWorker],
+ * chargé quant à lui de la synchronisation des paramètres applicatifs.
  *
- * Planification:
- * - Utilise WorkManager pour la planification
- * - S'exécute selon l'intervalle configuré
- * - Respecte les politiques d'économie d'énergie d'Android
+ * Fonctionnalités :
+ * - Synchronisation périodique des coffres via [VaultSyncManager]
+ * - Vérification et réhydratation du provider avant chaque exécution
+ * - Respect des contraintes réseau (Wi-Fi uniquement par défaut)
+ * - Politique de retry limitée pour les erreurs transitoires
  */
 @HiltWorker
 class SyncWorker @AssistedInject constructor(
@@ -44,6 +44,12 @@ class SyncWorker @AssistedInject constructor(
         SafeLog.d(TAG, "Starting background sync")
 
         return try {
+            val providerReady = vaultSyncManager.rehydrateActiveProvider()
+            if (!providerReady) {
+                SafeLog.w(TAG, "No active provider configured, skipping sync")
+                return Result.success()
+            }
+
             // Vérifier si le provider est authentifié
             if (!vaultSyncManager.isAuthenticated()) {
                 SafeLog.w(TAG, "Provider not authenticated, skipping sync")

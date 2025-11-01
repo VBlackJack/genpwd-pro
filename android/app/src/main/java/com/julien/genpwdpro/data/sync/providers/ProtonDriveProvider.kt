@@ -3,7 +3,7 @@ package com.julien.genpwdpro.data.sync.providers
 import android.app.Activity
 import android.net.Uri
 import android.util.Base64
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
@@ -255,7 +255,7 @@ class ProtonDriveProvider(
             accessToken = it.getAccessToken(CloudProviderType.PROTON_DRIVE)
             refreshToken = it.getRefreshToken(CloudProviderType.PROTON_DRIVE)
             if (accessToken != null) {
-                Log.d(TAG, "Loaded saved access token")
+                SafeLog.d(TAG, "Loaded saved access token")
             }
         }
     }
@@ -294,7 +294,7 @@ class ProtonDriveProvider(
     override suspend fun isAuthenticated(): Boolean = withContext(Dispatchers.IO) {
         try {
             if (accessToken == null) {
-                Log.d(TAG, "No access token available")
+                SafeLog.d(TAG, "No access token available")
                 return@withContext false
             }
 
@@ -302,15 +302,15 @@ class ProtonDriveProvider(
             val response = api.getUserInfo("Bearer $accessToken")
 
             if (response.code == 1000 && response.user != null) {
-                Log.d(TAG, "Authentication valid for user: ${response.user.email}")
+                SafeLog.d(TAG, "Authentication valid for user: ${response.user.email}")
                 true
             } else {
-                Log.w(TAG, "Authentication failed: code ${response.code}")
+                SafeLog.w(TAG, "Authentication failed: code ${response.code}")
                 accessToken = null
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking authentication", e)
+            SafeLog.e(TAG, "Error checking authentication", e)
             accessToken = null
             false
         }
@@ -322,7 +322,7 @@ class ProtonDriveProvider(
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
             // Temporarily disabled due to OAuthCallbackManager compilation error
-            Log.e(
+            SafeLog.e(
                 TAG,
                 "OAuth authentication temporarily disabled - OAuthCallbackManager not available"
             )
@@ -356,7 +356,7 @@ class ProtonDriveProvider(
                     .appendQueryParameter("code_challenge_method", "S256")
                     .build()
 
-                Log.d(TAG, "Opening OAuth URL with PKCE: $authUrl")
+                SafeLog.d(TAG, "Opening OAuth URL with PKCE: $authUrl")
 
                 // Ouvrir le navigateur pour OAuth
                 val intent = Intent(Intent.ACTION_VIEW, authUrl)
@@ -366,7 +366,7 @@ class ProtonDriveProvider(
             }
             */
         } catch (e: Exception) {
-            Log.e(TAG, "Authentication error", e)
+            SafeLog.e(TAG, "Authentication error", e)
             // OAuthCallbackManager.unregisterCallback(CloudProviderType.PROTON_DRIVE)
             false
         }
@@ -392,7 +392,7 @@ class ProtonDriveProvider(
             Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
         )
 
-        Log.d(TAG, "PKCE generated: verifier length=${codeVerifier!!.length}")
+        SafeLog.d(TAG, "PKCE generated: verifier length=${codeVerifier!!.length}")
     }
 
     /**
@@ -402,18 +402,18 @@ class ProtonDriveProvider(
         try {
             val code = uri.getQueryParameter("code")
             if (code.isNullOrEmpty()) {
-                Log.e(TAG, "No authorization code in callback")
+                SafeLog.e(TAG, "No authorization code in callback")
                 authCallback?.invoke(false)
                 return@withContext false
             }
 
             if (codeVerifier == null) {
-                Log.e(TAG, "No PKCE code verifier available")
+                SafeLog.e(TAG, "No PKCE code verifier available")
                 authCallback?.invoke(false)
                 return@withContext false
             }
 
-            Log.d(TAG, "Received OAuth code, exchanging for token with PKCE...")
+            SafeLog.d(TAG, "Received OAuth code, exchanging for token with PKCE...")
 
             // Échanger le code contre un access token (avec PKCE)
             val response = api.getAccessToken(
@@ -427,7 +427,7 @@ class ProtonDriveProvider(
             if (!response.accessToken.isNullOrEmpty()) {
                 accessToken = response.accessToken
                 refreshToken = response.refreshToken
-                Log.d(TAG, "Access token obtained successfully")
+                SafeLog.d(TAG, "Access token obtained successfully")
 
                 // Sauvegarder les tokens de manière sécurisée
                 credentialManager?.saveAccessToken(
@@ -442,12 +442,12 @@ class ProtonDriveProvider(
                 authCallback?.invoke(true)
                 true
             } else {
-                Log.e(TAG, "Failed to get access token: ${response.error}")
+                SafeLog.e(TAG, "Failed to get access token: ${response.error}")
                 authCallback?.invoke(false)
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling OAuth callback", e)
+            SafeLog.e(TAG, "Error handling OAuth callback", e)
             authCallback?.invoke(false)
             false
         } finally {
@@ -466,7 +466,7 @@ class ProtonDriveProvider(
             val volumesResponse = api.getVolumes("Bearer $accessToken")
             if (volumesResponse.code == 1000 && !volumesResponse.volumes.isNullOrEmpty()) {
                 volumeId = volumesResponse.volumes[0].id
-                Log.d(TAG, "Volume ID: $volumeId")
+                SafeLog.d(TAG, "Volume ID: $volumeId")
             } else {
                 throw Exception("No volumes available")
             }
@@ -474,7 +474,7 @@ class ProtonDriveProvider(
             // Chercher ou créer le share GenPwdPro
             ensureShare()
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing volume and share", e)
+            SafeLog.e(TAG, "Error initializing volume and share", e)
             throw e
         }
     }
@@ -497,7 +497,7 @@ class ProtonDriveProvider(
                 val existing = sharesResponse.shares.find { it.name == FOLDER_NAME && it.type == 1 }
                 if (existing != null) {
                     shareId = existing.id
-                    Log.d(TAG, "Share found: $FOLDER_NAME (ID: $shareId)")
+                    SafeLog.d(TAG, "Share found: $FOLDER_NAME (ID: $shareId)")
                     return@withContext shareId!!
                 }
             }
@@ -508,13 +508,13 @@ class ProtonDriveProvider(
 
             if (createResponse.code == 1000 && createResponse.share != null) {
                 shareId = createResponse.share.id
-                Log.d(TAG, "Share created: $FOLDER_NAME (ID: $shareId)")
+                SafeLog.d(TAG, "Share created: $FOLDER_NAME (ID: $shareId)")
                 shareId!!
             } else {
                 throw Exception("Failed to create share")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error ensuring share", e)
+            SafeLog.e(TAG, "Error ensuring share", e)
             throw e
         }
     }
@@ -551,17 +551,17 @@ class ProtonDriveProvider(
 
                     if (response.code == 1000 && response.file != null) {
                         val fileId = response.file.id
-                        Log.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
+                        SafeLog.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
                         fileId
                     } else {
-                        Log.e(TAG, "Upload failed: code ${response.code}")
+                        SafeLog.e(TAG, "Upload failed: code ${response.code}")
                         null
                     }
                 } finally {
                     tempFile.delete()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading vault", e)
+                SafeLog.e(TAG, "Error uploading vault", e)
                 null
             }
         }
@@ -585,7 +585,7 @@ class ProtonDriveProvider(
                 val urlResponse = api.getDownloadUrl("Bearer $token", share, cloudFileId)
 
                 if (urlResponse.code != 1000 || urlResponse.url == null) {
-                    Log.e(TAG, "Failed to get download URL: code ${urlResponse.code}")
+                    SafeLog.e(TAG, "Failed to get download URL: code ${urlResponse.code}")
                     return@withContext null
                 }
 
@@ -597,7 +597,7 @@ class ProtonDriveProvider(
 
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
-                        Log.e(TAG, "Download failed: ${response.code}")
+                        SafeLog.e(TAG, "Download failed: ${response.code}")
                         return@withContext null
                     }
 
@@ -614,7 +614,7 @@ class ProtonDriveProvider(
                     )
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error downloading vault", e)
+                SafeLog.e(TAG, "Error downloading vault", e)
                 null
             }
         }
@@ -643,11 +643,11 @@ class ProtonDriveProvider(
                         )
                     }
             } else {
-                Log.e(TAG, "Failed to list vaults: code ${response.code}")
+                SafeLog.e(TAG, "Failed to list vaults: code ${response.code}")
                 emptyList()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing vaults", e)
+            SafeLog.e(TAG, "Error listing vaults", e)
             emptyList()
         }
     }
@@ -663,14 +663,14 @@ class ProtonDriveProvider(
             val response = api.deleteFile("Bearer $token", share, cloudFileId)
 
             if (response.code == 1000) {
-                Log.d(TAG, "Vault deleted successfully: $cloudFileId")
+                SafeLog.d(TAG, "Vault deleted successfully: $cloudFileId")
                 true
             } else {
-                Log.e(TAG, "Delete failed: code ${response.code}, error: ${response.error}")
+                SafeLog.e(TAG, "Delete failed: code ${response.code}, error: ${response.error}")
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting vault", e)
+            SafeLog.e(TAG, "Error deleting vault", e)
             false
         }
     }
@@ -692,11 +692,11 @@ class ProtonDriveProvider(
                     freeBytes = user.maxSpace - user.usedSpace
                 )
             } else {
-                Log.e(TAG, "Failed to get quota: code ${response.code}")
+                SafeLog.e(TAG, "Failed to get quota: code ${response.code}")
                 StorageQuota(0, 0, 0)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting storage quota", e)
+            SafeLog.e(TAG, "Error getting storage quota", e)
             StorageQuota(0, 0, 0)
         }
     }
@@ -711,7 +711,7 @@ class ProtonDriveProvider(
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking version", e)
+            SafeLog.e(TAG, "Error checking version", e)
             false
         }
     }
@@ -727,7 +727,7 @@ class ProtonDriveProvider(
             val metadata = listVaults().find { it.fileName == fileName }
             metadata
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting metadata", e)
+            SafeLog.e(TAG, "Error getting metadata", e)
             null
         }
     }
@@ -745,9 +745,9 @@ class ProtonDriveProvider(
             codeVerifier = null
             codeChallenge = null
 
-            Log.d(TAG, "Signed out successfully")
+            SafeLog.d(TAG, "Signed out successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Error signing out", e)
+            SafeLog.e(TAG, "Error signing out", e)
         }
     }
 }

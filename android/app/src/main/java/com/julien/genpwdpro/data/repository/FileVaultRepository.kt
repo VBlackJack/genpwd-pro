@@ -1,22 +1,20 @@
 package com.julien.genpwdpro.data.repository
 
 import androidx.fragment.app.FragmentActivity
-import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.models.vault.*
+import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.security.BiometricVaultManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
 /**
  * Repository pour les opérations sur les vaults file-based
@@ -44,9 +42,7 @@ import kotlinx.coroutines.flow.map
 class FileVaultRepository @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val biometricVaultManager: BiometricVaultManager,
-    private val legacyVaultRepository: VaultRepository,
-    @Named("legacy_sync_enabled") private val legacySyncEnabled: Boolean
+    private val biometricVaultManager: BiometricVaultManager
 ) {
 
     // ========== Entry Operations ==========
@@ -257,21 +253,55 @@ class FileVaultRepository @Inject constructor(
     }
 
     /**
+     * Ajoute un tag à une entry (relation many-to-many)
+     *
+     * @param entryId ID de l'entry
+     * @param tagId ID du tag
+     * @return Result.success si ajouté, Result.failure si erreur
+     */
+    suspend fun addTagToEntry(entryId: String, tagId: String): Result<Unit> {
+        return vaultSessionManager.addTagToEntry(entryId, tagId)
+    }
+
+    /**
+     * Retire un tag d'une entry
+     *
+     * @param entryId ID de l'entry
+     * @param tagId ID du tag
+     * @return Result.success si retiré, Result.failure si erreur
+     */
+    suspend fun removeTagFromEntry(entryId: String, tagId: String): Result<Unit> {
+        return vaultSessionManager.removeTagFromEntry(entryId, tagId)
+    }
+
+    /**
      * Récupère les tags d'une entry
      *
      * @param entryId ID de l'entry
      * @return Flow de liste de tags
      */
     fun getTagsForEntry(entryId: String): Flow<List<TagEntity>> {
-        return vaultSessionManager.getTags().map { allTags ->
-            val entryTagRefs = vaultSessionManager.getCurrentSession()
-                ?.vaultData?.value?.entryTags
-                ?.filter { it.entryId == entryId }
-                ?: emptyList()
+        return vaultSessionManager.getTagsForEntry(entryId)
+    }
 
-            val tagIds = entryTagRefs.map { it.tagId }.toSet()
-            allTags.filter { it.id in tagIds }
-        }
+    /**
+     * Récupère le nombre d'entries utilisant un tag (pour les statistiques)
+     *
+     * @param tagId ID du tag
+     * @return Nombre d'entries
+     */
+    suspend fun getEntryCountForTag(tagId: String): Int {
+        return vaultSessionManager.getEntryCountForTag(tagId)
+    }
+
+    /**
+     * Recherche des tags par nom (insensible à la casse)
+     *
+     * @param query Texte de recherche
+     * @return Flow de liste de tags correspondants
+     */
+    fun searchTags(query: String): Flow<List<TagEntity>> {
+        return vaultSessionManager.searchTags(query)
     }
 
     // ========== Preset Operations ==========
@@ -323,6 +353,142 @@ class FileVaultRepository @Inject constructor(
      */
     suspend fun deletePreset(presetId: String): Result<Unit> {
         return vaultSessionManager.deletePreset(presetId)
+    }
+
+    /**
+     * Vérifie si on peut créer un nouveau preset pour un mode donné (limite de 3 par mode)
+     *
+     * @param generationMode Mode de génération
+     * @return true si on peut créer, false sinon
+     */
+    suspend fun canCreatePreset(generationMode: String): Boolean {
+        val presets = getPresets().first()
+        val presetsForMode = presets.filter { it.generationMode == generationMode && !it.isSystemPreset }
+        return presetsForMode.size < 3
+    }
+
+    /**
+     * Récupère le preset par défaut du vault
+     *
+     * @return Preset par défaut ou null
+     */
+    suspend fun getDefaultPreset(): PresetEntity? {
+        return getPresets().first().firstOrNull { it.isDefault }
+    }
+
+    /**
+     * Définit un preset comme par défaut (désactive les autres)
+     *
+     * @param presetId ID du preset à définir comme défaut
+     * @return Result.success si défini, Result.failure si erreur
+     */
+    suspend fun setAsDefaultPreset(presetId: String): Result<Unit> {
+        return try {
+            val presets = getPresets().first()
+
+            // Désactiver tous les autres presets par défaut
+            presets.filter { it.isDefault && it.id != presetId }.forEach { preset ->
+                updatePreset(preset.copy(isDefault = false))
+            }
+
+            // Activer le preset sélectionné
+            val targetPreset = presets.find { it.id == presetId }
+            if (targetPreset != null) {
+                updatePreset(targetPreset.copy(isDefault = true))
+            } else {
+                Result.failure(IllegalArgumentException("Preset not found: $presetId"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Enregistre l'utilisation d'un preset (incrémente usage count, met à jour last used)
+     *
+     * @param presetId ID du preset utilisé
+     * @return Result.success si enregistré, Result.failure si erreur
+     */
+    suspend fun recordPresetUsage(presetId: String): Result<Unit> {
+        return try {
+            val preset = getPresetById(presetId)
+            if (preset != null) {
+                updatePreset(
+                    preset.copy(
+                        usageCount = preset.usageCount + 1,
+                        lastUsedAt = System.currentTimeMillis()
+                    )
+                )
+            } else {
+                Result.failure(IllegalArgumentException("Preset not found: $presetId"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ========== Preset Operations (Decrypted UI-friendly versions) ==========
+
+    /**
+     * Récupère les presets sous forme décryptée avec types strongly-typed (pour UI)
+     *
+     * @return Flow de liste de presets déchiffrés
+     */
+    fun getPresetsDecrypted(): Flow<List<DecryptedPreset>> {
+        return getPresets().map { presets -> presets.toDecrypted() }
+    }
+
+    /**
+     * Récupère un preset déchiffré par ID (pour UI)
+     *
+     * @param presetId ID du preset
+     * @return Preset déchiffré ou null
+     */
+    suspend fun getPresetByIdDecrypted(presetId: String): DecryptedPreset? {
+        return getPresetById(presetId)?.toDecrypted()
+    }
+
+    /**
+     * Récupère le preset par défaut déchiffré (pour UI)
+     *
+     * @return Preset par défaut déchiffré ou null
+     */
+    suspend fun getDefaultPresetDecrypted(): DecryptedPreset? {
+        return getDefaultPreset()?.toDecrypted()
+    }
+
+    /**
+     * Crée un nouveau preset à partir d'un DecryptedPreset (pour UI)
+     *
+     * @param preset Preset déchiffré à créer
+     * @return ID du preset créé ou null si erreur
+     */
+    suspend fun createPreset(preset: DecryptedPreset): String? {
+        return try {
+            val result = addPreset(preset.toEntity())
+            if (result.isSuccess) preset.id else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Met à jour un preset à partir d'un DecryptedPreset (pour UI)
+     *
+     * @param preset Preset déchiffré à mettre à jour
+     */
+    suspend fun updatePresetDecrypted(preset: DecryptedPreset) {
+        updatePreset(preset.toEntity())
+    }
+
+    /**
+     * Vérifie si on peut créer un nouveau preset pour un mode donné (pour UI)
+     *
+     * @param mode Mode de génération
+     * @return true si on peut créer, false sinon
+     */
+    suspend fun canCreatePreset(mode: GenerationMode): Boolean {
+        return canCreatePreset(mode.name)
     }
 
     // ========== Statistics ==========
@@ -415,15 +581,15 @@ class FileVaultRepository @Inject constructor(
 
     private fun VaultEntryEntity.estimatedSize(): Long {
         val stringSizes = listOf(
-            encryptedTitle,
-            encryptedUsername,
-            encryptedPassword,
-            encryptedUrl,
-            encryptedNotes,
-            encryptedCustomFields,
+            title,
+            username ?: "",
+            password ?: "",
+            url ?: "",
+            notes ?: "",
+            customFields ?: "",
             entryType,
-            encryptedTotpSecret,
-            encryptedPasskeyData,
+            totpSecret ?: "",
+            passkeyData ?: "",
             passkeyRpId,
             passkeyRpName,
             passkeyUserHandle,
@@ -457,12 +623,10 @@ class FileVaultRepository @Inject constructor(
 
     private fun PresetEntity.estimatedSize(): Long {
         val stringSizes = listOf(
-            encryptedName,
-            nameIv,
+            name,
             icon,
             generationMode,
-            encryptedSettings,
-            settingsIv
+            settings
         ).sumOf { it.length.toLong() }
 
         val numericFieldsOverhead = 8L * 6
@@ -498,33 +662,14 @@ class FileVaultRepository @Inject constructor(
      * @return Result.success si déverrouillé, Result.failure si erreur
      */
     suspend fun unlockVault(vaultId: String, masterPassword: String): Result<Unit> {
-        val result = vaultSessionManager.unlockVault(vaultId, masterPassword)
-
-        if (result.isSuccess) {
-            syncLegacyRepositoryUnlock(vaultId, masterPassword)
-        }
-
-        return result
+        return vaultSessionManager.unlockVault(vaultId, masterPassword)
     }
 
     /**
      * Verrouille le vault actuel
      */
     suspend fun lockVault() {
-        val currentVaultId = vaultSessionManager.getCurrentVaultId()
         vaultSessionManager.lockVault()
-
-        currentVaultId?.let { vaultId ->
-            if (!legacySyncEnabled) {
-                SafeLog.d(TAG, "Skipping legacy lock sync for vault $vaultId (flag disabled)")
-                return@let
-            }
-            try {
-                legacyVaultRepository.lockVault(vaultId)
-            } catch (e: Exception) {
-                SafeLog.e(TAG, "Failed to sync legacy lock for vault $vaultId", e)
-            }
-        }
     }
 
     /**
@@ -550,11 +695,7 @@ class FileVaultRepository @Inject constructor(
 
         return passwordResult.fold(
             onSuccess = { masterPassword ->
-                val unlockResult = vaultSessionManager.unlockVault(vaultId, masterPassword)
-                if (unlockResult.isSuccess) {
-                    syncLegacyRepositoryUnlock(vaultId, masterPassword)
-                }
-                unlockResult
+                vaultSessionManager.unlockVault(vaultId, masterPassword)
             },
             onFailure = { error -> Result.failure(error) }
         )
@@ -585,23 +726,4 @@ class FileVaultRepository @Inject constructor(
         return biometricVaultManager.isBiometricAvailable()
     }
 
-    private suspend fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
-        if (!legacySyncEnabled) {
-            SafeLog.d(TAG, "Legacy sync disabled by feature flag")
-            return
-        }
-
-        try {
-            val success = legacyVaultRepository.unlockVault(vaultId, masterPassword)
-            if (!success) {
-                SafeLog.w(TAG, "Legacy repository did not unlock vault $vaultId")
-            }
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Failed to sync legacy unlock for vault $vaultId", e)
-        }
-    }
-
-    companion object {
-        private const val TAG = "FileVaultRepository"
-    }
 }

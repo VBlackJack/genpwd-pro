@@ -2,8 +2,11 @@ package com.julien.genpwdpro.presentation.analysis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.db.entity.EntryType
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.models.vault.EntryType
+import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
+import com.julien.genpwdpro.data.models.vault.toEntryType
+import com.julien.genpwdpro.data.repository.FileVaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +26,7 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class PasswordHealthViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository
+    private val fileVaultRepository: FileVaultRepository
 ) : ViewModel() {
 
     private val haveIBeenPwnedClient = com.julien.genpwdpro.data.api.HaveIBeenPwnedClient()
@@ -39,8 +42,8 @@ class PasswordHealthViewModel @Inject constructor(
             try {
                 _uiState.value = HealthUiState.Loading
 
-                // Récupérer toutes les entrées
-                val entries = vaultRepository.getEntries(vaultId).first()
+                // Récupérer toutes les entrées (note: vaultId ignoré, utilise session active)
+                val entries = fileVaultRepository.getEntries().first()
 
                 // Analyser les mots de passe
                 val weakPasswords = mutableListOf<WeakPasswordEntry>()
@@ -48,12 +51,13 @@ class PasswordHealthViewModel @Inject constructor(
                 val compromisedPasswords = mutableListOf<CompromisedPasswordEntry>()
                 val oldPasswords = mutableListOf<OldPasswordEntry>()
 
-                val passwordMap = mutableMapOf<String, MutableList<VaultRepository.DecryptedEntry>>()
+                val passwordMap = mutableMapOf<String, MutableList<VaultEntryEntity>>()
 
                 // Analyser chaque entrée
                 for (entry in entries) {
-                    if (entry.entryType != EntryType.LOGIN) continue
-                    if (entry.password.isEmpty()) continue
+                    if (entry.entryType.toEntryType() != EntryType.LOGIN) continue
+                    val password = entry.password ?: continue
+                    if (password.isEmpty()) continue
 
                     // Mots de passe faibles
                     if (entry.passwordStrength < 60) {
@@ -61,30 +65,30 @@ class PasswordHealthViewModel @Inject constructor(
                             WeakPasswordEntry(
                                 id = entry.id,
                                 title = entry.title,
-                                username = entry.username,
+                                username = entry.username ?: "",
                                 strength = entry.passwordStrength,
-                                reason = getWeaknessReason(entry.password)
+                                reason = getWeaknessReason(password)
                             )
                         )
                     }
 
                     // Mots de passe réutilisés (grouper par mot de passe)
-                    passwordMap.getOrPut(entry.password) { mutableListOf() }.add(entry)
+                    passwordMap.getOrPut(password) { mutableListOf() }.add(entry)
 
                     // Mots de passe compromis (vérification via HaveIBeenPwned)
                     // Note: Cette vérification est asynchrone et peut prendre du temps
                     // On la fait en arrière-plan pour ne pas bloquer l'UI
-                    if (entry.password.isNotEmpty()) {
+                    if (password.isNotEmpty()) {
                         viewModelScope.launch {
                             try {
-                                val result = haveIBeenPwnedClient.checkPassword(entry.password)
+                                val result = haveIBeenPwnedClient.checkPassword(password)
                                 result.getOrNull()?.let { (isCompromised, breachCount) ->
                                     if (isCompromised) {
                                         compromisedPasswords.add(
                                             CompromisedPasswordEntry(
                                                 id = entry.id,
                                                 title = entry.title,
-                                                username = entry.username,
+                                                username = entry.username ?: "",
                                                 breachCount = breachCount
                                             )
                                         )
@@ -94,7 +98,10 @@ class PasswordHealthViewModel @Inject constructor(
                                 }
                             } catch (e: Exception) {
                                 // Ignorer les erreurs de vérification individuelles
-                                android.util.Log.e("PasswordHealth", "Error checking password: ${e.message}")
+                                com.julien.genpwdpro.core.log.SafeLog.e(
+                                    "PasswordHealth",
+                                    "Error checking password: ${e.message}"
+                                )
                             }
                         }
                     }
@@ -105,8 +112,8 @@ class PasswordHealthViewModel @Inject constructor(
                         oldPasswords.add(
                             OldPasswordEntry(
                                 id = entry.id,
-                                title = entry.title,
-                                username = entry.username,
+                                title = entry.title ?: "",
+                                username = entry.username ?: "",
                                 daysSinceUpdate = daysSinceUpdate.toInt()
                             )
                         )
@@ -121,7 +128,7 @@ class PasswordHealthViewModel @Inject constructor(
                                 password = "•••••••", // Masquer le mot de passe
                                 count = entriesWithPassword.size,
                                 entries = entriesWithPassword.map {
-                                    PasswordReference(it.id, it.title, it.username)
+                                    PasswordReference(it.id, it.title ?: "", it.username ?: "")
                                 }
                             )
                         )
@@ -129,7 +136,7 @@ class PasswordHealthViewModel @Inject constructor(
                 }
 
                 // Calculer le score de santé global (0-100)
-                val totalPasswords = entries.count { it.entryType == EntryType.LOGIN && it.password.isNotEmpty() }
+                val totalPasswords = entries.count { it.entryType.toEntryType() == EntryType.LOGIN && !it.password.isNullOrEmpty() }
                 val score = calculateHealthScore(
                     totalPasswords = totalPasswords,
                     weakCount = weakPasswords.size,
@@ -147,7 +154,7 @@ class PasswordHealthViewModel @Inject constructor(
                     compromisedPasswords = compromisedPasswords.size,
                     oldPasswords = oldPasswords.size,
                     averageStrength = entries
-                        .filter { it.entryType == EntryType.LOGIN && it.password.isNotEmpty() }
+                        .filter { it.entryType.toEntryType() == EntryType.LOGIN && !it.password.isNullOrEmpty() }
                         .map { it.passwordStrength }
                         .average()
                         .toInt()

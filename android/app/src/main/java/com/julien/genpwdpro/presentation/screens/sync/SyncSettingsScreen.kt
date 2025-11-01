@@ -2,7 +2,7 @@ package com.julien.genpwdpro.presentation.screens.sync
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,13 +18,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
 import com.julien.genpwdpro.data.sync.*
@@ -32,6 +33,7 @@ import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.SyncStatus
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -60,7 +62,8 @@ fun SyncSettingsScreen(
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val activity = LocalContext.current as? Activity
+    val context = LocalContext.current
+    val activity = context as? Activity
     val snackbarHostState = remember { SnackbarHostState() }
     var showProviderConfigDialog by remember { mutableStateOf(false) }
     var selectedProviderForConfig by remember { mutableStateOf<ProviderInfo?>(null) }
@@ -70,7 +73,8 @@ fun SyncSettingsScreen(
         uiState.authenticationResult?.let { result ->
             val message = when (result) {
                 is AuthenticationResult.Success -> result.message
-                is AuthenticationResult.Failure -> "Erreur: ${result.error}"
+                is AuthenticationResult.Failure ->
+                    context.getString(R.string.sync_snackbar_error_prefix, result.error)
             }
             snackbarHostState.showSnackbar(
                 message = message,
@@ -85,7 +89,8 @@ fun SyncSettingsScreen(
         uiState.testConnectionResult?.let { result ->
             val message = when (result) {
                 is TestConnectionResult.Success -> result.message
-                is TestConnectionResult.Failure -> "Erreur: ${result.error}"
+                is TestConnectionResult.Failure ->
+                    context.getString(R.string.sync_snackbar_error_prefix, result.error)
             }
             snackbarHostState.showSnackbar(
                 message = message,
@@ -98,10 +103,13 @@ fun SyncSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Synchronisation Cloud") },
+                title = { Text(stringResource(id = R.string.sync_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Retour")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            stringResource(id = R.string.sync_common_back)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -134,6 +142,21 @@ fun SyncSettingsScreen(
                     lastSyncTimestamp = uiState.metadata.lastSyncTimestamp,
                     metadata = uiState.metadata
                 )
+
+                uiState.providerWarning?.let { warning ->
+                    ProviderWarningCard(
+                        message = warning,
+                        onRetry = { viewModel.retryProviderRehydration() },
+                        onReauthenticate = {
+                            uiState.availableProviders.find { it.type == uiState.config.providerType }
+                                ?.let { providerInfo ->
+                                    selectedProviderForConfig = providerInfo
+                                    showProviderConfigDialog = true
+                                }
+                        },
+                        onDismiss = { viewModel.clearProviderWarning() }
+                    )
+                }
 
                 // Cloud provider selection
                 ProviderSelectionCard(
@@ -274,21 +297,20 @@ private fun ConflictResolutionDialog(
             Icon(
                 Icons.Default.Warning,
                 contentDescription = null,
-                tint = Color(0xFFF59E0B),
+                tint = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(48.dp)
             )
         },
         title = {
             Text(
-                "Conflit de synchronisation détecté",
+                stringResource(id = R.string.sync_conflict_dialog_title),
                 style = MaterialTheme.typography.headlineSmall
             )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Vos paramètres ont été modifiés localement et sur le cloud. " +
-                        "Quelle version souhaitez-vous conserver ?",
+                    stringResource(id = R.string.sync_conflict_dialog_message),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -307,17 +329,23 @@ private fun ConflictResolutionDialog(
                         ) {
                             Icon(Icons.Default.PhoneAndroid, null, modifier = Modifier.size(16.dp))
                             Text(
-                                "Version locale",
+                                stringResource(id = R.string.sync_conflict_local_version),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Text(
-                            "Modifié : ${formatTimestamp(conflict.localData.timestamp)}",
+                            stringResource(
+                                id = R.string.sync_conflict_modified,
+                                formatTimestamp(conflict.localData.timestamp)
+                            ),
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "Appareil : ${conflict.localData.deviceId.take(8)}...",
+                            stringResource(
+                                id = R.string.sync_conflict_device,
+                                "${conflict.localData.deviceId.take(8)}..."
+                            ),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -338,17 +366,23 @@ private fun ConflictResolutionDialog(
                         ) {
                             Icon(Icons.Default.Cloud, null, modifier = Modifier.size(16.dp))
                             Text(
-                                "Version cloud",
+                                stringResource(id = R.string.sync_conflict_remote_version),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Text(
-                            "Modifié : ${formatTimestamp(conflict.remoteData.timestamp)}",
+                            stringResource(
+                                id = R.string.sync_conflict_modified,
+                                formatTimestamp(conflict.remoteData.timestamp)
+                            ),
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "Appareil : ${conflict.remoteData.deviceId.take(8)}...",
+                            stringResource(
+                                id = R.string.sync_conflict_device,
+                                "${conflict.remoteData.deviceId.take(8)}..."
+                            ),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -357,7 +391,7 @@ private fun ConflictResolutionDialog(
                 Divider()
 
                 Text(
-                    "Choisissez une stratégie de résolution :",
+                    stringResource(id = R.string.sync_conflict_resolution_prompt),
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -378,7 +412,7 @@ private fun ConflictResolutionDialog(
                 ) {
                     Icon(Icons.Default.PhoneAndroid, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Garder la version locale")
+                    Text(stringResource(id = R.string.sync_conflict_keep_local))
                 }
 
                 // Keep remote
@@ -392,7 +426,7 @@ private fun ConflictResolutionDialog(
                 ) {
                     Icon(Icons.Default.Cloud, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Garder la version cloud")
+                    Text(stringResource(id = R.string.sync_conflict_keep_remote))
                 }
 
                 // Keep newest
@@ -402,13 +436,13 @@ private fun ConflictResolutionDialog(
                 ) {
                     Icon(Icons.Default.Schedule, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Garder la plus récente")
+                    Text(stringResource(id = R.string.sync_conflict_keep_latest))
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Annuler")
+                Text(stringResource(id = R.string.sync_common_cancel))
             }
         }
     )
@@ -432,12 +466,18 @@ private fun SyncEnableCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Synchronisation Cloud",
+                    text = stringResource(id = R.string.sync_settings_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (enabled) "Activée" else "Désactivée",
+                    text = stringResource(
+                        id = if (enabled) {
+                            R.string.sync_status_enabled
+                        } else {
+                            R.string.sync_status_disabled
+                        }
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -459,22 +499,16 @@ private fun SyncStatusCard(
     lastSyncTimestamp: Long,
     metadata: LocalSyncMetadata
 ) {
-    val (statusColor, statusIcon, statusText) = when (status) {
-        SyncStatus.NEVER_SYNCED -> Triple(
-            Color(0xFF9CA3AF),
-            Icons.Default.CloudOff,
-            "Jamais synchronisé"
-        )
-        SyncStatus.PENDING -> Triple(Color(0xFF9CA3AF), Icons.Default.CloudOff, "En attente")
-        SyncStatus.SYNCING -> Triple(
-            Color(0xFF3B82F6),
-            Icons.Default.CloudSync,
-            "Synchronisation..."
-        )
-        SyncStatus.SYNCED -> Triple(Color(0xFF10B981), Icons.Default.CloudDone, "Synchronisé")
-        SyncStatus.ERROR -> Triple(Color(0xFFEF4444), Icons.Default.CloudOff, "Erreur")
-        SyncStatus.CONFLICT -> Triple(Color(0xFFF59E0B), Icons.Default.Warning, "Conflit détecté")
+    val colorScheme = MaterialTheme.colorScheme
+    val (statusColor, statusIcon, statusTextRes) = when (status) {
+        SyncStatus.NEVER_SYNCED -> Triple(colorScheme.outline, Icons.Default.CloudOff, R.string.sync_status_never)
+        SyncStatus.PENDING -> Triple(colorScheme.outline, Icons.Default.CloudOff, R.string.sync_status_pending)
+        SyncStatus.SYNCING -> Triple(colorScheme.primary, Icons.Default.CloudSync, R.string.sync_status_syncing)
+        SyncStatus.SYNCED -> Triple(colorScheme.tertiary, Icons.Default.CloudDone, R.string.sync_status_synced)
+        SyncStatus.ERROR -> Triple(colorScheme.error, Icons.Default.CloudOff, R.string.sync_status_error)
+        SyncStatus.CONFLICT -> Triple(colorScheme.secondary, Icons.Default.Warning, R.string.sync_status_conflict)
     }
+    val statusText = stringResource(id = statusTextRes)
 
     Card(
         colors = CardDefaults.cardColors(
@@ -544,7 +578,10 @@ private fun SyncStatusCard(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "${metadata.pendingChanges} modification(s) en attente",
+                            text = stringResource(
+                                id = R.string.sync_status_pending_changes,
+                                metadata.pendingChanges
+                            ),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -552,23 +589,110 @@ private fun SyncStatusCard(
 
                 if (metadata.syncErrors.isNotEmpty()) {
                     metadata.syncErrors.take(3).forEach { error ->
+                        val (icon, tint) = when (error.category) {
+                            SyncErrorCategory.CONNECTION -> Icons.Default.WifiOff to colorScheme.secondary
+                            SyncErrorCategory.UPLOAD -> Icons.Default.CloudUpload to colorScheme.error
+                            SyncErrorCategory.DOWNLOAD -> Icons.Default.CloudDownload to colorScheme.error
+                            SyncErrorCategory.DELETE -> Icons.Default.Delete to colorScheme.error
+                            SyncErrorCategory.CLEANUP -> Icons.Default.DeleteSweep to colorScheme.secondary
+                            SyncErrorCategory.REHYDRATION -> Icons.Default.Refresh to colorScheme.primary
+                            SyncErrorCategory.GENERAL -> Icons.Default.Error to colorScheme.error
+                        }
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                Icons.Default.Error,
+                                icon,
                                 null,
                                 modifier = Modifier.size(18.dp),
-                                tint = Color(0xFFEF4444)
+                                tint = tint
                             )
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFFEF4444)
-                            )
+                            Column {
+                                Text(
+                                    text = error.message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = tint
+                                )
+                                Text(
+                                    text = formatTimestamp(error.timestamp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProviderWarningCard(
+    message: String,
+    onRetry: () -> Unit,
+    onReauthenticate: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val containerColor = MaterialTheme.colorScheme.tertiaryContainer
+    val accentColor = MaterialTheme.colorScheme.tertiary
+    val textColor = MaterialTheme.colorScheme.onTertiaryContainer
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.WarningAmber,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(28.dp)
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(onClick = onRetry) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(id = R.string.sync_provider_warning_retry))
+                }
+
+                Button(onClick = onReauthenticate) {
+                    Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(id = R.string.sync_provider_warning_reconfigure))
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                TextButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = accentColor
+                    )
+                ) {
+                    Text(stringResource(id = R.string.sync_provider_warning_ignore))
                 }
             }
         }
@@ -592,13 +716,13 @@ private fun ProviderSelectionCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Service de stockage cloud",
+                text = stringResource(id = R.string.sync_provider_selection_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                text = "Tous les providers sont production-ready avec chiffrement E2E",
+                text = stringResource(id = R.string.sync_provider_selection_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -644,6 +768,7 @@ private fun ProviderOption(
             ) {
                 Text(provider.icon, style = MaterialTheme.typography.headlineSmall)
                 Column {
+                    val colorScheme = MaterialTheme.colorScheme
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -655,24 +780,24 @@ private fun ProviderOption(
                         )
                         // Privacy badge
                         val privacyColor = when (provider.privacyLevel) {
-                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> Color(
-                                0xFF10B981
-                            )
-                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> Color(
-                                0xFF3B82F6
-                            )
-                            else -> Color(0xFF9CA3AF)
+                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> colorScheme.tertiary
+                            com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> colorScheme.primary
+                            else -> colorScheme.outline
                         }
                         Surface(
                             shape = RoundedCornerShape(4.dp),
                             color = privacyColor.copy(alpha = 0.2f)
                         ) {
                             Text(
-                                text = when (provider.privacyLevel) {
-                                    com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM -> "Max Privacy"
-                                    com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH -> "High Privacy"
-                                    else -> "Standard"
-                                },
+                                text = stringResource(
+                                    when (provider.privacyLevel) {
+                                        com.julien.genpwdpro.data.sync.providers.PrivacyLevel.MAXIMUM ->
+                                            R.string.sync_provider_privacy_max
+                                        com.julien.genpwdpro.data.sync.providers.PrivacyLevel.HIGH ->
+                                            R.string.sync_provider_privacy_high
+                                        else -> R.string.sync_provider_privacy_standard
+                                    }
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = privacyColor,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -687,7 +812,10 @@ private fun ProviderOption(
                     // Storage info
                     if (provider.freeStorage > 0) {
                         Text(
-                            text = "Gratuit: ${formatBytes(provider.freeStorage)}",
+                            text = stringResource(
+                                id = R.string.sync_provider_storage_free,
+                                formatBytes(provider.freeStorage)
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.tertiary
                         )
@@ -708,12 +836,14 @@ private fun ProviderOption(
 /**
  * Format bytes to human readable string
  */
+@Composable
 private fun formatBytes(bytes: Long): String {
+    val context = LocalContext.current
     return when {
-        bytes >= 1_000_000_000 -> "${bytes / 1_000_000_000} GB"
-        bytes >= 1_000_000 -> "${bytes / 1_000_000} MB"
-        bytes >= 1_000 -> "${bytes / 1_000} KB"
-        else -> "$bytes B"
+        bytes >= 1_000_000_000 -> context.getString(R.string.sync_bytes_gb, bytes / 1_000_000_000)
+        bytes >= 1_000_000 -> context.getString(R.string.sync_bytes_mb, bytes / 1_000_000)
+        bytes >= 1_000 -> context.getString(R.string.sync_bytes_kb, bytes / 1_000)
+        else -> context.getString(R.string.sync_bytes_b, bytes)
     }
 }
 
@@ -741,12 +871,14 @@ private fun AutoSyncCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Synchronisation automatique",
+                        text = stringResource(id = R.string.sync_auto_sync_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = if (enabled) "Activée" else "Désactivée",
+                        text = stringResource(
+                            id = if (enabled) R.string.sync_status_enabled else R.string.sync_status_disabled
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -761,17 +893,17 @@ private fun AutoSyncCard(
                 Divider()
 
                 Text(
-                    text = "Intervalle de synchronisation",
+                    text = stringResource(id = R.string.sync_interval_title),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 val intervalOptions = listOf(
-                    900000L to "15 minutes",
-                    1800000L to "30 minutes",
-                    3600000L to "1 heure",
-                    7200000L to "2 heures",
-                    21600000L to "6 heures",
-                    86400000L to "24 heures"
+                    900000L to stringResource(id = R.string.sync_interval_15_min),
+                    1_800_000L to stringResource(id = R.string.sync_interval_30_min),
+                    3_600_000L to stringResource(id = R.string.sync_interval_1_hour),
+                    7_200_000L to stringResource(id = R.string.sync_interval_2_hours),
+                    21_600_000L to stringResource(id = R.string.sync_interval_6_hours),
+                    86_400_000L to stringResource(id = R.string.sync_interval_24_hours)
                 )
 
                 intervalOptions.forEach { (value, label) ->
@@ -805,7 +937,7 @@ private fun SyncActionsCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Actions",
+                text = stringResource(id = R.string.sync_actions_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -817,7 +949,7 @@ private fun SyncActionsCard(
             ) {
                 Icon(Icons.Default.Sync, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Synchroniser maintenant")
+                Text(stringResource(id = R.string.sync_action_sync_now))
             }
 
             OutlinedButton(
@@ -826,7 +958,7 @@ private fun SyncActionsCard(
             ) {
                 Icon(Icons.Default.Wifi, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Tester la connexion")
+                Text(stringResource(id = R.string.sync_action_test_connection))
             }
 
             OutlinedButton(
@@ -838,7 +970,7 @@ private fun SyncActionsCard(
             ) {
                 Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Réinitialiser la synchronisation")
+                Text(stringResource(id = R.string.sync_action_reset))
             }
         }
     }
@@ -852,9 +984,10 @@ private fun ConflictsCard(
     conflictCount: Int,
     onResolve: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF59E0B).copy(alpha = 0.1f)
+            containerColor = colorScheme.secondary.copy(alpha = 0.1f)
         )
     ) {
         Column(
@@ -870,16 +1003,19 @@ private fun ConflictsCard(
                 Icon(
                     Icons.Default.Warning,
                     null,
-                    tint = Color(0xFFF59E0B)
+                    tint = colorScheme.secondary
                 )
                 Column {
                     Text(
-                        text = "Conflits détectés",
+                        text = stringResource(id = R.string.sync_conflicts_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "$conflictCount conflit(s) nécessitent une résolution",
+                        text = stringResource(
+                            id = R.string.sync_conflicts_count,
+                            conflictCount
+                        ),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -889,7 +1025,7 @@ private fun ConflictsCard(
                 onClick = onResolve,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Résoudre les conflits")
+                Text(stringResource(id = R.string.sync_conflicts_resolve))
             }
         }
     }
@@ -919,12 +1055,12 @@ private fun EncryptionInfoCard() {
             )
             Column {
                 Text(
-                    text = "Chiffrement de bout en bout",
+                    text = stringResource(id = R.string.sync_encryption_title),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Toutes vos données sont chiffrées avec AES-256-GCM avant envoi au cloud",
+                    text = stringResource(id = R.string.sync_encryption_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -936,20 +1072,36 @@ private fun EncryptionInfoCard() {
 /**
  * Format un timestamp en texte lisible
  */
+@Composable
 private fun formatTimestamp(timestamp: Long): String {
-    if (timestamp == 0L) return "Jamais synchronisé"
+    val context = LocalContext.current
+    if (timestamp == 0L) {
+        return context.getString(R.string.sync_status_never)
+    }
 
     val now = System.currentTimeMillis()
     val diff = now - timestamp
 
     return when {
-        diff < 60000 -> "Il y a moins d'une minute"
-        diff < 3600000 -> "Il y a ${diff / 60000} minutes"
-        diff < 86400000 -> "Il y a ${diff / 3600000} heures"
-        diff < 604800000 -> "Il y a ${diff / 86400000} jours"
+        diff < 60_000 -> context.getString(R.string.sync_relative_less_than_minute)
+        diff < 3_600_000 -> context.getString(
+            R.string.sync_relative_minutes,
+            (diff / 60_000).toInt()
+        )
+        diff < 86_400_000 -> context.getString(
+            R.string.sync_relative_hours,
+            (diff / 3_600_000).toInt()
+        )
+        diff < 604_800_000 -> context.getString(
+            R.string.sync_relative_days,
+            (diff / 86_400_000).toInt()
+        )
         else -> {
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRENCH)
-            sdf.format(Date(timestamp))
+            val currentLocale = Locale.getDefault()
+            val formatter = remember(currentLocale) {
+                SimpleDateFormat("dd/MM/yyyy HH:mm", currentLocale)
+            }
+            formatter.format(Date(timestamp))
         }
     }
 }
@@ -969,7 +1121,7 @@ private fun QuickAccessCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Paramètres associés",
+                text = stringResource(id = R.string.sync_quick_links_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -985,7 +1137,7 @@ private fun QuickAccessCard(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Historique de Synchronisation")
+                Text(stringResource(id = R.string.sync_quick_link_history))
             }
 
             // Security button
@@ -999,7 +1151,7 @@ private fun QuickAccessCard(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Sécurité & Biométrie")
+                Text(stringResource(id = R.string.sync_quick_link_security))
             }
 
             // Autofill button
@@ -1013,7 +1165,7 @@ private fun QuickAccessCard(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Auto-remplissage")
+                Text(stringResource(id = R.string.sync_quick_link_autofill))
             }
         }
     }
@@ -1031,12 +1183,19 @@ class SyncSettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    companion object {
+        private const val CONFIG_KEY_VALIDATE_SSL = "validateSSL"
+    }
+
     private val _uiState = MutableStateFlow(
         SyncSettingsUiState(
             availableProviders = providerFactory.getProductionReadyProviders()
         )
     )
     val uiState: StateFlow<SyncSettingsUiState> = _uiState.asStateFlow()
+
+    private var lastRehydratedProviderType: CloudProviderType? = null
+    private var lastRehydrationSucceeded: Boolean = false
 
     init {
         viewModelScope.launch {
@@ -1052,6 +1211,40 @@ class SyncSettingsViewModel @Inject constructor(
                             syncOnWifiOnly = savedConfig.syncOnWifiOnly
                         )
                     )
+                }
+
+                if (savedConfig.enabled && savedConfig.providerType != CloudProviderType.NONE) {
+                    val shouldAttempt =
+                        savedConfig.providerType != lastRehydratedProviderType || !lastRehydrationSucceeded
+
+                    if (shouldAttempt) {
+                        val restored = runCatching {
+                            cloudRepository.rehydrateActiveProvider(savedConfig.providerType)
+                        }.onFailure { error ->
+                            SafeLog.e(
+                                "SyncSettingsViewModel",
+                                "Provider rehydration failed with exception",
+                                error
+                            )
+                        }.getOrDefault(false)
+
+                        lastRehydratedProviderType = savedConfig.providerType
+                        lastRehydrationSucceeded = restored
+
+                        _uiState.update { state ->
+                            state.copy(
+                                providerWarning = if (restored) {
+                                    null
+                                } else {
+                                    context.getString(R.string.sync_provider_warning_rehydrate_failed)
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    lastRehydratedProviderType = null
+                    lastRehydrationSucceeded = false
+                    _uiState.update { state -> state.copy(providerWarning = null) }
                 }
             }
         }
@@ -1077,27 +1270,94 @@ class SyncSettingsViewModel @Inject constructor(
 
             _uiState.update { state ->
                 state.copy(
-                    config = state.config.copy(enabled = newEnabled)
+                    config = state.config.copy(enabled = newEnabled),
+                    providerWarning = if (newEnabled) state.providerWarning else null
                 )
+            }
+
+            if (!newEnabled) {
+                lastRehydratedProviderType = null
+                lastRehydrationSucceeded = false
             }
         }
     }
 
     fun selectProvider(providerType: CloudProviderType) {
+        lastRehydratedProviderType = null
+        lastRehydrationSucceeded = false
         _uiState.update { state ->
             state.copy(
-                config = state.config.copy(providerType = providerType)
+                config = state.config.copy(providerType = providerType),
+                providerWarning = null
             )
         }
     }
 
     fun configureWebDAV(serverUrl: String, username: String, password: String, validateSSL: Boolean) {
         viewModelScope.launch {
-            // TODO: Save WebDAV config and create provider
-            _uiState.update { state ->
-                state.copy(
-                    config = state.config.copy(providerType = CloudProviderType.WEBDAV)
+            val normalizedUrl = serverUrl.trim().trimEnd('/')
+            val trimmedUsername = username.trim()
+
+            _uiState.update { it.copy(isAuthenticating = true, authenticationResult = null) }
+
+            try {
+                val provider = providerFactory.createWebDAVProvider(
+                    serverUrl = normalizedUrl,
+                    username = trimmedUsername,
+                    password = password,
+                    validateSSL = validateSSL
                 )
+
+                val isAuthenticated = provider.isAuthenticated()
+
+                if (isAuthenticated) {
+                    val providerConfig = ProviderConfig(
+                        serverUrl = normalizedUrl,
+                        username = trimmedUsername,
+                        password = password,
+                        customSettings = mapOf(CONFIG_KEY_VALIDATE_SSL to validateSSL.toString())
+                    )
+
+                    cloudRepository.setActiveProvider(
+                        providerType = CloudProviderType.WEBDAV,
+                        provider = provider,
+                        providerConfig = providerConfig
+                    )
+
+                    syncConfigDataStore.setProviderType(CloudProviderType.WEBDAV)
+                    lastRehydratedProviderType = CloudProviderType.WEBDAV
+                    lastRehydrationSucceeded = true
+
+                    _uiState.update { state ->
+                        state.copy(
+                            config = state.config.copy(providerType = CloudProviderType.WEBDAV),
+                            isAuthenticating = false,
+                            authenticationResult = AuthenticationResult.Success(
+                                context.getString(R.string.sync_webdav_config_saved)
+                            ),
+                            providerWarning = null
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isAuthenticating = false,
+                            authenticationResult = AuthenticationResult.Failure(
+                                context.getString(R.string.sync_webdav_auth_failed)
+                            )
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                SafeLog.e("SyncSettingsViewModel", "WebDAV configuration failed", e)
+                _uiState.update {
+                    it.copy(
+                        isAuthenticating = false,
+                        authenticationResult = AuthenticationResult.Failure(
+                            e.message ?: context.getString(R.string.sync_generic_unknown_error)
+                        )
+                    )
+                }
             }
         }
     }
@@ -1109,29 +1369,98 @@ class SyncSettingsViewModel @Inject constructor(
         validateSSL: Boolean
     ) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isTestingConnection = true) }
+            val normalizedUrl = serverUrl.trim().trimEnd('/')
+            val trimmedUsername = username.trim()
+
+            _uiState.update { it.copy(isTestingConnection = true, testConnectionResult = null) }
             try {
-                // TODO: Test WebDAV connection
-                kotlinx.coroutines.delay(1500)
+                val provider = providerFactory.createWebDAVProvider(
+                    serverUrl = normalizedUrl,
+                    username = trimmedUsername,
+                    password = password,
+                    validateSSL = validateSSL
+                )
+
+                val success = provider.isAuthenticated()
+
                 _uiState.update {
                     it.copy(
                         isTestingConnection = false,
-                        testConnectionResult = TestConnectionResult.Success(
-                            "Connexion WebDAV réussie!"
-                        )
+                        testConnectionResult = if (success) {
+                            TestConnectionResult.Success(
+                                context.getString(R.string.sync_webdav_connection_success)
+                            )
+                        } else {
+                            TestConnectionResult.Failure(
+                                context.getString(R.string.sync_webdav_connection_failed)
+                            )
+                        }
                     )
                 }
             } catch (e: Exception) {
+                SafeLog.e("SyncSettingsViewModel", "WebDAV test connection failed", e)
                 _uiState.update {
                     it.copy(
                         isTestingConnection = false,
                         testConnectionResult = TestConnectionResult.Failure(
-                            e.message ?: "Erreur inconnue"
+                            e.message ?: context.getString(R.string.sync_generic_unknown_error)
                         )
                     )
                 }
             }
         }
+    }
+
+    fun retryProviderRehydration() {
+        viewModelScope.launch {
+            val providerType = _uiState.value.config.providerType
+            if (providerType == CloudProviderType.NONE) {
+                _uiState.update { it.copy(providerWarning = null) }
+                return@launch
+            }
+
+            val restored = runCatching {
+                cloudRepository.rehydrateActiveProvider(providerType)
+            }.onFailure { error ->
+                SafeLog.e("SyncSettingsViewModel", "Provider rehydration retry failed", error)
+            }.getOrDefault(false)
+
+            lastRehydratedProviderType = providerType
+            lastRehydrationSucceeded = restored
+
+            _uiState.update { state ->
+                state.copy(
+                    providerWarning = if (restored) {
+                        null
+                    } else {
+                        context.getString(R.string.sync_provider_warning_rehydrate_failed)
+                    }
+                )
+            }
+        }
+    }
+
+    fun clearProviderWarning() {
+        _uiState.update { it.copy(providerWarning = null) }
+    }
+
+    private fun createSyncErrorEntry(
+        message: String,
+        category: SyncErrorCategory = SyncErrorCategory.GENERAL
+    ): SyncErrorLogEntry {
+        return SyncErrorLogEntry(
+            message = message,
+            category = category,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+
+    private fun LocalSyncMetadata.prependError(entry: SyncErrorLogEntry): LocalSyncMetadata {
+        val updatedErrors = buildList {
+            add(entry)
+            addAll(syncErrors)
+        }.take(10)
+        return copy(syncErrors = updatedErrors)
     }
 
     /**
@@ -1150,25 +1479,41 @@ class SyncSettingsViewModel @Inject constructor(
             _uiState.update { it.copy(isAuthenticating = true) }
 
             try {
-                val provider = when (config) {
+                val (provider, providerConfig) = when (config) {
                     is CloudProviderConfig.GoogleDrive -> {
                         // Google Drive ne nécessite pas de config spécifique
-                        providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE)
+                        providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE) to null
                     }
+
                     is CloudProviderConfig.OneDrive -> {
-                        providerFactory.createOneDriveProvider(config.clientId)
+                        providerFactory.createOneDriveProvider(config.clientId) to ProviderConfig(
+                            customSettings = mapOf("clientId" to config.clientId)
+                        )
                     }
+
                     is CloudProviderConfig.PCloud -> {
                         providerFactory.createPCloudProvider(
                             appKey = config.appKey,
                             appSecret = config.appSecret,
                             region = config.region
+                        ) to ProviderConfig(
+                            customSettings = mapOf(
+                                "appKey" to config.appKey,
+                                "appSecret" to config.appSecret,
+                                "region" to config.region.name
+                            )
                         )
                     }
+
                     is CloudProviderConfig.ProtonDrive -> {
                         providerFactory.createProtonDriveProvider(
                             clientId = config.clientId,
                             clientSecret = config.clientSecret
+                        ) to ProviderConfig(
+                            customSettings = mapOf(
+                                "clientId" to config.clientId,
+                                "clientSecret" to config.clientSecret
+                            )
                         )
                     }
                 }
@@ -1179,18 +1524,22 @@ class SyncSettingsViewModel @Inject constructor(
 
                     if (success) {
                         // Définir comme provider actif
-                        cloudRepository.setActiveProvider(providerType, provider)
+                        cloudRepository.setActiveProvider(providerType, provider, providerConfig)
 
                         // Sauvegarder le provider type
                         syncConfigDataStore.setProviderType(providerType)
+
+                        lastRehydratedProviderType = providerType
+                        lastRehydrationSucceeded = true
 
                         _uiState.update { state ->
                             state.copy(
                                 config = state.config.copy(providerType = providerType),
                                 isAuthenticating = false,
                                 authenticationResult = AuthenticationResult.Success(
-                                    "Authentification réussie!"
-                                )
+                                    context.getString(R.string.sync_authentication_success)
+                                ),
+                                providerWarning = null
                             )
                         }
                     } else {
@@ -1198,7 +1547,7 @@ class SyncSettingsViewModel @Inject constructor(
                             it.copy(
                                 isAuthenticating = false,
                                 authenticationResult = AuthenticationResult.Failure(
-                                    "Authentification échouée"
+                                    context.getString(R.string.sync_authentication_failure)
                                 )
                             )
                         }
@@ -1208,7 +1557,7 @@ class SyncSettingsViewModel @Inject constructor(
                         it.copy(
                             isAuthenticating = false,
                             authenticationResult = AuthenticationResult.Failure(
-                                "Provider non supporté"
+                                context.getString(R.string.sync_provider_not_supported)
                             )
                         )
                     }
@@ -1218,7 +1567,7 @@ class SyncSettingsViewModel @Inject constructor(
                     it.copy(
                         isAuthenticating = false,
                         authenticationResult = AuthenticationResult.Failure(
-                            e.message ?: "Erreur inconnue"
+                            e.message ?: context.getString(R.string.sync_generic_unknown_error)
                         )
                     )
                 }
@@ -1233,7 +1582,7 @@ class SyncSettingsViewModel @Inject constructor(
 
             if (newAutoSync) {
                 // Activer la synchronisation automatique
-                Log.d(
+                SafeLog.d(
                     "SyncSettingsViewModel",
                     "Enabling auto-sync with interval: ${_uiState.value.config.syncInterval}"
                 )
@@ -1244,7 +1593,7 @@ class SyncSettingsViewModel @Inject constructor(
                 )
             } else {
                 // Désactiver la synchronisation automatique
-                Log.d("SyncSettingsViewModel", "Disabling auto-sync")
+                SafeLog.d("SyncSettingsViewModel", "Disabling auto-sync")
                 CloudSyncWorker.cancel(context)
             }
 
@@ -1262,7 +1611,7 @@ class SyncSettingsViewModel @Inject constructor(
 
             // Si auto-sync est activé, reprogrammer avec le nouvel intervalle
             if (_uiState.value.config.autoSync) {
-                Log.d("SyncSettingsViewModel", "Updating sync interval to: $interval")
+                SafeLog.d("SyncSettingsViewModel", "Updating sync interval to: $interval")
                 CloudSyncWorker.schedule(
                     context = context,
                     intervalMillis = interval,
@@ -1282,7 +1631,7 @@ class SyncSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(status = SyncStatus.SYNCING) }
-                Log.d("SyncSettingsViewModel", "Starting full sync...")
+                SafeLog.d("SyncSettingsViewModel", "Starting full sync...")
 
                 // Initialize SyncManager (ensures encryption key is ready)
                 syncManager.initialize()
@@ -1296,7 +1645,7 @@ class SyncSettingsViewModel @Inject constructor(
 
                 when (result) {
                     is SyncResult.Success -> {
-                        Log.d("SyncSettingsViewModel", "Sync successful")
+                        SafeLog.d("SyncSettingsViewModel", "Sync successful")
 
                         // Sauvegarder le timestamp de dernière sync
                         syncConfigDataStore.updateLastSyncTimestamp()
@@ -1309,36 +1658,41 @@ class SyncSettingsViewModel @Inject constructor(
                         }
                     }
                     is SyncResult.Conflict -> {
-                        Log.w("SyncSettingsViewModel", "Conflict detected during sync")
+                        SafeLog.w("SyncSettingsViewModel", "Conflict detected during sync")
+                        val metadata = syncManager.getMetadata()
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.CONFLICT,
                                 currentConflict = result,
-                                metadata = syncManager.getMetadata().copy(
+                                metadata = metadata.copy(
                                     conflictCount = 1
                                 )
                             )
                         }
                     }
                     is SyncResult.Error -> {
-                        Log.e("SyncSettingsViewModel", "Sync error: ${result.message}")
+                        SafeLog.e("SyncSettingsViewModel", "Sync error: ${result.message}")
+                        val metadata = syncManager.getMetadata()
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.ERROR,
-                                metadata = syncManager.getMetadata().copy(
-                                    syncErrors = listOf(result.message)
-                                )
+                        metadata = metadata.prependError(
+                            createSyncErrorEntry(result.message)
+                        )
                             )
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e("SyncSettingsViewModel", "Sync failed with exception", e)
+                SafeLog.e("SyncSettingsViewModel", "Sync failed with exception", e)
+                val metadata = syncManager.getMetadata()
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.ERROR,
-                        metadata = syncManager.getMetadata().copy(
-                            syncErrors = listOf(e.message ?: "Erreur inconnue")
+                        metadata = metadata.prependError(
+                            createSyncErrorEntry(
+                                e.message ?: context.getString(R.string.sync_generic_unknown_error)
+                            )
                         )
                     )
                 }
@@ -1357,9 +1711,13 @@ class SyncSettingsViewModel @Inject constructor(
                     it.copy(
                         isTestingConnection = false,
                         testConnectionResult = if (result) {
-                            TestConnectionResult.Success("Connexion réussie!")
+                            TestConnectionResult.Success(
+                                context.getString(R.string.sync_test_connection_success)
+                            )
                         } else {
-                            TestConnectionResult.Failure("Impossible de se connecter au cloud")
+                            TestConnectionResult.Failure(
+                                context.getString(R.string.sync_test_connection_failure)
+                            )
                         }
                     )
                 }
@@ -1368,7 +1726,7 @@ class SyncSettingsViewModel @Inject constructor(
                     it.copy(
                         isTestingConnection = false,
                         testConnectionResult = TestConnectionResult.Failure(
-                            e.message ?: "Erreur inconnue"
+                            e.message ?: context.getString(R.string.sync_generic_unknown_error)
                         )
                     )
                 }
@@ -1389,6 +1747,9 @@ class SyncSettingsViewModel @Inject constructor(
 
             // Réinitialiser le repository
             cloudRepository.clearActiveProvider()
+
+            lastRehydratedProviderType = null
+            lastRehydrationSucceeded = false
 
             _uiState.update {
                 SyncSettingsUiState(
@@ -1414,7 +1775,7 @@ class SyncSettingsViewModel @Inject constructor(
             val conflict = _uiState.value.currentConflict ?: return@launch
 
             try {
-                Log.d("SyncSettingsViewModel", "Resolving conflict with strategy: $strategy")
+                SafeLog.d("SyncSettingsViewModel", "Resolving conflict with strategy: $strategy")
 
                 // Résoudre le conflit
                 val resolved = syncManager.resolveConflict(conflict, strategy)
@@ -1427,31 +1788,33 @@ class SyncSettingsViewModel @Inject constructor(
                     val remoteSettings = syncManager.downloadSettings()
                     if (remoteSettings != null) {
                         settingsDataStore.saveSettings(remoteSettings)
-                        Log.d("SyncSettingsViewModel", "Applied remote settings")
+                        SafeLog.d("SyncSettingsViewModel", "Applied remote settings")
                     }
                 } else {
                     // Uploader les paramètres locaux
                     val currentSettings = settingsDataStore.settingsFlow.first()
                     syncManager.syncSettings(currentSettings)
-                    Log.d("SyncSettingsViewModel", "Uploaded local settings")
+                    SafeLog.d("SyncSettingsViewModel", "Uploaded local settings")
                 }
 
                 // Mettre à jour l'état
+                val metadata = syncManager.getMetadata()
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.SYNCED,
                         currentConflict = null,
-                        metadata = syncManager.getMetadata().copy(conflictCount = 0)
+                        metadata = metadata.copy(conflictCount = 0)
                     )
                 }
             } catch (e: Exception) {
-                Log.e("SyncSettingsViewModel", "Error resolving conflict", e)
+                SafeLog.e("SyncSettingsViewModel", "Error resolving conflict", e)
+                val metadata = syncManager.getMetadata()
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.ERROR,
-                        metadata = it.metadata.copy(
-                            syncErrors = listOf(
-                                e.message ?: "Erreur lors de la résolution du conflit"
+                        metadata = metadata.prependError(
+                            createSyncErrorEntry(
+                                e.message ?: context.getString(R.string.sync_conflict_resolution_error)
                             )
                         )
                     )
@@ -1486,7 +1849,8 @@ data class SyncSettingsUiState(
     val testConnectionResult: TestConnectionResult? = null,
     val isAuthenticating: Boolean = false,
     val authenticationResult: AuthenticationResult? = null,
-    val currentConflict: SyncResult.Conflict? = null
+    val currentConflict: SyncResult.Conflict? = null,
+    val providerWarning: String? = null
 )
 
 /**

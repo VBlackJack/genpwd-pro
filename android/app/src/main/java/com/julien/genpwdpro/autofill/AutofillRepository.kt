@@ -11,11 +11,7 @@ import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.core.ipc.IntentSanitizer
-import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
-import com.julien.genpwdpro.data.db.entity.password
-import com.julien.genpwdpro.data.db.entity.title
-import com.julien.genpwdpro.data.db.entity.url
-import com.julien.genpwdpro.data.db.entity.username
+import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult

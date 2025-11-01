@@ -3,12 +3,12 @@ package com.julien.genpwdpro.security
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.dao.updateById
+import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -87,7 +87,7 @@ class BiometricVaultManager @Inject constructor(
         masterPassword: String
     ): Result<Unit> {
         return try {
-            Log.d(TAG, "Enabling biometric for vault: $vaultId")
+            SafeLog.d(TAG, "Enabling biometric for vault: vaultId=${SafeLog.redact(vaultId)}")
 
             // 1. Obtenir ou créer la clé Keystore
             val secretKey = getOrCreateKey(vaultId)
@@ -112,10 +112,10 @@ class BiometricVaultManager @Inject constructor(
                 )
             }
 
-            Log.i(TAG, "Biometric enabled successfully for vault: $vaultId")
+            SafeLog.i(TAG, "Biometric enabled successfully for vault: vaultId=${SafeLog.redact(vaultId)}")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to enable biometric for vault: $vaultId", e)
+            SafeLog.e(TAG, "Failed to enable biometric for vault: vaultId=${SafeLog.redact(vaultId)}", e)
             Result.failure(e)
         }
     }
@@ -138,7 +138,7 @@ class BiometricVaultManager @Inject constructor(
         vaultId: String
     ): Result<String> {
         return try {
-            Log.d(TAG, "Unlocking vault with biometric: $vaultId")
+            SafeLog.d(TAG, "Unlocking vault with biometric: vaultId=${SafeLog.redact(vaultId)}")
 
             // 1. Récupérer les données chiffrées
             val vaultRegistry = vaultRegistryDao.getById(vaultId)
@@ -164,10 +164,10 @@ class BiometricVaultManager @Inject constructor(
             // 3. Afficher le prompt biométrique et déchiffrer
             val decryptedPassword = showBiometricPrompt(activity, cipher, encryptedPassword)
 
-            Log.i(TAG, "Vault unlocked successfully with biometric: $vaultId")
+            SafeLog.i(TAG, "Vault unlocked successfully with biometric: vaultId=${SafeLog.redact(vaultId)}")
             Result.success(decryptedPassword)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to unlock with biometric: $vaultId", e)
+            SafeLog.e(TAG, "Failed to unlock with biometric: vaultId=${SafeLog.redact(vaultId)}", e)
             Result.failure(e)
         }
     }
@@ -180,7 +180,7 @@ class BiometricVaultManager @Inject constructor(
      */
     suspend fun disableBiometric(vaultId: String): Result<Unit> {
         return try {
-            Log.d(TAG, "Disabling biometric for vault: $vaultId")
+            SafeLog.d(TAG, "Disabling biometric for vault: vaultId=${SafeLog.redact(vaultId)}")
 
             // Supprimer les données biométriques de vault_registry
             vaultRegistryDao.updateById(vaultId) { entry ->
@@ -194,10 +194,10 @@ class BiometricVaultManager @Inject constructor(
             // Supprimer la clé du Keystore
             deleteKey(vaultId)
 
-            Log.i(TAG, "Biometric disabled successfully for vault: $vaultId")
+            SafeLog.i(TAG, "Biometric disabled successfully for vault: vaultId=${SafeLog.redact(vaultId)}")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to disable biometric for vault: $vaultId", e)
+            SafeLog.e(TAG, "Failed to disable biometric for vault: vaultId=${SafeLog.redact(vaultId)}", e)
             Result.failure(e)
         }
     }
@@ -217,10 +217,10 @@ class BiometricVaultManager @Inject constructor(
             val result = biometricManager.canAuthenticate(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
             )
-            Log.d(TAG, "Biometric STRONG availability check result: $result")
+            SafeLog.d(TAG, "Biometric STRONG availability check result: $result")
             result == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking biometric availability", e)
+            SafeLog.e(TAG, "Error checking biometric availability", e)
             false
         }
     }
@@ -336,7 +336,7 @@ class BiometricVaultManager @Inject constructor(
 
                         continuation.resume(EncryptionResult(encryptedBytes, iv))
                     } catch (e: Exception) {
-                        Log.e(TAG, "Encryption failed", e)
+                        SafeLog.e(TAG, "Encryption failed", e)
                         if (continuation.isActive) {
                             continuation.cancel(e)
                         }
@@ -345,7 +345,7 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Log.w(TAG, "Biometric authentication error: $errString")
+                    SafeLog.w(TAG, "Biometric authentication error: $errString")
 
                     if (continuation.isActive) {
                         plainData.fill(0)
@@ -357,7 +357,7 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Log.w(TAG, "Biometric authentication failed")
+                    SafeLog.w(TAG, "Biometric authentication failed")
                     // Ne pas annuler la continuation ici, l'utilisateur peut réessayer
                 }
             }
@@ -415,7 +415,7 @@ class BiometricVaultManager @Inject constructor(
 
                         continuation.resume(password)
                     } catch (e: Exception) {
-                        Log.e(TAG, "Decryption failed", e)
+                        SafeLog.e(TAG, "Decryption failed", e)
                         if (continuation.isActive) {
                             continuation.cancel(e)
                         }
@@ -424,7 +424,7 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Log.w(TAG, "Biometric authentication error: $errString")
+                    SafeLog.w(TAG, "Biometric authentication error: $errString")
 
                     if (continuation.isActive) {
                         continuation.cancel(
@@ -435,7 +435,7 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Log.w(TAG, "Biometric authentication failed")
+                    SafeLog.w(TAG, "Biometric authentication failed")
                     // Ne pas annuler la continuation ici, l'utilisateur peut réessayer
                 }
             }

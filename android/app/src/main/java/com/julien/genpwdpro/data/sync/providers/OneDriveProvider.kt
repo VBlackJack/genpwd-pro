@@ -2,7 +2,7 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.julien.genpwdpro.data.sync.CloudProvider
@@ -115,7 +115,7 @@ class OneDriveProvider(
     override suspend fun isAuthenticated(): Boolean = withContext(Dispatchers.IO) {
         try {
             if (accessToken == null) {
-                Log.d(TAG, "No access token available")
+                SafeLog.d(TAG, "No access token available")
                 return@withContext false
             }
 
@@ -130,16 +130,16 @@ class OneDriveProvider(
                     val userInfo = JsonParser.parseString(response.body?.string() ?: "{}")
                         .asJsonObject
                     val email = userInfo.get("userPrincipalName")?.asString
-                    Log.d(TAG, "Authentication valid for user: $email")
+                    SafeLog.d(TAG, "Authentication valid for user: $email")
                     true
                 } else {
-                    Log.w(TAG, "Authentication failed: ${response.code}")
+                    SafeLog.w(TAG, "Authentication failed: ${response.code}")
                     accessToken = null
                     false
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking authentication", e)
+            SafeLog.e(TAG, "Error checking authentication", e)
             accessToken = null
             false
         }
@@ -153,8 +153,8 @@ class OneDriveProvider(
      */
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
-            Log.w(TAG, "MSAL authentication requires MSAL library dependency")
-            Log.w(
+            SafeLog.w(TAG, "MSAL authentication requires MSAL library dependency")
+            SafeLog.w(
                 TAG,
                 "Add to build.gradle.kts: implementation(\"com.microsoft.identity.client:msal:4.+\")"
             )
@@ -181,7 +181,7 @@ class OneDriveProvider(
                     object : AuthenticationCallback {
                         override fun onSuccess(authenticationResult: IAuthenticationResult) {
                             accessToken = authenticationResult.accessToken
-                            Log.d(TAG, "Authentication successful")
+                            SafeLog.d(TAG, "Authentication successful")
 
                             // Initialiser le dossier
                             viewModelScope.launch {
@@ -191,12 +191,12 @@ class OneDriveProvider(
                         }
 
                         override fun onError(exception: MsalException?) {
-                            Log.e(TAG, "Authentication failed", exception)
+                            SafeLog.e(TAG, "Authentication failed", exception)
                             authCallback?.invoke(false)
                         }
 
                         override fun onCancel() {
-                            Log.d(TAG, "Authentication cancelled")
+                            SafeLog.d(TAG, "Authentication cancelled")
                             authCallback?.invoke(false)
                         }
                     }
@@ -207,7 +207,7 @@ class OneDriveProvider(
             // Placeholder return
             false
         } catch (e: Exception) {
-            Log.e(TAG, "Authentication error", e)
+            SafeLog.e(TAG, "Authentication error", e)
             false
         }
     }
@@ -222,15 +222,15 @@ class OneDriveProvider(
             // Vérifier que le token est valide
             if (isAuthenticated()) {
                 ensureFolder()
-                Log.d(TAG, "Access token set successfully")
+                SafeLog.d(TAG, "Access token set successfully")
                 true
             } else {
                 accessToken = null
-                Log.e(TAG, "Invalid access token")
+                SafeLog.e(TAG, "Invalid access token")
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error setting access token", e)
+            SafeLog.e(TAG, "Error setting access token", e)
             accessToken = null
             false
         }
@@ -261,7 +261,7 @@ class OneDriveProvider(
                     val folder = JsonParser.parseString(response.body?.string() ?: "{}")
                         .asJsonObject
                     genPwdFolderId = folder.get("id")?.asString
-                    Log.d(TAG, "Folder found: $FOLDER_NAME (ID: $genPwdFolderId)")
+                    SafeLog.d(TAG, "Folder found: $FOLDER_NAME (ID: $genPwdFolderId)")
                     return@withContext genPwdFolderId!!
                 }
             }
@@ -282,7 +282,7 @@ class OneDriveProvider(
                     val folder = JsonParser.parseString(response.body?.string() ?: "{}")
                         .asJsonObject
                     genPwdFolderId = folder.get("id")?.asString
-                    Log.d(TAG, "Folder created: $FOLDER_NAME (ID: $genPwdFolderId)")
+                    SafeLog.d(TAG, "Folder created: $FOLDER_NAME (ID: $genPwdFolderId)")
                     genPwdFolderId!!
                 } else {
                     val error = response.body?.string() ?: "Unknown error"
@@ -290,7 +290,7 @@ class OneDriveProvider(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error ensuring folder", e)
+            SafeLog.e(TAG, "Error ensuring folder", e)
             throw e
         }
     }
@@ -326,24 +326,24 @@ class OneDriveProvider(
                             val fileItem = JsonParser.parseString(response.body?.string() ?: "{}")
                                 .asJsonObject
                             val fileId = fileItem.get("id")?.asString
-                            Log.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
+                            SafeLog.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
                             fileId
                         } else {
                             val error = response.body?.string() ?: "Unknown error"
-                            Log.e(TAG, "Upload failed: $error")
+                            SafeLog.e(TAG, "Upload failed: $error")
                             null
                         }
                     }
                 } else {
                     // TODO: Implémenter chunked upload pour fichiers > 4MB
-                    Log.w(
+                    SafeLog.w(
                         TAG,
                         "File too large for simple upload, chunked upload not yet implemented"
                     )
                     null
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading vault", e)
+                SafeLog.e(TAG, "Error uploading vault", e)
                 null
             }
         }
@@ -376,7 +376,7 @@ class OneDriveProvider(
 
                 httpClient.newCall(metadataRequest).execute().use { response ->
                     if (!response.isSuccessful) {
-                        Log.e(TAG, "Failed to get file metadata: ${response.code}")
+                        SafeLog.e(TAG, "Failed to get file metadata: ${response.code}")
                         return@withContext null
                     }
 
@@ -393,7 +393,7 @@ class OneDriveProvider(
 
                 // Download le fichier
                 if (downloadUrl == null) {
-                    Log.e(TAG, "No download URL in metadata")
+                    SafeLog.e(TAG, "No download URL in metadata")
                     return@withContext null
                 }
 
@@ -404,7 +404,7 @@ class OneDriveProvider(
 
                 httpClient.newCall(downloadRequest).execute().use { response ->
                     if (!response.isSuccessful) {
-                        Log.e(TAG, "Download failed: ${response.code}")
+                        SafeLog.e(TAG, "Download failed: ${response.code}")
                         return@withContext null
                     }
 
@@ -421,7 +421,7 @@ class OneDriveProvider(
                     )
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error downloading vault", e)
+                SafeLog.e(TAG, "Error downloading vault", e)
                 null
             }
         }
@@ -444,7 +444,7 @@ class OneDriveProvider(
 
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "Failed to list vaults: ${response.code}")
+                    SafeLog.e(TAG, "Failed to list vaults: ${response.code}")
                     return@withContext emptyList()
                 }
 
@@ -477,7 +477,7 @@ class OneDriveProvider(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing vaults", e)
+            SafeLog.e(TAG, "Error listing vaults", e)
             emptyList()
         }
     }
@@ -498,16 +498,16 @@ class OneDriveProvider(
 
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 204) {
-                    Log.d(TAG, "Vault deleted successfully: $cloudFileId")
+                    SafeLog.d(TAG, "Vault deleted successfully: $cloudFileId")
                     true
                 } else {
                     val error = response.body?.string() ?: "Unknown error"
-                    Log.e(TAG, "Delete failed: $error")
+                    SafeLog.e(TAG, "Delete failed: $error")
                     false
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting vault", e)
+            SafeLog.e(TAG, "Error deleting vault", e)
             false
         }
     }
@@ -528,7 +528,7 @@ class OneDriveProvider(
 
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "Failed to get quota: ${response.code}")
+                    SafeLog.e(TAG, "Failed to get quota: ${response.code}")
                     return@withContext StorageQuota(0, 0, 0)
                 }
 
@@ -547,7 +547,7 @@ class OneDriveProvider(
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting storage quota", e)
+            SafeLog.e(TAG, "Error getting storage quota", e)
             StorageQuota(0, 0, 0)
         }
     }
@@ -562,7 +562,7 @@ class OneDriveProvider(
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking version", e)
+            SafeLog.e(TAG, "Error checking version", e)
             false
         }
     }
@@ -578,7 +578,7 @@ class OneDriveProvider(
             val metadata = listVaults().find { it.fileName == fileName }
             metadata
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting metadata", e)
+            SafeLog.e(TAG, "Error getting metadata", e)
             null
         }
     }
@@ -595,9 +595,9 @@ class OneDriveProvider(
             // TODO: Avec MSAL, appeler également:
             // msalApp.signOut()
 
-            Log.d(TAG, "Signed out successfully")
+            SafeLog.d(TAG, "Signed out successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Error signing out", e)
+            SafeLog.e(TAG, "Error signing out", e)
         }
     }
 
@@ -610,7 +610,7 @@ class OneDriveProvider(
             // TODO: Parser correctement ISO 8601
             System.currentTimeMillis()
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing timestamp: $timestamp", e)
+            SafeLog.e(TAG, "Error parsing timestamp: $timestamp", e)
             System.currentTimeMillis()
         }
     }

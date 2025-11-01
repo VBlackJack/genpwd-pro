@@ -11,7 +11,6 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.julien.genpwdpro.domain.session.SessionManager
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.presentation.navigation.AppNavGraph
 import com.julien.genpwdpro.presentation.navigation.Screen
@@ -26,7 +25,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    sessionManager: SessionManager,
     vaultSessionManager: VaultSessionManager,
     startDestination: String = Screen.Dashboard.route // Destination de départ
 ) {
@@ -118,7 +116,6 @@ fun MainScreen(
                 AppNavGraph(
                     navController = navController,
                     startDestination = startDestination, // Utiliser la destination dynamique
-                    sessionManager = sessionManager,
                     vaultSessionManager = vaultSessionManager
                 )
             }

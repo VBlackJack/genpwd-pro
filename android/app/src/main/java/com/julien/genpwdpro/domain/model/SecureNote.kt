@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.domain.model
 
-import com.julien.genpwdpro.data.db.entity.EntryType
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.models.vault.EntryType
+import com.julien.genpwdpro.data.models.vault.DecryptedVaultEntry
 import java.util.UUID
 
 /**
@@ -46,19 +46,19 @@ data class SecureNote(
     val viewCount: Int = 0
 ) {
     /**
-     * Convertit une note sécurisée en DecryptedEntry pour le repository
+     * Convertit une note sécurisée en DecryptedVaultEntry pour le repository
      */
-    fun toDecryptedEntry(): VaultRepository.DecryptedEntry {
-        return VaultRepository.DecryptedEntry(
+    fun toDecryptedEntry(): DecryptedVaultEntry {
+        return DecryptedVaultEntry(
             id = id,
             vaultId = vaultId,
             folderId = folderId,
             title = title,
-            username = "", // Pas utilisé pour les notes
-            password = "", // Pas utilisé pour les notes
-            url = "", // Pas utilisé pour les notes
+            username = null, // Pas utilisé pour les notes
+            password = null, // Pas utilisé pour les notes
+            url = null, // Pas utilisé pour les notes
             notes = content, // Le contenu est stocké dans le champ notes
-            customFields = "",
+            customFields = null,
             entryType = EntryType.NOTE,
             isFavorite = isFavorite,
             passwordStrength = 0,
@@ -73,13 +73,13 @@ data class SecureNote(
             icon = icon,
             color = color,
             hasTOTP = false,
-            totpSecret = "",
+            totpSecret = null,
             totpPeriod = 30,
             totpDigits = 6,
             totpAlgorithm = "SHA1",
             totpIssuer = "",
             hasPasskey = false,
-            passkeyData = "",
+            passkeyData = null,
             passkeyRpId = "",
             passkeyRpName = "",
             passkeyUserHandle = "",
@@ -90,9 +90,9 @@ data class SecureNote(
 
     companion object {
         /**
-         * Crée une SecureNote depuis un DecryptedEntry
+         * Crée une SecureNote depuis un DecryptedVaultEntry
          */
-        fun fromDecryptedEntry(entry: VaultRepository.DecryptedEntry): SecureNote? {
+        fun fromDecryptedEntry(entry: DecryptedVaultEntry): SecureNote? {
             if (entry.entryType != EntryType.NOTE) return null
 
             return SecureNote(
@@ -100,7 +100,7 @@ data class SecureNote(
                 vaultId = entry.vaultId,
                 folderId = entry.folderId,
                 title = entry.title,
-                content = entry.notes,
+                content = entry.notes ?: "",
                 isFavorite = entry.isFavorite,
                 icon = entry.icon,
                 color = entry.color,
@@ -136,17 +136,17 @@ data class SecureIdentity(
     val createdAt: Long = System.currentTimeMillis(),
     val modifiedAt: Long = System.currentTimeMillis()
 ) {
-    fun toDecryptedEntry(): VaultRepository.DecryptedEntry {
-        return VaultRepository.DecryptedEntry(
+    fun toDecryptedEntry(): DecryptedVaultEntry {
+        return DecryptedVaultEntry(
             id = id,
             vaultId = vaultId,
             folderId = folderId,
             title = fullName,
             username = identityType,
-            password = "",
-            url = "",
+            password = null,
+            url = null,
             notes = identityData,
-            customFields = "",
+            customFields = null,
             entryType = EntryType.IDENTITY,
             isFavorite = isFavorite,
             passwordStrength = 0,
@@ -161,13 +161,13 @@ data class SecureIdentity(
             icon = icon,
             color = color,
             hasTOTP = false,
-            totpSecret = "",
+            totpSecret = null,
             totpPeriod = 30,
             totpDigits = 6,
             totpAlgorithm = "SHA1",
             totpIssuer = "",
             hasPasskey = false,
-            passkeyData = "",
+            passkeyData = null,
             passkeyRpId = "",
             passkeyRpName = "",
             passkeyUserHandle = "",
@@ -212,7 +212,7 @@ data class SecureCard(
     val createdAt: Long = System.currentTimeMillis(),
     val modifiedAt: Long = System.currentTimeMillis()
 ) {
-    fun toDecryptedEntry(): VaultRepository.DecryptedEntry {
+    fun toDecryptedEntry(): DecryptedVaultEntry {
         // Stocker les données de carte dans customFields en JSON
         val cardData = """
             {
@@ -224,14 +224,14 @@ data class SecureCard(
             }
         """.trimIndent()
 
-        return VaultRepository.DecryptedEntry(
+        return DecryptedVaultEntry(
             id = id,
             vaultId = vaultId,
             folderId = folderId,
             title = "$cardType - ${cardNumber.takeLast(4)}",
             username = cardholderName,
             password = cvv,
-            url = "",
+            url = null,
             notes = notes,
             customFields = cardData,
             entryType = EntryType.CARD,
@@ -248,13 +248,13 @@ data class SecureCard(
             icon = icon,
             color = color,
             hasTOTP = false,
-            totpSecret = "",
+            totpSecret = null,
             totpPeriod = 30,
             totpDigits = 6,
             totpAlgorithm = "SHA1",
             totpIssuer = "",
             hasPasskey = false,
-            passkeyData = "",
+            passkeyData = null,
             passkeyRpId = "",
             passkeyRpName = "",
             passkeyUserHandle = "",

@@ -54,9 +54,11 @@ class SecureScreenDelegate(
         val owner = dialogOwners.getOrPut(dialog) { Any() }
         dialog.window?.apply {
             setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                runCatching { setRecentsScreenshotEnabled(false) }
-            }
+            // setRecentsScreenshotEnabled is Android 15+ (API 35)
+            // Commented out for now as API 35 is not yet released
+            // if (Build.VERSION.SDK_INT >= 35) {
+            //     runCatching { setRecentsScreenshotEnabled(false) }
+            // }
         }
         registerSecureOwner(owner)
         dialog.setOnDismissListener {
