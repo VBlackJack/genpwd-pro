@@ -157,19 +157,24 @@ data class PasswordHistoryEntity(
 - Générateur rapide du Dashboard
 - Statistiques de génération
 
-### Entités Legacy (conservées pour migration)
+### Entités Legacy (SUPPRIMÉES - 2025-11-01)
 
-Les artefacts Room historiques demeurent dans le dépôt pour faciliter les migrations ponctuelles et la rétro-ingénierie des
-anciens coffres :
+Les artefacts Room historiques ont été **complètement supprimés** du code source :
 
-- `VaultEntity` - Ancien système de vault Room
-- `VaultEntryEntity` - Anciennes entrées Room
-- `FolderEntity` - Anciens dossiers Room
-- `TagEntity` - Anciens tags Room
-- `PresetEntity` - Anciens presets Room
+- `VaultEntity` - ✅ SUPPRIMÉ
+- `VaultEntryEntity` - ✅ SUPPRIMÉ
+- `VaultEntryEntityExt` - ✅ SUPPRIMÉ
+- `FolderEntity` - ✅ SUPPRIMÉ
+- `TagEntity` - ✅ SUPPRIMÉ
+- `PresetEntity` - ✅ SUPPRIMÉ
+- `VaultDao` - ✅ SUPPRIMÉ
+- `VaultEntryDao` - ✅ SUPPRIMÉ
+- `FolderDao` - ✅ SUPPRIMÉ
+- `TagDao` - ✅ SUPPRIMÉ
+- `PresetDao` - ✅ SUPPRIMÉ
+- `VaultRepository` (legacy Room) - ✅ SUPPRIMÉ
 
-Ils ne sont plus injectés dans Hilt ni accessibles en runtime. Toute réutilisation nécessite un wiring manuel explicite dans une
-branche dédiée à la migration.
+**Raison :** Le système file-based (.gpv) fonctionne parfaitement. Suppression du code legacy pour éliminer toute ambiguïté pour les analyseurs de code et les IA.
 
 ---
 
