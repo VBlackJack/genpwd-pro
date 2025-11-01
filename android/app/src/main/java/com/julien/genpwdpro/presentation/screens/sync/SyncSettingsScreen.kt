@@ -32,6 +32,7 @@ import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.SyncStatus
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
 import com.julien.genpwdpro.data.sync.providers.ProviderInfo
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -1150,25 +1151,41 @@ class SyncSettingsViewModel @Inject constructor(
             _uiState.update { it.copy(isAuthenticating = true) }
 
             try {
-                val provider = when (config) {
+                val (provider, providerConfig) = when (config) {
                     is CloudProviderConfig.GoogleDrive -> {
                         // Google Drive ne nécessite pas de config spécifique
-                        providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE)
+                        providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE) to null
                     }
+
                     is CloudProviderConfig.OneDrive -> {
-                        providerFactory.createOneDriveProvider(config.clientId)
+                        providerFactory.createOneDriveProvider(config.clientId) to ProviderConfig(
+                            customSettings = mapOf("clientId" to config.clientId)
+                        )
                     }
+
                     is CloudProviderConfig.PCloud -> {
                         providerFactory.createPCloudProvider(
                             appKey = config.appKey,
                             appSecret = config.appSecret,
                             region = config.region
+                        ) to ProviderConfig(
+                            customSettings = mapOf(
+                                "appKey" to config.appKey,
+                                "appSecret" to config.appSecret,
+                                "region" to config.region.name
+                            )
                         )
                     }
+
                     is CloudProviderConfig.ProtonDrive -> {
                         providerFactory.createProtonDriveProvider(
                             clientId = config.clientId,
                             clientSecret = config.clientSecret
+                        ) to ProviderConfig(
+                            customSettings = mapOf(
+                                "clientId" to config.clientId,
+                                "clientSecret" to config.clientSecret
+                            )
                         )
                     }
                 }
@@ -1179,7 +1196,7 @@ class SyncSettingsViewModel @Inject constructor(
 
                     if (success) {
                         // Définir comme provider actif
-                        cloudRepository.setActiveProvider(providerType, provider)
+                        cloudRepository.setActiveProvider(providerType, provider, providerConfig)
 
                         // Sauvegarder le provider type
                         syncConfigDataStore.setProviderType(providerType)

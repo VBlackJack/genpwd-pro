@@ -42,7 +42,7 @@ interface CloudSyncRepository {
      * @param id Identifiant unique de la donnée
      * @return Données chiffrées ou null si introuvable
      */
-    suspend fun downloadById(id: String): SyncData?
+    suspend fun downloadById(id: String, dataType: SyncDataType): SyncData?
 
     /**
      * Supprime des données du cloud
@@ -106,7 +106,7 @@ class NoOpCloudSyncRepository : CloudSyncRepository {
     override suspend fun download(dataType: SyncDataType, deviceId: String?): List<SyncData> =
         emptyList()
 
-    override suspend fun downloadById(id: String): SyncData? = null
+    override suspend fun downloadById(id: String, dataType: SyncDataType): SyncData? = null
 
     override suspend fun delete(id: String): SyncResult =
         SyncResult.Error("Sync désactivée")

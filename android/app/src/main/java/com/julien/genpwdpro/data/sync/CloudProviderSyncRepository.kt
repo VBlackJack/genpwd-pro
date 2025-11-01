@@ -4,15 +4,21 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
+import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
+import com.julien.genpwdpro.data.sync.providers.PCloudProvider
+import com.julien.genpwdpro.data.sync.providers.PCloudProvider.PCloudRegion
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.json.JSONArray
+import org.json.JSONException
 
 /**
  * Implémentation de CloudSyncRepository utilisant les CloudProviders
@@ -37,6 +43,16 @@ class CloudProviderSyncRepository @Inject constructor(
         private const val TAG = "CloudProviderSyncRepo"
         private const val PREFS_NAME = "cloud_sync_prefs"
         private const val KEY_ACTIVE_PROVIDER = "active_provider_type"
+        private const val KEY_SYNC_ERRORS = "sync_errors"
+        private const val MAX_SYNC_ERRORS = 10
+        private const val CONFIG_KEY_CLIENT_ID = "clientId"
+        private const val CONFIG_KEY_CLIENT_SECRET = "clientSecret"
+        private const val CONFIG_KEY_APP_KEY = "appKey"
+        private const val CONFIG_KEY_APP_SECRET = "appSecret"
+        private const val CONFIG_KEY_REGION = "region"
+        private const val CONFIG_KEY_SERVER_URL = "serverUrl"
+        private const val CONFIG_KEY_USERNAME = "username"
+        private const val CONFIG_KEY_PASSWORD = "password"
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -60,7 +76,11 @@ class CloudProviderSyncRepository @Inject constructor(
      * @param providerType Type de provider à activer
      * @param provider Instance du provider (déjà configuré)
      */
-    fun setActiveProvider(providerType: CloudProviderType, provider: CloudProvider) {
+    fun setActiveProvider(
+        providerType: CloudProviderType,
+        provider: CloudProvider,
+        providerConfig: ProviderConfig? = null
+    ) {
         SafeLog.d(TAG, "Setting active provider: $providerType")
         activeProviderType = providerType
         activeProvider = provider
@@ -69,6 +89,10 @@ class CloudProviderSyncRepository @Inject constructor(
         prefs.edit()
             .putString(KEY_ACTIVE_PROVIDER, providerType.name)
             .apply()
+
+        providerConfig?.let {
+            credentialManager.saveProviderConfig(providerType, it)
+        }
     }
 
     /**
@@ -80,16 +104,19 @@ class CloudProviderSyncRepository @Inject constructor(
      * Charger le provider actif depuis les préférences
      */
     private fun loadActiveProvider() {
-        val savedProviderName = prefs.getString(KEY_ACTIVE_PROVIDER, null)
-        if (savedProviderName != null) {
-            try {
-                val providerType = CloudProviderType.valueOf(savedProviderName)
-                activeProviderType = providerType
-                SafeLog.d(TAG, "Loaded active provider type: $providerType")
-                // Le provider sera instancié quand nécessaire
-            } catch (e: Exception) {
-                SafeLog.w(TAG, "Failed to load active provider: $savedProviderName", e)
-            }
+        activeProviderType = readStoredProviderType()?.also {
+            SafeLog.d(TAG, "Loaded active provider type: $it")
+        }
+    }
+
+    private fun readStoredProviderType(): CloudProviderType? {
+        val savedProviderName = prefs.getString(KEY_ACTIVE_PROVIDER, null) ?: return null
+        return try {
+            CloudProviderType.valueOf(savedProviderName)
+        } catch (e: Exception) {
+            SafeLog.w(TAG, "Failed to parse stored provider type: $savedProviderName", e)
+            prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()
+            null
         }
     }
 
@@ -99,27 +126,161 @@ class CloudProviderSyncRepository @Inject constructor(
     fun clearActiveProvider() {
         SafeLog.d(TAG, "Clearing active provider")
         activeProvider = null
+        activeProviderType?.let { providerType ->
+            credentialManager.clearProvider(providerType)
+        }
         activeProviderType = null
         prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()
+        clearSyncErrors()
     }
 
-    /**
-     * Vérifier qu'un provider est actif
-     */
-    private fun ensureProviderAvailable(): Boolean {
-        if (activeProvider == null) {
-            SafeLog.w(TAG, "No active provider configured")
-            return false
+    suspend fun rehydrateActiveProvider(expectedType: CloudProviderType? = null): Boolean {
+        expectedType?.let { type ->
+            activeProviderType = type
+            prefs.edit().putString(KEY_ACTIVE_PROVIDER, type.name).apply()
         }
-        return true
+
+        return ensureActiveProvider() != null
+    }
+
+    private suspend fun ensureActiveProvider(): CloudProvider? {
+        activeProvider?.let { return it }
+
+        val providerType = activeProviderType
+            ?: readStoredProviderType()?.also { activeProviderType = it }
+
+        if (providerType == null || providerType == CloudProviderType.NONE) {
+            SafeLog.w(TAG, "No stored provider available for rehydration")
+            return null
+        }
+
+        val provider = instantiateProvider(providerType)
+        if (provider == null) {
+            SafeLog.w(TAG, "Unable to instantiate provider: $providerType")
+            return null
+        }
+
+        activeProvider = provider
+        SafeLog.d(TAG, "Active provider rehydrated: $providerType")
+        return provider
+    }
+
+    private fun instantiateProvider(type: CloudProviderType): CloudProvider? {
+        return when (type) {
+            CloudProviderType.GOOGLE_DRIVE -> {
+                providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE)
+            }
+
+            CloudProviderType.ONEDRIVE -> {
+                val config = credentialManager.getProviderConfig(type, ProviderConfig::class.java)
+                val clientId = config?.customSettings?.get(CONFIG_KEY_CLIENT_ID)
+
+                if (clientId.isNullOrBlank()) {
+                    SafeLog.w(TAG, "Missing clientId for OneDrive provider rehydration")
+                    null
+                } else {
+                    providerFactory.createOneDriveProvider(clientId)
+                }
+            }
+
+            CloudProviderType.PROTON_DRIVE -> {
+                val config = credentialManager.getProviderConfig(type, ProviderConfig::class.java)
+                val clientId = config?.customSettings?.get(CONFIG_KEY_CLIENT_ID)
+                val clientSecret = config?.customSettings?.get(CONFIG_KEY_CLIENT_SECRET)
+
+                if (clientId.isNullOrBlank() || clientSecret.isNullOrBlank()) {
+                    SafeLog.w(TAG, "Missing Proton Drive credentials for rehydration")
+                    null
+                } else {
+                    providerFactory.createProtonDriveProvider(clientId, clientSecret)
+                }
+            }
+
+            CloudProviderType.PCLOUD -> {
+                val config = credentialManager.getProviderConfig(type, ProviderConfig::class.java)
+                val appKey = config?.customSettings?.get(CONFIG_KEY_APP_KEY)
+                val appSecret = config?.customSettings?.get(CONFIG_KEY_APP_SECRET)
+                val region = config?.customSettings?.get(CONFIG_KEY_REGION)
+                    ?.let { runCatching { PCloudRegion.valueOf(it) }.getOrNull() }
+                    ?: PCloudRegion.EU
+
+                if (appKey.isNullOrBlank() || appSecret.isNullOrBlank()) {
+                    SafeLog.w(TAG, "Missing pCloud credentials for rehydration")
+                    null
+                } else {
+                    providerFactory.createPCloudProvider(appKey, appSecret, region)
+                }
+            }
+
+            CloudProviderType.WEBDAV -> {
+                val config = credentialManager.getProviderConfig(type, ProviderConfig::class.java)
+                val serverUrl = config?.serverUrl
+                val username = config?.username
+                val password = config?.password
+
+                if (serverUrl.isNullOrBlank() || username.isNullOrBlank() || password.isNullOrBlank()) {
+                    SafeLog.w(TAG, "Incomplete WebDAV configuration for rehydration")
+                    null
+                } else {
+                    providerFactory.createWebDAVProvider(serverUrl, username, password)
+                }
+            }
+
+            CloudProviderType.NONE -> null
+        }
+    }
+
+    private fun recordSyncError(message: String, throwable: Exception? = null) {
+        val composedMessage = buildString {
+            append(message)
+            val throwableMessage = throwable?.message
+            if (!throwableMessage.isNullOrBlank()) {
+                append(" – ")
+                append(throwableMessage)
+            }
+        }.take(512)
+
+        val errors = readSyncErrors().apply {
+            add(0, composedMessage)
+            if (size > MAX_SYNC_ERRORS) {
+                subList(MAX_SYNC_ERRORS, size).clear()
+            }
+        }
+
+        persistSyncErrors(errors)
+    }
+
+    private fun readSyncErrors(): MutableList<String> {
+        val raw = prefs.getString(KEY_SYNC_ERRORS, null) ?: return mutableListOf()
+
+        return try {
+            val array = JSONArray(raw)
+            MutableList(array.length()) { index -> array.optString(index) }
+        } catch (e: JSONException) {
+            SafeLog.w(TAG, "Failed to parse stored sync errors", e)
+            prefs.edit().remove(KEY_SYNC_ERRORS).apply()
+            mutableListOf()
+        }
+    }
+
+    private fun persistSyncErrors(errors: List<String>) {
+        val array = JSONArray()
+        errors.forEach { array.put(it) }
+        prefs.edit().putString(KEY_SYNC_ERRORS, array.toString()).apply()
+    }
+
+    private fun clearSyncErrors() {
+        prefs.edit().remove(KEY_SYNC_ERRORS).apply()
     }
 
     // ========== CloudSyncRepository Implementation ==========
 
     override suspend fun upload(data: SyncData): SyncResult {
-        if (!ensureProviderAvailable()) {
-            return SyncResult.Error("Aucun provider cloud configuré")
-        }
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("Upload aborted – no active provider configured")
+                return SyncResult.Error("Aucun provider cloud configuré")
+            }
 
         return try {
             SafeLog.d(TAG, "Uploading data: ${SafeLog.redact(data.id)} (${data.dataType})")
@@ -143,31 +304,35 @@ class CloudProviderSyncRepository @Inject constructor(
             )
 
             // Upload via le provider
-            val fileId = activeProvider!!.uploadVault(data.id, vaultSyncData)
+            val fileId = provider.uploadVault(data.id, vaultSyncData)
 
             if (fileId != null) {
                 SafeLog.d(TAG, "Upload successful: ${SafeLog.redact(fileId)}")
                 SyncResult.Success
             } else {
                 SafeLog.w(TAG, "Upload failed: provider returned null fileId")
+                recordSyncError("Upload failed – provider returned null fileId")
                 SyncResult.Error("Échec de l'upload")
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Upload error", e)
+            recordSyncError("Upload error", e)
             SyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
 
     override suspend fun download(dataType: SyncDataType, deviceId: String?): List<SyncData> {
-        if (!ensureProviderAvailable()) {
-            return emptyList()
-        }
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("Download aborted – no active provider configured")
+                return emptyList()
+            }
 
         return try {
             SafeLog.d(TAG, "Downloading data for type: $dataType")
 
             // Lister tous les vaults
-            val files = activeProvider!!.listVaults()
+            val files = provider.listVaults()
 
             // Convertir CloudFileMetadata → SyncData
             files.mapNotNull { metadata ->
@@ -178,7 +343,7 @@ class CloudProviderSyncRepository @Inject constructor(
                         .removeSuffix(".enc")
 
                     // Télécharger le vault
-                    val vaultData = activeProvider!!.downloadVault(vaultId)
+                    val vaultData = provider.downloadVault(vaultId)
 
                     if (vaultData != null) {
                         // Encoder ByteArray → EncryptedDataEncoded
@@ -209,19 +374,22 @@ class CloudProviderSyncRepository @Inject constructor(
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Download error", e)
+            recordSyncError("Download error", e)
             emptyList()
         }
     }
 
-    override suspend fun downloadById(id: String): SyncData? {
-        if (!ensureProviderAvailable()) {
-            return null
-        }
+    override suspend fun downloadById(id: String, dataType: SyncDataType): SyncData? {
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("DownloadById aborted – no active provider configured")
+                return null
+            }
 
         return try {
             SafeLog.d(TAG, "Downloading vault by ID: ${SafeLog.redact(id)}")
 
-            val vaultData = activeProvider!!.downloadVault(id)
+            val vaultData = provider.downloadVault(id)
 
             if (vaultData != null) {
                 // Encoder ByteArray → EncryptedDataEncoded
@@ -232,7 +400,7 @@ class CloudProviderSyncRepository @Inject constructor(
 
                 SyncData(
                     id = vaultData.vaultId,
-                    dataType = SyncDataType.SETTINGS, // Assume SETTINGS for now
+                    dataType = dataType,
                     deviceId = vaultData.deviceId,
                     timestamp = vaultData.timestamp,
                     version = vaultData.version,
@@ -247,47 +415,55 @@ class CloudProviderSyncRepository @Inject constructor(
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Download by ID error", e)
+            recordSyncError("Download by ID error", e)
             null
         }
     }
 
     override suspend fun delete(id: String): SyncResult {
-        if (!ensureProviderAvailable()) {
-            return SyncResult.Error("Aucun provider cloud configuré")
-        }
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("Delete aborted – no active provider configured")
+                return SyncResult.Error("Aucun provider cloud configuré")
+            }
 
         return try {
             SafeLog.d(TAG, "Deleting vault: ${SafeLog.redact(id)}")
 
-            val success = activeProvider!!.deleteVault(id)
+            val success = provider.deleteVault(id)
 
             if (success) {
                 SafeLog.d(TAG, "Delete successful")
                 SyncResult.Success
             } else {
                 SafeLog.w(TAG, "Delete failed")
+                recordSyncError("Delete failed for vault ${SafeLog.redact(id)}")
                 SyncResult.Error("Échec de la suppression")
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Delete error", e)
+            recordSyncError("Delete error", e)
             SyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
 
     override suspend fun hasNewerData(dataType: SyncDataType, localTimestamp: Long): Boolean {
-        if (!ensureProviderAvailable()) {
-            return false
-        }
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("hasNewerData aborted – no active provider configured")
+                return false
+            }
 
         return try {
             SafeLog.d(TAG, "Checking for newer data (local timestamp: $localTimestamp)")
 
-            val files = activeProvider!!.listVaults()
+            val files = provider.listVaults()
 
             // Vérifier si au moins un fichier est plus récent
             files.any { it.modifiedTime > localTimestamp }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error checking for newer data", e)
+            recordSyncError("Error while checking for newer data", e)
             false
         }
     }
@@ -333,36 +509,41 @@ class CloudProviderSyncRepository @Inject constructor(
             lastSuccessfulSyncTimestamp = prefs.getLong("last_successful_sync_timestamp", 0),
             pendingChanges = prefs.getInt("pending_changes", 0),
             conflictCount = prefs.getInt("conflict_count", 0),
-            syncErrors = emptyList() // TODO: Load from prefs
+            syncErrors = readSyncErrors()
         )
     }
 
     override suspend fun testConnection(): Boolean {
-        if (!ensureProviderAvailable()) {
-            return false
-        }
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("Connection test aborted – no active provider configured")
+                return false
+            }
 
         return try {
             SafeLog.d(TAG, "Testing connection to cloud provider")
 
             // Vérifier l'authentification
-            activeProvider!!.isAuthenticated()
+            provider.isAuthenticated()
         } catch (e: Exception) {
             SafeLog.e(TAG, "Connection test failed", e)
+            recordSyncError("Connection test failed", e)
             false
         }
     }
 
     override suspend fun cleanup(olderThan: Long) {
-        if (!ensureProviderAvailable()) {
-            return
-        }
+        val provider = ensureActiveProvider()
+            ?: run {
+                recordSyncError("Cleanup aborted – no active provider configured")
+                return
+            }
 
         try {
             SafeLog.d(TAG, "Cleaning up data older than: $olderThan")
 
             // Lister tous les vaults
-            val files = activeProvider!!.listVaults()
+            val files = provider.listVaults()
 
             // Supprimer les fichiers trop anciens
             files.filter { it.modifiedTime < olderThan }
@@ -372,14 +553,19 @@ class CloudProviderSyncRepository @Inject constructor(
                             .removePrefix("vault_")
                             .removeSuffix(".enc")
 
-                        activeProvider!!.deleteVault(vaultId)
+                        provider.deleteVault(vaultId)
                         SafeLog.d(TAG, "Deleted old vault: ${SafeLog.redact(vaultId)}")
                     } catch (e: Exception) {
                         SafeLog.e(TAG, "Error deleting old file: ${SafeLog.redact(metadata.fileName)}", e)
+                        recordSyncError(
+                            "Error deleting old file ${SafeLog.redact(metadata.fileName)}",
+                            e
+                        )
                     }
                 }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Cleanup error", e)
+            recordSyncError("Cleanup error", e)
         }
     }
 
@@ -388,8 +574,6 @@ class CloudProviderSyncRepository @Inject constructor(
      */
     fun disableSync() {
         SafeLog.d(TAG, "Disabling cloud sync")
-        activeProvider = null
-        activeProviderType = null
-        prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()
+        clearActiveProvider()
     }
 }

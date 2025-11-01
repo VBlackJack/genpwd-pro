@@ -1,6 +1,8 @@
 package com.julien.genpwdpro.domain.session
 
 import android.net.Uri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.dao.updateById
@@ -18,6 +20,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Gestionnaire de session pour le système de coffres file-based
@@ -53,6 +57,7 @@ class VaultSessionManager @Inject constructor(
     companion object {
         private const val TAG = "VaultSessionManager"
         private const val DEFAULT_AUTO_LOCK_MINUTES = 5
+        private const val FOREGROUND_RECHECK_DELAY_MS = 5_000L
     }
 
     /**
@@ -91,6 +96,8 @@ class VaultSessionManager @Inject constructor(
     // Session courante (null = aucun vault déverrouillé)
     private var currentSession: VaultSession? = null
 
+    private val mutationMutex = Mutex()
+
     // Flux d'observation de la session active
     private val _activeVaultId = MutableStateFlow<String?>(null)
     val activeVaultId: StateFlow<String?> = _activeVaultId.asStateFlow()
@@ -106,59 +113,62 @@ class VaultSessionManager @Inject constructor(
         session: VaultSession,
         operationName: String,
         mutate: (VaultData) -> VaultData,
-        successLog: () -> Unit = {}
+        successLog: () -> Unit = {},
     ): Result<Unit> {
-        val previousData = session.vaultData.value
-        return try {
-            val updatedData = mutate(previousData)
+        return mutationMutex.withLock {
+            val previousData = session.vaultData.value
+            try {
+                val updatedData = mutate(previousData)
 
-            if (updatedData == previousData) {
-                SafeLog.d(
-                    TAG,
-                    "No changes detected after $operationName – skipping persistence"
-                )
-                resetAutoLockTimer()
-                return Result.success(Unit)
-            }
-
-            session.updateData(updatedData)
-
-            val saveResult = saveCurrentVault()
-            if (saveResult.isFailure) {
-                session.updateData(previousData)
-                val cause = saveResult.exceptionOrNull()
-                SafeLog.e(
-                    TAG,
-                    "Failed to save vault after $operationName: vaultId=${SafeLog.redact(session.vaultId)}",
-                    cause
-                )
-                Result.failure(
-                    VaultException.SaveFailed(
-                        message = "Failed to save vault after $operationName.",
-                        cause = cause
+                if (updatedData == previousData) {
+                    SafeLog.d(
+                        TAG,
+                        "No changes detected after $operationName – skipping persistence"
                     )
-                )
-            } else {
+                    resetAutoLockTimer()
+                    return@withLock Result.success(Unit)
+                }
+
+                session.updateData(updatedData)
+
+                val saveResult = saveCurrentVault()
+                if (saveResult.isFailure) {
+                    session.updateData(previousData)
+                    val cause = saveResult.exceptionOrNull()
+                    SafeLog.e(
+                        TAG,
+                        "Failed to save vault after $operationName: vaultId=${SafeLog.redact(session.vaultId)}",
+                        cause
+                    )
+                    return@withLock Result.failure(
+                        VaultException.SaveFailed(
+                            message = "Failed to save vault after $operationName.",
+                            cause = cause
+                        )
+                    )
+                }
+
                 resetAutoLockTimer()
                 successLog()
                 Result.success(Unit)
+            } catch (e: CancellationException) {
+                session.updateData(previousData)
+                throw e
+            } catch (e: VaultException) {
+                session.updateData(previousData)
+                SafeLog.w(
+                    TAG,
+                    "Business rule failed during $operationName: ${e.message}"
+                )
+                Result.failure(e)
+            } catch (e: Exception) {
+                session.updateData(previousData)
+                SafeLog.e(TAG, "Failed to $operationName", e)
+                Result.failure(e)
             }
-        } catch (e: CancellationException) {
-            session.updateData(previousData)
-            throw e
-        } catch (e: VaultException) {
-            session.updateData(previousData)
-            SafeLog.w(
-                TAG,
-                "Business rule failed during $operationName: ${e.message}"
-            )
-            Result.failure(e)
-        } catch (e: Exception) {
-            session.updateData(previousData)
-            SafeLog.e(TAG, "Failed to $operationName", e)
-            Result.failure(e)
         }
     }
+
 
     /**
      * Vérifie si un vault est actuellement déverrouillé
@@ -1057,6 +1067,19 @@ class VaultSessionManager @Inject constructor(
         session.autoLockJob?.cancel()
         session.autoLockJob = sessionScope.launch {
             delay(minutes * 60 * 1000L)
+
+            if (isAppInForeground()) {
+                SafeLog.d(TAG, "Auto-lock deferred because app is in foreground")
+                while (isActive && isAppInForeground()) {
+                    delay(FOREGROUND_RECHECK_DELAY_MS)
+                }
+
+                if (!isActive || currentSession == null) {
+                    SafeLog.d(TAG, "Auto-lock cancelled while waiting for background state")
+                    return@launch
+                }
+            }
+
             SafeLog.i(TAG, "Auto-lock triggered after $minutes minutes")
             lockVault()
         }
@@ -1113,5 +1136,10 @@ class VaultSessionManager @Inject constructor(
         currentSession?.cleanup()
         currentSession = null
         _activeVaultId.value = null
+    }
+
+    private fun isAppInForeground(): Boolean {
+        val lifecycleState = ProcessLifecycleOwner.get().lifecycle.currentState
+        return lifecycleState.isAtLeast(Lifecycle.State.STARTED)
     }
 }

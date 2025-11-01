@@ -6,7 +6,6 @@ import com.julien.genpwdpro.data.local.preferences.SyncConfigDataStore
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.SyncManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
-import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -31,7 +30,6 @@ class SyncInitializer @Inject constructor(
     @ApplicationContext private val context: Context,
     private val syncManager: SyncManager,
     private val syncConfigDataStore: SyncConfigDataStore,
-    private val providerFactory: CloudProviderFactory,
     private val cloudRepository: CloudProviderSyncRepository
 ) {
 
@@ -89,57 +87,12 @@ class SyncInitializer @Inject constructor(
     private suspend fun restoreProvider(providerType: CloudProviderType) {
         try {
             SafeLog.d(TAG, "Restoring provider: $providerType")
+            val restored = cloudRepository.rehydrateActiveProvider(providerType)
 
-            // Les credentials sont déjà chargés par les providers via ProviderCredentialManager
-            // On doit juste créer l'instance du provider qui chargera automatiquement ses credentials
-
-            val provider = when (providerType) {
-                CloudProviderType.GOOGLE_DRIVE -> {
-                    providerFactory.createProvider(CloudProviderType.GOOGLE_DRIVE)
-                }
-                CloudProviderType.ONEDRIVE -> {
-                    // OneDrive nécessite un clientId - on le récupère des credentials ou config
-                    // Pour l'instant on skip car on n'a pas sauvegardé le clientId
-                    SafeLog.w(TAG, "OneDrive provider restoration not yet implemented (needs clientId)")
-                    null
-                }
-                CloudProviderType.PCLOUD -> {
-                    // pCloud nécessite appKey et appSecret - on skip pour l'instant
-                    SafeLog.w(
-                        TAG,
-                        "pCloud provider restoration not yet implemented (needs appKey/appSecret)"
-                    )
-                    null
-                }
-                CloudProviderType.PROTON_DRIVE -> {
-                    // ProtonDrive nécessite clientId et clientSecret - on skip pour l'instant
-                    SafeLog.w(
-                        TAG,
-                        "ProtonDrive provider restoration not yet implemented (needs clientId/clientSecret)"
-                    )
-                    null
-                }
-                CloudProviderType.WEBDAV -> {
-                    // WebDAV nécessite URL, username, password - on skip pour l'instant
-                    SafeLog.w(
-                        TAG,
-                        "WebDAV provider restoration not yet implemented (needs credentials)"
-                    )
-                    null
-                }
-                else -> {
-                    SafeLog.w(TAG, "Unknown provider type: $providerType")
-                    null
-                }
-            }
-
-            if (provider != null) {
-                // Les tokens OAuth2 sont automatiquement chargés via ProviderCredentialManager
-                // On définit juste le provider comme actif
-                cloudRepository.setActiveProvider(providerType, provider)
+            if (restored) {
                 SafeLog.i(TAG, "Provider restored successfully: $providerType")
             } else {
-                SafeLog.w(TAG, "Could not restore provider: $providerType (not yet implemented)")
+                SafeLog.w(TAG, "Provider rehydration failed for $providerType")
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to restore provider: $providerType", e)
