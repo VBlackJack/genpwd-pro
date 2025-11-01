@@ -136,6 +136,21 @@ fun SyncSettingsScreen(
                     metadata = uiState.metadata
                 )
 
+                uiState.providerWarning?.let { warning ->
+                    ProviderWarningCard(
+                        message = warning,
+                        onRetry = { viewModel.retryProviderRehydration() },
+                        onReauthenticate = {
+                            uiState.availableProviders.find { it.type == uiState.config.providerType }
+                                ?.let { providerInfo ->
+                                    selectedProviderForConfig = providerInfo
+                                    showProviderConfigDialog = true
+                                }
+                        },
+                        onDismiss = { viewModel.clearProviderWarning() }
+                    )
+                }
+
                 // Cloud provider selection
                 ProviderSelectionCard(
                     availableProviders = uiState.availableProviders,
@@ -553,23 +568,104 @@ private fun SyncStatusCard(
 
                 if (metadata.syncErrors.isNotEmpty()) {
                     metadata.syncErrors.take(3).forEach { error ->
+                        val (icon, tint) = when (error.category) {
+                            SyncErrorCategory.CONNECTION -> Icons.Default.WifiOff to Color(0xFFF97316)
+                            SyncErrorCategory.UPLOAD -> Icons.Default.CloudUpload to Color(0xFFEF4444)
+                            SyncErrorCategory.DOWNLOAD -> Icons.Default.CloudDownload to Color(0xFFEF4444)
+                            SyncErrorCategory.DELETE -> Icons.Default.Delete to Color(0xFFEF4444)
+                            SyncErrorCategory.CLEANUP -> Icons.Default.DeleteSweep to Color(0xFFF97316)
+                            SyncErrorCategory.REHYDRATION -> Icons.Default.Refresh to Color(0xFFFACC15)
+                            SyncErrorCategory.GENERAL -> Icons.Default.Error to Color(0xFFEF4444)
+                        }
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                Icons.Default.Error,
+                                icon,
                                 null,
                                 modifier = Modifier.size(18.dp),
-                                tint = Color(0xFFEF4444)
+                                tint = tint
                             )
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFFEF4444)
-                            )
+                            Column {
+                                Text(
+                                    text = error.message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = tint
+                                )
+                                Text(
+                                    text = formatTimestamp(error.timestamp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProviderWarningCard(
+    message: String,
+    onRetry: () -> Unit,
+    onReauthenticate: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFEF3C7)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.WarningAmber,
+                    contentDescription = null,
+                    tint = Color(0xFFF97316),
+                    modifier = Modifier.size(28.dp)
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF92400E)
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(onClick = onRetry) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Réessayer")
+                }
+
+                Button(onClick = onReauthenticate) {
+                    Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Reconfigurer")
+                }
+
+                TextButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF92400E)
+                    )
+                ) {
+                    Text("Ignorer")
                 }
             }
         }
@@ -1039,6 +1135,9 @@ class SyncSettingsViewModel @Inject constructor(
     )
     val uiState: StateFlow<SyncSettingsUiState> = _uiState.asStateFlow()
 
+    private var lastRehydratedProviderType: CloudProviderType? = null
+    private var lastRehydrationSucceeded: Boolean = false
+
     init {
         viewModelScope.launch {
             // Charger la configuration sauvegardée
@@ -1053,6 +1152,40 @@ class SyncSettingsViewModel @Inject constructor(
                             syncOnWifiOnly = savedConfig.syncOnWifiOnly
                         )
                     )
+                }
+
+                if (savedConfig.enabled && savedConfig.providerType != CloudProviderType.NONE) {
+                    val shouldAttempt =
+                        savedConfig.providerType != lastRehydratedProviderType || !lastRehydrationSucceeded
+
+                    if (shouldAttempt) {
+                        val restored = runCatching {
+                            cloudRepository.rehydrateActiveProvider(savedConfig.providerType)
+                        }.onFailure { error ->
+                            SafeLog.e(
+                                "SyncSettingsViewModel",
+                                "Provider rehydration failed with exception",
+                                error
+                            )
+                        }.getOrDefault(false)
+
+                        lastRehydratedProviderType = savedConfig.providerType
+                        lastRehydrationSucceeded = restored
+
+                        _uiState.update { state ->
+                            state.copy(
+                                providerWarning = if (restored) {
+                                    null
+                                } else {
+                                    "Impossible de restaurer le fournisseur cloud. Veuillez vous reconnecter."
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    lastRehydratedProviderType = null
+                    lastRehydrationSucceeded = false
+                    _uiState.update { state -> state.copy(providerWarning = null) }
                 }
             }
         }
@@ -1078,16 +1211,25 @@ class SyncSettingsViewModel @Inject constructor(
 
             _uiState.update { state ->
                 state.copy(
-                    config = state.config.copy(enabled = newEnabled)
+                    config = state.config.copy(enabled = newEnabled),
+                    providerWarning = if (newEnabled) state.providerWarning else null
                 )
+            }
+
+            if (!newEnabled) {
+                lastRehydratedProviderType = null
+                lastRehydrationSucceeded = false
             }
         }
     }
 
     fun selectProvider(providerType: CloudProviderType) {
+        lastRehydratedProviderType = null
+        lastRehydrationSucceeded = false
         _uiState.update { state ->
             state.copy(
-                config = state.config.copy(providerType = providerType)
+                config = state.config.copy(providerType = providerType),
+                providerWarning = null
             )
         }
     }
@@ -1133,6 +1275,58 @@ class SyncSettingsViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun retryProviderRehydration() {
+        viewModelScope.launch {
+            val providerType = _uiState.value.config.providerType
+            if (providerType == CloudProviderType.NONE) {
+                _uiState.update { it.copy(providerWarning = null) }
+                return@launch
+            }
+
+            val restored = runCatching {
+                cloudRepository.rehydrateActiveProvider(providerType)
+            }.onFailure { error ->
+                SafeLog.e("SyncSettingsViewModel", "Provider rehydration retry failed", error)
+            }.getOrDefault(false)
+
+            lastRehydratedProviderType = providerType
+            lastRehydrationSucceeded = restored
+
+            _uiState.update { state ->
+                state.copy(
+                    providerWarning = if (restored) {
+                        null
+                    } else {
+                        "La restauration du fournisseur a échoué. Veuillez reconfigurer votre compte cloud."
+                    }
+                )
+            }
+        }
+    }
+
+    fun clearProviderWarning() {
+        _uiState.update { it.copy(providerWarning = null) }
+    }
+
+    private fun createSyncErrorEntry(
+        message: String,
+        category: SyncErrorCategory = SyncErrorCategory.GENERAL
+    ): SyncErrorLogEntry {
+        return SyncErrorLogEntry(
+            message = message,
+            category = category,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+
+    private fun LocalSyncMetadata.prependError(entry: SyncErrorLogEntry): LocalSyncMetadata {
+        val updatedErrors = buildList {
+            add(entry)
+            addAll(syncErrors)
+        }.take(10)
+        return copy(syncErrors = updatedErrors)
     }
 
     /**
@@ -1201,13 +1395,17 @@ class SyncSettingsViewModel @Inject constructor(
                         // Sauvegarder le provider type
                         syncConfigDataStore.setProviderType(providerType)
 
+                        lastRehydratedProviderType = providerType
+                        lastRehydrationSucceeded = true
+
                         _uiState.update { state ->
                             state.copy(
                                 config = state.config.copy(providerType = providerType),
                                 isAuthenticating = false,
                                 authenticationResult = AuthenticationResult.Success(
                                     "Authentification réussie!"
-                                )
+                                ),
+                                providerWarning = null
                             )
                         }
                     } else {
@@ -1327,11 +1525,12 @@ class SyncSettingsViewModel @Inject constructor(
                     }
                     is SyncResult.Conflict -> {
                         SafeLog.w("SyncSettingsViewModel", "Conflict detected during sync")
+                        val metadata = syncManager.getMetadata()
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.CONFLICT,
                                 currentConflict = result,
-                                metadata = syncManager.getMetadata().copy(
+                                metadata = metadata.copy(
                                     conflictCount = 1
                                 )
                             )
@@ -1339,11 +1538,12 @@ class SyncSettingsViewModel @Inject constructor(
                     }
                     is SyncResult.Error -> {
                         SafeLog.e("SyncSettingsViewModel", "Sync error: ${result.message}")
+                        val metadata = syncManager.getMetadata()
                         _uiState.update {
                             it.copy(
                                 status = SyncStatus.ERROR,
-                                metadata = syncManager.getMetadata().copy(
-                                    syncErrors = listOf(result.message)
+                                metadata = metadata.prependError(
+                                    createSyncErrorEntry(result.message)
                                 )
                             )
                         }
@@ -1351,11 +1551,12 @@ class SyncSettingsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 SafeLog.e("SyncSettingsViewModel", "Sync failed with exception", e)
+                val metadata = syncManager.getMetadata()
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.ERROR,
-                        metadata = syncManager.getMetadata().copy(
-                            syncErrors = listOf(e.message ?: "Erreur inconnue")
+                        metadata = metadata.prependError(
+                            createSyncErrorEntry(e.message ?: "Erreur inconnue")
                         )
                     )
                 }
@@ -1407,6 +1608,9 @@ class SyncSettingsViewModel @Inject constructor(
             // Réinitialiser le repository
             cloudRepository.clearActiveProvider()
 
+            lastRehydratedProviderType = null
+            lastRehydrationSucceeded = false
+
             _uiState.update {
                 SyncSettingsUiState(
                     availableProviders = providerFactory.getProductionReadyProviders()
@@ -1454,20 +1658,22 @@ class SyncSettingsViewModel @Inject constructor(
                 }
 
                 // Mettre à jour l'état
+                val metadata = syncManager.getMetadata()
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.SYNCED,
                         currentConflict = null,
-                        metadata = syncManager.getMetadata().copy(conflictCount = 0)
+                        metadata = metadata.copy(conflictCount = 0)
                     )
                 }
             } catch (e: Exception) {
                 SafeLog.e("SyncSettingsViewModel", "Error resolving conflict", e)
+                val metadata = syncManager.getMetadata()
                 _uiState.update {
                     it.copy(
                         status = SyncStatus.ERROR,
-                        metadata = it.metadata.copy(
-                            syncErrors = listOf(
+                        metadata = metadata.prependError(
+                            createSyncErrorEntry(
                                 e.message ?: "Erreur lors de la résolution du conflit"
                             )
                         )
@@ -1503,7 +1709,8 @@ data class SyncSettingsUiState(
     val testConnectionResult: TestConnectionResult? = null,
     val isAuthenticating: Boolean = false,
     val authenticationResult: AuthenticationResult? = null,
-    val currentConflict: SyncResult.Conflict? = null
+    val currentConflict: SyncResult.Conflict? = null,
+    val providerWarning: String? = null
 )
 
 /**

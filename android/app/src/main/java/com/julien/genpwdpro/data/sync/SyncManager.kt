@@ -6,6 +6,7 @@ import com.julien.genpwdpro.crypto.CryptoEngine
 import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.sync.models.SyncStatus
+import kotlin.math.max
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -267,15 +268,21 @@ class SyncManager @Inject constructor(
      */
     suspend fun getMetadata(): LocalSyncMetadata {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return LocalSyncMetadata(
-            lastSyncTimestamp = prefs.getLong(KEY_LAST_SYNC, 0),
-            lastSuccessfulSyncTimestamp = when (_syncStatus.value) {
-                SyncStatus.SYNCED -> prefs.getLong(KEY_LAST_SYNC, 0)
-                else -> 0
-            },
-            pendingChanges = 0,
-            conflictCount = 0,
-            syncErrors = emptyList()
+        val lastSyncTimestamp = prefs.getLong(KEY_LAST_SYNC, 0)
+        val lastSuccessfulSyncTimestamp = when (_syncStatus.value) {
+            SyncStatus.SYNCED -> lastSyncTimestamp
+            else -> 0
+        }
+
+        val repositoryMetadata = runCatching { cloudRepository.getMetadata() }
+            .getOrDefault(LocalSyncMetadata())
+
+        return repositoryMetadata.copy(
+            lastSyncTimestamp = max(repositoryMetadata.lastSyncTimestamp, lastSyncTimestamp),
+            lastSuccessfulSyncTimestamp = max(
+                repositoryMetadata.lastSuccessfulSyncTimestamp,
+                lastSuccessfulSyncTimestamp
+            )
         )
     }
 

@@ -1071,6 +1071,10 @@ class VaultSessionManager @Inject constructor(
             if (isAppInForeground()) {
                 SafeLog.d(TAG, "Auto-lock deferred because app is in foreground")
                 while (isActive && isAppInForeground()) {
+                    if (currentSession == null) {
+                        SafeLog.d(TAG, "Auto-lock cancelled – session cleared while app in foreground")
+                        return@launch
+                    }
                     delay(FOREGROUND_RECHECK_DELAY_MS)
                 }
 

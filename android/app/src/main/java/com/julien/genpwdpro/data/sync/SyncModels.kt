@@ -70,10 +70,26 @@ sealed class SyncEvent {
 /**
  * Métadonnées de synchronisation locale
  */
+enum class SyncErrorCategory {
+    UPLOAD,
+    DOWNLOAD,
+    DELETE,
+    CONNECTION,
+    CLEANUP,
+    REHYDRATION,
+    GENERAL
+}
+
+data class SyncErrorLogEntry(
+    val message: String,
+    val category: SyncErrorCategory,
+    val timestamp: Long
+)
+
 data class LocalSyncMetadata(
     val lastSyncTimestamp: Long = 0,
     val lastSuccessfulSyncTimestamp: Long = 0,
     val pendingChanges: Int = 0,
     val conflictCount: Int = 0,
-    val syncErrors: List<String> = emptyList()
+    val syncErrors: List<SyncErrorLogEntry> = emptyList()
 )

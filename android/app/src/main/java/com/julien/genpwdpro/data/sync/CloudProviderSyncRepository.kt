@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
 import com.julien.genpwdpro.data.sync.CloudProvider
+import com.julien.genpwdpro.data.sync.SyncErrorCategory
+import com.julien.genpwdpro.data.sync.SyncErrorLogEntry
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.json.JSONArray
 import org.json.JSONException
+import org.json.JSONObject
 
 /**
  * Implémentation de CloudSyncRepository utilisant les CloudProviders
@@ -53,6 +56,9 @@ class CloudProviderSyncRepository @Inject constructor(
         private const val CONFIG_KEY_SERVER_URL = "serverUrl"
         private const val CONFIG_KEY_USERNAME = "username"
         private const val CONFIG_KEY_PASSWORD = "password"
+        private const val JSON_KEY_MESSAGE = "message"
+        private const val JSON_KEY_CATEGORY = "category"
+        private const val JSON_KEY_TIMESTAMP = "timestamp"
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -151,12 +157,20 @@ class CloudProviderSyncRepository @Inject constructor(
 
         if (providerType == null || providerType == CloudProviderType.NONE) {
             SafeLog.w(TAG, "No stored provider available for rehydration")
+            recordSyncError(
+                message = "Rehydration failed – no provider configuration persisted",
+                category = SyncErrorCategory.REHYDRATION
+            )
             return null
         }
 
         val provider = instantiateProvider(providerType)
         if (provider == null) {
             SafeLog.w(TAG, "Unable to instantiate provider: $providerType")
+            recordSyncError(
+                message = "Rehydration failed – missing configuration for $providerType",
+                category = SyncErrorCategory.REHYDRATION
+            )
             return null
         }
 
@@ -177,6 +191,10 @@ class CloudProviderSyncRepository @Inject constructor(
 
                 if (clientId.isNullOrBlank()) {
                     SafeLog.w(TAG, "Missing clientId for OneDrive provider rehydration")
+                    recordSyncError(
+                        message = "Rehydration failed – missing OneDrive clientId",
+                        category = SyncErrorCategory.REHYDRATION
+                    )
                     null
                 } else {
                     providerFactory.createOneDriveProvider(clientId)
@@ -190,6 +208,10 @@ class CloudProviderSyncRepository @Inject constructor(
 
                 if (clientId.isNullOrBlank() || clientSecret.isNullOrBlank()) {
                     SafeLog.w(TAG, "Missing Proton Drive credentials for rehydration")
+                    recordSyncError(
+                        message = "Rehydration failed – Proton Drive credentials missing",
+                        category = SyncErrorCategory.REHYDRATION
+                    )
                     null
                 } else {
                     providerFactory.createProtonDriveProvider(clientId, clientSecret)
@@ -206,6 +228,10 @@ class CloudProviderSyncRepository @Inject constructor(
 
                 if (appKey.isNullOrBlank() || appSecret.isNullOrBlank()) {
                     SafeLog.w(TAG, "Missing pCloud credentials for rehydration")
+                    recordSyncError(
+                        message = "Rehydration failed – pCloud credentials missing",
+                        category = SyncErrorCategory.REHYDRATION
+                    )
                     null
                 } else {
                     providerFactory.createPCloudProvider(appKey, appSecret, region)
@@ -220,6 +246,10 @@ class CloudProviderSyncRepository @Inject constructor(
 
                 if (serverUrl.isNullOrBlank() || username.isNullOrBlank() || password.isNullOrBlank()) {
                     SafeLog.w(TAG, "Incomplete WebDAV configuration for rehydration")
+                    recordSyncError(
+                        message = "Rehydration failed – incomplete WebDAV configuration",
+                        category = SyncErrorCategory.REHYDRATION
+                    )
                     null
                 } else {
                     providerFactory.createWebDAVProvider(serverUrl, username, password)
@@ -230,7 +260,11 @@ class CloudProviderSyncRepository @Inject constructor(
         }
     }
 
-    private fun recordSyncError(message: String, throwable: Exception? = null) {
+    private fun recordSyncError(
+        message: String,
+        category: SyncErrorCategory,
+        throwable: Exception? = null
+    ) {
         val composedMessage = buildString {
             append(message)
             val throwableMessage = throwable?.message
@@ -240,8 +274,14 @@ class CloudProviderSyncRepository @Inject constructor(
             }
         }.take(512)
 
+        val entry = SyncErrorLogEntry(
+            message = composedMessage,
+            category = category,
+            timestamp = System.currentTimeMillis()
+        )
+
         val errors = readSyncErrors().apply {
-            add(0, composedMessage)
+            add(0, entry)
             if (size > MAX_SYNC_ERRORS) {
                 subList(MAX_SYNC_ERRORS, size).clear()
             }
@@ -250,12 +290,31 @@ class CloudProviderSyncRepository @Inject constructor(
         persistSyncErrors(errors)
     }
 
-    private fun readSyncErrors(): MutableList<String> {
+    private fun readSyncErrors(): MutableList<SyncErrorLogEntry> {
         val raw = prefs.getString(KEY_SYNC_ERRORS, null) ?: return mutableListOf()
 
         return try {
             val array = JSONArray(raw)
-            MutableList(array.length()) { index -> array.optString(index) }
+            MutableList(array.length()) { index ->
+                val json = array.optJSONObject(index)
+                if (json != null) {
+                    val message = json.optString(JSON_KEY_MESSAGE).ifBlank { "Erreur inconnue" }
+                    val category = json.optString(JSON_KEY_CATEGORY)
+                        .takeIf { it.isNotBlank() }
+                        ?.let { runCatching { SyncErrorCategory.valueOf(it) }.getOrNull() }
+                        ?: SyncErrorCategory.GENERAL
+                    val timestamp = json.optLong(JSON_KEY_TIMESTAMP).takeIf { it > 0 }
+                        ?: System.currentTimeMillis()
+                    SyncErrorLogEntry(message, category, timestamp)
+                } else {
+                    val legacyValue = array.optString(index)
+                    SyncErrorLogEntry(
+                        message = legacyValue.ifBlank { "Erreur inconnue" },
+                        category = SyncErrorCategory.GENERAL,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
+            }
         } catch (e: JSONException) {
             SafeLog.w(TAG, "Failed to parse stored sync errors", e)
             prefs.edit().remove(KEY_SYNC_ERRORS).apply()
@@ -263,9 +322,15 @@ class CloudProviderSyncRepository @Inject constructor(
         }
     }
 
-    private fun persistSyncErrors(errors: List<String>) {
+    private fun persistSyncErrors(errors: List<SyncErrorLogEntry>) {
         val array = JSONArray()
-        errors.forEach { array.put(it) }
+        errors.forEach { entry ->
+            val json = JSONObject()
+                .put(JSON_KEY_MESSAGE, entry.message)
+                .put(JSON_KEY_CATEGORY, entry.category.name)
+                .put(JSON_KEY_TIMESTAMP, entry.timestamp)
+            array.put(json)
+        }
         prefs.edit().putString(KEY_SYNC_ERRORS, array.toString()).apply()
     }
 
@@ -278,7 +343,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun upload(data: SyncData): SyncResult {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("Upload aborted – no active provider configured")
+                recordSyncError(
+                    message = "Upload aborted – no active provider configured",
+                    category = SyncErrorCategory.UPLOAD
+                )
                 return SyncResult.Error("Aucun provider cloud configuré")
             }
 
@@ -311,12 +379,19 @@ class CloudProviderSyncRepository @Inject constructor(
                 SyncResult.Success
             } else {
                 SafeLog.w(TAG, "Upload failed: provider returned null fileId")
-                recordSyncError("Upload failed – provider returned null fileId")
+                recordSyncError(
+                    message = "Upload failed – provider returned null fileId",
+                    category = SyncErrorCategory.UPLOAD
+                )
                 SyncResult.Error("Échec de l'upload")
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Upload error", e)
-            recordSyncError("Upload error", e)
+            recordSyncError(
+                message = "Upload error",
+                category = SyncErrorCategory.UPLOAD,
+                throwable = e
+            )
             SyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
@@ -324,7 +399,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun download(dataType: SyncDataType, deviceId: String?): List<SyncData> {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("Download aborted – no active provider configured")
+                recordSyncError(
+                    message = "Download aborted – no active provider configured",
+                    category = SyncErrorCategory.DOWNLOAD
+                )
                 return emptyList()
             }
 
@@ -374,7 +452,11 @@ class CloudProviderSyncRepository @Inject constructor(
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Download error", e)
-            recordSyncError("Download error", e)
+            recordSyncError(
+                message = "Download error",
+                category = SyncErrorCategory.DOWNLOAD,
+                throwable = e
+            )
             emptyList()
         }
     }
@@ -382,7 +464,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun downloadById(id: String, dataType: SyncDataType): SyncData? {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("DownloadById aborted – no active provider configured")
+                recordSyncError(
+                    message = "DownloadById aborted – no active provider configured",
+                    category = SyncErrorCategory.DOWNLOAD
+                )
                 return null
             }
 
@@ -415,7 +500,11 @@ class CloudProviderSyncRepository @Inject constructor(
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Download by ID error", e)
-            recordSyncError("Download by ID error", e)
+            recordSyncError(
+                message = "Download by ID error",
+                category = SyncErrorCategory.DOWNLOAD,
+                throwable = e
+            )
             null
         }
     }
@@ -423,7 +512,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun delete(id: String): SyncResult {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("Delete aborted – no active provider configured")
+                recordSyncError(
+                    message = "Delete aborted – no active provider configured",
+                    category = SyncErrorCategory.DELETE
+                )
                 return SyncResult.Error("Aucun provider cloud configuré")
             }
 
@@ -437,12 +529,19 @@ class CloudProviderSyncRepository @Inject constructor(
                 SyncResult.Success
             } else {
                 SafeLog.w(TAG, "Delete failed")
-                recordSyncError("Delete failed for vault ${SafeLog.redact(id)}")
+                recordSyncError(
+                    message = "Delete failed for vault ${SafeLog.redact(id)}",
+                    category = SyncErrorCategory.DELETE
+                )
                 SyncResult.Error("Échec de la suppression")
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Delete error", e)
-            recordSyncError("Delete error", e)
+            recordSyncError(
+                message = "Delete error",
+                category = SyncErrorCategory.DELETE,
+                throwable = e
+            )
             SyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
@@ -450,7 +549,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun hasNewerData(dataType: SyncDataType, localTimestamp: Long): Boolean {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("hasNewerData aborted – no active provider configured")
+                recordSyncError(
+                    message = "hasNewerData aborted – no active provider configured",
+                    category = SyncErrorCategory.DOWNLOAD
+                )
                 return false
             }
 
@@ -463,7 +565,11 @@ class CloudProviderSyncRepository @Inject constructor(
             files.any { it.modifiedTime > localTimestamp }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error checking for newer data", e)
-            recordSyncError("Error while checking for newer data", e)
+            recordSyncError(
+                message = "Error while checking for newer data",
+                category = SyncErrorCategory.DOWNLOAD,
+                throwable = e
+            )
             false
         }
     }
@@ -516,7 +622,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun testConnection(): Boolean {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("Connection test aborted – no active provider configured")
+                recordSyncError(
+                    message = "Connection test aborted – no active provider configured",
+                    category = SyncErrorCategory.CONNECTION
+                )
                 return false
             }
 
@@ -527,7 +636,11 @@ class CloudProviderSyncRepository @Inject constructor(
             provider.isAuthenticated()
         } catch (e: Exception) {
             SafeLog.e(TAG, "Connection test failed", e)
-            recordSyncError("Connection test failed", e)
+            recordSyncError(
+                message = "Connection test failed",
+                category = SyncErrorCategory.CONNECTION,
+                throwable = e
+            )
             false
         }
     }
@@ -535,7 +648,10 @@ class CloudProviderSyncRepository @Inject constructor(
     override suspend fun cleanup(olderThan: Long) {
         val provider = ensureActiveProvider()
             ?: run {
-                recordSyncError("Cleanup aborted – no active provider configured")
+                recordSyncError(
+                    message = "Cleanup aborted – no active provider configured",
+                    category = SyncErrorCategory.CLEANUP
+                )
                 return
             }
 
@@ -558,14 +674,19 @@ class CloudProviderSyncRepository @Inject constructor(
                     } catch (e: Exception) {
                         SafeLog.e(TAG, "Error deleting old file: ${SafeLog.redact(metadata.fileName)}", e)
                         recordSyncError(
-                            "Error deleting old file ${SafeLog.redact(metadata.fileName)}",
-                            e
+                            message = "Error deleting old file ${SafeLog.redact(metadata.fileName)}",
+                            category = SyncErrorCategory.CLEANUP,
+                            throwable = e
                         )
                     }
                 }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Cleanup error", e)
-            recordSyncError("Cleanup error", e)
+            recordSyncError(
+                message = "Cleanup error",
+                category = SyncErrorCategory.CLEANUP,
+                throwable = e
+            )
         }
     }
 
