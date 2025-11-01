@@ -57,7 +57,7 @@ class ImportExportViewModel @Inject constructor(
 
             val result = when (format) {
                 ExportFormat.CSV -> importExportRepository.exportToCsv(vaultId, vaultKey, uri)
-                ExportFormat.JSON -> importExportRepository.exportToJson(vaultId, vaultKey, uri)
+                ExportFormat.JSON -> Result.failure(Exception("JSON export not yet implemented for file-based vaults"))
             }
 
             _uiState.value = result.fold(
@@ -81,7 +81,7 @@ class ImportExportViewModel @Inject constructor(
 
             val result = when (format) {
                 ImportFormat.CSV -> importExportRepository.importFromCsv(vaultId, vaultKey, uri)
-                ImportFormat.JSON -> importExportRepository.importFromJson(vaultId, vaultKey, uri)
+                ImportFormat.JSON -> Result.failure(Exception("JSON import not yet implemented for file-based vaults"))
             }
 
             _uiState.value = result.fold(

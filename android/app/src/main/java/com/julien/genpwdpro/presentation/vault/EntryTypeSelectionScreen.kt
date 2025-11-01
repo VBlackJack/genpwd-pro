@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.julien.genpwdpro.data.db.entity.EntryType
+import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**

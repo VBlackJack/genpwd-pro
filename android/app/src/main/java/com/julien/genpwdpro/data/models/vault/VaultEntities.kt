@@ -16,7 +16,11 @@ import java.util.UUID
 
 /**
  * Représente une entrée (mot de passe, note, carte, etc.) dans un vault
- * Toutes les données sensibles sont chiffrées avec AES-256-GCM
+ *
+ * IMPORTANT: Cette classe stocke les données DÉCHIFFRÉES en mémoire après déverrouillage.
+ * - Sur disque (.gpv) : les données sont chiffrées par VaultCryptoManager
+ * - En mémoire (après unlock) : les données sont déchiffrées et accessibles en clair
+ * - Au verrouillage : les instances sont nettoyées de la mémoire
  */
 data class VaultEntryEntity(
     val id: String = UUID.randomUUID().toString(),
@@ -27,41 +31,23 @@ data class VaultEntryEntity(
     /** ID du dossier (nullable) */
     val folderId: String? = null,
 
-    /** Titre de l'entrée (chiffré) */
-    val encryptedTitle: String,
+    /** Titre de l'entrée */
+    val title: String,
 
-    /** IV pour le titre */
-    val titleIv: String,
+    /** Nom d'utilisateur / email */
+    val username: String? = null,
 
-    /** Nom d'utilisateur / email (chiffré) */
-    val encryptedUsername: String = "",
+    /** Mot de passe */
+    val password: String? = null,
 
-    /** IV pour le username */
-    val usernameIv: String = "",
+    /** URL du site */
+    val url: String? = null,
 
-    /** Mot de passe (chiffré) */
-    val encryptedPassword: String,
+    /** Notes */
+    val notes: String? = null,
 
-    /** IV pour le password */
-    val passwordIv: String,
-
-    /** URL du site (chiffré) */
-    val encryptedUrl: String = "",
-
-    /** IV pour l'URL */
-    val urlIv: String = "",
-
-    /** Notes (chiffré) */
-    val encryptedNotes: String = "",
-
-    /** IV pour les notes */
-    val notesIv: String = "",
-
-    /** Champs personnalisés au format JSON chiffré */
-    val encryptedCustomFields: String = "",
-
-    /** IV pour les champs personnalisés */
-    val customFieldsIv: String = "",
+    /** Champs personnalisés au format JSON */
+    val customFields: String? = null,
 
     /** Type d'entrée (LOGIN, CARD, NOTE, IDENTITY, WIFI) */
     val entryType: String = "LOGIN",
@@ -107,11 +93,8 @@ data class VaultEntryEntity(
     /** Active le TOTP pour cette entrée */
     val hasTOTP: Boolean = false,
 
-    /** Secret TOTP (chiffré, base32) */
-    val encryptedTotpSecret: String = "",
-
-    /** IV pour le secret TOTP */
-    val totpSecretIv: String = "",
+    /** Secret TOTP (base32) */
+    val totpSecret: String? = null,
 
     /** Période TOTP en secondes (défaut: 30) */
     val totpPeriod: Int = 30,
@@ -130,11 +113,8 @@ data class VaultEntryEntity(
     /** Active les passkeys pour cette entrée */
     val hasPasskey: Boolean = false,
 
-    /** Données du passkey (credential) chiffrées au format JSON */
-    val encryptedPasskeyData: String = "",
-
-    /** IV pour les données passkey */
-    val passkeyDataIv: String = "",
+    /** Données du passkey (credential) au format JSON */
+    val passkeyData: String? = null,
 
     /** Relying Party ID (domaine, ex: "example.com") */
     val passkeyRpId: String = "",
@@ -150,7 +130,12 @@ data class VaultEntryEntity(
 
     /** Dernière utilisation du passkey (timestamp) */
     val passkeyLastUsedAt: Long = 0
-)
+) {
+    /**
+     * Vérifie si l'entrée a TOTP configuré
+     */
+    fun hasTOTP(): Boolean = hasTOTP && !totpSecret.isNullOrEmpty()
+}
 
 /**
  * Types d'entrées supportés
@@ -233,9 +218,13 @@ data class EntryTagCrossRef(
     val tagId: String
 )
 
+// DecryptedPreset sera défini dans un fichier séparé pour éviter les dépendances circulaires
+
 /**
  * Représente un preset de génération de mot de passe
- * Stocké dans un vault spécifique et chiffré
+ * Stocké dans un vault spécifique
+ *
+ * Note: Les données sont déchiffrées en mémoire après déverrouillage du vault
  */
 data class PresetEntity(
     val id: String = UUID.randomUUID().toString(),
@@ -243,19 +232,17 @@ data class PresetEntity(
     /** ID du vault auquel appartient ce preset */
     val vaultId: String,
 
-    /** Nom du preset (chiffré) */
-    val encryptedName: String,
-    val nameIv: String,
+    /** Nom du preset */
+    val name: String,
 
-    /** Icône emoji (non chiffré pour affichage rapide) */
+    /** Icône emoji */
     val icon: String = "🔐",
 
     /** Mode de génération (SYLLABLES ou PASSPHRASE uniquement) */
     val generationMode: String, // GenerationMode.name
 
-    /** Paramètres de génération chiffrés (JSON de Settings) */
-    val encryptedSettings: String,
-    val settingsIv: String,
+    /** Paramètres de génération (JSON de Settings) */
+    val settings: String,
 
     /** Preset par défaut (un seul par vault) */
     val isDefault: Boolean = false,
@@ -275,3 +262,70 @@ data class PresetEntity(
     /** Nombre d'utilisations */
     val usageCount: Int = 0
 )
+
+/**
+ * Version déchiffrée d'une entrée vault pour manipulation en mémoire
+ * Utilisée par les ViewModels et l'UI après déverrouillage
+ *
+ * Note: Les données sensibles sont en clair - cette classe ne doit être utilisée
+ * qu'après déverrouillage du vault et nettoyée au verrouillage
+ */
+data class DecryptedVaultEntry(
+    val id: String,
+    val vaultId: String,
+    val folderId: String? = null,
+
+    /** Titre déchiffré */
+    val title: String,
+
+    /** Nom d'utilisateur / email déchiffré */
+    val username: String? = null,
+
+    /** Mot de passe déchiffré */
+    val password: String? = null,
+
+    /** URL déchiffrée */
+    val url: String? = null,
+
+    /** Notes déchiffrées */
+    val notes: String? = null,
+
+    /** Champs personnalisés déchiffrés (JSON) */
+    val customFields: String? = null,
+
+    val entryType: EntryType = EntryType.LOGIN,
+    val isFavorite: Boolean = false,
+    val passwordStrength: Int = 0,
+    val passwordEntropy: Double = 0.0,
+    val generationMode: String? = null,
+    val createdAt: Long,
+    val modifiedAt: Long,
+    val lastAccessedAt: Long,
+    val passwordExpiresAt: Long = 0,
+    val requiresPasswordChange: Boolean = false,
+    val usageCount: Int = 0,
+    val icon: String? = null,
+    val color: String? = null,
+
+    // TOTP
+    val hasTOTP: Boolean = false,
+    val totpSecret: String? = null,
+    val totpPeriod: Int = 30,
+    val totpDigits: Int = 6,
+    val totpAlgorithm: String = "SHA1",
+    val totpIssuer: String = "",
+
+    // Passkey
+    val hasPasskey: Boolean = false,
+    val passkeyData: String? = null,
+    val passkeyRpId: String = "",
+    val passkeyRpName: String = "",
+    val passkeyUserHandle: String = "",
+    val passkeyCreatedAt: Long = 0,
+    val passkeyLastUsedAt: Long = 0
+) {
+    /**
+     * Vérifie si l'entrée a TOTP configuré
+     */
+    fun hasTOTP(): Boolean = hasTOTP && !totpSecret.isNullOrEmpty()
+}

@@ -2,7 +2,7 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.db.dao.FolderDao
+import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.models.vault.FolderEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -11,41 +11,44 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel pour la gestion des dossiers
+ * ViewModel for folder management (file-based system)
  *
- * Gère :
- * - CRUD des dossiers
- * - Hiérarchie (dossiers parents/enfants)
- * - Organisation visuelle (icônes, couleurs)
- * - Déplacement d'entrées entre dossiers
+ * Handles:
+ * - Folder CRUD operations
+ * - Hierarchy (parent/child folders)
+ * - Visual organization (icons, colors)
+ * - Moving entries between folders
+ *
+ * Migrated to use FileVaultRepository
  */
 @HiltViewModel
 class FolderManagementViewModel @Inject constructor(
-    private val folderDao: FolderDao
+    private val fileVaultRepository: FileVaultRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<FolderUiState>(FolderUiState.Loading)
     val uiState: StateFlow<FolderUiState> = _uiState.asStateFlow()
 
     /**
-     * Charge tous les dossiers d'un vault
+     * Loads all folders for a vault
+     * Note: vaultId kept for backward compatibility, uses active session
      */
     fun loadFolders(vaultId: String) {
         viewModelScope.launch {
             try {
-                folderDao.getFoldersByVault(vaultId).collect { folders ->
-                    // Construire la hiérarchie
+                fileVaultRepository.getFolders().collect { folders ->
+                    // Build hierarchy
                     val hierarchy = buildHierarchy(folders)
                     _uiState.value = FolderUiState.Success(folders, hierarchy)
                 }
             } catch (e: Exception) {
-                _uiState.value = FolderUiState.Error(e.message ?: "Erreur de chargement")
+                _uiState.value = FolderUiState.Error(e.message ?: "Error loading folders")
             }
         }
     }
 
     /**
-     * Crée un nouveau dossier
+     * Creates a new folder
      */
     fun createFolder(
         vaultId: String,
@@ -66,56 +69,56 @@ class FolderManagementViewModel @Inject constructor(
                     createdAt = System.currentTimeMillis(),
                     modifiedAt = System.currentTimeMillis()
                 )
-                folderDao.insert(folder)
+                fileVaultRepository.addFolder(folder)
             } catch (e: Exception) {
-                _uiState.value = FolderUiState.Error(e.message ?: "Erreur de création")
+                _uiState.value = FolderUiState.Error(e.message ?: "Error creating folder")
             }
         }
     }
 
     /**
-     * Met à jour un dossier
+     * Updates a folder
      */
     fun updateFolder(folder: FolderEntity) {
         viewModelScope.launch {
             try {
-                folderDao.update(folder.copy(modifiedAt = System.currentTimeMillis()))
+                fileVaultRepository.updateFolder(folder.copy(modifiedAt = System.currentTimeMillis()))
             } catch (e: Exception) {
-                _uiState.value = FolderUiState.Error(e.message ?: "Erreur de mise à jour")
+                _uiState.value = FolderUiState.Error(e.message ?: "Error updating folder")
             }
         }
     }
 
     /**
-     * Supprime un dossier
+     * Deletes a folder
      *
-     * Les entrées du dossier ne sont pas supprimées, juste déplacées vers la racine.
+     * Entries in the folder are not deleted, just moved to root.
      */
     fun deleteFolder(folderId: String) {
         viewModelScope.launch {
             try {
-                folderDao.deleteById(folderId)
+                fileVaultRepository.deleteFolder(folderId)
             } catch (e: Exception) {
-                _uiState.value = FolderUiState.Error(e.message ?: "Erreur de suppression")
+                _uiState.value = FolderUiState.Error(e.message ?: "Error deleting folder")
             }
         }
     }
 
     /**
-     * Déplace un dossier dans un autre parent
+     * Moves a folder to a different parent
      */
     fun moveFolder(folderId: String, newParentId: String?) {
         viewModelScope.launch {
             try {
-                val folder = folderDao.getById(folderId)
+                val folder = fileVaultRepository.getFolderById(folderId)
                 if (folder != null) {
-                    // Vérifier qu'on ne crée pas une boucle
+                    // Check that we don't create a loop
                     if (newParentId != null && isDescendant(newParentId, folderId)) {
-                        _uiState.value = FolderUiState.Error("Impossible: cela créerait une boucle")
+                        _uiState.value = FolderUiState.Error("Cannot move: would create a loop")
                         return@launch
                     }
 
-                    folderDao.update(
+                    fileVaultRepository.updateFolder(
                         folder.copy(
                             parentFolderId = newParentId,
                             modifiedAt = System.currentTimeMillis()
@@ -123,7 +126,7 @@ class FolderManagementViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = FolderUiState.Error(e.message ?: "Erreur de déplacement")
+                _uiState.value = FolderUiState.Error(e.message ?: "Error moving folder")
             }
         }
     }
@@ -170,14 +173,14 @@ class FolderManagementViewModel @Inject constructor(
     }
 
     /**
-     * Vérifie si un dossier est un descendant d'un autre
+     * Checks if a folder is a descendant of another
      */
     private suspend fun isDescendant(folderId: String, potentialAncestorId: String): Boolean {
-        var currentFolder = folderDao.getById(folderId)
+        var currentFolder = fileVaultRepository.getFolderById(folderId)
 
         while (currentFolder != null) {
             if (currentFolder.id == potentialAncestorId) return true
-            currentFolder = currentFolder.parentFolderId?.let { folderDao.getById(it) }
+            currentFolder = currentFolder.parentFolderId?.let { fileVaultRepository.getFolderById(it) }
         }
 
         return false

@@ -14,10 +14,10 @@ import com.julien.genpwdpro.data.sync.SyncHistoryAction
 import com.julien.genpwdpro.data.sync.SyncHistoryEntry
 import com.julien.genpwdpro.data.sync.SyncHistoryStatus
 import com.julien.genpwdpro.data.sync.SyncResult
+import com.julien.genpwdpro.data.sync.ConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
-import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.PCloudProvider
 import com.julien.genpwdpro.data.sync.providers.PCloudProvider.PCloudRegion
@@ -132,7 +132,7 @@ class CloudProviderSyncRepository @Inject constructor(
     /**
      * Obtenir le type de provider actif
      */
-    fun getActiveProviderType(): CloudProviderType? = activeProviderType
+    override fun getActiveProviderType(): CloudProviderType? = activeProviderType
 
     fun getProviderConfig(providerType: CloudProviderType): ProviderConfig? {
         return credentialManager.getProviderConfig(providerType, ProviderConfig::class.java)
@@ -837,8 +837,6 @@ class CloudProviderSyncRepository @Inject constructor(
             )
         }
     }
-
-    override fun getActiveProviderType(): CloudProviderType? = activeProviderType
 
     override suspend fun recordHistoryEntry(entry: SyncHistoryEntry) {
         val existing = readSyncHistory()

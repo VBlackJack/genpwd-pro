@@ -90,16 +90,7 @@ fun VaultManagerScreen(
         }
     }
 
-    if (uiState.showMigrationDialog) {
-        MigrationDialog(
-            isActive = uiState.isMigrating,
-            progress = uiState.migrationProgress,
-            onDismiss = { viewModel.hideMigrationDialog() },
-            onConfirm = { passwords ->
-                viewModel.startMigration(passwords)
-            }
-        )
-    }
+    // Migration dialog removed - Room to .gpv migration is no longer needed
 
     uiState.confirmDeleteVaultId?.let { vaultId ->
         val vault = vaults.find { it.id == vaultId }
@@ -804,64 +795,7 @@ fun ConfirmDeleteDialog(
     )
 }
 
-/**
- * Dialog de migration
- */
-@Composable
-fun MigrationDialog(
-    isActive: Boolean,
-    progress: com.julien.genpwdpro.data.vault.VaultMigrationManager.MigrationProgress?,
-    onDismiss: () -> Unit,
-    onConfirm: (Map<String, String>) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = if (isActive) {
-            {}
-        } else {
-            onDismiss
-        },
-        title = { Text("Migrate Vaults") },
-        text = {
-            if (isActive && progress != null) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text("Migrating vaults to new file-based system...")
-                    LinearProgressIndicator(
-                        progress = if (progress.totalVaults > 0) {
-                            progress.currentVault.toFloat() / progress.totalVaults
-                        } else {
-                            0f
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = "${progress.currentVault}/${progress.totalVaults}: ${progress.vaultName}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            } else {
-                Text(
-                    "Your vaults will be migrated to the new file-based storage system. This is a one-time operation and may take a few moments."
-                )
-            }
-        },
-        confirmButton = {
-            if (!isActive) {
-                Button(onClick = { onConfirm(emptyMap()) }) {
-                    Text("Start Migration")
-                }
-            }
-        },
-        dismissButton = {
-            if (!isActive) {
-                TextButton(onClick = onDismiss) {
-                    Text("Later")
-                }
-            }
-        }
-    )
-}
+// Migration dialog removed - Room to .gpv migration is no longer needed
 
 /**
  * Dialog d'import de vault depuis un fichier .gpv

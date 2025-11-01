@@ -746,6 +746,115 @@ class VaultSessionManager @Inject constructor(
         )
     }
 
+    /**
+     * Adds a tag to an entry (creates many-to-many relationship)
+     */
+    suspend fun addTagToEntry(entryId: String, tagId: String): Result<Unit> {
+        val session = currentSession
+            ?: return Result.failure(IllegalStateException("No vault unlocked"))
+
+        return persistSessionMutation(
+            session = session,
+            operationName = "add tag to entry ${SafeLog.redact(entryId)}",
+            mutate = { currentData ->
+                // Validate entry exists
+                if (currentData.entries.none { it.id == entryId }) {
+                    throw VaultException.EntryNotFound(entryId)
+                }
+                // Validate tag exists
+                if (currentData.tags.none { it.id == tagId }) {
+                    throw VaultException.TagNotFound(tagId)
+                }
+                // Check if relationship already exists
+                if (currentData.entryTags.any { it.entryId == entryId && it.tagId == tagId }) {
+                    throw IllegalStateException("Tag already assigned to entry")
+                }
+
+                currentData.copy(
+                    entryTags = currentData.entryTags + EntryTagCrossRef(entryId, tagId)
+                )
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Tag added to entry: entryId=${SafeLog.redact(entryId)}, tagId=${SafeLog.redact(tagId)}"
+                )
+            }
+        )
+    }
+
+    /**
+     * Removes a tag from an entry (removes many-to-many relationship)
+     */
+    suspend fun removeTagFromEntry(entryId: String, tagId: String): Result<Unit> {
+        val session = currentSession
+            ?: return Result.failure(IllegalStateException("No vault unlocked"))
+
+        return persistSessionMutation(
+            session = session,
+            operationName = "remove tag from entry ${SafeLog.redact(entryId)}",
+            mutate = { currentData ->
+                val updatedEntryTags = currentData.entryTags.filter {
+                    !(it.entryId == entryId && it.tagId == tagId)
+                }
+
+                currentData.copy(entryTags = updatedEntryTags)
+            },
+            successLog = {
+                SafeLog.d(
+                    TAG,
+                    "Tag removed from entry: entryId=${SafeLog.redact(entryId)}, tagId=${SafeLog.redact(tagId)}"
+                )
+            }
+        )
+    }
+
+    /**
+     * Gets all tags for a specific entry
+     */
+    fun getTagsForEntry(entryId: String): StateFlow<List<TagEntity>> {
+        val session = currentSession
+            ?: return MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
+
+        return session.vaultData.map { vaultData ->
+            val tagIds = vaultData.entryTags
+                .filter { it.entryId == entryId }
+                .map { it.tagId }
+
+            vaultData.tags.filter { it.id in tagIds }
+        }.stateIn(
+            scope = sessionScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = emptyList()
+        )
+    }
+
+    /**
+     * Gets entry count for a specific tag (for statistics)
+     */
+    suspend fun getEntryCountForTag(tagId: String): Int {
+        val session = currentSession ?: return 0
+        return session.vaultData.value.entryTags.count { it.tagId == tagId }
+    }
+
+    /**
+     * Searches tags by name (case-insensitive)
+     */
+    fun searchTags(query: String): StateFlow<List<TagEntity>> {
+        val session = currentSession
+            ?: return MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
+
+        return session.vaultData.map { vaultData ->
+            vaultData.tags.filter { tag ->
+                tag.name.contains(query, ignoreCase = true)
+            }
+        }.stateIn(
+            scope = sessionScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = emptyList()
+        )
+    }
+
     // ========== Preset Operations ==========
 
     /**

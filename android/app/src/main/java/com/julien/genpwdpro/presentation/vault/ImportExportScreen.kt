@@ -44,7 +44,7 @@ fun ImportExportScreen(
 
     // Récupérer la clé du vault au chargement
     LaunchedEffect(vaultId) {
-        vaultKey = vaultSessionManager.getVaultSession(vaultId)?.vaultKey
+        vaultKey = vaultSessionManager.getCurrentSession()?.vaultKey
     }
 
     // Launcher pour créer un fichier d'export

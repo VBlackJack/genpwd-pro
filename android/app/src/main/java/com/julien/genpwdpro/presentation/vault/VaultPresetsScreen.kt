@@ -246,7 +246,7 @@ private fun PresetCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = preset.encryptedName, // Will show encrypted for now
+                        text = preset.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,

@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.julien.genpwdpro.data.models.GenerationMode
-import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
+import com.julien.genpwdpro.data.models.vault.DecryptedPreset
 
 /**
  * Composant de sélection de preset

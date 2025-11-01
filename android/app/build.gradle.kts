@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -55,8 +56,17 @@ android {
         buildConfig = true
     }
 
+    // KDF Configuration constants
+    defaultConfig.apply {
+        buildConfigField("String", "DEFAULT_KDF_ALGORITHM", "\"SCRYPT\"")
+        buildConfigField("int", "SCRYPT_COST", "32768") // 2^15, moderate security
+        buildConfigField("int", "SCRYPT_BLOCK_SIZE", "8")
+        buildConfigField("int", "SCRYPT_PARALLELIZATION", "1")
+        buildConfigField("int", "SCRYPT_KEY_LENGTH", "32") // 256-bit key
+    }
+
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
+        kotlinCompilerExtensionVersion = "1.5.14"  // Updated for Kotlin 1.9.24 compatibility + Strong Skipping mode
     }
 
     packaging {
@@ -88,7 +98,10 @@ dependencies {
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-process:2.6.2")
     implementation("androidx.activity:activity-compose:1.8.1")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // Compose
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
@@ -140,6 +153,15 @@ dependencies {
     implementation("com.goterl:lazysodium-android:5.1.0@aar")
     implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation("commons-codec:commons-codec:1.16.0") // Base32 for TOTP
+
+    // Tink Crypto for AES-GCM
+    implementation("com.google.crypto.tink:tink-android:1.12.0")
+
+    // SQLCipher for encrypted Room database
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
+
+    // Scrypt KDF
+    implementation("com.lambdaworks:scrypt:1.4.0")
 
     // Google Drive API for Cloud Sync
     implementation("com.google.android.gms:play-services-auth:20.7.0")

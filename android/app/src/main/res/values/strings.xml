@@ -146,8 +146,8 @@
     <string name="sync_provider_warning_reconfigure">Reconfigurer</string>
     <string name="sync_provider_warning_ignore">Ignorer</string>
     <string name="sync_provider_configuration_required">Configuration du fournisseur requise</string>
-    <string name="sync_provider_not_ready">%1$s n'est pas encore complètement implémenté. Statut : %2$s</string>
-    <string name="sync_authentication_failed">Échec de l'authentification</string>
+    <string name="sync_provider_not_ready">%1$s n\'est pas encore completement implemente. Statut : %2$s</string>
+    <string name="sync_authentication_failed">Echec de l\'authentification</string>
     <string name="sync_error_unknown">Erreur inconnue</string>
     <string name="sync_error_with_detail">Erreur : %1$s</string>
     <string name="sync_disconnect_error_generic">Erreur lors de la déconnexion</string>
@@ -162,9 +162,9 @@
     <string name="sync_listing_error">Erreur lors du listage : %1$s</string>
     <string name="sync_webdav_configuration_error">Erreur de configuration WebDAV : %1$s</string>
     <string name="sync_webdav_connection_success_detail">Connexion réussie ! Espace : %1$s / %2$s</string>
-    <string name="sync_webdav_authentication_failed">Échec de l'authentification. Vérifiez vos identifiants.</string>
+    <string name="sync_webdav_authentication_failed">Echec de l\'authentification. Verifiez vos identifiants.</string>
     <string name="sync_webdav_connection_error">Erreur de connexion : %1$s</string>
-    <string name="sync_webdav_connection_unreachable">Impossible d'accéder au serveur</string>
+    <string name="sync_webdav_connection_unreachable">Impossible d\'acceder au serveur</string>
     <string name="sync_webdav_disconnect_unknown">Erreur de déconnexion</string>
     <string name="sync_webdav_disconnect_error">Erreur de déconnexion : %1$s</string>
     <string name="sync_bytes_format_b">%1$d B</string>

@@ -369,6 +369,3 @@ class SyncManager @Inject constructor(
         _syncStatus.value = SyncStatus.PENDING
     }
 }
-import com.julien.genpwdpro.data.sync.SyncHistoryEntry
-import com.julien.genpwdpro.data.sync.SyncHistoryAction
-import com.julien.genpwdpro.data.sync.SyncHistoryStatus

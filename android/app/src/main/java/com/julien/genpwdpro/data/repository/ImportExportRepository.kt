@@ -5,11 +5,13 @@ import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.db.dao.VaultDao
-import com.julien.genpwdpro.data.db.dao.VaultEntryDao
-import com.julien.genpwdpro.data.db.entity.EntryType
-import com.julien.genpwdpro.data.models.vault.VaultEntity
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
+import com.julien.genpwdpro.data.models.vault.StorageStrategy
+import com.julien.genpwdpro.data.vault.VaultFileManager
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -24,38 +26,44 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /**
- * Repository pour l'import/export de données
+ * Repository for data import/export (file-based system)
  *
- * Supporte :
- * - CSV export/import (non chiffré, pour migration)
- * - JSON export (chiffré avec AES-256-GCM)
- * - JSON import (déchiffrement)
- * - Mapping de colonnes CSV personnalisé
+ * Supports:
+ * - CSV export/import (unencrypted, for migration)
+ * - JSON export (encrypted with AES-256-GCM)
+ * - JSON import (decryption)
+ * - Custom CSV column mapping
+ *
+ * Migrated to use FileVaultRepository
  */
 @Singleton
 class ImportExportRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val vaultDao: VaultDao,
-    private val vaultEntryDao: VaultEntryDao,
+    private val vaultRegistryDao: VaultRegistryDao,
     private val cryptoManager: VaultCryptoManager,
-    private val vaultRepository: VaultRepository
+    private val fileVaultRepository: FileVaultRepository,
+    private val vaultSessionManager: VaultSessionManager,
+    private val vaultFileManager: VaultFileManager
 ) {
 
     private val gson = Gson()
 
     /**
-     * Exporte les entrées d'un vault en CSV (NON CHIFFRÉ)
+     * Exports vault entries to CSV (UNENCRYPTED)
      *
-     * ⚠️ ATTENTION: Le CSV contient des données en clair !
-     * À utiliser uniquement pour migration vers d'autres gestionnaires.
+     * ⚠️ WARNING: CSV contains plaintext data!
+     * Use only for migration to other password managers.
+     *
+     * Note: Vault must be unlocked before calling this method.
      */
     suspend fun exportToCsv(
         vaultId: String,
-        vaultKey: SecretKey,
+        vaultKey: SecretKey, // Kept for backward compatibility but not used
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val entries = vaultEntryDao.getEntriesByVault(vaultId).first()
+            // Get entries from session (already decrypted)
+            val entries = fileVaultRepository.getEntries().first()
 
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
@@ -64,67 +72,18 @@ class ImportExportRepository @Inject constructor(
                         "title,username,password,url,notes,type,totp_secret,favorite,icon,folder,tags,created_at,updated_at\n"
                     )
 
-                    // Écrire chaque entrée
+                    // Write each entry (data is already decrypted)
                     var count = 0
                     for (entry in entries) {
-                        // Déchiffrer les champs
-                        val title = cryptoManager.decryptString(
-                            cryptoManager.hexToBytes(entry.encryptedTitle),
-                            vaultKey,
-                            cryptoManager.hexToBytes(entry.titleIv)
-                        )
+                        // Fields are already decrypted in memory
+                        val title = entry.title
+                        val username = entry.username ?: ""
+                        val password = entry.password ?: ""
+                        val url = entry.url ?: ""
+                        val notes = entry.notes ?: ""
+                        val totpSecret = if (entry.hasTOTP()) entry.totpSecret ?: "" else ""
 
-                        val username = if (entry.encryptedUsername.isNotEmpty()) {
-                            cryptoManager.decryptString(
-                                cryptoManager.hexToBytes(entry.encryptedUsername),
-                                vaultKey,
-                                cryptoManager.hexToBytes(entry.usernameIv)
-                            )
-                        } else {
-                            ""
-                        }
-
-                        val password = if (entry.encryptedPassword.isNotEmpty()) {
-                            cryptoManager.decryptString(
-                                cryptoManager.hexToBytes(entry.encryptedPassword),
-                                vaultKey,
-                                cryptoManager.hexToBytes(entry.passwordIv)
-                            )
-                        } else {
-                            ""
-                        }
-
-                        val url = if (entry.encryptedUrl.isNotEmpty()) {
-                            cryptoManager.decryptString(
-                                cryptoManager.hexToBytes(entry.encryptedUrl),
-                                vaultKey,
-                                cryptoManager.hexToBytes(entry.urlIv)
-                            )
-                        } else {
-                            ""
-                        }
-
-                        val notes = if (entry.encryptedNotes.isNotEmpty()) {
-                            cryptoManager.decryptString(
-                                cryptoManager.hexToBytes(entry.encryptedNotes),
-                                vaultKey,
-                                cryptoManager.hexToBytes(entry.notesIv)
-                            )
-                        } else {
-                            ""
-                        }
-
-                        val totpSecret = if (entry.hasTOTP && entry.encryptedTotpSecret.isNotEmpty()) {
-                            cryptoManager.decryptString(
-                                cryptoManager.hexToBytes(entry.encryptedTotpSecret),
-                                vaultKey,
-                                cryptoManager.hexToBytes(entry.totpSecretIv)
-                            )
-                        } else {
-                            ""
-                        }
-
-                        // Écrire la ligne CSV (échapper les guillemets et virgules)
+                        // Write CSV line (escape quotes and commas)
                         writer.write(
                             "${escapeCsv(title)}," +
                                 "${escapeCsv(username)}," +
@@ -136,7 +95,7 @@ class ImportExportRepository @Inject constructor(
                                 "${entry.isFavorite}," +
                                 "${entry.icon}," +
                                 "${entry.folderId ?: ""}," +
-                                "," + // tags (à implémenter)
+                                "," + // tags (to be implemented)
                                 "${entry.createdAt}," +
                                 "${entry.modifiedAt}\n"
                         )
@@ -186,25 +145,25 @@ class ImportExportRepository @Inject constructor(
                             val totpSecret = fields.getOrNull(6) ?: ""
                             val favorite = fields.getOrNull(7)?.toBoolean() ?: false
 
-                            // Créer l'entrée via VaultRepository
-                            val decryptedEntry = VaultRepository.DecryptedEntry(
+                            // Créer l'entrée via FileVaultRepository
+                            val entryEntity = VaultEntryEntity(
                                 id = UUID.randomUUID().toString(),
                                 vaultId = vaultId,
                                 folderId = null,
                                 title = title,
-                                username = username,
-                                password = password,
-                                url = url,
-                                notes = notes,
-                                customFields = "",
-                                entryType = type,
+                                username = username.takeIf { it.isNotEmpty() },
+                                password = password.takeIf { it.isNotEmpty() },
+                                url = url.takeIf { it.isNotEmpty() },
+                                notes = notes.takeIf { it.isNotEmpty() },
+                                customFields = null,
+                                entryType = type.name,
                                 isFavorite = favorite,
                                 passwordStrength = calculatePasswordStrength(password),
                                 passwordEntropy = 0.0,
                                 generationMode = null,
                                 createdAt = System.currentTimeMillis(),
                                 modifiedAt = System.currentTimeMillis(),
-                                lastAccessedAt = 0L,
+                                lastAccessedAt = System.currentTimeMillis(),
                                 passwordExpiresAt = 0,
                                 requiresPasswordChange = false,
                                 usageCount = 0,
@@ -212,14 +171,14 @@ class ImportExportRepository @Inject constructor(
                                 color = "#2196F3",
                                 // TOTP
                                 hasTOTP = totpSecret.isNotEmpty(),
-                                totpSecret = totpSecret,
+                                totpSecret = totpSecret.takeIf { it.isNotEmpty() },
                                 totpPeriod = 30,
                                 totpDigits = 6,
                                 totpAlgorithm = "SHA1",
                                 totpIssuer = "",
                                 // Passkey
                                 hasPasskey = false,
-                                passkeyData = "",
+                                passkeyData = null,
                                 passkeyRpId = "",
                                 passkeyRpName = "",
                                 passkeyUserHandle = "",
@@ -227,7 +186,8 @@ class ImportExportRepository @Inject constructor(
                                 passkeyLastUsedAt = 0
                             )
 
-                            vaultRepository.createEntry(vaultId, decryptedEntry)
+                            // Utiliser FileVaultRepository pour ajouter l'entrée
+                            fileVaultRepository.addEntry(entryEntity).getOrThrow()
                             count++
                         } catch (e: Exception) {
                             // Ignorer les lignes invalides
@@ -244,10 +204,12 @@ class ImportExportRepository @Inject constructor(
     }
 
     /**
-     * Exporte un vault complet en JSON chiffré
+     * Exports complete vault to encrypted JSON
      *
-     * Le JSON est chiffré avec AES-256-GCM et une clé dérivée du master password.
-     * Format sécurisé pour backup.
+     * JSON is encrypted with AES-256-GCM and key derived from master password.
+     * Secure format for backup.
+     *
+     * Note: Vault must be unlocked before calling this method.
      */
     suspend fun exportToEncryptedJson(
         vaultId: String,
@@ -255,32 +217,30 @@ class ImportExportRepository @Inject constructor(
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val vault = vaultDao.getById(vaultId) ?: return@withContext Result.failure(
-                Exception("Vault non trouvé")
-            )
+            // Get vault metadata from registry
+            val registryEntry = vaultRegistryDao.getById(vaultId)
+                ?: return@withContext Result.failure(Exception("Vault not found"))
 
-            val entries = vaultEntryDao.getEntriesByVault(vaultId).first()
+            // Get entries from session (already decrypted)
+            val entries = fileVaultRepository.getEntries().first()
 
-            // Créer l'export data
+            // Create export data
             val exportData = VaultExportData(
                 version = 1,
                 exportedAt = System.currentTimeMillis(),
-                vault = vault,
+                vaultName = registryEntry.name,
+                vaultDescription = registryEntry.description,
                 entries = entries
             )
 
             val json = gson.toJson(exportData)
 
-            // Chiffrer le JSON avec le master password
+            // Encrypt JSON with master password (using default Argon2 params)
             val salt = cryptoManager.generateSalt()
             val derivedKey = cryptoManager.deriveKey(
                 masterPassword,
                 salt,
-                VaultCryptoManager.Argon2Params(
-                    iterations = vault.iterations,
-                    memory = vault.memory,
-                    parallelism = vault.parallelism
-                )
+                VaultCryptoManager.Argon2Params() // Use defaults
             )
 
             val iv = cryptoManager.generateIV()
@@ -305,9 +265,10 @@ class ImportExportRepository @Inject constructor(
     }
 
     /**
-     * Importe un vault depuis un JSON chiffré
+     * Imports vault from encrypted JSON
      *
-     * Restaure complètement un vault avec toutes ses entrées.
+     * Restores a complete vault with all entries.
+     * Creates a new .gpv file and registers it in the vault registry.
      */
     suspend fun importFromEncryptedJson(
         masterPassword: String,
@@ -317,47 +278,77 @@ class ImportExportRepository @Inject constructor(
         try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                    // Vérifier le header
+                    // Verify header
                     val header = reader.readLine()
                     if (header != "GENPWDPRO_BACKUP_V1") {
-                        return@withContext Result.failure(Exception("Format de fichier invalide"))
+                        return@withContext Result.failure(Exception("Invalid file format"))
                     }
 
-                    // Lire les données chiffrées
+                    // Read encrypted data
                     val encrypted = reader.readLine()
                     val parts = encrypted.split(":")
                     if (parts.size != 3) {
-                        return@withContext Result.failure(Exception("Format de fichier invalide"))
+                        return@withContext Result.failure(Exception("Invalid file format"))
                     }
 
                     val salt = cryptoManager.hexToBytes(parts[0])
                     val iv = cryptoManager.hexToBytes(parts[1])
                     val encryptedData = cryptoManager.hexToBytes(parts[2])
 
-                    // Dériver la clé et déchiffrer
+                    // Derive key and decrypt
                     val derivedKey = cryptoManager.deriveKey(
                         masterPassword,
                         salt,
-                        VaultCryptoManager.Argon2Params() // Utiliser les params par défaut
+                        VaultCryptoManager.Argon2Params() // Use defaults
                     )
 
                     val json = cryptoManager.decryptString(encryptedData, derivedKey, iv)
 
-                    // Parser le JSON
+                    // Parse JSON
                     val exportData = gson.fromJson(json, VaultExportData::class.java)
 
-                    // Créer un nouveau vault avec un nouvel ID
-                    val newVaultId = UUID.randomUUID().toString()
-                    val newVault = exportData.vault.copy(
-                        id = newVaultId,
-                        name = newVaultName ?: "${exportData.vault.name} (Importé)",
-                        createdAt = System.currentTimeMillis(),
-                        modifiedAt = System.currentTimeMillis()
+                    // Create new vault file
+                    val finalVaultName = newVaultName ?: "${exportData.vaultName} (Imported)"
+                    val (newVaultId, vaultFile) = vaultFileManager.createVaultFile(
+                        name = finalVaultName,
+                        masterPassword = masterPassword,
+                        strategy = StorageStrategy.INTERNAL,
+                        description = exportData.vaultDescription
                     )
 
-                    vaultDao.insert(newVault)
+                    // Register vault in registry
+                    val registryEntry = VaultRegistryEntry(
+                        id = newVaultId,
+                        name = finalVaultName,
+                        description = exportData.vaultDescription,
+                        filePath = vaultFile.absolutePath,
+                        storageStrategy = StorageStrategy.INTERNAL,
+                        fileSize = vaultFile.length(),
+                        lastModified = System.currentTimeMillis(),
+                        lastAccessed = null,
+                        isDefault = false,
+                        isLoaded = false,
+                        statistics = com.julien.genpwdpro.data.models.vault.VaultStatistics(
+                            entryCount = exportData.entries.size,
+                            folderCount = 0,
+                            presetCount = 0,
+                            tagCount = 0,
+                            totalSize = vaultFile.length()
+                        ),
+                        createdAt = System.currentTimeMillis(),
+                        biometricUnlockEnabled = false,
+                        encryptedMasterPassword = null,
+                        masterPasswordIv = null
+                    )
+                    vaultRegistryDao.insert(registryEntry)
 
-                    // Importer toutes les entrées
+                    // Unlock vault to add entries
+                    vaultSessionManager.unlockVault(
+                        vaultId = newVaultId,
+                        masterPassword = masterPassword
+                    ).getOrThrow()
+
+                    // Import all entries
                     for (entry in exportData.entries) {
                         val newEntry = entry.copy(
                             id = UUID.randomUUID().toString(),
@@ -365,12 +356,15 @@ class ImportExportRepository @Inject constructor(
                             createdAt = System.currentTimeMillis(),
                             modifiedAt = System.currentTimeMillis()
                         )
-                        vaultEntryDao.insert(newEntry)
+                        fileVaultRepository.addEntry(newEntry).getOrThrow()
                     }
+
+                    // Lock vault after import
+                    vaultSessionManager.lockVault()
 
                     Result.success(newVaultId)
                 }
-            } ?: Result.failure(Exception("Impossible d'ouvrir le fichier"))
+            } ?: Result.failure(Exception("Cannot open file"))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -443,12 +437,14 @@ class ImportExportRepository @Inject constructor(
     }
 
     /**
-     * Structure de données pour export JSON
+     * Data structure for JSON export
+     * Uses simplified vault metadata instead of full VaultEntity
      */
     data class VaultExportData(
         @SerializedName("version") val version: Int,
         @SerializedName("exported_at") val exportedAt: Long,
-        @SerializedName("vault") val vault: VaultEntity,
+        @SerializedName("vault_name") val vaultName: String,
+        @SerializedName("vault_description") val vaultDescription: String?,
         @SerializedName("entries") val entries: List<VaultEntryEntity>
     )
 }

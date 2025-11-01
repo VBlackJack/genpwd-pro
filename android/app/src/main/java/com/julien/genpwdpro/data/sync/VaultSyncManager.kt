@@ -5,7 +5,7 @@ import android.content.Context
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.providers.ProviderConfig
-import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
 import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as VaultConflictResolutionStrategy
@@ -22,24 +22,27 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Gestionnaire de synchronisation des vaults avec le cloud
+ * Cloud sync manager for vaults (file-based system)
  *
- * Fonctionnalités:
- * - Synchronisation bidirectionnelle des vaults
- * - Gestion multi-providers (Google Drive, OneDrive, etc.)
- * - Détection et résolution de conflits
- * - Chiffrement end-to-end
+ * Features:
+ * - Bidirectional vault synchronization
+ * - Multi-provider support (Google Drive, OneDrive, etc.)
+ * - Conflict detection and resolution
+ * - End-to-end encryption
  *
  * Workflow:
- * 1. Exporter vault → Données chiffrées (VaultRepository)
- * 2. Upload vers cloud (CloudProvider)
- * 3. Download depuis cloud (CloudProvider)
- * 4. Importer vault → Déchiffrement (VaultRepository)
+ * 1. Export vault → Encrypted data (.gpv file)
+ * 2. Upload to cloud (CloudProvider)
+ * 3. Download from cloud (CloudProvider)
+ * 4. Import vault → Decryption (.gpv file)
+ *
+ * TODO: This class needs redesign for .gpv file-based sync.
+ * Currently uses stub implementations for compilation.
  */
 @Singleton
 class VaultSyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val vaultRepository: VaultRepository,
+    private val fileVaultRepository: FileVaultRepository,
     private val conflictResolver: ConflictResolver,
     private val credentialManager: ProviderCredentialManager,
     private val syncPreferencesManager: SyncPreferencesManager,
@@ -258,14 +261,18 @@ class VaultSyncManager @Inject constructor(
 
         _syncStatus.value = SyncStatus.SYNCING
 
-        return try {
-            // 1. Exporter le vault (chiffré)
-            val encryptedData = vaultRepository.exportVault(vaultId, masterPassword)
-                ?: return VaultSyncResult.Error("Impossible d'exporter le vault")
+        // TODO: Implement .gpv file export for sync
+        // Need to read .gpv file directly from VaultFileManager
+        SafeLog.w(TAG, "exportVault not yet implemented for .gpv files")
+        return VaultSyncResult.Error("Sync not yet implemented for file-based vaults")
 
-            // 2. Obtenir les métadonnées du vault
-            val vault = vaultRepository.getVaultById(vaultId)
-                ?: return VaultSyncResult.Error("Vault non trouvé")
+        /*
+        return try {
+            // 1. Export vault (encrypted) - needs .gpv file access
+            val encryptedData = TODO("Read .gpv file from VaultFileManager")
+
+            // 2. Get vault metadata - needs VaultRegistryDao
+            val vaultName = TODO("Get vault name from VaultRegistryDao")
 
             // 3. Calculer le checksum
             val checksum = calculateChecksum(encryptedData)
@@ -306,6 +313,7 @@ class VaultSyncManager @Inject constructor(
             _syncStatus.value = SyncStatus.ERROR
             VaultSyncResult.Error(e.message ?: "Erreur inconnue", e)
         }
+        */
     }
 
     /**
@@ -321,14 +329,21 @@ class VaultSyncManager @Inject constructor(
         _syncStatus.value = SyncStatus.SYNCING
 
         return try {
-            // 1. Télécharger depuis le cloud
+            // TODO: Implement .gpv file import for sync
+            // Need to write .gpv file directly via VaultFileManager
+            SafeLog.w(TAG, "importVault not yet implemented for .gpv files")
+            _syncStatus.value = SyncStatus.ERROR
+            return false
+
+            /*
+            // 1. Download from cloud
             val syncData = provider.downloadVault(vaultId)
                 ?: return false.also {
                     _syncStatus.value = SyncStatus.ERROR
                 }
 
-            // 2. Importer le vault (déchiffré)
-            val success = vaultRepository.importVault(syncData.encryptedData, masterPassword)
+            // 2. Import vault - needs .gpv file writing
+            val success = TODO("Write .gpv file via VaultFileManager")
 
             _syncStatus.value = if (success) {
                 SyncStatus.SYNCED
@@ -337,6 +352,7 @@ class VaultSyncManager @Inject constructor(
             }
 
             success
+            */
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error downloading vault", e)
             _syncStatus.value = SyncStatus.ERROR
@@ -362,15 +378,21 @@ class VaultSyncManager @Inject constructor(
         val provider = ensureProvider() ?: return false
 
         return try {
+            // TODO: Implement conflict resolution for .gpv files
+            SafeLog.w(TAG, "Conflict resolution not yet implemented for .gpv files")
+            _syncStatus.value = SyncStatus.ERROR
+            return false
+
+            /*
             val resolvedData = conflictResolver.resolve(local, remote, strategy)
 
-            // Upload de la version résolue
+            // Upload resolved version
             val fileId = provider.uploadVault(resolvedData.vaultId, resolvedData)
 
             if (fileId != null) {
-                // Importer localement si nécessaire
+                // Import locally if needed - TODO: .gpv file writing
                 if (resolvedData != local) {
-                    vaultRepository.importVault(resolvedData.encryptedData, masterPassword)
+                    TODO("Write .gpv file via VaultFileManager")
                 }
 
                 _syncStatus.value = SyncStatus.SYNCED
@@ -378,6 +400,7 @@ class VaultSyncManager @Inject constructor(
             } else {
                 false
             }
+            */
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error resolving conflict", e)
             false

@@ -49,6 +49,7 @@ sealed class Screen(val route: String) {
 
     // Security Settings
     object SecuritySettings : Screen("security_settings")
+    object Privacy : Screen("privacy")
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {

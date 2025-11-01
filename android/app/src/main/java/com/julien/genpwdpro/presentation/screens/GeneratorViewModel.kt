@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.models.*
+import com.julien.genpwdpro.data.models.vault.DecryptedPreset
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
+import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,25 +19,26 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel pour l'écran de génération de mots de passe
+ * ViewModel for password generation screen
+ * Migrated to use FileVaultRepository (file-based system)
  */
 @HiltViewModel
 class GeneratorViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val historyRepository: PasswordHistoryRepository,
     private val settingsDataStore: SettingsDataStore,
-    private val vaultRepository: com.julien.genpwdpro.data.repository.VaultRepository,
+    private val fileVaultRepository: FileVaultRepository,
     private val vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
     val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
 
-    private val _currentPreset = MutableStateFlow<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset?>(null)
-    val currentPreset: StateFlow<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset?> = _currentPreset.asStateFlow()
+    private val _currentPreset = MutableStateFlow<DecryptedPreset?>(null)
+    val currentPreset: StateFlow<DecryptedPreset?> = _currentPreset.asStateFlow()
 
-    private val _presets = MutableStateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>>(emptyList())
-    val presets: StateFlow<List<com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset>> = _presets.asStateFlow()
+    private val _presets = MutableStateFlow<List<DecryptedPreset>>(emptyList())
+    val presets: StateFlow<List<DecryptedPreset>> = _presets.asStateFlow()
 
     private var currentVaultId: String? = null
 
@@ -55,71 +58,26 @@ class GeneratorViewModel @Inject constructor(
     }
 
     /**
-     * Charge les presets d'un vault depuis VaultSessionManager
+     * Loads presets for a vault (file-based system)
      * Fixed: Uses collectLatest to prevent memory leaks
      */
     fun loadPresets(vaultId: String) {
         currentVaultId = vaultId
         viewModelScope.launch {
             try {
-                // Vérifier que le vault est déverrouillé
+                // Check if vault is unlocked
                 if (!vaultSessionManager.isVaultUnlocked()) {
                     SafeLog.w("GeneratorViewModel", "Cannot load presets: Vault not unlocked")
                     return@launch
                 }
 
-                // Charger les presets depuis VaultSessionManager
+                // Load presets from FileVaultRepository (already converted to DecryptedPreset)
                 // Use collectLatest instead of collect to cancel previous collection
-                vaultSessionManager.getPresets().collectLatest { presetEntities ->
-                    val corruptedPresets = mutableListOf<String>()
+                fileVaultRepository.getPresetsDecrypted().collectLatest { presets ->
+                    _presets.value = presets
 
-                    // Convertir PresetEntity -> DecryptedPreset
-                    val convertedPresets = presetEntities.mapNotNull { entity ->
-                        // Désérialiser les settings depuis JSON
-                        val settings = try {
-                            gson.fromJson(
-                                entity.encryptedSettings,
-                                com.julien.genpwdpro.data.models.Settings::class.java
-                            )
-                        } catch (e: Exception) {
-                            SafeLog.e(
-                                "GeneratorViewModel",
-                                "Failed to parse settings for preset ${SafeLog.redact(entity.id)}",
-                                e
-                            )
-                            corruptedPresets.add(entity.encryptedName)
-                            null
-                        }
-
-                        settings?.let {
-                            com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset(
-                                id = entity.id,
-                                vaultId = entity.vaultId,
-                                name = entity.encryptedName, // Already decrypted by file-based system
-                                icon = entity.icon,
-                                generationMode = com.julien.genpwdpro.data.models.GenerationMode.valueOf(entity.generationMode),
-                                settings = it,
-                                isDefault = entity.isDefault,
-                                isSystemPreset = entity.isSystemPreset,
-                                createdAt = entity.createdAt,
-                                modifiedAt = entity.modifiedAt,
-                                lastUsedAt = entity.lastUsedAt,
-                                usageCount = entity.usageCount
-                            )
-                        }
-                    }
-
-                    _presets.value = convertedPresets
-
-                    // Notifier l'utilisateur des presets corrompus
-                    if (corruptedPresets.isNotEmpty()) {
-                        _uiState.update {
-                            it.copy(error = "Presets corrompus ignorés: ${corruptedPresets.joinToString(", ")}")
-                        }
-                    }
-
-                    // Charger le preset par défaut si aucun preset n'est sélectionné
-                    val defaultPreset = convertedPresets.firstOrNull { it.isDefault }
+                    // Load default preset if none selected
+                    val defaultPreset = presets.firstOrNull { it.isDefault }
                     if (defaultPreset != null && _currentPreset.value == null) {
                         selectPreset(defaultPreset)
                     }
@@ -127,16 +85,16 @@ class GeneratorViewModel @Inject constructor(
             } catch (e: Exception) {
                 SafeLog.e("GeneratorViewModel", "Error loading presets: ${e.message}", e)
                 _uiState.update {
-                    it.copy(error = "Erreur lors du chargement des presets: ${e.message}")
+                    it.copy(error = "Error loading presets: ${e.message}")
                 }
             }
         }
     }
 
     /**
-     * Sélectionne un preset et applique ses settings
+     * Selects a preset and applies its settings
      */
-    fun selectPreset(preset: com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset) {
+    fun selectPreset(preset: DecryptedPreset) {
         _currentPreset.value = preset
         _uiState.update { it.copy(settings = preset.settings) }
 
@@ -196,15 +154,13 @@ class GeneratorViewModel @Inject constructor(
                 val settingsJson = gson.toJson(currentSettings)
 
                 // Créer le PresetEntity
-                val preset = com.julien.genpwdpro.data.local.entity.PresetEntity(
+                val preset = com.julien.genpwdpro.data.models.vault.PresetEntity(
                     id = java.util.UUID.randomUUID().toString(),
                     vaultId = vaultId,
-                    encryptedName = trimmedName, // Stocké en clair car le fichier .gpv est chiffré
-                    nameIv = "", // Pas utilisé avec le système file-based
+                    name = trimmedName,
                     icon = icon,
                     generationMode = currentSettings.mode.name,
-                    encryptedSettings = settingsJson, // Stocké en clair car le fichier .gpv est chiffré
-                    settingsIv = "", // Pas utilisé avec le système file-based
+                    settings = settingsJson,
                     isDefault = setAsDefault,
                     isSystemPreset = false,
                     createdAt = System.currentTimeMillis(),
