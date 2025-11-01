@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import com.julien.genpwdpro.crypto.CryptoEngine
 import com.julien.genpwdpro.data.encryption.EncryptionManager
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.SyncStatus
 import kotlin.math.max
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -88,15 +89,20 @@ class SyncManager @Inject constructor(
         _syncStatus.value = SyncStatus.SYNCING
         _syncEvents.value = SyncEvent.Started
 
+        var syncData: SyncData? = null
+        var payloadSize: Long? = null
+        val operationStart = System.currentTimeMillis()
+
         return try {
             // Sérialiser en JSON
             val json = gson.toJson(settings)
 
             // Chiffrer
             val encryptedData = encryptionManager.encryptString(json, engine)
+            payloadSize = encryptedData.ciphertext.size.toLong()
 
             // Créer SyncData
-            val syncData = SyncData(
+            syncData = SyncData(
                 id = UUID.randomUUID().toString(),
                 deviceId = getDeviceId(),
                 timestamp = System.currentTimeMillis(),
@@ -107,21 +113,62 @@ class SyncManager @Inject constructor(
             )
 
             // Upload
-            val result = cloudRepository.upload(syncData)
+            val result = cloudRepository.upload(syncData!!)
+            val providerType = cloudRepository.getActiveProviderType() ?: CloudProviderType.NONE
+            val duration = System.currentTimeMillis() - operationStart
 
             when (result) {
                 is SyncResult.Success -> {
                     _syncStatus.value = SyncStatus.SYNCED
                     _syncEvents.value = SyncEvent.Completed
                     updateLastSyncTimestamp()
+                    cloudRepository.recordHistoryEntry(
+                        SyncHistoryEntry(
+                            id = syncData!!.id,
+                            timestamp = System.currentTimeMillis(),
+                            action = SyncHistoryAction.UPLOAD,
+                            status = SyncHistoryStatus.SUCCESS,
+                            providerType = providerType,
+                            dataType = SyncDataType.SETTINGS,
+                            durationMs = duration,
+                            sizeBytes = payloadSize
+                        )
+                    )
                 }
+
                 is SyncResult.Error -> {
                     _syncStatus.value = SyncStatus.ERROR
                     _syncEvents.value = SyncEvent.Failed(result.message)
+                    cloudRepository.recordHistoryEntry(
+                        SyncHistoryEntry(
+                            id = syncData!!.id,
+                            timestamp = System.currentTimeMillis(),
+                            action = SyncHistoryAction.UPLOAD,
+                            status = SyncHistoryStatus.ERROR,
+                            providerType = providerType,
+                            dataType = SyncDataType.SETTINGS,
+                            durationMs = duration,
+                            sizeBytes = payloadSize,
+                            message = result.message
+                        )
+                    )
                 }
+
                 is SyncResult.Conflict -> {
                     _syncStatus.value = SyncStatus.CONFLICT
                     _syncEvents.value = SyncEvent.ConflictDetected(SyncDataType.SETTINGS)
+                    cloudRepository.recordHistoryEntry(
+                        SyncHistoryEntry(
+                            id = syncData!!.id,
+                            timestamp = System.currentTimeMillis(),
+                            action = SyncHistoryAction.CONFLICT,
+                            status = SyncHistoryStatus.CONFLICT,
+                            providerType = providerType,
+                            dataType = SyncDataType.SETTINGS,
+                            durationMs = duration,
+                            sizeBytes = payloadSize
+                        )
+                    )
                 }
             }
 
@@ -129,6 +176,20 @@ class SyncManager @Inject constructor(
         } catch (e: Exception) {
             _syncStatus.value = SyncStatus.ERROR
             _syncEvents.value = SyncEvent.Failed(e.message ?: "Erreur inconnue")
+            val providerType = cloudRepository.getActiveProviderType() ?: CloudProviderType.NONE
+            cloudRepository.recordHistoryEntry(
+                SyncHistoryEntry(
+                    id = syncData?.id ?: UUID.randomUUID().toString(),
+                    timestamp = System.currentTimeMillis(),
+                    action = SyncHistoryAction.UPLOAD,
+                    status = SyncHistoryStatus.ERROR,
+                    providerType = providerType,
+                    dataType = SyncDataType.SETTINGS,
+                    durationMs = System.currentTimeMillis() - operationStart,
+                    sizeBytes = payloadSize,
+                    message = e.message
+                )
+            )
             SyncResult.Error(e.message ?: "Erreur", e)
         }
     }
@@ -183,6 +244,18 @@ class SyncManager @Inject constructor(
 
             if (remoteData != null && remoteData.timestamp > localTimestamp) {
                 // Conflit détecté
+                val providerType = cloudRepository.getActiveProviderType() ?: CloudProviderType.NONE
+                cloudRepository.recordHistoryEntry(
+                    SyncHistoryEntry(
+                        id = remoteData.id,
+                        timestamp = System.currentTimeMillis(),
+                        action = SyncHistoryAction.CONFLICT,
+                        status = SyncHistoryStatus.CONFLICT,
+                        providerType = providerType,
+                        dataType = SyncDataType.SETTINGS,
+                        message = "Remote data is newer than local state"
+                    )
+                )
                 SyncResult.Conflict(
                     localData = createSyncData(settings, SyncDataType.SETTINGS),
                     remoteData = remoteData
@@ -296,3 +369,6 @@ class SyncManager @Inject constructor(
         _syncStatus.value = SyncStatus.PENDING
     }
 }
+import com.julien.genpwdpro.data.sync.SyncHistoryEntry
+import com.julien.genpwdpro.data.sync.SyncHistoryAction
+import com.julien.genpwdpro.data.sync.SyncHistoryStatus

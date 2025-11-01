@@ -5,11 +5,19 @@ import android.content.SharedPreferences
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
 import com.julien.genpwdpro.data.sync.CloudProvider
+import com.julien.genpwdpro.data.sync.SyncData
+import com.julien.genpwdpro.data.sync.SyncDataType
 import com.julien.genpwdpro.data.sync.SyncErrorCategory
 import com.julien.genpwdpro.data.sync.SyncErrorLogEntry
+import com.julien.genpwdpro.data.sync.SyncEvent
+import com.julien.genpwdpro.data.sync.SyncHistoryAction
+import com.julien.genpwdpro.data.sync.SyncHistoryEntry
+import com.julien.genpwdpro.data.sync.SyncHistoryStatus
+import com.julien.genpwdpro.data.sync.SyncResult
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.providers.CloudProviderFactory
 import com.julien.genpwdpro.data.sync.providers.PCloudProvider
 import com.julien.genpwdpro.data.sync.providers.PCloudProvider.PCloudRegion
@@ -47,7 +55,9 @@ class CloudProviderSyncRepository @Inject constructor(
         private const val PREFS_NAME = "cloud_sync_prefs"
         private const val KEY_ACTIVE_PROVIDER = "active_provider_type"
         private const val KEY_SYNC_ERRORS = "sync_errors"
+        private const val KEY_SYNC_HISTORY = "sync_history"
         private const val MAX_SYNC_ERRORS = 10
+        private const val MAX_HISTORY_ENTRIES = 50
         private const val CONFIG_KEY_CLIENT_ID = "clientId"
         private const val CONFIG_KEY_CLIENT_SECRET = "clientSecret"
         private const val CONFIG_KEY_APP_KEY = "appKey"
@@ -56,9 +66,17 @@ class CloudProviderSyncRepository @Inject constructor(
         private const val CONFIG_KEY_SERVER_URL = "serverUrl"
         private const val CONFIG_KEY_USERNAME = "username"
         private const val CONFIG_KEY_PASSWORD = "password"
+        private const val CONFIG_KEY_VALIDATE_SSL = "validateSSL"
         private const val JSON_KEY_MESSAGE = "message"
         private const val JSON_KEY_CATEGORY = "category"
         private const val JSON_KEY_TIMESTAMP = "timestamp"
+        private const val JSON_KEY_ID = "id"
+        private const val JSON_KEY_ACTION = "action"
+        private const val JSON_KEY_STATUS = "status"
+        private const val JSON_KEY_PROVIDER = "provider"
+        private const val JSON_KEY_DATA_TYPE = "dataType"
+        private const val JSON_KEY_DURATION = "duration"
+        private const val JSON_KEY_SIZE = "size"
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -138,6 +156,7 @@ class CloudProviderSyncRepository @Inject constructor(
         activeProviderType = null
         prefs.edit().remove(KEY_ACTIVE_PROVIDER).apply()
         clearSyncErrors()
+        clearSyncHistory()
     }
 
     suspend fun rehydrateActiveProvider(expectedType: CloudProviderType? = null): Boolean {
@@ -243,6 +262,7 @@ class CloudProviderSyncRepository @Inject constructor(
                 val serverUrl = config?.serverUrl
                 val username = config?.username
                 val password = config?.password
+                val validateSSL = config?.customSettings?.get(CONFIG_KEY_VALIDATE_SSL)?.toBooleanStrictOrNull() ?: true
 
                 if (serverUrl.isNullOrBlank() || username.isNullOrBlank() || password.isNullOrBlank()) {
                     SafeLog.w(TAG, "Incomplete WebDAV configuration for rehydration")
@@ -252,7 +272,7 @@ class CloudProviderSyncRepository @Inject constructor(
                     )
                     null
                 } else {
-                    providerFactory.createWebDAVProvider(serverUrl, username, password)
+                    providerFactory.createWebDAVProvider(serverUrl, username, password, validateSSL)
                 }
             }
 
@@ -336,6 +356,88 @@ class CloudProviderSyncRepository @Inject constructor(
 
     private fun clearSyncErrors() {
         prefs.edit().remove(KEY_SYNC_ERRORS).apply()
+    }
+
+    private fun readSyncHistory(): MutableList<SyncHistoryEntry> {
+        val raw = prefs.getString(KEY_SYNC_HISTORY, null) ?: return mutableListOf()
+
+        return try {
+            val array = JSONArray(raw)
+            MutableList(array.length()) { index ->
+                val json = array.optJSONObject(index)
+                if (json != null) {
+                    val id = json.optString(JSON_KEY_ID).ifBlank { "" }
+                    val action = json.optString(JSON_KEY_ACTION)
+                        .takeIf { it.isNotBlank() }
+                        ?.let { runCatching { SyncHistoryAction.valueOf(it) }.getOrNull() }
+                        ?: SyncHistoryAction.UPLOAD
+                    val status = json.optString(JSON_KEY_STATUS)
+                        .takeIf { it.isNotBlank() }
+                        ?.let { runCatching { SyncHistoryStatus.valueOf(it) }.getOrNull() }
+                        ?: SyncHistoryStatus.SUCCESS
+                    val provider = json.optString(JSON_KEY_PROVIDER)
+                        .takeIf { it.isNotBlank() }
+                        ?.let { runCatching { CloudProviderType.valueOf(it) }.getOrNull() }
+                        ?: CloudProviderType.NONE
+                    val dataType = json.optString(JSON_KEY_DATA_TYPE)
+                        .takeIf { it.isNotBlank() }
+                        ?.let { runCatching { SyncDataType.valueOf(it) }.getOrNull() }
+                        ?: SyncDataType.SETTINGS
+                    val timestamp = json.optLong(JSON_KEY_TIMESTAMP).takeIf { it > 0 }
+                        ?: System.currentTimeMillis()
+                    val duration = json.optLong(JSON_KEY_DURATION).takeIf { it > 0 }
+                    val size = json.optLong(JSON_KEY_SIZE).takeIf { it > 0 }
+                    val message = json.optString(JSON_KEY_MESSAGE).takeIf { it.isNotBlank() }
+
+                    SyncHistoryEntry(
+                        id = id,
+                        timestamp = timestamp,
+                        action = action,
+                        status = status,
+                        providerType = provider,
+                        dataType = dataType,
+                        durationMs = duration,
+                        sizeBytes = size,
+                        message = message
+                    )
+                } else {
+                    SyncHistoryEntry(
+                        id = "",
+                        timestamp = System.currentTimeMillis(),
+                        action = SyncHistoryAction.UPLOAD,
+                        status = SyncHistoryStatus.SUCCESS,
+                        providerType = CloudProviderType.NONE,
+                        dataType = SyncDataType.SETTINGS
+                    )
+                }
+            }
+        } catch (e: JSONException) {
+            SafeLog.w(TAG, "Failed to parse stored sync history", e)
+            prefs.edit().remove(KEY_SYNC_HISTORY).apply()
+            mutableListOf()
+        }
+    }
+
+    private fun persistSyncHistory(entries: List<SyncHistoryEntry>) {
+        val array = JSONArray()
+        entries.forEach { entry ->
+            val json = JSONObject()
+                .put(JSON_KEY_ID, entry.id)
+                .put(JSON_KEY_ACTION, entry.action.name)
+                .put(JSON_KEY_STATUS, entry.status.name)
+                .put(JSON_KEY_PROVIDER, entry.providerType.name)
+                .put(JSON_KEY_DATA_TYPE, entry.dataType.name)
+                .put(JSON_KEY_TIMESTAMP, entry.timestamp)
+            entry.durationMs?.let { json.put(JSON_KEY_DURATION, it) }
+            entry.sizeBytes?.let { json.put(JSON_KEY_SIZE, it) }
+            entry.message?.let { json.put(JSON_KEY_MESSAGE, it) }
+            array.put(json)
+        }
+        prefs.edit().putString(KEY_SYNC_HISTORY, array.toString()).apply()
+    }
+
+    private fun clearSyncHistory() {
+        prefs.edit().remove(KEY_SYNC_HISTORY).apply()
     }
 
     // ========== CloudSyncRepository Implementation ==========
@@ -615,7 +717,8 @@ class CloudProviderSyncRepository @Inject constructor(
             lastSuccessfulSyncTimestamp = prefs.getLong("last_successful_sync_timestamp", 0),
             pendingChanges = prefs.getInt("pending_changes", 0),
             conflictCount = prefs.getInt("conflict_count", 0),
-            syncErrors = readSyncErrors()
+            syncErrors = readSyncErrors(),
+            history = readSyncHistory()
         )
     }
 
@@ -678,6 +781,17 @@ class CloudProviderSyncRepository @Inject constructor(
                             category = SyncErrorCategory.CLEANUP,
                             throwable = e
                         )
+                        recordHistoryEntry(
+                            SyncHistoryEntry(
+                                id = metadata.fileName,
+                                timestamp = System.currentTimeMillis(),
+                                action = SyncHistoryAction.CLEANUP,
+                                status = SyncHistoryStatus.ERROR,
+                                providerType = activeProviderType ?: CloudProviderType.NONE,
+                                dataType = SyncDataType.SETTINGS,
+                                message = e.message
+                            )
+                        )
                     }
                 }
         } catch (e: Exception) {
@@ -688,6 +802,49 @@ class CloudProviderSyncRepository @Inject constructor(
                 throwable = e
             )
         }
+    }
+
+    override fun getActiveProviderType(): CloudProviderType? = activeProviderType
+
+    override suspend fun recordHistoryEntry(entry: SyncHistoryEntry) {
+        val existing = readSyncHistory()
+        val resolvedProvider = entry.providerType.takeUnless { it == CloudProviderType.NONE }
+            ?: activeProviderType
+            ?: CloudProviderType.NONE
+        existing.add(0, entry.copy(providerType = resolvedProvider))
+        if (existing.size > MAX_HISTORY_ENTRIES) {
+            existing.subList(MAX_HISTORY_ENTRIES, existing.size).clear()
+        }
+        persistSyncHistory(existing)
+
+        if (entry.status == SyncHistoryStatus.CONFLICT) {
+            val newConflictCount = prefs.getInt("conflict_count", 0) + 1
+            prefs.edit().putInt("conflict_count", newConflictCount).apply()
+        }
+
+        if (entry.action == SyncHistoryAction.UPLOAD || entry.action == SyncHistoryAction.DOWNLOAD) {
+            when (entry.status) {
+                SyncHistoryStatus.SUCCESS -> {
+                    prefs.edit()
+                        .putLong("last_sync_timestamp", entry.timestamp)
+                        .putLong("last_successful_sync_timestamp", entry.timestamp)
+                        .putInt("pending_changes", 0)
+                        .apply()
+                }
+
+                SyncHistoryStatus.ERROR -> {
+                    prefs.edit()
+                        .putLong("last_sync_timestamp", entry.timestamp)
+                        .apply()
+                }
+
+                SyncHistoryStatus.CONFLICT -> Unit
+            }
+        }
+    }
+
+    override suspend fun clearHistory() {
+        clearSyncHistory()
     }
 
     /**

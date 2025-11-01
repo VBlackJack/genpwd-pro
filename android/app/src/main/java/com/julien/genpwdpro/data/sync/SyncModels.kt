@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.sync
 
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
 
 // NOTE: ConflictResolutionStrategy is also defined in models/SyncStatus.kt
 // But we keep a local copy for CloudSyncRepository to use with SyncData
@@ -86,10 +87,38 @@ data class SyncErrorLogEntry(
     val timestamp: Long
 )
 
+enum class SyncHistoryStatus {
+    SUCCESS,
+    ERROR,
+    CONFLICT
+}
+
+enum class SyncHistoryAction {
+    UPLOAD,
+    DOWNLOAD,
+    DELETE,
+    CONFLICT,
+    CLEANUP,
+    TEST_CONNECTION
+}
+
+data class SyncHistoryEntry(
+    val id: String,
+    val timestamp: Long,
+    val action: SyncHistoryAction,
+    val status: SyncHistoryStatus,
+    val providerType: CloudProviderType,
+    val dataType: SyncDataType,
+    val durationMs: Long? = null,
+    val sizeBytes: Long? = null,
+    val message: String? = null
+)
+
 data class LocalSyncMetadata(
     val lastSyncTimestamp: Long = 0,
     val lastSuccessfulSyncTimestamp: Long = 0,
     val pendingChanges: Int = 0,
     val conflictCount: Int = 0,
-    val syncErrors: List<SyncErrorLogEntry> = emptyList()
+    val syncErrors: List<SyncErrorLogEntry> = emptyList(),
+    val history: List<SyncHistoryEntry> = emptyList()
 )
