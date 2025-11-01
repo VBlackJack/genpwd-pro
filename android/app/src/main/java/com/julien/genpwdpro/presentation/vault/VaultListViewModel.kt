@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.crypto.TotpGenerator
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.model.VaultStatistics

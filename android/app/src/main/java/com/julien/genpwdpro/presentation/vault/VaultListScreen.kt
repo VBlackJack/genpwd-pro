@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import kotlinx.coroutines.delay
 

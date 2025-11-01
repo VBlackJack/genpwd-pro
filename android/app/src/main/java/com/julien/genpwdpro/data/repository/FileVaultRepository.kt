@@ -2,7 +2,8 @@ package com.julien.genpwdpro.data.repository
 
 import androidx.fragment.app.FragmentActivity
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.security.BiometricVaultManager

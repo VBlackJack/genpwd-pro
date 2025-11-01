@@ -10,11 +10,11 @@ import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.local.dao.*
-import com.julien.genpwdpro.data.local.database.AppDatabase
+import com.julien.genpwdpro.data.db.dao.PasswordHistoryDao
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.database.AppDatabase
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
-import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -156,46 +156,6 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideVaultDao(
-        database: AppDatabase
-    ): VaultDao {
-        return database.vaultDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideVaultEntryDao(
-        database: AppDatabase
-    ): VaultEntryDao {
-        return database.vaultEntryDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideFolderDao(
-        database: AppDatabase
-    ): FolderDao {
-        return database.folderDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideTagDao(
-        database: AppDatabase
-    ): TagDao {
-        return database.tagDao()
-    }
-
-    @Provides
-    @Singleton
-    fun providePresetDao(
-        database: AppDatabase
-    ): PresetDao {
-        return database.presetDao()
-    }
-
-    @Provides
-    @Singleton
     fun provideVaultRegistryDao(
         database: AppDatabase
     ): VaultRegistryDao {
@@ -212,20 +172,6 @@ object DatabaseModule {
     @Singleton
     fun provideTotpGenerator(): TotpGenerator {
         return TotpGenerator()
-    }
-
-    @Provides
-    @Singleton
-    fun provideVaultRepository(
-        vaultDao: VaultDao,
-        entryDao: VaultEntryDao,
-        folderDao: FolderDao,
-        tagDao: TagDao,
-        presetDao: PresetDao,
-        cryptoManager: VaultCryptoManager,
-        keystoreManager: com.julien.genpwdpro.security.KeystoreManager
-    ): VaultRepository {
-        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
     }
 
     @Provides

@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.net.Uri
 import com.julien.genpwdpro.core.log.SafeLog
-import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings

@@ -3,7 +3,7 @@ package com.julien.genpwdpro.presentation.vault
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.db.dao.FolderDao
-import com.julien.genpwdpro.data.db.entity.FolderEntity
+import com.julien.genpwdpro.data.models.vault.FolderEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
