@@ -32,14 +32,21 @@ import {
   InMemorySessionManager
 } from '../vault/index.js';
 
-const { serializedKeyset } = await TinkAeadCryptoEngine.generateKeyset();
-const crypto = await TinkAeadCryptoEngine.fromSerializedKeyset(serializedKeyset);
 const kdf = new ScryptKdfService();
 const params = kdf.createParams();
-const masterKey = await kdf.deriveKey('passphrase', params);
+const keyEncryptionKey = await kdf.deriveKey('passphrase', params);
+const { encryptedKeyset } = await TinkAeadCryptoEngine.generateKeyset({
+  keyEncryptionKey,
+  associatedData: params.salt
+});
+const crypto = await TinkAeadCryptoEngine.fromEncryptedKeyset(
+  encryptedKeyset,
+  keyEncryptionKey,
+  params.salt
+);
 
 const session = new InMemorySessionManager();
-await session.storeKey(masterKey, 60_000);
+await session.storeKey(keyEncryptionKey, 60_000);
 ```
 
 See `src/js/vault/tests/contract-tests.js` for more detailed usage examples.
