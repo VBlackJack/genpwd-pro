@@ -103,8 +103,16 @@ async function testRepositorySearch() {
 }
 
 async function testCryptoEngine() {
-  const { serializedKeyset } = await TinkAeadCryptoEngine.generateKeyset();
-  const engine = await TinkAeadCryptoEngine.fromSerializedKeyset(serializedKeyset);
+  const kdfService = new ScryptKdfService({ keyLength: 32 });
+  const kdfParams = kdfService.createParams();
+  const kek = await kdfService.deriveKey('unit-test-passphrase', kdfParams);
+  const associatedData = kdfParams.salt;
+
+  const { encryptedKeyset } = await TinkAeadCryptoEngine.generateKeyset({
+    keyEncryptionKey: kek,
+    associatedData
+  });
+  const engine = await TinkAeadCryptoEngine.fromEncryptedKeyset(encryptedKeyset, kek, associatedData);
 
   const plaintext = new TextEncoder().encode('vault-secret');
   const ad = new TextEncoder().encode('metadata');
@@ -123,6 +131,24 @@ async function testCryptoEngine() {
     assert(error instanceof Error, 'Decrypt should throw error');
   }
   assert(threw, 'Decrypting with wrong AD must fail');
+
+  const exported = await engine.serializeKeyset(kek, associatedData);
+  const restored = await TinkAeadCryptoEngine.fromEncryptedKeyset(exported, kek, associatedData);
+  const decryptedRestored = await restored.decrypt(ciphertext, ad);
+  assert(
+    new TextDecoder().decode(decryptedRestored) === 'vault-secret',
+    'Restored engine should decrypt correctly'
+  );
+
+  let wrongKeyFailure = false;
+  const tamperedKey = new Uint8Array(kek);
+  tamperedKey[0] ^= 0xff;
+  try {
+    await TinkAeadCryptoEngine.fromEncryptedKeyset(encryptedKeyset, tamperedKey, associatedData);
+  } catch (error) {
+    wrongKeyFailure = error instanceof Error;
+  }
+  assert(wrongKeyFailure, 'Decrypting with wrong key should fail');
 }
 
 async function testKdfService() {
