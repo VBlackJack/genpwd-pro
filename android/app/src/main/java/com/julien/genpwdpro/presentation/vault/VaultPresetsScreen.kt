@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.PresetEntity
+import com.julien.genpwdpro.data.models.vault.PresetEntity
 import java.text.SimpleDateFormat
 import java.util.*
 

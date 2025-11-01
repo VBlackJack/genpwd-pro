@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.di
 
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -10,11 +10,11 @@ import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
-import com.julien.genpwdpro.data.local.dao.*
-import com.julien.genpwdpro.data.local.database.AppDatabase
+import com.julien.genpwdpro.data.db.dao.PasswordHistoryDao
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.database.AppDatabase
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
-import com.julien.genpwdpro.data.repository.VaultRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,7 +24,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -84,13 +83,13 @@ object DatabaseModule {
 
                         // Copier le fichier de base de données
                         dbFile.copyTo(backupFile, overwrite = false)
-                        Log.i("DatabaseModule", "Database backup created: ${backupFile.name}")
+                        SafeLog.i("DatabaseModule", "Database backup created: ${SafeLog.redact(backupFile.name)}")
 
                         // Nettoyer les backups trop anciens (garder seulement les 3 derniers)
                         cleanOldBackups(context, 3)
                     }
                 } catch (e: Exception) {
-                    Log.e("DatabaseModule", "Failed to create database backup", e)
+                    SafeLog.e("DatabaseModule", "Failed to create database backup", e)
                     // Ne pas bloquer l'ouverture de la DB si le backup échoue
                 }
             }
@@ -114,11 +113,11 @@ object DatabaseModule {
             // Supprimer les backups au-delà de keepCount
             backupFiles.drop(keepCount).forEach { file ->
                 if (file.delete()) {
-                    Log.d("DatabaseModule", "Deleted old backup: ${file.name}")
+                    SafeLog.d("DatabaseModule", "Deleted old backup: ${SafeLog.redact(file.name)}")
                 }
             }
         } catch (e: Exception) {
-            Log.e("DatabaseModule", "Failed to clean old backups", e)
+            SafeLog.e("DatabaseModule", "Failed to clean old backups", e)
         }
     }
 
@@ -157,46 +156,6 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideVaultDao(
-        database: AppDatabase
-    ): VaultDao {
-        return database.vaultDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideVaultEntryDao(
-        database: AppDatabase
-    ): VaultEntryDao {
-        return database.vaultEntryDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideFolderDao(
-        database: AppDatabase
-    ): FolderDao {
-        return database.folderDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideTagDao(
-        database: AppDatabase
-    ): TagDao {
-        return database.tagDao()
-    }
-
-    @Provides
-    @Singleton
-    fun providePresetDao(
-        database: AppDatabase
-    ): PresetDao {
-        return database.presetDao()
-    }
-
-    @Provides
-    @Singleton
     fun provideVaultRegistryDao(
         database: AppDatabase
     ): VaultRegistryDao {
@@ -217,44 +176,8 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideVaultRepository(
-        vaultDao: VaultDao,
-        entryDao: VaultEntryDao,
-        folderDao: FolderDao,
-        tagDao: TagDao,
-        presetDao: PresetDao,
-        cryptoManager: VaultCryptoManager,
-        keystoreManager: com.julien.genpwdpro.security.KeystoreManager
-    ): VaultRepository {
-        return VaultRepository(vaultDao, entryDao, folderDao, tagDao, presetDao, cryptoManager, keystoreManager)
-    }
-
-    @Provides
-    @Singleton
     fun provideIoDispatcher(): kotlinx.coroutines.CoroutineDispatcher {
         return kotlinx.coroutines.Dispatchers.IO
     }
 
-    /**
-     * Flag pour activer les fonctionnalités legacy de synchronisation
-     *
-     * Fixed: Retourne toujours false pour éviter d'exposer des fonctionnalités
-     * potentiellement non sécurisées en production.
-     *
-     * Si vous avez besoin d'activer le legacy sync:
-     * 1. Créer un BuildConfigField dans build.gradle
-     * 2. Utiliser un flag de configuration utilisateur (SharedPreferences)
-     * 3. Ne JAMAIS laisser BuildConfig.DEBUG en production
-     *
-     * @deprecated Legacy sync system - devrait être migré vers le nouveau système
-     */
-    @Deprecated("Legacy sync system - use new file-based sync instead")
-    @Provides
-    @Singleton
-    @Named("legacy_sync_enabled")
-    fun provideLegacySyncFlag(): Boolean {
-        // Fixed: Toujours false, même en debug
-        // Le mode debug ne doit pas activer des fonctionnalités non sécurisées
-        return false
-    }
 }

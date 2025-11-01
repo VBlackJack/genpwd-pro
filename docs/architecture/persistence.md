@@ -1,69 +1,59 @@
-# Persistence Architecture & Legacy Migration
+# Persistence Architecture
 
-This document describes the current persistence stack as well as the one-off migration
-path that moves the historical in-memory cache into the SQLCipher-backed Room database.
+This document summarises the storage stack that powers GenPwd Pro after the
+retirement of the legacy in-memory cache.
 
-## Overview
+## Components
 
-* **Primary storage** – `AppDatabase` (SQLCipher Room) stores vault metadata, encrypted
-  entries, folders, tags, presets and registry information.
-* **Legacy cache** – Older builds serialised unlocked vaults as JSON files inside the
-  private storage directory `files/legacy_inmemory/` (temporary copies could also live in
-  `cache/legacy_inmemory/`). These snapshots were encrypted at rest only by the filesystem
-  sandbox and must be migrated into SQLCipher during upgrade.
-* **Migration coordinator** – `LegacyInMemoryMigrationManager` runs exactly once during
-  application start. It imports the snapshots, wipes the cache files and reports progress
-  to `LegacyMigrationStateStore`.
+- **Vault registry (Room / SQLCipher)** – `AppDatabase` tracks the vault
+  catalogue, presets, folders, tags and other metadata. Every entry stored in
+  the database remains encrypted at rest through SQLCipher.
+- **Vault files (`.gpv`)** – `VaultFileManager` persists encrypted vault
+  payloads to disk using the storage strategy selected by the user
+  (application-private directory or Storage Access Framework document).
+- **Session management** – `VaultSessionManager` coordinates unlock / lock
+  events for the file-based vaults and enforces inactivity timeouts.
+- **Cloud synchronisation** – `SyncInitializer` and
+  `CloudProviderSyncRepository` orchestrate remote providers and background
+  workers.
 
-The upgrade workflow is triggered from `GenPwdProApplication` before any component relies on
-Room data. The migration is skipped automatically when the SQLCipher database already exists
-or when the state store marks the migration as completed.
+### Background synchronisation workers
 
-## Migration Flow
+Two distinct WorkManager tasks handle cloud synchronisation to minimise
+coupling:
 
-1. `LegacyInMemoryMigrationManager.migrateIfNeeded()` checks if the migration was already
-   executed. If not, it evaluates whether the SQLCipher database exists and whether any
-   legacy cache files are present.
-2. `LegacyInMemoryStore.loadSnapshots()` parses every JSON file located in
-   `files/legacy_inmemory/` or `cache/legacy_inmemory/` into `LegacyVaultSnapshot` objects.
-   Each snapshot bundles the Room entities (`VaultEntity`, `VaultEntryEntity`, `FolderEntity`,
-   `TagEntity`, `PresetEntity`, `EntryTagCrossRef`) required to rebuild the vault.
-3. Using `AppDatabase.withTransaction`, the migrator inserts the entities via the DAOs
-   (`VaultDao`, `VaultEntryDao`, `FolderDao`, `TagDao`, `PresetDao`). Successfully imported
-   snapshots are recorded so they can be wiped afterwards.
-4. After a successful import, `LegacyInMemoryStore.secureWipe()` overwrites every processed
-   cache file with zeroes and removes empty directories. The state store is updated so the
-   migration never runs again.
+- `com.julien.genpwdpro.workers.CloudSyncWorker` propagates application
+  settings (preferences, generator policies, autofill configuration). It can
+  run even when no vault is unlocked and therefore keeps the UI in sync with
+  remote configuration changes.
+- `com.julien.genpwdpro.data.sync.workers.SyncWorker` synchronises vault
+  contents. Before performing any upload or download it rehydrate the active
+  provider through `VaultSyncManager`, validates authentication and uses the
+  stored master password. The worker deliberately bails out when no provider is
+  configured so that periodic jobs do not fail noisily.
 
-## Failure Handling & Recovery
+Both workers are scheduled independently by `AutoSyncScheduler` and
+`SyncInitializer`, which prevents heavy vault transfers from starving settings
+updates or vice versa.
 
-* **Partial failures** – When some snapshots cannot be imported (missing metadata or write
-  error), the migrator keeps their cache files untouched, logs the failure and records the
-  affected vault IDs inside `LegacyMigrationStateStore`. The user is prompted to re-authenticate
-  on the next launch (`MainActivity` reads the state store and displays a toast).
-* **Fatal failures** – If the Room transaction fails entirely, all vault IDs are registered in
-  the state store. The migration is retried on the next launch after the user unlocks their
-  vaults manually.
-* **Audit logging** – Every outcome is logged via `SafeLog` in `GenPwdProApplication` to assist
-  with support diagnostics. Successful runs detail how many vaults and entries were imported.
+## Startup Flow
 
-## Manual Recovery
+1. `GenPwdProApplication` installs strict-mode policies, crash handling and
+   initialises the Tink AEAD configuration once at startup.
+2. `SyncInitializer.initialize()` runs on a background dispatcher to restore
+   any configured provider, reschedule sync workers and prime `SyncManager`.
+3. `VaultStartupLocker.secureStartup()` (triggered from the UI layer) ensures
+   the in-memory session is locked and that registry flags are reset before the
+   user interacts with the vault list.
 
-1. **User prompt** – When the application displays the “mise à jour de sécurité” prompt, users
-   should unlock each vault manually. This action recreates the Room metadata and allows the
-   migration to resume on the next launch.
-2. **Developer intervention** – If cache files remain after repeated attempts, pull the contents
-   of `files/legacy_inmemory/` for offline inspection. Each JSON file can be opened with the
-   repository’s `LegacyInMemoryVaultContainer` schema to verify integrity.
-3. **Cleanup** – After confirming that data is safely stored inside SQLCipher, remove any leftover
-   cache files and call `LegacyMigrationStateStore.clearMigrationCompleted()` via an internal
-   build to force the migrator to rerun if additional validation is required.
+## Legacy Migration
 
-## Related Components
+The old JSON-based “in-memory” cache was migrated to SQLCipher in previous
+releases. All runtime migration code (`LegacyInMemoryMigrationManager`,
+`LegacyInMemoryStore`, etc.) has now been removed from the application. Should
+historical inspection ever be required, refer to the corresponding git history
+(before commit `ce9b2fcd09e3b3a08269c32fd74ff67d5c389ed5`) for implementation
+references.
 
-* `LegacyInMemoryStore` – Disk access, JSON parsing and secure wipe helpers.
-* `LegacyMigrationStateStore` – Small preference-backed state machine guarding idempotency and
-  user prompts.
-* `LegacyInMemoryMigrationManager` – Transactional import logic.
-* `GenPwdProApplication` – Triggers the migration before strict-mode and sync initialization.
-* `MainActivity` – Surfaces partial migration results to the user via a toast notification.
+With the legacy pathway retired, the application now depends solely on the
+file-based vault system for persistence.

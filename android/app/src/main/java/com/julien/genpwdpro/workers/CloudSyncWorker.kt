@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.workers
 
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
@@ -13,13 +13,13 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 
 /**
- * Worker pour la synchronisation automatique en arrière-plan
+ * Worker WorkManager dédié à la synchronisation des paramètres applicatifs
+ * (préférences, configuration, politiques de génération).
  *
- * Fonctionnalités:
- * - Synchronisation périodique des paramètres
- * - Respect des contraintes WiFi-only
- * - Gestion des erreurs et retry
- * - Intégration avec SyncManager pour chiffrement E2E
+ * Il fonctionne en parallèle de [com.julien.genpwdpro.data.sync.workers.SyncWorker]
+ * qui gère, lui, la synchronisation des coffres chiffrés. Les deux workers sont
+ * planifiés séparément afin d'éviter qu'une tâche lourde sur les vaults bloque
+ * la propagation des paramètres.
  */
 @HiltWorker
 class CloudSyncWorker @AssistedInject constructor(
@@ -48,7 +48,7 @@ class CloudSyncWorker @AssistedInject constructor(
             intervalMillis: Long,
             wifiOnly: Boolean = true
         ) {
-            Log.d(TAG, "Scheduling periodic sync: interval=$intervalMillis ms, wifiOnly=$wifiOnly")
+            SafeLog.d(TAG, "Scheduling periodic sync: interval=$intervalMillis ms, wifiOnly=$wifiOnly")
 
             // Contraintes
             val constraints = Constraints.Builder()
@@ -87,14 +87,14 @@ class CloudSyncWorker @AssistedInject constructor(
                     syncWorkRequest
                 )
 
-            Log.i(TAG, "Periodic sync scheduled successfully: every $intervalMinutes minutes")
+            SafeLog.i(TAG, "Periodic sync scheduled successfully: every $intervalMinutes minutes")
         }
 
         /**
          * Annule la synchronisation automatique
          */
         fun cancel(context: Context) {
-            Log.d(TAG, "Cancelling periodic sync")
+            SafeLog.d(TAG, "Cancelling periodic sync")
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }
 
@@ -102,7 +102,7 @@ class CloudSyncWorker @AssistedInject constructor(
          * Déclenche une synchronisation immédiate (one-time)
          */
         fun syncNow(context: Context, wifiOnly: Boolean = false) {
-            Log.d(TAG, "Triggering immediate sync")
+            SafeLog.d(TAG, "Triggering immediate sync")
 
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(
@@ -123,7 +123,7 @@ class CloudSyncWorker @AssistedInject constructor(
      * Exécute la synchronisation
      */
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Starting background sync...")
+        SafeLog.d(TAG, "Starting background sync...")
 
         return try {
             // Initialiser SyncManager
@@ -138,11 +138,11 @@ class CloudSyncWorker @AssistedInject constructor(
 
             when (syncResult) {
                 is SyncResult.Success -> {
-                    Log.i(TAG, "Background sync successful")
+                    SafeLog.i(TAG, "Background sync successful")
                     Result.success()
                 }
                 is SyncResult.Conflict -> {
-                    Log.w(TAG, "Conflict detected during background sync, auto-resolving...")
+                    SafeLog.w(TAG, "Conflict detected during background sync, auto-resolving...")
 
                     // Auto-résoudre avec NEWEST_WINS
                     val resolved = syncManager.resolveConflict(
@@ -155,35 +155,35 @@ class CloudSyncWorker @AssistedInject constructor(
                         val remoteSettings = syncManager.downloadSettings()
                         if (remoteSettings != null) {
                             settingsDataStore.saveSettings(remoteSettings)
-                            Log.d(TAG, "Applied remote settings after conflict resolution")
+                            SafeLog.d(TAG, "Applied remote settings after conflict resolution")
                         }
                     }
 
-                    Log.i(TAG, "Background sync successful (conflict resolved)")
+                    SafeLog.i(TAG, "Background sync successful (conflict resolved)")
                     Result.success()
                 }
                 is SyncResult.Error -> {
-                    Log.e(TAG, "Background sync failed: ${syncResult.message}")
+                    SafeLog.e(TAG, "Background sync failed: ${syncResult.message}")
 
                     // Retry si c'est une erreur réseau temporaire
                     if (isRetryableError(syncResult.message)) {
-                        Log.d(TAG, "Error is retryable, will retry later")
+                        SafeLog.d(TAG, "Error is retryable, will retry later")
                         Result.retry()
                     } else {
-                        Log.d(TAG, "Error is not retryable, giving up")
+                        SafeLog.d(TAG, "Error is not retryable, giving up")
                         Result.failure()
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Background sync crashed", e)
+            SafeLog.e(TAG, "Background sync crashed", e)
 
             // Retry en cas d'exception
             if (runAttemptCount < 3) {
-                Log.d(TAG, "Attempt $runAttemptCount, will retry")
+                SafeLog.d(TAG, "Attempt $runAttemptCount, will retry")
                 Result.retry()
             } else {
-                Log.e(TAG, "Max retry attempts reached, giving up")
+                SafeLog.e(TAG, "Max retry attempts reached, giving up")
                 Result.failure()
             }
         }

@@ -3,6 +3,7 @@ package com.julien.genpwdpro.presentation.vaultmanager
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
@@ -147,7 +148,7 @@ class VaultManagerViewModel @Inject constructor(
 
                 // Sauvegarder la biométrie si demandé
                 if (enableBiometric && activity != null) {
-                    android.util.Log.d("VaultManagerVM", "Enabling biometric for vault $vaultId")
+                    SafeLog.d("VaultManagerVM", "Enabling biometric for vault=${SafeLog.redact(vaultId)}")
                     val biometricResult = biometricVaultManager.enableBiometric(
                         activity,
                         vaultId,
@@ -155,21 +156,21 @@ class VaultManagerViewModel @Inject constructor(
                     )
                     biometricResult.fold(
                         onSuccess = {
-                            android.util.Log.i(
+                            SafeLog.i(
                                 "VaultManagerVM",
-                                "✅ Biometric enabled successfully for vault $vaultId"
+                                "✅ Biometric enabled successfully for vault ${SafeLog.redact(vaultId)}"
                             )
                         },
                         onFailure = { error ->
-                            android.util.Log.e(
+                            SafeLog.e(
                                 "VaultManagerVM",
-                                "❌ Failed to save biometric for vault $vaultId: ${error.message}",
+                                "❌ Failed to save biometric for vault ${SafeLog.redact(vaultId)}: ${error.message}",
                                 error
                             )
                         }
                     )
                 } else if (enableBiometric && activity == null) {
-                    android.util.Log.w(
+                    SafeLog.w(
                         "VaultManagerVM",
                         "Cannot enable biometric: activity is null"
                     )
@@ -505,7 +506,7 @@ class VaultManagerViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                android.util.Log.e("VaultManagerViewModel", "Import error", e)
+                SafeLog.e("VaultManagerViewModel", "Import error", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,

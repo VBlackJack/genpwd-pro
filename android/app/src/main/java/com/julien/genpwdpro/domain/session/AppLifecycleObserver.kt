@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.domain.session
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CoroutineScope
@@ -16,11 +16,10 @@ import kotlinx.coroutines.launch
  *
  * Usage:
  * ```
- * lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
+ * lifecycle.addObserver(AppLifecycleObserver(vaultSessionManager))
  * ```
  */
 class AppLifecycleObserver(
-    private val sessionManager: SessionManager,
     private val vaultSessionManager: VaultSessionManager
 ) : DefaultLifecycleObserver {
 
@@ -45,7 +44,7 @@ class AppLifecycleObserver(
      */
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
-        Log.d(TAG, "App moved to foreground")
+        SafeLog.d(TAG, "App moved to foreground")
 
         // Vérifier si l'app est restée en background trop longtemps
         if (backgroundTimestamp > 0) {
@@ -53,13 +52,13 @@ class AppLifecycleObserver(
             val timeoutMillis = BACKGROUND_LOCK_TIMEOUT_MINUTES * 60 * 1000
 
             if (backgroundDuration > timeoutMillis) {
-                Log.d(
+                SafeLog.d(
                     TAG,
                     "Background timeout exceeded ($backgroundDuration ms > $timeoutMillis ms), locking vaults"
                 )
                 lockAllVaults()
             } else {
-                Log.d(TAG, "Background duration within timeout: $backgroundDuration ms")
+                SafeLog.d(TAG, "Background duration within timeout: $backgroundDuration ms")
             }
         }
 
@@ -73,7 +72,7 @@ class AppLifecycleObserver(
         super.onStop(owner)
         // Android ne garantit pas l'appel à onDestroy() quand l'app est swipée ou tuée,
         // nous verrouillons donc immédiatement les coffres ici.
-        Log.d(TAG, "App moved to background - locking vaults immediately")
+        SafeLog.d(TAG, "App moved to background - locking vaults immediately")
         lockAllVaults()
         backgroundTimestamp = System.currentTimeMillis()
     }
@@ -85,11 +84,10 @@ class AppLifecycleObserver(
     private fun lockAllVaults() {
         lockScope.launch {
             try {
-                sessionManager.lockVault()
                 vaultSessionManager.lockVault()
-                Log.d(TAG, "All vaults locked successfully")
+                SafeLog.d(TAG, "Vault locked successfully on lifecycle transition")
             } catch (e: Exception) {
-                Log.e(TAG, "Error locking vaults", e)
+                SafeLog.e(TAG, "Error locking vault", e)
             }
         }
     }

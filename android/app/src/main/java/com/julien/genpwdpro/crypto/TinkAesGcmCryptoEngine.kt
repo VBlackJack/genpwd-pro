@@ -2,10 +2,8 @@ package com.julien.genpwdpro.crypto
 
 import android.content.Context
 import com.google.crypto.tink.Aead
-import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.aead.AeadKeyTemplates
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
-import java.security.GeneralSecurityException
 
 /**
  * Google Tink backed implementation of [CryptoEngine] relying on AES-256-GCM keysets.
@@ -42,14 +40,6 @@ class TinkAesGcmCryptoEngine private constructor(
 
     companion object {
         private const val MASTER_KEY_URI = "android-keystore://genpwdpro_master_key"
-
-        init {
-            try {
-                AeadConfig.register()
-            } catch (e: GeneralSecurityException) {
-                throw IllegalStateException("Unable to register Tink AEAD configuration", e)
-            }
-        }
 
         fun getOrCreate(
             context: Context,

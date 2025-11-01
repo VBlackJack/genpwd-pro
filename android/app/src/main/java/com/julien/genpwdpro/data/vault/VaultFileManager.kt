@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -199,13 +199,13 @@ class VaultFileManager @Inject constructor(
                 // Valider le checksum
                 val contentChecksum = calculateChecksum(decryptedString)
                 if (contentChecksum != header.checksum) {
-                    Log.w(TAG, "Checksum mismatch - file may be corrupted")
+                    SafeLog.w(TAG, "Checksum mismatch - file may be corrupted")
                 }
 
                 return vaultData
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error reading vault file", e)
+            SafeLog.e(TAG, "Error reading vault file", e)
             throw e
         }
     }
@@ -266,10 +266,10 @@ class VaultFileManager @Inject constructor(
                 fos.write(encryptedContent)
             }
 
-            Log.d(TAG, "Vault file written successfully: ${file.absolutePath}")
+            SafeLog.d(TAG, "Vault file written successfully: ${SafeLog.redact(file.absolutePath)}")
             return file
         } catch (e: Exception) {
-            Log.e(TAG, "Error writing vault file", e)
+            SafeLog.e(TAG, "Error writing vault file", e)
             throw e
         }
     }
@@ -292,11 +292,11 @@ class VaultFileManager @Inject constructor(
             if (file.exists()) {
                 file.delete()
             } else {
-                Log.w(TAG, "Vault file not found for deletion: $filePath")
+                SafeLog.w(TAG, "Vault file not found for deletion: ${SafeLog.redact(filePath)}")
                 true // Already deleted
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting vault file", e)
+            SafeLog.e(TAG, "Error deleting vault file", e)
             false
         }
     }
@@ -311,10 +311,10 @@ class VaultFileManager @Inject constructor(
 
             source.copyTo(destination, overwrite = true)
 
-            Log.d(TAG, "Vault exported to: $destinationPath")
+            SafeLog.d(TAG, "Vault exported to: ${SafeLog.redact(destinationPath)}")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Error exporting vault", e)
+            SafeLog.e(TAG, "Error exporting vault", e)
             false
         }
     }
@@ -330,7 +330,7 @@ class VaultFileManager @Inject constructor(
         return try {
             val sourceFile = File(sourceFilePath)
             if (!sourceFile.exists()) {
-                Log.e(TAG, "Source vault file not found: $sourceFilePath")
+                SafeLog.e(TAG, "Source vault file not found: ${SafeLog.redact(sourceFilePath)}")
                 return false
             }
 
@@ -340,10 +340,10 @@ class VaultFileManager @Inject constructor(
                 }
             }
 
-            Log.d(TAG, "Vault exported to URI: $destinationUri")
+            SafeLog.d(TAG, "Vault exported to URI: ${SafeLog.redact(destinationUri)}")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Error exporting vault to URI", e)
+            SafeLog.e(TAG, "Error exporting vault to URI", e)
             false
         }
     }
@@ -378,10 +378,13 @@ class VaultFileManager @Inject constructor(
             tempFile.copyTo(destFile, overwrite = true)
             tempFile.delete()
 
-            Log.d(TAG, "Vault imported: $vaultId to ${destFile.absolutePath}")
+            SafeLog.d(
+                TAG,
+                "Vault imported: ${SafeLog.redact(vaultId)} to ${SafeLog.redact(destFile.absolutePath)}"
+            )
             return Pair(vaultId, destFile)
         } catch (e: Exception) {
-            Log.e(TAG, "Error importing vault", e)
+            SafeLog.e(TAG, "Error importing vault", e)
             throw e
         }
     }
@@ -401,7 +404,7 @@ class VaultFileManager @Inject constructor(
                 gson.fromJson(headerJson, VaultFileHeader::class.java)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error reading vault file info", e)
+            SafeLog.e(TAG, "Error reading vault file info", e)
             null
         }
     }
@@ -554,10 +557,10 @@ class VaultFileManager @Inject constructor(
                 outputStream.flush()
             } ?: throw IllegalStateException("Cannot open output stream")
 
-            Log.d(TAG, "Vault file written to SAF URI: ${vaultFile.uri}")
+            SafeLog.d(TAG, "Vault file written to SAF URI: ${SafeLog.redact(vaultFile.uri)}")
             return vaultFile.uri
         } catch (e: Exception) {
-            Log.e(TAG, "Error writing vault file to SAF", e)
+            SafeLog.e(TAG, "Error writing vault file to SAF", e)
             throw e
         }
     }
@@ -611,9 +614,9 @@ class VaultFileManager @Inject constructor(
                 outputStream.flush()
             } ?: throw IllegalStateException("Cannot open output stream for URI: $fileUri")
 
-            Log.d(TAG, "Vault file updated at SAF URI: $fileUri")
+            SafeLog.d(TAG, "Vault file updated at SAF URI: ${SafeLog.redact(fileUri)}")
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating vault file at SAF URI", e)
+            SafeLog.e(TAG, "Error updating vault file at SAF URI", e)
             throw e
         }
     }
@@ -661,13 +664,13 @@ class VaultFileManager @Inject constructor(
                 // Valider le checksum
                 val contentChecksum = calculateChecksum(decryptedString)
                 if (contentChecksum != header.checksum) {
-                    Log.w(TAG, "Checksum mismatch - file may be corrupted")
+                    SafeLog.w(TAG, "Checksum mismatch - file may be corrupted")
                 }
 
                 return vaultData
             } ?: throw IllegalStateException("Cannot open input stream from URI")
         } catch (e: Exception) {
-            Log.e(TAG, "Error reading vault file from SAF", e)
+            SafeLog.e(TAG, "Error reading vault file from SAF", e)
             throw e
         }
     }
@@ -680,7 +683,7 @@ class VaultFileManager @Inject constructor(
             val documentFile = DocumentFile.fromSingleUri(context, fileUri)
             documentFile?.length() ?: 0L
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting file size from URI", e)
+            SafeLog.e(TAG, "Error getting file size from URI", e)
             0L
         }
     }

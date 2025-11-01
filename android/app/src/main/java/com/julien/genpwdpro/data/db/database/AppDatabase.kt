@@ -5,20 +5,22 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.julien.genpwdpro.data.db.dao.*
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.db.entity.PasswordHistoryEntity
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 
 /**
  * Base de données Room de l'application
+ *
+ * NOTE: Les entités legacy Room pour les vaults (VaultEntity, VaultEntryEntity, etc.)
+ * ont été supprimées. Le système file-based (.gpv) est maintenant le seul système utilisé.
+ *
+ * Entités conservées:
+ * - PasswordHistoryEntity: Historique des mots de passe générés
+ * - VaultRegistryEntry: Registre des vaults file-based (.gpv)
  */
 @Database(
     entities = [
         PasswordHistoryEntity::class,
-        VaultEntity::class,
-        VaultEntryEntity::class,
-        FolderEntity::class,
-        TagEntity::class,
-        EntryTagCrossRef::class,
-        PresetEntity::class,
         VaultRegistryEntry::class
     ],
     version = 8,
@@ -27,11 +29,6 @@ import com.julien.genpwdpro.data.db.entity.*
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun passwordHistoryDao(): PasswordHistoryDao
-    abstract fun vaultDao(): VaultDao
-    abstract fun vaultEntryDao(): VaultEntryDao
-    abstract fun folderDao(): FolderDao
-    abstract fun tagDao(): TagDao
-    abstract fun presetDao(): PresetDao
     abstract fun vaultRegistryDao(): VaultRegistryDao
 
     companion object {

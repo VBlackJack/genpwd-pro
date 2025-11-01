@@ -1,5 +1,9 @@
 # Code Review: Codex Vault Lock Fix (Issue #23)
 
+> **Note:** This analysis captures the legacy implementation that still relied
+> on a separate `SessionManager`. The modern codebase now routes session expiry
+> and locking exclusively through `VaultSessionManager`.
+
 **Reviewer**: Claude
 **Date**: 2025-10-28
 **Branch**: `codex/corriger-bug-de-sauvegarde-de-preset-ldzqff`

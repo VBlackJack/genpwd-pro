@@ -36,4 +36,6 @@ object SafeLog {
     }
 
     fun redact(value: Any?): String = REDACTED
+
+    fun redact(values: Iterable<*>): String = values.joinToString(prefix = "[", postfix = "]") { REDACTED }
 }

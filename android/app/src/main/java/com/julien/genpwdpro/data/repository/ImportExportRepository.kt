@@ -8,8 +8,8 @@ import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.db.dao.VaultDao
 import com.julien.genpwdpro.data.db.dao.VaultEntryDao
 import com.julien.genpwdpro.data.db.entity.EntryType
-import com.julien.genpwdpro.data.db.entity.VaultEntity
-import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
+import com.julien.genpwdpro.data.models.vault.VaultEntity
+import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.BufferedReader
 import java.io.BufferedWriter

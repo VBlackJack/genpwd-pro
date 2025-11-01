@@ -114,7 +114,7 @@ R : Les presets sont stockés localement dans chaque vault. Si vous utilisez la 
 
 1. **Lancement de l'app** → Dashboard visible
 2. **Créer un nouveau vault** → Preset par défaut créé automatiquement
-3. **Déverrouiller le vault** → SessionManager stocke l'ID
+3. **Déverrouiller le vault** → VaultSessionManager garde la session en mémoire
 4. **Aller dans "Générateur"** → Preset par défaut chargé automatiquement
 5. **Cliquer sur "Générer"** → Mot de passe généré avec preset
 6. **Modifier les paramètres** → Ajuster selon vos besoins
@@ -124,7 +124,7 @@ R : Les presets sont stockés localement dans chaque vault. Si vous utilisez la 
 
 ## 📝 Notes Techniques
 
-- **SessionManager** : Garde en mémoire le vault déverrouillé
+- **VaultSessionManager** : Garde en mémoire le vault déverrouillé et gère le timeout
 - **GeneratorViewModel** : Charge automatiquement les presets du vault actif
 - **PresetRepository** : Gère le chiffrement/déchiffrement
 - **Database Migration** : v4 → v5 ajoute la table presets

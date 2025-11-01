@@ -18,7 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.julien.genpwdpro.data.local.entity.TagEntity
+import com.julien.genpwdpro.data.models.vault.TagEntity
 
 /**
  * Chip pour afficher un tag avec sa couleur

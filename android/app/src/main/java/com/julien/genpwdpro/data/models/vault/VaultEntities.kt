@@ -1,41 +1,24 @@
-package com.julien.genpwdpro.data.db.entity
+package com.julien.genpwdpro.data.models.vault
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
 import java.util.UUID
 
 /**
- * Entité représentant une entrée (mot de passe) dans un vault
+ * Data classes pour le système de vault file-based (.gpv)
+ *
+ * NOTE: Ces classes sont utilisées pour sérialiser/désérialiser les fichiers .gpv
+ * Elles ne sont PAS des entités Room - le système Room legacy a été supprimé.
+ *
+ * Architecture:
+ * - Fichiers .gpv (chiffrés) contiennent ces structures
+ * - VaultSessionManager les charge en mémoire après déverrouillage
+ * - Modifications sauvegardées automatiquement dans le fichier
+ */
+
+/**
+ * Représente une entrée (mot de passe, note, carte, etc.) dans un vault
  * Toutes les données sensibles sont chiffrées avec AES-256-GCM
  */
-@Entity(
-    tableName = "vault_entries",
-    foreignKeys = [
-        ForeignKey(
-            entity = VaultEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["vaultId"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
-            entity = FolderEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["folderId"],
-            onDelete = ForeignKey.SET_NULL
-        )
-    ],
-    indices = [
-        Index(value = ["vaultId"]),
-        Index(value = ["folderId"]),
-        Index(value = ["isFavorite"]),
-        Index(value = ["createdAt"]),
-        Index(value = ["modifiedAt"])
-    ]
-)
 data class VaultEntryEntity(
-    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
 
     /** ID du vault parent */
@@ -80,7 +63,7 @@ data class VaultEntryEntity(
     /** IV pour les champs personnalisés */
     val customFieldsIv: String = "",
 
-    /** Type d'entrée (LOGIN, CARD, NOTE, IDENTITY) */
+    /** Type d'entrée (LOGIN, CARD, NOTE, IDENTITY, WIFI) */
     val entryType: String = "LOGIN",
 
     /** Favori */
@@ -173,11 +156,11 @@ data class VaultEntryEntity(
  * Types d'entrées supportés
  */
 enum class EntryType {
-    LOGIN, // Identifiant + mot de passe
-    WIFI, // Réseau WiFi (SSID + mot de passe + sécurité)
-    NOTE, // Note sécurisée
-    CARD, // Carte bancaire
-    IDENTITY // Informations d'identité
+    LOGIN,      // Identifiant + mot de passe
+    WIFI,       // Réseau WiFi (SSID + mot de passe + sécurité)
+    NOTE,       // Note sécurisée
+    CARD,       // Carte bancaire
+    IDENTITY    // Informations d'identité
 }
 
 /**
@@ -190,3 +173,105 @@ fun String.toEntryType(): EntryType {
         EntryType.LOGIN
     }
 }
+
+/**
+ * Représente un dossier pour organiser les entrées
+ * Support de la hiérarchie (dossiers parent/enfant)
+ */
+data class FolderEntity(
+    val id: String = UUID.randomUUID().toString(),
+
+    /** ID du vault parent */
+    val vaultId: String,
+
+    /** ID du dossier parent (null si racine) */
+    val parentFolderId: String? = null,
+
+    /** Nom du dossier */
+    val name: String,
+
+    /** Icône du dossier (emoji ou nom d'icône) */
+    val icon: String = "📁",
+
+    /** Couleur du dossier (hex string) */
+    val color: String? = null,
+
+    /** Ordre d'affichage */
+    val sortOrder: Int = 0,
+
+    /** Date de création (timestamp) */
+    val createdAt: Long = System.currentTimeMillis(),
+
+    /** Date de dernière modification (timestamp) */
+    val modifiedAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * Représente un tag pour catégoriser les entrées
+ */
+data class TagEntity(
+    val id: String = UUID.randomUUID().toString(),
+
+    /** ID du vault parent */
+    val vaultId: String,
+
+    /** Nom du tag (unique par vault) */
+    val name: String,
+
+    /** Couleur du tag (hex string) */
+    val color: String,
+
+    /** Date de création (timestamp) */
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * Relation many-to-many entre entries et tags
+ */
+data class EntryTagCrossRef(
+    val entryId: String,
+    val tagId: String
+)
+
+/**
+ * Représente un preset de génération de mot de passe
+ * Stocké dans un vault spécifique et chiffré
+ */
+data class PresetEntity(
+    val id: String = UUID.randomUUID().toString(),
+
+    /** ID du vault auquel appartient ce preset */
+    val vaultId: String,
+
+    /** Nom du preset (chiffré) */
+    val encryptedName: String,
+    val nameIv: String,
+
+    /** Icône emoji (non chiffré pour affichage rapide) */
+    val icon: String = "🔐",
+
+    /** Mode de génération (SYLLABLES ou PASSPHRASE uniquement) */
+    val generationMode: String, // GenerationMode.name
+
+    /** Paramètres de génération chiffrés (JSON de Settings) */
+    val encryptedSettings: String,
+    val settingsIv: String,
+
+    /** Preset par défaut (un seul par vault) */
+    val isDefault: Boolean = false,
+
+    /** Preset système non modifiable */
+    val isSystemPreset: Boolean = false,
+
+    /** Date de création (timestamp) */
+    val createdAt: Long = System.currentTimeMillis(),
+
+    /** Date de dernière modification (timestamp) */
+    val modifiedAt: Long = System.currentTimeMillis(),
+
+    /** Date de dernière utilisation (timestamp) */
+    val lastUsedAt: Long? = null,
+
+    /** Nombre d'utilisations */
+    val usageCount: Int = 0
+)

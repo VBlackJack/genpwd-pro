@@ -64,25 +64,31 @@ The UI checks `isLoaded` flag and assumes vault is unlocked!
 #### ❌ Issue 3: `MainActivity.onCreate()` doesn't lock vaults
 
 ```kotlin
-// MainActivity.kt:73-83
+// MainActivity.kt (legacy behaviour)
 private fun setupSessionManagement() {
     lifecycleScope.launch {
         val hasExpired = sessionManager.clearExpiredSessions(SESSION_TIMEOUT_HOURS)
         if (hasExpired) {
             Log.d(TAG, "Sessions expirées nettoyées au démarrage.")
         } else {
-            Log.d(TAG, "Aucune session expirée, le coffre reste déverrouillé.") // ← WTF?!
+            Log.d(TAG, "Aucune session expirée, le coffre reste déverrouillé.")
         }
     }
     lifecycle.addObserver(AppLifecycleObserver(sessionManager, vaultSessionManager))
 }
 ```
 
-**Problem**:
-- Checks if `SessionManager` session is expired
-- If NOT expired, logs "vault stays unlocked" but **does NOTHING**
-- Never calls `vaultSessionManager.lockVault()`
-- Never resets `VaultRegistryDao.isLoaded` flags
+**Problem (legacy)**:
+- Relied on a separate `SessionManager` that could decide to keep a vault
+  unlocked across process restarts.
+- Never forced a call to `vaultSessionManager.lockVault()` nor reset registry
+  flags when the legacy session considered itself valid.
+- Produced inconsistent startup states when a crash occurred between
+  backgrounding and the next resume.
+
+**Current state**: the dedicated `SessionManager` has been removed. Startup now
+delegates directly to `VaultSessionManager.clearExpiredSession()` and the
+`AppLifecycleObserver` only locks the file-based session.
 
 ---
 
@@ -117,10 +123,7 @@ private suspend fun lockAllVaultsOnStartup() {
     // 1. Lock VaultSessionManager (clear memory)
     vaultSessionManager.lockVault()
 
-    // 2. Lock SessionManager (clear memory)
-    sessionManager.lockVault()
-
-    // 3. Reset ALL isLoaded flags in database
+    // 2. Reset ALL isLoaded flags in database
     vaultRegistryDao.updateAllLoadedStatus(false)
 
     Log.d(TAG, "All vaults locked successfully")
@@ -137,7 +140,7 @@ override fun onStop(owner: LifecycleOwner) {
     backgroundTimestamp = System.currentTimeMillis()
 
     // LOCK IMMEDIATELY for security
-    Log.d(TAG, "Locking vaults immediately on background")
+    Log.d(TAG, "Locking vault immediately on background")
     lockAllVaults()
 }
 ```

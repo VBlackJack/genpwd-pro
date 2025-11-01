@@ -3,6 +3,8 @@ package com.julien.genpwdpro.data.sync
 import android.app.Activity
 import android.content.Context
 import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
+import com.julien.genpwdpro.data.sync.providers.ProviderConfig
 import com.julien.genpwdpro.data.repository.VaultRepository
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
@@ -16,6 +18,8 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Gestionnaire de synchronisation des vaults avec le cloud
@@ -39,7 +43,8 @@ class VaultSyncManager @Inject constructor(
     private val conflictResolver: ConflictResolver,
     private val credentialManager: ProviderCredentialManager,
     private val syncPreferencesManager: SyncPreferencesManager,
-    private val autoSyncScheduler: AutoSyncScheduler
+    private val autoSyncScheduler: AutoSyncScheduler,
+    private val cloudRepository: CloudProviderSyncRepository
 ) {
 
     companion object {
@@ -58,6 +63,7 @@ class VaultSyncManager @Inject constructor(
 
     private var currentProvider: CloudProvider? = null
     private var currentProviderType: CloudProviderType = CloudProviderType.NONE
+    private val providerMutex = Mutex()
 
     /**
      * ID de cet appareil (unique)
@@ -89,12 +95,19 @@ class VaultSyncManager @Inject constructor(
      * @param provider Instance du provider (GoogleDriveProvider, etc.)
      * @param type Type du provider
      */
-    fun setProvider(provider: CloudProvider, type: CloudProviderType) {
+    fun setProvider(
+        provider: CloudProvider,
+        type: CloudProviderType,
+        providerConfig: ProviderConfig? = null
+    ) {
         currentProvider = provider
         currentProviderType = type
 
+        cloudRepository.setActiveProvider(type, provider, providerConfig)
+
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_PROVIDER_TYPE, type.name).apply()
+        syncPreferencesManager.setCurrentProvider(type)
 
         _config.value = _config.value.copy(
             enabled = true,
@@ -104,18 +117,76 @@ class VaultSyncManager @Inject constructor(
         )
     }
 
+    suspend fun rehydrateActiveProvider(): Boolean {
+        return ensureProvider() != null
+    }
+
+    private fun readStoredProviderType(): CloudProviderType? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val stored = prefs.getString(KEY_PROVIDER_TYPE, null) ?: return null
+        return runCatching { CloudProviderType.valueOf(stored) }
+            .onFailure { prefs.edit().remove(KEY_PROVIDER_TYPE).apply() }
+            .getOrNull()
+    }
+
+    private suspend fun ensureProvider(): CloudProvider? {
+        return providerMutex.withLock {
+            currentProvider?.let { return it }
+
+            val persistedType = currentProviderType.takeIf { it != CloudProviderType.NONE }
+                ?: cloudRepository.getActiveProviderType()?.takeIf { it != CloudProviderType.NONE }
+                ?: cloudRepository.getStoredProviderType()
+                ?: readStoredProviderType()
+
+            val providerType = persistedType ?: CloudProviderType.NONE
+            if (providerType == CloudProviderType.NONE) {
+                SafeLog.w(TAG, "No active cloud provider configured")
+                return null
+            }
+
+            val restored = cloudRepository.rehydrateActiveProvider(providerType)
+            if (!restored) {
+                SafeLog.w(TAG, "Failed to rehydrate cloud provider: $providerType")
+                return null
+            }
+
+            val provider = cloudRepository.getOrCreateActiveProvider()
+            if (provider == null) {
+                SafeLog.w(TAG, "Cloud provider instance unavailable after rehydration: $providerType")
+                return null
+            }
+
+            currentProvider = provider
+            currentProviderType = providerType
+
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(KEY_PROVIDER_TYPE, providerType.name).apply()
+            syncPreferencesManager.setCurrentProvider(providerType)
+
+            _config.value = _config.value.copy(
+                enabled = true,
+                providerType = providerType,
+                deviceId = deviceId,
+                deviceName = deviceName
+            )
+
+            provider
+        }
+    }
+
     /**
      * Vérifie si le provider est authentifié
      */
     suspend fun isAuthenticated(): Boolean {
-        return currentProvider?.isAuthenticated() ?: false
+        val provider = ensureProvider() ?: return false
+        return provider.isAuthenticated()
     }
 
     /**
      * Authentifie auprès du provider
      */
     suspend fun authenticate(activity: Activity): Boolean {
-        val provider = currentProvider ?: return false
+        val provider = ensureProvider() ?: return false
         val success = provider.authenticate(activity)
 
         if (success) {
@@ -131,10 +202,15 @@ class VaultSyncManager @Inject constructor(
     suspend fun disconnect() {
         SafeLog.i(TAG, "Disconnecting cloud provider and clearing credentials")
 
-        val providerType = currentProviderType
+        val providerType = currentProviderType.takeIf { it != CloudProviderType.NONE }
+            ?: cloudRepository.getActiveProviderType()?.takeIf { it != CloudProviderType.NONE }
+            ?: readStoredProviderType()
+            ?: CloudProviderType.NONE
+
+        val provider = currentProvider ?: ensureProvider()
 
         try {
-            currentProvider?.disconnect()
+            provider?.disconnect()
         } catch (e: Exception) {
             SafeLog.w(TAG, "Error while disconnecting provider", e)
         }
@@ -151,6 +227,9 @@ class VaultSyncManager @Inject constructor(
         } catch (e: Exception) {
             SafeLog.w(TAG, "Failed to clear sync preferences credentials", e)
         }
+
+        cloudRepository.clearActiveProvider()
+        syncPreferencesManager.setCurrentProvider(CloudProviderType.NONE)
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit()
@@ -175,7 +254,7 @@ class VaultSyncManager @Inject constructor(
      * @return Résultat de la synchronisation
      */
     suspend fun syncVault(vaultId: String, masterPassword: String): VaultSyncResult {
-        val provider = currentProvider ?: return VaultSyncResult.Error("Aucun provider configuré")
+        val provider = ensureProvider() ?: return VaultSyncResult.Error("Aucun provider configuré")
 
         _syncStatus.value = SyncStatus.SYNCING
 
@@ -237,7 +316,7 @@ class VaultSyncManager @Inject constructor(
      * @return true si le téléchargement a réussi
      */
     suspend fun downloadVault(vaultId: String, masterPassword: String): Boolean {
-        val provider = currentProvider ?: return false
+        val provider = ensureProvider() ?: return false
 
         _syncStatus.value = SyncStatus.SYNCING
 
@@ -280,7 +359,7 @@ class VaultSyncManager @Inject constructor(
         strategy: VaultConflictResolutionStrategy,
         masterPassword: String
     ): Boolean {
-        val provider = currentProvider ?: return false
+        val provider = ensureProvider() ?: return false
 
         return try {
             val resolvedData = conflictResolver.resolve(local, remote, strategy)
@@ -309,14 +388,16 @@ class VaultSyncManager @Inject constructor(
      * Liste tous les vaults synchronisés sur le cloud
      */
     suspend fun listCloudVaults(): List<String> {
-        return currentProvider?.listVaults()?.map { it.fileId } ?: emptyList()
+        val provider = ensureProvider() ?: return emptyList()
+        return provider.listVaults().map { it.fileId }
     }
 
     /**
      * Récupère le quota de stockage
      */
     suspend fun getStorageQuota(): StorageQuota? {
-        return currentProvider?.getStorageQuota()
+        val provider = ensureProvider() ?: return null
+        return provider.getStorageQuota()
     }
 
     /**

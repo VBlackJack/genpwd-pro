@@ -5,7 +5,6 @@ import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.impl.annotations.MockK
-import io.mockk.verify
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,9 +19,6 @@ class VaultStartupLockerTest {
     @MockK(relaxed = true)
     private lateinit var vaultSessionManager: VaultSessionManager
 
-    @MockK(relaxed = true)
-    private lateinit var sessionManager: SessionManager
-
     @MockK
     private lateinit var vaultRegistryDao: VaultRegistryDao
 
@@ -33,7 +29,6 @@ class VaultStartupLockerTest {
         MockKAnnotations.init(this, relaxUnitFun = true)
         locker = VaultStartupLocker(
             vaultSessionManager = vaultSessionManager,
-            sessionManager = sessionManager,
             vaultRegistryDao = vaultRegistryDao,
             ioDispatcher = UnconfinedTestDispatcher()
         )
@@ -46,7 +41,6 @@ class VaultStartupLockerTest {
         val result = locker.secureStartup()
 
         coVerify(exactly = 1) { vaultSessionManager.lockVault() }
-        verify(exactly = 1) { sessionManager.lockVault() }
         coVerify(exactly = 1) { vaultRegistryDao.resetAllLoadedFlags() }
         assertTrue(result.isSecure)
         assertTrue(result.registryResetSucceeded)
@@ -86,7 +80,6 @@ class VaultStartupLockerTest {
         assertFalse(result.isSecure)
         coVerify { vaultRegistryDao.resetAllLoadedFlags() }
         coVerify { vaultRegistryDao.getLoadedVaultIds() }
-        verify { sessionManager.lockVault() }
         coVerify { vaultSessionManager.lockVault() }
         coVerify(exactly = 0) { vaultRegistryDao.updateLoadedStatus(any(), any()) }
     }

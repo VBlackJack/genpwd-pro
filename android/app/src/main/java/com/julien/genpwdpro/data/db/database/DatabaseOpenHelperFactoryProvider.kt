@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.db.database
 
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.julien.genpwdpro.crypto.CryptoEngine
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
@@ -101,7 +101,7 @@ class SqlCipherPassphraseProvider @Inject constructor(
     }
 
     private fun handleInvalidatedSecret(throwable: Throwable): ByteArray {
-        Log.w(TAG, "SQLCipher key invalidated, regenerating", throwable)
+        SafeLog.w(TAG, "SQLCipher key invalidated, regenerating", throwable)
 
         securePrefs.remove(PREF_KEY)
         resetCryptoEngine()
