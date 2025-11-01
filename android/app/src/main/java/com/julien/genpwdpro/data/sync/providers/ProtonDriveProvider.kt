@@ -3,6 +3,7 @@ package com.julien.genpwdpro.data.sync.providers
 import android.app.Activity
 import android.net.Uri
 import android.util.Base64
+import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.sync.CloudProvider
@@ -269,7 +270,11 @@ class ProtonDriveProvider(
     // HTTP Client
     private val httpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         OkHttpClient.Builder()
