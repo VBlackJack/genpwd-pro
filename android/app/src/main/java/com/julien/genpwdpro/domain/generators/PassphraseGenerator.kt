@@ -2,6 +2,7 @@ package com.julien.genpwdpro.domain.generators
 
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.utils.DictionaryManager
+import com.julien.genpwdpro.domain.utils.secureRandom
 
 /**
  * Générateur de passphrases (mots du dictionnaire séparés)
@@ -20,9 +21,8 @@ class PassphraseGenerator(
             throw IllegalStateException("Dictionnaire vide pour ${settings.dictionary}")
         }
 
-        val words = mutableListOf<String>()
-        repeat(wordCount) {
-            words.add(dictionary.random())
+        val words = MutableList(wordCount) {
+            dictionary.secureRandom()
         }
 
         return words.joinToString(separator)
