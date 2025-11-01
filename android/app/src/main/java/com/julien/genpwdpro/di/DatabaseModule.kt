@@ -58,7 +58,6 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_7_8
             )
             .addCallback(createBackupCallback(context)) // Fixed: Backup avant migration
-            .fallbackToDestructiveMigration() // Fallback si migration échoue (après backup)
             .build()
     }
 
