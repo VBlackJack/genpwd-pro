@@ -26,6 +26,7 @@ import retrofit2.http.*
 import java.io.File
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 /**
@@ -248,6 +249,7 @@ class ProtonDriveProvider(
     private var volumeId: String? = null
     private var shareId: String? = null // Dossier GenPwdPro
     private var authCallback: ((Boolean) -> Unit)? = null
+    private var oauthState: String? = null
 
     init {
         // Charger le token sauvegardé au démarrage
@@ -347,6 +349,8 @@ class ProtonDriveProvider(
                 generatePKCE()
 
                 // Construire l'URL d'autorisation avec PKCE
+                val state = UUID.randomUUID().toString()
+                oauthState = state
                 val authUrl = Uri.parse("$AUTH_BASE_URL/oauth/authorize").buildUpon()
                     .appendQueryParameter("client_id", clientId)
                     .appendQueryParameter("response_type", "code")
@@ -354,6 +358,7 @@ class ProtonDriveProvider(
                     .appendQueryParameter("scope", SCOPE)
                     .appendQueryParameter("code_challenge", codeChallenge)
                     .appendQueryParameter("code_challenge_method", "S256")
+                    .appendQueryParameter("state", state)
                     .build()
 
                 SafeLog.d(TAG, "Opening OAuth URL with PKCE: $authUrl")
@@ -400,6 +405,15 @@ class ProtonDriveProvider(
      */
     suspend fun handleOAuthCallback(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
+            val returnedState = uri.getQueryParameter("state")
+            val expectedState = oauthState
+            oauthState = null
+            if (expectedState.isNullOrEmpty() || expectedState != returnedState) {
+                SafeLog.w(TAG, "Rejected OAuth callback with invalid state")
+                authCallback?.invoke(false)
+                return@withContext false
+            }
+
             val code = uri.getQueryParameter("code")
             if (code.isNullOrEmpty()) {
                 SafeLog.e(TAG, "No authorization code in callback")

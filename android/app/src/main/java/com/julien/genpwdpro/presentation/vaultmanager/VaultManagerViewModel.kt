@@ -251,11 +251,12 @@ class VaultManagerViewModel @Inject constructor(
                 // Récupérer l'entrée pour obtenir le chemin du fichier
                 val entry = vaultRegistryDao.getById(vaultId)
                 if (entry != null) {
-                    // Supprimer le fichier
-                    val file = File(entry.filePath)
-                    if (file.exists()) {
-                        file.delete()
+                    val targetUri = vaultFileManager.pathToUri(entry.filePath)
+                    val deleted = when {
+                        targetUri != null -> vaultFileManager.deleteVaultFile(targetUri)
+                        else -> vaultFileManager.deleteVaultFile(File(entry.filePath))
                     }
+                    SafeLog.d("VaultManagerViewModel", "Vault file deletion result=$deleted")
                 }
 
                 // Supprimer du registry
