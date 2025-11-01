@@ -287,18 +287,39 @@ class VaultFileManager @Inject constructor(
      * Supprime un fichier vault
      */
     suspend fun deleteVaultFile(filePath: String): Boolean {
-        return try {
-            val file = File(filePath)
-            if (file.exists()) {
-                file.delete()
-            } else {
-                SafeLog.w(TAG, "Vault file not found for deletion: ${SafeLog.redact(filePath)}")
-                true // Already deleted
-            }
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Error deleting vault file", e)
-            false
+        val targetUri = pathToUri(filePath)
+        return when {
+            targetUri != null -> deleteVaultFile(targetUri)
+            else -> deleteVaultFile(File(filePath))
         }
+    }
+
+    suspend fun deleteVaultFile(file: File): Boolean = runCatching {
+        if (!file.exists()) {
+            SafeLog.w(TAG, "Vault file not found for deletion: ${SafeLog.redact(file.absolutePath)}")
+            true
+        } else {
+            file.delete()
+        }
+    }.getOrElse {
+        SafeLog.e(TAG, "Error deleting vault file", it)
+        false
+    }
+
+    suspend fun deleteVaultFile(fileUri: Uri): Boolean = runCatching {
+        val document = DocumentFile.fromSingleUri(context, fileUri)
+        if (document == null) {
+            SafeLog.w(TAG, "DocumentFile not found for URI: ${SafeLog.redact(fileUri.toString())}")
+            true
+        } else if (!document.exists()) {
+            SafeLog.w(TAG, "Vault file not found for deletion (URI): ${SafeLog.redact(fileUri.toString())}")
+            true
+        } else {
+            document.delete()
+        }
+    }.getOrElse {
+        SafeLog.e(TAG, "Error deleting vault file from URI", it)
+        false
     }
 
     /**
