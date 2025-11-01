@@ -3,8 +3,8 @@ package com.julien.genpwdpro.presentation.vault
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.db.dao.TagDao
-import com.julien.genpwdpro.data.db.entity.EntryTagCrossRef
-import com.julien.genpwdpro.data.db.entity.TagEntity
+import com.julien.genpwdpro.data.models.vault.EntryTagCrossRef
+import com.julien.genpwdpro.data.models.vault.TagEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject

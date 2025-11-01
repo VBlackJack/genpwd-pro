@@ -5,7 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.julien.genpwdpro.data.db.dao.*
-import com.julien.genpwdpro.data.db.entity.*
+import com.julien.genpwdpro.data.db.entity.PasswordHistoryEntity
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 
 /**
  * Base de données Room de l'application

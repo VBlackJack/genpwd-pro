@@ -9,8 +9,8 @@ import com.julien.genpwdpro.data.db.dao.TagDao
 import com.julien.genpwdpro.data.db.dao.VaultDao
 import com.julien.genpwdpro.data.db.dao.VaultEntryDao
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.db.entity.EntryTagCrossRef
-import com.julien.genpwdpro.data.db.entity.VaultEntity
+import com.julien.genpwdpro.data.models.vault.EntryTagCrossRef
+import com.julien.genpwdpro.data.models.vault.VaultEntity
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultData
