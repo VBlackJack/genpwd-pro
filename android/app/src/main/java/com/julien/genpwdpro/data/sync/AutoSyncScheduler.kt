@@ -9,14 +9,20 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.WorkQuery
 import androidx.work.WorkRequest
+import androidx.work.getWorkInfosFlow
 import androidx.work.workDataOf
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.models.SyncInterval
 import com.julien.genpwdpro.data.sync.workers.SyncWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 
 /**
  * Planificateur de synchronisation automatique
@@ -49,18 +55,30 @@ class AutoSyncScheduler @Inject constructor(
         masterPassword: String,
         interval: SyncInterval = SyncInterval.HOURLY,
         wifiOnly: Boolean = true
-    ) {
-        // Annuler la sync précédente si elle existe
-        cancelPeriodicSync()
-
-        // Convertir l'intervalle en millisecondes
-        val intervalMillis = when (interval) {
-            SyncInterval.MANUAL -> return // Pas de sync automatique
-            SyncInterval.REALTIME -> return // TODO: Implémenter observer temps réel
+    ): Boolean {
+        val intervalMinutes = when (interval) {
+            SyncInterval.MANUAL -> {
+                SafeLog.w(TAG, "Ignoring periodic sync request for MANUAL interval")
+                return false
+            }
+            SyncInterval.REALTIME -> {
+                SafeLog.w(TAG, "Realtime auto-sync not yet supported")
+                return false
+            }
             SyncInterval.EVERY_15_MIN -> 15L
             SyncInterval.EVERY_30_MIN -> 30L
             SyncInterval.HOURLY -> 60L
             SyncInterval.DAILY -> 1440L
+        }
+
+        cancelPeriodicSync()
+
+        if (!secretStore.persistSecret(vaultId, masterPassword)) {
+            SafeLog.w(
+                TAG,
+                "Secret store unavailable; skipping periodic sync scheduling for ${SafeLog.redact(vaultId)}"
+            )
+            return false
         }
 
         // Créer les contraintes
@@ -75,39 +93,48 @@ class AutoSyncScheduler @Inject constructor(
             .setRequiresBatteryNotLow(true) // Ne pas sync si batterie faible
             .build()
 
-        // Créer les données d'entrée
-        secretStore.persistSecret(vaultId, masterPassword)
-
         val inputData = workDataOf(
             SyncWorker.KEY_VAULT_ID to vaultId,
             SyncWorker.KEY_CLEAR_SECRET to false
         )
 
-        rememberScheduledVault(vaultId)
-
-        // Créer la requête de travail périodique
-        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-            intervalMillis,
-            TimeUnit.MINUTES,
-            15, // Flex interval de 15 minutes
-            TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .setInputData(inputData)
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                WorkRequest.MIN_BACKOFF_MILLIS,
-                TimeUnit.MILLISECONDS
+        val schedulingResult = runCatching {
+            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
+                intervalMinutes,
+                TimeUnit.MINUTES,
+                15, // Flex interval de 15 minutes
+                TimeUnit.MINUTES
             )
-            .addTag(SyncWorker.WORK_NAME)
-            .build()
+                .setConstraints(constraints)
+                .setInputData(inputData)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
+                .addTag(SyncWorker.WORK_NAME)
+                .build()
 
-        // Enregistrer le travail
-        workManager.enqueueUniquePeriodicWork(
-            SyncWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            syncRequest
-        )
+            workManager.enqueueUniquePeriodicWork(
+                SyncWorker.WORK_NAME,
+                ExistingPeriodicWorkPolicy.UPDATE,
+                syncRequest
+            )
+
+            rememberScheduledVault(vaultId)
+            true
+        }
+
+        return schedulingResult.getOrElse { error ->
+            SafeLog.e(
+                TAG,
+                "Failed to enqueue periodic sync for ${SafeLog.redact(vaultId)}",
+                error
+            )
+            secretStore.clearSecret(vaultId)
+            forgetScheduledVault()
+            false
+        }
     }
 
     /**
@@ -121,7 +148,7 @@ class AutoSyncScheduler @Inject constructor(
         vaultId: String,
         masterPassword: String,
         wifiOnly: Boolean = false
-    ) {
+    ): Boolean {
         // Créer les contraintes
         val constraints = Constraints.Builder()
             .apply {
@@ -133,23 +160,39 @@ class AutoSyncScheduler @Inject constructor(
             }
             .build()
 
-        // Créer les données d'entrée
-        secretStore.persistSecret(vaultId, masterPassword)
+        if (!secretStore.persistSecret(vaultId, masterPassword)) {
+            SafeLog.w(
+                TAG,
+                "Secret store unavailable; skipping one-time sync scheduling for ${SafeLog.redact(vaultId)}"
+            )
+            return false
+        }
 
         val inputData = workDataOf(
             SyncWorker.KEY_VAULT_ID to vaultId,
             SyncWorker.KEY_CLEAR_SECRET to true
         )
 
-        // Créer la requête de travail unique
-        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setConstraints(constraints)
-            .setInputData(inputData)
-            .addTag(SyncWorker.ONE_TIME_WORK_TAG)
-            .build()
+        val schedulingResult = runCatching {
+            val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                .setConstraints(constraints)
+                .setInputData(inputData)
+                .addTag(SyncWorker.ONE_TIME_WORK_TAG)
+                .build()
 
-        // Enregistrer le travail
-        workManager.enqueue(syncRequest)
+            workManager.enqueue(syncRequest)
+            true
+        }
+
+        return schedulingResult.getOrElse { error ->
+            SafeLog.e(
+                TAG,
+                "Failed to enqueue one-time sync for ${SafeLog.redact(vaultId)}",
+                error
+            )
+            secretStore.clearSecret(vaultId)
+            false
+        }
     }
 
     /**
@@ -172,9 +215,14 @@ class AutoSyncScheduler @Inject constructor(
     /**
      * Obtient l'info sur la synchronisation automatique
      */
-    fun getSyncInfo(): WorkInfo? {
-        val workInfos = workManager.getWorkInfosForUniqueWork(SyncWorker.WORK_NAME).get()
-        return workInfos.firstOrNull()
+    fun observePeriodicSync(): Flow<WorkInfo?> {
+        val query = WorkQuery.Builder.fromUniqueWorkNames(listOf(SyncWorker.WORK_NAME)).build()
+        return workManager.getWorkInfosFlow(query)
+            .map { infos -> infos.firstOrNull() }
+            .catch { error ->
+                SafeLog.w(TAG, "Unable to observe periodic sync status", error)
+                emit(null)
+            }
     }
 
     private fun rememberScheduledVault(vaultId: String) {
@@ -190,3 +238,4 @@ class AutoSyncScheduler @Inject constructor(
 
 private const val PREF_NAME = "auto_sync_scheduler"
 private const val KEY_SCHEDULED_VAULT = "scheduled_vault_id"
+private const val TAG = "AutoSyncScheduler"

@@ -3,6 +3,7 @@ package com.julien.genpwdpro.data.vault
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import com.julien.genpwdpro.core.log.SafeLog
 import androidx.documentfile.provider.DocumentFile
@@ -14,6 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.UUID
 import javax.crypto.SecretKey
@@ -49,7 +51,7 @@ class VaultFileManager @Inject constructor(
      * Récupère le répertoire de stockage selon la stratégie
      */
     fun getStorageDirectory(strategy: StorageStrategy, customPath: Uri? = null): File {
-        return when (strategy) {
+        val directory = when (strategy) {
             StorageStrategy.INTERNAL -> {
                 File(context.filesDir, VAULTS_DIR_NAME)
             }
@@ -57,6 +59,9 @@ class VaultFileManager @Inject constructor(
                 File(context.getExternalFilesDir(null), VAULTS_DIR_NAME)
             }
             StorageStrategy.PUBLIC_DOCUMENTS -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+                    throw IOException("Public documents directory requires Storage Access Framework authorization")
+                }
                 File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
                     PUBLIC_DIR_NAME
@@ -66,10 +71,29 @@ class VaultFileManager @Inject constructor(
                 // Pour custom, on utilise le SAF, géré séparément
                 throw UnsupportedOperationException("Custom paths use Storage Access Framework")
             }
-        }.also { dir ->
-            if (!dir.exists()) {
-                dir.mkdirs()
+        }
+
+        ensureDirectory(directory)
+        return directory
+    }
+
+    private fun ensureDirectory(directory: File) {
+        if (!directory.exists()) {
+            val created = directory.mkdirs()
+            if (!created && !directory.exists()) {
+                SafeLog.e(TAG, "Unable to create storage directory: ${SafeLog.redact(directory.absolutePath)}")
+                throw IOException("Unable to create storage directory")
             }
+        }
+
+        if (!directory.isDirectory) {
+            SafeLog.e(TAG, "Storage path is not a directory: ${SafeLog.redact(directory.absolutePath)}")
+            throw IOException("Invalid storage directory")
+        }
+
+        if (!directory.canWrite()) {
+            SafeLog.e(TAG, "Storage directory not writable: ${SafeLog.redact(directory.absolutePath)}")
+            throw IOException("Storage directory not writable")
         }
     }
 
