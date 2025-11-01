@@ -1,7 +1,16 @@
 package com.julien.genpwdpro.data.sync
 
 import android.content.Context
-import androidx.work.*
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.workDataOf
 import com.julien.genpwdpro.data.sync.models.SyncInterval
 import com.julien.genpwdpro.data.sync.workers.SyncWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -20,10 +29,12 @@ import javax.inject.Singleton
  */
 @Singleton
 class AutoSyncScheduler @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val secretStore: AutoSyncSecretStore
 ) {
 
     private val workManager = WorkManager.getInstance(context)
+    private val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
     /**
      * Programme la synchronisation automatique périodique
@@ -65,10 +76,14 @@ class AutoSyncScheduler @Inject constructor(
             .build()
 
         // Créer les données d'entrée
+        secretStore.persistSecret(vaultId, masterPassword)
+
         val inputData = workDataOf(
             SyncWorker.KEY_VAULT_ID to vaultId,
-            SyncWorker.KEY_MASTER_PASSWORD to masterPassword
+            SyncWorker.KEY_CLEAR_SECRET to false
         )
+
+        rememberScheduledVault(vaultId)
 
         // Créer la requête de travail périodique
         val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
@@ -119,9 +134,11 @@ class AutoSyncScheduler @Inject constructor(
             .build()
 
         // Créer les données d'entrée
+        secretStore.persistSecret(vaultId, masterPassword)
+
         val inputData = workDataOf(
             SyncWorker.KEY_VAULT_ID to vaultId,
-            SyncWorker.KEY_MASTER_PASSWORD to masterPassword
+            SyncWorker.KEY_CLEAR_SECRET to true
         )
 
         // Créer la requête de travail unique
@@ -140,6 +157,7 @@ class AutoSyncScheduler @Inject constructor(
      */
     fun cancelPeriodicSync() {
         workManager.cancelUniqueWork(SyncWorker.WORK_NAME)
+        forgetScheduledVault()?.let(secretStore::clearSecret)
     }
 
     /**
@@ -148,6 +166,7 @@ class AutoSyncScheduler @Inject constructor(
     fun cancelAllSync() {
         workManager.cancelAllWorkByTag(SyncWorker.WORK_NAME)
         workManager.cancelAllWorkByTag(SyncWorker.ONE_TIME_WORK_TAG)
+        forgetScheduledVault()?.let(secretStore::clearSecret)
     }
 
     /**
@@ -157,4 +176,17 @@ class AutoSyncScheduler @Inject constructor(
         val workInfos = workManager.getWorkInfosForUniqueWork(SyncWorker.WORK_NAME).get()
         return workInfos.firstOrNull()
     }
+
+    private fun rememberScheduledVault(vaultId: String) {
+        prefs.edit().putString(KEY_SCHEDULED_VAULT, vaultId).apply()
+    }
+
+    private fun forgetScheduledVault(): String? {
+        val stored = prefs.getString(KEY_SCHEDULED_VAULT, null)
+        prefs.edit().remove(KEY_SCHEDULED_VAULT).apply()
+        return stored
+    }
 }
+
+private const val PREF_NAME = "auto_sync_scheduler"
+private const val KEY_SCHEDULED_VAULT = "scheduled_vault_id"
