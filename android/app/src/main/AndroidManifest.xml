@@ -103,6 +103,24 @@
             </intent-filter>
         </activity>
 
+        <!-- OAuth2 Callback Activity for Cloud Provider Authentication -->
+        <activity
+            android:name=".presentation.sync.OAuthCallbackActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.GenPwdPro">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- OAuth2 callback URL: com.julien.genpwdpro://oauth2callback -->
+                <data
+                    android:scheme="com.julien.genpwdpro"
+                    android:host="oauth2callback" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".presentation.otp.OtpQrScannerActivity"
             android:exported="false"
