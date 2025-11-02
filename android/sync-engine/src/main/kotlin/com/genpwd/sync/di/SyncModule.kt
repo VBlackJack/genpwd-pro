@@ -2,6 +2,9 @@ package com.genpwd.sync.di
 
 import com.genpwd.corevault.VaultCryptoEngine
 import com.genpwd.providers.api.CloudProvider
+import com.genpwd.sync.oauth.EncryptedOAuthStateStorage
+import com.genpwd.sync.oauth.OAuthStateStorage
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +20,12 @@ import javax.inject.Singleton
 abstract class SyncModule {
     @Multibinds
     abstract fun bindProvidersSet(): Set<CloudProvider>
+
+    @Binds
+    @Singleton
+    abstract fun bindOAuthStateStorage(
+        impl: EncryptedOAuthStateStorage
+    ): OAuthStateStorage
 
     companion object {
         @Provides

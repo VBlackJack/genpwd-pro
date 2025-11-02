@@ -3,10 +3,14 @@ package com.genpwd.provider.drive
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.genpwd.corevault.ProviderKind
 import com.genpwd.providers.api.ProviderAccount
 import com.genpwd.providers.api.ProviderError
+import com.genpwd.sync.oauth.OAuthStateStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -14,6 +18,7 @@ import org.json.JSONObject
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -27,6 +32,7 @@ import kotlin.coroutines.resumeWithException
 class OAuth2GoogleDriveAuthProvider @Inject constructor(
     @ApplicationContext private val context: Context,
     private val httpClient: OkHttpClient,
+    private val oauthStateStorage: OAuthStateStorage
 ) : GoogleDriveAuthProvider {
 
     companion object {
@@ -45,7 +51,14 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             // Generate PKCE challenge
             val codeVerifier = generateCodeVerifier()
             val codeChallenge = generateCodeChallenge(codeVerifier)
-            val state = generateState()
+
+            // Generate state with provider kind prefix
+            val state = "${ProviderKind.GOOGLE_DRIVE.name}:${UUID.randomUUID()}"
+
+            // Store code_verifier securely for later retrieval
+            kotlinx.coroutines.runBlocking {
+                oauthStateStorage.saveCodeVerifier(state, codeVerifier)
+            }
 
             // Build authorization URL
             val authUrl = Uri.parse(AUTH_ENDPOINT).buildUpon()
@@ -66,18 +79,11 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             }
             context.startActivity(intent)
 
-            // Note: In real implementation, you would:
-            // 1. Handle the redirect callback in a dedicated Activity
-            // 2. Extract the authorization code from the callback
-            // 3. Exchange the code for tokens
-            //
-            // For this implementation, we'll simulate the flow
-
-            // TODO: Implement actual OAuth callback handling
-            // For now, throw an error indicating manual setup is needed
+            // Note: OAuth callback is handled by OAuthCallbackActivity
+            // which will call completeAuthentication() with the authorization code
             continuation.resumeWithException(
                 ProviderError.Authentication(
-                    "OAuth2 flow initiated. Please configure OAuth callback handling in AndroidManifest.xml"
+                    "OAuth2 flow initiated. Awaiting callback..."
                 )
             )
         } catch (e: Exception) {
@@ -88,9 +94,38 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
     }
 
     /**
+     * Complete OAuth authentication after receiving callback.
+     *
+     * @param state The state parameter from OAuth callback
+     * @param authCode The authorization code from OAuth callback
+     * @return TokenResponse containing access token, refresh token, and expiry
+     */
+    suspend fun completeAuthentication(state: String, authCode: String): TokenResponse {
+        return withContext(Dispatchers.IO) {
+            // Retrieve code_verifier from secure storage
+            val codeVerifier = oauthStateStorage.getCodeVerifier(state)
+                ?: throw ProviderError.Authentication("Code verifier not found or expired")
+
+            try {
+                // Exchange authorization code for tokens
+                val tokens = exchangeCodeForTokens(authCode, codeVerifier)
+
+                // Clear code_verifier after successful exchange
+                oauthStateStorage.clearCodeVerifier(state)
+
+                tokens
+            } catch (e: Exception) {
+                // Clear code_verifier on failure too
+                oauthStateStorage.clearCodeVerifier(state)
+                throw e
+            }
+        }
+    }
+
+    /**
      * Exchange authorization code for access and refresh tokens.
      */
-    private suspend fun exchangeCodeForTokens(
+    suspend fun exchangeCodeForTokens(
         authCode: String,
         codeVerifier: String
     ): TokenResponse {
@@ -107,17 +142,23 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             .post(requestBody)
             .build()
 
-        return httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw ProviderError.Authentication("Token exchange failed: ${response.code}")
-            }
+        return withContext(Dispatchers.IO) {
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val errorBody = response.body?.string()
+                    throw ProviderError.Authentication(
+                        "Token exchange failed: ${response.code} - $errorBody"
+                    )
+                }
 
-            val json = JSONObject(response.body?.string() ?: "")
-            TokenResponse(
-                accessToken = json.getString("access_token"),
-                refreshToken = json.optString("refresh_token"),
-                expiresIn = json.optLong("expires_in", 3600)
-            )
+                val json = JSONObject(response.body?.string() ?: "")
+                TokenResponse(
+                    accessToken = json.getString("access_token"),
+                    refreshToken = json.optString("refresh_token", ""),
+                    expiresIn = json.optLong("expires_in", 3600),
+                    email = null // Email can be retrieved from userinfo endpoint if needed
+                )
+            }
         }
     }
 
@@ -161,16 +202,14 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
         return Base64.getUrlEncoder().withoutPadding().encodeToString(digest)
     }
-
-    private fun generateState(): String {
-        val bytes = ByteArray(16)
-        SecureRandom().nextBytes(bytes)
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
-    }
-
-    private data class TokenResponse(
-        val accessToken: String,
-        val refreshToken: String,
-        val expiresIn: Long
-    )
 }
+
+/**
+ * OAuth token response containing access token, refresh token, and expiry information.
+ */
+data class TokenResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val expiresIn: Long,
+    val email: String? = null
+)
