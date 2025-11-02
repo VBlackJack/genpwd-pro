@@ -64,6 +64,8 @@ class VaultSessionManager @Inject constructor(
     data class VaultSession(
         val vaultId: String,
         val vaultKey: SecretKey,
+        val header: VaultFileHeader,
+        val kdfSalt: ByteArray,
         val filePath: String,
         val storageStrategy: StorageStrategy,
         val fileUri: Uri?,
@@ -240,7 +242,7 @@ class VaultSessionManager @Inject constructor(
                     null
                 }
 
-                val vaultData = try {
+                val loadResult = try {
                     if (resolvedUri != null) {
                         vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, resolvedUri)
                     } else {
@@ -280,29 +282,16 @@ class VaultSessionManager @Inject constructor(
                     )
                 }
 
-                // Dériver la clé de chiffrement depuis le master password
-                val vaultKey = try {
-                    val saltBytes = cryptoManager.generateSaltFromString(vaultId)
-                    cryptoManager.deriveKey(masterPassword, saltBytes)
-                } catch (e: Exception) {
-                    SafeLog.e(
-                        TAG,
-                        "Key derivation failed for vault: vaultId=${SafeLog.redact(vaultId)}",
-                        e
-                    )
-                    return@withContext Result.failure(
-                        VaultException.EncryptionFailed("Failed to derive encryption key", e)
-                    )
-                }
-
                 // Créer la session
                 val session = VaultSession(
                     vaultId = vaultId,
-                    vaultKey = vaultKey,
+                    vaultKey = loadResult.vaultKey,
+                    header = loadResult.header,
+                    kdfSalt = loadResult.salt.copyOf(),
                     filePath = vaultRegistry.filePath,
                     storageStrategy = vaultRegistry.storageStrategy,
                     fileUri = resolvedUri,
-                    _vaultData = MutableStateFlow(vaultData)
+                    _vaultData = MutableStateFlow(loadResult.data)
                 )
 
                 currentSession = session
@@ -314,7 +303,7 @@ class VaultSessionManager @Inject constructor(
                         vaultFileManager.getVaultFileSizeFromUri(uri)
                     } ?: vaultFileManager.getVaultFileSize(vaultRegistry.filePath)
 
-                    val statistics = calculateStatistics(vaultData, fileSize)
+                    val statistics = calculateStatistics(loadResult.data, fileSize)
 
                     vaultRegistryDao.updateById(vaultId) { entry ->
                         entry.copy(
@@ -1021,8 +1010,7 @@ class VaultSessionManager @Inject constructor(
                 )
 
                 // 1. Vérifier le mot de passe actuel
-                val currentSalt = cryptoManager.generateSaltFromString(session.vaultId)
-                val currentKey = cryptoManager.deriveKey(currentPassword, currentSalt)
+                val currentKey = cryptoManager.deriveKey(currentPassword, session.kdfSalt)
 
                 // Comparer les clés pour vérifier le mot de passe
                 if (!currentKey.encoded.contentEquals(session.vaultKey.encoded)) {
@@ -1030,11 +1018,19 @@ class VaultSessionManager @Inject constructor(
                 }
 
                 // 2. Dériver la nouvelle clé avec le nouveau mot de passe
-                val newSalt = cryptoManager.generateSaltFromString(session.vaultId)
+                val newSalt = cryptoManager.generateSalt()
                 val newKey = cryptoManager.deriveKey(newPassword, newSalt)
+                val updatedHeader = session.header.copy(
+                    kdfSalt = cryptoManager.bytesToHex(newSalt),
+                    kdfAlgorithm = VaultFileHeader.DEFAULT_KDF
+                )
 
                 // 3. Créer une nouvelle session avec la nouvelle clé
-                val newSession = session.copy(vaultKey = newKey)
+                val newSession = session.copy(
+                    vaultKey = newKey,
+                    header = updatedHeader,
+                    kdfSalt = newSalt.copyOf()
+                )
 
                 // 4. Sauvegarder le vault avec la nouvelle clé
                 val vaultData = session.vaultData.value
@@ -1044,7 +1040,8 @@ class VaultSessionManager @Inject constructor(
                         vaultFileManager.updateVaultFileAtUri(
                             fileUri = newSession.fileUri,
                             data = vaultData,
-                            vaultKey = newKey
+                            vaultKey = newKey,
+                            header = updatedHeader
                         )
                     }
                     else -> {
@@ -1052,6 +1049,7 @@ class VaultSessionManager @Inject constructor(
                             vaultId = newSession.vaultId,
                             data = vaultData,
                             vaultKey = newKey,
+                            header = updatedHeader,
                             strategy = newSession.storageStrategy,
                             customPath = null
                         )
@@ -1102,25 +1100,30 @@ class VaultSessionManager @Inject constructor(
                 val vaultData = session.vaultData.value
 
                 // Sauvegarder selon le type de path (SAF ou File)
-                when {
+                val updatedHeader = when {
                     session.fileUri != null -> {
                         vaultFileManager.updateVaultFileAtUri(
                             fileUri = session.fileUri,
                             data = vaultData,
-                            vaultKey = session.vaultKey
+                            vaultKey = session.vaultKey,
+                            header = session.header
                         )
                     }
 
                     else -> {
-                        vaultFileManager.saveVaultFile(
+                        val result = vaultFileManager.saveVaultFile(
                             vaultId = session.vaultId,
                             data = vaultData,
                             vaultKey = session.vaultKey,
+                            header = session.header,
                             strategy = session.storageStrategy,
                             customPath = null
                         )
+                        result.header
                     }
                 }
+
+                currentSession = session.copy(header = updatedHeader)
 
                 val fileSize = session.fileUri?.let { uri ->
                     vaultFileManager.getVaultFileSizeFromUri(uri)

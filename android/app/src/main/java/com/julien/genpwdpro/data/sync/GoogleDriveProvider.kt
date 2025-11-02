@@ -36,7 +36,6 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
     private var signedInAccount: GoogleSignInAccount? = null
 
     companion object {
-        private const val FOLDER_NAME = "GenPwdPro_Vaults"
         private const val MIME_TYPE = "application/octet-stream"
         private const val REQUEST_CODE_SIGN_IN = 9003
     }
@@ -45,9 +44,8 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         signedInAccount != null && driveService != null
     }
 
-    override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.IO) {
-        try {
-            // Configuration Google Sign-In avec Drive API scope
+    override suspend fun authenticate(activity: Activity): Boolean {
+        return try {
             val signInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
@@ -55,21 +53,19 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
 
             val client = GoogleSignIn.getClient(activity, signInOptions)
 
-            // Vérifier si déjà connecté
             val existingAccount = GoogleSignIn.getLastSignedInAccount(activity)
             if (existingAccount != null) {
-                signedInAccount = existingAccount
-                initializeDriveService(activity, existingAccount)
-                return@withContext true
+                withContext(Dispatchers.IO) {
+                    signedInAccount = existingAccount
+                    initializeDriveService(activity, existingAccount)
+                }
+                true
+            } else {
+                withContext(Dispatchers.Main) {
+                    activity.startActivityForResult(client.signInIntent, REQUEST_CODE_SIGN_IN)
+                }
+                false
             }
-
-            // Sinon, lancer le flow de connexion
-            val signInIntent = client.signInIntent
-            activity.startActivityForResult(signInIntent, REQUEST_CODE_SIGN_IN)
-
-            // Note: Le résultat sera traité dans onActivityResult
-            // Pour l'instant on retourne false, l'app devra gérer le callback
-            false
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -121,16 +117,13 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         try {
             val service = driveService ?: return@withContext null
 
-            // Créer ou récupérer le dossier de l'app
-            val folderId = getOrCreateAppFolder()
-
             // Vérifier si le fichier existe déjà
             val existingFile = findVaultFile(vaultId)
 
             val fileMetadata = File().apply {
                 name = "vault_$vaultId.enc"
                 if (existingFile == null) {
-                    parents = listOf(folderId)
+                    parents = listOf("appDataFolder")
                 }
             }
 
@@ -234,11 +227,10 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
     override suspend fun listVaults(): List<CloudFileMetadata> = withContext(Dispatchers.IO) {
         try {
             val service = driveService ?: return@withContext emptyList()
-            val folderId = getOrCreateAppFolder()
 
             val result = service.files().list()
-                .setQ("'$folderId' in parents and name contains 'vault_' and trashed=false")
-                .setSpaces("drive")
+                .setQ("name contains 'vault_' and trashed=false")
+                .setSpaces("appDataFolder")
                 .setFields("files(id, name, size, modifiedTime, md5Checksum, version)")
                 .execute()
 
@@ -281,48 +273,16 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
     }
 
     /**
-     * Récupère ou crée le dossier de l'application
-     */
-    private fun getOrCreateAppFolder(): String {
-        val service = driveService ?: throw IllegalStateException("Drive service not initialized")
-
-        // Chercher le dossier existant
-        val result = service.files().list()
-            .setQ(
-                "name='$FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            )
-            .setSpaces("drive")
-            .setFields("files(id)")
-            .execute()
-
-        return if (result.files.isNotEmpty()) {
-            result.files[0].id
-        } else {
-            // Créer le dossier
-            val folderMetadata = File().apply {
-                name = FOLDER_NAME
-                mimeType = "application/vnd.google-apps.folder"
-            }
-
-            service.files().create(folderMetadata)
-                .setFields("id")
-                .execute()
-                .id
-        }
-    }
-
-    /**
      * Trouve un fichier de vault par son ID
      */
     private fun findVaultFile(vaultId: String): File? {
         val service = driveService ?: return null
-        val folderId = getOrCreateAppFolder()
 
         val fileName = "vault_$vaultId.enc"
 
         val result = service.files().list()
-            .setQ("name='$fileName' and '$folderId' in parents and trashed=false")
-            .setSpaces("drive")
+            .setQ("name='$fileName' and trashed=false")
+            .setSpaces("appDataFolder")
             .setFields("files(id, name, size, modifiedTime, md5Checksum)")
             .execute()
 

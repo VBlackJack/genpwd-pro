@@ -13,11 +13,14 @@ data class VaultFileHeader(
     val createdAt: Long,
     val modifiedAt: Long,
     val checksum: String, // SHA-256 du contenu déchiffré
-    val keyFileHash: String? = null // SHA-256 du key file (optionnel, KeePass-style)
+    val keyFileHash: String? = null, // SHA-256 du key file (optionnel, KeePass-style)
+    val kdfSalt: String? = null, // Salt hexadécimal utilisé pour Argon2id
+    val kdfAlgorithm: String = DEFAULT_KDF
 ) {
     companion object {
         const val MAGIC_NUMBER = "GPVAULT1"
         const val CURRENT_VERSION = 1
+        const val DEFAULT_KDF = "argon2id"
         const val HEADER_SIZE = 256
     }
 
@@ -34,4 +37,6 @@ data class VaultFileHeader(
     fun requiresKeyFile(): Boolean {
         return keyFileHash != null
     }
+
+    fun hasKdfSalt(): Boolean = !kdfSalt.isNullOrBlank()
 }

@@ -4,6 +4,7 @@ import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultData
+import com.julien.genpwdpro.data.models.vault.VaultFileHeader
 import com.julien.genpwdpro.data.models.vault.VaultMetadata
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
@@ -94,14 +95,24 @@ class VaultSessionManagerMutationTest {
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 0) {
-            vaultFileManager.saveVaultFile(any(), any(), any(), any(), any())
+            vaultFileManager.saveVaultFile(any(), any(), any(), any(), any(), any())
         }
     }
 
     private fun configureSession(initialData: VaultData, testScope: TestScope) {
+        val salt = ByteArray(32) { 0x01 }
+        val header = VaultFileHeader(
+            vaultId = initialData.metadata.vaultId,
+            createdAt = initialData.metadata.createdAt,
+            modifiedAt = initialData.metadata.modifiedAt,
+            checksum = "",
+            kdfSalt = salt.joinToString(separator = "") { String.format("%02x", it) }
+        )
         val session = VaultSessionManager.VaultSession(
             vaultId = initialData.metadata.vaultId,
             vaultKey = dummySecretKey(),
+            header = header,
+            kdfSalt = salt,
             filePath = "/data/${initialData.metadata.vaultId}.gpv",
             storageStrategy = StorageStrategy.APP_STORAGE,
             fileUri = null,

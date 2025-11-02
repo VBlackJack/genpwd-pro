@@ -2,7 +2,8 @@ package com.julien.genpwdpro.domain.generators
 
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.utils.CharacterSets
-import kotlin.random.Random
+import com.julien.genpwdpro.domain.utils.SecureRandomProvider
+import com.julien.genpwdpro.domain.utils.secureRandom
 
 /**
  * Générateur de mots de passe par syllables (alternance consonnes/voyelles)
@@ -19,13 +20,13 @@ class SyllablesGenerator : PasswordGenerator {
 
         repeat(length) {
             val char = if (useConsonant) {
-                charSets.consonants.random()
+                charSets.consonants.secureRandom()
             } else {
-                charSets.vowels.random()
+                charSets.vowels.secureRandom()
             }
 
             // Appliquer la casse (alternance majuscule/minuscule de façon aléatoire)
-            val finalChar = if (Random.nextBoolean()) {
+            val finalChar = if (SecureRandomProvider.nextBoolean()) {
                 char.uppercaseChar()
             } else {
                 char
@@ -45,8 +46,8 @@ class SyllablesGenerator : PasswordGenerator {
         consonants: List<Char>,
         vowels: List<Char>
     ): String {
-        val consonant = consonants.random()
-        val vowel = vowels.random()
+        val consonant = consonants.secureRandom()
+        val vowel = vowels.secureRandom()
         return "$consonant$vowel"
     }
 }
