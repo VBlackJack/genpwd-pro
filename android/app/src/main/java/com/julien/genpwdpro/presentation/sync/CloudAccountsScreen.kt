@@ -118,15 +118,15 @@ fun CloudAccountsScreen(
                             onSyncAccount = { kind, accountId ->
                                 viewModel.syncAccount(kind, accountId)
                             },
-                            onRemoveAccount = { kind, accountId ->
+                            onRemoveAccount = { accountId ->
                                 scope.launch {
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "Remove account from ${kind.name}?",
+                                        message = "Remove this cloud account?",
                                         actionLabel = "Remove",
                                         duration = SnackbarDuration.Long
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
-                                        viewModel.removeAccount(kind, accountId)
+                                        viewModel.removeAccount(accountId)
                                     }
                                 }
                             },
@@ -187,7 +187,7 @@ private fun EmptyAccountsView(
 private fun AccountsList(
     accounts: List<AccountWithVaults>,
     onSyncAccount: (ProviderKind, String) -> Unit,
-    onRemoveAccount: (ProviderKind, String) -> Unit,
+    onRemoveAccount: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -198,8 +198,8 @@ private fun AccountsList(
         items(accounts) { accountWithVaults ->
             AccountCard(
                 accountWithVaults = accountWithVaults,
-                onSync = { onSyncAccount(accountWithVaults.kind, accountWithVaults.account?.id ?: "") },
-                onRemove = { onRemoveAccount(accountWithVaults.kind, accountWithVaults.account?.id ?: "") }
+                onSync = { onSyncAccount(accountWithVaults.account.providerKind, accountWithVaults.account.id) },
+                onRemove = { onRemoveAccount(accountWithVaults.account.id) }
             )
         }
     }
@@ -238,11 +238,11 @@ private fun AccountCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(getProviderColor(accountWithVaults.kind)),
+                            .background(getProviderColor(accountWithVaults.account.providerKind)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = getProviderIcon(accountWithVaults.kind),
+                            imageVector = getProviderIcon(accountWithVaults.account.providerKind),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
@@ -250,12 +250,12 @@ private fun AccountCard(
 
                     Column {
                         Text(
-                            text = accountWithVaults.kind.name.replace("_", " "),
+                            text = accountWithVaults.account.providerKind.name.replace("_", " "),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = accountWithVaults.account?.displayName ?: "Unknown",
+                            text = accountWithVaults.account.displayName,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

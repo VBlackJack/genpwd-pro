@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.genpwd.corevault.ProviderKind
 import com.genpwd.corevault.VaultMeta
-import com.genpwd.providers.api.ProviderAccount
-import com.genpwd.providers.api.ProviderError
+import com.genpwd.provider.drive.OAuth2GoogleDriveAuthProvider
+import com.genpwd.storage.CloudAccountRepository
 import com.genpwd.storage.VaultStorageRepository
+import com.genpwd.storage.db.entities.CloudAccountEntity
 import com.genpwd.sync.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -18,7 +19,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CloudAccountsViewModel @Inject constructor(
-    private val storage: VaultStorageRepository,
+    private val cloudAccountRepository: CloudAccountRepository,
+    private val vaultStorage: VaultStorageRepository,
+    private val googleDriveAuthProvider: OAuth2GoogleDriveAuthProvider,
     private val providerRegistry: ProviderRegistry,
 ) : ViewModel() {
 
@@ -37,26 +40,18 @@ class CloudAccountsViewModel @Inject constructor(
             try {
                 _uiState.value = CloudAccountsUiState.Loading
 
-                // Load all accounts from storage
-                val accounts = mutableListOf<AccountWithVaults>()
-
-                for (kind in ProviderKind.values()) {
-                    // For now, we'll just check if there's an account
-                    // In a real implementation, you'd store account IDs and iterate through them
-                    // This is a simplified version
-                }
-
-                // For demo, we'll observe vaults and group by account
-                storage.observeVaults()
-                    .map { vaults ->
-                        val grouped = vaults.groupBy { it.id.provider to it.id.accountId }
-                        grouped.map { (providerAndAccount, vaultList) ->
-                            val (provider, accountId) = providerAndAccount
-                            val account = storage.getAccount(provider, accountId)
+                // Observe cloud accounts from repository
+                cloudAccountRepository.observeAllAccounts()
+                    .combine(vaultStorage.observeVaults()) { accounts, vaults ->
+                        // Combine accounts with their associated vaults
+                        accounts.map { account ->
+                            val accountVaults = vaults.filter {
+                                it.id.provider == account.providerKind &&
+                                it.id.accountId == account.id
+                            }
                             AccountWithVaults(
-                                kind = provider,
                                 account = account,
-                                vaults = vaultList,
+                                vaults = accountVaults,
                                 syncStatus = SyncStatus.IDLE
                             )
                         }
@@ -75,8 +70,27 @@ class CloudAccountsViewModel @Inject constructor(
     fun addAccount(kind: ProviderKind) {
         viewModelScope.launch {
             try {
-                val provider = providerRegistry.get(kind)
-                _events.emit(CloudAccountsEvent.StartOAuthFlow(kind))
+                // Currently only Google Drive is implemented
+                when (kind) {
+                    ProviderKind.GOOGLE_DRIVE -> {
+                        // Start OAuth flow - this will open the browser
+                        // The flow will throw an exception which we'll catch
+                        // but this triggers the OAuth browser flow
+                        try {
+                            googleDriveAuthProvider.authenticate()
+                        } catch (e: Exception) {
+                            // Expected exception - OAuth flow initiated
+                            _events.emit(CloudAccountsEvent.StartOAuthFlow(kind))
+                        }
+                    }
+                    else -> {
+                        _events.emit(
+                            CloudAccountsEvent.ShowError(
+                                "OAuth not yet implemented for $kind"
+                            )
+                        )
+                    }
+                }
             } catch (e: Exception) {
                 _events.emit(
                     CloudAccountsEvent.ShowError(
@@ -87,65 +101,24 @@ class CloudAccountsViewModel @Inject constructor(
         }
     }
 
-    fun handleOAuthResult(kind: ProviderKind, authCode: String) {
+    fun removeAccount(accountId: String) {
         viewModelScope.launch {
             try {
-                val provider = providerRegistry.get(kind)
-                if (provider == null) {
-                    _events.emit(
-                        CloudAccountsEvent.ShowError("Provider $kind not found")
-                    )
-                    return@launch
-                }
+                // Remove account from database
+                cloudAccountRepository.removeAccount(accountId)
 
-                // In a real implementation with full PKCE flow:
-                // 1. Retrieve stored code_verifier from secure storage
-                // 2. Exchange auth code for tokens using the auth provider
-                // 3. Create CloudAccount with provider credentials
-                // 4. Save to storage
-
-                // For now, we'll simulate a successful account addition
-                // The actual token exchange would be:
-                // val authProvider = provider as? OAuth2Provider
-                // val tokens = authProvider?.exchangeCodeForTokens(authCode, codeVerifier)
-                // val account = CloudAccount(
-                //     id = UUID.randomUUID().toString(),
-                //     kind = kind,
-                //     displayName = "User Account",
-                //     accessToken = tokens.accessToken,
-                //     refreshToken = tokens.refreshToken,
-                //     expiresAt = System.currentTimeMillis() + tokens.expiresIn * 1000
-                // )
-                // storage.saveAccount(account)
-
-                _events.emit(CloudAccountsEvent.AccountAdded)
-                loadAccounts()
-            } catch (e: Exception) {
-                _events.emit(
-                    CloudAccountsEvent.ShowError(
-                        "Failed to complete OAuth: ${e.message}"
-                    )
-                )
-            }
-        }
-    }
-
-    fun removeAccount(kind: ProviderKind, accountId: String) {
-        viewModelScope.launch {
-            try {
-                // Remove all vaults associated with this account
-                storage.observeVaults()
+                // Also remove all vaults associated with this account
+                vaultStorage.observeVaults()
                     .take(1)
                     .collect { vaults ->
                         vaults.filter {
-                            it.id.provider == kind && it.id.accountId == accountId
+                            it.id.accountId == accountId
                         }.forEach { vault ->
-                            storage.deleteVaultMeta(vault.id)
+                            vaultStorage.deleteVaultMeta(vault.id)
                         }
                     }
 
                 _events.emit(CloudAccountsEvent.AccountRemoved)
-                loadAccounts()
             } catch (e: Exception) {
                 _events.emit(
                     CloudAccountsEvent.ShowError(
@@ -199,8 +172,7 @@ sealed class CloudAccountsEvent {
  * Represents a cloud account with its associated vaults.
  */
 data class AccountWithVaults(
-    val kind: ProviderKind,
-    val account: ProviderAccount?,
+    val account: CloudAccountEntity,
     val vaults: List<VaultMeta>,
     val syncStatus: SyncStatus,
 )

@@ -13,7 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.genpwd.corevault.ProviderKind
-import com.genpwd.storage.VaultStorageRepository
+import com.genpwd.provider.drive.OAuth2GoogleDriveAuthProvider
+import com.genpwd.storage.CloudAccountRepository
 import com.genpwd.sync.ProviderRegistry
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
@@ -33,10 +34,10 @@ import javax.inject.Inject
 class OAuthCallbackActivity : ComponentActivity() {
 
     @Inject
-    lateinit var storage: VaultStorageRepository
+    lateinit var cloudAccountRepository: CloudAccountRepository
 
     @Inject
-    lateinit var providerRegistry: ProviderRegistry
+    lateinit var googleDriveAuthProvider: OAuth2GoogleDriveAuthProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,24 +109,30 @@ class OAuthCallbackActivity : ComponentActivity() {
 
                 SafeLog.d(TAG, "Provider kind: $providerKind")
 
-                // Get the cloud provider from registry
-                val provider = providerRegistry.get(providerKind)
-                    ?: throw IllegalStateException("Provider $providerKind not registered")
+                // Currently only Google Drive is implemented
+                if (providerKind != ProviderKind.GOOGLE_DRIVE) {
+                    throw IllegalStateException("OAuth not implemented for $providerKind")
+                }
 
                 SafeLog.d(TAG, "Exchanging authorization code for tokens...")
 
-                // The auth provider should handle the token exchange
-                // This is a simplified approach - in production, you'd need to:
-                // 1. Retrieve the stored code_verifier for PKCE
-                // 2. Call the provider's token exchange method
-                // 3. Save the tokens securely
+                // Exchange authorization code for tokens using PKCE
+                val tokens = googleDriveAuthProvider.completeAuthentication(state, authCode)
 
-                // For now, we'll mark the provider as authenticated
-                // In a real implementation, you'd call something like:
-                // val tokens = authProvider.exchangeCodeForTokens(authCode, codeVerifier)
-                // storage.saveAccount(CloudAccount(providerKind, tokens))
+                SafeLog.d(TAG, "Token exchange successful, saving account...")
 
-                SafeLog.d(TAG, "OAuth flow completed successfully")
+                // Save account to database
+                // TODO: Encrypt tokens before storage
+                val account = cloudAccountRepository.saveAccount(
+                    kind = providerKind,
+                    displayName = tokens.email ?: "Google Drive Account",
+                    email = tokens.email,
+                    accessToken = tokens.accessToken,
+                    refreshToken = tokens.refreshToken,
+                    expiresIn = tokens.expiresIn
+                )
+
+                SafeLog.d(TAG, "Account saved successfully with ID: ${account.id}")
                 finishWithSuccess()
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Failed to complete OAuth", e)
