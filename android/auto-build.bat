@@ -18,6 +18,13 @@ if not exist "app\build.gradle.kts" (
     exit /b 1
 )
 
+if not exist "version-helper.ps1" (
+    echo ERREUR: Fichier version-helper.ps1 introuvable!
+    echo Assurez-vous que tous les fichiers sont presents.
+    pause
+    exit /b 1
+)
+
 REM Demander le type de build
 echo Choisissez le type de build:
 echo 1. Debug (genpwd-pro-vX.X.X-alpha.X-debug.apk)
@@ -43,9 +50,9 @@ echo   Etape 1/4: Lecture de la version
 echo ========================================
 echo.
 
-REM Utiliser PowerShell pour extraire les versions
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "$content = Get-Content 'app\build.gradle.kts' -Raw; if ($content -match 'versionCode\s*=\s*(\d+)') { $matches[1] }"`) do set CURRENT_VERSION_CODE=%%i
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "$content = Get-Content 'app\build.gradle.kts' -Raw; if ($content -match 'versionName\s*=\s*\"([^\"]+)\"') { $matches[1] }"`) do set CURRENT_VERSION_NAME=%%i
+REM Lire la version actuelle avec le script PowerShell
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action GetVersionCode`) do set CURRENT_VERSION_CODE=%%i
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action GetVersionName`) do set CURRENT_VERSION_NAME=%%i
 
 if not defined CURRENT_VERSION_CODE (
     echo ERREUR: Impossible de lire versionCode!
@@ -82,7 +89,13 @@ REM Incrementer versionCode
 set /a NEW_VERSION_CODE=%CURRENT_VERSION_CODE%+1
 
 REM Incrementer versionName (alpha.X -> alpha.X+1)
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "if ('%CURRENT_VERSION_NAME%' -match '^(.+\-alpha\.)(\d+)$') { $baseVersion = $matches[1]; $alphaNum = [int]$matches[2] + 1; Write-Output ($baseVersion + $alphaNum) } else { Write-Output '%CURRENT_VERSION_NAME%' }"`) do set NEW_VERSION_NAME=%%i
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action IncrementAlpha`) do set NEW_VERSION_NAME=%%i
+
+if not defined NEW_VERSION_NAME (
+    echo ERREUR: Impossible d'incrementer la version!
+    pause
+    exit /b 1
+)
 
 echo Nouvelle version:
 echo   versionCode: %NEW_VERSION_CODE%
@@ -91,11 +104,7 @@ echo.
 
 REM Mettre a jour le fichier build.gradle.kts
 echo Mise a jour de build.gradle.kts...
-powershell -NoProfile -Command ^
-    "$content = Get-Content 'app\build.gradle.kts' -Raw; ^
-     $content = $content -replace 'versionCode\s*=\s*\d+', 'versionCode = %NEW_VERSION_CODE%'; ^
-     $content = $content -replace 'versionName\s*=\s*\"[^\"]+\"', 'versionName = \"%NEW_VERSION_NAME%\"'; ^
-     Set-Content 'app\build.gradle.kts' -Value $content -NoNewline"
+powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action UpdateVersions -NewVersionCode %NEW_VERSION_CODE% -NewVersionName "%NEW_VERSION_NAME%" >nul
 
 if errorlevel 1 (
     echo ERREUR lors de la mise a jour du fichier!
