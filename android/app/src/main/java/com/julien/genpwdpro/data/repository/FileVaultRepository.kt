@@ -1,17 +1,19 @@
 package com.julien.genpwdpro.data.repository
 
-import android.util.Log
 import androidx.fragment.app.FragmentActivity
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.models.vault.*
+import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.security.BiometricVaultManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -40,9 +42,7 @@ import javax.inject.Singleton
 class FileVaultRepository @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val biometricVaultManager: BiometricVaultManager,
-    private val legacyVaultRepository: VaultRepository,
-    @Named("legacy_sync_enabled") private val legacySyncEnabled: Boolean
+    private val biometricVaultManager: BiometricVaultManager
 ) {
 
     // ========== Entry Operations ==========
@@ -89,9 +89,9 @@ class FileVaultRepository @Inject constructor(
         return getEntries().map { entries ->
             entries.filter { entry ->
                 entry.title.contains(query, ignoreCase = true) ||
-                entry.username?.contains(query, ignoreCase = true) == true ||
-                entry.url?.contains(query, ignoreCase = true) == true ||
-                entry.notes?.contains(query, ignoreCase = true) == true
+                    entry.username?.contains(query, ignoreCase = true) == true ||
+                    entry.url?.contains(query, ignoreCase = true) == true ||
+                    entry.notes?.contains(query, ignoreCase = true) == true
             }
         }
     }
@@ -253,21 +253,55 @@ class FileVaultRepository @Inject constructor(
     }
 
     /**
+     * Ajoute un tag à une entry (relation many-to-many)
+     *
+     * @param entryId ID de l'entry
+     * @param tagId ID du tag
+     * @return Result.success si ajouté, Result.failure si erreur
+     */
+    suspend fun addTagToEntry(entryId: String, tagId: String): Result<Unit> {
+        return vaultSessionManager.addTagToEntry(entryId, tagId)
+    }
+
+    /**
+     * Retire un tag d'une entry
+     *
+     * @param entryId ID de l'entry
+     * @param tagId ID du tag
+     * @return Result.success si retiré, Result.failure si erreur
+     */
+    suspend fun removeTagFromEntry(entryId: String, tagId: String): Result<Unit> {
+        return vaultSessionManager.removeTagFromEntry(entryId, tagId)
+    }
+
+    /**
      * Récupère les tags d'une entry
      *
      * @param entryId ID de l'entry
      * @return Flow de liste de tags
      */
     fun getTagsForEntry(entryId: String): Flow<List<TagEntity>> {
-        return vaultSessionManager.getTags().map { allTags ->
-            val entryTagRefs = vaultSessionManager.getCurrentSession()
-                ?.vaultData?.value?.entryTags
-                ?.filter { it.entryId == entryId }
-                ?: emptyList()
+        return vaultSessionManager.getTagsForEntry(entryId)
+    }
 
-            val tagIds = entryTagRefs.map { it.tagId }.toSet()
-            allTags.filter { it.id in tagIds }
-        }
+    /**
+     * Récupère le nombre d'entries utilisant un tag (pour les statistiques)
+     *
+     * @param tagId ID du tag
+     * @return Nombre d'entries
+     */
+    suspend fun getEntryCountForTag(tagId: String): Int {
+        return vaultSessionManager.getEntryCountForTag(tagId)
+    }
+
+    /**
+     * Recherche des tags par nom (insensible à la casse)
+     *
+     * @param query Texte de recherche
+     * @return Flow de liste de tags correspondants
+     */
+    fun searchTags(query: String): Flow<List<TagEntity>> {
+        return vaultSessionManager.searchTags(query)
     }
 
     // ========== Preset Operations ==========
@@ -321,6 +355,142 @@ class FileVaultRepository @Inject constructor(
         return vaultSessionManager.deletePreset(presetId)
     }
 
+    /**
+     * Vérifie si on peut créer un nouveau preset pour un mode donné (limite de 3 par mode)
+     *
+     * @param generationMode Mode de génération
+     * @return true si on peut créer, false sinon
+     */
+    suspend fun canCreatePreset(generationMode: String): Boolean {
+        val presets = getPresets().first()
+        val presetsForMode = presets.filter { it.generationMode == generationMode && !it.isSystemPreset }
+        return presetsForMode.size < 3
+    }
+
+    /**
+     * Récupère le preset par défaut du vault
+     *
+     * @return Preset par défaut ou null
+     */
+    suspend fun getDefaultPreset(): PresetEntity? {
+        return getPresets().first().firstOrNull { it.isDefault }
+    }
+
+    /**
+     * Définit un preset comme par défaut (désactive les autres)
+     *
+     * @param presetId ID du preset à définir comme défaut
+     * @return Result.success si défini, Result.failure si erreur
+     */
+    suspend fun setAsDefaultPreset(presetId: String): Result<Unit> {
+        return try {
+            val presets = getPresets().first()
+
+            // Désactiver tous les autres presets par défaut
+            presets.filter { it.isDefault && it.id != presetId }.forEach { preset ->
+                updatePreset(preset.copy(isDefault = false))
+            }
+
+            // Activer le preset sélectionné
+            val targetPreset = presets.find { it.id == presetId }
+            if (targetPreset != null) {
+                updatePreset(targetPreset.copy(isDefault = true))
+            } else {
+                Result.failure(IllegalArgumentException("Preset not found: $presetId"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Enregistre l'utilisation d'un preset (incrémente usage count, met à jour last used)
+     *
+     * @param presetId ID du preset utilisé
+     * @return Result.success si enregistré, Result.failure si erreur
+     */
+    suspend fun recordPresetUsage(presetId: String): Result<Unit> {
+        return try {
+            val preset = getPresetById(presetId)
+            if (preset != null) {
+                updatePreset(
+                    preset.copy(
+                        usageCount = preset.usageCount + 1,
+                        lastUsedAt = System.currentTimeMillis()
+                    )
+                )
+            } else {
+                Result.failure(IllegalArgumentException("Preset not found: $presetId"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ========== Preset Operations (Decrypted UI-friendly versions) ==========
+
+    /**
+     * Récupère les presets sous forme décryptée avec types strongly-typed (pour UI)
+     *
+     * @return Flow de liste de presets déchiffrés
+     */
+    fun getPresetsDecrypted(): Flow<List<DecryptedPreset>> {
+        return getPresets().map { presets -> presets.toDecrypted() }
+    }
+
+    /**
+     * Récupère un preset déchiffré par ID (pour UI)
+     *
+     * @param presetId ID du preset
+     * @return Preset déchiffré ou null
+     */
+    suspend fun getPresetByIdDecrypted(presetId: String): DecryptedPreset? {
+        return getPresetById(presetId)?.toDecrypted()
+    }
+
+    /**
+     * Récupère le preset par défaut déchiffré (pour UI)
+     *
+     * @return Preset par défaut déchiffré ou null
+     */
+    suspend fun getDefaultPresetDecrypted(): DecryptedPreset? {
+        return getDefaultPreset()?.toDecrypted()
+    }
+
+    /**
+     * Crée un nouveau preset à partir d'un DecryptedPreset (pour UI)
+     *
+     * @param preset Preset déchiffré à créer
+     * @return ID du preset créé ou null si erreur
+     */
+    suspend fun createPreset(preset: DecryptedPreset): String? {
+        return try {
+            val result = addPreset(preset.toEntity())
+            if (result.isSuccess) preset.id else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Met à jour un preset à partir d'un DecryptedPreset (pour UI)
+     *
+     * @param preset Preset déchiffré à mettre à jour
+     */
+    suspend fun updatePresetDecrypted(preset: DecryptedPreset) {
+        updatePreset(preset.toEntity())
+    }
+
+    /**
+     * Vérifie si on peut créer un nouveau preset pour un mode donné (pour UI)
+     *
+     * @param mode Mode de génération
+     * @return true si on peut créer, false sinon
+     */
+    suspend fun canCreatePreset(mode: GenerationMode): Boolean {
+        return canCreatePreset(mode.name)
+    }
+
     // ========== Statistics ==========
 
     /**
@@ -335,22 +505,34 @@ class FileVaultRepository @Inject constructor(
             vaultSessionManager.getTags(),
             vaultSessionManager.getPresets()
         ) { entries, folders, tags, presets ->
-            // Compter par type
             val loginCount = entries.count { it.entryType == EntryType.LOGIN.name }
             val noteCount = entries.count { it.entryType == EntryType.NOTE.name }
             val wifiCount = entries.count { it.entryType == EntryType.WIFI.name }
             val cardCount = entries.count { it.entryType == EntryType.CARD.name }
             val identityCount = entries.count { it.entryType == EntryType.IDENTITY.name }
 
-            // Compter favoris et TOTP
             val favoritesCount = entries.count { it.isFavorite }
             val totpCount = entries.count { it.hasTOTP() }
 
-            // Compter mots de passe faibles (< 8 caractères)
             val weakPasswordCount = entries.count { entry ->
-                val pwd = entry.password
-                pwd != null && pwd.length < 8
+                val password = entry.password
+                if (password.isNullOrEmpty()) {
+                    false
+                } else {
+                    when (entry.entryType.toEntryType()) {
+                        EntryType.LOGIN, EntryType.WIFI -> password.isWeakPassword()
+                        else -> false
+                    }
+                }
             }
+
+            val estimatedSize = vaultSessionManager.getCurrentSession()
+                ?.vaultData
+                ?.value
+                ?.metadata
+                ?.statistics
+                ?.totalSize
+                ?: estimateVaultSize(entries, folders, tags, presets)
 
             VaultStatistics(
                 entryCount = entries.size,
@@ -365,9 +547,91 @@ class FileVaultRepository @Inject constructor(
                 favoritesCount = favoritesCount,
                 totpCount = totpCount,
                 weakPasswordCount = weakPasswordCount,
-                sizeInBytes = 0L // TODO: Calculate real size
+                sizeInBytes = estimatedSize
             )
-        }
+        }.distinctUntilChanged()
+    }
+
+    private fun String.isWeakPassword(): Boolean {
+        if (length < 12) return true
+
+        val diversity = listOf<(Char) -> Boolean>(
+            { it.isLowerCase() },
+            { it.isUpperCase() },
+            { it.isDigit() },
+            { !it.isLetterOrDigit() }
+        ).count { predicate -> any(predicate) }
+
+        return diversity < 3
+    }
+
+    private fun estimateVaultSize(
+        entries: List<VaultEntryEntity>,
+        folders: List<FolderEntity>,
+        tags: List<TagEntity>,
+        presets: List<PresetEntity>
+    ): Long {
+        val entriesSize = entries.sumOf { it.estimatedSize() }
+        val foldersSize = folders.sumOf { it.estimatedSize() }
+        val tagsSize = tags.sumOf { it.estimatedSize() }
+        val presetsSize = presets.sumOf { it.estimatedSize() }
+
+        return entriesSize + foldersSize + tagsSize + presetsSize
+    }
+
+    private fun VaultEntryEntity.estimatedSize(): Long {
+        val stringSizes = listOf(
+            title,
+            username ?: "",
+            password ?: "",
+            url ?: "",
+            notes ?: "",
+            customFields ?: "",
+            entryType,
+            totpSecret ?: "",
+            passkeyData ?: "",
+            passkeyRpId,
+            passkeyRpName,
+            passkeyUserHandle,
+            icon ?: "",
+            color ?: ""
+        ).sumOf { it.length.toLong() }
+
+        val numericFieldsOverhead = 8L * 12 // Rough estimation for timestamps & flags
+
+        return stringSizes + numericFieldsOverhead
+    }
+
+    private fun FolderEntity.estimatedSize(): Long {
+        val stringSizes = listOf(
+            name,
+            icon,
+            color ?: ""
+        ).sumOf { it.length.toLong() }
+
+        val numericFieldsOverhead = 8L * 4
+
+        return stringSizes + numericFieldsOverhead
+    }
+
+    private fun TagEntity.estimatedSize(): Long {
+        val stringSizes = listOf(name, color).sumOf { it.length.toLong() }
+        val numericFieldsOverhead = 8L * 2
+
+        return stringSizes + numericFieldsOverhead
+    }
+
+    private fun PresetEntity.estimatedSize(): Long {
+        val stringSizes = listOf(
+            name,
+            icon,
+            generationMode,
+            settings
+        ).sumOf { it.length.toLong() }
+
+        val numericFieldsOverhead = 8L * 6
+
+        return stringSizes + numericFieldsOverhead
     }
 
     // ========== Session Management ==========
@@ -398,33 +662,14 @@ class FileVaultRepository @Inject constructor(
      * @return Result.success si déverrouillé, Result.failure si erreur
      */
     suspend fun unlockVault(vaultId: String, masterPassword: String): Result<Unit> {
-        val result = vaultSessionManager.unlockVault(vaultId, masterPassword)
-
-        if (result.isSuccess) {
-            syncLegacyRepositoryUnlock(vaultId, masterPassword)
-        }
-
-        return result
+        return vaultSessionManager.unlockVault(vaultId, masterPassword)
     }
 
     /**
      * Verrouille le vault actuel
      */
     suspend fun lockVault() {
-        val currentVaultId = vaultSessionManager.getCurrentVaultId()
         vaultSessionManager.lockVault()
-
-        currentVaultId?.let { vaultId ->
-            if (!legacySyncEnabled) {
-                Log.d(TAG, "Skipping legacy lock sync for vault $vaultId (flag disabled)")
-                return@let
-            }
-            try {
-                legacyVaultRepository.lockVault(vaultId)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to sync legacy lock for vault $vaultId", e)
-            }
-        }
     }
 
     /**
@@ -450,11 +695,7 @@ class FileVaultRepository @Inject constructor(
 
         return passwordResult.fold(
             onSuccess = { masterPassword ->
-                val unlockResult = vaultSessionManager.unlockVault(vaultId, masterPassword)
-                if (unlockResult.isSuccess) {
-                    syncLegacyRepositoryUnlock(vaultId, masterPassword)
-                }
-                unlockResult
+                vaultSessionManager.unlockVault(vaultId, masterPassword)
             },
             onFailure = { error -> Result.failure(error) }
         )
@@ -485,23 +726,4 @@ class FileVaultRepository @Inject constructor(
         return biometricVaultManager.isBiometricAvailable()
     }
 
-    private suspend fun syncLegacyRepositoryUnlock(vaultId: String, masterPassword: String) {
-        if (!legacySyncEnabled) {
-            Log.d(TAG, "Legacy sync disabled by feature flag")
-            return
-        }
-
-        try {
-            val success = legacyVaultRepository.unlockVault(vaultId, masterPassword)
-            if (!success) {
-                Log.w(TAG, "Legacy repository did not unlock vault $vaultId")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync legacy unlock for vault $vaultId", e)
-        }
-    }
-
-    companion object {
-        private const val TAG = "FileVaultRepository"
-    }
 }

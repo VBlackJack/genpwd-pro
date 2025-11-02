@@ -1,5 +1,7 @@
 package com.julien.genpwdpro.data.sync
 
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
+import com.julien.genpwdpro.data.sync.SyncHistoryEntry
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -42,7 +44,7 @@ interface CloudSyncRepository {
      * @param id Identifiant unique de la donnée
      * @return Données chiffrées ou null si introuvable
      */
-    suspend fun downloadById(id: String): SyncData?
+    suspend fun downloadById(id: String, dataType: SyncDataType): SyncData?
 
     /**
      * Supprime des données du cloud
@@ -94,6 +96,21 @@ interface CloudSyncRepository {
      * Nettoie les anciennes données (> 30 jours par exemple)
      */
     suspend fun cleanup(olderThan: Long)
+
+    /**
+     * Type de provider actuellement actif
+     */
+    fun getActiveProviderType(): CloudProviderType?
+
+    /**
+     * Enregistre une entrée d'historique de synchronisation
+     */
+    suspend fun recordHistoryEntry(entry: SyncHistoryEntry)
+
+    /**
+     * Efface l'historique de synchronisation persistant
+     */
+    suspend fun clearHistory()
 }
 
 /**
@@ -106,7 +123,7 @@ class NoOpCloudSyncRepository : CloudSyncRepository {
     override suspend fun download(dataType: SyncDataType, deviceId: String?): List<SyncData> =
         emptyList()
 
-    override suspend fun downloadById(id: String): SyncData? = null
+    override suspend fun downloadById(id: String, dataType: SyncDataType): SyncData? = null
 
     override suspend fun delete(id: String): SyncResult =
         SyncResult.Error("Sync désactivée")
@@ -127,4 +144,10 @@ class NoOpCloudSyncRepository : CloudSyncRepository {
     override suspend fun testConnection(): Boolean = false
 
     override suspend fun cleanup(olderThan: Long) {}
+
+    override fun getActiveProviderType(): CloudProviderType? = CloudProviderType.NONE
+
+    override suspend fun recordHistoryEntry(entry: SyncHistoryEntry) {}
+
+    override suspend fun clearHistory() {}
 }

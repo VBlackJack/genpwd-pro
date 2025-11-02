@@ -88,9 +88,9 @@ class ApplyCasingUseCaseTest {
         val input = "abcdefgh" // 8 chars
         val mode = CaseMode.VISUAL_BLOCKS
         val blocks = listOf(
-            CaseBlock.UPPERCASE,  // 0-2: ABC
-            CaseBlock.LOWERCASE,  // 3-5: def
-            CaseBlock.TITLECASE   // 6-7: Gh
+            CaseBlock.UPPERCASE, // 0-2: ABC
+            CaseBlock.LOWERCASE, // 3-5: def
+            CaseBlock.TITLECASE // 6-7: Gh
         )
 
         val result = applyCasingUseCase(input, mode, blocks)
@@ -219,17 +219,19 @@ class ApplyCasingUseCaseTest {
         val input = "abcdefghij" // 10 chars
         val mode = CaseMode.VISUAL_BLOCKS
         val blocks = listOf(
-            CaseBlock.UPPERCASE,  // chars 0-3
-            CaseBlock.LOWERCASE,  // chars 4-6
-            CaseBlock.TITLECASE   // chars 7-9
+            CaseBlock.UPPERCASE, // chars 0-3
+            CaseBlock.LOWERCASE, // chars 4-6
+            CaseBlock.TITLECASE // chars 7-9
         )
 
         val result = applyCasingUseCase(input, mode, blocks)
 
         // Vérifier que les blocs sont appliqués correctement
         val firstPart = result.substring(0, 4)
-        assertTrue("First part should be uppercase",
-            firstPart == firstPart.uppercase())
+        assertTrue(
+            "First part should be uppercase",
+            firstPart == firstPart.uppercase()
+        )
     }
 
     @Test
@@ -240,8 +242,11 @@ class ApplyCasingUseCaseTest {
             val result1 = applyCasingUseCase(input, mode, emptyList())
             val result2 = applyCasingUseCase(input, mode, emptyList())
 
-            assertEquals("Results should be consistent for mode $mode",
-                result1, result2)
+            assertEquals(
+                "Results should be consistent for mode $mode",
+                result1,
+                result2
+            )
         }
     }
 }

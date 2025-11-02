@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.presentation.vaultmanager
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,11 +13,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
+import com.julien.genpwdpro.presentation.utils.SecureWindow
+import com.julien.genpwdpro.core.log.SafeLog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,6 +40,8 @@ fun VaultManagerScreen(
     val defaultVault by viewModel.defaultVault.collectAsState()
     val loadedVaults by viewModel.loadedVaults.collectAsState()
 
+    SecureWindow()
+
     // Obtenir l'activité pour le prompt biométrique
     val activity = LocalContext.current as? androidx.fragment.app.FragmentActivity
 
@@ -45,21 +52,45 @@ fun VaultManagerScreen(
             uiState = uiState,
             onDismiss = { viewModel.hideCreateDialog() },
             onCreate = { name, password, strategy, description, setAsDefault, enableBiometric ->
-                viewModel.createVault(activity, name, password, strategy, description, setAsDefault, enableBiometric)
+                viewModel.createVault(
+                    activity,
+                    name,
+                    password,
+                    strategy,
+                    description,
+                    setAsDefault,
+                    enableBiometric
+                )
             }
         )
     }
 
-    if (uiState.showMigrationDialog) {
-        MigrationDialog(
-            isActive = uiState.isMigrating,
-            progress = uiState.migrationProgress,
-            onDismiss = { viewModel.hideMigrationDialog() },
-            onConfirm = { passwords ->
-                viewModel.startMigration(passwords)
+    if (uiState.showImportDialog) {
+        ImportVaultDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.hideImportDialog() },
+            onImport = { fileUri, vaultName ->
+                viewModel.importVaultFromFile(fileUri, vaultName)
             }
         )
     }
+
+    // Dialog d'export
+    uiState.exportVaultId?.let { vaultId ->
+        val vault = vaults.find { it.id == vaultId }
+        vault?.let {
+            ExportVaultDialog(
+                vaultName = vault.name,
+                onDismiss = { viewModel.hideExportDialog() },
+                onExport = { destinationUri ->
+                    viewModel.exportVault(vaultId, destinationUri)
+                    viewModel.hideExportDialog()
+                }
+            )
+        }
+    }
+
+    // Migration dialog removed - Room to .gpv migration is no longer needed
 
     uiState.confirmDeleteVaultId?.let { vaultId ->
         val vault = vaults.find { it.id == vaultId }
@@ -105,6 +136,12 @@ fun VaultManagerScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    // Bouton pour importer un coffre
+                    IconButton(onClick = { viewModel.showImportDialog() }) {
+                        Icon(Icons.Default.FileOpen, contentDescription = "Importer un coffre")
+                    }
                 }
             )
         },
@@ -139,7 +176,7 @@ fun VaultManagerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lock,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_vault_empty_state_lock),
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -153,7 +190,10 @@ fun VaultManagerScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Button(onClick = { viewModel.showCreateDialog() }) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.cd_create_vault)
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text("Create Vault")
                     }
@@ -179,7 +219,8 @@ fun VaultManagerScreen(
                         },
                         onUnload = { viewModel.unloadVault(vault.id) },
                         onDelete = { viewModel.showDeleteConfirmation(vault.id) },
-                        onOpen = { onNavigateToVault(vault.id) }
+                        onOpen = { onNavigateToVault(vault.id) },
+                        onExport = { viewModel.showExportDialog(vault.id) }
                     )
                 }
             }
@@ -200,7 +241,8 @@ fun VaultCard(
     onLoad: () -> Unit,
     onUnload: () -> Unit,
     onDelete: () -> Unit,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    onExport: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -238,7 +280,12 @@ fun VaultCard(
                         if (isDefault) {
                             AssistChip(
                                 onClick = { },
-                                label = { Text("Default", style = MaterialTheme.typography.labelSmall) },
+                                label = {
+                                    Text(
+                                        "Default",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.Star,
@@ -252,7 +299,12 @@ fun VaultCard(
                         if (isLoaded) {
                             AssistChip(
                                 onClick = { },
-                                label = { Text("Loaded", style = MaterialTheme.typography.labelSmall) },
+                                label = {
+                                    Text(
+                                        "Loaded",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.CheckCircle,
@@ -329,7 +381,11 @@ fun VaultCard(
                         onClick = onOpen,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.LockOpen,
+                            contentDescription = stringResource(R.string.cd_open_vault),
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text("Open", style = MaterialTheme.typography.labelMedium)
                     }
@@ -339,10 +395,30 @@ fun VaultCard(
                             onClick = onSetDefault,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = stringResource(R.string.cd_set_default_vault),
+                                modifier = Modifier.size(18.dp)
+                            )
                             Spacer(Modifier.width(4.dp))
                             Text("Default", style = MaterialTheme.typography.labelMedium)
                         }
+                    }
+                }
+
+                // Deuxième ligne d'actions
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onExport,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Export", style = MaterialTheme.typography.labelMedium)
                     }
 
                     OutlinedButton(
@@ -352,7 +428,11 @@ fun VaultCard(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.cd_delete_vault),
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text("Delete", style = MaterialTheme.typography.labelMedium)
                     }
@@ -434,16 +514,26 @@ fun CreateVaultDialog(
             )
             val weakResult = biometricManager.canAuthenticate(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
-                androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                    androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
 
-            android.util.Log.d("CreateVaultDialog", "Biometric STRONG: $strongResult")
-            android.util.Log.d("CreateVaultDialog", "Biometric WEAK|CREDENTIAL: $weakResult")
+            com.julien.genpwdpro.core.log.SafeLog.d(
+                "CreateVaultDialog",
+                "Biometric STRONG: $strongResult"
+            )
+            com.julien.genpwdpro.core.log.SafeLog.d(
+                "CreateVaultDialog",
+                "Biometric WEAK|CREDENTIAL: $weakResult"
+            )
 
             strongResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS ||
-            weakResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+                weakResult == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
-            android.util.Log.e("CreateVaultDialog", "Error checking biometric availability", e)
+            com.julien.genpwdpro.core.log.SafeLog.e(
+                "CreateVaultDialog",
+                "Error checking biometric availability",
+                e
+            )
             false
         }
     }
@@ -456,10 +546,10 @@ fun CreateVaultDialog(
     }
 
     val isValid = name.isNotBlank() &&
-            password.isNotBlank() &&
-            password == confirmPassword &&
-            password.length >= 8 &&
-            (selectedStrategy != StorageStrategy.CUSTOM || uiState.customFolderUri != null)
+        password.isNotBlank() &&
+        password == confirmPassword &&
+        password.length >= 8 &&
+        (selectedStrategy != StorageStrategy.CUSTOM || uiState.customFolderUri != null)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -580,7 +670,9 @@ fun CreateVaultDialog(
                     isError = confirmPassword.isNotBlank() && password != confirmPassword,
                     supportingText = if (confirmPassword.isNotBlank() && password != confirmPassword) {
                         { Text("Passwords don't match") }
-                    } else null,
+                    } else {
+                        null
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -681,7 +773,9 @@ fun ConfirmDeleteDialog(
         },
         title = { Text("Delete Vault?") },
         text = {
-            Text("Are you sure you want to delete \"$vaultName\"? This action cannot be undone and all data will be permanently lost.")
+            Text(
+                "Are you sure you want to delete \"$vaultName\"? This action cannot be undone and all data will be permanently lost."
+            )
         },
         confirmButton = {
             Button(
@@ -701,56 +795,101 @@ fun ConfirmDeleteDialog(
     )
 }
 
+// Migration dialog removed - Room to .gpv migration is no longer needed
+
 /**
- * Dialog de migration
+ * Dialog d'import de vault depuis un fichier .gpv
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MigrationDialog(
-    isActive: Boolean,
-    progress: com.julien.genpwdpro.data.vault.VaultMigrationManager.MigrationProgress?,
+fun ImportVaultDialog(
+    viewModel: VaultManagerViewModel,
     onDismiss: () -> Unit,
-    onConfirm: (Map<String, String>) -> Unit
+    onImport: (Uri, String) -> Unit
 ) {
+    var vaultName by remember { mutableStateOf("") }
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+    // File picker launcher pour sélectionner le fichier .gpv
+    val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        selectedFileUri = uri
+        // Essayer d'extraire un nom depuis l'URI
+        uri?.let {
+            // Si aucun nom n'est défini, utiliser le nom du fichier
+            if (vaultName.isBlank()) {
+                vaultName = "Coffre importé"
+            }
+        }
+    }
+
+    val isValid = vaultName.isNotBlank() && selectedFileUri != null
+
     AlertDialog(
-        onDismissRequest = if (isActive) {
-            {}
-        } else {
-            onDismiss
-        },
-        title = { Text("Migrate Vaults") },
+        onDismissRequest = onDismiss,
+        title = { Text("Importer un coffre") },
         text = {
-            if (isActive && progress != null) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Bouton de sélection de fichier
+                Button(
+                    onClick = {
+                        filePickerLauncher.launch(arrayOf(
+                            "application/octet-stream",
+                            "*/*"  // Accepter tous les fichiers au cas où
+                        ))
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Migrating vaults to new file-based system...")
-                    LinearProgressIndicator(
-                        progress = if (progress.totalVaults > 0) {
-                            progress.currentVault.toFloat() / progress.totalVaults
-                        } else 0f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Icon(Icons.Default.Folder, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(selectedFileUri?.let { "Fichier sélectionné" } ?: "Sélectionner un fichier .gpv")
+                }
+
+                selectedFileUri?.let { uri ->
+                    // Afficher le chemin du fichier sélectionné
                     Text(
-                        text = "${progress.currentVault}/${progress.totalVaults}: ${progress.vaultName}",
-                        style = MaterialTheme.typography.bodySmall
+                        text = uri.lastPathSegment ?: uri.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
                 }
-            } else {
-                Text("Your vaults will be migrated to the new file-based storage system. This is a one-time operation and may take a few moments.")
+
+                // Nom du coffre
+                OutlinedTextField(
+                    value = vaultName,
+                    onValueChange = { vaultName = it },
+                    label = { Text("Nom du coffre") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Text(
+                    text = "Le coffre sera importé dans le stockage interne de l'application.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         },
         confirmButton = {
-            if (!isActive) {
-                Button(onClick = { onConfirm(emptyMap()) }) {
-                    Text("Start Migration")
-                }
+            Button(
+                onClick = {
+                    selectedFileUri?.let { uri ->
+                        onImport(uri, vaultName)
+                    }
+                },
+                enabled = isValid
+            ) {
+                Text("Importer")
             }
         },
         dismissButton = {
-            if (!isActive) {
-                TextButton(onClick = onDismiss) {
-                    Text("Later")
-                }
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
             }
         }
     )
@@ -768,4 +907,65 @@ private fun formatFileSize(bytes: Long): String {
         bytes < 1024 * 1024 -> "${bytes / 1024} KB"
         else -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
     }
+}
+
+/**
+ * Dialog pour exporter un coffre
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExportVaultDialog(
+    vaultName: String,
+    onDismiss: () -> Unit,
+    onExport: (Uri) -> Unit
+) {
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+    // File picker launcher pour sélectionner la destination
+    val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedFileUri = it
+            onExport(it)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        // Ouvrir automatiquement le sélecteur de fichiers avec le nom suggéré
+        val suggestedName = "$vaultName-${System.currentTimeMillis()}.gpv"
+        filePickerLauncher.launch(suggestedName)
+    }
+
+    // Dialog d'information pendant la sélection
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Exporter le coffre") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Coffre: $vaultName",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Sélectionnez l'emplacement où vous souhaitez sauvegarder le fichier .gpv",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "⚠️ Ce fichier contient vos données chiffrées. Conservez-le en lieu sûr.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
 }

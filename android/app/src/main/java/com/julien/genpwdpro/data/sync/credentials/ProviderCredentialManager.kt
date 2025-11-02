@@ -1,14 +1,10 @@
 package com.julien.genpwdpro.data.sync.credentials
 
-import android.content.Context
-import android.content.SharedPreferences
-import android.util.Log
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.google.gson.Gson
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.secure.SecurePrefs
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.providers.PCloudProvider
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -28,36 +24,18 @@ import javax.inject.Singleton
  */
 @Singleton
 class ProviderCredentialManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val securePrefs: SecurePrefs,
     private val gson: Gson
 ) {
 
     companion object {
         private const val TAG = "ProviderCredentialManager"
-        private const val PREFS_NAME = "cloud_provider_credentials"
 
         // Keys for each provider
         private fun accessTokenKey(type: CloudProviderType) = "${type.name}_access_token"
         private fun refreshTokenKey(type: CloudProviderType) = "${type.name}_refresh_token"
         private fun configKey(type: CloudProviderType) = "${type.name}_config"
         private fun expiresAtKey(type: CloudProviderType) = "${type.name}_expires_at"
-    }
-
-    /**
-     * EncryptedSharedPreferences instance
-     */
-    private val encryptedPrefs: SharedPreferences by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
     }
 
     // ========== OAuth2 Access Tokens ==========
@@ -76,24 +54,23 @@ class ProviderCredentialManager @Inject constructor(
         refreshToken: String? = null,
         expiresInSeconds: Long? = null
     ) {
-        Log.d(TAG, "Saving access token for $providerType")
+        SafeLog.d(TAG, "Saving access token for $providerType")
 
-        encryptedPrefs.edit().apply {
-            putString(accessTokenKey(providerType), accessToken)
-
-            if (refreshToken != null) {
-                putString(refreshTokenKey(providerType), refreshToken)
-            }
-
-            if (expiresInSeconds != null) {
-                val expiresAt = System.currentTimeMillis() + (expiresInSeconds * 1000)
-                putLong(expiresAtKey(providerType), expiresAt)
-            }
-
-            apply()
+        securePrefs.putString(accessTokenKey(providerType), accessToken)
+        if (refreshToken != null) {
+            securePrefs.putString(refreshTokenKey(providerType), refreshToken)
+        } else {
+            securePrefs.remove(refreshTokenKey(providerType))
         }
 
-        Log.d(TAG, "Access token saved for $providerType")
+        if (expiresInSeconds != null) {
+            val expiresAt = System.currentTimeMillis() + (expiresInSeconds * 1000)
+            securePrefs.putLong(expiresAtKey(providerType), expiresAt)
+        } else {
+            securePrefs.remove(expiresAtKey(providerType))
+        }
+
+        SafeLog.d(TAG, "Access token saved for $providerType")
     }
 
     /**
@@ -103,22 +80,22 @@ class ProviderCredentialManager @Inject constructor(
      * @return Access token ou null si non trouvé ou expiré
      */
     fun getAccessToken(providerType: CloudProviderType): String? {
-        val token = encryptedPrefs.getString(accessTokenKey(providerType), null)
+        val token = securePrefs.getString(accessTokenKey(providerType))
 
         if (token == null) {
-            Log.d(TAG, "No access token found for $providerType")
+            SafeLog.d(TAG, "No access token found for $providerType")
             return null
         }
 
         // Vérifier l'expiration
-        val expiresAt = encryptedPrefs.getLong(expiresAtKey(providerType), 0)
+        val expiresAt = securePrefs.getLong(expiresAtKey(providerType), 0)
         if (expiresAt > 0 && System.currentTimeMillis() >= expiresAt) {
-            Log.w(TAG, "Access token expired for $providerType")
+            SafeLog.w(TAG, "Access token expired for $providerType")
             clearAccessToken(providerType)
             return null
         }
 
-        Log.d(TAG, "Access token retrieved for $providerType")
+        SafeLog.d(TAG, "Access token retrieved for $providerType")
         return token
     }
 
@@ -126,7 +103,7 @@ class ProviderCredentialManager @Inject constructor(
      * Récupérer un refresh token
      */
     fun getRefreshToken(providerType: CloudProviderType): String? {
-        return encryptedPrefs.getString(refreshTokenKey(providerType), null)
+        return securePrefs.getString(refreshTokenKey(providerType))
     }
 
     /**
@@ -140,14 +117,13 @@ class ProviderCredentialManager @Inject constructor(
      * Effacer les tokens d'un provider
      */
     fun clearAccessToken(providerType: CloudProviderType) {
-        Log.d(TAG, "Clearing access token for $providerType")
+        SafeLog.d(TAG, "Clearing access token for $providerType")
 
-        encryptedPrefs.edit().apply {
-            remove(accessTokenKey(providerType))
-            remove(refreshTokenKey(providerType))
-            remove(expiresAtKey(providerType))
-            apply()
-        }
+        securePrefs.remove(
+            accessTokenKey(providerType),
+            refreshTokenKey(providerType),
+            expiresAtKey(providerType)
+        )
     }
 
     // ========== Provider Configuration ==========
@@ -159,14 +135,12 @@ class ProviderCredentialManager @Inject constructor(
      * @param config Objet de configuration (sera sérialisé en JSON)
      */
     fun <T> saveProviderConfig(providerType: CloudProviderType, config: T) {
-        Log.d(TAG, "Saving config for $providerType")
+        SafeLog.d(TAG, "Saving config for $providerType")
 
         val json = gson.toJson(config)
-        encryptedPrefs.edit()
-            .putString(configKey(providerType), json)
-            .apply()
+        securePrefs.putString(configKey(providerType), json)
 
-        Log.d(TAG, "Config saved for $providerType")
+        SafeLog.d(TAG, "Config saved for $providerType")
     }
 
     /**
@@ -177,19 +151,19 @@ class ProviderCredentialManager @Inject constructor(
      * @return Configuration ou null si non trouvée
      */
     fun <T> getProviderConfig(providerType: CloudProviderType, clazz: Class<T>): T? {
-        val json = encryptedPrefs.getString(configKey(providerType), null)
+        val json = securePrefs.getString(configKey(providerType))
 
         if (json == null) {
-            Log.d(TAG, "No config found for $providerType")
+            SafeLog.d(TAG, "No config found for $providerType")
             return null
         }
 
         return try {
             val config = gson.fromJson(json, clazz)
-            Log.d(TAG, "Config retrieved for $providerType")
+            SafeLog.d(TAG, "Config retrieved for $providerType")
             config
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing config for $providerType", e)
+            SafeLog.e(TAG, "Error parsing config for $providerType", e)
             null
         }
     }
@@ -198,18 +172,16 @@ class ProviderCredentialManager @Inject constructor(
      * Vérifier si une configuration existe
      */
     fun hasProviderConfig(providerType: CloudProviderType): Boolean {
-        return encryptedPrefs.contains(configKey(providerType))
+        return securePrefs.contains(configKey(providerType))
     }
 
     /**
      * Effacer la configuration d'un provider
      */
     fun clearProviderConfig(providerType: CloudProviderType) {
-        Log.d(TAG, "Clearing config for $providerType")
+        SafeLog.d(TAG, "Clearing config for $providerType")
 
-        encryptedPrefs.edit()
-            .remove(configKey(providerType))
-            .apply()
+        securePrefs.remove(configKey(providerType))
     }
 
     // ========== Complete Provider Management ==========
@@ -218,23 +190,30 @@ class ProviderCredentialManager @Inject constructor(
      * Effacer toutes les données d'un provider (tokens + config)
      */
     fun clearProvider(providerType: CloudProviderType) {
-        Log.d(TAG, "Clearing all data for $providerType")
+        SafeLog.d(TAG, "Clearing all data for $providerType")
 
         clearAccessToken(providerType)
         clearProviderConfig(providerType)
 
-        Log.d(TAG, "All data cleared for $providerType")
+        SafeLog.d(TAG, "All data cleared for $providerType")
     }
 
     /**
      * Effacer toutes les données de tous les providers
      */
     fun clearAll() {
-        Log.w(TAG, "Clearing ALL provider data")
+        SafeLog.w(TAG, "Clearing ALL provider data")
 
-        encryptedPrefs.edit().clear().apply()
+        CloudProviderType.values().forEach { type ->
+            securePrefs.remove(
+                accessTokenKey(type),
+                refreshTokenKey(type),
+                expiresAtKey(type),
+                configKey(type)
+            )
+        }
 
-        Log.w(TAG, "All provider data cleared")
+        SafeLog.w(TAG, "All provider data cleared")
     }
 
     /**

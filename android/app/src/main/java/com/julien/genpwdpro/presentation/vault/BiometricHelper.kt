@@ -25,7 +25,11 @@ class BiometricHelper(private val activity: FragmentActivity) {
      */
     fun isBiometricAvailable(): Boolean {
         val biometricManager = BiometricManager.from(activity)
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        return when (
+            biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+            )
+        ) {
             BiometricManager.BIOMETRIC_SUCCESS -> true
             else -> false
         }
@@ -36,29 +40,31 @@ class BiometricHelper(private val activity: FragmentActivity) {
      */
     fun isBiometricOrCredentialsAvailable(): Boolean {
         val biometricManager = BiometricManager.from(activity)
-        return when (biometricManager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        )) {
+        return when (
+            biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
+        ) {
             BiometricManager.BIOMETRIC_SUCCESS -> true
             else -> false
         }
     }
 
     /**
-     * Affiche le prompt biométrique
+     * Affiche le prompt biométrique avec messages améliorés
      *
-     * @param title Titre du dialogue
-     * @param subtitle Sous-titre (nom du vault)
-     * @param description Description additionnelle
+     * @param title Titre du dialogue (par défaut contextualisé)
+     * @param subtitle Sous-titre explicatif
+     * @param description Description détaillée de l'action
      * @param allowDeviceCredentials Autoriser PIN/Pattern en fallback
      * @param onSuccess Callback appelé en cas de succès
-     * @param onError Callback appelé en cas d'erreur
+     * @param onError Callback appelé en cas d'erreur avec code et message
      */
     fun showBiometricPrompt(
-        title: String = "Authentification biométrique",
-        subtitle: String? = null,
-        description: String? = null,
+        title: String = "Authentification sécurisée",
+        subtitle: String? = "Confirmez votre identité",
+        description: String? = "Utilisez votre empreinte digitale ou reconnaissance faciale pour continuer en toute sécurité.",
         allowDeviceCredentials: Boolean = true,
         onSuccess: () -> Unit,
         onError: (errorCode: Int, errorMessage: String) -> Unit
@@ -95,7 +101,7 @@ class BiometricHelper(private val activity: FragmentActivity) {
                     // Permet PIN/Pattern comme fallback
                     setAllowedAuthenticators(
                         BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                            BiometricManager.Authenticators.DEVICE_CREDENTIAL
                     )
                 } else {
                     // Biométrie uniquement
@@ -126,30 +132,77 @@ class BiometricHelper(private val activity: FragmentActivity) {
         const val ERROR_VENDOR = BiometricPrompt.ERROR_VENDOR
 
         /**
-         * Traduit un code d'erreur en message utilisateur
+         * Traduit un code d'erreur en message utilisateur détaillé
+         * avec des instructions claires pour l'utilisateur
          */
         fun getErrorMessage(errorCode: Int): String {
             return when (errorCode) {
                 ERROR_CANCELED, ERROR_USER_CANCELED, ERROR_NEGATIVE_BUTTON ->
+                    "Authentification annulée. Vous pouvez réessayer ou utiliser votre mot de passe principal."
+
+                ERROR_NO_BIOMETRICS ->
+                    "Aucune biométrie enregistrée sur cet appareil.\n\n" +
+                    "Pour utiliser cette fonction, configurez d'abord une empreinte digitale ou reconnaissance faciale dans les paramètres de votre appareil."
+
+                ERROR_HW_NOT_PRESENT ->
+                    "Capteur biométrique non disponible.\n\n" +
+                    "Votre appareil ne dispose pas de capteur d'empreinte digitale ou de reconnaissance faciale. Vous pouvez utiliser votre mot de passe principal pour déverrouiller vos coffres."
+
+                ERROR_HW_UNAVAILABLE ->
+                    "Capteur biométrique temporairement indisponible.\n\n" +
+                    "Le capteur est peut-être utilisé par une autre application. Veuillez réessayer dans quelques instants."
+
+                ERROR_LOCKOUT ->
+                    "Trop de tentatives échouées.\n\n" +
+                    "Pour votre sécurité, la biométrie est temporairement désactivée. Veuillez patienter 30 secondes avant de réessayer, ou utilisez votre mot de passe principal."
+
+                ERROR_LOCKOUT_PERMANENT ->
+                    "Biométrie verrouillée.\n\n" +
+                    "Après plusieurs tentatives échouées, la biométrie a été verrouillée. Pour des raisons de sécurité, veuillez déverrouiller votre appareil avec votre PIN/mot de passe, puis réessayez."
+
+                ERROR_NO_DEVICE_CREDENTIAL ->
+                    "Aucun code de sécurité configuré.\n\n" +
+                    "Pour utiliser cette fonction, configurez d'abord un code PIN, un schéma ou un mot de passe dans les paramètres de sécurité de votre appareil."
+
+                ERROR_TIMEOUT ->
+                    "Temps d'authentification expiré.\n\n" +
+                    "Vous n'avez pas authentifié dans le délai imparti. Veuillez réessayer."
+
+                ERROR_UNABLE_TO_PROCESS ->
+                    "Impossible de traiter l'authentification.\n\n" +
+                    "Le capteur n'a pas pu lire correctement votre biométrie. Assurez-vous que votre doigt/visage est bien positionné et réessayez."
+
+                else ->
+                    "Échec de l'authentification biométrique.\n\n" +
+                    "Une erreur inattendue s'est produite (code: $errorCode). Vous pouvez utiliser votre mot de passe principal."
+            }
+        }
+
+        /**
+         * Obtient un message court pour l'erreur (sans les détails)
+         */
+        fun getShortErrorMessage(errorCode: Int): String {
+            return when (errorCode) {
+                ERROR_CANCELED, ERROR_USER_CANCELED, ERROR_NEGATIVE_BUTTON ->
                     "Authentification annulée"
                 ERROR_NO_BIOMETRICS ->
-                    "Aucune biométrie enregistrée. Veuillez configurer une empreinte ou reconnaissance faciale."
+                    "Aucune biométrie enregistrée"
                 ERROR_HW_NOT_PRESENT ->
-                    "Capteur biométrique non disponible sur cet appareil"
+                    "Capteur non disponible"
                 ERROR_HW_UNAVAILABLE ->
-                    "Capteur biométrique temporairement indisponible"
+                    "Capteur temporairement indisponible"
                 ERROR_LOCKOUT ->
-                    "Trop de tentatives. Réessayez dans quelques secondes."
+                    "Trop de tentatives"
                 ERROR_LOCKOUT_PERMANENT ->
-                    "Trop de tentatives. Utilisez votre mot de passe."
+                    "Biométrie verrouillée"
                 ERROR_NO_DEVICE_CREDENTIAL ->
                     "Aucun code PIN/pattern configuré"
                 ERROR_TIMEOUT ->
-                    "Délai d'authentification dépassé"
+                    "Temps expiré"
                 ERROR_UNABLE_TO_PROCESS ->
                     "Impossible de traiter l'authentification"
                 else ->
-                    "Échec de l'authentification biométrique"
+                    "Échec de l'authentification"
             }
         }
     }

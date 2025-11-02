@@ -1,18 +1,18 @@
 package com.julien.genpwdpro.presentation.vault
 
-import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour l'écran de déverrouillage d'un vault
@@ -45,16 +45,21 @@ class UnlockVaultViewModel @Inject constructor(
     fun loadVault(vaultId: String) {
         viewModelScope.launch {
             try {
+                SafeLog.d(TAG, "Loading vault metadata for $vaultId")
                 _uiState.value = UnlockVaultUiState.Loading
                 val registry = vaultRegistryDao.getById(vaultId)
 
                 if (registry == null) {
+                    SafeLog.w(TAG, "Vault not found: $vaultId")
+                    _vaultRegistry.value = null
                     _uiState.value = UnlockVaultUiState.Error("Vault introuvable")
                 } else {
                     _vaultRegistry.value = registry
                     _uiState.value = UnlockVaultUiState.Ready
+                    SafeLog.d(TAG, "Vault metadata loaded: ${registry.name}")
                 }
             } catch (e: Exception) {
+                SafeLog.e(TAG, "Error loading vault: $vaultId", e)
                 _uiState.value = UnlockVaultUiState.Error(
                     e.message ?: "Erreur lors du chargement du vault"
                 )
@@ -68,41 +73,47 @@ class UnlockVaultViewModel @Inject constructor(
     fun unlockWithPassword(vaultId: String, masterPassword: String) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "🔓 Attempting unlock for vault: $vaultId")
-                Log.d(TAG, "📏 Password length: ${masterPassword.length}")
-                Log.d(TAG, "📊 Current UI state: ${_uiState.value::class.simpleName}")
+                SafeLog.d(TAG, "🔓 Attempting unlock for vault: $vaultId")
+                SafeLog.d(
+                    TAG,
+                    "📏 Master password received for unlock: ${SafeLog.redact(masterPassword)}"
+                )
+                SafeLog.d(TAG, "📊 Current UI state: ${_uiState.value::class.simpleName}")
 
                 _uiState.value = UnlockVaultUiState.Unlocking
 
                 val result = fileVaultRepository.unlockVault(vaultId, masterPassword)
 
-                Log.d(TAG, "✅ Unlock result: ${if (result.isSuccess) "SUCCESS" else "FAILURE"}")
+                SafeLog.d(TAG, "✅ Unlock result: ${if (result.isSuccess) "SUCCESS" else "FAILURE"}")
 
                 result.fold(
                     onSuccess = {
-                        Log.i(TAG, "✅ Vault unlocked successfully: $vaultId")
+                        SafeLog.i(TAG, "✅ Vault unlocked successfully: $vaultId")
                         // Vérifier que la session est bien créée
                         val currentVaultId = fileVaultRepository.getCurrentVaultId()
-                        Log.d(TAG, "Current vault ID after unlock: $currentVaultId")
+                        SafeLog.d(TAG, "Current vault ID after unlock: $currentVaultId")
                         if (currentVaultId == vaultId) {
-                            Log.i(TAG, "✅ Session correctly set to vault: $vaultId")
+                            SafeLog.i(TAG, "✅ Session correctly set to vault: $vaultId")
                         } else {
-                            Log.w(TAG, "⚠️ Session mismatch! Expected: $vaultId, Got: $currentVaultId")
+                            SafeLog.w(
+                                TAG,
+                                "⚠️ Session mismatch! Expected: $vaultId, Got: $currentVaultId"
+                            )
                         }
                         _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
                     },
                     onFailure = { error ->
-                        Log.e(TAG, "❌ Unlock failed for vault $vaultId", error)
-                        Log.e(TAG, "❌ Error type: ${error::class.simpleName}")
-                        Log.e(TAG, "❌ Error message: ${error.message}")
+                        SafeLog.e(TAG, "❌ Unlock failed for vault $vaultId", error)
+                        SafeLog.e(TAG, "❌ Error type: ${error::class.simpleName}")
+                        SafeLog.e(TAG, "❌ Error message: ${error.message}")
                         _uiState.value = UnlockVaultUiState.Error(
                             error.message ?: "Mot de passe incorrect"
                         )
                     }
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "💥 Exception during unlock attempt", e)
-                Log.e(TAG, "💥 Exception type: ${e::class.simpleName}")
+                SafeLog.e(TAG, "💥 Exception during unlock attempt", e)
+                SafeLog.e(TAG, "💥 Exception type: ${e::class.simpleName}")
                 _uiState.value = UnlockVaultUiState.Error(
                     e.message ?: "Erreur lors du déverrouillage"
                 )
@@ -128,7 +139,8 @@ class UnlockVaultViewModel @Inject constructor(
                         val message = error.message ?: "Authentification biométrique échouée"
 
                         if (message.contains("cancel", ignoreCase = true) ||
-                            message.contains("annul", ignoreCase = true)) {
+                            message.contains("annul", ignoreCase = true)
+                        ) {
                             _uiState.value = UnlockVaultUiState.Ready
                         } else {
                             _uiState.value = UnlockVaultUiState.Error(message)

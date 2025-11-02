@@ -3,7 +3,8 @@ package com.julien.genpwdpro.domain.usecases
 import com.julien.genpwdpro.data.models.Placement
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.utils.CharacterSets
-import kotlin.random.Random
+import com.julien.genpwdpro.domain.utils.SecureRandomProvider
+import com.julien.genpwdpro.domain.utils.secureRandom
 
 /**
  * Use case pour placer les chiffres et caractères spéciaux
@@ -21,7 +22,7 @@ class PlaceCharactersUseCase {
                 password = result,
                 characters = digits,
                 placement = settings.digitsPlacement,
-                position = settings.digitsPosition
+                positions = settings.digitsPositions
             )
         }
 
@@ -32,7 +33,7 @@ class PlaceCharactersUseCase {
                 password = result,
                 characters = specials,
                 placement = settings.specialsPlacement,
-                position = settings.specialsPosition
+                positions = settings.specialsPositions
             )
         }
 
@@ -44,7 +45,7 @@ class PlaceCharactersUseCase {
      */
     private fun generateDigits(count: Int): String {
         return (1..count).map {
-            CharacterSets.DIGITS.random()
+            CharacterSets.DIGITS.secureRandom()
         }.joinToString("")
     }
 
@@ -59,7 +60,7 @@ class PlaceCharactersUseCase {
         }
 
         return (1..count).map {
-            specials.random()
+            specials.secureRandom()
         }.joinToString("")
     }
 
@@ -70,7 +71,7 @@ class PlaceCharactersUseCase {
         password: String,
         characters: String,
         placement: Placement,
-        position: Int
+        positions: List<Int>
     ): String {
         return when (placement) {
             Placement.START -> characters + password
@@ -82,15 +83,29 @@ class PlaceCharactersUseCase {
             Placement.RANDOM -> {
                 val chars = password.toMutableList()
                 characters.forEach { char ->
-                    val randomPos = Random.nextInt(0, chars.size + 1)
+                    val randomPos = SecureRandomProvider.nextInt(chars.size + 1)
                     chars.add(randomPos, char)
                 }
                 chars.joinToString("")
             }
             Placement.VISUAL -> {
-                // Position basée sur le pourcentage (0-100)
-                val insertPos = (password.length * position / 100).coerceIn(0, password.length)
-                password.substring(0, insertPos) + characters + password.substring(insertPos)
+                // Placer chaque caractère à sa position spécifique
+                val chars = password.toMutableList()
+
+                // Créer une liste de (caractère, position) et trier par position décroissante
+                // pour éviter les décalages lors de l'insertion
+                val charWithPositions = characters.mapIndexed { index, char ->
+                    val position = positions.getOrNull(index) ?: positions.lastOrNull() ?: 50
+                    val insertPos = (password.length * position / 100).coerceIn(0, chars.size)
+                    char to insertPos
+                }.sortedByDescending { it.second }
+
+                // Insérer chaque caractère à sa position
+                charWithPositions.forEach { (char, pos) ->
+                    chars.add(pos, char)
+                }
+
+                chars.joinToString("")
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.models.vault
 
-import com.julien.genpwdpro.data.local.entity.*
+// Toutes les entités sont maintenant définies dans ce package (VaultEntities.kt)
+// Plus besoin d'importer depuis data.db.entity (supprimé)
 
 /**
  * Metadata du vault (stocké dans le fichier .gpv)

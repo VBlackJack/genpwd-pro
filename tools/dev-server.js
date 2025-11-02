@@ -98,17 +98,26 @@ class DevServer {
     }
 
     // Sécurité : empêcher l'accès aux répertoires parents
-    const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, '');
-    
-    // CORRECTION CRITIQUE : Gestion correcte des chemins de fichiers
-    let filePath;
-    if (safePath.startsWith('/dictionaries/')) {
-      // Dictionnaires à la racine du projet
-      filePath = path.join(process.cwd(), safePath.substring(1));
+    const normalizedPath = path.posix.normalize(pathname);
+    const isDictionaryRequest = normalizedPath.startsWith('/dictionaries/');
+    const baseDir = isDictionaryRequest
+      ? path.join(process.cwd(), 'dictionaries')
+      : path.join(process.cwd(), this.sourceDir);
+    const relativePath = isDictionaryRequest
+      ? normalizedPath.substring('/dictionaries'.length)
+      : normalizedPath;
+    const candidatePath = path.resolve(baseDir, '.' + relativePath);
+
+    const baseDirWithSep = baseDir.endsWith(path.sep) ? baseDir : baseDir + path.sep;
+    if (!candidatePath.startsWith(baseDirWithSep)) {
+      console.warn(`[DEV] Tentative d'accès hors racine bloquée: ${pathname}`);
+      this.send404(res, pathname);
+      return;
+    }
+
+    const filePath = candidatePath;
+    if (isDictionaryRequest) {
       console.log(`[DEV] Demande dictionnaire: ${filePath}`);
-    } else {
-      // Autres fichiers dans src/
-      filePath = path.join(process.cwd(), this.sourceDir, safePath);
     }
 
     // Vérification existence fichier

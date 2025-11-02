@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.data.sync
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import javax.inject.Inject
@@ -42,26 +42,26 @@ class ConflictResolver @Inject constructor() {
         remote: VaultSyncData,
         strategy: ConflictResolutionStrategy
     ): VaultSyncData {
-        Log.d(TAG, "Resolving conflict with strategy: $strategy")
-        Log.d(TAG, "Local timestamp: ${local.timestamp}, Remote timestamp: ${remote.timestamp}")
+        SafeLog.d(TAG, "Resolving conflict with strategy: $strategy")
+        SafeLog.d(TAG, "Local timestamp: ${local.timestamp}, Remote timestamp: ${remote.timestamp}")
 
         return when (strategy) {
             ConflictResolutionStrategy.LOCAL_WINS -> {
-                Log.d(TAG, "Keeping local version")
+                SafeLog.d(TAG, "Keeping local version")
                 local
             }
 
             ConflictResolutionStrategy.REMOTE_WINS -> {
-                Log.d(TAG, "Keeping remote version")
+                SafeLog.d(TAG, "Keeping remote version")
                 remote
             }
 
             ConflictResolutionStrategy.NEWEST_WINS -> {
                 if (remote.timestamp > local.timestamp) {
-                    Log.d(TAG, "Remote is newer, keeping remote")
+                    SafeLog.d(TAG, "Remote is newer, keeping remote")
                     remote
                 } else {
-                    Log.d(TAG, "Local is newer or equal, keeping local")
+                    SafeLog.d(TAG, "Local is newer or equal, keeping local")
                     local
                 }
             }
@@ -69,14 +69,14 @@ class ConflictResolver @Inject constructor() {
             ConflictResolutionStrategy.SMART_MERGE -> {
                 // TODO: Implémenter la fusion intelligente
                 // Pour l'instant, utiliser NEWEST_WINS
-                Log.w(TAG, "SMART_MERGE not implemented yet, falling back to NEWEST_WINS")
+                SafeLog.w(TAG, "SMART_MERGE not implemented yet, falling back to NEWEST_WINS")
                 if (remote.timestamp > local.timestamp) remote else local
             }
 
             ConflictResolutionStrategy.MANUAL -> {
                 // Retourner la version locale par défaut
                 // L'UI devra demander à l'utilisateur
-                Log.d(TAG, "MANUAL resolution required, returning local for now")
+                SafeLog.d(TAG, "MANUAL resolution required, returning local for now")
                 local
             }
         }
@@ -92,31 +92,31 @@ class ConflictResolver @Inject constructor() {
     fun hasConflict(local: VaultSyncData, remote: VaultSyncData): Boolean {
         // Pas de conflit si les checksums sont identiques
         if (local.checksum == remote.checksum) {
-            Log.d(TAG, "No conflict: checksums match")
+            SafeLog.d(TAG, "No conflict: checksums match")
             return false
         }
 
         // Pas de conflit si c'est le même appareil
         if (local.deviceId == remote.deviceId) {
-            Log.d(TAG, "No conflict: same device")
+            SafeLog.d(TAG, "No conflict: same device")
             return false
         }
 
         // Conflit si les timestamps sont très proches (modifications simultanées)
         val timeDiff = kotlin.math.abs(local.timestamp - remote.timestamp)
         if (timeDiff < CONFLICT_THRESHOLD_MS) {
-            Log.d(TAG, "Conflict detected: simultaneous modifications (diff: ${timeDiff}ms)")
+            SafeLog.d(TAG, "Conflict detected: simultaneous modifications (diff: ${timeDiff}ms)")
             return true
         }
 
         // Pas de conflit si l'un est clairement plus récent
         if (kotlin.math.abs(local.timestamp - remote.timestamp) > CONFLICT_THRESHOLD_MS) {
-            Log.d(TAG, "No conflict: clear time difference")
+            SafeLog.d(TAG, "No conflict: clear time difference")
             return false
         }
 
         // Par défaut, considérer comme conflit si les checksums diffèrent
-        Log.d(TAG, "Conflict detected: different checksums")
+        SafeLog.d(TAG, "Conflict detected: different checksums")
         return true
     }
 

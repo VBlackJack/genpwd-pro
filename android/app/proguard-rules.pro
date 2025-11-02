@@ -19,9 +19,12 @@
 #===============================================================================
 # Only keep what's absolutely necessary
 
+# Ensure runtime annotations/generic signatures are preserved for reflection and DI
+-keepattributes *Annotation*,Signature
+
 # Keep data models for JSON serialization
 -keep class com.julien.genpwdpro.data.models.** { *; }
--keep class com.julien.genpwdpro.data.local.entity.** { *; }
+-keep class com.julien.genpwdpro.data.db.entity.** { *; }
 
 # Keep ViewModels (accessed by Hilt)
 -keep class * extends androidx.lifecycle.ViewModel {
@@ -59,14 +62,24 @@
 # Prevent stripping of generic signatures
 -keepattributes Signature
 
+# TODO: Enable when kotlinx.serialization is adopted
+#-keep class kotlinx.serialization.** { *; }
+#-keepclassmembers class * { @kotlinx.serialization.SerialName <fields>; }
+
 #===============================================================================
 # HILT / DAGGER
 #===============================================================================
 -dontwarn com.google.errorprone.annotations.**
+-dontwarn dagger.**
+-dontwarn javax.inject.**
 
 # Keep Hilt generated classes
+-keep class dagger.** { *; }
+-keep interface dagger.** { *; }
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
+-keep class com.julien.genpwdpro.GenPwdProApplication_GeneratedInjector { *; }
+-keep class com.julien.genpwdpro.di.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 
 # Keep Hilt entry points
@@ -76,9 +89,75 @@
 #===============================================================================
 # ROOM DATABASE
 #===============================================================================
+-keep class androidx.room.RoomDatabase { *; }
 -keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Database class * { *; }
 -keep @androidx.room.Entity class *
+-keep @androidx.room.Dao class * { *; }
+-keep class androidx.room.migration.Migration { *; }
+-keepclassmembers class * extends androidx.room.migration.Migration {
+    public <init>(...);
+    public void migrate(androidx.sqlite.db.SupportSQLiteDatabase);
+}
+-keepclassmembers class ** implements androidx.room.RoomDatabase$Callback { *; }
+-keep class androidx.sqlite.db.SupportSQLiteOpenHelper$Callback { *; }
+-keep class androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory { *; }
+-keep class com.julien.genpwdpro.data.db.entity.** { *; }
+-keep class com.julien.genpwdpro.data.db.dao.** { *; }
+-keep class com.julien.genpwdpro.data.db.migrations.** { *; }
+-keepclassmembers class com.julien.genpwdpro.data.db.database.AppDatabase$Companion {
+    public static androidx.room.migration.Migration MIGRATION_1_2;
+    public static androidx.room.migration.Migration MIGRATION_2_3;
+    public static androidx.room.migration.Migration MIGRATION_3_4;
+    public static androidx.room.migration.Migration MIGRATION_4_5;
+    public static androidx.room.migration.Migration MIGRATION_5_6;
+    public static androidx.room.migration.Migration MIGRATION_6_7;
+    public static androidx.room.migration.Migration MIGRATION_7_8;
+}
 -dontwarn androidx.room.paging.**
+-dontwarn androidx.room.**
+
+#==============================================================================
+# WORKMANAGER
+#==============================================================================
+-keep class androidx.work.Configuration { *; }
+-keep class androidx.work.WorkerParameters { *; }
+-keep class androidx.work.ListenableWorker { *; }
+-keep class androidx.work.CoroutineWorker { *; }
+-keep class androidx.work.ListenableWorker$Result { *; }
+-keep class androidx.hilt.work.HiltWorkerFactory { *; }
+-keep class androidx.work.impl.foreground.SystemForegroundService { *; }
+-keep class androidx.work.impl.background.systemjob.SystemJobService { *; }
+-keep class androidx.work.impl.background.systemjob.SystemJobScheduler { *; }
+-keep class androidx.work.impl.background.systemalarm.SystemAlarmService { *; }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy* { *; }
+-keep class androidx.work.impl.utils.ForceStopRunnable { *; }
+-keep class androidx.work.impl.Schedulers { *; }
+-keep class androidx.work.WorkManagerInitializer { *; }
+-keep class androidx.startup.InitializationProvider { *; }
+-keep class com.julien.genpwdpro.workers.** { *; }
+-keep interface com.julien.genpwdpro.workers.** { *; }
+-dontwarn androidx.work.**
+
+#==============================================================================
+# SQLCIPHER
+#==============================================================================
+-keep class net.sqlcipher.** { *; }
+-dontwarn net.sqlcipher.**
+-keep class net.sqlcipher.database.SupportFactory { *; }
+-keep class net.sqlcipher.database.SQLiteDatabase { *; }
+-keep class net.sqlcipher.database.SQLiteDatabaseHook { *; }
+-keep class net.sqlcipher.CursorWindow { *; }
+
+#==============================================================================
+# AUTOFILL SERVICE
+#==============================================================================
+-keep class com.julien.genpwdpro.autofill.GenPwdAutofillService { *; }
+-keep class com.julien.genpwdpro.autofill.model.** { *; }
+-keep class com.julien.genpwdpro.autofill.dataset.** { *; }
+-keep class com.julien.genpwdpro.autofill.resolvers.** { *; }
+-keep class com.julien.genpwdpro.autofill.security.** { *; }
+-keep interface com.julien.genpwdpro.autofill.** { *; }
 
 #===============================================================================
 # KOTLIN
@@ -110,6 +189,9 @@
 #===============================================================================
 # COMPOSE
 #===============================================================================
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
 # Keep Compose stable classes
 -keep class androidx.compose.runtime.** { *; }
 -keep class androidx.compose.ui.** { *; }
@@ -132,7 +214,20 @@
     public static *** i(...);
     public static *** w(...);
     public static *** e(...);
+    public static *** wtf(...);
 }
+-assumenosideeffects class okhttp3.logging.HttpLoggingInterceptor$Logger {
+    public void log(java.lang.String);
+}
+-assumenosideeffects class okhttp3.logging.HttpLoggingInterceptor {
+    public okhttp3.logging.HttpLoggingInterceptor setLevel(okhttp3.logging.HttpLoggingInterceptor$Level);
+}
+
+#===============================================================================
+# ENCRYPTED SHARED PREFS
+#===============================================================================
+-keep class androidx.security.crypto.** { *; }
+-dontwarn androidx.security.crypto.**
 
 #===============================================================================
 # GENERAL ANDROID

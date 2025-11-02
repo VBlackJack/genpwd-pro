@@ -2,16 +2,15 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import com.julien.genpwdpro.data.secure.SecurePrefs
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.models.SyncInterval
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Gestionnaire de préférences pour la synchronisation cloud
@@ -29,12 +28,12 @@ import javax.inject.Singleton
  */
 @Singleton
 class SyncPreferencesManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val securePrefs: SecurePrefs
 ) {
     companion object {
         // Shared Preferences names
         private const val PREFS_SYNC_CONFIG = "genpwd_sync_config"
-        private const val PREFS_SYNC_CREDENTIALS = "genpwd_sync_credentials_encrypted"
         private const val PREFS_SYNC_HISTORY = "genpwd_sync_history"
 
         // Keys - Configuration
@@ -72,21 +71,6 @@ class SyncPreferencesManager @Inject constructor(
         PREFS_SYNC_CONFIG,
         Context.MODE_PRIVATE
     )
-
-    // Encrypted SharedPreferences for credentials
-    private val credentialPrefs: SharedPreferences by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_SYNC_CREDENTIALS,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-    }
 
     // History SharedPreferences
     private val historyPrefs: SharedPreferences = context.getSharedPreferences(
@@ -235,24 +219,22 @@ class SyncPreferencesManager @Inject constructor(
         accessToken: String,
         refreshToken: String?
     ) = withContext(Dispatchers.IO) {
-        credentialPrefs.edit()
-            .putString(KEY_GOOGLE_DRIVE_TOKEN, accessToken)
-            .putString(KEY_GOOGLE_DRIVE_REFRESH_TOKEN, refreshToken)
-            .apply()
+        securePrefs.putString(KEY_GOOGLE_DRIVE_TOKEN, accessToken)
+        securePrefs.putString(KEY_GOOGLE_DRIVE_REFRESH_TOKEN, refreshToken)
     }
 
     /**
      * Récupère le token Google Drive
      */
     suspend fun getGoogleDriveAccessToken(): String? = withContext(Dispatchers.IO) {
-        credentialPrefs.getString(KEY_GOOGLE_DRIVE_TOKEN, null)
+        securePrefs.getString(KEY_GOOGLE_DRIVE_TOKEN)
     }
 
     /**
      * Récupère le refresh token Google Drive
      */
     suspend fun getGoogleDriveRefreshToken(): String? = withContext(Dispatchers.IO) {
-        credentialPrefs.getString(KEY_GOOGLE_DRIVE_REFRESH_TOKEN, null)
+        securePrefs.getString(KEY_GOOGLE_DRIVE_REFRESH_TOKEN)
     }
 
     /**
@@ -262,17 +244,15 @@ class SyncPreferencesManager @Inject constructor(
         accessToken: String,
         refreshToken: String?
     ) = withContext(Dispatchers.IO) {
-        credentialPrefs.edit()
-            .putString(KEY_ONEDRIVE_TOKEN, accessToken)
-            .putString(KEY_ONEDRIVE_REFRESH_TOKEN, refreshToken)
-            .apply()
+        securePrefs.putString(KEY_ONEDRIVE_TOKEN, accessToken)
+        securePrefs.putString(KEY_ONEDRIVE_REFRESH_TOKEN, refreshToken)
     }
 
     /**
      * Récupère le token OneDrive
      */
     suspend fun getOneDriveAccessToken(): String? = withContext(Dispatchers.IO) {
-        credentialPrefs.getString(KEY_ONEDRIVE_TOKEN, null)
+        securePrefs.getString(KEY_ONEDRIVE_TOKEN)
     }
 
     /**
@@ -284,22 +264,20 @@ class SyncPreferencesManager @Inject constructor(
         password: String,
         validateSSL: Boolean = true
     ) = withContext(Dispatchers.IO) {
-        credentialPrefs.edit()
-            .putString(KEY_WEBDAV_URL, serverUrl)
-            .putString(KEY_WEBDAV_USERNAME, username)
-            .putString(KEY_WEBDAV_PASSWORD, password)
-            .putBoolean(KEY_WEBDAV_VALIDATE_SSL, validateSSL)
-            .apply()
+        securePrefs.putString(KEY_WEBDAV_URL, serverUrl)
+        securePrefs.putString(KEY_WEBDAV_USERNAME, username)
+        securePrefs.putString(KEY_WEBDAV_PASSWORD, password)
+        securePrefs.putBoolean(KEY_WEBDAV_VALIDATE_SSL, validateSSL)
     }
 
     /**
      * Récupère les credentials WebDAV
      */
     suspend fun getWebDAVCredentials(): WebDAVCredentials? = withContext(Dispatchers.IO) {
-        val url = credentialPrefs.getString(KEY_WEBDAV_URL, null)
-        val username = credentialPrefs.getString(KEY_WEBDAV_USERNAME, null)
-        val password = credentialPrefs.getString(KEY_WEBDAV_PASSWORD, null)
-        val validateSSL = credentialPrefs.getBoolean(KEY_WEBDAV_VALIDATE_SSL, true)
+        val url = securePrefs.getString(KEY_WEBDAV_URL)
+        val username = securePrefs.getString(KEY_WEBDAV_USERNAME)
+        val password = securePrefs.getString(KEY_WEBDAV_PASSWORD)
+        val validateSSL = securePrefs.getBoolean(KEY_WEBDAV_VALIDATE_SSL, true)
 
         if (url != null && username != null && password != null) {
             WebDAVCredentials(url, username, password, validateSSL)
@@ -312,28 +290,28 @@ class SyncPreferencesManager @Inject constructor(
      * Enregistre le token pCloud
      */
     suspend fun setPCloudToken(token: String) = withContext(Dispatchers.IO) {
-        credentialPrefs.edit().putString(KEY_PCLOUD_TOKEN, token).apply()
+        securePrefs.putString(KEY_PCLOUD_TOKEN, token)
     }
 
     /**
      * Récupère le token pCloud
      */
     suspend fun getPCloudToken(): String? = withContext(Dispatchers.IO) {
-        credentialPrefs.getString(KEY_PCLOUD_TOKEN, null)
+        securePrefs.getString(KEY_PCLOUD_TOKEN)
     }
 
     /**
      * Enregistre le token Proton Drive
      */
     suspend fun setProtonDriveToken(token: String) = withContext(Dispatchers.IO) {
-        credentialPrefs.edit().putString(KEY_PROTON_TOKEN, token).apply()
+        securePrefs.putString(KEY_PROTON_TOKEN, token)
     }
 
     /**
      * Récupère le token Proton Drive
      */
     suspend fun getProtonDriveToken(): String? = withContext(Dispatchers.IO) {
-        credentialPrefs.getString(KEY_PROTON_TOKEN, null)
+        securePrefs.getString(KEY_PROTON_TOKEN)
     }
 
     /**
@@ -342,34 +320,30 @@ class SyncPreferencesManager @Inject constructor(
     suspend fun clearCurrentProviderCredentials() = withContext(Dispatchers.IO) {
         when (getCurrentProvider()) {
             CloudProviderType.GOOGLE_DRIVE -> {
-                credentialPrefs.edit()
-                    .remove(KEY_GOOGLE_DRIVE_TOKEN)
-                    .remove(KEY_GOOGLE_DRIVE_REFRESH_TOKEN)
-                    .apply()
+                securePrefs.remove(
+                    KEY_GOOGLE_DRIVE_TOKEN,
+                    KEY_GOOGLE_DRIVE_REFRESH_TOKEN
+                )
             }
             CloudProviderType.ONEDRIVE -> {
-                credentialPrefs.edit()
-                    .remove(KEY_ONEDRIVE_TOKEN)
-                    .remove(KEY_ONEDRIVE_REFRESH_TOKEN)
-                    .apply()
+                securePrefs.remove(
+                    KEY_ONEDRIVE_TOKEN,
+                    KEY_ONEDRIVE_REFRESH_TOKEN
+                )
             }
             CloudProviderType.WEBDAV -> {
-                credentialPrefs.edit()
-                    .remove(KEY_WEBDAV_URL)
-                    .remove(KEY_WEBDAV_USERNAME)
-                    .remove(KEY_WEBDAV_PASSWORD)
-                    .remove(KEY_WEBDAV_VALIDATE_SSL)
-                    .apply()
+                securePrefs.remove(
+                    KEY_WEBDAV_URL,
+                    KEY_WEBDAV_USERNAME,
+                    KEY_WEBDAV_PASSWORD,
+                    KEY_WEBDAV_VALIDATE_SSL
+                )
             }
             CloudProviderType.PCLOUD -> {
-                credentialPrefs.edit()
-                    .remove(KEY_PCLOUD_TOKEN)
-                    .apply()
+                securePrefs.remove(KEY_PCLOUD_TOKEN)
             }
             CloudProviderType.PROTON_DRIVE -> {
-                credentialPrefs.edit()
-                    .remove(KEY_PROTON_TOKEN)
-                    .apply()
+                securePrefs.remove(KEY_PROTON_TOKEN)
             }
             CloudProviderType.NONE -> {
                 // Nothing to clear
@@ -381,7 +355,18 @@ class SyncPreferencesManager @Inject constructor(
      * Supprime TOUS les credentials (tous les providers)
      */
     suspend fun clearAllCredentials() = withContext(Dispatchers.IO) {
-        credentialPrefs.edit().clear().apply()
+        securePrefs.remove(
+            KEY_GOOGLE_DRIVE_TOKEN,
+            KEY_GOOGLE_DRIVE_REFRESH_TOKEN,
+            KEY_ONEDRIVE_TOKEN,
+            KEY_ONEDRIVE_REFRESH_TOKEN,
+            KEY_WEBDAV_URL,
+            KEY_WEBDAV_USERNAME,
+            KEY_WEBDAV_PASSWORD,
+            KEY_WEBDAV_VALIDATE_SSL,
+            KEY_PCLOUD_TOKEN,
+            KEY_PROTON_TOKEN
+        )
     }
 
     // ===== History Methods =====
@@ -445,7 +430,7 @@ class SyncPreferencesManager @Inject constructor(
      */
     suspend fun resetAll() = withContext(Dispatchers.IO) {
         configPrefs.edit().clear().apply()
-        credentialPrefs.edit().clear().apply()
+        securePrefs.clearAll()
         historyPrefs.edit().clear().apply()
     }
 }

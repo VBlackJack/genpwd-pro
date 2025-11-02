@@ -163,3 +163,5 @@ gradle-app.setting
 *.iws
 .idea/
 .claude/settings.local.json
+vault-domain/
+rebuild.bat

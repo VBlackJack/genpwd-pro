@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.sync
 
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
-import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
 
 // NOTE: ConflictResolutionStrategy is also defined in models/SyncStatus.kt
 // But we keep a local copy for CloudSyncRepository to use with SyncData
@@ -29,10 +29,10 @@ data class SyncData(
  * Types de données synchronisables
  */
 enum class SyncDataType {
-    SETTINGS,           // Paramètres de l'application
-    HISTORY,            // Historique des mots de passe générés
-    CUSTOM_WORDS,       // Listes de mots personnalisés
-    FAVORITES           // Mots de passe favoris (si fonctionnalité ajoutée)
+    SETTINGS, // Paramètres de l'application
+    HISTORY, // Historique des mots de passe générés
+    CUSTOM_WORDS, // Listes de mots personnalisés
+    FAVORITES // Mots de passe favoris (si fonctionnalité ajoutée)
 }
 
 /**
@@ -49,11 +49,11 @@ sealed class SyncResult {
  * NOTE: VaultSyncManager uses the version from models/SyncStatus.kt
  */
 enum class ConflictResolutionStrategy {
-    LOCAL_WINS,         // Garder les données locales
-    REMOTE_WINS,        // Garder les données distantes
-    NEWEST_WINS,        // Garder la version la plus récente (timestamp)
-    MERGE,              // Fusionner (si possible)
-    MANUAL              // Demander à l'utilisateur
+    LOCAL_WINS, // Garder les données locales
+    REMOTE_WINS, // Garder les données distantes
+    NEWEST_WINS, // Garder la version la plus récente (timestamp)
+    MERGE, // Fusionner (si possible)
+    MANUAL // Demander à l'utilisateur
 }
 
 /**
@@ -71,10 +71,54 @@ sealed class SyncEvent {
 /**
  * Métadonnées de synchronisation locale
  */
+enum class SyncErrorCategory {
+    UPLOAD,
+    DOWNLOAD,
+    DELETE,
+    CONNECTION,
+    CLEANUP,
+    REHYDRATION,
+    GENERAL
+}
+
+data class SyncErrorLogEntry(
+    val message: String,
+    val category: SyncErrorCategory,
+    val timestamp: Long
+)
+
+enum class SyncHistoryStatus {
+    SUCCESS,
+    ERROR,
+    CONFLICT
+}
+
+enum class SyncHistoryAction {
+    UPLOAD,
+    DOWNLOAD,
+    DELETE,
+    CONFLICT,
+    CLEANUP,
+    TEST_CONNECTION
+}
+
+data class SyncHistoryEntry(
+    val id: String,
+    val timestamp: Long,
+    val action: SyncHistoryAction,
+    val status: SyncHistoryStatus,
+    val providerType: CloudProviderType,
+    val dataType: SyncDataType,
+    val durationMs: Long? = null,
+    val sizeBytes: Long? = null,
+    val message: String? = null
+)
+
 data class LocalSyncMetadata(
     val lastSyncTimestamp: Long = 0,
     val lastSuccessfulSyncTimestamp: Long = 0,
     val pendingChanges: Int = 0,
     val conflictCount: Int = 0,
-    val syncErrors: List<String> = emptyList()
+    val syncErrors: List<SyncErrorLogEntry> = emptyList(),
+    val history: List<SyncHistoryEntry> = emptyList()
 )

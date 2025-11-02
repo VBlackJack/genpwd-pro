@@ -1,9 +1,9 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
-import android.content.Intent
 import android.net.Uri
-import android.util.Log
+import com.julien.genpwdpro.BuildConfig
+import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
@@ -13,7 +13,6 @@ import com.julien.genpwdpro.data.sync.models.VaultSyncData
 // Temporarily disabled due to OAuthCallbackManager compilation error
 // import com.julien.genpwdpro.data.sync.oauth.OAuthCallbackManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -21,13 +20,12 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
 
 /**
  * Provider pCloud avec implémentation complète OAuth2 et REST API
@@ -217,13 +215,14 @@ class PCloudProvider(
     private var accessToken: String? = null
     private var genPwdFolderId: Long? = null
     private var authCallback: ((Boolean) -> Unit)? = null
+    private var oauthState: String? = null
 
     init {
         // Charger le token sauvegardé au démarrage
         credentialManager?.let {
             accessToken = it.getAccessToken(CloudProviderType.PCLOUD)
             if (accessToken != null) {
-                Log.d(TAG, "Loaded saved access token")
+                SafeLog.d(TAG, "Loaded saved access token")
             }
         }
     }
@@ -231,7 +230,11 @@ class PCloudProvider(
     // HTTP Client with logging
     private val httpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         OkHttpClient.Builder()
@@ -258,22 +261,22 @@ class PCloudProvider(
     override suspend fun isAuthenticated(): Boolean = withContext(Dispatchers.IO) {
         try {
             if (accessToken == null) {
-                Log.d(TAG, "No access token available")
+                SafeLog.d(TAG, "No access token available")
                 return@withContext false
             }
 
             // Vérifier le token avec userinfo
             val response = api.getUserInfo(accessToken!!)
             if (response.result == 0 && response.email != null) {
-                Log.d(TAG, "Authentication valid for user: ${response.email}")
+                SafeLog.d(TAG, "Authentication valid for user: ${response.email}")
                 true
             } else {
-                Log.w(TAG, "Authentication failed: ${response.error}")
+                SafeLog.w(TAG, "Authentication failed: ${response.error}")
                 accessToken = null
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking authentication", e)
+            SafeLog.e(TAG, "Error checking authentication", e)
             accessToken = null
             false
         }
@@ -285,7 +288,10 @@ class PCloudProvider(
     override suspend fun authenticate(activity: Activity): Boolean = withContext(Dispatchers.Main) {
         try {
             // Temporarily disabled due to OAuthCallbackManager compilation error
-            Log.e(TAG, "OAuth authentication temporarily disabled - OAuthCallbackManager not available")
+            SafeLog.e(
+                TAG,
+                "OAuth authentication temporarily disabled - OAuthCallbackManager not available"
+            )
             false
 
             /* ORIGINAL CODE - Disabled temporarily
@@ -304,13 +310,16 @@ class PCloudProvider(
                 }
 
                 // Construire l'URL d'autorisation
+                val state = UUID.randomUUID().toString()
+                oauthState = state
                 val authUrl = Uri.parse(region.authUrl).buildUpon()
                     .appendQueryParameter("client_id", appKey)
                     .appendQueryParameter("response_type", "code")
                     .appendQueryParameter("redirect_uri", REDIRECT_URI)
+                    .appendQueryParameter("state", state)
                     .build()
 
-                Log.d(TAG, "Opening OAuth URL: $authUrl")
+                SafeLog.d(TAG, "Opening OAuth URL: $authUrl")
 
                 // Ouvrir le navigateur pour OAuth
                 val intent = Intent(Intent.ACTION_VIEW, authUrl)
@@ -320,7 +329,7 @@ class PCloudProvider(
             }
             */
         } catch (e: Exception) {
-            Log.e(TAG, "Authentication error", e)
+            SafeLog.e(TAG, "Authentication error", e)
             // OAuthCallbackManager.unregisterCallback(CloudProviderType.PCLOUD)
             false
         }
@@ -331,21 +340,30 @@ class PCloudProvider(
      */
     suspend fun handleOAuthCallback(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
-            val code = uri.getQueryParameter("code")
-            if (code.isNullOrEmpty()) {
-                Log.e(TAG, "No authorization code in callback")
+            val returnedState = uri.getQueryParameter("state")
+            val expectedState = oauthState
+            oauthState = null
+            if (expectedState.isNullOrEmpty() || expectedState != returnedState) {
+                SafeLog.w(TAG, "Rejected OAuth callback with invalid state")
                 authCallback?.invoke(false)
                 return@withContext false
             }
 
-            Log.d(TAG, "Received OAuth code, exchanging for token...")
+            val code = uri.getQueryParameter("code")
+            if (code.isNullOrEmpty()) {
+                SafeLog.e(TAG, "No authorization code in callback")
+                authCallback?.invoke(false)
+                return@withContext false
+            }
+
+            SafeLog.d(TAG, "Received OAuth code, exchanging for token...")
 
             // Échanger le code contre un access token
             val response = api.getAccessToken(appKey, appSecret, code)
 
             if (response.result == 0 && !response.accessToken.isNullOrEmpty()) {
                 accessToken = response.accessToken
-                Log.d(TAG, "Access token obtained successfully")
+                SafeLog.d(TAG, "Access token obtained successfully")
 
                 // Sauvegarder le token de manière sécurisée
                 credentialManager?.saveAccessToken(
@@ -359,12 +377,12 @@ class PCloudProvider(
                 authCallback?.invoke(true)
                 true
             } else {
-                Log.e(TAG, "Failed to get access token: ${response.error}")
+                SafeLog.e(TAG, "Failed to get access token: ${response.error}")
                 authCallback?.invoke(false)
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling OAuth callback", e)
+            SafeLog.e(TAG, "Error handling OAuth callback", e)
             authCallback?.invoke(false)
             false
         }
@@ -386,13 +404,13 @@ class PCloudProvider(
 
             if (response.result == 0 && response.metadata != null) {
                 genPwdFolderId = response.metadata.folderId
-                Log.d(TAG, "Folder created/found: $FOLDER_NAME (ID: $genPwdFolderId)")
+                SafeLog.d(TAG, "Folder created/found: $FOLDER_NAME (ID: $genPwdFolderId)")
                 genPwdFolderId!!
             } else {
                 throw Exception("Failed to create folder: ${response.error}")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error ensuring folder", e)
+            SafeLog.e(TAG, "Error ensuring folder", e)
             throw e
         }
     }
@@ -406,7 +424,7 @@ class PCloudProvider(
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
                 val folderId = ensureFolder()
 
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
 
                 // Créer un fichier temporaire
                 val tempFile = File.createTempFile("upload_", ".enc")
@@ -414,7 +432,9 @@ class PCloudProvider(
 
                 try {
                     // Créer le multipart body
-                    val requestFile = tempFile.asRequestBody("application/octet-stream".toMediaType())
+                    val requestFile = tempFile.asRequestBody(
+                        "application/octet-stream".toMediaType()
+                    )
                     val body = MultipartBody.Part.createFormData("file", fileName, requestFile)
 
                     // Upload
@@ -422,10 +442,10 @@ class PCloudProvider(
 
                     if (response.result == 0 && !response.metadata.isNullOrEmpty()) {
                         val fileId = response.metadata[0].fileId
-                        Log.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
+                        SafeLog.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
                         fileId.toString()
                     } else {
-                        Log.e(TAG, "Upload failed: ${response.error}")
+                        SafeLog.e(TAG, "Upload failed: ${response.error}")
                         null
                     }
                 } finally {
@@ -433,7 +453,7 @@ class PCloudProvider(
                     tempFile.delete()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading vault", e)
+                SafeLog.e(TAG, "Error uploading vault", e)
                 null
             }
         }
@@ -447,10 +467,12 @@ class PCloudProvider(
                 val token = accessToken ?: throw IllegalStateException("Not authenticated")
 
                 // Trouver le fileId depuis vaultId
-                val fileName = "vault_${vaultId}.enc"
+                val fileName = "vault_$vaultId.enc"
                 val metadata = listVaults().find { it.fileName == fileName }
                     ?: return@withContext null
-                val fileId = metadata.fileId.toLongOrNull() ?: throw IllegalArgumentException("Invalid file ID")
+                val fileId = metadata.fileId.toLongOrNull() ?: throw IllegalArgumentException(
+                    "Invalid file ID"
+                )
 
                 // Download le fichier
                 val responseBody = api.downloadFile(token, fileId)
@@ -475,11 +497,11 @@ class PCloudProvider(
                         checksum = "" // Le checksum sera calculé côté client
                     )
                 } else {
-                    Log.e(TAG, "Failed to get file metadata: ${statResponse.error}")
+                    SafeLog.e(TAG, "Failed to get file metadata: ${statResponse.error}")
                     null
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error downloading vault", e)
+                SafeLog.e(TAG, "Error downloading vault", e)
                 null
             }
         }
@@ -510,11 +532,11 @@ class PCloudProvider(
                         }
                     }
             } else {
-                Log.e(TAG, "Failed to list vaults: ${response.error}")
+                SafeLog.e(TAG, "Failed to list vaults: ${response.error}")
                 emptyList()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing vaults", e)
+            SafeLog.e(TAG, "Error listing vaults", e)
             emptyList()
         }
     }
@@ -525,19 +547,21 @@ class PCloudProvider(
     override suspend fun deleteVault(cloudFileId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val token = accessToken ?: throw IllegalStateException("Not authenticated")
-            val fileId = cloudFileId.toLongOrNull() ?: throw IllegalArgumentException("Invalid file ID")
+            val fileId = cloudFileId.toLongOrNull() ?: throw IllegalArgumentException(
+                "Invalid file ID"
+            )
 
             val response = api.deleteFile(token, fileId)
 
             if (response.result == 0) {
-                Log.d(TAG, "Vault deleted successfully: $cloudFileId")
+                SafeLog.d(TAG, "Vault deleted successfully: $cloudFileId")
                 true
             } else {
-                Log.e(TAG, "Delete failed: ${response.error}")
+                SafeLog.e(TAG, "Delete failed: ${response.error}")
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting vault", e)
+            SafeLog.e(TAG, "Error deleting vault", e)
             false
         }
     }
@@ -558,23 +582,26 @@ class PCloudProvider(
                     freeBytes = (response.quota ?: 0) - (response.usedQuota ?: 0)
                 )
             } else {
-                Log.e(TAG, "Failed to get quota: ${response.error}")
+                SafeLog.e(TAG, "Failed to get quota: ${response.error}")
                 StorageQuota(0, 0, 0)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting storage quota", e)
+            SafeLog.e(TAG, "Error getting storage quota", e)
             StorageQuota(0, 0, 0)
         }
     }
+
     /**
      * Vérifie si une version plus récente existe sur le cloud
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking version", e)
+            SafeLog.e(TAG, "Error checking version", e)
             false
         }
     }
@@ -582,13 +609,15 @@ class PCloudProvider(
     /**
      * Récupère les métadonnées d'un fichier cloud
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
             val metadata = listVaults().find { it.fileName == fileName }
             metadata
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting metadata", e)
+            SafeLog.e(TAG, "Error getting metadata", e)
             null
         }
     }
@@ -601,9 +630,9 @@ class PCloudProvider(
             accessToken = null
             genPwdFolderId = null
             authCallback = null
-            Log.d(TAG, "Signed out successfully")
+            SafeLog.d(TAG, "Signed out successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Error signing out", e)
+            SafeLog.e(TAG, "Error signing out", e)
         }
     }
 
@@ -617,7 +646,7 @@ class PCloudProvider(
             // TODO: Parser correctement le format RFC 1123
             System.currentTimeMillis()
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing timestamp: $timestamp", e)
+            SafeLog.e(TAG, "Error parsing timestamp: $timestamp", e)
             System.currentTimeMillis()
         }
     }

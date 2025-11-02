@@ -1,0 +1,96 @@
+name: Android CI
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configure Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          build-root-directory: android
+
+      - name: Install Android SDK components
+        run: |
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platform-tools" \
+            "build-tools;34.0.0" \
+            "platforms;android-34" \
+            "platforms;android-35"
+
+      - name: Run static analysis and unit tests
+        working-directory: android
+        run: |
+          set -euo pipefail
+          ./gradlew lint detekt ktlintCheck testDebugUnitTest --console=plain
+
+      - name: Verify analysis reports
+        if: always()
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          lint_error=0
+          for report in android/app/build/reports/lint-results*.xml; do
+            if grep -q 'severity="Error"' "$report"; then
+              echo "Lint errors detected in $report" >&2
+              lint_error=1
+            fi
+          done
+          if [ $lint_error -ne 0 ]; then
+            exit 1
+          fi
+
+          detekt_report=android/app/build/reports/detekt/detekt.xml
+          if [ -f "$detekt_report" ] && grep -q '<error' "$detekt_report"; then
+            echo "Detekt violations detected" >&2
+            exit 1
+          fi
+
+          ktlint_errors=$(grep -R "<error " -n android/app/build/reports/ktlint 2>/dev/null || true)
+          if [ -n "$ktlint_errors" ]; then
+            echo "$ktlint_errors" >&2
+            echo "ktlint errors detected" >&2
+            exit 1
+          fi
+
+      - name: Upload verification reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-ci-reports
+          path: |
+            android/app/build/reports/lint-results*.html
+            android/app/build/reports/lint-results*.xml
+            android/app/build/reports/detekt/**
+            android/app/build/reports/ktlint/**
+            android/app/build/reports/tests/testDebugUnitTest/**
+            android/app/build/test-results/testDebugUnitTest/**
+          if-no-files-found: ignore
