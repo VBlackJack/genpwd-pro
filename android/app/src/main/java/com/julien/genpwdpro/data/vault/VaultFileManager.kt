@@ -525,12 +525,22 @@ class VaultFileManager @Inject constructor(
      */
     suspend fun exportVault(sourcePath: String, destinationPath: String): Boolean {
         return try {
-            val source = File(sourcePath)
             val destination = File(destinationPath)
 
-            source.copyTo(destination, overwrite = true)
+            val bytesCopied = copyVaultToStream(
+                sourcePath = sourcePath,
+                openOutputStream = { destination.outputStream() }
+            )
 
-            SafeLog.d(TAG, "Vault exported to: ${SafeLog.redact(destinationPath)}")
+            if (bytesCopied <= 0L) {
+                SafeLog.e(
+                    TAG,
+                    "No bytes exported from ${SafeLog.redact(sourcePath)} to ${SafeLog.redact(destinationPath)}"
+                )
+                return false
+            }
+
+            SafeLog.d(TAG, "Vault exported to: ${SafeLog.redact(destinationPath)} (${bytesCopied} bytes)")
             true
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error exporting vault", e)
@@ -547,16 +557,20 @@ class VaultFileManager @Inject constructor(
         destinationUri: Uri
     ): Boolean {
         return try {
-            val sourceFile = File(sourceFilePath)
-            if (!sourceFile.exists()) {
-                SafeLog.e(TAG, "Source vault file not found: ${SafeLog.redact(sourceFilePath)}")
-                return false
-            }
-
-            context.contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
-                sourceFile.inputStream().use { inputStream ->
-                    inputStream.copyTo(outputStream)
+            val bytesCopied = copyVaultToStream(
+                sourcePath = sourceFilePath,
+                openOutputStream = {
+                    context.contentResolver.openOutputStream(destinationUri)
+                        ?: throw IOException("Unable to open output stream for destination URI")
                 }
+            )
+
+            if (bytesCopied <= 0L) {
+                SafeLog.e(
+                    TAG,
+                    "No bytes exported for vault=${SafeLog.redact(vaultId)}"
+                )
+                return false
             }
 
             SafeLog.d(TAG, "Vault exported to URI: ${SafeLog.redact(destinationUri)}")
@@ -564,6 +578,58 @@ class VaultFileManager @Inject constructor(
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error exporting vault to URI", e)
             false
+        }
+    }
+
+    private fun copyVaultToStream(
+        sourcePath: String,
+        openOutputStream: () -> OutputStream
+    ): Long {
+        val sourceUri = pathToUri(sourcePath)
+        return if (sourceUri != null) {
+            copyFromUri(sourceUri, openOutputStream)
+        } else {
+            copyFromFile(File(sourcePath), openOutputStream)
+        }
+    }
+
+    private fun copyFromFile(
+        sourceFile: File,
+        openOutputStream: () -> OutputStream
+    ): Long {
+        if (!sourceFile.exists()) {
+            SafeLog.e(TAG, "Source vault file not found: ${SafeLog.redact(sourceFile.absolutePath)}")
+            return 0L
+        }
+
+        return try {
+            openOutputStream().use { outputStream ->
+                FileInputStream(sourceFile).use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+        } catch (ioe: IOException) {
+            SafeLog.e(TAG, "Error copying vault from file", ioe)
+            0L
+        }
+    }
+
+    private fun copyFromUri(
+        sourceUri: Uri,
+        openOutputStream: () -> OutputStream
+    ): Long {
+        return try {
+            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                openOutputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: run {
+                SafeLog.e(TAG, "Unable to open input stream from URI: ${SafeLog.redact(sourceUri.toString())}")
+                0L
+            }
+        } catch (ioe: IOException) {
+            SafeLog.e(TAG, "Error copying vault from URI", ioe)
+            0L
         }
     }
 
