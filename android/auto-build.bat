@@ -123,7 +123,8 @@ echo.
 REM Nettoyer d'abord
 echo Nettoyage...
 call gradlew.bat clean
-if errorlevel 1 (
+set CLEAN_ERROR=%ERRORLEVEL%
+if %CLEAN_ERROR% neq 0 (
     echo ERREUR lors du nettoyage!
     pause
     exit /b 1
@@ -132,7 +133,8 @@ if errorlevel 1 (
 echo.
 echo Compilation en cours (%BUILD_NAME%)...
 call gradlew.bat %GRADLE_TASK%
-if errorlevel 1 (
+set BUILD_ERROR=%ERRORLEVEL%
+if %BUILD_ERROR% neq 0 (
     echo.
     echo ========================================
     echo   ERREUR lors de la compilation!
@@ -140,6 +142,7 @@ if errorlevel 1 (
     echo.
     echo La version a ete incrementee mais le build a echoue.
     echo Corrigez les erreurs et relancez le build.
+    echo.
     pause
     exit /b 1
 )
