@@ -344,7 +344,7 @@ class VaultManagerViewModel @Inject constructor(
                 val file = location.file
                 val uri = location.uri
 
-                val vaultData = when {
+                val loadResult = when {
                     file != null -> vaultFileManager.loadVaultFile(
                         vaultId = vaultId,
                         masterPassword = masterPassword,
@@ -359,6 +359,8 @@ class VaultManagerViewModel @Inject constructor(
 
                     else -> throw IllegalStateException("Imported vault location unavailable")
                 }
+
+                val vaultData = loadResult.data
 
                 val resolvedFilePath = file?.absolutePath ?: uri?.let { vaultFileManager.uriToPath(it) }
                     ?: throw IllegalStateException("Unable to resolve imported vault path")
