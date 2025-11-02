@@ -23,10 +23,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
-import javax.inject.Named
 
 private const val BASE_URL = "https://www.googleapis.com/drive/v3"
 private const val UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3"
@@ -35,7 +35,7 @@ private val MEDIA_TYPE_OCTET = "application/octet-stream".toMediaType()
 @Singleton
 class GoogleDriveCloudProvider @Inject constructor(
     private val json: Json,
-    @Named("drive") private val httpClient: OkHttpClient,
+    private val httpClient: OkHttpClient,
     private val authProvider: GoogleDriveAuthProvider,
 ) : CloudProvider {
     private val health = MutableStateFlow(ProviderHealth(ProviderHealth.Status.OK))
