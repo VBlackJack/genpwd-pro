@@ -33,8 +33,8 @@ class ConflictResolver @Inject constructor() {
             val localItem = localItems[id]
             when {
                 localItem == null -> localItems[id] = remoteItem
-                remoteItem.updatedAt > localItem.updatedAt -> localItems[id] = remoteItem
-                remoteItem.updatedAt == localItem.updatedAt && remoteItem.encryptedPayload != localItem.encryptedPayload -> {
+                remoteItem.updatedAtUtc > localItem.updatedAtUtc -> localItems[id] = remoteItem
+                remoteItem.updatedAtUtc == localItem.updatedAtUtc && remoteItem.encryptedBlob != localItem.encryptedBlob -> {
                     val conflictId = "${id}_conflict"
                     conflicts.add(Conflict(id, localItem, remoteItem))
                     localItems[conflictId] = remoteItem.copy(itemId = conflictId)

@@ -25,7 +25,20 @@ class VaultCryptoEngine(
     private val secureRandom: SecureRandom = SecureRandom(),
 ) {
 
-    fun encrypt(vault: Vault, secret: CharArray, deviceId: String, createdUtc: Long): EncryptedVault {
+    /**
+     * Encrypts a vault with the given master password.
+     *
+     * @param secret The master password
+     * @param vault The vault to encrypt
+     * @param deviceId The device identifier
+     * @return The encrypted vault with header and local hash
+     */
+    fun encryptVault(secret: CharArray, vault: Vault, deviceId: String): EncryptedVault {
+        val createdUtc = System.currentTimeMillis() / 1000
+        return encrypt(vault, secret, deviceId, createdUtc)
+    }
+
+    private fun encrypt(vault: Vault, secret: CharArray, deviceId: String, createdUtc: Long): EncryptedVault {
         val payload = encodeVaultPayload(vault)
         val payloadBytes = serializePayload(payload)
 
@@ -58,7 +71,18 @@ class VaultCryptoEngine(
         )
     }
 
-    fun decrypt(blob: ByteArray, secret: CharArray): Vault {
+    /**
+     * Decrypts an encrypted vault with the given master password.
+     *
+     * @param secret The master password
+     * @param encryptedVault The encrypted vault
+     * @return The decrypted vault
+     */
+    fun decryptVault(secret: CharArray, encryptedVault: EncryptedVault): Vault {
+        return decrypt(encryptedVault.payload, secret)
+    }
+
+    private fun decrypt(blob: ByteArray, secret: CharArray): Vault {
         val parsed = parseBlob(blob)
         val key = deriveKey(secret, parsed.header.kdf)
         val nonce = parsed.header.nonce.decodeBase64()

@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class VaultId(
     val remotePath: String,
-    val provider: String,
+    val provider: ProviderKind,
     val accountId: String,
 )
 
@@ -121,3 +121,45 @@ sealed interface KdfParameters {
         val hashLength: Int,
     ) : KdfParameters
 }
+
+/**
+ * Enum representing the different cloud provider types.
+ */
+@Serializable
+enum class ProviderKind {
+    GOOGLE_DRIVE,
+    DROPBOX,
+    ONEDRIVE,
+    WEBDAV,
+    NEXTCLOUD
+}
+
+/**
+ * Represents a pending operation on a vault item that needs to be synced.
+ */
+@Serializable
+sealed class PendingOp {
+    @Serializable
+    @SerialName("add")
+    data class Add(val item: VaultItem) : PendingOp()
+
+    @Serializable
+    @SerialName("update")
+    data class Update(val item: VaultItem) : PendingOp()
+
+    @Serializable
+    @SerialName("delete")
+    data class Delete(val itemId: String) : PendingOp()
+}
+
+/**
+ * Represents the synchronization state of a vault.
+ */
+@Serializable
+data class SyncState(
+    val vaultId: VaultId,
+    val lastSyncUtc: Long,
+    val localEtag: String?,
+    val remoteEtag: String?,
+    val pendingOps: List<PendingOp>
+)
