@@ -62,6 +62,18 @@ class VaultFileManager @Inject constructor(
         }
     }
 
+    data class VaultLoadResult(
+        val data: VaultData,
+        val header: VaultFileHeader,
+        val vaultKey: SecretKey,
+        val salt: ByteArray
+    )
+
+    data class VaultFileSaveResult(
+        val header: VaultFileHeader,
+        val location: VaultFileLocation
+    )
+
     private val publicRelativePath: String =
         "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_DIR_NAME/"
 
@@ -126,19 +138,22 @@ class VaultFileManager @Inject constructor(
 
     private data class VaultPayload(
         val headerBytes: ByteArray,
-        val encryptedContent: ByteArray
+        val encryptedContent: ByteArray,
+        val header: VaultFileHeader
     )
 
     private fun buildVaultPayload(
         data: VaultData,
         vaultKey: SecretKey,
-        vaultId: String
+        header: VaultFileHeader,
+        updateModifiedTimestamp: Boolean = true
     ): VaultPayload {
-        val updatedData = data.copy(
-            metadata = data.metadata.copy(
-                modifiedAt = System.currentTimeMillis()
-            )
-        )
+        val metadata = if (updateModifiedTimestamp) {
+            data.metadata.copy(modifiedAt = System.currentTimeMillis())
+        } else {
+            data.metadata
+        }
+        val updatedData = if (metadata === data.metadata) data else data.copy(metadata = metadata)
 
         val dataJson = gson.toJson(updatedData)
         val encryptedContent = cryptoManager.encryptBytes(
@@ -147,14 +162,12 @@ class VaultFileManager @Inject constructor(
         )
 
         val checksum = calculateChecksum(dataJson)
-        val header = VaultFileHeader(
-            vaultId = vaultId,
-            createdAt = updatedData.metadata.createdAt,
-            modifiedAt = updatedData.metadata.modifiedAt,
+        val updatedHeader = header.copy(
+            modifiedAt = metadata.modifiedAt,
             checksum = checksum
         )
 
-        val headerJson = gson.toJson(header)
+        val headerJson = gson.toJson(updatedHeader)
         val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
         val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
         System.arraycopy(
@@ -167,7 +180,8 @@ class VaultFileManager @Inject constructor(
 
         return VaultPayload(
             headerBytes = paddedHeader,
-            encryptedContent = encryptedContent
+            encryptedContent = encryptedContent,
+            header = updatedHeader
         )
     }
 
@@ -175,6 +189,128 @@ class VaultFileManager @Inject constructor(
         write(payload.headerBytes)
         write(payload.encryptedContent)
         flush()
+    }
+
+    private fun writeVaultPayloadToUri(uri: Uri, payload: VaultPayload) {
+        context.contentResolver.openOutputStream(uri, "wt")?.use { outputStream ->
+            outputStream.writeVaultPayload(payload)
+        } ?: throw IllegalStateException("Cannot open output stream for URI: $uri")
+    }
+
+    private suspend fun persistPayloadToLocation(
+        location: VaultFileLocation,
+        payload: VaultPayload
+    ) {
+        when {
+            location.file != null -> writeVaultFile(location.file, payload)
+            location.uri != null -> writeVaultPayloadToUri(location.uri, payload)
+            else -> throw IllegalStateException("Vault file location is undefined")
+        }
+    }
+
+    private suspend fun migrateLegacyVault(
+        vaultId: String,
+        masterPassword: String,
+        location: VaultFileLocation,
+        legacyHeader: VaultFileHeader,
+        vaultData: VaultData
+    ): VaultLoadResult {
+        SafeLog.w(
+            TAG,
+            "Migrating legacy vault salt to random salt: vaultId=${SafeLog.redact(vaultId)}"
+        )
+
+        val newSalt = cryptoManager.generateSalt()
+        val newKey = cryptoManager.deriveKey(masterPassword, newSalt)
+
+        val updatedHeader = legacyHeader.copy(
+            kdfSalt = cryptoManager.bytesToHex(newSalt),
+            kdfAlgorithm = VaultFileHeader.DEFAULT_KDF
+        )
+
+        val payload = buildVaultPayload(
+            data = vaultData,
+            vaultKey = newKey,
+            header = updatedHeader,
+            updateModifiedTimestamp = false
+        )
+
+        persistPayloadToLocation(location, payload)
+
+        return VaultLoadResult(
+            data = vaultData,
+            header = payload.header,
+            vaultKey = newKey,
+            salt = newSalt
+        )
+    }
+
+    private suspend fun decryptVaultPayload(
+        vaultId: String,
+        masterPassword: String,
+        header: VaultFileHeader,
+        encryptedContent: ByteArray,
+        location: VaultFileLocation
+    ): VaultLoadResult {
+        val (saltBytes, vaultKey) = if (header.hasKdfSalt()) {
+            val salt = cryptoManager.hexToBytes(header.kdfSalt!!)
+            salt to cryptoManager.deriveKey(masterPassword, salt)
+        } else {
+            val legacySalt = cryptoManager.generateSaltFromString(vaultId)
+            legacySalt to cryptoManager.deriveKey(masterPassword, legacySalt)
+        }
+
+        val decryptedJson = cryptoManager.decryptBytes(encryptedContent, vaultKey)
+        val decryptedString = String(decryptedJson, Charsets.UTF_8)
+        val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
+
+        val contentChecksum = calculateChecksum(decryptedString)
+        if (contentChecksum != header.checksum) {
+            SafeLog.w(TAG, "Checksum mismatch - file may be corrupted")
+        }
+
+        return if (header.hasKdfSalt()) {
+            VaultLoadResult(
+                data = vaultData,
+                header = header,
+                vaultKey = vaultKey,
+                salt = saltBytes
+            )
+        } else {
+            migrateLegacyVault(
+                vaultId = vaultId,
+                masterPassword = masterPassword,
+                location = location,
+                legacyHeader = header,
+                vaultData = vaultData
+            )
+        }
+    }
+
+    private fun readVaultHeader(inputStream: java.io.InputStream): VaultFileHeader {
+        val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
+        val read = inputStream.read(headerBytes)
+        if (read != VaultFileHeader.HEADER_SIZE) {
+            throw IOException("Unable to read vault header: expected ${VaultFileHeader.HEADER_SIZE} bytes, got $read")
+        }
+        val headerJson = String(headerBytes).trim('\u0000')
+        val header = gson.fromJson(headerJson, VaultFileHeader::class.java)
+        if (!header.isValid()) {
+            throw IllegalStateException("Invalid vault file header")
+        }
+        return header
+    }
+
+    private fun readVaultHeader(file: File): VaultFileHeader {
+        FileInputStream(file).use { fis ->
+            return readVaultHeader(fis)
+        }
+    }
+
+    private fun readVaultHeader(uri: Uri): VaultFileHeader {
+        return context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            readVaultHeader(inputStream)
+        } ?: throw IllegalStateException("Cannot open input stream for URI: $uri")
     }
 
     /**
@@ -190,9 +326,8 @@ class VaultFileManager @Inject constructor(
         val vaultId = UUID.randomUUID().toString()
         val timestamp = System.currentTimeMillis()
 
-        // Créer la clé depuis le master password
-        // Utilise vaultId comme seed pour un salt déterministe
-        val salt = cryptoManager.generateSaltFromString(vaultId)
+        // Créer la clé depuis le master password avec un salt aléatoire sécurisé
+        val salt = cryptoManager.generateSalt()
         val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         // Créer les métadonnées initiales
@@ -216,10 +351,27 @@ class VaultFileManager @Inject constructor(
             entryTags = emptyList()
         )
 
-        // Sauvegarder
-        val location = saveVaultFile(vaultId, vaultData, vaultKey, strategy, customPath)
+        // Préparer le header avec configuration KDF sécurisée
+        val header = VaultFileHeader(
+            vaultId = vaultId,
+            createdAt = timestamp,
+            modifiedAt = timestamp,
+            checksum = "",
+            kdfSalt = cryptoManager.bytesToHex(salt),
+            kdfAlgorithm = VaultFileHeader.DEFAULT_KDF
+        )
 
-        return Pair(vaultId, location)
+        // Sauvegarder
+        val result = saveVaultFile(
+            vaultId = vaultId,
+            data = vaultData,
+            vaultKey = vaultKey,
+            header = header,
+            strategy = strategy,
+            customPath = customPath
+        )
+
+        return Pair(vaultId, result.location)
     }
 
     /**
@@ -229,18 +381,28 @@ class VaultFileManager @Inject constructor(
         vaultId: String,
         masterPassword: String,
         filePath: String
-    ): VaultData {
+    ): VaultLoadResult {
         val file = File(filePath)
         if (!file.exists()) {
             throw IllegalStateException("Vault file not found: $filePath")
         }
 
-        // Dériver la clé depuis le master password
-        // Utilise vaultId comme seed pour le salt (même salt qu'à la création)
-        val salt = cryptoManager.generateSaltFromString(vaultId)
-        val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
-
-        return readVaultFile(file, vaultKey)
+        return try {
+            FileInputStream(file).use { fis ->
+                val header = readVaultHeader(fis)
+                val encryptedContent = fis.readBytes()
+                decryptVaultPayload(
+                    vaultId = vaultId,
+                    masterPassword = masterPassword,
+                    header = header,
+                    encryptedContent = encryptedContent,
+                    location = VaultFileLocation(file = file)
+                )
+            }
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Error reading vault file", e)
+            throw e
+        }
     }
 
     /**
@@ -250,9 +412,10 @@ class VaultFileManager @Inject constructor(
         vaultId: String,
         data: VaultData,
         vaultKey: SecretKey,
+        header: VaultFileHeader,
         strategy: StorageStrategy,
         customPath: Uri? = null
-    ): VaultFileLocation {
+    ): VaultFileSaveResult {
         if (strategy == StorageStrategy.CUSTOM && customPath != null) {
             // Utiliser SAF pour custom paths
             throw UnsupportedOperationException(
@@ -260,55 +423,22 @@ class VaultFileManager @Inject constructor(
             )
         }
 
+        val payload = buildVaultPayload(data, vaultKey, header)
+
         return if (strategy == StorageStrategy.PUBLIC_DOCUMENTS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val uri = writeVaultFileToPublicDocuments(vaultId, data, vaultKey)
-            VaultFileLocation(uri = uri)
+            val uri = writeVaultFileToPublicDocuments(vaultId, payload)
+            VaultFileSaveResult(
+                header = payload.header,
+                location = VaultFileLocation(uri = uri)
+            )
         } else {
             val dir = getStorageDirectory(strategy)
             val file = File(dir, getVaultFileName(vaultId))
-            val written = writeVaultFile(file, data, vaultKey, vaultId)
-            VaultFileLocation(file = written)
-        }
-    }
-
-    /**
-     * Lit un fichier vault et déchiffre le contenu
-     */
-    private suspend fun readVaultFile(file: File, vaultKey: SecretKey): VaultData {
-        try {
-            FileInputStream(file).use { fis ->
-                // Lire le header (256 bytes)
-                val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
-                fis.read(headerBytes)
-                val headerJson = String(headerBytes).trim('\u0000')
-                val header = gson.fromJson(headerJson, VaultFileHeader::class.java)
-
-                // Valider le header
-                if (!header.isValid()) {
-                    throw IllegalStateException("Invalid vault file header")
-                }
-
-                // Lire le contenu chiffré
-                val encryptedContent = fis.readBytes()
-
-                // Déchiffrer le contenu
-                val decryptedJson = cryptoManager.decryptBytes(encryptedContent, vaultKey)
-                val decryptedString = String(decryptedJson, Charsets.UTF_8)
-
-                // Parser le JSON
-                val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
-
-                // Valider le checksum
-                val contentChecksum = calculateChecksum(decryptedString)
-                if (contentChecksum != header.checksum) {
-                    SafeLog.w(TAG, "Checksum mismatch - file may be corrupted")
-                }
-
-                return vaultData
-            }
-        } catch (e: Exception) {
-            SafeLog.e(TAG, "Error reading vault file", e)
-            throw e
+            val written = writeVaultFile(file, payload)
+            VaultFileSaveResult(
+                header = payload.header,
+                location = VaultFileLocation(file = written)
+            )
         }
     }
 
@@ -317,13 +447,9 @@ class VaultFileManager @Inject constructor(
      */
     private suspend fun writeVaultFile(
         file: File,
-        data: VaultData,
-        vaultKey: SecretKey,
-        vaultId: String
+        payload: VaultPayload
     ): File {
         try {
-            val payload = buildVaultPayload(data, vaultKey, vaultId)
-
             FileOutputStream(file).use { fos ->
                 fos.writeVaultPayload(payload)
             }
@@ -391,8 +517,7 @@ class VaultFileManager @Inject constructor(
 
     private suspend fun writeVaultFileToPublicDocuments(
         vaultId: String,
-        data: VaultData,
-        vaultKey: SecretKey
+        payload: VaultPayload
     ): Uri {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             throw UnsupportedOperationException("MediaStore public documents requires Android 10+")
@@ -401,7 +526,6 @@ class VaultFileManager @Inject constructor(
         val fileName = getVaultFileName(vaultId)
         val (targetUri, isNewEntry) = preparePublicDocumentUri(fileName)
         val resolver = context.contentResolver
-        val payload = buildVaultPayload(data, vaultKey, vaultId)
 
         var writeSucceeded = false
         try {
@@ -746,7 +870,7 @@ class VaultFileManager @Inject constructor(
         )
 
         // Créer la clé depuis le master password
-        val salt = cryptoManager.generateSaltFromString(vaultId)
+        val salt = cryptoManager.generateSalt()
         val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         // Créer les métadonnées initiales
@@ -770,10 +894,25 @@ class VaultFileManager @Inject constructor(
             entryTags = emptyList()
         )
 
-        // Sauvegarder dans le dossier SAF
-        val fileUri = saveVaultFileToUri(vaultId, vaultData, vaultKey, customFolderUri)
+        val header = VaultFileHeader(
+            vaultId = vaultId,
+            createdAt = timestamp,
+            modifiedAt = timestamp,
+            checksum = "",
+            kdfSalt = cryptoManager.bytesToHex(salt),
+            kdfAlgorithm = VaultFileHeader.DEFAULT_KDF
+        )
 
-        return Pair(vaultId, fileUri)
+        // Sauvegarder dans le dossier SAF
+        val result = saveVaultFileToUri(
+            vaultId = vaultId,
+            data = vaultData,
+            vaultKey = vaultKey,
+            header = header,
+            customFolderUri = customFolderUri
+        )
+
+        return Pair(vaultId, result.location.uri!!)
     }
 
     /**
@@ -789,8 +928,9 @@ class VaultFileManager @Inject constructor(
         vaultId: String,
         data: VaultData,
         vaultKey: SecretKey,
+        header: VaultFileHeader,
         customFolderUri: Uri
-    ): Uri {
+    ): VaultFileSaveResult {
         try {
             val folder = DocumentFile.fromTreeUri(context, customFolderUri)
                 ?: throw IllegalStateException("Cannot access custom folder")
@@ -806,7 +946,7 @@ class VaultFileManager @Inject constructor(
                     ?: throw IllegalStateException("Cannot create vault file in custom folder")
             }
 
-            val payload = buildVaultPayload(data, vaultKey, vaultId)
+            val payload = buildVaultPayload(data, vaultKey, header)
 
             // Écrire le fichier via SAF
             context.contentResolver.openOutputStream(vaultFile.uri, "wt")?.use { outputStream ->
@@ -814,7 +954,10 @@ class VaultFileManager @Inject constructor(
             } ?: throw IllegalStateException("Cannot open output stream")
 
             SafeLog.d(TAG, "Vault file written to SAF URI: ${SafeLog.redact(vaultFile.uri)}")
-            return vaultFile.uri
+            return VaultFileSaveResult(
+                header = payload.header,
+                location = VaultFileLocation(uri = vaultFile.uri)
+            )
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error writing vault file to SAF", e)
             throw e
@@ -831,16 +974,16 @@ class VaultFileManager @Inject constructor(
     suspend fun updateVaultFileAtUri(
         fileUri: Uri,
         data: VaultData,
-        vaultKey: SecretKey
-    ) {
+        vaultKey: SecretKey,
+        header: VaultFileHeader
+    ): VaultFileHeader {
         try {
-            val payload = buildVaultPayload(data, vaultKey, data.metadata.vaultId)
+            val payload = buildVaultPayload(data, vaultKey, header)
 
-            context.contentResolver.openOutputStream(fileUri, "wt")?.use { outputStream ->
-                outputStream.writeVaultPayload(payload)
-            } ?: throw IllegalStateException("Cannot open output stream for URI: $fileUri")
+            writeVaultPayloadToUri(fileUri, payload)
 
             SafeLog.d(TAG, "Vault file updated at SAF URI: ${SafeLog.redact(fileUri)}")
+            return payload.header
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error updating vault file at SAF URI", e)
             throw e
@@ -859,41 +1002,18 @@ class VaultFileManager @Inject constructor(
         vaultId: String,
         masterPassword: String,
         fileUri: Uri
-    ): VaultData {
+    ): VaultLoadResult {
         try {
-            // Dériver la clé depuis le master password
-            val salt = cryptoManager.generateSaltFromString(vaultId)
-            val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
-
             context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
-                // Lire le header (256 bytes)
-                val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
-                inputStream.read(headerBytes)
-                val headerJson = String(headerBytes).trim('\u0000')
-                val header = gson.fromJson(headerJson, VaultFileHeader::class.java)
-
-                // Valider le header
-                if (!header.isValid()) {
-                    throw IllegalStateException("Invalid vault file header")
-                }
-
-                // Lire le contenu chiffré
+                val header = readVaultHeader(inputStream)
                 val encryptedContent = inputStream.readBytes()
-
-                // Déchiffrer le contenu
-                val decryptedJson = cryptoManager.decryptBytes(encryptedContent, vaultKey)
-                val decryptedString = String(decryptedJson, Charsets.UTF_8)
-
-                // Parser le JSON
-                val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
-
-                // Valider le checksum
-                val contentChecksum = calculateChecksum(decryptedString)
-                if (contentChecksum != header.checksum) {
-                    SafeLog.w(TAG, "Checksum mismatch - file may be corrupted")
-                }
-
-                return vaultData
+                return decryptVaultPayload(
+                    vaultId = vaultId,
+                    masterPassword = masterPassword,
+                    header = header,
+                    encryptedContent = encryptedContent,
+                    location = VaultFileLocation(uri = fileUri)
+                )
             } ?: throw IllegalStateException("Cannot open input stream from URI")
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error reading vault file from SAF", e)
