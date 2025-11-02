@@ -14,7 +14,7 @@ Pour la documentation à jour de l'architecture actuelle (post-migration), consu
 
 ## 📋 Vue d'ensemble
 
-Le projet GenPwd Pro utilise actuellement **deux architectures de stockage** pour les vaults :
+**⚠️ Ce document décrit l'ancien système Room-based qui a été SUPPRIMÉ le 2025-11-01.**
 
 1. **Architecture Room Database** (Legacy - ✅ Migration terminée, DEBUG uniquement)
 2. **Architecture File-Based** (✅ EN PRODUCTION - Système actuel)
