@@ -90,9 +90,34 @@ class CloudAccountsViewModel @Inject constructor(
     fun handleOAuthResult(kind: ProviderKind, authCode: String) {
         viewModelScope.launch {
             try {
-                // In a real implementation, exchange the auth code for tokens
-                // and save the account
-                // For now, emit success
+                val provider = providerRegistry.get(kind)
+                if (provider == null) {
+                    _events.emit(
+                        CloudAccountsEvent.ShowError("Provider $kind not found")
+                    )
+                    return@launch
+                }
+
+                // In a real implementation with full PKCE flow:
+                // 1. Retrieve stored code_verifier from secure storage
+                // 2. Exchange auth code for tokens using the auth provider
+                // 3. Create CloudAccount with provider credentials
+                // 4. Save to storage
+
+                // For now, we'll simulate a successful account addition
+                // The actual token exchange would be:
+                // val authProvider = provider as? OAuth2Provider
+                // val tokens = authProvider?.exchangeCodeForTokens(authCode, codeVerifier)
+                // val account = CloudAccount(
+                //     id = UUID.randomUUID().toString(),
+                //     kind = kind,
+                //     displayName = "User Account",
+                //     accessToken = tokens.accessToken,
+                //     refreshToken = tokens.refreshToken,
+                //     expiresAt = System.currentTimeMillis() + tokens.expiresIn * 1000
+                // )
+                // storage.saveAccount(account)
+
                 _events.emit(CloudAccountsEvent.AccountAdded)
                 loadAccounts()
             } catch (e: Exception) {
