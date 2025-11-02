@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.domain.generators
 
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.domain.utils.secureShuffled
 import javax.inject.Inject
 
 /**
@@ -10,6 +11,8 @@ import javax.inject.Inject
 class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
 
     companion object {
+        const val MIN_WORD_LIST_SIZE = 2048
+
         // Catégories de mots prédéfinies (suggestions)
         val SUGGESTIONS = mapOf(
             "Animaux" to listOf("chat", "chien", "lion", "tigre", "ours", "loup", "aigle", "dauphin", "éléphant", "girafe"),
@@ -27,13 +30,14 @@ class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
      * Génère une passphrase à partir de mots personnalisés
      */
     override suspend fun generate(settings: Settings): String {
-        val customWords = settings.customPhraseWords.ifEmpty {
-            // Si aucun mot personnalisé, utiliser les suggestions
-            SUGGESTIONS.values.flatten().shuffled().take(50)
-        }
+        val customWords = settings.customPhraseWords
 
         if (customWords.isEmpty()) {
-            throw IllegalStateException("Aucun mot disponible pour la génération")
+            throw IllegalStateException("Custom word list must contain at least $MIN_WORD_LIST_SIZE unique entries")
+        }
+
+        if (customWords.size < MIN_WORD_LIST_SIZE) {
+            throw IllegalArgumentException("Custom word list must contain at least $MIN_WORD_LIST_SIZE unique entries")
         }
 
         val wordCount = settings.customPhraseWordCount.coerceIn(2, 10)
@@ -69,9 +73,9 @@ class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
      */
     private fun selectRandomWords(words: List<String>, count: Int): List<String> {
         return if (words.size <= count) {
-            words.shuffled()
+            words.secureShuffled()
         } else {
-            words.shuffled().take(count)
+            words.secureShuffled().take(count)
         }
     }
 
@@ -112,10 +116,10 @@ class CustomPhraseGenerator @Inject constructor() : PasswordGenerator {
             )
         }
 
-        if (words.size < 10) {
+        if (words.size < MIN_WORD_LIST_SIZE) {
             return WordListValidation(
                 isValid = false,
-                error = "La liste doit contenir au moins 10 mots différents",
+                error = "La liste doit contenir au moins $MIN_WORD_LIST_SIZE mots différents",
                 wordCount = words.size,
                 averageLength = words.map { it.length }.average(),
                 minEntropy = calculateEntropy(words.size, 2),

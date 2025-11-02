@@ -198,6 +198,7 @@
     <string name="sync_history_statistics_total">Total</string>
     <string name="sync_history_statistics_success">Réussies</string>
     <string name="sync_history_statistics_failed">Échouées</string>
+    <string name="sync_auto_secret_unavailable">Déverrouillez l’appareil pour enregistrer la clé de synchronisation automatique.</string>
     <string name="sync_history_last_error_title">Dernière erreur</string>
     <string name="sync_history_operation_upload">Upload %1$s</string>
     <string name="sync_history_operation_download">Download %1$s</string>

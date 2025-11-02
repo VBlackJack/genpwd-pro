@@ -2,6 +2,7 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.content.Context
+import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -83,7 +84,11 @@ class OneDriveProvider(
      */
     private val httpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         OkHttpClient.Builder()

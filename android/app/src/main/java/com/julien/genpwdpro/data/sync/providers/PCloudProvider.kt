@@ -2,6 +2,7 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.net.Uri
+import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.sync.CloudProvider
@@ -23,6 +24,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 /**
@@ -213,6 +215,7 @@ class PCloudProvider(
     private var accessToken: String? = null
     private var genPwdFolderId: Long? = null
     private var authCallback: ((Boolean) -> Unit)? = null
+    private var oauthState: String? = null
 
     init {
         // Charger le token sauvegardé au démarrage
@@ -227,7 +230,11 @@ class PCloudProvider(
     // HTTP Client with logging
     private val httpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         OkHttpClient.Builder()
@@ -303,10 +310,13 @@ class PCloudProvider(
                 }
 
                 // Construire l'URL d'autorisation
+                val state = UUID.randomUUID().toString()
+                oauthState = state
                 val authUrl = Uri.parse(region.authUrl).buildUpon()
                     .appendQueryParameter("client_id", appKey)
                     .appendQueryParameter("response_type", "code")
                     .appendQueryParameter("redirect_uri", REDIRECT_URI)
+                    .appendQueryParameter("state", state)
                     .build()
 
                 SafeLog.d(TAG, "Opening OAuth URL: $authUrl")
@@ -330,6 +340,15 @@ class PCloudProvider(
      */
     suspend fun handleOAuthCallback(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
+            val returnedState = uri.getQueryParameter("state")
+            val expectedState = oauthState
+            oauthState = null
+            if (expectedState.isNullOrEmpty() || expectedState != returnedState) {
+                SafeLog.w(TAG, "Rejected OAuth callback with invalid state")
+                authCallback?.invoke(false)
+                return@withContext false
+            }
+
             val code = uri.getQueryParameter("code")
             if (code.isNullOrEmpty()) {
                 SafeLog.e(TAG, "No authorization code in callback")

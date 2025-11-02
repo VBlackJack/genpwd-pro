@@ -2,15 +2,20 @@ package com.julien.genpwdpro.data.sync
 
 import android.app.Activity
 import android.content.Context
+import android.net.Uri
 import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.providers.ProviderConfig
-import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
+import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.data.sync.models.ConflictResolutionStrategy as VaultConflictResolutionStrategy
 import com.julien.genpwdpro.data.sync.models.SyncResult as VaultSyncResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
@@ -42,7 +47,8 @@ import kotlinx.coroutines.sync.withLock
 @Singleton
 class VaultSyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val fileVaultRepository: FileVaultRepository,
+    private val vaultRegistryDao: VaultRegistryDao,
+    private val vaultFileManager: VaultFileManager,
     private val conflictResolver: ConflictResolver,
     private val credentialManager: ProviderCredentialManager,
     private val syncPreferencesManager: SyncPreferencesManager,
@@ -67,6 +73,61 @@ class VaultSyncManager @Inject constructor(
     private var currentProvider: CloudProvider? = null
     private var currentProviderType: CloudProviderType = CloudProviderType.NONE
     private val providerMutex = Mutex()
+
+    private suspend fun getVaultRegistryEntry(vaultId: String): VaultRegistryEntry? {
+        return vaultRegistryDao.getById(vaultId)
+    }
+
+    private fun VaultRegistryEntry.asUri(): Uri? {
+        return vaultFileManager.pathToUri(filePath)
+    }
+
+    private fun readEncryptedVault(entry: VaultRegistryEntry): ByteArray {
+        val uri = entry.asUri()
+        return if (uri != null) {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                inputStream.readBytes()
+            } ?: throw IOException("Cannot open vault file URI: ${entry.filePath}")
+        } else {
+            val file = File(entry.filePath)
+            if (!file.exists()) {
+                throw IOException("Vault file not found: ${entry.filePath}")
+            }
+            file.readBytes()
+        }
+    }
+
+    private suspend fun writeEncryptedVault(
+        entry: VaultRegistryEntry,
+        encryptedData: ByteArray,
+        timestamp: Long
+    ) {
+        val resolvedTimestamp = if (timestamp > 0) timestamp else System.currentTimeMillis()
+        val uri = entry.asUri()
+        if (uri != null) {
+            context.contentResolver.openOutputStream(uri, "wt")?.use { outputStream ->
+                outputStream.write(encryptedData)
+            } ?: throw IOException("Cannot open vault URI for writing: ${entry.filePath}")
+        } else {
+            val file = File(entry.filePath)
+            file.parentFile?.let { parent ->
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw IOException("Unable to create directory for vault file: ${parent.absolutePath}")
+                }
+            }
+            file.outputStream().use { outputStream ->
+                outputStream.write(encryptedData)
+            }
+        }
+
+        val size = if (uri != null) {
+            vaultFileManager.getVaultFileSizeFromUri(uri)
+        } else {
+            File(entry.filePath).length()
+        }
+
+        vaultRegistryDao.updateFileInfo(entry.id, size, resolvedTimestamp)
+    }
 
     /**
      * ID de cet appareil (unique)
@@ -261,34 +322,25 @@ class VaultSyncManager @Inject constructor(
 
         _syncStatus.value = SyncStatus.SYNCING
 
-        // TODO: Implement .gpv file export for sync
-        // Need to read .gpv file directly from VaultFileManager
-        SafeLog.w(TAG, "exportVault not yet implemented for .gpv files")
-        return VaultSyncResult.Error("Sync not yet implemented for file-based vaults")
-
-        /*
         return try {
-            // 1. Export vault (encrypted) - needs .gpv file access
-            val encryptedData = TODO("Read .gpv file from VaultFileManager")
+            val entry = getVaultRegistryEntry(vaultId)
+                ?: return VaultSyncResult.Error("Vault introuvable")
 
-            // 2. Get vault metadata - needs VaultRegistryDao
-            val vaultName = TODO("Get vault name from VaultRegistryDao")
-
-            // 3. Calculer le checksum
+            val encryptedData = readEncryptedVault(entry)
+            val timestamp = entry.lastModified.takeIf { it > 0 } ?: System.currentTimeMillis()
             val checksum = calculateChecksum(encryptedData)
 
-            // 4. Créer VaultSyncData
             val syncData = VaultSyncData(
                 vaultId = vaultId,
-                vaultName = vault.name,
+                vaultName = entry.name,
                 encryptedData = encryptedData,
-                timestamp = System.currentTimeMillis(),
+                timestamp = timestamp,
                 version = 1,
                 deviceId = deviceId,
                 checksum = checksum
             )
 
-            // 5. Vérifier s'il y a une version plus récente sur le cloud
+            // Vérifier s'il y a une version plus récente sur le cloud
             if (provider.hasNewerVersion(vaultId, syncData.timestamp)) {
                 // Télécharger et comparer
                 val remoteData = provider.downloadVault(vaultId)
@@ -298,7 +350,7 @@ class VaultSyncManager @Inject constructor(
                 }
             }
 
-            // 6. Upload vers le cloud
+            // Upload vers le cloud
             val fileId = provider.uploadVault(vaultId, syncData)
 
             if (fileId != null) {
@@ -313,7 +365,6 @@ class VaultSyncManager @Inject constructor(
             _syncStatus.value = SyncStatus.ERROR
             VaultSyncResult.Error(e.message ?: "Erreur inconnue", e)
         }
-        */
     }
 
     /**
@@ -329,30 +380,43 @@ class VaultSyncManager @Inject constructor(
         _syncStatus.value = SyncStatus.SYNCING
 
         return try {
-            // TODO: Implement .gpv file import for sync
-            // Need to write .gpv file directly via VaultFileManager
-            SafeLog.w(TAG, "importVault not yet implemented for .gpv files")
-            _syncStatus.value = SyncStatus.ERROR
-            return false
-
-            /*
-            // 1. Download from cloud
             val syncData = provider.downloadVault(vaultId)
                 ?: return false.also {
+                    SafeLog.w(TAG, "No remote vault found for $vaultId")
                     _syncStatus.value = SyncStatus.ERROR
                 }
 
-            // 2. Import vault - needs .gpv file writing
-            val success = TODO("Write .gpv file via VaultFileManager")
-
-            _syncStatus.value = if (success) {
-                SyncStatus.SYNCED
-            } else {
-                SyncStatus.ERROR
+            if (syncData.vaultId != vaultId) {
+                SafeLog.w(TAG, "Downloaded vaultId mismatch: expected=$vaultId, received=${syncData.vaultId}")
+                _syncStatus.value = SyncStatus.ERROR
+                return false
             }
 
-            success
-            */
+            val entry = getVaultRegistryEntry(vaultId)
+                ?: return false.also {
+                    SafeLog.w(TAG, "Vault registry entry not found for $vaultId")
+                    _syncStatus.value = SyncStatus.ERROR
+                }
+
+            val tempFile = File(context.cacheDir, "sync_download_${vaultId}_${System.currentTimeMillis()}.gpv")
+            try {
+                tempFile.outputStream().use { outputStream ->
+                    outputStream.write(syncData.encryptedData)
+                }
+
+                // Validate decryption with provided master password
+                vaultFileManager.loadVaultFile(
+                    vaultId = vaultId,
+                    masterPassword = masterPassword,
+                    filePath = tempFile.absolutePath
+                )
+
+                writeEncryptedVault(entry, syncData.encryptedData, syncData.timestamp)
+                _syncStatus.value = SyncStatus.SYNCED
+                true
+            } finally {
+                tempFile.delete()
+            }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error downloading vault", e)
             _syncStatus.value = SyncStatus.ERROR
@@ -378,31 +442,31 @@ class VaultSyncManager @Inject constructor(
         val provider = ensureProvider() ?: return false
 
         return try {
-            // TODO: Implement conflict resolution for .gpv files
-            SafeLog.w(TAG, "Conflict resolution not yet implemented for .gpv files")
-            _syncStatus.value = SyncStatus.ERROR
-            return false
-
-            /*
             val resolvedData = conflictResolver.resolve(local, remote, strategy)
 
             // Upload resolved version
             val fileId = provider.uploadVault(resolvedData.vaultId, resolvedData)
 
             if (fileId != null) {
-                // Import locally if needed - TODO: .gpv file writing
                 if (resolvedData != local) {
-                    TODO("Write .gpv file via VaultFileManager")
+                    val entry = getVaultRegistryEntry(resolvedData.vaultId)
+                        ?: return false.also {
+                            SafeLog.w(TAG, "Registry entry missing for resolved vault ${resolvedData.vaultId}")
+                            _syncStatus.value = SyncStatus.ERROR
+                        }
+
+                    writeEncryptedVault(entry, resolvedData.encryptedData, resolvedData.timestamp)
                 }
 
                 _syncStatus.value = SyncStatus.SYNCED
                 true
             } else {
+                _syncStatus.value = SyncStatus.ERROR
                 false
             }
-            */
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error resolving conflict", e)
+            _syncStatus.value = SyncStatus.ERROR
             false
         }
     }

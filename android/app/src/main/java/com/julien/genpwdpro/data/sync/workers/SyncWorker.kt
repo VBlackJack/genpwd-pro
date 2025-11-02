@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.sync.AutoSyncSecretStore
 import com.julien.genpwdpro.data.sync.VaultSyncManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -27,7 +28,8 @@ import dagger.assisted.AssistedInject
 class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val vaultSyncManager: VaultSyncManager
+    private val vaultSyncManager: VaultSyncManager,
+    private val secretStore: AutoSyncSecretStore
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -37,7 +39,7 @@ class SyncWorker @AssistedInject constructor(
 
         // Paramètres du worker
         const val KEY_VAULT_ID = "vault_id"
-        const val KEY_MASTER_PASSWORD = "master_password"
+        const val KEY_CLEAR_SECRET = "clear_secret"
     }
 
     override suspend fun doWork(): Result {
@@ -58,17 +60,32 @@ class SyncWorker @AssistedInject constructor(
 
             // Récupérer les paramètres
             val vaultId = inputData.getString(KEY_VAULT_ID)
-            val masterPassword = inputData.getString(KEY_MASTER_PASSWORD)
+            val clearSecret = inputData.getBoolean(KEY_CLEAR_SECRET, false)
 
-            if (vaultId == null || masterPassword == null) {
-                SafeLog.e(TAG, "Missing vault ID or master password")
+            if (vaultId == null) {
+                SafeLog.e(TAG, "Missing vault ID for background sync")
+                return Result.failure()
+            }
+
+            if (!secretStore.canAccessSecrets()) {
+                SafeLog.w(TAG, "Secure storage unavailable, retrying later")
+                return Result.retry()
+            }
+
+            val masterPassword = secretStore.getSecret(vaultId)
+
+            if (masterPassword == null) {
+                SafeLog.e(
+                    TAG,
+                    "Master password unavailable for vault ${SafeLog.redact(vaultId)}"
+                )
                 return Result.failure()
             }
 
             // Synchroniser le vault
             val result = vaultSyncManager.syncVault(vaultId, masterPassword)
 
-            when (result) {
+            val outcome = when (result) {
                 is com.julien.genpwdpro.data.sync.models.SyncResult.Success -> {
                     SafeLog.d(TAG, "Sync completed successfully")
                     Result.success()
@@ -88,15 +105,26 @@ class SyncWorker @AssistedInject constructor(
                     Result.failure()
                 }
             }
+            if (clearSecret) {
+                when (outcome) {
+                    is Result.Success, is Result.Failure -> secretStore.clearSecret(vaultId)
+                    is Result.Retry -> Unit
+                }
+            }
+            outcome
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error during sync", e)
 
             // Retry en cas d'erreur inattendue
-            if (runAttemptCount < 3) {
+            val outcome = if (runAttemptCount < 3) {
                 Result.retry()
             } else {
                 Result.failure()
             }
+            if (clearSecret && outcome is Result.Failure) {
+                secretStore.clearSecret(vaultId)
+            }
+            outcome
         }
     }
 }

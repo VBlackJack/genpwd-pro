@@ -74,6 +74,7 @@ class VaultManagerViewModel @Inject constructor(
                 val vaultId: String
                 val filePath: String
                 val fileSize: Long
+                val lastModified: Long
 
                 if (strategy == StorageStrategy.CUSTOM) {
                     // Utiliser SAF pour custom paths
@@ -90,9 +91,10 @@ class VaultManagerViewModel @Inject constructor(
                     vaultId = id
                     filePath = vaultFileManager.uriToPath(fileUri)
                     fileSize = vaultFileManager.getVaultFileSizeFromUri(fileUri)
+                    lastModified = System.currentTimeMillis()
                 } else {
                     // Utiliser les méthodes standard pour les autres stratégies
-                    val (id, file) = vaultFileManager.createVaultFile(
+                    val (id, location) = vaultFileManager.createVaultFile(
                         name = name,
                         masterPassword = masterPassword,
                         strategy = strategy,
@@ -101,8 +103,21 @@ class VaultManagerViewModel @Inject constructor(
                     )
 
                     vaultId = id
-                    filePath = file.absolutePath
-                    fileSize = file.length()
+                    val file = location.file
+                    val uri = location.uri
+                    when {
+                        file != null -> {
+                            filePath = file.absolutePath
+                            fileSize = file.length()
+                            lastModified = file.lastModified()
+                        }
+                        uri != null -> {
+                            filePath = vaultFileManager.uriToPath(uri)
+                            fileSize = vaultFileManager.getVaultFileSizeFromUri(uri)
+                            lastModified = System.currentTimeMillis()
+                        }
+                        else -> throw IllegalStateException("Vault file location unavailable")
+                    }
                 }
 
                 // Créer l'entrée dans le registry
@@ -114,7 +129,7 @@ class VaultManagerViewModel @Inject constructor(
                     filePath = filePath,
                     storageStrategy = strategy,
                     fileSize = fileSize,
-                    lastModified = System.currentTimeMillis(),
+                    lastModified = lastModified,
                     lastAccessed = null,
                     isDefault = setAsDefault,
                     isLoaded = false,
@@ -251,11 +266,12 @@ class VaultManagerViewModel @Inject constructor(
                 // Récupérer l'entrée pour obtenir le chemin du fichier
                 val entry = vaultRegistryDao.getById(vaultId)
                 if (entry != null) {
-                    // Supprimer le fichier
-                    val file = File(entry.filePath)
-                    if (file.exists()) {
-                        file.delete()
+                    val targetUri = vaultFileManager.pathToUri(entry.filePath)
+                    val deleted = when {
+                        targetUri != null -> vaultFileManager.deleteVaultFile(targetUri)
+                        else -> vaultFileManager.deleteVaultFile(File(entry.filePath))
                     }
+                    SafeLog.d("VaultManagerViewModel", "Vault file deletion result=$deleted")
                 }
 
                 // Supprimer du registry
@@ -324,23 +340,42 @@ class VaultManagerViewModel @Inject constructor(
                     destinationStrategy = StorageStrategy.APP_STORAGE
                 )
 
-                val (vaultId, file) = result
+                val (vaultId, location) = result
+                val file = location.file
+                val uri = location.uri
 
-                // Charger le vault pour obtenir les métadonnées
-                val vaultData = vaultFileManager.loadVaultFile(
-                    vaultId = vaultId,
-                    masterPassword = masterPassword,
-                    filePath = file.absolutePath
-                )
+                val loadResult = when {
+                    file != null -> vaultFileManager.loadVaultFile(
+                        vaultId = vaultId,
+                        masterPassword = masterPassword,
+                        filePath = file.absolutePath
+                    )
+
+                    uri != null -> vaultFileManager.loadVaultFileFromUri(
+                        vaultId = vaultId,
+                        masterPassword = masterPassword,
+                        fileUri = uri
+                    )
+
+                    else -> throw IllegalStateException("Imported vault location unavailable")
+                }
+
+                val vaultData = loadResult.data
+
+                val resolvedFilePath = file?.absolutePath ?: uri?.let { vaultFileManager.uriToPath(it) }
+                    ?: throw IllegalStateException("Unable to resolve imported vault path")
+                val resolvedSize = file?.length() ?: uri?.let { vaultFileManager.getVaultFileSizeFromUri(it) }
+                    ?: 0L
+                val resolvedLastModified = file?.lastModified() ?: System.currentTimeMillis()
 
                 // Créer l'entrée dans le registry
                 val registryEntry = VaultRegistryEntry(
                     id = vaultId,
                     name = vaultData.metadata.name,
-                    filePath = file.absolutePath,
+                    filePath = resolvedFilePath,
                     storageStrategy = StorageStrategy.APP_STORAGE,
-                    fileSize = file.length(),
-                    lastModified = file.lastModified(),
+                    fileSize = resolvedSize,
+                    lastModified = resolvedLastModified,
                     lastAccessed = null,
                     isDefault = false,
                     isLoaded = false,
@@ -414,19 +449,27 @@ class VaultManagerViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 // Importer le fichier vers le stockage interne
-                val (vaultId, vaultFile) = vaultFileManager.importVault(
+                val (vaultId, location) = vaultFileManager.importVault(
                     sourceUri = fileUri,
                     destinationStrategy = StorageStrategy.INTERNAL
                 )
+
+                val file = location.file
+                val uri = location.uri
+                val filePath = file?.absolutePath ?: uri?.let { vaultFileManager.uriToPath(it) }
+                    ?: throw IllegalStateException("Imported vault location unavailable")
+                val fileSize = file?.length() ?: uri?.let { vaultFileManager.getVaultFileSizeFromUri(it) }
+                    ?: 0L
+                val lastModified = file?.lastModified() ?: System.currentTimeMillis()
 
                 // Créer une entrée dans le registry avec les paramètres corrects
                 val registryEntry = VaultRegistryEntry(
                     id = vaultId,
                     name = vaultName,
-                    filePath = vaultFile.absolutePath,
+                    filePath = filePath,
                     storageStrategy = StorageStrategy.INTERNAL,
-                    fileSize = vaultFile.length(),
-                    lastModified = vaultFile.lastModified(),
+                    fileSize = fileSize,
+                    lastModified = lastModified,
                     lastAccessed = null,
                     isDefault = false,
                     isLoaded = false,

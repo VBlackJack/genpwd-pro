@@ -13,6 +13,8 @@ import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.db.dao.PasswordHistoryDao
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.database.AppDatabase
+import com.julien.genpwdpro.data.db.database.DatabaseOpenHelperFactoryProvider
+import com.julien.genpwdpro.data.db.database.SqlCipherDatabaseOpenHelperFactoryProvider
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
 import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import dagger.Module
@@ -36,13 +38,16 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        factoryProvider: DatabaseOpenHelperFactoryProvider
     ): AppDatabase {
+        val supportFactory = factoryProvider.provideFactory()
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
+            .openHelperFactory(supportFactory)
             .addMigrations(
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
@@ -53,9 +58,14 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_7_8
             )
             .addCallback(createBackupCallback(context)) // Fixed: Backup avant migration
-            .fallbackToDestructiveMigration() // Fallback si migration échoue (après backup)
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideDatabaseOpenHelperFactoryProvider(
+        provider: SqlCipherDatabaseOpenHelperFactoryProvider
+    ): DatabaseOpenHelperFactoryProvider = provider
 
     /**
      * Crée un callback Room pour faire un backup automatique de la base de données

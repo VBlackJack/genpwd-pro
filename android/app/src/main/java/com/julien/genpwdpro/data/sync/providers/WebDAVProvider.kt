@@ -7,15 +7,10 @@ import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import java.io.IOException
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
 import java.text.SimpleDateFormat
 import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.*
@@ -105,24 +100,7 @@ class WebDAVProvider(
 
         // Gestion SSL personnalisée si nécessaire
         if (!validateSSL) {
-            try {
-                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
-                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
-                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-                })
-
-                val sslContext = SSLContext.getInstance("TLS")
-                sslContext.init(null, trustAllCerts, SecureRandom())
-
-                builder.sslSocketFactory(
-                    sslContext.socketFactory,
-                    trustAllCerts[0] as X509TrustManager
-                )
-                builder.hostnameVerifier { _, _ -> true }
-            } catch (e: Exception) {
-                SafeLog.e(TAG, "Error configuring SSL", e)
-            }
+            throw IllegalStateException("TLS validation cannot be disabled for WebDAV connections")
         }
 
         return builder.build()

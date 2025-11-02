@@ -5,8 +5,10 @@ import android.content.Context
 import android.os.Build
 import android.os.UserManager
 import androidx.core.content.getSystemService
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,57 +41,83 @@ class SecurePrefs @Inject constructor(
         return prefsIfUnlocked()?.getString(key, defaultValue) ?: defaultValue
     }
 
-    fun putString(key: String, value: String?) {
-        val prefs = prefsIfUnlocked() ?: return
-        prefs.edit().apply {
+    fun putString(key: String, value: String?): Boolean {
+        val prefs = prefsIfUnlockedWithLogging("putString", key) ?: return false
+        val success = prefs.edit().apply {
             if (value == null) {
                 remove(key)
             } else {
                 putString(key, value)
             }
-            apply()
+        }.commit()
+
+        if (!success) {
+            SafeLog.e(TAG, "Failed to persist secure preference: key=${SafeLog.redact(key)}")
         }
+
+        return success
     }
 
     fun getBoolean(key: String, defaultValue: Boolean = false): Boolean {
         return prefsIfUnlocked()?.getBoolean(key, defaultValue) ?: defaultValue
     }
 
-    fun putBoolean(key: String, value: Boolean) {
-        prefsIfUnlocked()?.edit()?.apply {
-            putBoolean(key, value)
-            apply()
+    fun putBoolean(key: String, value: Boolean): Boolean {
+        val prefs = prefsIfUnlockedWithLogging("putBoolean", key) ?: return false
+        val success = prefs.edit().putBoolean(key, value).commit()
+        if (!success) {
+            SafeLog.e(TAG, "Failed to persist secure boolean: key=${SafeLog.redact(key)}")
         }
+        return success
     }
 
     fun getLong(key: String, defaultValue: Long = 0L): Long {
         return prefsIfUnlocked()?.getLong(key, defaultValue) ?: defaultValue
     }
 
-    fun putLong(key: String, value: Long) {
-        prefsIfUnlocked()?.edit()?.apply {
-            putLong(key, value)
-            apply()
+    fun putLong(key: String, value: Long): Boolean {
+        val prefs = prefsIfUnlockedWithLogging("putLong", key) ?: return false
+        val success = prefs.edit().putLong(key, value).commit()
+        if (!success) {
+            SafeLog.e(TAG, "Failed to persist secure long: key=${SafeLog.redact(key)}")
         }
+        return success
     }
 
     fun contains(key: String): Boolean {
         return prefsIfUnlocked()?.contains(key) ?: false
     }
 
-    fun remove(vararg keys: String) {
-        val prefs = prefsIfUnlocked() ?: return
-        prefs.edit().apply {
+    fun remove(vararg keys: String): Boolean {
+        val redactedKeys = keys.joinToString { SafeLog.redact(it) }
+        val prefs = prefsIfUnlockedWithLogging("remove", redactedKeys) ?: return false
+        val success = prefs.edit().apply {
             keys.forEach { remove(it) }
-            apply()
+        }.commit()
+        if (!success) {
+            SafeLog.e(TAG, "Failed to remove secure preferences: keys=$redactedKeys")
+        }
+        return success
+    }
+
+    fun clearAll(): Boolean {
+        val prefs = prefsIfUnlockedWithLogging("clearAll") ?: return false
+        val success = prefs.edit().clear().commit()
+        if (!success) {
+            SafeLog.e(TAG, "Failed to clear secure preferences")
+        }
+        return success
+    }
+
+    private fun prefsIfUnlocked(): SharedPreferences? = if (isDeviceUnlocked()) encryptedPrefs else null
+
+    private fun prefsIfUnlockedWithLogging(operation: String, key: String? = null): SharedPreferences? {
+        return prefsIfUnlocked() ?: run {
+            val suffix = key?.let { ": key=${SafeLog.redact(it)}" } ?: ""
+            SafeLog.w(TAG, "SecurePrefs unavailable for $operation$suffix - device locked")
+            null
         }
     }
-
-    fun clearAll() {
-        prefsIfUnlocked()?.edit()?.clear()?.apply()
-    }
-
-    private fun prefsIfUnlocked() = if (isDeviceUnlocked()) encryptedPrefs else null
 
     private fun isDeviceUnlocked(): Boolean {
         val userManager = appContext.getSystemService<UserManager>()
@@ -112,5 +140,6 @@ class SecurePrefs @Inject constructor(
 
     companion object {
         private const val PREF_NAME = "secure_prefs"
+        private const val TAG = "SecurePrefs"
     }
 }
