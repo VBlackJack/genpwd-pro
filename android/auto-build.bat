@@ -51,17 +51,19 @@ echo ========================================
 echo.
 
 REM Lire la version actuelle avec le script PowerShell
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action GetVersionCode`) do set CURRENT_VERSION_CODE=%%i
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action GetVersionName`) do set CURRENT_VERSION_NAME=%%i
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0version-helper.ps1" -Action GetVersionCode 2^>^&1`) do set CURRENT_VERSION_CODE=%%i
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0version-helper.ps1" -Action GetVersionName 2^>^&1`) do set CURRENT_VERSION_NAME=%%i
 
 if not defined CURRENT_VERSION_CODE (
     echo ERREUR: Impossible de lire versionCode!
+    echo Verifiez que le fichier version-helper.ps1 est present.
     pause
     exit /b 1
 )
 
 if not defined CURRENT_VERSION_NAME (
     echo ERREUR: Impossible de lire versionName!
+    echo Verifiez que le fichier version-helper.ps1 est present.
     pause
     exit /b 1
 )
@@ -89,7 +91,7 @@ REM Incrementer versionCode
 set /a NEW_VERSION_CODE=%CURRENT_VERSION_CODE%+1
 
 REM Incrementer versionName (alpha.X -> alpha.X+1)
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action IncrementAlpha`) do set NEW_VERSION_NAME=%%i
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0version-helper.ps1" -Action IncrementAlpha 2^>^&1`) do set NEW_VERSION_NAME=%%i
 
 if not defined NEW_VERSION_NAME (
     echo ERREUR: Impossible d'incrementer la version!
@@ -104,7 +106,7 @@ echo.
 
 REM Mettre a jour le fichier build.gradle.kts
 echo Mise a jour de build.gradle.kts...
-powershell -NoProfile -ExecutionPolicy Bypass -File "version-helper.ps1" -Action UpdateVersions -NewVersionCode %NEW_VERSION_CODE% -NewVersionName "%NEW_VERSION_NAME%" >nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0version-helper.ps1" -Action UpdateVersions -NewVersionCode %NEW_VERSION_CODE% -NewVersionName "%NEW_VERSION_NAME%"
 
 if errorlevel 1 (
     echo ERREUR lors de la mise a jour du fichier!
@@ -122,17 +124,19 @@ echo.
 
 REM Nettoyer d'abord
 echo Nettoyage...
-call gradlew.bat clean
+call "%~dp0gradlew.bat" clean
 set CLEAN_ERROR=%ERRORLEVEL%
 if %CLEAN_ERROR% neq 0 (
     echo ERREUR lors du nettoyage!
+    echo Restauration de l'ancienne version...
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0version-helper.ps1" -Action UpdateVersions -NewVersionCode %CURRENT_VERSION_CODE% -NewVersionName "%CURRENT_VERSION_NAME%"
     pause
     exit /b 1
 )
 
 echo.
 echo Compilation en cours (%BUILD_NAME%)...
-call gradlew.bat %GRADLE_TASK%
+call "%~dp0gradlew.bat" %GRADLE_TASK%
 set BUILD_ERROR=%ERRORLEVEL%
 if %BUILD_ERROR% neq 0 (
     echo.
@@ -140,7 +144,16 @@ if %BUILD_ERROR% neq 0 (
     echo   ERREUR lors de la compilation!
     echo ========================================
     echo.
-    echo La version a ete incrementee mais le build a echoue.
+    echo Restauration de l'ancienne version...
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0version-helper.ps1" -Action UpdateVersions -NewVersionCode %CURRENT_VERSION_CODE% -NewVersionName "%CURRENT_VERSION_NAME%"
+    if errorlevel 1 (
+        echo ATTENTION: Impossible de restaurer l'ancienne version!
+        echo Version actuelle dans le fichier: %NEW_VERSION_CODE% / %NEW_VERSION_NAME%
+        echo Version a restaurer manuellement: %CURRENT_VERSION_CODE% / %CURRENT_VERSION_NAME%
+    ) else (
+        echo Version restauree avec succes: %CURRENT_VERSION_CODE% / %CURRENT_VERSION_NAME%
+    )
+    echo.
     echo Corrigez les erreurs et relancez le build.
     echo.
     pause
@@ -154,10 +167,9 @@ echo ========================================
 echo.
 
 REM Detecter l'APK genere
-set APK_FILE=
-for %%F in (app\build\outputs\apk\%BUILD_NAME%\genpwd-pro-v%NEW_VERSION_NAME%-%BUILD_NAME%.apk) do set APK_FILE=%%F
+set APK_FILE=app\build\outputs\apk\%BUILD_NAME%\genpwd-pro-v%NEW_VERSION_NAME%-%BUILD_NAME%.apk
 
-if defined APK_FILE (
+if exist "%APK_FILE%" (
     echo.
     echo ========================================
     echo   SUCCES! APK genere avec succes
@@ -168,7 +180,7 @@ if defined APK_FILE (
     echo L'APK se trouve dans:
     echo %APK_FILE%
     echo.
-    for %%A in (%APK_FILE%) do (
+    for %%A in ("%APK_FILE%") do (
         set SIZE=%%~zA
         echo Taille: !SIZE! octets
     )
@@ -179,7 +191,7 @@ if defined APK_FILE (
     echo.
 ) else (
     echo ERREUR: L'APK n'a pas ete genere!
-    echo Chemin attendu: app\build\outputs\apk\%BUILD_NAME%\genpwd-pro-v%NEW_VERSION_NAME%-%BUILD_NAME%.apk
+    echo Chemin attendu: %APK_FILE%
 )
 
 echo.

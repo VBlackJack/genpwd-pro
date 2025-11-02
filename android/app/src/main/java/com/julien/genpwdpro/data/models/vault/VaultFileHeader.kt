@@ -25,7 +25,7 @@ data class VaultFileHeader(
         const val MAGIC_NUMBER = "GPVAULT1"
         const val CURRENT_VERSION = 2  // Incremented for random kdfSalt security improvement
         const val DEFAULT_KDF = "argon2id"
-        const val HEADER_SIZE = 256
+        const val HEADER_SIZE = 512  // Increased from 256 to prevent truncation
     }
 
     /**

@@ -169,13 +169,22 @@ class VaultFileManager @Inject constructor(
 
         val headerJson = gson.toJson(updatedHeader)
         val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
+
+        // Verify header size to prevent truncation
+        if (headerBytes.size > VaultFileHeader.HEADER_SIZE) {
+            throw IllegalStateException(
+                "Vault header too large: ${headerBytes.size} bytes > ${VaultFileHeader.HEADER_SIZE} bytes. " +
+                "Header JSON: ${headerJson.take(100)}..."
+            )
+        }
+
         val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
         System.arraycopy(
             headerBytes,
             0,
             paddedHeader,
             0,
-            minOf(headerBytes.size, paddedHeader.size)
+            headerBytes.size
         )
 
         return VaultPayload(

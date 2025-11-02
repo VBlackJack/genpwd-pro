@@ -24,10 +24,12 @@ class GenPwdProApplication : Application(), Configuration.Provider {
     lateinit var syncInitializer: SyncInitializer
 
     override fun onCreate() {
+        // Initialiser Tink AVANT super.onCreate() car Hilt en a besoin lors de l'injection
+        initializeTink()
+
         super.onCreate()
 
         installCrashHandler()
-        initializeTink()
 
         StrictModeInitializer.install()
 

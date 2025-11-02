@@ -11,7 +11,6 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkQuery
 import androidx.work.WorkRequest
-import androidx.work.getWorkInfosFlow
 import androidx.work.workDataOf
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.models.SyncInterval

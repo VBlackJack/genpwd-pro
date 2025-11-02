@@ -65,8 +65,9 @@ switch ($Action) {
         # Remplacer versionName
         $content = $content -replace 'versionName\s*=\s*"[^"]+"', "versionName = `"$NewVersionName`""
 
-        # Sauvegarder le fichier
-        Set-Content -Path $buildGradleFile -Value $content -NoNewline -Encoding UTF8
+        # Sauvegarder le fichier (UTF8 sans BOM pour compatibilité)
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        [System.IO.File]::WriteAllText($buildGradleFile, $content, $utf8NoBom)
 
         Write-Output "OK"
     }

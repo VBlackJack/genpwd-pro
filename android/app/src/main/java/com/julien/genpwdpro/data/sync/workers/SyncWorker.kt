@@ -45,6 +45,10 @@ class SyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         SafeLog.d(TAG, "Starting background sync")
 
+        // Récupérer les paramètres au début pour qu'ils soient accessibles partout
+        val vaultId = inputData.getString(KEY_VAULT_ID)
+        val clearSecret = inputData.getBoolean(KEY_CLEAR_SECRET, false)
+
         return try {
             val providerReady = vaultSyncManager.rehydrateActiveProvider()
             if (!providerReady) {
@@ -57,10 +61,6 @@ class SyncWorker @AssistedInject constructor(
                 SafeLog.w(TAG, "Provider not authenticated, skipping sync")
                 return Result.success()
             }
-
-            // Récupérer les paramètres
-            val vaultId = inputData.getString(KEY_VAULT_ID)
-            val clearSecret = inputData.getBoolean(KEY_CLEAR_SECRET, false)
 
             if (vaultId == null) {
                 SafeLog.e(TAG, "Missing vault ID for background sync")
@@ -105,7 +105,7 @@ class SyncWorker @AssistedInject constructor(
                     Result.failure()
                 }
             }
-            if (clearSecret) {
+            if (clearSecret && vaultId != null) {
                 when (outcome) {
                     is Result.Success, is Result.Failure -> secretStore.clearSecret(vaultId)
                     is Result.Retry -> Unit
@@ -121,7 +121,7 @@ class SyncWorker @AssistedInject constructor(
             } else {
                 Result.failure()
             }
-            if (clearSecret && outcome is Result.Failure) {
+            if (clearSecret && outcome is Result.Failure && vaultId != null) {
                 secretStore.clearSecret(vaultId)
             }
             outcome
