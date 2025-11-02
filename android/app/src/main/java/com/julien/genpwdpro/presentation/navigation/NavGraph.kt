@@ -14,6 +14,9 @@ import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
+import com.julien.genpwdpro.presentation.sync.CloudAccountsScreen
+import com.julien.genpwdpro.presentation.sync.AddCloudAccountScreen
+import com.julien.genpwdpro.presentation.sync.ConflictResolutionScreen
 import com.julien.genpwdpro.presentation.vault.*
 import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 import kotlinx.coroutines.launch
@@ -43,6 +46,11 @@ sealed class Screen(val route: String) {
     // Sync Settings
     object SyncSettings : Screen("sync_settings")
     object SyncHistory : Screen("sync_history")
+
+    // Cloud Sync
+    object CloudAccounts : Screen("cloud_accounts")
+    object AddCloudAccount : Screen("add_cloud_account")
+    object ConflictResolution : Screen("conflict_resolution")
 
     // Autofill Settings
     object AutofillSettings : Screen("autofill_settings")
@@ -244,6 +252,42 @@ fun AppNavGraph(
         // ========== Sync Settings ==========
         composable(Screen.SyncSettings.route) {
             SyncSettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCloudAccounts = {
+                    navController.navigate(Screen.CloudAccounts.route)
+                }
+            )
+        }
+
+        // ========== Cloud Accounts ==========
+        composable(Screen.CloudAccounts.route) {
+            CloudAccountsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddAccount = {
+                    navController.navigate(Screen.AddCloudAccount.route)
+                }
+            )
+        }
+
+        // ========== Add Cloud Account ==========
+        composable(Screen.AddCloudAccount.route) {
+            AddCloudAccountScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onProviderSelected = { providerKind ->
+                    // TODO: Start OAuth flow for selected provider
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ========== Conflict Resolution ==========
+        composable(Screen.ConflictResolution.route) {
+            // TODO: Pass actual conflicts list from state
+            ConflictResolutionScreen(
+                conflicts = emptyList(),
+                onResolve = { conflict, resolution ->
+                    // TODO: Handle conflict resolution
+                },
                 onNavigateBack = { navController.popBackStack() }
             )
         }

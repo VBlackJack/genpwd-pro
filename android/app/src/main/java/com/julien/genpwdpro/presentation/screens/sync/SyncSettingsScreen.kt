@@ -59,6 +59,7 @@ fun SyncSettingsScreen(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToAutofill: () -> Unit = {},
     onNavigateToSecurity: () -> Unit = {},
+    onNavigateToCloudAccounts: () -> Unit = {},
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -204,7 +205,8 @@ fun SyncSettingsScreen(
             QuickAccessCard(
                 onNavigateToHistory = onNavigateToHistory,
                 onNavigateToAutofill = onNavigateToAutofill,
-                onNavigateToSecurity = onNavigateToSecurity
+                onNavigateToSecurity = onNavigateToSecurity,
+                onNavigateToCloudAccounts = onNavigateToCloudAccounts
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1113,7 +1115,8 @@ private fun formatTimestamp(timestamp: Long): String {
 private fun QuickAccessCard(
     onNavigateToHistory: () -> Unit,
     onNavigateToAutofill: () -> Unit,
-    onNavigateToSecurity: () -> Unit
+    onNavigateToSecurity: () -> Unit,
+    onNavigateToCloudAccounts: () -> Unit = {}
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -1125,6 +1128,20 @@ private fun QuickAccessCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+
+            // Cloud Accounts button
+            OutlinedButton(
+                onClick = onNavigateToCloudAccounts,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Default.Cloud,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Manage Cloud Accounts")
+            }
 
             // Sync History button
             OutlinedButton(

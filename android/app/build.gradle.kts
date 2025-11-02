@@ -95,6 +95,15 @@ android {
 }
 
 dependencies {
+    implementation(project(":core-vault"))
+    implementation(project(":storage"))
+    implementation(project(":providers-api"))
+    implementation(project(":sync-engine"))
+    implementation(project(":provider-drive"))
+    implementation(project(":provider-dropbox"))
+    implementation(project(":provider-graph"))
+    implementation(project(":provider-webdav"))
+
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
