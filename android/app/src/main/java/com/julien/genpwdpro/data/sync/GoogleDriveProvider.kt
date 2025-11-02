@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.sync
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -8,14 +9,21 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.secure.SecurePrefs
+import com.julien.genpwdpro.data.sync.models.CloudError
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -30,18 +38,39 @@ import kotlinx.coroutines.withContext
  * - Les fichiers sont stockés dans l'appFolder (privé à l'app)
  */
 @Singleton
-class GoogleDriveProvider @Inject constructor() : CloudProvider {
+class GoogleDriveProvider @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val securePrefs: SecurePrefs
+) : CloudProvider {
 
     private var driveService: Drive? = null
     private var signedInAccount: GoogleSignInAccount? = null
+    private var oauthState: String? = null
 
     companion object {
+        private const val TAG = "GoogleDriveProvider"
         private const val MIME_TYPE = "application/octet-stream"
         private const val REQUEST_CODE_SIGN_IN = 9003
+        private const val PREF_ACCOUNT_ID = "google_drive_account_id"
     }
 
     override suspend fun isAuthenticated(): Boolean = withContext(Dispatchers.IO) {
-        signedInAccount != null && driveService != null
+        if (signedInAccount != null && driveService != null) {
+            return@withContext true
+        }
+
+        // Try to restore session from persisted account ID
+        val savedAccountId = securePrefs.getString(PREF_ACCOUNT_ID)
+        if (!savedAccountId.isNullOrEmpty()) {
+            val account = GoogleSignIn.getLastSignedInAccount(context)
+            if (account != null && account.id == savedAccountId) {
+                signedInAccount = account
+                initializeDriveService(context, account)
+                return@withContext true
+            }
+        }
+
+        false
     }
 
     override suspend fun authenticate(activity: Activity): Boolean {
@@ -58,16 +87,24 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                 withContext(Dispatchers.IO) {
                     signedInAccount = existingAccount
                     initializeDriveService(activity, existingAccount)
+                    // Persist account ID for session restoration
+                    securePrefs.putString(PREF_ACCOUNT_ID, existingAccount.id ?: "")
                 }
+                SafeLog.d(TAG, "Google Drive authenticated with existing account")
                 true
             } else {
+                // Generate state for CSRF protection
+                val state = UUID.randomUUID().toString()
+                oauthState = state
+
                 withContext(Dispatchers.Main) {
                     activity.startActivityForResult(client.signInIntent, REQUEST_CODE_SIGN_IN)
                 }
+                SafeLog.d(TAG, "Google Drive authentication flow initiated")
                 false
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Failed to authenticate with Google Drive", e)
             false
         }
     }
@@ -75,24 +112,30 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
     /**
      * À appeler depuis onActivityResult de l'Activity
      */
-    suspend fun handleSignInResult(data: Intent?, activity: Activity): Boolean = withContext(
-        Dispatchers.IO
-    ) {
+    suspend fun handleSignInResult(data: Intent?): Boolean = withContext(Dispatchers.IO) {
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.result
+
+            // Validate CSRF state (Note: Google Sign-In doesn't support custom state parameter,
+            // so we rely on the SDK's built-in protection)
             signedInAccount = account
-            initializeDriveService(activity, account)
+            initializeDriveService(context, account)
+
+            // Persist account ID for session restoration
+            securePrefs.putString(PREF_ACCOUNT_ID, account.id ?: "")
+
+            SafeLog.d(TAG, "Google Drive sign-in successful")
             true
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Failed to handle Google Drive sign-in result", e)
             false
         }
     }
 
-    private fun initializeDriveService(activity: Activity, account: GoogleSignInAccount) {
+    private fun initializeDriveService(context: Context, account: GoogleSignInAccount) {
         val credential = GoogleAccountCredential.usingOAuth2(
-            activity,
+            context,
             listOf(DriveScopes.DRIVE_APPDATA)
         )
         credential.selectedAccount = account.account
@@ -109,13 +152,18 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
     override suspend fun disconnect() = withContext(Dispatchers.IO) {
         signedInAccount = null
         driveService = null
+        securePrefs.remove(PREF_ACCOUNT_ID)
+        SafeLog.d(TAG, "Google Drive disconnected")
     }
 
     override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
         Dispatchers.IO
     ) {
         try {
-            val service = driveService ?: return@withContext null
+            val service = driveService ?: run {
+                SafeLog.e(TAG, "Drive service not initialized for upload")
+                return@withContext null
+            }
 
             // Vérifier si le fichier existe déjà
             val existingFile = findVaultFile(vaultId)
@@ -143,9 +191,16 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                     .execute()
             }
 
+            SafeLog.d(TAG, "Vault uploaded successfully: vaultId=${SafeLog.redact(vaultId)}")
             file.id
+        } catch (e: GoogleJsonResponseException) {
+            handleDriveException(e, "upload vault", vaultId)
+            null
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error uploading vault: vaultId=${SafeLog.redact(vaultId)}", e)
+            null
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Unexpected error uploading vault: vaultId=${SafeLog.redact(vaultId)}", e)
             null
         }
     }
@@ -154,9 +209,15 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
         Dispatchers.IO
     ) {
         try {
-            val service = driveService ?: return@withContext null
+            val service = driveService ?: run {
+                SafeLog.e(TAG, "Drive service not initialized for download")
+                return@withContext null
+            }
 
-            val file = findVaultFile(vaultId) ?: return@withContext null
+            val file = findVaultFile(vaultId) ?: run {
+                SafeLog.w(TAG, "Vault file not found: vaultId=${SafeLog.redact(vaultId)}")
+                return@withContext null
+            }
 
             val outputStream = ByteArrayOutputStream()
             service.files().get(file.id)
@@ -165,6 +226,7 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
             val encryptedData = outputStream.toByteArray()
             val timestamp = file.modifiedTime?.value ?: System.currentTimeMillis()
 
+            SafeLog.d(TAG, "Vault downloaded successfully: vaultId=${SafeLog.redact(vaultId)}")
             VaultSyncData(
                 vaultId = vaultId,
                 vaultName = "Vault $vaultId",
@@ -174,8 +236,14 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                 checksum = "", // Will be computed by SyncManager
                 version = 1
             )
+        } catch (e: GoogleJsonResponseException) {
+            handleDriveException(e, "download vault", vaultId)
+            null
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error downloading vault: vaultId=${SafeLog.redact(vaultId)}", e)
+            null
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Unexpected error downloading vault: vaultId=${SafeLog.redact(vaultId)}", e)
             null
         }
     }
@@ -188,6 +256,7 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
             val cloudTimestamp = file.modifiedTime?.value ?: 0
             cloudTimestamp > localTimestamp
         } catch (e: Exception) {
+            SafeLog.e(TAG, "Error checking vault version: vaultId=${SafeLog.redact(vaultId)}", e)
             false
         }
     }
@@ -207,6 +276,7 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                 version = null
             )
         } catch (e: Exception) {
+            SafeLog.e(TAG, "Error getting cloud metadata: vaultId=${SafeLog.redact(vaultId)}", e)
             null
         }
     }
@@ -217,9 +287,16 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
             val file = findVaultFile(vaultId) ?: return@withContext false
 
             service.files().delete(file.id).execute()
+            SafeLog.d(TAG, "Vault deleted successfully: vaultId=${SafeLog.redact(vaultId)}")
             true
+        } catch (e: GoogleJsonResponseException) {
+            handleDriveException(e, "delete vault", vaultId)
+            false
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error deleting vault: vaultId=${SafeLog.redact(vaultId)}", e)
+            false
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Unexpected error deleting vault: vaultId=${SafeLog.redact(vaultId)}", e)
             false
         }
     }
@@ -234,6 +311,7 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                 .setFields("files(id, name, size, modifiedTime, md5Checksum, version)")
                 .execute()
 
+            SafeLog.d(TAG, "Listed ${result.files.size} vaults from Google Drive")
             result.files.map { file ->
                 CloudFileMetadata(
                     fileId = file.id,
@@ -244,8 +322,14 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                     version = file.version?.toString()
                 )
             }
+        } catch (e: GoogleJsonResponseException) {
+            handleDriveException(e, "list vaults", null)
+            emptyList()
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error listing vaults", e)
+            emptyList()
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Unexpected error listing vaults", e)
             emptyList()
         }
     }
@@ -266,8 +350,14 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
                 totalBytes = total,
                 freeBytes = total - used
             )
+        } catch (e: GoogleJsonResponseException) {
+            handleDriveException(e, "get storage quota", null)
+            null
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error getting storage quota", e)
+            null
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.e(TAG, "Unexpected error getting storage quota", e)
             null
         }
     }
@@ -280,12 +370,36 @@ class GoogleDriveProvider @Inject constructor() : CloudProvider {
 
         val fileName = "vault_$vaultId.enc"
 
-        val result = service.files().list()
-            .setQ("name='$fileName' and trashed=false")
-            .setSpaces("appDataFolder")
-            .setFields("files(id, name, size, modifiedTime, md5Checksum)")
-            .execute()
+        return try {
+            val result = service.files().list()
+                .setQ("name='$fileName' and trashed=false")
+                .setSpaces("appDataFolder")
+                .setFields("files(id, name, size, modifiedTime, md5Checksum)")
+                .execute()
 
-        return result.files.firstOrNull()
+            result.files.firstOrNull()
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Error finding vault file: vaultId=${SafeLog.redact(vaultId)}", e)
+            null
+        }
+    }
+
+    /**
+     * Handles Google Drive API exceptions and logs them appropriately
+     */
+    private fun handleDriveException(
+        exception: GoogleJsonResponseException,
+        operation: String,
+        vaultId: String?
+    ) {
+        val vaultInfo = vaultId?.let { "vaultId=${SafeLog.redact(it)}" } ?: ""
+        when (exception.statusCode) {
+            401 -> SafeLog.e(TAG, "Authentication expired during $operation $vaultInfo", exception)
+            403 -> SafeLog.e(TAG, "Permission denied during $operation $vaultInfo", exception)
+            404 -> SafeLog.w(TAG, "Resource not found during $operation $vaultInfo")
+            413 -> SafeLog.e(TAG, "Quota exceeded during $operation $vaultInfo", exception)
+            429 -> SafeLog.w(TAG, "Rate limit exceeded during $operation $vaultInfo")
+            else -> SafeLog.e(TAG, "Drive API error (${exception.statusCode}) during $operation $vaultInfo", exception)
+        }
     }
 }

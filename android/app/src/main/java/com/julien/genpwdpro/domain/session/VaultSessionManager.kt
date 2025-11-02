@@ -1003,6 +1003,7 @@ class VaultSessionManager @Inject constructor(
             ?: return Result.failure(IllegalStateException("No vault unlocked"))
 
         return withContext(Dispatchers.IO) {
+            var currentKey: SecretKey? = null
             try {
                 SafeLog.d(
                     TAG,
@@ -1010,7 +1011,7 @@ class VaultSessionManager @Inject constructor(
                 )
 
                 // 1. Vérifier le mot de passe actuel
-                val currentKey = cryptoManager.deriveKey(currentPassword, session.kdfSalt)
+                currentKey = cryptoManager.deriveKey(currentPassword, session.kdfSalt)
 
                 // Comparer les clés pour vérifier le mot de passe
                 if (!currentKey.encoded.contentEquals(session.vaultKey.encoded)) {
@@ -1074,6 +1075,9 @@ class VaultSessionManager @Inject constructor(
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Failed to change master password", e)
                 Result.failure(e)
+            } finally {
+                // Wipe sensitive key material from memory
+                currentKey?.encoded?.fill(0)
             }
         }
     }

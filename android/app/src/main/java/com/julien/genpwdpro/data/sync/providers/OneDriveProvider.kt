@@ -10,6 +10,7 @@ import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -78,6 +79,7 @@ class OneDriveProvider(
     private var accessToken: String? = null
     private var genPwdFolderId: String? = null
     private var authCallback: ((Boolean) -> Unit)? = null
+    private var oauthState: String? = null
 
     /**
      * HTTP Client avec logging
