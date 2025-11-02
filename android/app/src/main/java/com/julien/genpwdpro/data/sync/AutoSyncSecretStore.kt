@@ -33,8 +33,8 @@ class AutoSyncSecretStore @Inject constructor(
     /**
      * Persist the master password encrypted with the sync keystore key.
      */
-    fun persistSecret(vaultId: String, masterPassword: String) {
-        runCatching {
+    fun persistSecret(vaultId: String, masterPassword: String): Boolean {
+        return runCatching {
             val encrypted = keystoreManager.encryptString(
                 masterPassword,
                 KeystoreAlias.SYNC.alias
@@ -51,7 +51,7 @@ class AutoSyncSecretStore @Inject constructor(
                 "Failed to persist auto-sync secret: vaultId=${SafeLog.redact(vaultId)}",
                 error
             )
-        }
+        }.getOrDefault(false)
     }
 
     /**
@@ -95,7 +95,12 @@ class AutoSyncSecretStore @Inject constructor(
      * Remove the stored secret for a vault.
      */
     fun clearSecret(vaultId: String) {
-        securePrefs.remove(prefKey(vaultId))
+        if (!securePrefs.remove(prefKey(vaultId))) {
+            SafeLog.w(
+                TAG,
+                "Unable to clear auto-sync secret: vaultId=${SafeLog.redact(vaultId)}"
+            )
+        }
     }
 
     private fun ByteArray.encode(): String = Base64.encodeToString(this, Base64.NO_WRAP)

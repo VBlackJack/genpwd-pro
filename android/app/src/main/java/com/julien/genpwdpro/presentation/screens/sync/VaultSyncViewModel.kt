@@ -402,12 +402,16 @@ class VaultSyncViewModel @Inject constructor(
             val interval = _uiState.value.config.syncInterval
             val wifiOnly = _uiState.value.config.syncOnWifiOnly
 
-            autoSyncScheduler.schedulePeriodicSync(
+            val scheduled = autoSyncScheduler.schedulePeriodicSync(
                 vaultId = vaultId,
                 masterPassword = masterPassword,
                 interval = interval,
                 wifiOnly = wifiOnly
             )
+            if (!scheduled) {
+                handleAutoSyncSchedulingFailure()
+                return
+            }
         } else {
             // Désactiver la sync auto
             autoSyncScheduler.cancelPeriodicSync()
@@ -420,17 +424,24 @@ class VaultSyncViewModel @Inject constructor(
      * Change l'intervalle de synchronisation
      */
     fun changeSyncInterval(interval: SyncInterval, vaultId: String, masterPassword: String) {
-        vaultSyncManager.setAutoSync(true, interval)
+        val autoSyncEnabled = _uiState.value.config.autoSync
 
         // Replanifier si la sync auto est activée
-        if (_uiState.value.config.autoSync) {
-            autoSyncScheduler.schedulePeriodicSync(
+        if (autoSyncEnabled) {
+            val scheduled = autoSyncScheduler.schedulePeriodicSync(
                 vaultId = vaultId,
                 masterPassword = masterPassword,
                 interval = interval,
                 wifiOnly = _uiState.value.config.syncOnWifiOnly
             )
+            if (!scheduled) {
+                vaultSyncManager.setAutoSync(false)
+                handleAutoSyncSchedulingFailure()
+                return
+            }
         }
+
+        vaultSyncManager.setAutoSync(autoSyncEnabled, interval)
     }
 
     /**
@@ -438,17 +449,22 @@ class VaultSyncViewModel @Inject constructor(
      */
     fun toggleWifiOnly(vaultId: String, masterPassword: String) {
         val newValue = !_uiState.value.config.syncOnWifiOnly
-        vaultSyncManager.setSyncOnWifiOnly(newValue)
-
         // Replanifier si la sync auto est activée
         if (_uiState.value.config.autoSync) {
-            autoSyncScheduler.schedulePeriodicSync(
+            val scheduled = autoSyncScheduler.schedulePeriodicSync(
                 vaultId = vaultId,
                 masterPassword = masterPassword,
                 interval = _uiState.value.config.syncInterval,
                 wifiOnly = newValue
             )
+            if (!scheduled) {
+                vaultSyncManager.setSyncOnWifiOnly(!newValue)
+                handleAutoSyncSchedulingFailure()
+                return
+            }
         }
+
+        vaultSyncManager.setSyncOnWifiOnly(newValue)
     }
 
     /**
@@ -478,6 +494,14 @@ class VaultSyncViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Silently fail - quota is not critical
             }
+        }
+    }
+
+    private fun handleAutoSyncSchedulingFailure() {
+        _uiState.update {
+            it.copy(
+                errorMessage = appContext.getString(R.string.sync_auto_secret_unavailable)
+            )
         }
     }
 

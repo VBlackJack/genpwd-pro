@@ -1,9 +1,13 @@
 package com.julien.genpwdpro.data.vault
 
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import com.julien.genpwdpro.core.log.SafeLog
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
@@ -14,6 +18,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStream
 import java.security.MessageDigest
 import java.util.UUID
 import javax.crypto.SecretKey
@@ -43,13 +49,27 @@ class VaultFileManager @Inject constructor(
         private const val VAULT_EXTENSION = ".gpv"
         private const val VAULTS_DIR_NAME = "vaults"
         private const val PUBLIC_DIR_NAME = "GenPwdPro"
+        private const val MIME_TYPE_VAULT = "application/octet-stream"
     }
+
+    data class VaultFileLocation(
+        val file: File? = null,
+        val uri: Uri? = null
+    ) {
+        fun requirePath(): String {
+            return file?.absolutePath ?: uri?.toString()
+                ?: throw IllegalStateException("Vault file location is undefined")
+        }
+    }
+
+    private val publicRelativePath: String =
+        "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_DIR_NAME/"
 
     /**
      * Récupère le répertoire de stockage selon la stratégie
      */
     fun getStorageDirectory(strategy: StorageStrategy, customPath: Uri? = null): File {
-        return when (strategy) {
+        val directory = when (strategy) {
             StorageStrategy.INTERNAL -> {
                 File(context.filesDir, VAULTS_DIR_NAME)
             }
@@ -57,6 +77,11 @@ class VaultFileManager @Inject constructor(
                 File(context.getExternalFilesDir(null), VAULTS_DIR_NAME)
             }
             StorageStrategy.PUBLIC_DOCUMENTS -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    throw UnsupportedOperationException(
+                        "Public documents strategy uses MediaStore on Android 10+"
+                    )
+                }
                 File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
                     PUBLIC_DIR_NAME
@@ -66,10 +91,29 @@ class VaultFileManager @Inject constructor(
                 // Pour custom, on utilise le SAF, géré séparément
                 throw UnsupportedOperationException("Custom paths use Storage Access Framework")
             }
-        }.also { dir ->
-            if (!dir.exists()) {
-                dir.mkdirs()
+        }
+
+        ensureDirectory(directory)
+        return directory
+    }
+
+    private fun ensureDirectory(directory: File) {
+        if (!directory.exists()) {
+            val created = directory.mkdirs()
+            if (!created && !directory.exists()) {
+                SafeLog.e(TAG, "Unable to create storage directory: ${SafeLog.redact(directory.absolutePath)}")
+                throw IOException("Unable to create storage directory")
             }
+        }
+
+        if (!directory.isDirectory) {
+            SafeLog.e(TAG, "Storage path is not a directory: ${SafeLog.redact(directory.absolutePath)}")
+            throw IOException("Invalid storage directory")
+        }
+
+        if (!directory.canWrite()) {
+            SafeLog.e(TAG, "Storage directory not writable: ${SafeLog.redact(directory.absolutePath)}")
+            throw IOException("Storage directory not writable")
         }
     }
 
@@ -78,6 +122,59 @@ class VaultFileManager @Inject constructor(
      */
     private fun getVaultFileName(vaultId: String): String {
         return "vault_$vaultId$VAULT_EXTENSION"
+    }
+
+    private data class VaultPayload(
+        val headerBytes: ByteArray,
+        val encryptedContent: ByteArray
+    )
+
+    private fun buildVaultPayload(
+        data: VaultData,
+        vaultKey: SecretKey,
+        vaultId: String
+    ): VaultPayload {
+        val updatedData = data.copy(
+            metadata = data.metadata.copy(
+                modifiedAt = System.currentTimeMillis()
+            )
+        )
+
+        val dataJson = gson.toJson(updatedData)
+        val encryptedContent = cryptoManager.encryptBytes(
+            dataJson.toByteArray(Charsets.UTF_8),
+            vaultKey
+        )
+
+        val checksum = calculateChecksum(dataJson)
+        val header = VaultFileHeader(
+            vaultId = vaultId,
+            createdAt = updatedData.metadata.createdAt,
+            modifiedAt = updatedData.metadata.modifiedAt,
+            checksum = checksum
+        )
+
+        val headerJson = gson.toJson(header)
+        val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
+        val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
+        System.arraycopy(
+            headerBytes,
+            0,
+            paddedHeader,
+            0,
+            minOf(headerBytes.size, paddedHeader.size)
+        )
+
+        return VaultPayload(
+            headerBytes = paddedHeader,
+            encryptedContent = encryptedContent
+        )
+    }
+
+    private fun OutputStream.writeVaultPayload(payload: VaultPayload) {
+        write(payload.headerBytes)
+        write(payload.encryptedContent)
+        flush()
     }
 
     /**
@@ -89,7 +186,7 @@ class VaultFileManager @Inject constructor(
         strategy: StorageStrategy,
         description: String? = null,
         customPath: Uri? = null
-    ): Pair<String, File> {
+    ): Pair<String, VaultFileLocation> {
         val vaultId = UUID.randomUUID().toString()
         val timestamp = System.currentTimeMillis()
 
@@ -120,9 +217,9 @@ class VaultFileManager @Inject constructor(
         )
 
         // Sauvegarder
-        val file = saveVaultFile(vaultId, vaultData, vaultKey, strategy, customPath)
+        val location = saveVaultFile(vaultId, vaultData, vaultKey, strategy, customPath)
 
-        return Pair(vaultId, file)
+        return Pair(vaultId, location)
     }
 
     /**
@@ -155,7 +252,7 @@ class VaultFileManager @Inject constructor(
         vaultKey: SecretKey,
         strategy: StorageStrategy,
         customPath: Uri? = null
-    ): File {
+    ): VaultFileLocation {
         if (strategy == StorageStrategy.CUSTOM && customPath != null) {
             // Utiliser SAF pour custom paths
             throw UnsupportedOperationException(
@@ -163,10 +260,15 @@ class VaultFileManager @Inject constructor(
             )
         }
 
-        val dir = getStorageDirectory(strategy)
-        val file = File(dir, getVaultFileName(vaultId))
-
-        return writeVaultFile(file, data, vaultKey, vaultId)
+        return if (strategy == StorageStrategy.PUBLIC_DOCUMENTS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val uri = writeVaultFileToPublicDocuments(vaultId, data, vaultKey)
+            VaultFileLocation(uri = uri)
+        } else {
+            val dir = getStorageDirectory(strategy)
+            val file = File(dir, getVaultFileName(vaultId))
+            val written = writeVaultFile(file, data, vaultKey, vaultId)
+            VaultFileLocation(file = written)
+        }
     }
 
     /**
@@ -220,50 +322,10 @@ class VaultFileManager @Inject constructor(
         vaultId: String
     ): File {
         try {
-            // Mettre à jour le timestamp de modification
-            val updatedData = data.copy(
-                metadata = data.metadata.copy(
-                    modifiedAt = System.currentTimeMillis()
-                )
-            )
+            val payload = buildVaultPayload(data, vaultKey, vaultId)
 
-            // Sérialiser les données
-            val dataJson = gson.toJson(updatedData)
-
-            // Chiffrer le contenu
-            val encryptedContent = cryptoManager.encryptBytes(
-                dataJson.toByteArray(Charsets.UTF_8),
-                vaultKey
-            )
-
-            // Calculer le checksum
-            val checksum = calculateChecksum(dataJson)
-
-            // Créer le header
-            val header = VaultFileHeader(
-                vaultId = vaultId,
-                createdAt = updatedData.metadata.createdAt,
-                modifiedAt = updatedData.metadata.modifiedAt,
-                checksum = checksum
-            )
-
-            // Écrire le fichier
             FileOutputStream(file).use { fos ->
-                // Écrire le header (padding à 256 bytes)
-                val headerJson = gson.toJson(header)
-                val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
-                val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
-                System.arraycopy(
-                    headerBytes,
-                    0,
-                    paddedHeader,
-                    0,
-                    minOf(headerBytes.size, paddedHeader.size)
-                )
-                fos.write(paddedHeader)
-
-                // Écrire le contenu chiffré
-                fos.write(encryptedContent)
+                fos.writeVaultPayload(payload)
             }
 
             SafeLog.d(TAG, "Vault file written successfully: ${SafeLog.redact(file.absolutePath)}")
@@ -272,6 +334,142 @@ class VaultFileManager @Inject constructor(
             SafeLog.e(TAG, "Error writing vault file", e)
             throw e
         }
+    }
+
+    private fun findExistingPublicDocumentUri(fileName: String): Uri? {
+        val collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection =
+            "${MediaStore.MediaColumns.DISPLAY_NAME}=? AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?"
+        val selectionArgs = arrayOf(fileName, publicRelativePath)
+
+        return context.contentResolver.query(
+            collection,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                val id = cursor.getLong(idColumn)
+                ContentUris.withAppendedId(collection, id)
+            } else {
+                null
+            }
+        }
+    }
+
+    private fun preparePublicDocumentUri(fileName: String): Pair<Uri, Boolean> {
+        val resolver = context.contentResolver
+        val existingUri = findExistingPublicDocumentUri(fileName)
+        if (existingUri != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val pendingValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+                resolver.update(existingUri, pendingValues, null, null)
+            }
+            return existingUri to false
+        }
+
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, MIME_TYPE_VAULT)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, publicRelativePath)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+        }
+
+        val collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val createdUri = resolver.insert(collection, values)
+            ?: throw IOException("Unable to create public documents entry")
+
+        return createdUri to true
+    }
+
+    private suspend fun writeVaultFileToPublicDocuments(
+        vaultId: String,
+        data: VaultData,
+        vaultKey: SecretKey
+    ): Uri {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            throw UnsupportedOperationException("MediaStore public documents requires Android 10+")
+        }
+
+        val fileName = getVaultFileName(vaultId)
+        val (targetUri, isNewEntry) = preparePublicDocumentUri(fileName)
+        val resolver = context.contentResolver
+        val payload = buildVaultPayload(data, vaultKey, vaultId)
+
+        var writeSucceeded = false
+        try {
+            resolver.openOutputStream(targetUri, "wt")?.use { outputStream ->
+                outputStream.writeVaultPayload(payload)
+            } ?: throw IOException("Cannot open output stream for MediaStore URI")
+            writeSucceeded = true
+            SafeLog.d(TAG, "Vault file written to public documents: ${SafeLog.redact(targetUri)}")
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Error writing vault file to public documents", e)
+            if (isNewEntry) {
+                resolver.delete(targetUri, null, null)
+            }
+            throw e
+        } finally {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val finalizeValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                }
+                resolver.update(targetUri, finalizeValues, null, null)
+            }
+
+            if (!writeSucceeded && isNewEntry) {
+                // Ensure cleanup when write failed before reaching catch (rare cases)
+                resolver.delete(targetUri, null, null)
+            }
+        }
+
+        return targetUri
+    }
+
+    private fun copyRawFileToPublicDocuments(tempFile: File, vaultId: String): Uri {
+        val fileName = getVaultFileName(vaultId)
+        val (targetUri, isNewEntry) = preparePublicDocumentUri(fileName)
+        val resolver = context.contentResolver
+
+        var writeSucceeded = false
+        try {
+            resolver.openOutputStream(targetUri, "wt")?.use { outputStream ->
+                tempFile.inputStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: throw IOException("Cannot open output stream for MediaStore URI")
+            writeSucceeded = true
+            SafeLog.d(
+                TAG,
+                "Vault file copied to public documents: ${SafeLog.redact(targetUri)}"
+            )
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Error copying vault file to public documents", e)
+            if (isNewEntry) {
+                resolver.delete(targetUri, null, null)
+            }
+            throw e
+        } finally {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val finalizeValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                }
+                resolver.update(targetUri, finalizeValues, null, null)
+            }
+
+            if (!writeSucceeded && isNewEntry) {
+                resolver.delete(targetUri, null, null)
+            }
+        }
+
+        return targetUri
     }
 
     /**
@@ -327,12 +525,22 @@ class VaultFileManager @Inject constructor(
      */
     suspend fun exportVault(sourcePath: String, destinationPath: String): Boolean {
         return try {
-            val source = File(sourcePath)
             val destination = File(destinationPath)
 
-            source.copyTo(destination, overwrite = true)
+            val bytesCopied = copyVaultToStream(
+                sourcePath = sourcePath,
+                openOutputStream = { destination.outputStream() }
+            )
 
-            SafeLog.d(TAG, "Vault exported to: ${SafeLog.redact(destinationPath)}")
+            if (bytesCopied <= 0L) {
+                SafeLog.e(
+                    TAG,
+                    "No bytes exported from ${SafeLog.redact(sourcePath)} to ${SafeLog.redact(destinationPath)}"
+                )
+                return false
+            }
+
+            SafeLog.d(TAG, "Vault exported to: ${SafeLog.redact(destinationPath)} (${bytesCopied} bytes)")
             true
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error exporting vault", e)
@@ -349,16 +557,20 @@ class VaultFileManager @Inject constructor(
         destinationUri: Uri
     ): Boolean {
         return try {
-            val sourceFile = File(sourceFilePath)
-            if (!sourceFile.exists()) {
-                SafeLog.e(TAG, "Source vault file not found: ${SafeLog.redact(sourceFilePath)}")
-                return false
-            }
-
-            context.contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
-                sourceFile.inputStream().use { inputStream ->
-                    inputStream.copyTo(outputStream)
+            val bytesCopied = copyVaultToStream(
+                sourcePath = sourceFilePath,
+                openOutputStream = {
+                    context.contentResolver.openOutputStream(destinationUri)
+                        ?: throw IOException("Unable to open output stream for destination URI")
                 }
+            )
+
+            if (bytesCopied <= 0L) {
+                SafeLog.e(
+                    TAG,
+                    "No bytes exported for vault=${SafeLog.redact(vaultId)}"
+                )
+                return false
             }
 
             SafeLog.d(TAG, "Vault exported to URI: ${SafeLog.redact(destinationUri)}")
@@ -369,13 +581,65 @@ class VaultFileManager @Inject constructor(
         }
     }
 
+    private fun copyVaultToStream(
+        sourcePath: String,
+        openOutputStream: () -> OutputStream
+    ): Long {
+        val sourceUri = pathToUri(sourcePath)
+        return if (sourceUri != null) {
+            copyFromUri(sourceUri, openOutputStream)
+        } else {
+            copyFromFile(File(sourcePath), openOutputStream)
+        }
+    }
+
+    private fun copyFromFile(
+        sourceFile: File,
+        openOutputStream: () -> OutputStream
+    ): Long {
+        if (!sourceFile.exists()) {
+            SafeLog.e(TAG, "Source vault file not found: ${SafeLog.redact(sourceFile.absolutePath)}")
+            return 0L
+        }
+
+        return try {
+            openOutputStream().use { outputStream ->
+                FileInputStream(sourceFile).use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+        } catch (ioe: IOException) {
+            SafeLog.e(TAG, "Error copying vault from file", ioe)
+            0L
+        }
+    }
+
+    private fun copyFromUri(
+        sourceUri: Uri,
+        openOutputStream: () -> OutputStream
+    ): Long {
+        return try {
+            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                openOutputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: run {
+                SafeLog.e(TAG, "Unable to open input stream from URI: ${SafeLog.redact(sourceUri.toString())}")
+                0L
+            }
+        } catch (ioe: IOException) {
+            SafeLog.e(TAG, "Error copying vault from URI", ioe)
+            0L
+        }
+    }
+
     /**
      * Importe un vault depuis une URI (Storage Access Framework)
      */
     suspend fun importVault(
         sourceUri: Uri,
         destinationStrategy: StorageStrategy
-    ): Pair<String, File> {
+    ): Pair<String, VaultFileLocation> {
         try {
             // Lire le fichier source
             val tempFile = File(context.cacheDir, "temp_import_${System.currentTimeMillis()}.gpv")
@@ -392,18 +656,29 @@ class VaultFileManager @Inject constructor(
 
             val vaultId = header.vaultId
 
-            // Copier vers la destination finale
-            val destDir = getStorageDirectory(destinationStrategy)
-            val destFile = File(destDir, getVaultFileName(vaultId))
+            val location = if (destinationStrategy == StorageStrategy.PUBLIC_DOCUMENTS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val uri = copyRawFileToPublicDocuments(tempFile, vaultId)
+                tempFile.delete()
+                SafeLog.d(
+                    TAG,
+                    "Vault imported to public documents: ${SafeLog.redact(vaultId)} -> ${SafeLog.redact(uri)}"
+                )
+                VaultFileLocation(uri = uri)
+            } else {
+                val destDir = getStorageDirectory(destinationStrategy)
+                val destFile = File(destDir, getVaultFileName(vaultId))
 
-            tempFile.copyTo(destFile, overwrite = true)
-            tempFile.delete()
+                tempFile.copyTo(destFile, overwrite = true)
+                tempFile.delete()
 
-            SafeLog.d(
-                TAG,
-                "Vault imported: ${SafeLog.redact(vaultId)} to ${SafeLog.redact(destFile.absolutePath)}"
-            )
-            return Pair(vaultId, destFile)
+                SafeLog.d(
+                    TAG,
+                    "Vault imported: ${SafeLog.redact(vaultId)} to ${SafeLog.redact(destFile.absolutePath)}"
+                )
+                VaultFileLocation(file = destFile)
+            }
+
+            return Pair(vaultId, location)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error importing vault", e)
             throw e
@@ -527,55 +802,15 @@ class VaultFileManager @Inject constructor(
 
             // Si le fichier n'existe pas, le créer
             if (vaultFile == null) {
-                vaultFile = folder.createFile("application/octet-stream", fileName)
+                vaultFile = folder.createFile(MIME_TYPE_VAULT, fileName)
                     ?: throw IllegalStateException("Cannot create vault file in custom folder")
             }
 
-            // Mettre à jour le timestamp de modification
-            val updatedData = data.copy(
-                metadata = data.metadata.copy(
-                    modifiedAt = System.currentTimeMillis()
-                )
-            )
-
-            // Sérialiser les données
-            val dataJson = gson.toJson(updatedData)
-
-            // Chiffrer le contenu
-            val encryptedContent = cryptoManager.encryptBytes(
-                dataJson.toByteArray(Charsets.UTF_8),
-                vaultKey
-            )
-
-            // Calculer le checksum
-            val checksum = calculateChecksum(dataJson)
-
-            // Créer le header
-            val header = VaultFileHeader(
-                vaultId = vaultId,
-                createdAt = updatedData.metadata.createdAt,
-                modifiedAt = updatedData.metadata.modifiedAt,
-                checksum = checksum
-            )
+            val payload = buildVaultPayload(data, vaultKey, vaultId)
 
             // Écrire le fichier via SAF
             context.contentResolver.openOutputStream(vaultFile.uri, "wt")?.use { outputStream ->
-                // Écrire le header (padding à 256 bytes)
-                val headerJson = gson.toJson(header)
-                val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
-                val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
-                System.arraycopy(
-                    headerBytes,
-                    0,
-                    paddedHeader,
-                    0,
-                    minOf(headerBytes.size, paddedHeader.size)
-                )
-                outputStream.write(paddedHeader)
-
-                // Écrire le contenu chiffré
-                outputStream.write(encryptedContent)
-                outputStream.flush()
+                outputStream.writeVaultPayload(payload)
             } ?: throw IllegalStateException("Cannot open output stream")
 
             SafeLog.d(TAG, "Vault file written to SAF URI: ${SafeLog.redact(vaultFile.uri)}")
@@ -599,40 +834,10 @@ class VaultFileManager @Inject constructor(
         vaultKey: SecretKey
     ) {
         try {
-            val updatedData = data.copy(
-                metadata = data.metadata.copy(
-                    modifiedAt = System.currentTimeMillis()
-                )
-            )
-
-            val dataJson = gson.toJson(updatedData)
-            val encryptedContent = cryptoManager.encryptBytes(
-                dataJson.toByteArray(Charsets.UTF_8),
-                vaultKey
-            )
-
-            val checksum = calculateChecksum(dataJson)
-            val header = VaultFileHeader(
-                vaultId = updatedData.metadata.vaultId,
-                createdAt = updatedData.metadata.createdAt,
-                modifiedAt = updatedData.metadata.modifiedAt,
-                checksum = checksum
-            )
+            val payload = buildVaultPayload(data, vaultKey, data.metadata.vaultId)
 
             context.contentResolver.openOutputStream(fileUri, "wt")?.use { outputStream ->
-                val headerJson = gson.toJson(header)
-                val headerBytes = headerJson.toByteArray(Charsets.UTF_8)
-                val paddedHeader = ByteArray(VaultFileHeader.HEADER_SIZE)
-                System.arraycopy(
-                    headerBytes,
-                    0,
-                    paddedHeader,
-                    0,
-                    minOf(headerBytes.size, paddedHeader.size)
-                )
-                outputStream.write(paddedHeader)
-                outputStream.write(encryptedContent)
-                outputStream.flush()
+                outputStream.writeVaultPayload(payload)
             } ?: throw IllegalStateException("Cannot open output stream for URI: $fileUri")
 
             SafeLog.d(TAG, "Vault file updated at SAF URI: ${SafeLog.redact(fileUri)}")

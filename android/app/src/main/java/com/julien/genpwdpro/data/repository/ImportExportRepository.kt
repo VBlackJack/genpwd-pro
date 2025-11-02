@@ -309,22 +309,30 @@ class ImportExportRepository @Inject constructor(
 
                     // Create new vault file
                     val finalVaultName = newVaultName ?: "${exportData.vaultName} (Imported)"
-                    val (newVaultId, vaultFile) = vaultFileManager.createVaultFile(
+                    val (newVaultId, location) = vaultFileManager.createVaultFile(
                         name = finalVaultName,
                         masterPassword = masterPassword,
                         strategy = StorageStrategy.INTERNAL,
                         description = exportData.vaultDescription
                     )
 
+                    val file = location.file
+                    val uri = location.uri
+                    val filePath = file?.absolutePath ?: uri?.let { vaultFileManager.uriToPath(it) }
+                        ?: throw IllegalStateException("Vault file location unavailable")
+                    val fileSize = file?.length() ?: uri?.let { vaultFileManager.getVaultFileSizeFromUri(it) }
+                        ?: 0L
+                    val lastModified = file?.lastModified() ?: System.currentTimeMillis()
+
                     // Register vault in registry
                     val registryEntry = VaultRegistryEntry(
                         id = newVaultId,
                         name = finalVaultName,
                         description = exportData.vaultDescription,
-                        filePath = vaultFile.absolutePath,
+                        filePath = filePath,
                         storageStrategy = StorageStrategy.INTERNAL,
-                        fileSize = vaultFile.length(),
-                        lastModified = System.currentTimeMillis(),
+                        fileSize = fileSize,
+                        lastModified = lastModified,
                         lastAccessed = null,
                         isDefault = false,
                         isLoaded = false,
@@ -333,7 +341,7 @@ class ImportExportRepository @Inject constructor(
                             folderCount = 0,
                             presetCount = 0,
                             tagCount = 0,
-                            totalSize = vaultFile.length()
+                            totalSize = fileSize
                         ),
                         createdAt = System.currentTimeMillis(),
                         biometricUnlockEnabled = false,
