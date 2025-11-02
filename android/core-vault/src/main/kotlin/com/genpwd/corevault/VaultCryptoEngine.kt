@@ -67,7 +67,7 @@ class VaultCryptoEngine @Inject constructor(
             deviceId = deviceId,
             createdUtc = Instant.now().epochSecond,
         )
-        val localHash = payload.sha256().toHex()
+        val localHash = ciphertext.sha256().toHex()
         return EncryptedVault(header = header, ciphertext = ciphertext, localHash = localHash)
     }
 

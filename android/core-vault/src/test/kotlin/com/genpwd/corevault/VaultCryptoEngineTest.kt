@@ -32,7 +32,12 @@ class VaultCryptoEngineTest {
         val decrypted = engine.decryptVault("password".toCharArray(), encrypted)
 
         assertEquals(vault, decrypted)
-        assertTrue(encrypted.localHash.isNotBlank())
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val expectedHash = digest.digest(encrypted.ciphertext).joinToString(separator = "") { byte ->
+            val value = byte.toInt() and 0xff
+            "${"0123456789abcdef"[value shr 4]}${"0123456789abcdef"[value and 0x0f]}"
+        }
+        assertEquals(expectedHash, encrypted.localHash)
     }
 
     @Test
