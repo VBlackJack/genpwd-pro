@@ -1,52 +1,99 @@
 package com.genpwd.corevault
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import java.security.MessageDigest
+import java.time.Instant
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Test
 
 class VaultCryptoEngineTest {
+
     private val engine = VaultCryptoEngine()
 
     @Test
-    fun `encrypt and decrypt roundtrip`() {
-        val vault = Vault(
-            meta = VaultMeta(
-                id = VaultId("/vaults/demo", ProviderKind.GOOGLE_DRIVE, "account"),
-                name = "demo",
-                version = 1L,
-                lastModifiedUtc = 1000L,
-                size = 2048L,
-                remoteEtag = "etag",
-            ),
-            items = listOf(
-                VaultItem(
-                    itemId = "1",
-                    encryptedPayload = "ciphertext",
-                    updatedAt = 1000L,
-                    updatedBy = "device",
-                ),
-            ),
-            changeVector = "device#1",
-        )
-        val encrypted = engine.encryptVault("password".toCharArray(), vault, deviceId = "device")
-        val decrypted = engine.decryptVault("password".toCharArray(), encrypted)
+    fun `encrypt and decrypt restores vault`() {
+        val vault = sampleVault()
+        val secret = "correct horse battery staple".toCharArray()
+        val encrypted = engine.encrypt(vault, secret, deviceId = "device-A", createdUtc = vault.meta.createdUtc())
 
-        assertEquals(vault, decrypted)
-        val digest = java.security.MessageDigest.getInstance("SHA-256")
-        val expectedHash = digest.digest(encrypted.ciphertext).joinToString(separator = "") { byte ->
-            val value = byte.toInt() and 0xff
-            "${"0123456789abcdef"[value shr 4]}${"0123456789abcdef"[value and 0x0f]}"
-        }
-        assertEquals(expectedHash, encrypted.localHash)
+        val cipherBytes = cipherSection(encrypted.payload)
+        assertEquals(cipherBytes.sha256(), encrypted.localEtag)
+
+        val decrypted = engine.decrypt(encrypted.payload, secret)
+        assertEquals(vault.meta, decrypted.meta)
+        assertEquals(vault.items, decrypted.items)
+        assertEquals(vault.journal, decrypted.journal)
+        assertEquals(vault.changeVector, decrypted.changeVector)
     }
 
     @Test
-    fun `constant time equals`() {
-        val first = byteArrayOf(1, 2, 3)
-        val second = byteArrayOf(1, 2, 3)
-        val third = byteArrayOf(3, 2, 1)
+    fun `local etag equals ciphertext digest`() {
+        val vault = sampleVault()
+        val secret = "hunter2".toCharArray()
+        val encrypted = engine.encrypt(vault, secret, deviceId = "device-B", createdUtc = vault.meta.createdUtc())
 
-        assertTrue(constantTimeEquals(first, second))
-        assertTrue(!constantTimeEquals(first, third))
+        val cipherBytes = cipherSection(encrypted.payload)
+        val expected = cipherBytes.sha256()
+        assertEquals(expected, encrypted.localEtag)
+    }
+
+    @Test
+    fun `journal is compressed smaller than json`() {
+        val vault = sampleVault(changeCount = 12)
+        val payload = encodeVaultPayload(vault)
+        val raw = kotlinx.serialization.json.Json.encodeToString(vault.journal)
+        assertTrue(payload.compressedJournal.size < raw.toByteArray(Charsets.UTF_8).size)
+    }
+
+    private fun cipherSection(blob: ByteArray): ByteArray {
+        val headerLength = blob.copyOfRange(0, 4).toInt()
+        return blob.copyOfRange(4 + headerLength, blob.size)
+    }
+
+    private fun sampleVault(changeCount: Int = 3): Vault {
+        val meta = VaultMeta(
+            id = VaultId(remotePath = "/vaults/sample.vlt", provider = "webdav", accountId = "account-1"),
+            name = "Sample",
+            version = 1,
+            lastModifiedUtc = Instant.now().toEpochMilli(),
+            size = 1024,
+            remoteEtag = "etag-1",
+        )
+        val items = listOf(
+            VaultItem(itemId = "1", encryptedBlob = "blob1", updatedAtUtc = meta.lastModifiedUtc),
+            VaultItem(itemId = "2", encryptedBlob = "blob2", updatedAtUtc = meta.lastModifiedUtc),
+        )
+        val journal = (0 until changeCount).map {
+            VaultChange(
+                changeId = UUID.randomUUID().toString(),
+                itemId = items[it % items.size].itemId,
+                operation = VaultChange.Operation.ADD,
+                updatedAtUtc = meta.lastModifiedUtc + it,
+                updatedByDevice = "device-${it % 2}",
+            )
+        }
+        return Vault(
+            meta = meta,
+            items = items,
+            changeVector = "device-123:${meta.version}",
+            journal = journal,
+        )
+    }
+
+    private fun VaultMeta.createdUtc(): Long = this.lastModifiedUtc
+
+    private fun ByteArray.toInt(): Int {
+        require(size == 4) { "Expected 4 bytes" }
+        return ((this[0].toInt() and 0xFF) shl 24) or
+            ((this[1].toInt() and 0xFF) shl 16) or
+            ((this[2].toInt() and 0xFF) shl 8) or
+            (this[3].toInt() and 0xFF)
+    }
+
+    private fun ByteArray.sha256(): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(this)
+        return hash.joinToString(separator = "") { "%02x".format(it) }
     }
 }

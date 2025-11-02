@@ -1,42 +1,69 @@
 package com.genpwd.corevault
 
-import kotlinx.serialization.decodeFromString
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.nio.ByteBuffer
 
-object VaultEncoding {
-    fun encode(encrypted: EncryptedVault, json: Json = Json): ByteArray {
-        val headerJson = json.encodeToString(VaultHeader.serializer(), encrypted.header)
-        val headerBytes = headerJson.encodeToByteArray()
-        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES + headerBytes.size + encrypted.ciphertext.size)
-        buffer.putInt(headerBytes.size)
-        buffer.put(headerBytes)
-        buffer.put(encrypted.ciphertext)
-        return buffer.array()
-    }
+private val json = Json { ignoreUnknownKeys = true }
 
-    fun decode(bytes: ByteArray, json: Json = Json): EncryptedVault {
-        val buffer = ByteBuffer.wrap(bytes)
-        require(buffer.remaining() >= Int.SIZE_BYTES) { "Invalid vault payload" }
-        val headerLength = buffer.int
-        require(headerLength > 0 && headerLength <= buffer.remaining()) { "Invalid header length" }
-        val headerBytes = ByteArray(headerLength)
-        buffer.get(headerBytes)
-        val ciphertext = ByteArray(buffer.remaining())
-        buffer.get(ciphertext)
-        val header = json.decodeFromString(VaultHeader.serializer(), headerBytes.decodeToString())
-        val hash = ciphertext.sha256().toHex()
-        return EncryptedVault(header = header, ciphertext = ciphertext, localHash = hash)
+@Serializable
+internal data class EncodedVaultPayload(
+    val metaJson: String,
+    val itemsJson: String,
+    val compressedJournal: ByteArray,
+    val changeVector: String,
+)
+
+internal fun encodeVaultPayload(vault: Vault): EncodedVaultPayload {
+    val itemsJson = json.encodeToString(vault.items)
+    val metaJson = json.encodeToString(vault.meta)
+    val journalJson = json.encodeToString(vault.journal)
+    val compressedJournal = compress(journalJson.toByteArray(Charsets.UTF_8))
+    return EncodedVaultPayload(
+        metaJson = metaJson,
+        itemsJson = itemsJson,
+        compressedJournal = compressedJournal,
+        changeVector = vault.changeVector,
+    )
+}
+
+internal fun decodeVaultPayload(payload: EncodedVaultPayload): VaultPayloadData {
+    val meta = json.decodeFromString<VaultMeta>(payload.metaJson)
+    val items = json.decodeFromString<List<VaultItem>>(payload.itemsJson)
+    val journalJson = decompress(payload.compressedJournal).toString(Charsets.UTF_8)
+    val journal = json.decodeFromString<List<VaultChange>>(journalJson)
+    return VaultPayloadData(
+        meta = meta,
+        items = items,
+        journal = journal,
+        changeVector = payload.changeVector,
+    )
+}
+
+internal data class VaultPayloadData(
+    val meta: VaultMeta,
+    val items: List<VaultItem>,
+    val journal: List<VaultChange>,
+    val changeVector: String,
+)
+
+private fun compress(input: ByteArray): ByteArray {
+    ByteArrayOutputStream().use { bos ->
+        GZIPOutputStream(bos).use { gzip ->
+            gzip.write(input)
+        }
+        return bos.toByteArray()
     }
 }
 
-private fun ByteArray.sha256(): ByteArray {
-    val digest = java.security.MessageDigest.getInstance("SHA-256")
-    return digest.digest(this)
-}
-
-private fun ByteArray.toHex(): String = joinToString(separator = "") { byte ->
-    val value = byte.toInt() and 0xff
-    "${"0123456789abcdef"[value shr 4]}${"0123456789abcdef"[value and 0x0f]}"
+private fun decompress(input: ByteArray): ByteArray {
+    ByteArrayInputStream(input).use { bis ->
+        GZIPInputStream(bis).use { gzip ->
+            return gzip.readBytes()
+        }
+    }
 }

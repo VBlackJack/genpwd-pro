@@ -4,103 +4,120 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Represents the identity of a vault on a remote provider.
+ * Represents a unique vault identifier on a remote provider.
  */
 @Serializable
 data class VaultId(
-    @SerialName("remote_path") val remotePath: String,
-    @SerialName("provider") val provider: ProviderKind,
-    @SerialName("account_id") val accountId: String,
+    val remotePath: String,
+    val provider: String,
+    val accountId: String,
 )
 
 /**
- * Enumeration of supported providers.
- */
-@Serializable
-enum class ProviderKind {
-    GOOGLE_DRIVE,
-    MICROSOFT_GRAPH,
-    DROPBOX,
-    WEBDAV,
-}
-
-/**
- * Metadata associated with a vault that lives remotely.
+ * Minimal metadata about a vault used locally and remotely.
  */
 @Serializable
 data class VaultMeta(
     val id: VaultId,
     val name: String,
     val version: Long,
-    @SerialName("last_modified_utc") val lastModifiedUtc: Long,
+    val lastModifiedUtc: Long,
     val size: Long,
-    @SerialName("remote_etag") val remoteEtag: String?,
+    val remoteEtag: String? = null,
 )
 
 /**
- * Represents a single logical item inside a vault. The content is stored encrypted in the
- * binary payload and never leaves the device in clear text.
+ * An item stored inside the vault. The actual payload is opaque to this module.
  */
 @Serializable
 data class VaultItem(
     val itemId: String,
-    val encryptedPayload: String,
-    @SerialName("updated_at") val updatedAt: Long,
-    @SerialName("updated_by") val updatedBy: String,
+    val encryptedBlob: String,
+    val updatedAtUtc: Long,
 )
 
 /**
- * Snapshot of a vault along with its internal change vector used for conflict resolution.
+ * Item-level change tracking metadata. Stored inside the compressed journal.
+ */
+@Serializable
+data class VaultChange(
+    val changeId: String,
+    val itemId: String,
+    @SerialName("op")
+    val operation: Operation,
+    val updatedAtUtc: Long,
+    val updatedByDevice: String,
+) {
+    @Serializable
+    enum class Operation {
+        ADD,
+        UPDATE,
+        DELETE,
+    }
+}
+
+/**
+ * Complete vault representation with metadata, payload and change vector.
  */
 @Serializable
 data class Vault(
     val meta: VaultMeta,
     val items: List<VaultItem>,
-    @SerialName("change_vector") val changeVector: String,
+    val changeVector: String,
+    val journal: List<VaultChange>,
 )
 
 /**
- * Represents a pending operation that needs to be sent to the remote provider once the
- * device regains connectivity.
+ * Result returned after encrypting a vault.
+ */
+data class EncryptedVault(
+    val payload: ByteArray,
+    val header: VaultHeader,
+    val localEtag: String,
+)
+
+/**
+ * Header stored alongside the encrypted payload. The header is authenticated via AEAD.
  */
 @Serializable
-sealed class PendingOp {
-    abstract val changeId: String
-    abstract val updatedAtUtc: Long
-
+data class VaultHeader(
+    val formatVersion: Int,
+    val cipher: CipherKind,
+    val kdf: KdfParameters,
+    val nonce: String,
+    val salt: String,
+    val deviceId: String,
+    val createdUtc: Long,
+) {
     @Serializable
-    @SerialName("add")
-    data class Add(
-        override val changeId: String,
-        override val updatedAtUtc: Long,
-        val item: VaultItem,
-    ) : PendingOp()
-
-    @Serializable
-    @SerialName("update")
-    data class Update(
-        override val changeId: String,
-        override val updatedAtUtc: Long,
-        val item: VaultItem,
-    ) : PendingOp()
-
-    @Serializable
-    @SerialName("delete")
-    data class Delete(
-        override val changeId: String,
-        override val updatedAtUtc: Long,
-        val itemId: String,
-    ) : PendingOp()
+    enum class CipherKind {
+        AES_256_GCM,
+        CHACHA20_POLY1305,
+    }
 }
 
 /**
- * Tracks the synchronisation state for a vault on a device.
+ * Parameters used to derive the encryption key from the user supplied secret.
  */
 @Serializable
-data class SyncState(
-    val vaultId: VaultId,
-    @SerialName("last_sync_utc") val lastSyncUtc: Long,
-    @SerialName("local_etag") val localEtag: String?,
-    @SerialName("remote_etag") val remoteEtag: String?,
-    @SerialName("pending_ops") val pendingOps: List<PendingOp>,
-)
+sealed interface KdfParameters {
+    val salt: String
+
+    @Serializable
+    @SerialName("argon2id")
+    data class Argon2id(
+        override val salt: String,
+        val iterations: Int,
+        val memoryKb: Int,
+        val parallelism: Int,
+        val hashLength: Int,
+    ) : KdfParameters
+
+    @Serializable
+    @SerialName("pbkdf2")
+    data class Pbkdf2(
+        override val salt: String,
+        val iterations: Int,
+        val hashLength: Int,
+    ) : KdfParameters
+}

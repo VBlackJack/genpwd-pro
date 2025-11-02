@@ -1,140 +1,185 @@
 package com.genpwd.corevault
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import java.nio.ByteBuffer
+import de.mkammerer.argon2.Argon2Factory
+import java.security.GeneralSecurityException
+import java.security.MessageDigest
 import java.security.SecureRandom
-import java.time.Instant
+import java.util.Base64
 import javax.crypto.Cipher
-import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 
-private const val HEADER_VERSION: Int = 1
-private const val GCM_TAG_LENGTH_BITS = 128
-private const val GCM_NONCE_LENGTH_BYTES = 12
-private const val SALT_LENGTH_BYTES = 16
-private const val PBKDF2_ITERATIONS = 120_000
-private const val PBKDF2_KEY_LENGTH_BITS = 256
+private const val FORMAT_VERSION = 1
+private const val AES_GCM_TAG_LENGTH = 128
+private const val NONCE_SIZE_BYTES = 12
+private const val SALT_SIZE_BYTES = 16
+private const val AES_KEY_LENGTH_BYTES = 32
+private val json = Json { ignoreUnknownKeys = true }
 
-/**
- * Minimal representation of the vault header stored alongside the ciphertext to simplify
- * format evolution.
- */
-data class VaultHeader(
-    val formatVersion: Int = HEADER_VERSION,
-    val cipher: String = "AES-256-GCM",
-    val kdf: String = "PBKDF2WithHmacSHA512",
-    val nonce: ByteArray,
-    val salt: ByteArray,
-    val deviceId: String,
-    val createdUtc: Long,
-)
-
-/**
- * Container returned to callers after encryption. It bundles the serialised header together
- * with the encrypted payload and the derived local hash.
- */
-data class EncryptedVault(
-    val header: VaultHeader,
-    val ciphertext: ByteArray,
-    val localHash: String,
-)
-
-/**
- * Provides encryption and decryption operations for vaults. The implementation sticks to
- * primitives that are available on the Android platform without external dependencies.
- */
-@Singleton
-class VaultCryptoEngine @Inject constructor(
+class VaultCryptoEngine(
     private val secureRandom: SecureRandom = SecureRandom(),
-    private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
-    fun encryptVault(masterPassword: CharArray, vault: Vault, deviceId: String): EncryptedVault {
-        val salt = ByteArray(SALT_LENGTH_BYTES).apply(secureRandom::nextBytes)
-        val nonce = ByteArray(GCM_NONCE_LENGTH_BYTES).apply(secureRandom::nextBytes)
-        val key = deriveKey(masterPassword, salt)
 
-        val payload = json.encodeToString(vault).encodeToByteArray()
-        val ciphertext = aesGcmEncrypt(key, nonce, payload)
+    fun encrypt(vault: Vault, secret: CharArray, deviceId: String, createdUtc: Long): EncryptedVault {
+        val payload = encodeVaultPayload(vault)
+        val payloadBytes = serializePayload(payload)
+
+        val kdfSalt = ByteArray(SALT_SIZE_BYTES).also(secureRandom::nextBytes)
+        val nonce = ByteArray(NONCE_SIZE_BYTES).also(secureRandom::nextBytes)
+
+        val kdfParameters = KdfParameters.Argon2id(
+            salt = kdfSalt.encodeBase64(),
+            iterations = DEFAULT_ARGON2_ITERATIONS,
+            memoryKb = DEFAULT_ARGON2_MEMORY_KB,
+            parallelism = DEFAULT_ARGON2_PARALLELISM,
+            hashLength = AES_KEY_LENGTH_BYTES,
+        )
+        val key = deriveKey(secret, kdfParameters)
+        val cipherText = aesGcmEncrypt(key, nonce, payloadBytes, deviceId)
         val header = VaultHeader(
-            nonce = nonce,
-            salt = salt,
+            formatVersion = FORMAT_VERSION,
+            cipher = VaultHeader.CipherKind.AES_256_GCM,
+            kdf = kdfParameters,
+            nonce = nonce.encodeBase64(),
+            salt = kdfSalt.encodeBase64(),
             deviceId = deviceId,
-            createdUtc = Instant.now().epochSecond,
+            createdUtc = createdUtc,
         )
-        val localHash = ciphertext.sha256().toHex()
-        return EncryptedVault(header = header, ciphertext = ciphertext, localHash = localHash)
-    }
-
-    fun decryptVault(masterPassword: CharArray, encryptedVault: EncryptedVault): Vault {
-        val key = deriveKey(masterPassword, encryptedVault.header.salt)
-        val payload = aesGcmDecrypt(key, encryptedVault.header.nonce, encryptedVault.ciphertext)
-        return json.decodeFromString(Vault.serializer(), payload.decodeToString())
-    }
-
-    private fun deriveKey(masterPassword: CharArray, salt: ByteArray): SecretKey {
-        val spec = PBEKeySpec(
-            masterPassword,
-            salt,
-            PBKDF2_ITERATIONS,
-            PBKDF2_KEY_LENGTH_BITS,
+        val localEtag = cipherText.sha256()
+        return EncryptedVault(
+            payload = composeBlob(header, cipherText),
+            header = header,
+            localEtag = localEtag,
         )
-        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
-        val secret = factory.generateSecret(spec)
-        return SecretKeySpec(secret.encoded, "AES")
     }
 
-    private fun aesGcmEncrypt(key: SecretKey, nonce: ByteArray, plaintext: ByteArray): ByteArray {
+    fun decrypt(blob: ByteArray, secret: CharArray): Vault {
+        val parsed = parseBlob(blob)
+        val key = deriveKey(secret, parsed.header.kdf)
+        val nonce = parsed.header.nonce.decodeBase64()
+        val plaintext = aesGcmDecrypt(key, nonce, parsed.cipherText, parsed.header.deviceId)
+        val payload = deserializePayload(plaintext)
+        return Vault(
+            meta = payload.meta,
+            items = payload.items,
+            changeVector = payload.changeVector,
+            journal = payload.journal,
+        )
+    }
+
+    private fun deriveKey(secret: CharArray, params: KdfParameters): ByteArray = when (params) {
+        is KdfParameters.Argon2id -> {
+            val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id)
+            argon2.hashRaw(
+                params.iterations,
+                params.memoryKb,
+                params.parallelism,
+                secret,
+                params.salt.decodeBase64(),
+                params.hashLength,
+            )
+        }
+        is KdfParameters.Pbkdf2 -> {
+            val keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+            val spec = PBEKeySpec(secret, params.salt.decodeBase64(), params.iterations, params.hashLength * 8)
+            keyFactory.generateSecret(spec).encoded
+        }
+    }
+
+    private fun aesGcmEncrypt(key: ByteArray, nonce: ByteArray, plaintext: ByteArray, aad: String): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, nonce))
-        cipher.updateAAD(buildHeaderBytes())
+        val secretKey = SecretKeySpec(key, "AES")
+        val spec = GCMParameterSpec(AES_GCM_TAG_LENGTH, nonce)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec)
+        cipher.updateAAD(aad.toByteArray(Charsets.UTF_8))
         return cipher.doFinal(plaintext)
     }
 
-    private fun aesGcmDecrypt(key: SecretKey, nonce: ByteArray, ciphertext: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, nonce))
-        cipher.updateAAD(buildHeaderBytes())
-        return cipher.doFinal(ciphertext)
+    private fun aesGcmDecrypt(key: ByteArray, nonce: ByteArray, cipherText: ByteArray, aad: String): ByteArray {
+        try {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val secretKey = SecretKeySpec(key, "AES")
+            val spec = GCMParameterSpec(AES_GCM_TAG_LENGTH, nonce)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
+            cipher.updateAAD(aad.toByteArray(Charsets.UTF_8))
+            return cipher.doFinal(cipherText)
+        } catch (ex: GeneralSecurityException) {
+            throw VaultDecryptionException("Unable to decrypt vault", ex)
+        }
     }
 
-    private fun buildHeaderBytes(): ByteArray {
-        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES * 2)
-        buffer.putInt(HEADER_VERSION)
-        buffer.putInt(GCM_TAG_LENGTH_BITS)
-        return buffer.array()
+    private fun serializePayload(payload: EncodedVaultPayload): ByteArray {
+        val encoded = json.encodeToString(payload)
+        return encoded.toByteArray(Charsets.UTF_8)
     }
+
+    private fun deserializePayload(plaintext: ByteArray): VaultPayloadData {
+        val encoded = plaintext.toString(Charsets.UTF_8)
+        val payload = json.decodeFromString<EncodedVaultPayload>(encoded)
+        return decodeVaultPayload(payload)
+    }
+
+    private fun composeBlob(header: VaultHeader, cipherText: ByteArray): ByteArray {
+        val headerBytes = json.encodeToString(header).toByteArray(Charsets.UTF_8)
+        val headerLength = headerBytes.size
+        val buffer = ByteArray(4 + headerLength + cipherText.size)
+        val headerLengthBytes = headerLength.toByteArray()
+        System.arraycopy(headerLengthBytes, 0, buffer, 0, 4)
+        System.arraycopy(headerBytes, 0, buffer, 4, headerLength)
+        System.arraycopy(cipherText, 0, buffer, 4 + headerLength, cipherText.size)
+        return buffer
+    }
+
+    private fun parseBlob(blob: ByteArray): ParsedBlob {
+        require(blob.size > 4) { "Invalid vault blob" }
+        val headerLength = blob.copyOfRange(0, 4).toInt()
+        val headerBytes = blob.copyOfRange(4, 4 + headerLength)
+        val cipherBytes = blob.copyOfRange(4 + headerLength, blob.size)
+        val header = json.decodeFromString<VaultHeader>(headerBytes.toString(Charsets.UTF_8))
+        require(header.formatVersion == FORMAT_VERSION) { "Unsupported vault format ${'$'}{header.formatVersion}" }
+        return ParsedBlob(header = header, cipherText = cipherBytes)
+    }
+
+    private data class ParsedBlob(
+        val header: VaultHeader,
+        val cipherText: ByteArray,
+    )
 }
 
-private fun ByteArray.sha256(): ByteArray {
-    val messageDigest = java.security.MessageDigest.getInstance("SHA-256")
-    messageDigest.update(this)
-    return messageDigest.digest()
+class VaultDecryptionException(message: String, cause: Throwable) : Exception(message, cause)
+
+private const val DEFAULT_ARGON2_ITERATIONS = 3
+private const val DEFAULT_ARGON2_MEMORY_KB = 65536
+private const val DEFAULT_ARGON2_PARALLELISM = 2
+
+private fun ByteArray.sha256(): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    val hash = digest.digest(this)
+    return hash.joinToString(separator = "") { "%02x".format(it) }
 }
 
-private fun ByteArray.toHex(): String {
-    val result = StringBuilder(size * 2)
-    forEach { byte ->
-        val intVal = byte.toInt() and 0xff
-        result.append("0123456789abcdef"[intVal shr 4])
-        result.append("0123456789abcdef"[intVal and 0x0f])
-    }
-    return result.toString()
-}
+private fun ByteArray.encodeBase64(): String =
+    Base64.getEncoder().encodeToString(this)
 
-/**
- * Simple helper used in tests to compare arrays safely without leaking timing information.
- */
-fun constantTimeEquals(left: ByteArray, right: ByteArray): Boolean {
-    if (left.size != right.size) return false
-    var diff = 0
-    for (index in left.indices) {
-        diff = diff or (left[index].toInt() xor right[index].toInt())
-    }
-    return diff == 0
+private fun String.decodeBase64(): ByteArray =
+    Base64.getDecoder().decode(this)
+
+private fun Int.toByteArray(): ByteArray = byteArrayOf(
+    ((this shr 24) and 0xFF).toByte(),
+    ((this shr 16) and 0xFF).toByte(),
+    ((this shr 8) and 0xFF).toByte(),
+    (this and 0xFF).toByte(),
+)
+
+private fun ByteArray.toInt(): Int {
+    require(size == 4) { "Expected 4 bytes" }
+    return ((this[0].toInt() and 0xFF) shl 24) or
+        ((this[1].toInt() and 0xFF) shl 16) or
+        ((this[2].toInt() and 0xFF) shl 8) or
+        (this[3].toInt() and 0xFF)
 }
