@@ -1,24 +1,35 @@
 package com.julien.genpwdpro.autofill
 
+import android.app.KeyguardManager
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.os.CancellationSignal
-import android.service.autofill.*
+import android.service.autofill.AutofillService
+import android.service.autofill.Dataset
+import android.service.autofill.FillCallback
+import android.service.autofill.FillRequest
+import android.service.autofill.FillResponse
+import android.service.autofill.SaveCallback
+import android.service.autofill.SaveRequest
+import android.view.View
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.autofill.security.AutofillRequestGuard
+import com.julien.genpwdpro.autofill.security.GuardDecision
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Service d'auto-remplissage pour GenPwd Pro
@@ -48,9 +59,19 @@ class GenPwdAutofillService : AutofillService() {
     lateinit var autofillRepository: AutofillRepository
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private lateinit var requestGuard: AutofillRequestGuard
 
     companion object {
-        private const val MAX_DATASETS = 3 // Nombre max de suggestions
+        private const val MAX_MATCHING_DATASETS = 2
+        private const val MAX_GENERATED_DATASETS = 1
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        requestGuard = AutofillRequestGuard.create(
+            getSystemService(KeyguardManager::class.java),
+            packageManager
+        )
     }
 
     override fun onFillRequest(
@@ -58,70 +79,129 @@ class GenPwdAutofillService : AutofillService() {
         cancellationSignal: CancellationSignal,
         callback: FillCallback
     ) {
-        serviceScope.launch {
-            try {
-                val context = request.fillContexts.lastOrNull()?.structure
-                if (context == null) {
-                    callback.onSuccess(null)
-                    return@launch
-                }
-
-                // Parser la structure pour trouver les champs de mot de passe
-                val parser = AutofillParser(context)
-                val autofillFields = parser.parseForCredentials()
-
-                if (autofillFields.isEmpty()) {
-                    callback.onSuccess(null)
-                    return@launch
-                }
-                
-                // Vérifier si le coffre est déverrouillé
-                val isUnlocked = autofillRepository.isVaultUnlocked()
-                if (!isUnlocked) {
-                    // Coffre verrouillé : proposer de déverrouiller
-                    val response = autofillRepository.createUnlockVaultResponse()
-                    callback.onSuccess(response)
-                    return@launch
-                }
-
-                // Coffre déverrouillé : rechercher les correspondances
-                val matchingEntries = autofillRepository.findMatchingEntries(
-                    packageName = autofillFields.packageName
-                ).first()
-
-                val responseBuilder = FillResponse.Builder()
-
-                if (matchingEntries.isNotEmpty()) {
-                    // Des correspondances ont été trouvées : les proposer
-                    matchingEntries.forEach { entry ->
-                        val dataset = autofillRepository.createCredentialDataset(
-                            entry = entry,
-                            autofillFields = autofillFields
-                        )
-                        responseBuilder.addDataset(dataset)
-                    }
-                } else {
-                    // Aucune correspondance : proposer de générer
-                    val settings = autofillRepository.getSettings().first()
-                    repeat(MAX_DATASETS) { index ->
-                        val passwordResults = generatePasswordUseCase(settings)
-                        val password = passwordResults.firstOrNull()?.password ?: ""
-                        val dataset = createPasswordDataset(
-                            autofillFields = autofillFields,
-                            password = password,
-                            index = index,
-                            settings = settings
-                        )
-                        responseBuilder.addDataset(dataset)
-                    }
-                }
-
-                callback.onSuccess(responseBuilder.build())
-
-            } catch (e: Exception) {
-                callback.onFailure(e.message)
-            }
+        if (cancellationSignal.isCanceled) {
+            callback.onSuccess(null)
+            return
         }
+
+        cancellationSignal.setOnCancelListener {
+            serviceScope.launch { callback.onSuccess(null) }
+        }
+
+        serviceScope.launch {
+            runCatching { processFillRequest(request, callback) }
+                .onFailure { callback.onFailure(null) }
+        }
+    }
+
+    private suspend fun processFillRequest(request: FillRequest, callback: FillCallback) {
+        val structure = request.fillContexts.lastOrNull()?.structure ?: run {
+            callback.onSuccess(null)
+            return
+        }
+
+        val callingPackage = guardCaller(structure) ?: run {
+            callback.onSuccess(null)
+            return
+        }
+
+        val autofillFields = parseAutofillFields(structure, callingPackage) ?: run {
+            callback.onSuccess(null)
+            return
+        }
+
+        if (!autofillRepository.isVaultUnlocked()) {
+            val response = autofillRepository.createUnlockVaultResponse()
+            callback.onSuccess(response)
+            return
+        }
+
+        val response = buildFillResponse(callingPackage, autofillFields)
+        callback.onSuccess(response)
+    }
+
+    private fun guardCaller(structure: AssistStructure): String? {
+        val componentPackage = structure.activityComponent?.packageName ?: return null
+        val decision = requestGuard.evaluate(componentPackage)
+        return when (decision) {
+            is GuardDecision.Allowed -> decision.packageName
+            GuardDecision.DeviceLocked,
+            GuardDecision.Throttled,
+            GuardDecision.UntrustedCaller -> null
+        }
+    }
+
+    private fun parseAutofillFields(
+        structure: AssistStructure,
+        callingPackage: String
+    ): AutofillFieldsMetadata? {
+        val fields = AutofillParser(structure).parseForCredentials()
+        if (fields.isEmpty() || fields.passwordField == null) {
+            return null
+        }
+        if (!fields.packageName.equals(callingPackage, ignoreCase = true)) {
+            return null
+        }
+        return fields
+    }
+
+    private suspend fun buildFillResponse(
+        callingPackage: String,
+        autofillFields: AutofillFieldsMetadata
+    ): FillResponse? {
+        val responseBuilder = FillResponse.Builder()
+        var hasDataset = addMatchingDatasets(responseBuilder, callingPackage, autofillFields)
+        if (!hasDataset) {
+            hasDataset = addGeneratedDatasets(responseBuilder, autofillFields)
+        }
+        return if (hasDataset) responseBuilder.build() else null
+    }
+
+    private suspend fun addMatchingDatasets(
+        responseBuilder: FillResponse.Builder,
+        callingPackage: String,
+        autofillFields: AutofillFieldsMetadata
+    ): Boolean {
+        val matchingEntries = autofillRepository.findMatchingEntries(
+            packageName = callingPackage
+        ).first()
+        var hasDataset = false
+        matchingEntries
+            .take(MAX_MATCHING_DATASETS)
+            .forEach { entry ->
+                val dataset = autofillRepository.createCredentialDataset(
+                    entry = entry,
+                    autofillFields = autofillFields
+                )
+                responseBuilder.addDataset(dataset)
+                hasDataset = true
+            }
+        return hasDataset
+    }
+
+    private suspend fun addGeneratedDatasets(
+        responseBuilder: FillResponse.Builder,
+        autofillFields: AutofillFieldsMetadata
+    ): Boolean {
+        val settings = autofillRepository.getSettings().first()
+        var hasDataset = false
+        repeat(MAX_GENERATED_DATASETS) { index ->
+            val passwordResults = generatePasswords(settings)
+            val password = passwordResults.firstOrNull()?.password.orEmpty()
+            if (password.isBlank()) {
+                return@repeat
+            }
+            responseBuilder.addDataset(
+                createPasswordDataset(
+                    autofillFields = autofillFields,
+                    password = password,
+                    index = index,
+                    settings = settings
+                )
+            )
+            hasDataset = true
+        }
+        return hasDataset
     }
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
@@ -147,7 +227,6 @@ class GenPwdAutofillService : AutofillService() {
                 }
 
                 callback.onSuccess()
-
             } catch (e: Exception) {
                 callback.onFailure(e.message)
             }
@@ -167,7 +246,8 @@ class GenPwdAutofillService : AutofillService() {
     /**
      * Crée un Dataset avec un mot de passe généré
      */
-    private fun createPasswordDataset(
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    internal open fun createPasswordDataset(
         autofillFields: AutofillFieldsMetadata,
         password: String,
         index: Int,
@@ -196,16 +276,6 @@ class GenPwdAutofillService : AutofillService() {
             )
         }
 
-        // Remplir le champ username si présent (optionnel)
-        autofillFields.usernameField?.let { field ->
-            val username = "user_${System.currentTimeMillis()}" // Placeholder
-            datasetBuilder.setValue(
-                field.autofillId,
-                AutofillValue.forText(username),
-                presentation
-            )
-        }
-
         return datasetBuilder.build()
     }
 
@@ -213,6 +283,8 @@ class GenPwdAutofillService : AutofillService() {
      * Calcule l'entropie approximative pour l'affichage
      */
     private fun calculateEntropy(password: String): Int {
+        if (password.isEmpty()) return 0
+
         val hasLower = password.any { it.isLowerCase() }
         val hasUpper = password.any { it.isUpperCase() }
         val hasDigit = password.any { it.isDigit() }
@@ -224,8 +296,17 @@ class GenPwdAutofillService : AutofillService() {
         if (hasDigit) poolSize += 10
         if (hasSpecial) poolSize += 32
 
+        if (poolSize == 0) {
+            return 0
+        }
+
         return (password.length * kotlin.math.log2(poolSize.toDouble())).toInt()
     }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    internal open suspend fun generatePasswords(settings: Settings) = generatePasswordUseCase(
+        settings
+    )
 }
 
 /**
@@ -273,16 +354,18 @@ class AutofillParser(private val structure: AssistStructure) {
         // Parcourir tous les nœuds
         for (i in 0 until structure.windowNodeCount) {
             val windowNode = structure.getWindowNodeAt(i)
-            packageName = windowNode.rootViewNode.idPackage ?: ""
+            val rootNode = windowNode?.rootViewNode ?: continue
+            val nodePackage = rootNode.idPackage.orEmpty()
+            if (nodePackage.isNotBlank()) {
+                packageName = nodePackage
+            }
 
-            traverseNode(windowNode.rootViewNode) { node ->
+            traverseNode(rootNode) { node ->
                 val autofillHints = node.autofillHints?.toList() ?: emptyList()
-                val autofillType = node.autofillType
-
                 // Chercher le champ de mot de passe
                 if (isPasswordField(node, autofillHints)) {
                     passwordField = AutofillFieldMetadata(
-                        autofillId = node.autofillId!!,
+                        autofillId = node.autofillId ?: return@traverseNode,
                         hints = autofillHints,
                         viewId = node.idEntry
                     )
@@ -291,7 +374,7 @@ class AutofillParser(private val structure: AssistStructure) {
                 // Chercher le champ username
                 if (isUsernameField(node, autofillHints)) {
                     usernameField = AutofillFieldMetadata(
-                        autofillId = node.autofillId!!,
+                        autofillId = node.autofillId ?: return@traverseNode,
                         hints = autofillHints,
                         viewId = node.idEntry
                     )
@@ -342,12 +425,18 @@ class AutofillParser(private val structure: AssistStructure) {
         node: AssistStructure.ViewNode,
         action: (AssistStructure.ViewNode) -> Unit
     ) {
-        if (node.autofillId != null) {
+        if (node.className?.contains("WebView", ignoreCase = true) == true) {
+            return
+        }
+
+        val autofillId = node.autofillId
+        if (autofillId != null && node.autofillType != View.AUTOFILL_TYPE_NONE) {
             action(node)
         }
 
         for (i in 0 until node.childCount) {
-            traverseNode(node.getChildAt(i), action)
+            val child = node.getChildAt(i) ?: continue
+            traverseNode(child, action)
         }
     }
 
@@ -365,7 +454,8 @@ class AutofillParser(private val structure: AssistStructure) {
 
         // Vérifier l'input type
         if (node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD != 0 ||
-            node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0) {
+            node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0
+        ) {
             return true
         }
 
@@ -388,9 +478,10 @@ class AutofillParser(private val structure: AssistStructure) {
         // Vérifier les hints
         if (hints.any {
             it.contains("username", ignoreCase = true) ||
-            it.contains("email", ignoreCase = true) ||
-            it.contains("login", ignoreCase = true)
-        }) {
+                it.contains("email", ignoreCase = true) ||
+                it.contains("login", ignoreCase = true)
+        }
+        ) {
             return true
         }
 

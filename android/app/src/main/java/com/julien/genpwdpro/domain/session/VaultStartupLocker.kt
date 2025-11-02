@@ -1,22 +1,21 @@
 package com.julien.genpwdpro.domain.session
 
-import android.util.Log
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
+import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 /**
  * Coordonne le verrouillage initial des coffres lors du démarrage de l'application.
  *
- * - Verrouille la session file-based et la session legacy en mémoire.
+ * - Verrouille la session file-based en mémoire.
  * - Réinitialise les indicateurs `isLoaded` du registre Room.
  * - Retente automatiquement en cas d'erreur et applique une solution de repli granulaire.
  */
 class VaultStartupLocker @Inject constructor(
     private val vaultSessionManager: VaultSessionManager,
-    private val sessionManager: SessionManager,
     private val vaultRegistryDao: VaultRegistryDao,
     private val ioDispatcher: CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO
 ) {
@@ -29,13 +28,12 @@ class VaultStartupLocker @Inject constructor(
 
     data class StartupLockResult(
         val fileSessionLocked: Boolean,
-        val legacySessionLocked: Boolean,
         val registryResetSucceeded: Boolean,
         val fallbackApplied: Boolean,
         val errors: List<String>
     ) {
         val isSecure: Boolean
-            get() = fileSessionLocked && legacySessionLocked && (registryResetSucceeded || fallbackApplied)
+            get() = fileSessionLocked && (registryResetSucceeded || fallbackApplied)
     }
 
     /**
@@ -48,14 +46,7 @@ class VaultStartupLocker @Inject constructor(
             vaultSessionManager.lockVault()
         }.onFailure { throwable ->
             errors += "File vault lock failed: ${throwable.message}"
-            Log.e(TAG, "Unable to lock file-based vault session", throwable)
-        }.isSuccess
-
-        val legacySessionLocked = runCatching {
-            sessionManager.lockVault()
-        }.onFailure { throwable ->
-            errors += "Legacy session lock failed: ${throwable.message}"
-            Log.e(TAG, "Unable to lock legacy session", throwable)
+            SafeLog.e(TAG, "Unable to lock file-based vault session", throwable)
         }.isSuccess
 
         var registryResetSucceeded = false
@@ -66,12 +57,12 @@ class VaultStartupLocker @Inject constructor(
 
             if (resetAttempt.isSuccess) {
                 registryResetSucceeded = true
-                Log.d(TAG, "Registry reset succeeded on attempt ${attempt + 1}")
+                SafeLog.d(TAG, "Registry reset succeeded on attempt ${attempt + 1}")
                 return@repeat
             } else {
                 val throwable = resetAttempt.exceptionOrNull()
                 errors += "Registry reset attempt ${attempt + 1} failed: ${throwable?.message}"
-                Log.w(TAG, "Failed to reset registry flags (attempt ${attempt + 1})", throwable)
+                SafeLog.w(TAG, "Failed to reset registry flags (attempt ${attempt + 1})", throwable)
                 if (attempt < MAX_RESET_ATTEMPTS - 1) {
                     delay(RETRY_DELAY_MS)
                 }
@@ -85,7 +76,6 @@ class VaultStartupLocker @Inject constructor(
 
         return StartupLockResult(
             fileSessionLocked = fileSessionLocked,
-            legacySessionLocked = legacySessionLocked,
             registryResetSucceeded = registryResetSucceeded,
             fallbackApplied = fallbackApplied,
             errors = errors
@@ -97,7 +87,7 @@ class VaultStartupLocker @Inject constructor(
             withContext(ioDispatcher) {
                 val loadedIds = vaultRegistryDao.getLoadedVaultIds()
                 if (loadedIds.isEmpty()) {
-                    Log.d(TAG, "Fallback reset not required: no loaded vaults reported")
+                    SafeLog.d(TAG, "Fallback reset not required: no loaded vaults reported")
                     return@withContext true
                 }
 
@@ -108,7 +98,11 @@ class VaultStartupLocker @Inject constructor(
                     }.onFailure { throwable ->
                         success = false
                         errors += "Fallback update failed for $id: ${throwable.message}"
-                        Log.e(TAG, "Failed to clear loaded flag for vault $id", throwable)
+                        SafeLog.e(
+                            TAG,
+                            "Failed to clear loaded flag for vault: vaultId=${SafeLog.redact(id)}",
+                            throwable
+                        )
                     }
                 }
 
@@ -116,7 +110,7 @@ class VaultStartupLocker @Inject constructor(
             }
         }.onFailure { throwable ->
             errors += "Fallback reset failed: ${throwable.message}"
-            Log.e(TAG, "Fallback reset failed", throwable)
+            SafeLog.e(TAG, "Fallback reset failed", throwable)
         }.getOrDefault(false)
     }
 }

@@ -28,8 +28,8 @@ class SettingsDataStore(private val context: Context) {
         val CUSTOM_SPECIALS = stringPreferencesKey("custom_specials")
         val DIGITS_PLACEMENT = stringPreferencesKey("digits_placement")
         val SPECIALS_PLACEMENT = stringPreferencesKey("specials_placement")
-        val DIGITS_POSITION = intPreferencesKey("digits_position")
-        val SPECIALS_POSITION = intPreferencesKey("specials_position")
+        val DIGITS_POSITIONS = stringPreferencesKey("digits_positions")
+        val SPECIALS_POSITIONS = stringPreferencesKey("specials_positions")
         val CASE_MODE = stringPreferencesKey("case_mode")
         val CASE_BLOCKS = stringPreferencesKey("case_blocks") // JSON array
         val SYLLABLES_LENGTH = intPreferencesKey("syllables_length")
@@ -61,8 +61,8 @@ class SettingsDataStore(private val context: Context) {
                 customSpecials = preferences[PreferencesKeys.CUSTOM_SPECIALS] ?: "_+-=.@#%",
                 digitsPlacement = preferences[PreferencesKeys.DIGITS_PLACEMENT]?.let { Placement.valueOf(it) } ?: Placement.RANDOM,
                 specialsPlacement = preferences[PreferencesKeys.SPECIALS_PLACEMENT]?.let { Placement.valueOf(it) } ?: Placement.RANDOM,
-                digitsPosition = preferences[PreferencesKeys.DIGITS_POSITION] ?: 50,
-                specialsPosition = preferences[PreferencesKeys.SPECIALS_POSITION] ?: 50,
+                digitsPositions = preferences[PreferencesKeys.DIGITS_POSITIONS]?.let { parsePositions(it) } ?: listOf(50),
+                specialsPositions = preferences[PreferencesKeys.SPECIALS_POSITIONS]?.let { parsePositions(it) } ?: listOf(50),
                 caseMode = preferences[PreferencesKeys.CASE_MODE]?.let { CaseMode.valueOf(it) } ?: CaseMode.MIXED,
                 caseBlocks = preferences[PreferencesKeys.CASE_BLOCKS]?.let { parseCaseBlocks(it) } ?: listOf(CaseBlock.T, CaseBlock.L),
                 syllablesLength = preferences[PreferencesKeys.SYLLABLES_LENGTH] ?: 20,
@@ -87,8 +87,8 @@ class SettingsDataStore(private val context: Context) {
             preferences[PreferencesKeys.CUSTOM_SPECIALS] = settings.customSpecials
             preferences[PreferencesKeys.DIGITS_PLACEMENT] = settings.digitsPlacement.name
             preferences[PreferencesKeys.SPECIALS_PLACEMENT] = settings.specialsPlacement.name
-            preferences[PreferencesKeys.DIGITS_POSITION] = settings.digitsPosition
-            preferences[PreferencesKeys.SPECIALS_POSITION] = settings.specialsPosition
+            preferences[PreferencesKeys.DIGITS_POSITIONS] = serializePositions(settings.digitsPositions)
+            preferences[PreferencesKeys.SPECIALS_POSITIONS] = serializePositions(settings.specialsPositions)
             preferences[PreferencesKeys.CASE_MODE] = settings.caseMode.name
             preferences[PreferencesKeys.CASE_BLOCKS] = serializeCaseBlocks(settings.caseBlocks)
             preferences[PreferencesKeys.SYLLABLES_LENGTH] = settings.syllablesLength
@@ -149,5 +149,25 @@ class SettingsDataStore(private val context: Context) {
                 null
             }
         }
+    }
+
+    /**
+     * Sérialise les positions en string
+     */
+    private fun serializePositions(positions: List<Int>): String {
+        return positions.joinToString(",")
+    }
+
+    /**
+     * Parse les positions depuis string
+     */
+    private fun parsePositions(str: String): List<Int> {
+        return str.split(",").mapNotNull {
+            try {
+                it.toInt().coerceIn(0, 100)
+            } catch (e: Exception) {
+                null
+            }
+        }.ifEmpty { listOf(50) }
     }
 }

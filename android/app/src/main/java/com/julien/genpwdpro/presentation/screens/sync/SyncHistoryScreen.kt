@@ -10,14 +10,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.sync.SyncHistoryAction
+import com.julien.genpwdpro.data.sync.SyncHistoryEntry
+import com.julien.genpwdpro.data.sync.SyncHistoryStatus
 import com.julien.genpwdpro.data.sync.SyncStatistics
+import com.julien.genpwdpro.data.sync.SyncDataType
+import com.julien.genpwdpro.data.sync.models.CloudProviderType
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -34,26 +43,27 @@ import java.util.*
 @Composable
 fun SyncHistoryScreen(
     onNavigateBack: () -> Unit,
-    viewModel: VaultSyncViewModel = hiltViewModel()
+    viewModel: SyncHistoryViewModel = hiltViewModel()
 ) {
-    // Récupère les statistiques de synchronisation
-    val statistics = remember { viewModel.getSyncStatistics() }
+    val uiState by viewModel.uiState.collectAsState()
+    val statistics = uiState.statistics ?: SyncStatistics(0, 0, 0, null, 0L)
+    val history = uiState.history
 
-    // Pour l'instant, l'historique détaillé n'est pas encore implémenté
-    // Il sera ajouté dans une future mise à jour
-    val history: List<SyncHistoryEntry> = emptyList()
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Historique de Synchronisation") },
+                title = { Text(stringResource(id = R.string.sync_history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Retour")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            stringResource(id = R.string.sync_common_back)
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { /* TODO: Filter/Search */ }) {
-                        Icon(Icons.Default.FilterList, "Filtrer")
+                        Icon(Icons.Default.FilterList, stringResource(id = R.string.sync_history_filter_cd))
                     }
                 }
             )
@@ -66,6 +76,21 @@ fun SyncHistoryScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (uiState.isLoading) {
+                item {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            }
+
+            uiState.errorMessage?.let { errorMessage ->
+                item {
+                    AssistChip(
+                        onClick = { viewModel.refresh() },
+                        label = { Text(errorMessage) },
+                        leadingIcon = { Icon(Icons.Default.Error, contentDescription = null) }
+                    )
+                }
+            }
             // Statistics Summary
             item {
                 StatisticsCard(statistics)
@@ -84,13 +109,13 @@ fun SyncHistoryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Synchronisations Récentes",
+                        text = stringResource(id = R.string.sync_history_recent_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     if (history.isNotEmpty()) {
                         Text(
-                            text = "${history.size} entrées",
+                            text = stringResource(id = R.string.sync_history_entries_count, history.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -125,7 +150,7 @@ private fun StatisticsCard(statistics: SyncStatistics) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Statistiques",
+                text = stringResource(id = R.string.sync_history_statistics_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -137,27 +162,27 @@ private fun StatisticsCard(statistics: SyncStatistics) {
                 // Total Syncs
                 StatisticItem(
                     value = statistics.totalSyncs.toString(),
-                    label = "Total",
+                    label = stringResource(id = R.string.sync_history_statistics_total),
                     icon = Icons.Default.Sync,
-                    color = Color(0xFF2196F3),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
 
                 // Successful
                 StatisticItem(
                     value = statistics.successfulSyncs.toString(),
-                    label = "Réussies",
+                    label = stringResource(id = R.string.sync_history_statistics_success),
                     icon = Icons.Default.CheckCircle,
-                    color = Color(0xFF4CAF50),
+                    color = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.weight(1f)
                 )
 
                 // Failed
                 StatisticItem(
                     value = statistics.failedSyncs.toString(),
-                    label = "Échouées",
+                    label = stringResource(id = R.string.sync_history_statistics_failed),
                     icon = Icons.Default.Error,
-                    color = Color(0xFFFF5252),
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -221,9 +246,10 @@ private fun StatisticItem(
  */
 @Composable
 private fun LastErrorSection(error: String, timestamp: Long) {
+    val colorScheme = MaterialTheme.colorScheme
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFF5252).copy(alpha = 0.1f)
+            containerColor = colorScheme.error.copy(alpha = 0.1f)
         )
     ) {
         Row(
@@ -236,19 +262,19 @@ private fun LastErrorSection(error: String, timestamp: Long) {
             Icon(
                 Icons.Default.Warning,
                 contentDescription = null,
-                tint = Color(0xFFFF5252),
+                tint = colorScheme.error,
                 modifier = Modifier.size(20.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Dernière erreur",
+                    text = stringResource(id = R.string.sync_history_last_error_title),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = error,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFD32F2F)
+                    color = colorScheme.error
                 )
                 Text(
                     text = formatTimestamp(timestamp),
@@ -266,10 +292,11 @@ private fun LastErrorSection(error: String, timestamp: Long) {
 @Composable
 private fun SuccessRateCard(statistics: SyncStatistics) {
     val successRate = statistics.successRate
+    val colorScheme = MaterialTheme.colorScheme
     val color = when {
-        successRate >= 90f -> Color(0xFF4CAF50)
-        successRate >= 70f -> Color(0xFFFF9800)
-        else -> Color(0xFFFF5252)
+        successRate >= 90f -> colorScheme.tertiary
+        successRate >= 70f -> colorScheme.secondary
+        else -> colorScheme.error
     }
 
     Card {
@@ -285,7 +312,7 @@ private fun SuccessRateCard(statistics: SyncStatistics) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Taux de Succès",
+                    text = stringResource(id = R.string.sync_history_success_rate_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -306,10 +333,10 @@ private fun SuccessRateCard(statistics: SyncStatistics) {
 
             Text(
                 text = when {
-                    successRate >= 90f -> "Excellent! La synchronisation fonctionne parfaitement."
-                    successRate >= 70f -> "Bien. Quelques erreurs occasionnelles."
-                    statistics.totalSyncs == 0 -> "Aucune synchronisation effectuée pour le moment."
-                    else -> "Attention. Plusieurs synchronisations ont échoué."
+                    successRate >= 90f -> stringResource(id = R.string.sync_history_success_rate_message_excellent)
+                    successRate >= 70f -> stringResource(id = R.string.sync_history_success_rate_message_good)
+                    statistics.totalSyncs == 0 -> stringResource(id = R.string.sync_history_success_rate_message_none)
+                    else -> stringResource(id = R.string.sync_history_success_rate_message_warning)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -329,9 +356,9 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
         onClick = { expanded = !expanded },
         colors = CardDefaults.cardColors(
             containerColor = when (entry.status) {
-                SyncHistoryStatus.SUCCESS -> Color(0xFF4CAF50).copy(alpha = 0.05f)
-                SyncHistoryStatus.ERROR -> Color(0xFFFF5252).copy(alpha = 0.05f)
-                SyncHistoryStatus.CONFLICT -> Color(0xFFFF9800).copy(alpha = 0.05f)
+                SyncHistoryStatus.SUCCESS -> MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                SyncHistoryStatus.ERROR -> MaterialTheme.colorScheme.error.copy(alpha = 0.05f)
+                SyncHistoryStatus.CONFLICT -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f)
             }
         )
     ) {
@@ -353,9 +380,9 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                         .clip(CircleShape)
                         .background(
                             when (entry.status) {
-                                SyncHistoryStatus.SUCCESS -> Color(0xFF4CAF50).copy(alpha = 0.2f)
-                                SyncHistoryStatus.ERROR -> Color(0xFFFF5252).copy(alpha = 0.2f)
-                                SyncHistoryStatus.CONFLICT -> Color(0xFFFF9800).copy(alpha = 0.2f)
+                                SyncHistoryStatus.SUCCESS -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                SyncHistoryStatus.ERROR -> MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                                SyncHistoryStatus.CONFLICT -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -368,9 +395,9 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                         },
                         contentDescription = null,
                         tint = when (entry.status) {
-                            SyncHistoryStatus.SUCCESS -> Color(0xFF4CAF50)
-                            SyncHistoryStatus.ERROR -> Color(0xFFFF5252)
-                            SyncHistoryStatus.CONFLICT -> Color(0xFFFF9800)
+                            SyncHistoryStatus.SUCCESS -> MaterialTheme.colorScheme.primary
+                            SyncHistoryStatus.ERROR -> MaterialTheme.colorScheme.error
+                            SyncHistoryStatus.CONFLICT -> MaterialTheme.colorScheme.tertiary
                         },
                         modifier = Modifier.size(20.dp)
                     )
@@ -379,7 +406,37 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                 // Info
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = entry.operation,
+                        text = when (entry.action) {
+                            SyncHistoryAction.UPLOAD -> stringResource(
+                                id = R.string.sync_history_operation_upload,
+                                dataTypeLabel(entry.dataType)
+                            )
+
+                            SyncHistoryAction.DOWNLOAD -> stringResource(
+                                id = R.string.sync_history_operation_download,
+                                dataTypeLabel(entry.dataType)
+                            )
+
+                            SyncHistoryAction.DELETE -> stringResource(
+                                id = R.string.sync_history_operation_delete,
+                                dataTypeLabel(entry.dataType)
+                            )
+
+                            SyncHistoryAction.CONFLICT -> stringResource(
+                                id = R.string.sync_history_operation_conflict,
+                                dataTypeLabel(entry.dataType)
+                            )
+
+                            SyncHistoryAction.CLEANUP -> stringResource(
+                                id = R.string.sync_history_operation_cleanup,
+                                dataTypeLabel(entry.dataType)
+                            )
+
+                            SyncHistoryAction.TEST_CONNECTION -> stringResource(
+                                id = R.string.sync_history_operation_test,
+                                dataTypeLabel(entry.dataType)
+                            )
+                        },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -388,19 +445,25 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (entry.vaultName != null) {
-                        Text(
-                            text = "Vault: ${entry.vaultName}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = providerLabel(entry.providerType),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 // Duration
                 if (entry.durationMs != null) {
+                    val durationText = if (entry.durationMs < 1000) {
+                        stringResource(R.string.sync_history_duration_ms, entry.durationMs)
+                    } else {
+                        stringResource(
+                            R.string.sync_history_duration_seconds,
+                            entry.durationMs / 1000.0
+                        )
+                    }
                     Text(
-                        text = "${entry.durationMs}ms",
+                        text = durationText,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -409,7 +472,9 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                 // Expand Icon
                 Icon(
                     if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Réduire" else "Développer"
+                    contentDescription = stringResource(
+                        if (expanded) R.string.sync_history_expand_less else R.string.sync_history_expand_more
+                    )
                 )
             }
 
@@ -421,52 +486,45 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                     Divider()
 
                     // Provider
-                    DetailRow("Provider", entry.provider)
+                    DetailRow(stringResource(R.string.sync_history_detail_provider), providerLabel(entry.providerType))
 
-                    // Size
-                    if (entry.sizeBytes != null) {
-                        DetailRow("Taille", formatBytes(entry.sizeBytes))
+                    DetailRow(
+                        stringResource(R.string.sync_history_detail_data_type),
+                        dataTypeLabel(entry.dataType)
+                    )
+
+                    entry.sizeBytes?.let { size ->
+                        DetailRow(
+                            stringResource(R.string.sync_history_detail_size),
+                            formatBytes(size)
+                        )
                     }
 
-                    // Changes
-                    if (entry.changesCount != null) {
-                        DetailRow("Modifications", "${entry.changesCount}")
-                    }
-
-                    // Error Message
-                    if (entry.errorMessage != null) {
-                        Divider()
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFF5252).copy(alpha = 0.1f)
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp)
-                            ) {
-                                Text(
-                                    text = "Erreur",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFFD32F2F),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = entry.errorMessage,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFD32F2F)
-                                )
-                            }
+                    entry.durationMs?.let { duration ->
+                        val durationDetail = if (duration < 1000) {
+                            stringResource(R.string.sync_history_duration_ms, duration)
+                        } else {
+                            stringResource(R.string.sync_history_duration_seconds, duration / 1000.0)
                         }
+                        DetailRow(stringResource(R.string.sync_history_detail_duration), durationDetail)
                     }
 
-                    // Conflict Info
-                    if (entry.conflictResolution != null) {
+                    val statusMessage = entry.message?.takeIf { it.isNotBlank() }
+                        ?: if (entry.status == SyncHistoryStatus.CONFLICT) {
+                            stringResource(R.string.sync_history_conflict_message)
+                        } else {
+                            null
+                        }
+
+                    if (statusMessage != null) {
                         Divider()
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+                                containerColor = when (entry.status) {
+                                    SyncHistoryStatus.SUCCESS -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    SyncHistoryStatus.ERROR -> MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                                    SyncHistoryStatus.CONFLICT -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
+                                }
                             )
                         ) {
                             Column(
@@ -475,15 +533,29 @@ private fun SyncHistoryEntryCard(entry: SyncHistoryEntry) {
                                     .padding(12.dp)
                             ) {
                                 Text(
-                                    text = "Conflit résolu",
+                                    text = stringResource(
+                                        when (entry.status) {
+                                            SyncHistoryStatus.SUCCESS -> R.string.sync_history_status_success
+                                            SyncHistoryStatus.ERROR -> R.string.sync_history_status_error
+                                            SyncHistoryStatus.CONFLICT -> R.string.sync_history_status_conflict
+                                        }
+                                    ),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFFF57C00),
+                                    color = when (entry.status) {
+                                        SyncHistoryStatus.SUCCESS -> MaterialTheme.colorScheme.primary
+                                        SyncHistoryStatus.ERROR -> MaterialTheme.colorScheme.error
+                                        SyncHistoryStatus.CONFLICT -> MaterialTheme.colorScheme.tertiary
+                                    },
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Stratégie: ${entry.conflictResolution}",
+                                    text = statusMessage,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFF57C00)
+                                    color = when (entry.status) {
+                                        SyncHistoryStatus.SUCCESS -> MaterialTheme.colorScheme.primary
+                                        SyncHistoryStatus.ERROR -> MaterialTheme.colorScheme.error
+                                        SyncHistoryStatus.CONFLICT -> MaterialTheme.colorScheme.tertiary
+                                    }
                                 )
                             }
                         }
@@ -536,12 +608,12 @@ private fun EmptyHistoryCard() {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
             Text(
-                text = "Aucun historique",
+                text = stringResource(id = R.string.empty_history),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Les synchronisations apparaîtront ici",
+                text = stringResource(id = R.string.sync_history_empty_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -556,36 +628,39 @@ private fun formatTimestamp(timestamp: Long): String {
     return sdf.format(Date(timestamp))
 }
 
+@Composable
 private fun formatBytes(bytes: Long): String {
+    val context = LocalContext.current
     return when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        else -> String.format("%.2f MB", bytes / (1024.0 * 1024.0))
+        bytes < 1_024 -> context.getString(R.string.sync_bytes_b, bytes)
+        bytes < 1_024 * 1_024 -> context.getString(R.string.sync_bytes_kb, bytes / 1_024)
+        bytes < 1_024L * 1_024L * 1_024L ->
+            context.getString(R.string.sync_bytes_mb, (bytes / (1_024L * 1_024L)).toInt())
+        else -> context.getString(
+            R.string.sync_bytes_gb,
+            (bytes / (1_024L * 1_024L * 1_024L)).toInt()
+        )
     }
 }
 
-/**
- * Entrée d'historique de synchronisation
- */
-data class SyncHistoryEntry(
-    val id: String,
-    val timestamp: Long,
-    val operation: String,
-    val status: SyncHistoryStatus,
-    val provider: String,
-    val vaultName: String? = null,
-    val durationMs: Long? = null,
-    val sizeBytes: Long? = null,
-    val changesCount: Int? = null,
-    val errorMessage: String? = null,
-    val conflictResolution: String? = null
-)
+@Composable
+private fun providerLabel(providerType: CloudProviderType): String {
+    return when (providerType) {
+        CloudProviderType.GOOGLE_DRIVE -> stringResource(R.string.sync_provider_google_drive)
+        CloudProviderType.ONEDRIVE -> stringResource(R.string.sync_provider_onedrive)
+        CloudProviderType.WEBDAV -> stringResource(R.string.sync_provider_webdav)
+        CloudProviderType.PCLOUD -> stringResource(R.string.sync_provider_pcloud)
+        CloudProviderType.PROTON_DRIVE -> stringResource(R.string.sync_provider_proton_drive)
+        CloudProviderType.NONE -> stringResource(R.string.sync_provider_none)
+    }
+}
 
-/**
- * Statut d'une synchronisation
- */
-enum class SyncHistoryStatus {
-    SUCCESS,
-    ERROR,
-    CONFLICT
+@Composable
+private fun dataTypeLabel(dataType: SyncDataType): String {
+    return when (dataType) {
+        SyncDataType.SETTINGS -> stringResource(R.string.sync_data_type_settings)
+        SyncDataType.HISTORY -> stringResource(R.string.sync_data_type_history)
+        SyncDataType.CUSTOM_WORDS -> stringResource(R.string.sync_data_type_custom_words)
+        SyncDataType.FAVORITES -> stringResource(R.string.sync_data_type_favorites)
+    }
 }

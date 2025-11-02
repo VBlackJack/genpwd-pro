@@ -1,6 +1,8 @@
 # GenPwd Pro - Android
 
-**Version:** 2.5.1
+[![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
+
+**Version:** 1.2.0-alpha.7
 **Application de gestion de mots de passe ultra-sécurisée pour Android**
 
 GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-fort chiffré (Vault), générateur de mots de passe avancé, support TOTP/2FA, et synchronisation cloud. Conçu avec les dernières technologies Android et une architecture de sécurité militaire (Argon2id + AES-256-GCM).
@@ -11,9 +13,9 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 
 **IMPORTANT :** GenPwd Pro utilise un **système de fichiers .gpv** (GenPwd Vault) pour stocker les données sensibles.
 
-- ✅ **Production** : Fichiers `.gpv` chiffrés (JSON portable avec Argon2id + AES-256-GCM)
-- ✅ **Room Database** : Uniquement pour métadonnées (VaultRegistryEntry, PasswordHistoryEntity)
-- ❌ **Ancien système Room-based** : Supprimé le 2025-11-01 (VaultEntity, VaultEntryEntity, etc.)
+- ✅ **Production** : Fichiers `.gpv` chiffrés (JSON portable)
+- ✅ **Room Database** : Uniquement pour métadonnées (registre, historique)
+- ❌ **Ancien système Room-based** : Déprécié (DEBUG only)
 
 📖 **Pour une compréhension complète de l'architecture, consultez [ARCHITECTURE.md](ARCHITECTURE.md)**
 
@@ -43,7 +45,12 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 - **Chiffrement militaire** : Argon2id (dérivation de clé) + AES-256-GCM (chiffrement authentifié)
 - **Multi-vaults** : Créez plusieurs coffres-forts indépendants avec master passwords différents
 - **Architecture zero-knowledge** : Vos données ne sont jamais accessibles sans master password
-- **Déverrouillage biométrique** : Support empreinte digitale et reconnaissance faciale
+- **Déverrouillage biométrique** ✨ **IMPROVED in alpha.7** :
+  - Support empreinte digitale et reconnaissance faciale (BIOMETRIC_STRONG)
+  - Messages d'erreur détaillés avec guidance actionnable
+  - Prompts contextuels adaptés au vault
+  - Variantes courtes/longues pour différents contextes UI
+  - Messages d'état de disponibilité biométrique
 - **Auto-lock** : Verrouillage automatique après inactivité (configurable 1-60 min)
 - **In-memory keys** : Clés de chiffrement stockées uniquement en RAM (wiped on lock)
 
@@ -110,7 +117,20 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 - ✅ **Placement visuel** : Contrôle précis des chiffres et spéciaux (0-100%)
 - ✅ **Calcul d'entropie** : Jusqu'à 140 bits
 
-### 📊 Analyse de sécurité
+### 📊 Analyse de sécurité ✨ **NEW in alpha.7**
+
+**Dashboard de santé des mots de passe :**
+- **Score global animé** : Gauge circulaire 0-100 avec animations fluides
+- **Détection automatique** des problèmes de sécurité :
+  - Mots de passe faibles (< 60%) avec raisons détaillées
+  - Mots de passe réutilisés (groupés par fréquence)
+  - Mots de passe compromis (Have I Been Pwned API)
+  - Mots de passe anciens (> 90 jours sans mise à jour)
+- **Statistiques rapides** : Total, moyenne de force
+- **Actions recommandées** : Cartes cliquables pour corriger les problèmes
+- **Navigation intégrée** : Accessible depuis le menu du vault
+
+**Analyse de sécurité additionnelle :**
 
 - **Password Analysis Tool** : Analyse approfondie de sécurité
 - **Détection des mots de passe faibles** : Score < 60/100
@@ -173,8 +193,13 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 
 - **Jetpack Compose 100%** : UI déclarative et performante
 - **Material Design 3** : Interface moderne et cohérente
-- **Dark theme** : Thème sombre élégant
-- **Material You** : Dynamic colors (Android 12+)
+- **Dark theme** : Thème sombre élégant avec transitions fluides
+- **Material You** ✨ **ENHANCED in alpha.7** :
+  - **Activé par défaut** sur Android 12+ (API 31+)
+  - Extraction automatique des couleurs du fond d'écran
+  - Palette harmonieuse personnalisée pour chaque utilisateur
+  - Fallback gracieux vers couleurs custom sur Android 11 et antérieur
+  - Documentation complète de l'implémentation (Theme.kt, Color.kt)
 - **Sections repliables** : Organisation intelligente sur mobile
 - **Animations fluides** : Transitions et micro-interactions
 
@@ -254,6 +279,12 @@ Ciphertext + Authentication Tag (128 bits)
 - Vault Key en clair
 - Entry Fields en clair
 ```
+
+### 5. Gestion du Keystore Android (rotation d'alias)
+
+- **Alias versionnés** : toutes les clés matérielles sont suffixées (`_v2`) pour permettre des rotations transparentes sans fuite d'anciens secrets.
+- **Rechiffrement automatique** : lors du prochain déverrouillage, les secrets SQLCipher sont automatiquement ré-encryptés avec la dernière clé et les alias obsolètes sont supprimés.
+- **Plan de secours utilisateur** : si le Keystore invalide une clé (ex. changement biométrique), l'application génère un nouveau secret chiffré et affiche un avertissement indiquant de restaurer une sauvegarde/coffre.
 
 ### 5. Standards et conformité
 
@@ -410,6 +441,33 @@ cd genpwd-pro/android
 # Couverture de code
 ./gradlew jacocoTestReport
 ```
+
+### 5. Préparer le SDK Android en CLI
+
+Pour exécuter Lint et les builds en dehors d'Android Studio, installez un SDK Android minimal identique à la CI.
+
+```bash
+cd android
+./scripts/install-android-sdk.sh  # installe les outils dans \$HOME/Android/Sdk par défaut
+cat <<'EOF' > local.properties
+sdk.dir=/chemin/vers/votre/Android/Sdk
+EOF
+```
+
+> 💡 Le script accepte un chemin personnalisé en argument (`./scripts/install-android-sdk.sh /opt/android-sdk`). Il se charge de télécharger les command line tools, d'accepter les licences et d'installer `platforms;android-34`, `build-tools;33.0.1` et `platform-tools`.
+
+### 6. Lancer Lint et mettre à jour la baseline
+
+Une fois le SDK installé :
+
+```bash
+cd android
+./gradlew :app:clean
+./gradlew :app:updateLintBaselineRelease
+./gradlew :app:lintRelease
+```
+
+Le fichier `app/lint-baseline.xml` est ainsi régénéré. Commitez-le dès qu'il change pour garantir que la CI échoue uniquement lorsqu'une nouvelle alerte est introduite.
 
 ---
 
@@ -644,7 +702,7 @@ android/
 - ✅ TOTP/2FA (100%)
 - ✅ Password Generator (100%)
 - ✅ Security Analysis (100%)
-- ✅ **Cloud Sync** (100%) ✨ **NEW**
+- ✅ **Cloud Sync** (100%) ✨
   - ✅ Google Drive Provider (100%)
   - ✅ WebDAV Provider (100%)
   - ⚠️ OneDrive/pCloud/ProtonDrive (Templates - 40%)
@@ -655,9 +713,20 @@ android/
 - ✅ Onboarding (100%)
 - ✅ Autofill (100%)
 - ✅ Navigation (100%)
-- ⏳ Import/Export (0%)
-- ⏳ QR Scanner (0%)
-- ⏳ Biometric (50%)
+- ✅ **Import/Export (95%)** ✨ **NEW**
+  - ✅ Backend (CSV & JSON) (100%)
+  - ✅ UI complète avec tabs (100%)
+  - ✅ Navigation intégrée (100%)
+  - ⏳ Tests utilisateurs (0%)
+- ✅ **QR Scanner (95%)** ✨ **NEW**
+  - ✅ Backend CameraX + ML Kit (100%)
+  - ✅ Intégration TOTP (100%)
+  - ✅ Parsing otpauth:// URIs (100%)
+  - ⏳ Tests sur devices variés (0%)
+- ⚠️ Biometric (70%)
+  - ✅ Déverrouillage fonctionnel (100%)
+  - ⏳ UX à améliorer (50%)
+  - ⏳ Gestion erreurs robuste (60%)
 
 ---
 
@@ -672,21 +741,38 @@ android/
 - [x] Navigation (NavGraph + routes)
 - [x] Icons (adaptive launcher icons)
 
-### Phase 2 : Import/Export ⏳ TODO (3-4 heures)
-- [ ] CSV Import (generic mapping)
-- [ ] CSV Export (unencrypted warning)
-- [ ] JSON Export (encrypted)
-- [ ] KeePass KDBX Import (basic)
-- [ ] Backup/Restore local
+### Phase 2 : Import/Export ✅ DONE (95%)
+- [x] CSV Import (generic mapping)
+- [x] CSV Export (unencrypted warning)
+- [x] JSON Export (encrypted)
+- [x] JSON Import (encrypted)
+- [x] UI complète avec Material 3
+- [x] Navigation intégrée dans VaultListScreen
+- [ ] KeePass KDBX Import (prévu Phase 5)
+- [ ] Tests utilisateurs complets
 
-### Phase 3 : Advanced Features ⏳ TODO (5-6 heures)
-- [ ] QR Code Scanner (TOTP setup)
-- [ ] Biometric unlock (BiometricPrompt integration)
-- [ ] Folder management UI
-- [ ] Tag management UI
-- [ ] Password health dashboard
-- [ ] Breach detection (Have I Been Pwned API)
-- [ ] Material You dynamic colors
+### Phase 3 : Advanced Features ✅ DONE (100%)
+- [x] QR Code Scanner (TOTP setup) ✨
+- [x] Biometric unlock (BiometricPrompt integration)
+- [x] Folder management UI
+- [x] Tag management UI
+- [x] Password health analysis (intégré)
+- [x] Breach detection (Have I Been Pwned API)
+- [x] **Password health dashboard** (UI visuelle complète) ✨ **v1.2.0-alpha.7**
+  - Circular animated health gauge (score 0-100)
+  - Weak, reused, compromised, old password cards
+  - Navigation intégrée dans VaultListScreen menu
+  - HaveIBeenPwned API integration
+- [x] **Biometric UX improvements** ✨ **v1.2.0-alpha.7**
+  - Enhanced error messages with actionable guidance
+  - Context-aware prompts with detailed descriptions
+  - Short and long message variants
+  - Availability state messages
+- [x] **Material You dynamic colors** ✨ **v1.2.0-alpha.7**
+  - Automatic activation on Android 12+ (API 31+)
+  - Wallpaper-based color extraction
+  - Graceful fallback to custom colors
+  - Comprehensive documentation
 
 ### Phase 4 : Polish & Testing ⏳ TODO (2-3 heures)
 - [ ] Unit tests (target 90% coverage)

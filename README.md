@@ -1,6 +1,7 @@
 # GenPwd Pro v2.5.1 🔐
 
 [![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
+[![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
 [![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
@@ -42,6 +43,27 @@ npm run dev
 | `npm run test:watch` | Relance les tests en continu via nodemon |
 | `npm run test:browser` | Vérifie l'interface via Puppeteer |
 | `npm run lint` | Analyse statique ESLint sur src/ et tools/ |
+
+## 🧱 Android build tooling
+
+L'application Android est livrée avec un environnement de développement complet prêt à l'emploi.
+
+### Option 1 — Devcontainer (recommandé)
+
+1. Installez [VS Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers).
+2. Ouvrez le dossier racine et choisissez **Reopen in Container**. L'image installe automatiquement le SDK Android (cmdline-tools, platform-tools, build-tools 34.0.0, platforms 35 et 34).
+3. Une fois la configuration terminée, ouvrez un terminal **dans le devcontainer** et exécutez les vérifications suivantes :
+
+```bash
+cd android
+./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
+```
+
+### Option 2 — Installation locale
+
+Exécutez le script `./.devcontainer/setup-android-sdk.sh` depuis la racine. Il télécharge les composants du SDK avec `sdkmanager` et génère `android/local.properties` avec `sdk.dir=...`.
+
+Un exemple d'exécution GitHub Actions est disponible dans [`docs/ci/android-ci-sample.txt`](docs/ci/android-ci-sample.txt).
 
 ## 🎮 Utilisation rapide
 
@@ -124,6 +146,28 @@ Les contributions sont bienvenues ! Consultez notre guide de contribution pour :
 - Créer des dictionnaires personnalisés
 - Améliorer l'interface utilisateur
 - Optimiser les performances
+
+### 🐳 Environnement de développement (Dev Container)
+
+Un environnement VS Code Dev Container est fourni pour simplifier l'installation du JDK 17 et du SDK Android.
+
+1. Installez l'extension **Dev Containers** dans VS Code.
+2. Ouvrez ce dépôt puis exécutez `Dev Containers: Reopen in Container`.
+3. Attendez la fin du script `setup-android-sdk.sh` (lancé automatiquement) qui installe `platform-tools`, `build-tools;34.0.0` ainsi que `platforms;android-35` et `platforms;android-34`, puis génère `android/local.properties`.
+4. Depuis le terminal du conteneur, exécutez :
+
+```bash
+cd android
+./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
+```
+
+### 🔍 Intégration Android
+
+Le module Android applique des contrôles stricts (Lint, ktlint, Detekt et tests JUnit). Exécutez la commande suivante depuis le dossier `android/` avant toute Pull Request :
+
+```bash
+./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
+```
 
 ## 📄 Licence
 

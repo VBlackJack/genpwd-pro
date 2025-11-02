@@ -6,18 +6,14 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.presentation.navigation.AppNavGraph
 import com.julien.genpwdpro.presentation.navigation.Screen
-import com.julien.genpwdpro.domain.session.SessionManager
-import com.julien.genpwdpro.domain.session.VaultSessionManager
-import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 /**
@@ -29,7 +25,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    sessionManager: SessionManager,
     vaultSessionManager: VaultSessionManager,
     startDestination: String = Screen.Dashboard.route // Destination de départ
 ) {
@@ -43,9 +38,15 @@ fun MainScreen(
         Screen.Dashboard.route,
         Screen.Generator.route,
         Screen.History.route,
-        Screen.VaultManager.route
+        Screen.VaultManager.route,
+        // Enable drawer in vault screens for better navigation
+        "vault_list/{vaultId}" // VaultList screen pattern
     )
-    val showDrawer = currentDestination?.route in screensWithDrawer
+    // Check if current route matches any drawer-enabled screen (including parameterized routes)
+    val showDrawer = screensWithDrawer.any { pattern ->
+        currentDestination?.route?.startsWith(pattern.substringBefore("{")) == true ||
+        currentDestination?.route == pattern
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -115,7 +116,6 @@ fun MainScreen(
                 AppNavGraph(
                     navController = navController,
                     startDestination = startDestination, // Utiliser la destination dynamique
-                    sessionManager = sessionManager,
                     vaultSessionManager = vaultSessionManager
                 )
             }
@@ -153,12 +153,13 @@ fun DrawerHeader() {
 }
 
 fun getCurrentScreenTitle(route: String?): String {
-    return when (route) {
-        Screen.Dashboard.route -> "GenPwd Pro"
-        Screen.Generator.route -> "Générateur"
-        Screen.History.route -> "Historique"
-        Screen.VaultManager.route -> "Gestion des Coffres"
-        Screen.Analyzer.route -> "Analyseur"
+    return when {
+        route == Screen.Dashboard.route -> "GenPwd Pro"
+        route == Screen.Generator.route -> "Générateur"
+        route == Screen.History.route -> "Historique"
+        route == Screen.VaultManager.route -> "Gestion des Coffres"
+        route == Screen.Analyzer.route -> "Analyseur"
+        route?.startsWith("vault_list/") == true -> "Coffre-fort"
         else -> "GenPwd Pro"
     }
 }
@@ -173,11 +174,32 @@ data class DrawerNavItem(
 private val drawerItems = listOf(
     DrawerNavItem(Screen.Dashboard.route, Icons.Default.Home, Icons.Default.Home, "Accueil"),
     DrawerNavItem(Screen.Generator.route, Icons.Default.VpnKey, Icons.Default.VpnKey, "Générateur"),
-    DrawerNavItem(Screen.VaultManager.route, Icons.Default.Storage, Icons.Default.Storage, "Gestion des Coffres"),
+    DrawerNavItem(
+        Screen.VaultManager.route,
+        Icons.Default.Storage,
+        Icons.Default.Storage,
+        "Gestion des Coffres"
+    ),
     DrawerNavItem(Screen.History.route, Icons.Default.History, Icons.Default.History, "Historique")
 )
 
 private val secondaryDrawerItems = listOf(
-    DrawerNavItem(Screen.Analyzer.route, Icons.Default.Security, Icons.Default.Security, "Analyseur"),
-    DrawerNavItem(Screen.SyncSettings.route, Icons.Default.Settings, Icons.Default.Settings, "Paramètres")
+    DrawerNavItem(
+        Screen.Analyzer.route,
+        Icons.Default.Security,
+        Icons.Default.Security,
+        "Analyseur"
+    ),
+    DrawerNavItem(
+        Screen.CustomPhrase.route,
+        Icons.Default.Key,
+        Icons.Default.Key,
+        "Phrases personnalisées"
+    ),
+    DrawerNavItem(
+        Screen.SyncSettings.route,
+        Icons.Default.Settings,
+        Icons.Default.Settings,
+        "Paramètres"
+    )
 )

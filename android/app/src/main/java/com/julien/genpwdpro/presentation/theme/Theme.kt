@@ -54,13 +54,35 @@ private val LightColorScheme = lightColorScheme(
 /**
  * Thème de l'application GenPwd Pro
  *
- * Supporte :
- * - Thèmes clair et sombre avec transition fluide
- * - Material You dynamic colors sur Android 12+ (S)
+ * # Fonctionnalités
  *
- * @param darkTheme Force le thème sombre (par défaut: suit le système)
- * @param dynamicColor Active les couleurs dynamiques Android 12+ (activé par défaut si disponible)
+ * ## Thèmes clair et sombre
+ * - Suit automatiquement le thème système par défaut
+ * - Transitions fluides entre les modes
+ * - Palettes de couleurs optimisées pour l'accessibilité (WCAG AA)
+ *
+ * ## Material You - Couleurs dynamiques (Android 12+)
+ * - **Activé par défaut** sur les appareils Android 12+ (API 31+)
+ * - Extrait automatiquement les couleurs du fond d'écran de l'utilisateur
+ * - Crée une palette harmonieuse qui s'adapte aux préférences visuelles
+ * - Fallback automatique vers la palette personnalisée sur Android 11 et antérieur
+ * - Utilise `dynamicDarkColorScheme()` et `dynamicLightColorScheme()` de Material3
+ *
+ * ## Comment ça marche
+ * Material You analyse le fond d'écran de l'utilisateur et génère une palette
+ * de couleurs cohérente qui s'applique à toute l'application. Cela crée une
+ * expérience visuelle personnalisée et harmonieuse avec le reste du système.
+ *
+ * Sur Android 11 et antérieur, l'application utilise les couleurs personnalisées
+ * définies dans Color.kt (cyan, gray-blue, green).
+ *
+ * @param darkTheme Force le thème sombre (par défaut: suit le système avec isSystemInDarkTheme())
+ * @param dynamicColor Active Material You dynamic colors sur Android 12+ (activé par défaut)
+ *                     Passez `false` pour forcer l'utilisation de la palette personnalisée
  * @param content Le contenu de l'application
+ *
+ * @see dynamicDarkColorScheme Documentation Material3 pour couleurs dynamiques
+ * @see dynamicLightColorScheme Documentation Material3 pour couleurs dynamiques
  */
 @Composable
 fun GenPwdProTheme(

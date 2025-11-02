@@ -1,12 +1,12 @@
 package com.julien.genpwdpro.presentation.dashboard
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,8 +15,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
@@ -26,13 +26,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
-import com.julien.genpwdpro.presentation.utils.ClipboardUtils
-import kotlinx.coroutines.launch
+import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.presentation.security.BiometricGate
+import com.julien.genpwdpro.presentation.util.ClipboardUtils
 import kotlin.math.max
+import kotlinx.coroutines.launch
 
 /**
  * Dashboard unifié - Page d'accueil de l'application
@@ -55,9 +59,38 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val requireBiometric by viewModel.requireBiometricForSensitiveActions.collectAsState()
+    val clipboardTtlMs by viewModel.clipboardTtlMs.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    val biometricPromptTitle = context.getString(R.string.biometric_prompt_title)
+    val biometricRequiredMessage = context.getString(R.string.biometric_required_message)
+    val biometricUnavailableMessage = context.getString(R.string.biometric_unavailable_message)
+
+    fun performSensitiveAction(action: () -> Unit) {
+        if (!requireBiometric) {
+            action()
+            return
+        }
+        val activity = context as? FragmentActivity
+        if (activity != null) {
+            BiometricGate.prompt(
+                activity = activity,
+                title = biometricPromptTitle,
+                onSuccess = action,
+                onFail = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(biometricRequiredMessage)
+                    }
+                }
+            )
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(biometricUnavailableMessage)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadQuickPassword()
@@ -93,32 +126,23 @@ fun DashboardScreen(
                     onGenerate = { viewModel.generateQuickPassword() },
                     onCopy = {
                         uiState.quickPassword?.let { password ->
-                            ClipboardUtils.copyWithTimeout(
-                                context = context,
-                                text = password,
-                                showToast = false
-                            )
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Copié ! Auto-effacement dans 60s")
+                            performSensitiveAction {
+                                ClipboardUtils.copySensitive(
+                                    context = context,
+                                    label = "password",
+                                    value = password,
+                                    ttlMs = clipboardTtlMs
+                                )
+                                scope.launch {
+                                    val message = ClipboardUtils.buildAutoClearMessage(
+                                        context,
+                                        clipboardTtlMs
+                                    )
+                                    snackbarHostState.showSnackbar(message)
+                                }
                             }
                         }
                     }
-                )
-            }
-
-            // Section Outils Rapides
-            item {
-                SectionHeader(
-                    title = "Outils Rapides",
-                    icon = Icons.Default.Build
-                )
-            }
-
-            item {
-                QuickToolsRow(
-                    onNavigateToAnalyzer = onNavigateToAnalyzer,
-                    onNavigateToHistory = onNavigateToHistory,
-                    onNavigateToCustomPhrase = onNavigateToCustomPhrase
                 )
             }
 
@@ -222,7 +246,7 @@ private fun QuickGeneratorCard(
                 targetState = password,
                 transitionSpec = {
                     fadeIn(animationSpec = spring(stiffness = Spring.StiffnessHigh)) with
-                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh))
+                        fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh))
                 },
                 label = "password_animation"
             ) { currentPassword ->
@@ -511,7 +535,7 @@ private fun VaultOverviewCard(
                         contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(if (isActive) "Continuer" else "Déverrouiller")
+                    Text(if (isActive) "Continuer" else "Ouvrir")
                 }
 
                 OutlinedButton(

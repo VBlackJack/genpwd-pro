@@ -63,7 +63,9 @@ class GeneratePasswordUseCase(
         // 4. Calcul de l'entropie
         val entropy = when (settings.mode) {
             GenerationMode.SYLLABLES -> {
-                val charSets = com.julien.genpwdpro.domain.utils.CharacterSets.getCharSets(settings.policy)
+                val charSets = com.julien.genpwdpro.domain.utils.CharacterSets.getCharSets(
+                    settings.policy
+                )
                 EntropyCalculator.calculateSyllablesEntropy(
                     password = password,
                     consonantsPoolSize = charSets.consonants.size,
@@ -82,7 +84,7 @@ class GeneratePasswordUseCase(
             GenerationMode.CUSTOM_PHRASE -> {
                 // Entropie basée sur la taille de la liste personnalisée
                 customPhraseGenerator.calculateEntropy(
-                    wordListSize = settings.customPhraseWords.size.coerceAtLeast(10),
+                    wordListSize = settings.customPhraseWords.size.coerceAtLeast(CustomPhraseGenerator.MIN_WORD_LIST_SIZE),
                     wordCount = settings.customPhraseWordCount
                 )
             }

@@ -1,0 +1,9 @@
+HSPLcom/julien/genpwdpro/GenPwdProApplication;
+HSPLcom/julien/genpwdpro/presentation/MainActivity;
+HSPLcom/julien/genpwdpro/presentation/otp/OtpQrScannerActivity;
+HSPLandroidx/compose/material3/SurfaceKt;
+HSPLandroidx/compose/runtime/ComposerImpl;
+HSPLandroidx/activity/ComponentActivity;
+HSPLcom/julien/genpwdpro/presentation/screens/GeneratorScreenKt;
+HSPLcom/julien/genpwdpro/presentation/vault/UnlockVaultScreenKt;
+HSPLcom/julien/genpwdpro/presentation/vault/VaultListScreenKt;

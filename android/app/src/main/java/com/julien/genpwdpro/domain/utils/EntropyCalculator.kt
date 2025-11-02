@@ -122,10 +122,10 @@ object EntropyCalculator {
      */
     fun getStrengthColor(entropy: Double): Long {
         return when {
-            entropy < 50 -> 0xFFEF4444  // Rouge
-            entropy < 70 -> 0xFFF59E0B  // Orange
+            entropy < 50 -> 0xFFEF4444 // Rouge
+            entropy < 70 -> 0xFFF59E0B // Orange
             entropy < 100 -> 0xFF10B981 // Vert
-            else -> 0xFF15BEFF          // Bleu cyan
+            else -> 0xFF15BEFF // Bleu cyan
         }
     }
 }

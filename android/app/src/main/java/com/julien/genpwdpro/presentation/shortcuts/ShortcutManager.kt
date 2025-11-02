@@ -3,11 +3,11 @@ package com.julien.genpwdpro.presentation.shortcuts
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.julien.genpwdpro.R
+import com.julien.genpwdpro.core.ipc.IntentSanitizer
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.presentation.MainActivity
 
@@ -50,6 +50,7 @@ object AppShortcutManager {
             action = Intent.ACTION_VIEW
             putExtra(EXTRA_GENERATION_MODE, GenerationMode.SYLLABLES.name)
             putExtra(EXTRA_QUICK_GENERATE, true)
+            IntentSanitizer.stripAllExcept(this, setOf(EXTRA_GENERATION_MODE, EXTRA_QUICK_GENERATE))
         }
 
         return ShortcutInfoCompat.Builder(context, SHORTCUT_SYLLABLES)
@@ -69,6 +70,7 @@ object AppShortcutManager {
             action = Intent.ACTION_VIEW
             putExtra(EXTRA_GENERATION_MODE, GenerationMode.PASSPHRASE.name)
             putExtra(EXTRA_QUICK_GENERATE, true)
+            IntentSanitizer.stripAllExcept(this, setOf(EXTRA_GENERATION_MODE, EXTRA_QUICK_GENERATE))
         }
 
         return ShortcutInfoCompat.Builder(context, SHORTCUT_PASSPHRASE)
@@ -88,6 +90,7 @@ object AppShortcutManager {
             action = Intent.ACTION_VIEW
             putExtra(EXTRA_GENERATION_MODE, GenerationMode.LEET.name)
             putExtra(EXTRA_QUICK_GENERATE, true)
+            IntentSanitizer.stripAllExcept(this, setOf(EXTRA_GENERATION_MODE, EXTRA_QUICK_GENERATE))
         }
 
         return ShortcutInfoCompat.Builder(context, SHORTCUT_LEET)

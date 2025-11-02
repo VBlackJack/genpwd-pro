@@ -181,10 +181,11 @@ private fun OnboardingBottomBar(
                 repeat(totalPages) { index ->
                     PageIndicator(
                         isActive = index == currentPage,
-                        color = if (index == currentPage)
+                        color = if (index == currentPage) {
                             MaterialTheme.colorScheme.primary
-                        else
+                        } else {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        }
                     )
                 }
             }

@@ -3,14 +3,14 @@ package com.julien.genpwdpro.security
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.dao.updateById
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.dao.updateById
+import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.suspendCancellableCoroutine
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -19,6 +19,9 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.security.UnrecoverableKeyException
 
 /**
  * Gestionnaire pour le déverrouillage biométrique des vaults
@@ -58,8 +61,8 @@ class BiometricVaultManager @Inject constructor(
         private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
         private const val KEY_PREFIX = "vault_biometric_"
         private const val TRANSFORMATION = "${KeyProperties.KEY_ALGORITHM_AES}/" +
-                "${KeyProperties.BLOCK_MODE_GCM}/" +
-                "${KeyProperties.ENCRYPTION_PADDING_NONE}"
+            "${KeyProperties.BLOCK_MODE_GCM}/" +
+            "${KeyProperties.ENCRYPTION_PADDING_NONE}"
         private const val GCM_TAG_LENGTH = 128
     }
 
@@ -87,7 +90,7 @@ class BiometricVaultManager @Inject constructor(
         masterPassword: String
     ): Result<Unit> {
         return try {
-            Log.d(TAG, "Enabling biometric for vault: $vaultId")
+            SafeLog.d(TAG, "Enabling biometric for vault: vaultId=${SafeLog.redact(vaultId)}")
 
             // 1. Obtenir ou créer la clé Keystore
             val secretKey = getOrCreateKey(vaultId)
@@ -112,11 +115,13 @@ class BiometricVaultManager @Inject constructor(
                 )
             }
 
-            Log.i(TAG, "Biometric enabled successfully for vault: $vaultId")
+            SafeLog.i(TAG, "Biometric enabled successfully for vault: vaultId=${SafeLog.redact(vaultId)}")
             Result.success(Unit)
-
+        } catch (c: CancellationException) {
+            SafeLog.i(TAG, "Biometric enable cancelled for vault: vaultId=${SafeLog.redact(vaultId)}")
+            throw c
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to enable biometric for vault: $vaultId", e)
+            SafeLog.e(TAG, "Failed to enable biometric for vault: vaultId=${SafeLog.redact(vaultId)}", e)
             Result.failure(e)
         }
     }
@@ -139,14 +144,16 @@ class BiometricVaultManager @Inject constructor(
         vaultId: String
     ): Result<String> {
         return try {
-            Log.d(TAG, "Unlocking vault with biometric: $vaultId")
+            SafeLog.d(TAG, "Unlocking vault with biometric: vaultId=${SafeLog.redact(vaultId)}")
 
             // 1. Récupérer les données chiffrées
             val vaultRegistry = vaultRegistryDao.getById(vaultId)
                 ?: return Result.failure(IllegalStateException("Vault not found: $vaultId"))
 
             if (!vaultRegistry.biometricUnlockEnabled) {
-                return Result.failure(IllegalStateException("Biometric not enabled for vault: $vaultId"))
+                return Result.failure(
+                    IllegalStateException("Biometric not enabled for vault: $vaultId")
+                )
             }
 
             val encryptedPassword = vaultRegistry.encryptedMasterPassword
@@ -156,18 +163,36 @@ class BiometricVaultManager @Inject constructor(
                 ?: return Result.failure(IllegalStateException("IV not found"))
 
             // 2. Préparer le cipher pour déchiffrement
-            val secretKey = getOrCreateKey(vaultId)
+            val secretKey = try {
+                getOrCreateKey(vaultId)
+            } catch (e: KeyPermanentlyInvalidatedException) {
+                handleInvalidatedKey(vaultId)
+                return Result.failure(BiometricEnrollmentInvalidatedException())
+            } catch (e: UnrecoverableKeyException) {
+                handleInvalidatedKey(vaultId)
+                return Result.failure(BiometricEnrollmentInvalidatedException())
+            }
             val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH, iv))
+            try {
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH, iv))
+            } catch (e: KeyPermanentlyInvalidatedException) {
+                handleInvalidatedKey(vaultId)
+                return Result.failure(BiometricEnrollmentInvalidatedException())
+            }
 
             // 3. Afficher le prompt biométrique et déchiffrer
             val decryptedPassword = showBiometricPrompt(activity, cipher, encryptedPassword)
 
-            Log.i(TAG, "Vault unlocked successfully with biometric: $vaultId")
+            SafeLog.i(TAG, "Vault unlocked successfully with biometric: vaultId=${SafeLog.redact(vaultId)}")
             Result.success(decryptedPassword)
-
+        } catch (c: CancellationException) {
+            SafeLog.i(TAG, "Biometric unlock cancelled: vaultId=${SafeLog.redact(vaultId)}")
+            throw c
+        } catch (e: BiometricEnrollmentInvalidatedException) {
+            SafeLog.w(TAG, "Biometric enrollment invalidated for vault: vaultId=${SafeLog.redact(vaultId)}")
+            Result.failure(e)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to unlock with biometric: $vaultId", e)
+            SafeLog.e(TAG, "Failed to unlock with biometric: vaultId=${SafeLog.redact(vaultId)}", e)
             Result.failure(e)
         }
     }
@@ -180,7 +205,7 @@ class BiometricVaultManager @Inject constructor(
      */
     suspend fun disableBiometric(vaultId: String): Result<Unit> {
         return try {
-            Log.d(TAG, "Disabling biometric for vault: $vaultId")
+            SafeLog.d(TAG, "Disabling biometric for vault: vaultId=${SafeLog.redact(vaultId)}")
 
             // Supprimer les données biométriques de vault_registry
             vaultRegistryDao.updateById(vaultId) { entry ->
@@ -194,11 +219,10 @@ class BiometricVaultManager @Inject constructor(
             // Supprimer la clé du Keystore
             deleteKey(vaultId)
 
-            Log.i(TAG, "Biometric disabled successfully for vault: $vaultId")
+            SafeLog.i(TAG, "Biometric disabled successfully for vault: vaultId=${SafeLog.redact(vaultId)}")
             Result.success(Unit)
-
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to disable biometric for vault: $vaultId", e)
+            SafeLog.e(TAG, "Failed to disable biometric for vault: vaultId=${SafeLog.redact(vaultId)}", e)
             Result.failure(e)
         }
     }
@@ -218,10 +242,10 @@ class BiometricVaultManager @Inject constructor(
             val result = biometricManager.canAuthenticate(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
             )
-            Log.d(TAG, "Biometric STRONG availability check result: $result")
+            SafeLog.d(TAG, "Biometric STRONG availability check result: $result")
             result == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking biometric availability", e)
+            SafeLog.e(TAG, "Error checking biometric availability", e)
             false
         }
     }
@@ -262,7 +286,7 @@ class BiometricVaultManager @Inject constructor(
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
             // API 30+ : utiliser setUserAuthenticationParameters
             builder.setUserAuthenticationParameters(
-                0,  // 0 = nécessite BiometricPrompt pour chaque opération
+                0, // 0 = nécessite BiometricPrompt pour chaque opération
                 KeyProperties.AUTH_BIOMETRIC_STRONG
             )
         } else {
@@ -282,9 +306,25 @@ class BiometricVaultManager @Inject constructor(
      */
     private fun deleteKey(vaultId: String) {
         val keyAlias = getKeyAlias(vaultId)
-        if (keyStore.containsAlias(keyAlias)) {
-            keyStore.deleteEntry(keyAlias)
+        runCatching {
+            if (keyStore.containsAlias(keyAlias)) {
+                keyStore.deleteEntry(keyAlias)
+            }
+        }.onFailure { error ->
+            SafeLog.w(TAG, "Failed to delete biometric key: vaultId=${SafeLog.redact(vaultId)}", error)
         }
+    }
+
+    private suspend fun handleInvalidatedKey(vaultId: String) {
+        SafeLog.w(TAG, "Biometric key invalidated; resetting enrollment for vault: vaultId=${SafeLog.redact(vaultId)}")
+        vaultRegistryDao.updateById(vaultId) { entry ->
+            entry.copy(
+                biometricUnlockEnabled = false,
+                encryptedMasterPassword = null,
+                masterPasswordIv = null
+            )
+        }
+        deleteKey(vaultId)
     }
 
     /**
@@ -325,12 +365,19 @@ class BiometricVaultManager @Inject constructor(
                         val authenticatedCipher = result.cryptoObject?.cipher
                             ?: throw IllegalStateException("Cipher not available")
 
-                        val encryptedBytes = authenticatedCipher.doFinal(plainData)
-                        val iv = authenticatedCipher.iv
+                        val encryptedBytes: ByteArray
+                        val iv: ByteArray
+                        try {
+                            encryptedBytes = authenticatedCipher.doFinal(plainData)
+                            iv = authenticatedCipher.iv
+                            require(iv.size == 12) { "GCM IV must be 12 bytes" }
+                        } finally {
+                            plainData.fill(0)
+                        }
 
                         continuation.resume(EncryptionResult(encryptedBytes, iv))
                     } catch (e: Exception) {
-                        Log.e(TAG, "Encryption failed", e)
+                        SafeLog.e(TAG, "Encryption failed", e)
                         if (continuation.isActive) {
                             continuation.cancel(e)
                         }
@@ -339,9 +386,10 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Log.w(TAG, "Biometric authentication error: $errString")
+                    SafeLog.w(TAG, "Biometric authentication error: $errString")
 
                     if (continuation.isActive) {
+                        plainData.fill(0)
                         continuation.cancel(
                             Exception("Biometric authentication failed: $errString")
                         )
@@ -350,7 +398,7 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Log.w(TAG, "Biometric authentication failed")
+                    SafeLog.w(TAG, "Biometric authentication failed")
                     // Ne pas annuler la continuation ici, l'utilisateur peut réessayer
                 }
             }
@@ -358,7 +406,8 @@ class BiometricVaultManager @Inject constructor(
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Activer le déverrouillage biométrique")
-            .setSubtitle("Authentifiez-vous pour sécuriser votre coffre")
+            .setSubtitle("Protection de votre coffre-fort")
+            .setDescription("Votre mot de passe principal sera chiffré de manière sécurisée avec votre biométrie. Vous pourrez ensuite déverrouiller ce coffre avec votre empreinte ou votre visage.")
             .setNegativeButtonText("Annuler")
             .setAllowedAuthenticators(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
@@ -371,6 +420,7 @@ class BiometricVaultManager @Inject constructor(
         continuation.invokeOnCancellation {
             // Cleanup si la coroutine est annulée
             biometricPrompt.cancelAuthentication()
+            plainData.fill(0)
         }
     }
 
@@ -398,11 +448,15 @@ class BiometricVaultManager @Inject constructor(
                             ?: throw IllegalStateException("Cipher not available")
 
                         val decryptedBytes = authenticatedCipher.doFinal(encryptedPassword)
-                        val password = String(decryptedBytes, Charsets.UTF_8)
+                        val password = try {
+                            String(decryptedBytes, Charsets.UTF_8)
+                        } finally {
+                            decryptedBytes.fill(0)
+                        }
 
                         continuation.resume(password)
                     } catch (e: Exception) {
-                        Log.e(TAG, "Decryption failed", e)
+                        SafeLog.e(TAG, "Decryption failed", e)
                         if (continuation.isActive) {
                             continuation.cancel(e)
                         }
@@ -411,7 +465,7 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Log.w(TAG, "Biometric authentication error: $errString")
+                    SafeLog.w(TAG, "Biometric authentication error: $errString")
 
                     if (continuation.isActive) {
                         continuation.cancel(
@@ -422,16 +476,17 @@ class BiometricVaultManager @Inject constructor(
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Log.w(TAG, "Biometric authentication failed")
+                    SafeLog.w(TAG, "Biometric authentication failed")
                     // Ne pas annuler la continuation ici, l'utilisateur peut réessayer
                 }
             }
         )
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Déverrouiller le coffre")
-            .setSubtitle("Utilisez votre biométrie pour déverrouiller")
-            .setNegativeButtonText("Annuler")
+            .setTitle("Déverrouiller le coffre-fort")
+            .setSubtitle("Accès sécurisé à vos mots de passe")
+            .setDescription("Utilisez votre empreinte digitale ou reconnaissance faciale pour déchiffrer votre coffre.")
+            .setNegativeButtonText("Utiliser le mot de passe")
             .setAllowedAuthenticators(
                 androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
             )
@@ -446,3 +501,5 @@ class BiometricVaultManager @Inject constructor(
         }
     }
 }
+
+class BiometricEnrollmentInvalidatedException : Exception("Biometric enrollment changed. Please re-enable biometric unlock.")

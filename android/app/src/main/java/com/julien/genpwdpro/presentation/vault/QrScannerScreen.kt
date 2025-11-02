@@ -23,7 +23,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import java.util.concurrent.ExecutorService
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 import java.util.concurrent.Executors
 
 /**
@@ -54,6 +54,8 @@ fun QrScannerScreen(
     }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    SecureWindow()
 
     // Launcher pour demander la permission caméra
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -136,7 +138,9 @@ fun QrScannerScreen(
                     ) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                                containerColor = MaterialTheme.colorScheme.surface.copy(
+                                    alpha = 0.9f
+                                )
                             )
                         ) {
                             Text(
