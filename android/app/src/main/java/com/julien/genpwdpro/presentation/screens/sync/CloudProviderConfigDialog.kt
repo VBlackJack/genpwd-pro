@@ -2,7 +2,6 @@ package com.julien.genpwdpro.presentation.screens.sync
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -388,10 +386,11 @@ private fun PCloudConfigDialog(
                                 )
                             }
                         },
-                        visualTransformation = if (showSecret)
+                        visualTransformation = if (showSecret) {
                             VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                         supportingText = {
                             Text("Secret d'application pCloud")
                         },
@@ -402,7 +401,9 @@ private fun PCloudConfigDialog(
                     // Region selection
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = 0.5f
+                            )
                         )
                     ) {
                         Column(
@@ -441,7 +442,9 @@ private fun PCloudConfigDialog(
                                                     modifier = Modifier.size(18.dp)
                                                 )
                                             }
-                                        } else null,
+                                        } else {
+                                            null
+                                        },
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -623,10 +626,11 @@ private fun ProtonDriveConfigDialog(
                                 )
                             }
                         },
-                        visualTransformation = if (showSecret)
+                        visualTransformation = if (showSecret) {
                             VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                         supportingText = {
                             Text("Secret client depuis Proton Developer Portal")
                         },

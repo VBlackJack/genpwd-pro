@@ -4,14 +4,10 @@ import androidx.lifecycle.LifecycleOwner
 import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.impl.annotations.MockK
-import io.mockk.verify
 import org.junit.Before
 import org.junit.Test
 
 class AppLifecycleObserverTest {
-
-    @MockK(relaxed = true)
-    private lateinit var sessionManager: SessionManager
 
     @MockK(relaxed = true)
     private lateinit var vaultSessionManager: VaultSessionManager
@@ -24,14 +20,13 @@ class AppLifecycleObserverTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxUnitFun = true)
-        observer = AppLifecycleObserver(sessionManager, vaultSessionManager)
+        observer = AppLifecycleObserver(vaultSessionManager)
     }
 
     @Test
     fun `onStop locks vaults immediately`() {
         observer.onStop(lifecycleOwner)
 
-        verify { sessionManager.lockVault() }
         coVerify { vaultSessionManager.lockVault() }
     }
 
@@ -46,7 +41,6 @@ class AppLifecycleObserverTest {
 
         observer.onStart(lifecycleOwner)
 
-        verify(exactly = 2) { sessionManager.lockVault() }
         coVerify(exactly = 2) { vaultSessionManager.lockVault() }
     }
 }

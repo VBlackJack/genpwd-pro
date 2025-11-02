@@ -2,14 +2,16 @@ package com.julien.genpwdpro.presentation.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.crypto.TotpGenerator
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.repository.FileVaultRepository
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour la liste des entrées de vault (nouveau système file-based)
@@ -17,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class VaultListViewModel @Inject constructor(
     private val fileVaultRepository: FileVaultRepository,
-    private val totpGenerator: TotpGenerator
+    private val totpGenerator: TotpGenerator,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VaultListUiState>(VaultListUiState.Loading)
@@ -35,6 +38,8 @@ class VaultListViewModel @Inject constructor(
     private val _statistics = MutableStateFlow<VaultStatistics?>(null)
     val statistics: StateFlow<VaultStatistics?> = _statistics.asStateFlow()
 
+    val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
+
     private var currentVaultId: String? = null
 
     /**
@@ -44,7 +49,7 @@ class VaultListViewModel @Inject constructor(
      */
     fun loadEntries(vaultId: String) {
         currentVaultId = vaultId
-        android.util.Log.d("VaultListViewModel", "Loading entries for vault: $vaultId")
+        SafeLog.d("VaultListViewModel", "Loading entries for vault: ${SafeLog.redact(vaultId)}")
         viewModelScope.launch {
             try {
                 // ✅ FIX: Utiliser FileVaultRepository avec searchEntries() pour filtrage réactif
@@ -54,7 +59,10 @@ class VaultListViewModel @Inject constructor(
                     _filterType,
                     _showFavoritesOnly
                 ) { entries, search, typeFilter, favoritesOnly ->
-                    android.util.Log.d("VaultListViewModel", "Received ${entries.size} entries from repository")
+                    SafeLog.d(
+                        "VaultListViewModel",
+                        "Received ${entries.size} entries from repository"
+                    )
                     entries.filter { entry ->
                         val matchesSearch = if (search.isEmpty()) {
                             true
@@ -75,11 +83,14 @@ class VaultListViewModel @Inject constructor(
                         matchesSearch && matchesType && matchesFavorites
                     }
                 }.collect { filteredEntries ->
-                    android.util.Log.d("VaultListViewModel", "Displaying ${filteredEntries.size} filtered entries")
+                    SafeLog.d(
+                        "VaultListViewModel",
+                        "Displaying ${filteredEntries.size} filtered entries"
+                    )
                     _uiState.value = VaultListUiState.Success(filteredEntries)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("VaultListViewModel", "Error loading entries: ${e.message}", e)
+                SafeLog.e("VaultListViewModel", "Error loading entries: ${e.message}", e)
                 _uiState.value = VaultListUiState.Error(e.message ?: "Erreur lors du chargement")
             }
         }
@@ -152,11 +163,15 @@ class VaultListViewModel @Inject constructor(
                 // ✅ FIX: Utiliser FileVaultRepository
                 val result = fileVaultRepository.deleteEntry(entryId)
                 result.onFailure { error ->
-                    _uiState.value = VaultListUiState.Error(error.message ?: "Erreur lors de la suppression")
+                    _uiState.value = VaultListUiState.Error(
+                        error.message ?: "Erreur lors de la suppression"
+                    )
                 }
                 // Le Flow dans loadEntries() se met à jour automatiquement
             } catch (e: Exception) {
-                _uiState.value = VaultListUiState.Error(e.message ?: "Erreur lors de la suppression")
+                _uiState.value = VaultListUiState.Error(
+                    e.message ?: "Erreur lors de la suppression"
+                )
             }
         }
     }
@@ -179,6 +194,13 @@ class VaultListViewModel @Inject constructor(
         } catch (e: Exception) {
             null
         }
+    }
+
+    /**
+     * Récupère les tags d'une entrée
+     */
+    fun getTagsForEntry(entryId: String): Flow<List<TagEntity>> {
+        return fileVaultRepository.getTagsForEntry(entryId)
     }
 
     /**

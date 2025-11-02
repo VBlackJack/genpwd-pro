@@ -5,6 +5,10 @@ package com.julien.genpwdpro.data.models.vault
  * Taille fixe: 256 bytes
  *
  * Inspiré de KeePass KDBX: header non-chiffré avec métadonnées
+ *
+ * Version history:
+ * - Version 1: Initial format with deterministic salt (deprecated for security)
+ * - Version 2: Random kdfSalt for improved security (current)
  */
 data class VaultFileHeader(
     val magicNumber: String = MAGIC_NUMBER,
@@ -12,12 +16,15 @@ data class VaultFileHeader(
     val vaultId: String,
     val createdAt: Long,
     val modifiedAt: Long,
-    val checksum: String,           // SHA-256 du contenu déchiffré
-    val keyFileHash: String? = null // SHA-256 du key file (optionnel, KeePass-style)
+    val checksum: String, // SHA-256 du contenu déchiffré
+    val keyFileHash: String? = null, // SHA-256 du key file (optionnel, KeePass-style)
+    val kdfSalt: String? = null, // Salt hexadécimal utilisé pour Argon2id (required in v2+)
+    val kdfAlgorithm: String = DEFAULT_KDF
 ) {
     companion object {
         const val MAGIC_NUMBER = "GPVAULT1"
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2  // Incremented for random kdfSalt security improvement
+        const val DEFAULT_KDF = "argon2id"
         const val HEADER_SIZE = 256
     }
 
@@ -34,4 +41,6 @@ data class VaultFileHeader(
     fun requiresKeyFile(): Boolean {
         return keyFileHash != null
     }
+
+    fun hasKdfSalt(): Boolean = !kdfSalt.isNullOrBlank()
 }

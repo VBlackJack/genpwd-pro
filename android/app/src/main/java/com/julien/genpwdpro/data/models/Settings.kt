@@ -17,9 +17,9 @@ data class Settings(
     val digitsPlacement: Placement = Placement.RANDOM,
     val specialsPlacement: Placement = Placement.RANDOM,
 
-    // Placement visuel (pourcentage 0-100)
-    val digitsPosition: Int = 50,
-    val specialsPosition: Int = 50,
+    // Placement visuel (pourcentage 0-100 pour chaque caractère)
+    val digitsPositions: List<Int> = listOf(50),
+    val specialsPositions: List<Int> = listOf(50),
 
     // Casse
     val caseMode: CaseMode = CaseMode.MIXED,
@@ -67,11 +67,17 @@ data class Settings(
             quantity = quantity.coerceIn(MIN_QUANTITY, MAX_QUANTITY),
             digitsCount = digitsCount.coerceIn(MIN_DIGITS, MAX_DIGITS),
             specialsCount = specialsCount.coerceIn(MIN_SPECIALS, MAX_SPECIALS),
-            digitsPosition = digitsPosition.coerceIn(0, 100),
-            specialsPosition = specialsPosition.coerceIn(0, 100),
+            digitsPositions = digitsPositions.map { it.coerceIn(0, 100) },
+            specialsPositions = specialsPositions.map { it.coerceIn(0, 100) },
             syllablesLength = syllablesLength.coerceIn(MIN_SYLLABLES_LENGTH, MAX_SYLLABLES_LENGTH),
-            passphraseWordCount = passphraseWordCount.coerceIn(MIN_PASSPHRASE_WORDS, MAX_PASSPHRASE_WORDS),
-            customPhraseWordCount = customPhraseWordCount.coerceIn(MIN_CUSTOM_PHRASE_WORDS, MAX_CUSTOM_PHRASE_WORDS),
+            passphraseWordCount = passphraseWordCount.coerceIn(
+                MIN_PASSPHRASE_WORDS,
+                MAX_PASSPHRASE_WORDS
+            ),
+            customPhraseWordCount = customPhraseWordCount.coerceIn(
+                MIN_CUSTOM_PHRASE_WORDS,
+                MAX_CUSTOM_PHRASE_WORDS
+            ),
             caseBlocks = if (caseBlocks.isEmpty()) listOf(CaseBlock.T, CaseBlock.L) else caseBlocks
         )
 

@@ -1,9 +1,7 @@
 package com.julien.genpwdpro.presentation.screens.analyzer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -24,14 +22,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.domain.analyzer.PasswordAnalysis
 import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
-import com.julien.genpwdpro.domain.analyzer.PasswordAnalysisStrength
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Écran d'analyse de mots de passe
@@ -256,7 +253,10 @@ private fun BasicMetricsCard(analysis: PasswordAnalysis) {
             ) {
                 MetricItem("Longueur", "${analysis.length}")
                 MetricItem("Uniques", "${analysis.uniqueChars}")
-                MetricItem("Variété", "${(analysis.uniqueChars.toFloat() / analysis.length * 100).toInt()}%")
+                MetricItem(
+                    "Variété",
+                    "${(analysis.uniqueChars.toFloat() / analysis.length * 100).toInt()}%"
+                )
             }
         }
     }

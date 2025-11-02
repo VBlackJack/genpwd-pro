@@ -1,124 +1,127 @@
 package com.julien.genpwdpro.data.encryption
 
+import android.content.Context
 import android.util.Base64
+import com.julien.genpwdpro.core.crypto.SecretUtils
+import com.julien.genpwdpro.crypto.CryptoEngine
+import com.julien.genpwdpro.crypto.TinkAesGcmCryptoEngine
 import java.security.SecureRandom
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 
 /**
- * Gestionnaire de chiffrement AES-256-GCM pour la synchronisation cloud
+ * Gestionnaire de chiffrement pour la synchronisation cloud basé sur Google Tink.
  *
- * AES-256-GCM Features:
- * - Authenticated encryption (AEAD)
- * - 256-bit key size
- * - 96-bit IV (Initialization Vector)
- * - 128-bit authentication tag
- * - Secure against tampering and replay attacks
+ * Le moteur sous-jacent ([CryptoEngine]) repose sur AES-256-GCM et gère les clés via les keysets
+ * Tink. Toutes les opérations de chiffrement sont effectuées en mémoire : aucune clé n'est
+ * persistée en clair et le moteur prend en charge la rotation des clés.
  */
 class EncryptionManager @Inject constructor() {
 
     companion object {
-        private const val ALGORITHM = "AES"
-        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+        const val CRYPTO_VERSION = 1
+        const val KDF_ALGORITHM = "PBKDF2WithHmacSHA256"
+        const val MIN_KDF_ITERATIONS = 310_000
+        const val DEFAULT_KDF_ITERATIONS = 310_000
         private const val KEY_SIZE = 256 // bits
-        private const val IV_SIZE = 12 // bytes (96 bits)
-        private const val TAG_SIZE = 128 // bits
+        private const val ALGORITHM = "AES"
+    }
+
+    fun obtainEngine(
+        context: Context,
+        keysetName: String,
+        prefFileName: String
+    ): CryptoEngine {
+        return TinkAesGcmCryptoEngine.getOrCreate(context, keysetName, prefFileName)
+    }
+
+    fun resetEngine(
+        context: Context,
+        keysetName: String,
+        prefFileName: String
+    ) {
+        TinkAesGcmCryptoEngine.wipe(context, keysetName, prefFileName)
     }
 
     /**
-     * Génère une nouvelle clé AES-256 aléatoire
-     */
-    fun generateKey(): SecretKey {
-        val keyGenerator = KeyGenerator.getInstance(ALGORITHM)
-        keyGenerator.init(KEY_SIZE, SecureRandom())
-        return keyGenerator.generateKey()
-    }
-
-    /**
-     * Encode une clé en Base64 pour stockage/transmission
-     */
-    fun encodeKey(key: SecretKey): String {
-        return Base64.encodeToString(key.encoded, Base64.NO_WRAP)
-    }
-
-    /**
-     * Décode une clé depuis Base64
-     */
-    fun decodeKey(encodedKey: String): SecretKey {
-        val keyBytes = Base64.decode(encodedKey, Base64.NO_WRAP)
-        return SecretKeySpec(keyBytes, ALGORITHM)
-    }
-
-    /**
-     * Chiffre des données avec AES-256-GCM
+     * Chiffre des données avec le moteur fourni.
      *
      * @param plaintext Données à chiffrer
-     * @param key Clé de chiffrement AES-256
-     * @return EncryptedData contenant le ciphertext et l'IV
+     * @param engine Moteur Tink (AEAD)
+     * @return EncryptedData contenant le ciphertext
      */
-    fun encrypt(plaintext: ByteArray, key: SecretKey): EncryptedData {
-        // Générer un IV aléatoire unique pour chaque chiffrement
-        val iv = ByteArray(IV_SIZE)
-        SecureRandom().nextBytes(iv)
-
-        // Initialiser le cipher en mode chiffrement
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        val gcmSpec = GCMParameterSpec(TAG_SIZE, iv)
-        cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec)
-
-        // Chiffrer les données
-        val ciphertext = cipher.doFinal(plaintext)
-
+    fun encrypt(
+        plaintext: ByteArray,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): EncryptedData {
+        val ciphertext = engine.encrypt(plaintext, associatedData)
         return EncryptedData(
             ciphertext = ciphertext,
-            iv = iv
+            iv = ByteArray(0)
         )
     }
 
     /**
      * Chiffre une chaîne de caractères
      */
-    fun encryptString(plaintext: String, key: SecretKey): EncryptedData {
-        return encrypt(plaintext.toByteArray(Charsets.UTF_8), key)
+    fun encryptString(
+        plaintext: String,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): EncryptedData {
+        val bytes = plaintext.toByteArray(Charsets.UTF_8)
+        return try {
+            encrypt(bytes, engine, associatedData)
+        } finally {
+            SecretUtils.wipe(bytes)
+        }
     }
 
     /**
-     * Déchiffre des données avec AES-256-GCM
+     * Déchiffre des données avec le moteur fourni
      *
-     * @param encryptedData Données chiffrées avec IV
-     * @param key Clé de déchiffrement AES-256
+     * @param encryptedData Données chiffrées
+     * @param engine Moteur Tink (AEAD)
      * @return Données déchiffrées
      * @throws javax.crypto.AEADBadTagException si les données ont été altérées
      */
-    fun decrypt(encryptedData: EncryptedData, key: SecretKey): ByteArray {
-        // Initialiser le cipher en mode déchiffrement
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        val gcmSpec = GCMParameterSpec(TAG_SIZE, encryptedData.iv)
-        cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec)
-
-        // Déchiffrer les données
-        return cipher.doFinal(encryptedData.ciphertext)
+    fun decrypt(
+        encryptedData: EncryptedData,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): ByteArray {
+        return engine.decrypt(encryptedData.ciphertext, associatedData)
     }
 
     /**
      * Déchiffre une chaîne de caractères
      */
-    fun decryptString(encryptedData: EncryptedData, key: SecretKey): String {
-        val plaintext = decrypt(encryptedData, key)
-        return String(plaintext, Charsets.UTF_8)
+    fun decryptString(
+        encryptedData: EncryptedData,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): String {
+        val plaintext = decrypt(encryptedData, engine, associatedData)
+        return try {
+            String(plaintext, Charsets.UTF_8)
+        } finally {
+            SecretUtils.wipe(plaintext)
+        }
     }
 
     /**
      * Vérifie l'intégrité des données sans les déchiffrer
      * Utile pour valider avant synchronisation
      */
-    fun verifyIntegrity(encryptedData: EncryptedData, key: SecretKey): Boolean {
+    fun verifyIntegrity(
+        encryptedData: EncryptedData,
+        engine: CryptoEngine,
+        associatedData: ByteArray = CryptoEngine.EMPTY_AAD
+    ): Boolean {
         return try {
-            decrypt(encryptedData, key)
+            decrypt(encryptedData, engine, associatedData)
             true
         } catch (e: Exception) {
             false
@@ -126,19 +129,68 @@ class EncryptionManager @Inject constructor() {
     }
 
     /**
+     * Effectue une rotation de clé sur le moteur fourni.
+     */
+    fun rotate(engine: CryptoEngine) {
+        engine.rotate()
+    }
+
+    /**
      * Dérive une clé depuis un mot de passe utilisateur (PBKDF2)
      * NOTE: Pour production, utiliser plutôt Android Keystore
      */
-    fun deriveKeyFromPassword(password: String, salt: ByteArray, iterations: Int = 100000): SecretKey {
-        val factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+    fun deriveKeyFromPassword(
+        password: String,
+        salt: ByteArray,
+        iterations: Int = DEFAULT_KDF_ITERATIONS
+    ): SecretKey {
+        require(iterations >= MIN_KDF_ITERATIONS) {
+            "KDF iterations ($iterations) below required floor $MIN_KDF_ITERATIONS"
+        }
+
+        val factory = javax.crypto.SecretKeyFactory.getInstance(KDF_ALGORITHM)
+        val passwordChars = password.toCharArray()
         val spec = javax.crypto.spec.PBEKeySpec(
-            password.toCharArray(),
+            passwordChars,
             salt,
             iterations,
             KEY_SIZE
         )
-        val tmp = factory.generateSecret(spec)
-        return SecretKeySpec(tmp.encoded, ALGORITHM)
+        return try {
+            val tmp = factory.generateSecret(spec)
+            val encoded = tmp.encoded
+            try {
+                SecretKeySpec(encoded, ALGORITHM)
+            } finally {
+                SecretUtils.wipe(encoded)
+            }
+        } finally {
+            spec.clearPassword()
+            SecretUtils.wipe(passwordChars)
+        }
+    }
+
+    /**
+     * Build a serialisable metadata header (JSON/TLV/etc.) pairing with [EncryptedData].
+     *
+     * The header must include:
+     * - version ([CRYPTO_VERSION])
+     * - KDF algorithm + iterations
+     * - salt (Base64) used for key derivation
+     * - nonce/IV (Base64) used for AES-GCM
+     */
+    fun buildMetadataHeader(
+        iv: ByteArray,
+        salt: ByteArray,
+        iterations: Int = DEFAULT_KDF_ITERATIONS
+    ): EncryptionMetadata {
+        require(iterations >= MIN_KDF_ITERATIONS) { "KDF iterations below security floor" }
+        return EncryptionMetadata(
+            version = CRYPTO_VERSION,
+            kdf = EncryptionMetadata.KdfMetadata(KDF_ALGORITHM, iterations),
+            salt = Base64.encodeToString(salt, Base64.NO_WRAP),
+            nonce = Base64.encodeToString(iv, Base64.NO_WRAP)
+        )
     }
 
     /**
@@ -152,10 +204,11 @@ class EncryptionManager @Inject constructor() {
 }
 
 /**
- * Données chiffrées avec AES-256-GCM
+ * Données chiffrées avec AES-256-GCM.
  *
- * @param ciphertext Données chiffrées (inclut le tag d'authentification)
- * @param iv Vecteur d'initialisation (96 bits)
+ * Lorsque le chiffrement est effectué par [CryptoEngine], le nonce est déjà encapsulé par Tink
+ * dans le ciphertext. Le champ [iv] est donc conservé pour compatibilité avec les anciens formats
+ * (et peut être vide lorsque Tink est utilisé).
  */
 data class EncryptedData(
     val ciphertext: ByteArray,
@@ -206,4 +259,19 @@ data class EncryptedDataEncoded(
             iv = Base64.decode(iv, Base64.NO_WRAP)
         )
     }
+}
+
+/**
+ * Métadonnées de chiffrement sérialisables pour stocker le contexte de dérivation.
+ */
+data class EncryptionMetadata(
+    val version: Int,
+    val kdf: KdfMetadata,
+    val salt: String,
+    val nonce: String
+) {
+    data class KdfMetadata(
+        val algorithm: String,
+        val iterations: Int
+    )
 }

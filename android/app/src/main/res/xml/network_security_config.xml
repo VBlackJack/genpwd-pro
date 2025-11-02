@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Cleartext traffic is globally disabled. Add explicit domain-config overrides here if an API legitimately requires HTTP. -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

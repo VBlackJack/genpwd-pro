@@ -1,3 +1,8 @@
+val androidSdkFromEnv = System.getenv("ANDROID_SDK_ROOT") ?: System.getenv("ANDROID_HOME")
+if (!androidSdkFromEnv.isNullOrBlank()) {
+    System.setProperty("sdk.dir", androidSdkFromEnv)
+}
+
 pluginManagement {
     repositories {
         google()
@@ -16,3 +21,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "GenPwd Pro"
 include(":app")
+include(":baselineprofile")
+include(":vault-domain")
+include(":tools")

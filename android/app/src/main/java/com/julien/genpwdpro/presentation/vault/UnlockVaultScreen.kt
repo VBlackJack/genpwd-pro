@@ -1,6 +1,5 @@
 package com.julien.genpwdpro.presentation.vault
 
-import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,8 +17,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
  * Écran de déverrouillage d'un vault
@@ -42,6 +42,8 @@ fun UnlockVaultScreen(
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsState()
     val vaultRegistry by viewModel.vaultRegistry.collectAsState()
+
+    SecureWindow()
 
     // Charger le vault
     LaunchedEffect(vaultId) {
@@ -238,7 +240,7 @@ fun UnlockVaultScreen(
                 } else {
                     Icon(Icons.Default.LockOpen, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Déverrouiller")
+                    Text("Ouvrir")
                 }
             }
 
@@ -261,9 +263,9 @@ fun UnlockVaultScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         if (viewModel.isBiometricAvailable()) {
-                            "Utiliser la biométrie"
+                            "Biométrie"
                         } else {
-                            "Biométrie non disponible"
+                            "Non disponible"
                         }
                     )
                 }
@@ -310,7 +312,11 @@ fun UnlockVaultScreen(
                             onClick = {
                                 // Active la biométrie avec le mot de passe actuel
                                 if (masterPassword.isNotEmpty() && activity != null) {
-                                    viewModel.enableBiometric(activity, currentVault.id, masterPassword)
+                                    viewModel.enableBiometric(
+                                        activity,
+                                        currentVault.id,
+                                        masterPassword
+                                    )
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

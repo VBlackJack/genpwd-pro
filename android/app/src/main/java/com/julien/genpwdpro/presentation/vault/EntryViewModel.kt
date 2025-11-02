@@ -3,15 +3,15 @@ package com.julien.genpwdpro.presentation.vault
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.crypto.TotpGenerator
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.models.Settings
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.domain.analyzer.PasswordAnalyzer
 import com.julien.genpwdpro.domain.generators.PasswordGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour créer/éditer une entrée de vault (nouveau système file-based)
@@ -48,6 +48,13 @@ class EntryViewModel @Inject constructor(
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
 
+    // Tags
+    private val _selectedTags = MutableStateFlow<List<TagEntity>>(emptyList())
+    val selectedTags: StateFlow<List<TagEntity>> = _selectedTags.asStateFlow()
+
+    private val _availableTags = MutableStateFlow<List<TagEntity>>(emptyList())
+    val availableTags: StateFlow<List<TagEntity>> = _availableTags.asStateFlow()
+
     // TOTP
     private val _hasTOTP = MutableStateFlow(false)
     val hasTOTP: StateFlow<Boolean> = _hasTOTP.asStateFlow()
@@ -78,6 +85,7 @@ class EntryViewModel @Inject constructor(
         isEditMode = false
         _entryType.value = type
         clearFields()
+        loadAvailableTags()
     }
 
     /**
@@ -88,6 +96,7 @@ class EntryViewModel @Inject constructor(
         currentVaultId = vaultId
         currentEntryId = entryId
         isEditMode = true
+        loadAvailableTags()
 
         viewModelScope.launch {
             try {
@@ -105,6 +114,11 @@ class EntryViewModel @Inject constructor(
                     _totpIssuer.value = entry.totpIssuer
                     _passwordStrength.value = entry.passwordStrength
                     _passwordEntropy.value = entry.passwordEntropy
+
+                    // Charger les tags de l'entrée
+                    fileVaultRepository.getTagsForEntry(entryId).collect { tags ->
+                        _selectedTags.value = tags
+                    }
                 } else {
                     _uiState.value = EntryUiState.Error("Entrée introuvable")
                 }
@@ -250,7 +264,7 @@ class EntryViewModel @Inject constructor(
             try {
                 when (_entryType.value) {
                     EntryType.LOGIN -> {
-                        val entry = createVaultEntry(
+                        val entry = VaultEntryEntity(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -260,7 +274,7 @@ class EntryViewModel @Inject constructor(
                             url = _url.value,
                             notes = _notes.value,
                             customFields = "",
-                            entryType = EntryType.LOGIN,
+                            entryType = EntryType.LOGIN.name,
                             isFavorite = _isFavorite.value,
                             passwordStrength = _passwordStrength.value,
                             passwordEntropy = _passwordEntropy.value,
@@ -300,13 +314,15 @@ class EntryViewModel @Inject constructor(
                         }
 
                         result.onFailure { error ->
-                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            _uiState.value = EntryUiState.Error(
+                                error.message ?: "Erreur lors de la sauvegarde"
+                            )
                             return@launch
                         }
                     }
 
                     EntryType.WIFI -> {
-                        val entry = createVaultEntry(
+                        val entry = VaultEntryEntity(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -316,7 +332,7 @@ class EntryViewModel @Inject constructor(
                             url = "",
                             notes = _notes.value,
                             customFields = "",
-                            entryType = EntryType.WIFI,
+                            entryType = EntryType.WIFI.name,
                             isFavorite = _isFavorite.value,
                             passwordStrength = _passwordStrength.value,
                             passwordEntropy = _passwordEntropy.value,
@@ -355,14 +371,16 @@ class EntryViewModel @Inject constructor(
                         }
 
                         result.onFailure { error ->
-                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            _uiState.value = EntryUiState.Error(
+                                error.message ?: "Erreur lors de la sauvegarde"
+                            )
                             return@launch
                         }
                     }
 
                     EntryType.NOTE -> {
                         // Créer une note sécurisée
-                        val entry = createVaultEntry(
+                        val entry = VaultEntryEntity(
                             id = currentEntryId ?: java.util.UUID.randomUUID().toString(),
                             vaultId = vaultId,
                             folderId = null,
@@ -372,7 +390,7 @@ class EntryViewModel @Inject constructor(
                             url = "",
                             notes = _notes.value,
                             customFields = "",
-                            entryType = EntryType.NOTE,
+                            entryType = EntryType.NOTE.name,
                             isFavorite = _isFavorite.value,
                             passwordStrength = 0,
                             passwordEntropy = 0.0,
@@ -394,7 +412,9 @@ class EntryViewModel @Inject constructor(
                         }
 
                         result.onFailure { error ->
-                            _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la sauvegarde")
+                            _uiState.value = EntryUiState.Error(
+                                error.message ?: "Erreur lors de la sauvegarde"
+                            )
                             return@launch
                         }
                     }
@@ -402,12 +422,16 @@ class EntryViewModel @Inject constructor(
                     EntryType.CARD -> {
                         // Pour les cartes, parser customFields si c'est une édition
                         // Sinon créer une nouvelle carte
-                        _uiState.value = EntryUiState.Error("La gestion des cartes n'est pas encore implémentée dans l'UI")
+                        _uiState.value = EntryUiState.Error(
+                            "La gestion des cartes n'est pas encore implémentée dans l'UI"
+                        )
                         return@launch
                     }
 
                     EntryType.IDENTITY -> {
-                        _uiState.value = EntryUiState.Error("La gestion des identités n'est pas encore implémentée dans l'UI")
+                        _uiState.value = EntryUiState.Error(
+                            "La gestion des identités n'est pas encore implémentée dans l'UI"
+                        )
                         return@launch
                     }
                 }
@@ -436,7 +460,9 @@ class EntryViewModel @Inject constructor(
                 result.onSuccess {
                     _uiState.value = EntryUiState.Saved
                 }.onFailure { error ->
-                    _uiState.value = EntryUiState.Error(error.message ?: "Erreur lors de la suppression")
+                    _uiState.value = EntryUiState.Error(
+                        error.message ?: "Erreur lors de la suppression"
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = EntryUiState.Error(e.message ?: "Erreur lors de la suppression")
@@ -460,6 +486,52 @@ class EntryViewModel @Inject constructor(
         _passwordStrength.value = 0
         _passwordEntropy.value = 0.0
         _uiState.value = EntryUiState.Editing
+    }
+
+    /**
+     * Charge tous les tags disponibles du vault
+     */
+    fun loadAvailableTags() {
+        viewModelScope.launch {
+            fileVaultRepository.getTags().collect { tags ->
+                _availableTags.value = tags
+            }
+        }
+    }
+
+    /**
+     * Ajoute un tag à l'entrée
+     */
+    fun addTag(tag: TagEntity) {
+        val current = _selectedTags.value.toMutableList()
+        if (!current.any { it.id == tag.id }) {
+            current.add(tag)
+            _selectedTags.value = current
+        }
+    }
+
+    /**
+     * Retire un tag de l'entrée
+     */
+    fun removeTag(tag: TagEntity) {
+        _selectedTags.value = _selectedTags.value.filter { it.id != tag.id }
+    }
+
+    /**
+     * Crée un nouveau tag
+     */
+    fun createTag(name: String, color: String) {
+        viewModelScope.launch {
+            val tag = TagEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                vaultId = currentVaultId ?: return@launch,
+                name = name,
+                color = color
+            )
+            fileVaultRepository.addTag(tag).onSuccess {
+                // Le tag sera automatiquement ajouté via le flow de loadAvailableTags
+            }
+        }
     }
 }
 

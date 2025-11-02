@@ -27,17 +27,17 @@ import androidx.compose.ui.platform.LocalView
  * Types de feedback haptique
  */
 enum class HapticFeedbackType {
-    CLICK,              // Click léger
-    SUCCESS,            // Opération réussie
-    ERROR,              // Erreur
-    LONG_PRESS,         // Appui long
-    SELECTION,          // Sélection d'item
-    IMPACT_LIGHT,       // Impact léger
-    IMPACT_MEDIUM,      // Impact moyen
-    IMPACT_HEAVY,       // Impact fort
-    TICK,               // Tick (scrolling)
-    CONFIRM,            // Confirmation
-    REJECT              // Rejet
+    CLICK, // Click léger
+    SUCCESS, // Opération réussie
+    ERROR, // Erreur
+    LONG_PRESS, // Appui long
+    SELECTION, // Sélection d'item
+    IMPACT_LIGHT, // Impact léger
+    IMPACT_MEDIUM, // Impact moyen
+    IMPACT_HEAVY, // Impact fort
+    TICK, // Tick (scrolling)
+    CONFIRM, // Confirmation
+    REJECT // Rejet
 }
 
 /**

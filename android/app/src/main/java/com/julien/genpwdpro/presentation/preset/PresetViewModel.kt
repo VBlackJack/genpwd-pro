@@ -4,20 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
-import com.julien.genpwdpro.data.repository.VaultRepository
-import com.julien.genpwdpro.data.repository.VaultRepository.DecryptedPreset
+import com.julien.genpwdpro.data.repository.FileVaultRepository
+import com.julien.genpwdpro.data.models.vault.DecryptedPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
- * ViewModel pour la gestion des presets de génération
+ * ViewModel for managing generation presets
+ * Migrated to use FileVaultRepository (file-based system)
  */
 @HiltViewModel
 class PresetViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository
+    private val fileVaultRepository: FileVaultRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PresetUiState())
@@ -26,13 +27,14 @@ class PresetViewModel @Inject constructor(
     private var currentVaultId: String? = null
 
     /**
-     * Charge les presets d'un vault
+     * Loads presets for a vault
+     * Note: vaultId is kept for backward compatibility but session manager uses active vault
      */
     fun loadPresets(vaultId: String) {
         currentVaultId = vaultId
         viewModelScope.launch {
             try {
-                vaultRepository.getPresets(vaultId).collect { presets ->
+                fileVaultRepository.getPresetsDecrypted().collect { presets ->
                     _uiState.update {
                         it.copy(
                             presets = presets,
@@ -45,7 +47,7 @@ class PresetViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Erreur lors du chargement des presets"
+                        error = e.message ?: "Error loading presets"
                     )
                 }
             }
@@ -53,7 +55,7 @@ class PresetViewModel @Inject constructor(
     }
 
     /**
-     * Crée un nouveau preset
+     * Creates a new preset
      */
     fun createPreset(
         name: String,
@@ -68,13 +70,13 @@ class PresetViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isCreating = true) }
 
-                // Vérifier si on peut créer un nouveau preset
-                val canCreate = vaultRepository.canCreatePreset(vaultId, mode)
+                // Check if we can create a new preset (max 3 per mode)
+                val canCreate = fileVaultRepository.canCreatePreset(mode)
                 if (!canCreate) {
                     _uiState.update {
                         it.copy(
                             isCreating = false,
-                            error = "Limite de 3 presets atteinte pour le mode ${mode.name}"
+                            error = "Limit of 3 presets reached for mode ${mode.name}"
                         )
                     }
                     return@launch
@@ -95,7 +97,7 @@ class PresetViewModel @Inject constructor(
                     usageCount = 0
                 )
 
-                val createdId = vaultRepository.createPreset(vaultId, preset)
+                val createdId = fileVaultRepository.createPreset(preset)
                 if (createdId != null) {
                     _uiState.update {
                         it.copy(
@@ -108,7 +110,7 @@ class PresetViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isCreating = false,
-                            error = "Impossible de créer le preset"
+                            error = "Unable to create preset"
                         )
                     }
                 }
@@ -116,7 +118,7 @@ class PresetViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isCreating = false,
-                        error = e.message ?: "Erreur lors de la création du preset"
+                        error = e.message ?: "Error creating preset"
                     )
                 }
             }
@@ -124,64 +126,62 @@ class PresetViewModel @Inject constructor(
     }
 
     /**
-     * Met à jour un preset existant
+     * Updates an existing preset
      */
     fun updatePreset(preset: DecryptedPreset) {
-        val vaultId = currentVaultId ?: return
-
         viewModelScope.launch {
             try {
-                vaultRepository.updatePreset(vaultId, preset)
+                fileVaultRepository.updatePresetDecrypted(preset)
                 _uiState.update { it.copy(error = null) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(error = e.message ?: "Erreur lors de la mise à jour du preset")
+                    it.copy(error = e.message ?: "Error updating preset")
                 }
             }
         }
     }
 
     /**
-     * Supprime un preset
+     * Deletes a preset
      */
     fun deletePreset(presetId: String) {
         viewModelScope.launch {
             try {
-                vaultRepository.deletePreset(presetId)
+                fileVaultRepository.deletePreset(presetId)
                 _uiState.update { it.copy(error = null) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(error = e.message ?: "Erreur lors de la suppression du preset")
+                    it.copy(error = e.message ?: "Error deleting preset")
                 }
             }
         }
     }
 
     /**
-     * Définit un preset comme par défaut
+     * Sets a preset as default
      */
     fun setAsDefault(presetId: String) {
-        val vaultId = currentVaultId ?: return
-
         viewModelScope.launch {
             try {
-                vaultRepository.setAsDefaultPreset(vaultId, presetId)
+                fileVaultRepository.setAsDefaultPreset(presetId)
                 _uiState.update { it.copy(error = null) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(error = e.message ?: "Erreur lors de la définition du preset par défaut")
+                    it.copy(
+                        error = e.message ?: "Error setting default preset"
+                    )
                 }
             }
         }
     }
 
     /**
-     * Enregistre l'utilisation d'un preset
+     * Records preset usage (increments count, updates last used timestamp)
      */
     fun recordUsage(presetId: String) {
         viewModelScope.launch {
             try {
-                vaultRepository.recordPresetUsage(presetId)
+                fileVaultRepository.recordPresetUsage(presetId)
             } catch (e: Exception) {
                 // Silent fail
             }
@@ -189,27 +189,24 @@ class PresetViewModel @Inject constructor(
     }
 
     /**
-     * Vérifie si on peut créer un nouveau preset pour un mode donné
+     * Checks if we can create a new preset for a given mode (max 3)
      */
     suspend fun canCreatePreset(mode: GenerationMode): Boolean {
-        val vaultId = currentVaultId ?: return false
-        return vaultRepository.canCreatePreset(vaultId, mode)
+        return fileVaultRepository.canCreatePreset(mode)
     }
 
     /**
-     * Récupère le preset par défaut
+     * Gets the default preset
      */
     suspend fun getDefaultPreset(): DecryptedPreset? {
-        val vaultId = currentVaultId ?: return null
-        return vaultRepository.getDefaultPreset(vaultId)
+        return fileVaultRepository.getDefaultPresetDecrypted()
     }
 
     /**
-     * Récupère un preset par ID
+     * Gets a preset by ID
      */
     suspend fun getPresetById(presetId: String): DecryptedPreset? {
-        val vaultId = currentVaultId ?: return null
-        return vaultRepository.getPresetById(vaultId, presetId)
+        return fileVaultRepository.getPresetByIdDecrypted(presetId)
     }
 
     /**

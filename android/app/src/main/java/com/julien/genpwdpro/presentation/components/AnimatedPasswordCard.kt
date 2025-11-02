@@ -151,7 +151,9 @@ fun ShakeablePasswordCard(
         modifier = modifier.graphicsLayer {
             translationX = if (shouldShake) {
                 (shakeOffset * 10f) * if (shakeOffset > 0.5f) 1 else -1
-            } else 0f
+            } else {
+                0f
+            }
         }
     ) {
         PasswordCard(

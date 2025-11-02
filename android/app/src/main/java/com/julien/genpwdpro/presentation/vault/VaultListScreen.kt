@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.julien.genpwdpro.data.local.entity.*
+import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.domain.model.VaultStatistics
 import kotlinx.coroutines.delay
 
@@ -28,6 +28,12 @@ fun VaultListScreen(
     onEntryClick: (String) -> Unit,
     onAddEntry: (EntryType) -> Unit,
     onSettingsClick: () -> Unit,
+    onImportExportClick: () -> Unit,
+    onPresetsClick: () -> Unit = {},
+    onChangeMasterPasswordClick: () -> Unit = {},
+    onVaultManagerClick: () -> Unit = {},
+    onPasswordHealthClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
 ) {
@@ -40,6 +46,7 @@ fun VaultListScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
 
     // Charger les entrées
     LaunchedEffect(vaultId) {
@@ -73,6 +80,10 @@ fun VaultListScreen(
                             viewModel.searchEntries("")
                         }) {
                             Icon(Icons.Default.ArrowBack, "Retour")
+                        }
+                    } else {
+                        IconButton(onClick = onNavigateToHome) {
+                            Icon(Icons.Default.Home, "Accueil")
                         }
                     }
                 },
@@ -165,14 +176,74 @@ fun VaultListScreen(
                             )
                         }
 
-                        // Verrouiller
-                        IconButton(onClick = onLockClick) {
-                            Icon(Icons.Default.Lock, "Verrouiller")
-                        }
+                        // Menu overflow
+                        Box {
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(Icons.Default.MoreVert, "Menu")
+                            }
 
-                        // Paramètres
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(Icons.Default.Settings, "Paramètres")
+                            DropdownMenu(
+                                expanded = showOverflowMenu,
+                                onDismissRequest = { showOverflowMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Presets de génération") },
+                                    onClick = {
+                                        onPresetsClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Tune, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Gestion des coffres") },
+                                    onClick = {
+                                        onVaultManagerClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Folder, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Synchronisation cloud") },
+                                    onClick = {
+                                        onSettingsClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Cloud, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import / Export") },
+                                    onClick = {
+                                        onImportExportClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.ImportExport, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Santé des mots de passe") },
+                                    onClick = {
+                                        onPasswordHealthClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.HealthAndSafety, null) }
+                                )
+                                Divider()
+                                DropdownMenuItem(
+                                    text = { Text("Changer le mot de passe") },
+                                    onClick = {
+                                        onChangeMasterPasswordClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.VpnKey, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Verrouiller") },
+                                    onClick = {
+                                        onLockClick()
+                                        showOverflowMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Lock, null) }
+                                )
+                            }
                         }
                     }
                 }
@@ -376,6 +447,16 @@ private fun EntryCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Tags
+                val tags by viewModel.getTagsForEntry(entry.id).collectAsState(initial = emptyList())
+                if (tags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    com.julien.genpwdpro.presentation.components.TagsList(
+                        tags = tags,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 

@@ -1,6 +1,8 @@
 package com.julien.genpwdpro.presentation.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,17 +12,31 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Bottom sheet pour le placement visuel des caractères
+ * Optimized: Uses remember to prevent unnecessary recompositions
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacementBottomSheet(
-    digitsPosition: Int,
-    specialsPosition: Int,
-    onDigitsPositionChange: (Int) -> Unit,
-    onSpecialsPositionChange: (Int) -> Unit,
+    digitsPositions: List<Int>,
+    specialsPositions: List<Int>,
+    digitsCount: Int,
+    specialsCount: Int,
+    onDigitsPositionsChange: (List<Int>) -> Unit,
+    onSpecialsPositionsChange: (List<Int>) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = androidx.compose.foundation.rememberScrollState()
+
+    // Optimize: Memoize adjusted positions to prevent recomputation
+    val adjustedDigitsPositions = remember(digitsPositions, digitsCount) {
+        adjustPositionsList(digitsPositions, digitsCount)
+    }
+
+    val adjustedSpecialsPositions = remember(specialsPositions, specialsCount) {
+        adjustPositionsList(specialsPositions, specialsCount)
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
@@ -29,6 +45,8 @@ fun PlacementBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = Constants.MAX_BOTTOM_SHEET_HEIGHT)
+                .verticalScroll(scrollState)
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
@@ -39,23 +57,31 @@ fun PlacementBottomSheet(
                 fontWeight = FontWeight.Bold
             )
 
-            // Position des chiffres
-            PlacementSlider(
-                label = "Position des chiffres",
-                position = digitsPosition,
-                onPositionChange = onDigitsPositionChange,
-                color = MaterialTheme.colorScheme.primary
-            )
+            // Positions des chiffres (un slider par chiffre)
+            if (digitsCount > 0) {
+                PlacementSection(
+                    title = "Chiffres ($digitsCount)",
+                    positions = adjustedDigitsPositions,
+                    onPositionsChange = onDigitsPositionsChange,
+                    color = MaterialTheme.colorScheme.primary,
+                    labelPrefix = "Chiffre"
+                )
+            }
 
-            Divider()
+            if (digitsCount > 0 && specialsCount > 0) {
+                HorizontalDivider()
+            }
 
-            // Position des spéciaux
-            PlacementSlider(
-                label = "Position des spéciaux",
-                position = specialsPosition,
-                onPositionChange = onSpecialsPositionChange,
-                color = MaterialTheme.colorScheme.secondary
-            )
+            // Positions des spéciaux (un slider par spécial)
+            if (specialsCount > 0) {
+                PlacementSection(
+                    title = "Spéciaux ($specialsCount)",
+                    positions = adjustedSpecialsPositions,
+                    onPositionsChange = onSpecialsPositionsChange,
+                    color = MaterialTheme.colorScheme.secondary,
+                    labelPrefix = "Spécial"
+                )
+            }
 
             // Explication
             Card(
@@ -80,6 +106,62 @@ fun PlacementBottomSheet(
             }
         }
     }
+}
+
+/**
+ * Reusable placement section component
+ * Extracts duplicate code for digits and specials sections
+ */
+@Composable
+private fun PlacementSection(
+    title: String,
+    positions: List<Int>,
+    onPositionsChange: (List<Int>) -> Unit,
+    color: androidx.compose.ui.graphics.Color,
+    labelPrefix: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = color
+        )
+
+        positions.forEachIndexed { index, position ->
+            PlacementSlider(
+                label = "$labelPrefix ${index + 1}",
+                position = position,
+                onPositionChange = { newPos ->
+                    val newPositions = positions.toMutableList()
+                    newPositions[index] = newPos
+                    onPositionsChange(newPositions)
+                },
+                color = color
+            )
+        }
+    }
+}
+
+/**
+ * Adjust positions list to match target count
+ * Extracts duplicate logic for digits and specials
+ */
+private fun adjustPositionsList(
+    positions: List<Int>,
+    targetCount: Int,
+    defaultValue: Int = Constants.DEFAULT_POSITION_PERCENT
+): List<Int> = when {
+    positions.size < targetCount ->
+        positions + List(targetCount - positions.size) { defaultValue }
+    positions.size > targetCount ->
+        positions.take(targetCount)
+    else ->
+        positions
 }
 
 @Composable
@@ -120,7 +202,7 @@ private fun PlacementSlider(
             value = position.toFloat(),
             onValueChange = { onPositionChange(it.toInt()) },
             valueRange = 0f..100f,
-            steps = 9, // 10% increments
+            steps = Constants.SLIDER_STEPS, // 10% increments
             colors = SliderDefaults.colors(
                 thumbColor = color,
                 activeTrackColor = color,
@@ -150,4 +232,14 @@ private fun PlacementSlider(
             )
         }
     }
+}
+
+/**
+ * Constants for PlacementBottomSheet
+ * Extracts magic numbers for better maintainability
+ */
+private object Constants {
+    const val DEFAULT_POSITION_PERCENT = 50
+    val MAX_BOTTOM_SHEET_HEIGHT = 600.dp
+    const val SLIDER_STEPS = 9 // 10% increments (0, 10, 20, ..., 100)
 }

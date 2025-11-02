@@ -2,8 +2,11 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.julien.genpwdpro.data.local.entity.VaultEntity
+import com.julien.genpwdpro.data.db.entity.VaultEntity
+import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
+import com.julien.genpwdpro.data.sync.credentials.ProviderCredentialManager
 import com.julien.genpwdpro.data.sync.models.*
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +30,10 @@ class VaultSyncManagerTest {
     private lateinit var mockCloudProvider: CloudProvider
     private lateinit var mockPrefs: SharedPreferences
     private lateinit var mockEditor: SharedPreferences.Editor
+    private lateinit var mockCredentialManager: ProviderCredentialManager
+    private lateinit var mockSyncPreferencesManager: SyncPreferencesManager
+    private lateinit var mockAutoSyncScheduler: AutoSyncScheduler
+    private lateinit var mockCloudRepository: CloudProviderSyncRepository
 
     @Before
     fun setup() {
@@ -38,6 +45,7 @@ class VaultSyncManagerTest {
         every { mockContext.getSharedPreferences(any(), any()) } returns mockPrefs
         every { mockPrefs.edit() } returns mockEditor
         every { mockEditor.putString(any(), any()) } returns mockEditor
+        every { mockEditor.remove(any()) } returns mockEditor
         every { mockEditor.apply() } just Runs
         every { mockPrefs.getString("device_id", null) } returns "test-device-123"
         every { mockPrefs.getString("device_name", null) } returns "Test Device"
@@ -51,11 +59,42 @@ class VaultSyncManagerTest {
         // Mock CloudProvider
         mockCloudProvider = mockk(relaxed = true)
 
+        mockCredentialManager = mockk(relaxed = true)
+        mockSyncPreferencesManager = mockk(relaxed = true)
+        mockAutoSyncScheduler = mockk(relaxed = true)
+
+        mockCloudRepository = mockk(relaxed = true)
+
+        var storedProviderType: CloudProviderType? = null
+
+        every { mockCloudRepository.setActiveProvider(any(), any(), any()) } answers {
+            storedProviderType = firstArg()
+        }
+        every { mockCloudRepository.getActiveProviderType() } answers { storedProviderType }
+        every { mockCloudRepository.getStoredProviderType() } answers { storedProviderType }
+        coEvery { mockCloudRepository.rehydrateActiveProvider(any()) } answers {
+            val expected = firstArg<CloudProviderType?>()
+            if (expected != null && expected != CloudProviderType.NONE) {
+                storedProviderType = expected
+            }
+            true
+        }
+        coEvery { mockCloudRepository.getOrCreateActiveProvider() } answers {
+            if (storedProviderType == null || storedProviderType == CloudProviderType.NONE) null else mockCloudProvider
+        }
+        every { mockCloudRepository.clearActiveProvider() } answers {
+            storedProviderType = null
+        }
+
         // Créer VaultSyncManager
         syncManager = VaultSyncManager(
             context = mockContext,
             vaultRepository = mockVaultRepository,
-            conflictResolver = mockConflictResolver
+            conflictResolver = mockConflictResolver,
+            credentialManager = mockCredentialManager,
+            syncPreferencesManager = mockSyncPreferencesManager,
+            autoSyncScheduler = mockAutoSyncScheduler,
+            cloudRepository = mockCloudRepository
         )
     }
 
@@ -74,6 +113,7 @@ class VaultSyncManagerTest {
         assertEquals(CloudProviderType.GOOGLE_DRIVE, config.providerType)
         assertEquals("test-device-123", config.deviceId)
         verify { mockEditor.putString("provider_type", "GOOGLE_DRIVE") }
+        verify { mockCloudRepository.setActiveProvider(CloudProviderType.GOOGLE_DRIVE, mockCloudProvider, null) }
     }
 
     @Test
@@ -92,6 +132,20 @@ class VaultSyncManagerTest {
 
         assertTrue(isAuth)
         coVerify { mockCloudProvider.isAuthenticated() }
+    }
+
+    @Test
+    fun `disconnect clears credentials and cancels work`() = runTest {
+        syncManager.setProvider(mockCloudProvider, CloudProviderType.GOOGLE_DRIVE)
+
+        syncManager.disconnect()
+
+        verify { mockAutoSyncScheduler.cancelAllSync() }
+        verify { mockCredentialManager.clearProvider(CloudProviderType.GOOGLE_DRIVE) }
+        coVerify { mockSyncPreferencesManager.clearAllCredentials() }
+        verify { mockCloudRepository.clearActiveProvider() }
+        verify { mockEditor.remove("provider_type") }
+        assertEquals(SyncStatus.NEVER_SYNCED, syncManager.syncStatus.first())
     }
 
     @Test
@@ -274,8 +328,8 @@ class VaultSyncManagerTest {
 
         val quota = StorageQuota(
             totalBytes = 15_000_000_000, // 15 GB
-            usedBytes = 5_000_000_000,   // 5 GB
-            freeBytes = 10_000_000_000   // 10 GB
+            usedBytes = 5_000_000_000, // 5 GB
+            freeBytes = 10_000_000_000 // 10 GB
         )
         coEvery { mockCloudProvider.getStorageQuota() } returns quota
 

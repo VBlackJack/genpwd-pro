@@ -36,8 +36,11 @@ class PassphraseGeneratorTest {
         val result = generator.generate(wordCount, dictionary)
 
         assertTrue("Result should contain spaces", result.contains(" "))
-        assertEquals("Separator count should be word count - 1",
-            wordCount - 1, result.count { it == ' ' })
+        assertEquals(
+            "Separator count should be word count - 1",
+            wordCount - 1,
+            result.count { it == ' ' }
+        )
     }
 
     @Test
@@ -51,8 +54,10 @@ class PassphraseGeneratorTest {
         }
 
         // Au moins 90% des phrases doivent être uniques
-        assertTrue("Generated passphrases should be mostly unique",
-            passphrases.size >= 45)
+        assertTrue(
+            "Generated passphrases should be mostly unique",
+            passphrases.size >= 45
+        )
     }
 
     @Test
@@ -113,8 +118,10 @@ class PassphraseGeneratorTest {
 
         val result = generator.generate(wordCount, dictionary)
 
-        assertFalse("Single word should not contain spaces",
-            result.contains(" "))
+        assertFalse(
+            "Single word should not contain spaces",
+            result.contains(" ")
+        )
     }
 
     @Test
@@ -147,8 +154,11 @@ class PassphraseGeneratorTest {
         DictionaryType.values().forEach { dictionary ->
             val result = generator.generate(wordCount, dictionary)
             val words = result.split(" ")
-            assertEquals("Failed for dictionary $dictionary",
-                wordCount, words.size)
+            assertEquals(
+                "Failed for dictionary $dictionary",
+                wordCount,
+                words.size
+            )
         }
     }
 
@@ -159,8 +169,11 @@ class PassphraseGeneratorTest {
 
         val result = generator.generate(wordCount, dictionary)
 
-        assertEquals("All words should be lowercase",
-            result, result.lowercase())
+        assertEquals(
+            "All words should be lowercase",
+            result,
+            result.lowercase()
+        )
     }
 
     @Test
@@ -172,8 +185,10 @@ class PassphraseGeneratorTest {
 
         // Seuls lettres et espaces sont autorisés
         result.forEach { char ->
-            assertTrue("Character should be letter or space",
-                char.isLetter() || char == ' ')
+            assertTrue(
+                "Character should be letter or space",
+                char.isLetter() || char == ' '
+            )
         }
     }
 }
