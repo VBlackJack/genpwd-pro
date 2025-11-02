@@ -1,9 +1,11 @@
 package com.genpwd.storage
 
 import com.genpwd.corevault.ProviderKind
+import com.genpwd.storage.crypto.TokenCrypto
 import com.genpwd.storage.db.GenPwdDatabase
 import com.genpwd.storage.db.entities.CloudAccountEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,40 +14,67 @@ import javax.inject.Singleton
  * Repository for managing cloud account storage and retrieval.
  *
  * Provides a clean API for working with cloud accounts, abstracting
- * the underlying Room database implementation.
+ * the underlying Room database implementation and handling token encryption.
  */
 @Singleton
 class CloudAccountRepository @Inject constructor(
-    private val database: GenPwdDatabase
+    private val database: GenPwdDatabase,
+    private val tokenCrypto: TokenCrypto
 ) {
     private val cloudAccountDao = database.cloudAccountDao()
 
     /**
-     * Observe all active cloud accounts.
+     * Observe all active cloud accounts with decrypted tokens.
      */
     fun observeAllAccounts(): Flow<List<CloudAccountEntity>> {
-        return cloudAccountDao.getAllActive()
+        return cloudAccountDao.getAllActive().map { accounts ->
+            accounts.map { decryptAccount(it) }
+        }
     }
 
     /**
-     * Observe accounts for a specific provider.
+     * Observe accounts for a specific provider with decrypted tokens.
      */
     fun observeAccountsForProvider(kind: ProviderKind): Flow<List<CloudAccountEntity>> {
-        return cloudAccountDao.getAllByProviderKind(kind)
+        return cloudAccountDao.getAllByProviderKind(kind).map { accounts ->
+            accounts.map { decryptAccount(it) }
+        }
     }
 
     /**
-     * Get account by ID.
+     * Get account by ID with decrypted tokens.
      */
     suspend fun getAccount(accountId: String): CloudAccountEntity? {
-        return cloudAccountDao.getById(accountId)
+        val account = cloudAccountDao.getById(accountId) ?: return null
+        return decryptAccount(account)
     }
 
     /**
-     * Get the active account for a provider.
+     * Get the active account for a provider with decrypted tokens.
      */
     suspend fun getAccountForProvider(kind: ProviderKind): CloudAccountEntity? {
-        return cloudAccountDao.getByProviderKind(kind)
+        val account = cloudAccountDao.getByProviderKind(kind) ?: return null
+        return decryptAccount(account)
+    }
+
+    /**
+     * Decrypt account tokens.
+     */
+    private fun decryptAccount(account: CloudAccountEntity): CloudAccountEntity {
+        return account.copy(
+            accessToken = tokenCrypto.decrypt(account.accessToken),
+            refreshToken = account.refreshToken?.let { tokenCrypto.decrypt(it) }
+        )
+    }
+
+    /**
+     * Encrypt account tokens.
+     */
+    private fun encryptAccount(account: CloudAccountEntity): CloudAccountEntity {
+        return account.copy(
+            accessToken = tokenCrypto.encrypt(account.accessToken),
+            refreshToken = account.refreshToken?.let { tokenCrypto.encrypt(it) }
+        )
     }
 
     /**
@@ -56,15 +85,15 @@ class CloudAccountRepository @Inject constructor(
     }
 
     /**
-     * Save a new cloud account.
+     * Save a new cloud account with encrypted tokens.
      *
      * @param kind The provider kind
      * @param displayName Display name for the account
      * @param email User email (optional)
-     * @param accessToken OAuth access token (should be encrypted)
-     * @param refreshToken OAuth refresh token (should be encrypted, optional)
+     * @param accessToken OAuth access token (plaintext - will be encrypted)
+     * @param refreshToken OAuth refresh token (plaintext - will be encrypted, optional)
      * @param expiresIn Token expiry in seconds
-     * @return The created account
+     * @return The created account with decrypted tokens
      */
     suspend fun saveAccount(
         kind: ProviderKind,
@@ -88,12 +117,16 @@ class CloudAccountRepository @Inject constructor(
             isActive = true
         )
 
-        cloudAccountDao.insert(account)
+        // Encrypt tokens before storing
+        val encryptedAccount = encryptAccount(account)
+        cloudAccountDao.insert(encryptedAccount)
+
+        // Return account with decrypted tokens
         return account
     }
 
     /**
-     * Update account tokens.
+     * Update account tokens with encryption.
      */
     suspend fun updateAccountToken(
         accountId: String,
@@ -101,7 +134,8 @@ class CloudAccountRepository @Inject constructor(
         expiresIn: Long
     ) {
         val expiresAt = System.currentTimeMillis() + (expiresIn * 1000)
-        cloudAccountDao.updateToken(accountId, accessToken, expiresAt)
+        val encryptedToken = tokenCrypto.encrypt(accessToken)
+        cloudAccountDao.updateToken(accountId, encryptedToken, expiresAt)
     }
 
     /**
