@@ -1,11 +1,28 @@
 # Architecture du système de Vault - GenPwd Pro Android
 
-## 📋 Vue d'ensemble
+## ⚠️ DOCUMENT HISTORIQUE
 
-Le projet GenPwd Pro utilise actuellement **deux architectures de stockage** pour les vaults :
+**⚠️ Ce document décrit l'ancien système Room-based qui a été SUPPRIMÉ le 2025-11-01.**
 
-1. **Architecture Room Database** (Legacy - En cours de migration)
-2. **Architecture File-Based** (Nouvelle - Recommandée)
+**Ce document est conservé uniquement pour référence historique et compréhension de l'évolution du projet.**
+
+Pour la documentation de l'architecture **actuelle**, consultez :
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architecture complète et actuelle (file-based .gpv)
+- **[MIGRATION_STATUS.md](MIGRATION_STATUS.md)** - Statut de la migration Room → File-Based
+
+**Résumé de l'état actuel :**
+- ✅ **Système actuel** : File-based .gpv (JSON chiffré)
+- ✅ **Room** : Métadonnées uniquement (VaultRegistryEntry, PasswordHistoryEntity)
+- ❌ **Legacy Room vault system** : Supprimé (VaultEntity, VaultDao, etc.)
+
+---
+
+## 📋 Vue d'ensemble historique
+
+Le projet GenPwd Pro a évolué à travers **deux architectures de stockage** pour les vaults :
+
+1. **Architecture Room Database** (Legacy - ❌ SUPPRIMÉ le 2025-11-01)
+2. **Architecture File-Based** (✅ EN PRODUCTION depuis 2025-11-01)
 
 ---
 
