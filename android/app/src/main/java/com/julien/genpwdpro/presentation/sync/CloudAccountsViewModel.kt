@@ -1,10 +1,10 @@
 package com.julien.genpwdpro.presentation.sync
 
 import androidx.lifecycle.ViewModel
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.genpwd.corevault.ProviderKind
 import com.genpwd.corevault.VaultMeta
-import com.genpwd.provider.drive.OAuth2GoogleDriveAuthProvider
 import com.genpwd.storage.CloudAccountRepository
 import com.genpwd.storage.VaultStorageRepository
 import com.genpwd.storage.db.entities.CloudAccountEntity
@@ -21,7 +21,6 @@ import javax.inject.Inject
 class CloudAccountsViewModel @Inject constructor(
     private val cloudAccountRepository: CloudAccountRepository,
     private val vaultStorage: VaultStorageRepository,
-    private val googleDriveAuthProvider: OAuth2GoogleDriveAuthProvider,
     private val providerRegistry: ProviderRegistry,
 ) : ViewModel() {
 
@@ -70,31 +69,44 @@ class CloudAccountsViewModel @Inject constructor(
     fun addAccount(kind: ProviderKind) {
         viewModelScope.launch {
             try {
-                // Currently only Google Drive is implemented
-                when (kind) {
-                    ProviderKind.GOOGLE_DRIVE -> {
-                        // Start OAuth flow - this will open the browser
-                        // The flow will throw an exception which we'll catch
-                        // but this triggers the OAuth browser flow
-                        try {
-                            googleDriveAuthProvider.authenticate()
-                        } catch (e: Exception) {
-                            // Expected exception - OAuth flow initiated
-                            _events.emit(CloudAccountsEvent.StartOAuthFlow(kind))
-                        }
-                    }
-                    else -> {
-                        _events.emit(
-                            CloudAccountsEvent.ShowError(
-                                "OAuth not yet implemented for $kind"
-                            )
+                Log.d("CloudAccountsVM", "addAccount called for provider: $kind")
+
+                // Get the cloud provider from registry
+                val provider = providerRegistry.get(kind)
+                Log.d("CloudAccountsVM", "Provider found: ${provider::class.simpleName}")
+
+                // Start OAuth flow - this will trigger the provider's authenticate method
+                // which should open the browser for OAuth providers
+                try {
+                    val account = provider.authenticate()
+                    Log.d("CloudAccountsVM", "Authentication successful, account: ${account.id}")
+
+                    // Save the account to repository
+                    cloudAccountRepository.saveAccount(
+                        kind = kind,
+                        displayName = account.displayName,
+                        email = account.displayName, // Use displayName as email fallback
+                        accessToken = account.accessToken,
+                        refreshToken = account.refreshToken,
+                        expiresIn = account.expiresAtEpochSeconds ?: 3600L // Default to 1 hour if not provided
+                    )
+
+                    _events.emit(CloudAccountsEvent.AccountAdded)
+                } catch (e: Exception) {
+                    Log.e("CloudAccountsVM", "Authentication failed", e)
+                    _events.emit(
+                        CloudAccountsEvent.ShowError(
+                            "Authentication failed: ${e.message}\n\n" +
+                            "Note: OAuth providers require configuration (CLIENT_ID, etc.) " +
+                            "which is not yet set up in this build."
                         )
-                    }
+                    )
                 }
             } catch (e: Exception) {
+                Log.e("CloudAccountsVM", "Failed to get provider", e)
                 _events.emit(
                     CloudAccountsEvent.ShowError(
-                        "Failed to start OAuth flow: ${e.message}"
+                        "Failed to start authentication: ${e.message}"
                     )
                 )
             }

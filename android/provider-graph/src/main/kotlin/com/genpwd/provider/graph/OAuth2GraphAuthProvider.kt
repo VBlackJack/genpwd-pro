@@ -1,4 +1,4 @@
-package com.genpwd.provider.drive
+package com.genpwd.provider.graph
 
 import android.content.Context
 import android.content.Intent
@@ -20,30 +20,28 @@ import java.security.SecureRandom
 import java.util.Base64
 import java.util.UUID
 import javax.inject.Inject
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * OAuth2 PKCE implementation for Google Drive authentication.
+ * OAuth2 PKCE implementation for Microsoft Graph (OneDrive) authentication.
  *
  * This implementation follows the OAuth 2.0 authorization code flow with PKCE
  * (Proof Key for Code Exchange) as specified in RFC 7636.
  */
-class OAuth2GoogleDriveAuthProvider @Inject constructor(
+class OAuth2GraphAuthProvider @Inject constructor(
     @ApplicationContext private val context: Context,
     private val httpClient: OkHttpClient,
     private val oauthStateStorage: OAuthStateStorage
-) : GoogleDriveAuthProvider {
+) : GraphAuthProvider {
 
     companion object {
-        private const val AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
-        private const val TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+        private const val AUTH_ENDPOINT = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+        private const val TOKEN_ENDPOINT = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
         private const val REDIRECT_URI = "com.julien.genpwdpro:/oauth2callback"
-        private const val CLIENT_ID = "617397885959-dejdholrsq2mulvuu24fmr6pfm2cter4.apps.googleusercontent.com"
+        private const val CLIENT_ID = "YOUR_MICROSOFT_CLIENT_ID"
 
-        // Scopes minimal for Google Drive
-        private const val SCOPES = "https://www.googleapis.com/auth/drive.appdata " +
-                "https://www.googleapis.com/auth/drive.file"
+        // Scopes for OneDrive file access
+        private const val SCOPES = "Files.ReadWrite offline_access"
     }
 
     override suspend fun authenticate(): ProviderAccount = suspendCancellableCoroutine { continuation ->
@@ -53,7 +51,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             val codeChallenge = generateCodeChallenge(codeVerifier)
 
             // Generate state with provider kind prefix
-            val state = "${ProviderKind.GOOGLE_DRIVE.name}:${UUID.randomUUID()}"
+            val state = "${ProviderKind.ONEDRIVE.name}:${UUID.randomUUID()}"
 
             // Store code_verifier securely for later retrieval
             kotlinx.coroutines.runBlocking {
@@ -69,8 +67,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
                 .appendQueryParameter("code_challenge", codeChallenge)
                 .appendQueryParameter("code_challenge_method", "S256")
                 .appendQueryParameter("state", state)
-                .appendQueryParameter("access_type", "offline")
-                .appendQueryParameter("prompt", "consent")
+                .appendQueryParameter("response_mode", "query")
                 .build()
 
             // Launch browser for OAuth flow
@@ -135,6 +132,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             .add("code_verifier", codeVerifier)
             .add("grant_type", "authorization_code")
             .add("redirect_uri", REDIRECT_URI)
+            .add("scope", SCOPES)
             .build()
 
         val request = Request.Builder()
@@ -156,7 +154,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
                     accessToken = json.getString("access_token"),
                     refreshToken = json.optString("refresh_token", ""),
                     expiresIn = json.optLong("expires_in", 3600),
-                    email = null // Email can be retrieved from userinfo endpoint if needed
+                    userId = json.optString("user_id", null)
                 )
             }
         }
@@ -170,6 +168,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             .add("client_id", CLIENT_ID)
             .add("refresh_token", refreshToken)
             .add("grant_type", "refresh_token")
+            .add("scope", SCOPES)
             .build()
 
         val request = Request.Builder()
@@ -177,17 +176,19 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
             .post(requestBody)
             .build()
 
-        return httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw ProviderError.Authentication("Token refresh failed: ${response.code}")
-            }
+        return withContext(Dispatchers.IO) {
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw ProviderError.Authentication("Token refresh failed: ${response.code}")
+                }
 
-            val json = JSONObject(response.body?.string() ?: "")
-            TokenResponse(
-                accessToken = json.getString("access_token"),
-                refreshToken = refreshToken, // Reuse old refresh token
-                expiresIn = json.optLong("expires_in", 3600)
-            )
+                val json = JSONObject(response.body?.string() ?: "")
+                TokenResponse(
+                    accessToken = json.getString("access_token"),
+                    refreshToken = json.optString("refresh_token", refreshToken), // May return new refresh token
+                    expiresIn = json.optLong("expires_in", 3600)
+                )
+            }
         }
     }
 
@@ -211,5 +212,5 @@ data class TokenResponse(
     val accessToken: String,
     val refreshToken: String,
     val expiresIn: Long,
-    val email: String? = null
+    val userId: String? = null
 )

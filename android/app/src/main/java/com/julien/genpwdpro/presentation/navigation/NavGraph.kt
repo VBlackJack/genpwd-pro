@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -15,6 +16,7 @@ import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.sync.CloudAccountsScreen
+import com.julien.genpwdpro.presentation.sync.CloudAccountsViewModel
 import com.julien.genpwdpro.presentation.sync.AddCloudAccountScreen
 import com.julien.genpwdpro.presentation.sync.ConflictResolutionScreen
 import com.julien.genpwdpro.presentation.vault.*
@@ -271,11 +273,14 @@ fun AppNavGraph(
 
         // ========== Add Cloud Account ==========
         composable(Screen.AddCloudAccount.route) {
+            val viewModel: CloudAccountsViewModel = hiltViewModel()
+
             AddCloudAccountScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onProviderSelected = { providerKind ->
-                    // TODO: Start OAuth flow for selected provider
-                    navController.popBackStack()
+                    // Start OAuth flow via ViewModel
+                    viewModel.addAccount(providerKind)
+                    // Stay on this screen - errors will be shown via ViewModel events
                 }
             )
         }
