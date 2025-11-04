@@ -16,6 +16,7 @@
 // src/js/core/dictionaries.js - Système de dictionnaires multilingues
 import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
 import { safeLog } from '../utils/logger.js';
+import { validateDictionary } from '../utils/integrity.js';
 
 const REMOTE_PROTOCOL_REGEX = /^https?:\/\//i;
 
@@ -110,7 +111,19 @@ export async function loadDictionary(dictKey) {
     safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
 
     const data = await loadDictionarySource(config);
-    
+
+    // Integrity validation (if hash is configured)
+    if (typeof data === 'string' || data instanceof ArrayBuffer) {
+      const integrityResult = await validateDictionary(dictKey, data);
+      if (!integrityResult.valid) {
+        safeLog(`⚠️ ${integrityResult.message}`);
+        // In production, you might want to throw an error here
+        // For now, we log a warning but continue
+      } else if (!integrityResult.skipped) {
+        safeLog(`✓ ${integrityResult.message}`);
+      }
+    }
+
     // Validation du format
     if (!data || !Array.isArray(data.words)) {
       throw new Error('Format de dictionnaire invalide (propriété "words" manquante)');

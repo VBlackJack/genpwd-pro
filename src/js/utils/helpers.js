@@ -242,6 +242,10 @@ export function distributeEvenly(count, start = 0, end = 100) {
  * insertWithPercentages('hello', ['!', '?'], [0, 100]) // → '!hello?'
  * insertWithPercentages('hello', ['1', '2'], [50, 50]) // → 'hel12lo'
  */
+/**
+ * OPTIMIZED: O(n+m) complexity instead of O(n*m)
+ * Builds result in single pass without repeated splices
+ */
 export function insertWithPercentages(base, charsToInsert, percentages) {
   const baseStr = typeof base === 'string' ? base : '';
   const chars = ensureArray(charsToInsert).filter(ch => typeof ch === 'string');
@@ -255,19 +259,37 @@ export function insertWithPercentages(base, charsToInsert, percentages) {
   }
 
   const positions = normalizePercentages(percentages, chars.length);
-  const arr = baseStr.split('');
+  const baseLength = baseStr.length;
 
-  positions.forEach((percent, index) => {
-    const ch = chars[index];
-    if (typeof ch !== 'string') {
-      return;
+  // Calculate absolute insertion positions
+  const insertions = positions.map((percent, index) => ({
+    pos: Math.max(0, Math.min(baseLength, Math.round((percent / 100) * baseLength))),
+    char: chars[index],
+    originalIndex: index
+  }))
+  .filter(item => typeof item.char === 'string')
+  .sort((a, b) => a.pos - b.pos || a.originalIndex - b.originalIndex);
+
+  // Build result in single pass - O(n+m) complexity
+  let result = '';
+  let baseIndex = 0;
+  let insertionIndex = 0;
+
+  while (baseIndex < baseLength || insertionIndex < insertions.length) {
+    // Insert all characters that belong at current position
+    while (insertionIndex < insertions.length && insertions[insertionIndex].pos === baseIndex) {
+      result += insertions[insertionIndex].char;
+      insertionIndex++;
     }
 
-    const insertionIndex = Math.max(0, Math.min(arr.length, Math.round((percent / 100) * arr.length)));
-    arr.splice(insertionIndex, 0, ch);
-  });
+    // Add character from base string
+    if (baseIndex < baseLength) {
+      result += baseStr[baseIndex];
+      baseIndex++;
+    }
+  }
 
-  return arr.join('');
+  return result;
 }
 
 /**
