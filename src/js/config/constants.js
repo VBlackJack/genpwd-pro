@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 // src/js/config/constants.js - Toutes les constantes du projet
-export const APP_VERSION = '2.5.1';
+export const APP_VERSION = '2.5.2';
 export const APP_NAME = 'GenPwd Pro';
 
 export const CHAR_SETS = Object.freeze({

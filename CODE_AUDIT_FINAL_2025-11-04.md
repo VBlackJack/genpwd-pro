@@ -1,7 +1,7 @@
 # 🔍 RAPPORT D'AUDIT FINAL - GENPWD PRO
 
 **Date de l'audit** : 2025-11-04
-**Version** : 2.5.1
+**Version** : 2.5.2
 **Auditeur** : Claude Code Analyzer
 **Phase** : Phase 1 (Corrections critiques) + Phase 2 (Améliorations avancées)
 

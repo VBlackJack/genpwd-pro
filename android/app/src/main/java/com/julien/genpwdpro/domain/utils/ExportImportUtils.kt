@@ -12,7 +12,7 @@ import java.io.IOException
  * Format d'export JSON compatible avec la version web
  */
 data class ExportData(
-    val version: String = "2.5.1",
+    val version: String = "2.5.2",
     val exportDate: Long = System.currentTimeMillis(),
     val platform: String = "android",
     val settings: Settings? = null,

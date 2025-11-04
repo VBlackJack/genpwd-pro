@@ -1,6 +1,6 @@
 {
   "name": "genpwd-pro",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "Générateur de mots de passe sécurisés avec tests intégrés - Architecture modulaire",
   "main": "src/index.html",
   "scripts": {

@@ -491,5 +491,5 @@ npm run lint
 ---
 
 **Date de création :** 2025-11-04
-**Version :** GenPwd Pro v2.5.1+
+**Version :** GenPwd Pro v2.5.2+
 **Auteur :** Julien Bombled
