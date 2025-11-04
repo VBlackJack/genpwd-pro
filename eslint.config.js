@@ -52,7 +52,18 @@ export default [
         TextEncoder: 'readonly',
         TextDecoder: 'readonly',
         Uint8Array: 'readonly',
-        ArrayBuffer: 'readonly'
+        ArrayBuffer: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
+        performance: 'readonly',
+        Buffer: 'readonly'
       }
     },
     rules: {
@@ -77,7 +88,11 @@ export default [
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
-        clearInterval: 'readonly'
+        clearInterval: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        crypto: 'readonly'
       }
     },
     rules: {
