@@ -1,7 +1,7 @@
 # 🔍 RAPPORT D'AUDIT DE CODE - GENPWD PRO
 
 **Date de l'audit** : 2025-11-04
-**Version analysée** : 2.5.1
+**Version analysée** : 2.5.2
 **Lignes de code** : ~6,388 lignes JavaScript ES6+
 **Auditeur** : Claude Code Analyzer
 
