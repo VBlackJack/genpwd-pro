@@ -54,9 +54,36 @@ function enforceCliSafety(value, context) {
   }
 }
 
+/**
+ * Génère un mot de passe basé sur des syllabes (alternance consonnes/voyelles)
+ * @param {Object} config - Configuration de génération
+ * @param {number} config.length - Longueur du mot de passe (lettres uniquement, avant ajout chiffres/spéciaux)
+ * @param {string} config.policy - Politique de caractères ('standard', 'standard-layout', 'alphanumerique', 'alphanumerique-layout')
+ * @param {number} config.digits - Nombre de chiffres à ajouter (0-6)
+ * @param {number} config.specials - Nombre de caractères spéciaux à ajouter (0-6)
+ * @param {string|Array} config.customSpecials - Caractères spéciaux personnalisés (optionnel)
+ * @param {string} config.placeDigits - Position des chiffres ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.placeSpecials - Position des spéciaux ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.caseMode - Mode de casse ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
+ * @param {boolean} config.useBlocks - Utiliser le système de blocs de casse
+ * @param {Array<string>} config.blockTokens - Tokens de blocs ['U', 'l', 'T'] (si useBlocks=true)
+ * @returns {Object} Résultat contenant { value: string, entropy: number, mode: string, policy: string }
+ * @throws {Error} Si la politique n'existe pas ou si les paramètres sont invalides
+ * @example
+ * const result = generateSyllables({
+ *   length: 20,
+ *   policy: 'standard',
+ *   digits: 2,
+ *   specials: 2,
+ *   placeDigits: 'aleatoire',
+ *   placeSpecials: 'fin',
+ *   caseMode: 'mixte'
+ * });
+ * // → { value: 'duNokUpYg!aKuKYMaci5@', entropy: 103.4, mode: 'syllables', policy: 'standard' }
+ */
 export function generateSyllables(config) {
   try {
-    const { length, policy, digits, specials, customSpecials, 
+    const { length, policy, digits, specials, customSpecials,
             placeDigits, placeSpecials, caseMode, useBlocks, blockTokens } = config;
 
     safeLog(`Génération syllables: length=${length}, policy="${policy}"`);
@@ -122,6 +149,34 @@ export function generateSyllables(config) {
   }
 }
 
+/**
+ * Génère une passphrase basée sur des mots de dictionnaire
+ * @param {Object} config - Configuration de génération
+ * @param {number} config.wordCount - Nombre de mots dans la passphrase (2-8)
+ * @param {string} config.separator - Séparateur entre les mots (ex: '-', ' ', '')
+ * @param {number} config.digits - Nombre de chiffres à ajouter (0-6)
+ * @param {number} config.specials - Nombre de caractères spéciaux à ajouter (0-6)
+ * @param {string|Array} config.customSpecials - Caractères spéciaux personnalisés (optionnel)
+ * @param {string} config.placeDigits - Position des chiffres ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.placeSpecials - Position des spéciaux ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.caseMode - Mode de casse ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
+ * @param {boolean} config.useBlocks - Utiliser le système de blocs de casse
+ * @param {Array<string>} config.blockTokens - Tokens de blocs ['U', 'l', 'T'] (si useBlocks=true)
+ * @param {string} config.dictionary - Langue du dictionnaire ('french', 'english', 'latin')
+ * @param {Array<string>} [config.wordListOverride] - Liste de mots personnalisée (optionnel)
+ * @returns {Promise<Object>} Résultat contenant { value: string, entropy: number, mode: string, dictionary: string, words: Array<string> }
+ * @throws {Error} Si le dictionnaire ne peut pas être chargé
+ * @example
+ * const result = await generatePassphrase({
+ *   wordCount: 5,
+ *   separator: '-',
+ *   digits: 2,
+ *   specials: 1,
+ *   dictionary: 'french',
+ *   caseMode: 'title'
+ * });
+ * // → { value: 'Pizza-Ideal-Mais-Petale-Fendre6@', entropy: 115.2, mode: 'passphrase', words: ['Pizza', 'Ideal', ...] }
+ */
 export async function generatePassphrase(config) {
   try {
     const { wordCount, separator, digits, specials, customSpecials,
@@ -218,6 +273,30 @@ export async function generatePassphrase(config) {
   }
 }
 
+/**
+ * Génère un mot de passe en leet speak (substitution de lettres par des symboles/chiffres)
+ * @param {Object} config - Configuration de génération
+ * @param {string} config.baseWord - Mot de base à transformer en leet speak
+ * @param {number} config.digits - Nombre de chiffres à ajouter (0-6)
+ * @param {number} config.specials - Nombre de caractères spéciaux à ajouter (0-6)
+ * @param {string|Array} config.customSpecials - Caractères spéciaux personnalisés (optionnel)
+ * @param {string} config.placeDigits - Position des chiffres ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.placeSpecials - Position des spéciaux ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.caseMode - Mode de casse ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
+ * @param {boolean} config.useBlocks - Utiliser le système de blocs de casse
+ * @param {Array<string>} config.blockTokens - Tokens de blocs ['U', 'l', 'T'] (si useBlocks=true)
+ * @returns {Object} Résultat contenant { value: string, entropy: number, mode: string, baseWord: string }
+ * @example
+ * const result = generateLeet({
+ *   baseWord: 'password',
+ *   digits: 2,
+ *   specials: 1,
+ *   placeDigits: 'fin',
+ *   placeSpecials: 'debut'
+ * });
+ * // → { value: '@p@55w0rd42', entropy: 45.6, mode: 'leet', baseWord: 'password' }
+ * // Transformations: a→@, s→5, o→0
+ */
 export function generateLeet(config) {
   try {
     const { baseWord, digits, specials, customSpecials,
@@ -397,23 +476,23 @@ function applyLeetTransformation(word) {
 }
 
 function resolveSpecialPool(customSpecials, policyKey = 'standard') {
-  console.log('DEBUG: resolveSpecialPool called with:', { customSpecials, policyKey });
+  safeLog('DEBUG: resolveSpecialPool called with:', { customSpecials, policyKey });
 
   if (Array.isArray(customSpecials) && customSpecials.length > 0) {
-    console.log('DEBUG: Using array customSpecials:', customSpecials);
+    safeLog('DEBUG: Using array customSpecials:', customSpecials);
     const sanitizedArray = sanitizeSpecialCandidates(customSpecials);
     if (sanitizedArray.length > 0) {
-      console.log('DEBUG: Sanitized custom array:', sanitizedArray);
+      safeLog('DEBUG: Sanitized custom array:', sanitizedArray);
       return sanitizedArray;
     }
   }
 
   if (typeof customSpecials === 'string' && customSpecials.length > 0) {
     const rawChars = Array.from(new Set(customSpecials.split('')));
-    console.log('DEBUG: Using string customSpecials:', rawChars);
+    safeLog('DEBUG: Using string customSpecials:', rawChars);
     const sanitizedString = sanitizeSpecialCandidates(rawChars);
     if (sanitizedString.length > 0) {
-      console.log('DEBUG: Sanitized custom string:', sanitizedString);
+      safeLog('DEBUG: Sanitized custom string:', sanitizedString);
       return sanitizedString;
     }
   }
@@ -421,11 +500,11 @@ function resolveSpecialPool(customSpecials, policyKey = 'standard') {
   const policyData = CHAR_SETS[policyKey];
   if (policyData && Array.isArray(policyData.specials)) {
     const sanitizedPolicy = sanitizeSpecialCandidates(policyData.specials);
-    console.log('DEBUG: Using policy specials:', sanitizedPolicy);
+    safeLog('DEBUG: Using policy specials:', sanitizedPolicy);
     return sanitizedPolicy;
   }
 
   const fallback = sanitizeSpecialCandidates(CHAR_SETS.standard.specials);
-  console.log('DEBUG: Using policy specials:', fallback);
+  safeLog('DEBUG: Using policy specials:', fallback);
   return fallback;
 }
