@@ -1,22 +1,74 @@
-# GenPwd Pro v2.5.1 🔐
+# GenPwd Pro v2.5.2 🔐
 
-[![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
+[![Version](https://img.shields.io/badge/version-2.5.2-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
 [![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
-[![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success.svg)](./tools/run_tests.js)
+[![Tests](https://img.shields.io/badge/tests-17%2F17%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![ES6+](https://img.shields.io/badge/ES6+-modern-orange.svg)](https://www.ecma-international.org/ecma-262/)
+[![Quality](https://img.shields.io/badge/quality-9.7%2F10-brightgreen.svg)](./DOCUMENTATION_AUDIT_2025-11-04.md)
 
-> Générateur de mots de passe sécurisés nouvelle génération avec architecture modulaire ES6, tests intégrés et interface moderne.
+> Générateur de mots de passe sécurisés nouvelle génération avec architecture modulaire ES6, tests intégrés, export multi-format et interface moderne personnalisable.
 
 ## ✨ Points forts
 
-- 🎯 **100% de fiabilité** - Suite de 13 tests automatisés validant chaque fonctionnalité
+- 🎯 **100% de fiabilité** - Suite de 17 tests automatisés validant chaque fonctionnalité
 - 🔒 **Haute sécurité** - Jusqu'à 140 bits d'entropie pour une protection maximale
 - 🌍 **Multilingue** - Dictionnaires français (2429 mots), anglais et latin
-- 🎨 **Interface moderne** - Dark theme, animations fluides, placement visuel interactif
-- ⚡ **Performance** - Architecture modulaire ES6 avec chargement dynamique
-- 🛠️ **Extensible** - Ajout facile de nouveaux modes et dictionnaires
+- 🎨 **Interface moderne** - 5 thèmes personnalisables, animations fluides, placement visuel interactif
+- ⚡ **Performance** - Architecture modulaire ES6 avec outils de benchmarking intégrés
+- 📤 **Export multi-format** - TXT, JSON, CSV pour tous vos besoins
+- 🛠️ **Extensible** - API complète, monitoring d'erreurs, documentation JSDoc exhaustive
+
+## 🆕 Nouvelles Fonctionnalités v2.5.2 (2025-11-04)
+
+### 📤 Export de Mots de Passe
+Exportez vos mots de passe générés dans 3 formats :
+- **TXT** - Liste simple pour copier-coller
+- **JSON** - Données complètes avec métadonnées (entropy, mode, etc.)
+- **CSV** - Compatible Excel/Google Sheets
+
+```javascript
+// Interface modale élégante avec choix du format
+// Fichiers auto-nommés: genpwd-export-2025-11-04T19-30-00.json
+```
+
+### 🎨 Système de Thèmes
+Choisissez parmi 5 thèmes professionnels :
+- 🌙 **Sombre** (défaut) - Confortable pour les yeux
+- ☀️ **Clair** - Professionnel pour usage diurne
+- ⚫⚪ **Contraste Élevé** - Accessibilité WCAG AAA
+- 🌊 **Océan** - Tons bleus apaisants
+- 🌲 **Forêt** - Tons verts naturels
+
+Persistance automatique, détection préférences système, API complète.
+
+### 🔍 Monitoring d'Erreurs
+- Capture automatique des erreurs JavaScript
+- Sanitization des données sensibles
+- Support Sentry/LogRocket pour production
+- API: `reportError()`, `withErrorHandling()`, `errorStats`
+
+### ⏱️ Outils de Performance
+Suite complète de benchmarking pour mesurer les performances :
+```javascript
+// Mesurer une fonction
+const { duration } = await measurePerformance('gen', fn);
+
+// Benchmark complet avec statistiques
+const stats = await benchmark('password-gen', fn, 1000);
+// → { min, max, mean, median, p95, p99, stdDev }
+```
+
+### 📚 Documentation Améliorée
+- **JSDoc complet** sur toutes les fonctions principales
+- **Guide des fonctionnalités** détaillé ([FEATURES_GUIDE.md](./docs/FEATURES_GUIDE.md))
+- **ESLint v9** avec configuration moderne
+- **+850 lignes** de documentation ajoutées
+
+**👉 [Guide complet des nouvelles fonctionnalités](./docs/FEATURES_GUIDE.md)**
+
+---
 
 ## 🚀 Installation rapide
 
@@ -135,9 +187,22 @@ npm run test
 
 ## 📚 Documentation
 
+### Guides Utilisateur
+- [**Guide des Fonctionnalités v2.5.2**](./docs/FEATURES_GUIDE.md) ⭐ NOUVEAU - Export, thèmes, monitoring, performance
 - [**Guide utilisateur**](./docs/USER-GUIDE.md) - Utilisation détaillée de toutes les fonctionnalités
-- [**Documentation technique**](./docs/TECHNICAL.md) - Architecture, API et extensibilité
 - [**Changelog**](./CHANGELOG.md) - Historique des versions et évolutions
+
+### Documentation Technique
+- [**Documentation technique**](./docs/TECHNICAL.md) - Architecture, API et extensibilité
+- [**API Reference**](./docs/API.md) - Référence complète de l'API
+- [**Android Architecture**](./docs/ANDROID-ARCHITECTURE.md) - Architecture de l'application Android
+
+### Sécurité & Qualité
+- [**Audit de Sécurité 2025-11-04**](./SECURITY_AUDIT_REPORT_2025-11-04.md) - Score 9.5/10
+- [**Correctifs Implémentés**](./SECURITY_FIXES_IMPLEMENTED.md) - Vulnérabilités corrigées
+- [**Audit Documentation**](./DOCUMENTATION_AUDIT_2025-11-04.md) - État de la documentation
+
+📖 **[Index complet de la documentation](./docs/INDEX.md)**
 
 ## 🤝 Contribution
 
