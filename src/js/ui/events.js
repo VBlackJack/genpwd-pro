@@ -31,6 +31,22 @@ let previewTimeout = null;
 let blockSyncTimeout = null;
 const BLOCK_SYNC_DELAY = 200;
 
+/**
+ * Cleans up all active timeouts and event handlers
+ * Should be called on page unload to prevent memory leaks
+ */
+export function cleanupEventHandlers() {
+  if (previewTimeout) {
+    clearTimeout(previewTimeout);
+    previewTimeout = null;
+  }
+  if (blockSyncTimeout) {
+    clearTimeout(blockSyncTimeout);
+    blockSyncTimeout = null;
+  }
+  safeLog('Event handlers cleaned up');
+}
+
 export function bindEventHandlers() {
   try {
     bindMainActions();
@@ -45,6 +61,9 @@ export function bindEventHandlers() {
     if (placementApi && typeof placementApi.onUpdate === 'function') {
       placementApi.onUpdate(() => debouncedUpdatePreview());
     }
+
+    // Register cleanup handler for page unload
+    window.addEventListener('beforeunload', cleanupEventHandlers);
 
     safeLog('Événements bindés avec succès');
   } catch (error) {
@@ -298,77 +317,131 @@ function bindDebugActions() {
   });
 }
 
-// Actions principales
+// Actions principales - REFACTORED for better maintainability
+
+/**
+ * Logs visual placement state if active
+ */
+function logVisualPlacement() {
+  const placementState = getVisualPlacement();
+  if (placementState?.mode === 'visual') {
+    const digitsInfo = placementState.digits.length > 0
+      ? placementState.digits.join(', ')
+      : 'aucun';
+    const specialsInfo = placementState.specials.length > 0
+      ? placementState.specials.join(', ')
+      : 'aucun';
+    safeLog(`Placement visuel actif → chiffres: [${digitsInfo}] • spéciaux: [${specialsInfo}]`);
+  }
+}
+
+/**
+ * Builds common configuration for all generation modes
+ * @param {Object} settings - Current settings
+ * @returns {Object} Common configuration object
+ */
+function buildCommonConfig(settings) {
+  return {
+    digits: settings.digitsNum,
+    specials: settings.specialsNum,
+    customSpecials: settings.customSpecials,
+    placeDigits: settings.placeDigits,
+    placeSpecials: settings.placeSpecials,
+    caseMode: settings.caseMode,
+    useBlocks: settings.caseMode === 'blocks',
+    blockTokens: getBlocks()
+  };
+}
+
+/**
+ * Generates a single password based on mode
+ * @param {string} mode - Generation mode (syllables, passphrase, leet)
+ * @param {Object} commonConfig - Common configuration
+ * @param {Object} settings - Full settings object
+ * @returns {Promise<Object>} Generated password result
+ */
+async function generateSinglePassword(mode, commonConfig, settings) {
+  switch (mode) {
+    case 'syllables':
+      return generateSyllables({
+        ...commonConfig,
+        length: settings.specific.length,
+        policy: settings.specific.policy
+      });
+
+    case 'passphrase':
+      return await generatePassphrase({
+        ...commonConfig,
+        wordCount: settings.specific.count,
+        separator: settings.specific.sep,
+        dictionary: settings.specific.dictionary
+      });
+
+    case 'leet':
+      return generateLeet({
+        ...commonConfig,
+        baseWord: settings.specific.word
+      });
+
+    default:
+      throw new Error(`Unknown generation mode: ${mode}`);
+  }
+}
+
+/**
+ * Handles generation results display and notifications
+ * @param {Array} results - Array of generated passwords
+ * @param {Object} settings - Current settings
+ */
+function handleGenerationResults(results, settings) {
+  if (results.length === 0) {
+    showToast('Erreur lors de la génération', 'error');
+    return;
+  }
+
+  setResults(results);
+  renderResults(results, settings.mask);
+
+  const dictText = settings.mode === 'passphrase'
+    ? ` (${settings.specific.dictionary})`
+    : '';
+  const plural = results.length > 1 ? 's' : '';
+
+  showToast(
+    `Généré ${results.length} mot${plural} de passe${dictText} !`,
+    'success'
+  );
+}
+
+/**
+ * Main password generation function - REFACTORED
+ * Now uses parallel generation with Promise.all for better performance
+ */
 async function generatePasswords() {
   try {
     const settings = readSettings();
-    const results = [];
+    const commonConfig = buildCommonConfig(settings);
 
-    const placementState = getVisualPlacement();
-    if (placementState?.mode === 'visual') {
-      const digitsInfo = placementState.digits.length > 0 ? placementState.digits.join(', ') : 'aucun';
-      const specialsInfo = placementState.specials.length > 0 ? placementState.specials.join(', ') : 'aucun';
-      safeLog(`Placement visuel actif → chiffres: [${digitsInfo}] • spéciaux: [${specialsInfo}]`);
-    }
-    
+    // Log visual placement if active
+    logVisualPlacement();
+
     safeLog(`Génération: mode=${settings.mode}, qty=${settings.qty}`);
 
-    for (let i = 0; i < settings.qty; i++) {
-      let result;
-      
-      const commonConfig = {
-        digits: settings.digitsNum,
-        specials: settings.specialsNum,
-        customSpecials: settings.customSpecials,
-        placeDigits: settings.placeDigits,
-        placeSpecials: settings.placeSpecials,
-        caseMode: settings.caseMode,
-        useBlocks: settings.caseMode === 'blocks',
-        blockTokens: getBlocks()
-      };
+    // PARALLEL generation instead of sequential for better performance
+    const promises = Array.from(
+      { length: settings.qty },
+      () => generateSinglePassword(settings.mode, commonConfig, settings)
+    );
 
-      switch (settings.mode) {
-        case 'syllables':
-          result = generateSyllables({
-            ...commonConfig,
-            length: settings.specific.length,
-            policy: settings.specific.policy
-          });
-          break;
+    const allResults = await Promise.all(promises);
 
-        case 'passphrase':
-          result = await generatePassphrase({
-            ...commonConfig,
-            wordCount: settings.specific.count,
-            separator: settings.specific.sep,
-            dictionary: settings.specific.dictionary
-          });
-          break;
+    // Filter out errors
+    const results = allResults.filter(
+      result => result?.value && !result.value.startsWith('error-')
+    );
 
-        case 'leet':
-          result = generateLeet({
-            ...commonConfig,
-            baseWord: settings.specific.word
-          });
-          break;
-      }
+    handleGenerationResults(results, settings);
 
-      if (result && result.value && !result.value.startsWith('error-')) {
-        results.push(result);
-      }
-    }
-
-    if (results.length === 0) {
-      showToast('Erreur lors de la génération', 'error');
-      return;
-    }
-
-    setResults(results);
-    renderResults(results, settings.mask);
-    
-    const dictText = settings.mode === 'passphrase' ? ` (${settings.specific.dictionary})` : '';
-    showToast(`Généré ${results.length} mot${results.length > 1 ? 's' : ''} de passe${dictText} !`, 'success');
-    
   } catch (error) {
     safeLog(`Erreur génération: ${error.message}`);
     showToast('Erreur lors de la génération', 'error');
