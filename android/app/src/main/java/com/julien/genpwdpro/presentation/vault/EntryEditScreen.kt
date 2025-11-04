@@ -36,6 +36,7 @@ fun EntryEditScreen(
     initialPassword: String? = null,
     onSaved: () -> Unit,
     onBackClick: () -> Unit,
+    onScanQrCode: () -> Unit = {},
     viewModel: EntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -449,8 +450,8 @@ fun EntryEditScreen(
                 showTotpDialog = false
             },
             onScanQr = {
-                // TODO: Ouvrir le scanner QR
                 showTotpDialog = false
+                onScanQrCode()
             }
         )
     }

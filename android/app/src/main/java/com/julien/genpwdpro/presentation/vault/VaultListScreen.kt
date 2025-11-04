@@ -28,6 +28,7 @@ fun VaultListScreen(
     onEntryClick: (String) -> Unit,
     onAddEntry: (EntryType) -> Unit,
     onSettingsClick: () -> Unit,
+    onImportExportClick: () -> Unit = {},
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
 ) {
@@ -40,6 +41,7 @@ fun VaultListScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
+    var showSettingsMenu by remember { mutableStateOf(false) }
 
     // Charger les entrées
     LaunchedEffect(vaultId) {
@@ -170,9 +172,33 @@ fun VaultListScreen(
                             Icon(Icons.Default.Lock, "Verrouiller")
                         }
 
-                        // Paramètres
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(Icons.Default.Settings, "Paramètres")
+                        // Paramètres (menu dropdown)
+                        Box {
+                            IconButton(onClick = { showSettingsMenu = true }) {
+                                Icon(Icons.Default.Settings, "Paramètres")
+                            }
+
+                            DropdownMenu(
+                                expanded = showSettingsMenu,
+                                onDismissRequest = { showSettingsMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Synchronisation") },
+                                    onClick = {
+                                        onSettingsClick()
+                                        showSettingsMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Cloud, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import / Export") },
+                                    onClick = {
+                                        onImportExportClick()
+                                        showSettingsMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.ImportExport, null) }
+                                )
+                            }
                         }
                     }
                 }

@@ -12,6 +12,8 @@ import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
+import com.julien.genpwdpro.presentation.screens.importexport.ImportExportScreen
+import com.julien.genpwdpro.presentation.qrscanner.QRScannerScreen
 import com.julien.genpwdpro.presentation.vault.*
 import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 
@@ -46,6 +48,14 @@ sealed class Screen(val route: String) {
 
     // Security Settings
     object SecuritySettings : Screen("security_settings")
+
+    // Import/Export Settings
+    object ImportExport : Screen("import_export/{vaultId}") {
+        fun createRoute(vaultId: String) = "import_export/$vaultId"
+    }
+
+    // QR Scanner (for TOTP)
+    object QRScanner : Screen("qr_scanner")
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {
@@ -219,6 +229,35 @@ fun AppNavGraph(
             )
         }
 
+        // ========== Import/Export ==========
+        composable(
+            route = Screen.ImportExport.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId")
+
+            ImportExportScreen(
+                onNavigateBack = { navController.popBackStack() },
+                vaultId = vaultId
+            )
+        }
+
+        // ========== QR Scanner ==========
+        composable(Screen.QRScanner.route) { backStackEntry ->
+            QRScannerScreen(
+                onQRCodeScanned = { qrData ->
+                    // Return the QR data to the previous screen
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("qr_data", qrData)
+                    navController.popBackStack()
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         // ========== Preset Manager ==========
         composable(
             route = Screen.PresetManager.route,
@@ -325,6 +364,9 @@ fun AppNavGraph(
                 onSettingsClick = {
                     navController.navigate(Screen.SyncSettings.route)
                 },
+                onImportExportClick = {
+                    navController.navigate(Screen.ImportExport.createRoute(vaultId))
+                },
                 onLockClick = {
                     // Return to dashboard instead of vault selector
                     navController.navigate(Screen.Dashboard.route) {
@@ -400,7 +442,10 @@ fun AppNavGraph(
                 onSaved = {
                     navController.popBackStack()
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onScanQrCode = {
+                    navController.navigate(Screen.QRScanner.route)
+                }
             )
         }
 
@@ -421,7 +466,10 @@ fun AppNavGraph(
                 onSaved = {
                     navController.popBackStack()
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onScanQrCode = {
+                    navController.navigate(Screen.QRScanner.route)
+                }
             )
         }
     }
