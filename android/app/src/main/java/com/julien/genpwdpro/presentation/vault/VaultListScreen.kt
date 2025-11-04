@@ -29,6 +29,7 @@ fun VaultListScreen(
     onAddEntry: (EntryType) -> Unit,
     onSettingsClick: () -> Unit,
     onImportExportClick: () -> Unit = {},
+    onPasswordHealthClick: () -> Unit = {},
     onLockClick: () -> Unit,
     viewModel: VaultListViewModel = hiltViewModel()
 ) {
@@ -182,6 +183,14 @@ fun VaultListScreen(
                                 expanded = showSettingsMenu,
                                 onDismissRequest = { showSettingsMenu = false }
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text("Santé des mots de passe") },
+                                    onClick = {
+                                        onPasswordHealthClick()
+                                        showSettingsMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.HealthAndSafety, null) }
+                                )
                                 DropdownMenuItem(
                                     text = { Text("Synchronisation") },
                                     onClick = {

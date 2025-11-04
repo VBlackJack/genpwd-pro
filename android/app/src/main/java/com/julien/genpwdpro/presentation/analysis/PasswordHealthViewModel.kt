@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.data.local.entity.EntryType
 import com.julien.genpwdpro.data.repository.VaultRepository
+import com.julien.genpwdpro.data.services.BreachCheckResult
+import com.julien.genpwdpro.data.services.HaveIBeenPwnedService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +25,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class PasswordHealthViewModel @Inject constructor(
-    private val vaultRepository: VaultRepository
+    private val vaultRepository: VaultRepository,
+    private val hibpService: HaveIBeenPwnedService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HealthUiState>(HealthUiState.Loading)
@@ -69,18 +72,23 @@ class PasswordHealthViewModel @Inject constructor(
                     // Mots de passe réutilisés (grouper par mot de passe)
                     passwordMap.getOrPut(entry.password) { mutableListOf() }.add(entry)
 
-                    // Mots de passe compromis
-                    // TODO: Implémenter la vérification des breaches via API externe (HaveIBeenPwned)
-                    // if (entry.isCompromised) {
-                    //     compromisedPasswords.add(
-                    //         CompromisedPasswordEntry(
-                    //             id = entry.id,
-                    //             title = entry.title,
-                    //             username = entry.username,
-                    //             breachCount = entry.breachCount
-                    //         )
-                    //     )
-                    // }
+                    // Mots de passe compromis (Have I Been Pwned API)
+                    try {
+                        val breachResult = hibpService.checkPassword(entry.password)
+                        if (breachResult is BreachCheckResult.Breached) {
+                            compromisedPasswords.add(
+                                CompromisedPasswordEntry(
+                                    id = entry.id,
+                                    title = entry.title,
+                                    username = entry.username,
+                                    breachCount = breachResult.count
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        // Continuer même si la vérification échoue
+                        android.util.Log.w("PasswordHealth", "Failed to check breach for ${entry.title}", e)
+                    }
 
                     // Mots de passe anciens (> 90 jours)
                     val daysSinceUpdate = (System.currentTimeMillis() - entry.modifiedAt) / (1000 * 60 * 60 * 24)

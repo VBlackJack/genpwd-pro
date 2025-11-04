@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GenPwd Pro</string>
+    <string name="app_subtitle">Générateur de mots de passe sécurisés</string>
+
+    <!-- Import/Export -->
+    <string name="import_export_title">Import / Export</string>
+    <string name="import_export_csv_title">Export / Import CSV</string>
+    <string name="import_export_csv_description">Format compatible avec d\'autres gestionnaires de mots de passe.</string>
+    <string name="import_export_csv_warning">⚠️ Les fichiers CSV contiennent vos données en clair (non chiffrées)</string>
+    <string name="import_export_json_title">Backup Chiffré (JSON)</string>
+    <string name="import_export_json_description">Sauvegarde complète et sécurisée de votre vault avec chiffrement AES-256-GCM.</string>
+    <string name="import_export_json_secure">✅ Recommandé : Chiffrement Argon2id + AES-256-GCM</string>
+
+    <string name="action_export_csv">Exporter CSV</string>
+    <string name="action_import_csv">Importer CSV</string>
+    <string name="action_create_backup">Créer Backup</string>
+    <string name="action_restore">Restaurer</string>
+
+    <string name="dialog_csv_warning_title">⚠️ Attention : Données non chiffrées</string>
+    <string name="dialog_csv_warning_message">Le fichier CSV contiendra vos mots de passe en clair (non chiffrés).</string>
+    <string name="dialog_csv_warning_migration">Utilisez cette option uniquement pour migrer vers un autre gestionnaire de mots de passe.</string>
+    <string name="dialog_csv_warning_recommendation">Pour un backup sécurisé, utilisez l\'export JSON chiffré.</string>
+    <string name="dialog_csv_confirm">J\'ai compris, continuer</string>
+
+    <string name="import_export_best_practices_title">💡 Bonnes Pratiques</string>
+    <string name="import_export_best_practice_1">Effectuez des backups réguliers (hebdomadaires recommandé)</string>
+    <string name="import_export_best_practice_2">Stockez les backups dans un endroit sûr (cloud chiffré, clé USB)</string>
+    <string name="import_export_best_practice_3">Ne partagez jamais vos exports CSV (données en clair)</string>
+    <string name="import_export_best_practice_4">Testez vos backups en restaurant sur un autre appareil</string>
+    <string name="import_export_best_practice_5">Utilisez un mot de passe fort pour les backups JSON</string>
+
+    <string name="no_vault_unlocked_title">Aucun vault déverrouillé</string>
+    <string name="no_vault_unlocked_message">Vous devez déverrouiller un vault avant de pouvoir importer ou exporter des données.</string>
+
+    <string name="export_success">%d entrées exportées avec succès</string>
+    <string name="import_success">%d entrées importées avec succès</string>
+    <string name="backup_created_success">Backup chiffré créé avec succès (%d entrées)</string>
+    <string name="vault_restored_success">Vault restauré avec succès (ID: %s)</string>
+
+    <!-- QR Scanner -->
+    <string name="qr_scanner_title">Scanner QR Code</string>
+    <string name="qr_scanner_instructions_title">📷 Scannez le QR Code</string>
+    <string name="qr_scanner_instructions">Placez le QR code dans le cadre pour le scanner automatiquement.</string>
+    <string name="qr_scanner_permission_title">Permission caméra requise</string>
+    <string name="qr_scanner_permission_message">Pour scanner un QR code, l\'application a besoin d\'accéder à votre caméra.</string>
+    <string name="qr_scanner_allow_camera">Autoriser la caméra</string>
+    <string name="qr_scanner_detected_title">✅ QR Code TOTP détecté !</string>
+    <string name="qr_scanner_detected_message">Configuration en cours…</string>
+    <string name="qr_scanner_invalid_title">❌ QR Code non valide</string>
+    <string name="qr_scanner_invalid_message">Ce n\'est pas un QR code TOTP/HOTP.</string>
+
+    <!-- Password Health -->
+    <string name="password_health_title">Santé des mots de passe</string>
+    <string name="password_health_analyzing">Analyse en cours…</string>
+    <string name="password_health_refresh">Rafraîchir</string>
+
+    <string name="password_health_score">Score de santé</string>
+    <string name="password_health_excellent">Excellent</string>
+    <string name="password_health_good">Bon</string>
+    <string name="password_health_fair">Moyen</string>
+    <string name="password_health_poor">Faible</string>
+    <string name="password_health_critical">Critique</string>
+
+    <string name="password_health_statistics_title">📊 Statistiques</string>
+    <string name="password_health_total_entries">Entrées totales</string>
+    <string name="password_health_total_passwords">Mots de passe</string>
+    <string name="password_health_weak_passwords">Mots de passe faibles</string>
+    <string name="password_health_reused_passwords">Mots de passe réutilisés</string>
+    <string name="password_health_compromised_passwords">Mots de passe compromis</string>
+    <string name="password_health_old_passwords">Mots de passe anciens</string>
+    <string name="password_health_average_strength">Force moyenne</string>
+
+    <string name="password_health_issues_title">⚠️ Problèmes détectés</string>
+    <string name="password_health_no_issues">✅ Aucun problème détecté ! Votre vault est sécurisé.</string>
+
+    <string name="password_health_weak_title">🔓 Mots de passe faibles</string>
+    <string name="password_health_weak_strength">Force : %d/100</string>
+    <string name="password_health_weak_reason">Raison : %s</string>
+
+    <string name="password_health_reused_title">♻️ Mots de passe réutilisés</string>
+    <string name="password_health_reused_count">Réutilisé %d fois</string>
+
+    <string name="password_health_compromised_title">💀 Mots de passe compromis</string>
+    <string name="password_health_compromised_breach_count">Trouvé dans %d fuites de données</string>
+    <string name="password_health_compromised_powered_by">Vérifié via Have I Been Pwned</string>
+
+    <string name="password_health_old_title">📅 Mots de passe anciens</string>
+    <string name="password_health_old_days">Pas modifié depuis %d jours</string>
+
+    <string name="password_health_recommendations_title">💡 Recommandations</string>
+    <string name="password_health_recommendation_weak">Changez les mots de passe faibles par des mots de passe plus forts (>16 caractères, mix de caractères)</string>
+    <string name="password_health_recommendation_reused">Utilisez un mot de passe unique pour chaque service</string>
+    <string name="password_health_recommendation_compromised">Changez IMMÉDIATEMENT les mots de passe compromis</string>
+    <string name="password_health_recommendation_old">Changez les mots de passe de plus de 90 jours</string>
+
+    <!-- Menu items -->
+    <string name="menu_password_health">Santé des mots de passe</string>
+    <string name="menu_synchronization">Synchronisation</string>
+    <string name="menu_import_export">Import / Export</string>
+
+    <!-- Common -->
+    <string name="action_back">Retour</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_continue">Continuer</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_refresh">Actualiser</string>
+
+    <string name="error_generic">Une erreur est survenue</string>
+    <string name="error_network">Erreur réseau</string>
+    <string name="error_vault_locked">Vault non déverrouillé</string>
+
+    <string name="loading">Chargement…</string>
+    <string name="success">Succès</string>
+</resources>

@@ -14,6 +14,7 @@ import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
 import com.julien.genpwdpro.presentation.screens.importexport.ImportExportScreen
 import com.julien.genpwdpro.presentation.qrscanner.QRScannerScreen
+import com.julien.genpwdpro.presentation.analysis.PasswordHealthScreen
 import com.julien.genpwdpro.presentation.vault.*
 import com.julien.genpwdpro.presentation.dashboard.DashboardScreen
 
@@ -56,6 +57,11 @@ sealed class Screen(val route: String) {
 
     // QR Scanner (for TOTP)
     object QRScanner : Screen("qr_scanner")
+
+    // Password Health Dashboard
+    object PasswordHealth : Screen("password_health/{vaultId}") {
+        fun createRoute(vaultId: String) = "password_health/$vaultId"
+    }
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {
@@ -258,6 +264,24 @@ fun AppNavGraph(
             )
         }
 
+        // ========== Password Health Dashboard ==========
+        composable(
+            route = Screen.PasswordHealth.route,
+            arguments = listOf(
+                navArgument("vaultId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val vaultId = backStackEntry.arguments?.getString("vaultId") ?: return@composable
+
+            PasswordHealthScreen(
+                vaultId = vaultId,
+                onBackClick = { navController.popBackStack() },
+                onEntryClick = { entryId ->
+                    navController.navigate(Screen.EditEntry.createRoute(vaultId, entryId))
+                }
+            )
+        }
+
         // ========== Preset Manager ==========
         composable(
             route = Screen.PresetManager.route,
@@ -366,6 +390,9 @@ fun AppNavGraph(
                 },
                 onImportExportClick = {
                     navController.navigate(Screen.ImportExport.createRoute(vaultId))
+                },
+                onPasswordHealthClick = {
+                    navController.navigate(Screen.PasswordHealth.createRoute(vaultId))
                 },
                 onLockClick = {
                     // Return to dashboard instead of vault selector
