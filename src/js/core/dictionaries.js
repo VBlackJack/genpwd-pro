@@ -17,6 +17,71 @@
 import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
 import { safeLog } from '../utils/logger.js';
 
+const REMOTE_PROTOCOL_REGEX = /^https?:\/\//i;
+
+async function loadDictionarySource(config) {
+  const { url } = config;
+
+  const isBrowserContext = typeof window !== 'undefined' && typeof window.fetch === 'function';
+  const shouldUseHttpFetch = isBrowserContext || REMOTE_PROTOCOL_REGEX.test(url);
+
+  if (shouldUseHttpFetch) {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'public, max-age=3600'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  const [{ readFile }, nodePath, { fileURLToPath }] = await Promise.all([
+    import('node:fs/promises'),
+    import('node:path'),
+    import('node:url')
+  ]);
+
+  const normalizedPath = url.startsWith('./') ? url.slice(2) : url;
+  const cwd = typeof globalThis.process?.cwd === 'function' ? globalThis.process.cwd() : null;
+  const moduleDir = nodePath.dirname(fileURLToPath(import.meta.url));
+
+  const candidatePaths = [
+    nodePath.resolve(moduleDir, '../../', normalizedPath)
+  ];
+
+  if (cwd) {
+    candidatePaths.unshift(
+      nodePath.resolve(cwd, 'src', normalizedPath)
+    );
+    candidatePaths.unshift(
+      nodePath.resolve(cwd, normalizedPath)
+    );
+  }
+
+  let lastError = null;
+
+  for (const candidate of candidatePaths) {
+    try {
+      const fileContent = await readFile(candidate, 'utf-8');
+      safeLog(`Lecture locale du dictionnaire ${config.name} depuis ${candidate}`);
+      return JSON.parse(fileContent);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error(`Impossible de localiser le dictionnaire ${url}`);
+}
+
 // État interne du système de dictionnaires
 const dictionaries = {
   current: 'french',
@@ -43,20 +108,8 @@ export async function loadDictionary(dictKey) {
   
   try {
     safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
-    
-    const response = await fetch(config.url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Cache-Control': 'public, max-age=3600'
-      }
-    });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const data = await loadDictionarySource(config);
     
     // Validation du format
     if (!data || !Array.isArray(data.words)) {

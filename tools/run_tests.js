@@ -637,7 +637,25 @@ async function main() {
   const results = await runner.runAll(runs);
   const lastRun = results[results.length - 1];
 
-  if (lastRun.failed > 0) {
+  let vaultFailed = false;
+  try {
+    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+    console.log(`[${formatTimestamp()}] ℹ️ 🔐 TESTS CONTRAT VAULT`);
+    const { runVaultContractTests } = await importModule('src/js/vault/tests/contract-tests.js');
+    const vaultResults = await runVaultContractTests();
+    vaultResults.forEach((result) => {
+      const icon = result.status === 'pass' ? '✅' : '❌';
+      console.log(`[${formatTimestamp()}] ${icon} ${result.name}`);
+      if (result.status !== 'pass') {
+        vaultFailed = true;
+      }
+    });
+  } catch (error) {
+    vaultFailed = true;
+    console.log(`[${formatTimestamp()}] ❌ Tests contrat vault - ${error.message}`);
+  }
+
+  if (lastRun.failed > 0 || vaultFailed) {
     process.exitCode = 1;
   }
 }

@@ -96,6 +96,17 @@ sealed class VaultException(
     )
 
     /**
+     * Entrée déjà existante
+     */
+    class EntryAlreadyExists(
+        entryId: String,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = "Entry already exists: $entryId",
+        cause = cause
+    )
+
+    /**
      * Dossier non trouvé
      */
     class FolderNotFound(
@@ -103,6 +114,61 @@ sealed class VaultException(
         cause: Throwable? = null
     ) : VaultException(
         message = "Folder not found: $folderId",
+        cause = cause
+    )
+
+    /**
+     * Dossier déjà existant
+     */
+    class FolderAlreadyExists(
+        folderId: String,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = "Folder already exists: $folderId",
+        cause = cause
+    )
+
+    /**
+     * Tag non trouvé
+     */
+    class TagNotFound(
+        tagId: String,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = "Tag not found: $tagId",
+        cause = cause
+    )
+
+    /**
+     * Tag déjà existant
+     */
+    class TagAlreadyExists(
+        tagId: String,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = "Tag already exists: $tagId",
+        cause = cause
+    )
+
+    /**
+     * Preset non trouvé
+     */
+    class PresetNotFound(
+        presetId: String,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = "Preset not found: $presetId",
+        cause = cause
+    )
+
+    /**
+     * Preset déjà existant
+     */
+    class PresetAlreadyExists(
+        presetId: String,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = "Preset already exists: $presetId",
         cause = cause
     )
 
@@ -165,6 +231,19 @@ sealed class VaultException(
         cause: Throwable? = null
     ) : VaultException(
         message = message ?: "Data conflict detected.",
+        cause = cause
+    )
+
+    /**
+     * Too many failed unlock attempts - vault is temporarily locked
+     *
+     * SECURITY: Rate limiting to prevent brute-force attacks
+     */
+    class TooManyAttempts(
+        message: String? = null,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = message ?: "Too many failed unlock attempts. Please try again later.",
         cause = cause
     )
 

@@ -1,6 +1,5 @@
 package com.julien.genpwdpro.presentation.utils
 
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -17,8 +16,8 @@ import androidx.compose.ui.unit.dp
  * Classe d'aide pour déterminer le type d'appareil
  */
 enum class DeviceType {
-    PHONE,      // < 600dp
-    TABLET,     // 600-840dp
+    PHONE, // < 600dp
+    TABLET, // 600-840dp
     LARGE_TABLET // > 840dp
 }
 

@@ -49,8 +49,10 @@ class LeetSpeakGeneratorTest {
         }
 
         // Au moins 90% des mots de passe doivent être uniques
-        assertTrue("Generated passwords should be mostly unique",
-            passwords.size >= 90)
+        assertTrue(
+            "Generated passwords should be mostly unique",
+            passwords.size >= 90
+        )
     }
 
     @Test
@@ -85,8 +87,10 @@ class LeetSpeakGeneratorTest {
         val leetRate = leetChars.toDouble() / length
 
         // Le taux de substitution devrait être entre 10% et 80%
-        assertTrue("Leet substitution rate should be reasonable (10-80%)",
-            leetRate in 0.1..0.8)
+        assertTrue(
+            "Leet substitution rate should be reasonable (10-80%)",
+            leetRate in 0.1..0.8
+        )
     }
 
     @Test
@@ -124,8 +128,10 @@ class LeetSpeakGeneratorTest {
         val commonLeetChars = setOf('3', '1', '0', '@', '!')
         val foundLeetChars = commonLeetChars.filter { allChars.contains(it) }
 
-        assertTrue("Should contain common leet substitutions",
-            foundLeetChars.size >= 3)
+        assertTrue(
+            "Should contain common leet substitutions",
+            foundLeetChars.size >= 3
+        )
     }
 
     @Test
@@ -138,8 +144,10 @@ class LeetSpeakGeneratorTest {
         val letterCount = result.count { it.isLetter() }
         val letterRate = letterCount.toDouble() / length
 
-        assertTrue("Should maintain some letters for readability",
-            letterRate >= 0.2)
+        assertTrue(
+            "Should maintain some letters for readability",
+            letterRate >= 0.2
+        )
     }
 
     @Test
@@ -150,7 +158,9 @@ class LeetSpeakGeneratorTest {
 
         // Vérifier que les premiers caractères sont différents (indication de variation)
         val firstChars = passwords.map { it.first() }.toSet()
-        assertTrue("First characters should vary",
-            firstChars.size >= 5)
+        assertTrue(
+            "First characters should vary",
+            firstChars.size >= 5
+        )
     }
 }

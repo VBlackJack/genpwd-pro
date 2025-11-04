@@ -6,21 +6,40 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
     <!-- Network permissions for cloud sync -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <permission
+        android:name="com.julien.genpwdpro.permission.WIDGET_INTERNAL"
+        android:label="@string/app_name"
+        android:description="@string/widget_permission_description"
+        android:protectionLevel="signature" />
+
+    <!-- Hardened trust anchors (system CAs only, debug overrides in xml/) -->
     <application
         android:name=".GenPwdProApplication"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GenPwdPro"
+        android:usesCleartextTraffic="false"
         tools:targetApi="31">
+
+        <!--
+             Export policy: only components required for widgets, autofill or OAuth deep links
+             declare android:exported="true". Everything else (providers, services) remains
+             internal and we keep allowBackup disabled to avoid leaking vault content through
+             system backups.
+        -->
 
         <activity
             android:name=".presentation.MainActivity"
@@ -57,18 +76,79 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".presentation.otp.OtpImportActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.GenPwdPro">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="otpauth"
+                    android:host="totp" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="otpauth"
+                    android:host="hotp" />
+            </intent-filter>
+        </activity>
+
+        <!-- OAuth2 Callback Activity for Cloud Provider Authentication -->
+        <activity
+            android:name=".presentation.sync.OAuthCallbackActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.GenPwdPro">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- OAuth2 callback URL: com.julien.genpwdpro://oauth2callback -->
+                <data
+                    android:scheme="com.julien.genpwdpro"
+                    android:host="oauth2callback" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".presentation.otp.OtpQrScannerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GenPwdPro"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Widget Provider -->
         <receiver
             android:name=".presentation.widget.PasswordWidget"
-            android:exported="true">
+            android:exported="true"
+            android:directBootAware="true"
+            android:permission="com.julien.genpwdpro.permission.WIDGET_INTERNAL">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.julien.genpwdpro.ACTION_GENERATE" />
-                <action android:name="com.julien.genpwdpro.ACTION_COPY" />
+                <action android:name="android.appwidget.action.APPWIDGET_OPTIONS_CHANGED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".presentation.widget.UserUnlockedReceiver"
+            android:exported="false"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.USER_UNLOCKED" />
+            </intent-filter>
         </receiver>
 
         <!-- Autofill Service (Android 8+) -->

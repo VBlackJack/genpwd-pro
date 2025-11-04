@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -16,10 +16,10 @@ import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Provider pour Google Drive
@@ -54,7 +54,7 @@ class GoogleDriveProvider : CloudProvider {
         try {
             driveService != null && currentAccount != null
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking authentication", e)
+            SafeLog.e(TAG, "Error checking authentication", e)
             false
         }
     }
@@ -83,7 +83,7 @@ class GoogleDriveProvider : CloudProvider {
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error during authentication", e)
+            SafeLog.e(TAG, "Error during authentication", e)
             false
         }
     }
@@ -92,7 +92,9 @@ class GoogleDriveProvider : CloudProvider {
      * Callback pour gérer le résultat du sign-in
      * À appeler depuis l'Activity après onActivityResult
      */
-    suspend fun handleSignInResult(activity: Activity, account: GoogleSignInAccount?): Boolean = withContext(Dispatchers.IO) {
+    suspend fun handleSignInResult(activity: Activity, account: GoogleSignInAccount?): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             if (account != null) {
                 setupDriveService(activity, account)
@@ -101,7 +103,7 @@ class GoogleDriveProvider : CloudProvider {
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling sign-in result", e)
+            SafeLog.e(TAG, "Error handling sign-in result", e)
             false
         }
     }
@@ -135,17 +137,19 @@ class GoogleDriveProvider : CloudProvider {
             driveService = null
             currentAccount = null
         } catch (e: Exception) {
-            Log.e(TAG, "Error during disconnect", e)
+            SafeLog.e(TAG, "Error during disconnect", e)
         }
     }
 
     /**
      * Upload un vault chiffré vers Google Drive
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(Dispatchers.IO) {
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val service = driveService ?: return@withContext null
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
 
             // Chercher si le fichier existe déjà
             val existingFile = findVaultFile(vaultId)
@@ -175,13 +179,13 @@ class GoogleDriveProvider : CloudProvider {
                     .execute()
             }
 
-            Log.d(TAG, "Vault uploaded: ${file.id}")
+            SafeLog.d(TAG, "Vault uploaded: ${file.id}")
             file.id
         } catch (e: IOException) {
-            Log.e(TAG, "Error uploading vault", e)
+            SafeLog.e(TAG, "Error uploading vault", e)
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error uploading vault", e)
+            SafeLog.e(TAG, "Unexpected error uploading vault", e)
             null
         }
     }
@@ -189,7 +193,9 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Télécharge un vault depuis Google Drive
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(Dispatchers.IO) {
+    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val service = driveService ?: return@withContext null
             val file = findVaultFile(vaultId) ?: return@withContext null
@@ -212,10 +218,10 @@ class GoogleDriveProvider : CloudProvider {
                 checksum = file.md5Checksum ?: ""
             )
         } catch (e: IOException) {
-            Log.e(TAG, "Error downloading vault", e)
+            SafeLog.e(TAG, "Error downloading vault", e)
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error downloading vault", e)
+            SafeLog.e(TAG, "Unexpected error downloading vault", e)
             null
         }
     }
@@ -223,12 +229,14 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Vérifie si une version plus récente existe sur le cloud
      */
-    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun hasNewerVersion(vaultId: String, localTimestamp: Long): Boolean = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val metadata = getCloudMetadata(vaultId)
             metadata != null && metadata.modifiedTime > localTimestamp
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking version", e)
+            SafeLog.e(TAG, "Error checking version", e)
             false
         }
     }
@@ -242,13 +250,13 @@ class GoogleDriveProvider : CloudProvider {
             val file = findVaultFile(vaultId) ?: return@withContext false
 
             service.files().delete(file.id).execute()
-            Log.d(TAG, "Vault deleted: $vaultId")
+            SafeLog.d(TAG, "Vault deleted: $vaultId")
             true
         } catch (e: IOException) {
-            Log.e(TAG, "Error deleting vault", e)
+            SafeLog.e(TAG, "Error deleting vault", e)
             false
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error deleting vault", e)
+            SafeLog.e(TAG, "Unexpected error deleting vault", e)
             false
         }
     }
@@ -256,7 +264,9 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Récupère les métadonnées d'un fichier cloud
      */
-    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(Dispatchers.IO) {
+    override suspend fun getCloudMetadata(vaultId: String): CloudFileMetadata? = withContext(
+        Dispatchers.IO
+    ) {
         try {
             val file = findVaultFile(vaultId) ?: return@withContext null
 
@@ -269,7 +279,7 @@ class GoogleDriveProvider : CloudProvider {
                 version = file.version?.toString()
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting metadata", e)
+            SafeLog.e(TAG, "Error getting metadata", e)
             null
         }
     }
@@ -299,10 +309,10 @@ class GoogleDriveProvider : CloudProvider {
                 )
             }
         } catch (e: IOException) {
-            Log.e(TAG, "Error listing vaults", e)
+            SafeLog.e(TAG, "Error listing vaults", e)
             emptyList()
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error listing vaults", e)
+            SafeLog.e(TAG, "Unexpected error listing vaults", e)
             emptyList()
         }
     }
@@ -326,10 +336,10 @@ class GoogleDriveProvider : CloudProvider {
                 freeBytes = (quota.limit ?: 0L) - (quota.usage ?: 0L)
             )
         } catch (e: IOException) {
-            Log.e(TAG, "Error getting storage quota", e)
+            SafeLog.e(TAG, "Error getting storage quota", e)
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error getting storage quota", e)
+            SafeLog.e(TAG, "Unexpected error getting storage quota", e)
             null
         }
     }
@@ -343,7 +353,7 @@ class GoogleDriveProvider : CloudProvider {
     private fun findVaultFile(vaultId: String): File? {
         return try {
             val service = driveService ?: return null
-            val fileName = "vault_${vaultId}.enc"
+            val fileName = "vault_$vaultId.enc"
 
             val result = service.files()
                 .list()
@@ -354,7 +364,7 @@ class GoogleDriveProvider : CloudProvider {
 
             result.files.firstOrNull()
         } catch (e: Exception) {
-            Log.e(TAG, "Error finding vault file", e)
+            SafeLog.e(TAG, "Error finding vault file", e)
             null
         }
     }

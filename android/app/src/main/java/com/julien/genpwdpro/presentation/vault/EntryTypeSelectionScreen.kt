@@ -9,9 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.julien.genpwdpro.data.local.entity.EntryType
+import com.julien.genpwdpro.data.models.vault.EntryType
+import com.julien.genpwdpro.presentation.utils.SecureWindow
 
 /**
  * Écran de sélection du type d'entrée à créer
@@ -24,6 +24,8 @@ fun EntryTypeSelectionScreen(
     onTypeSelected: (EntryType) -> Unit,
     onBackClick: () -> Unit
 ) {
+    SecureWindow()
+
     Scaffold(
         topBar = {
             TopAppBar(

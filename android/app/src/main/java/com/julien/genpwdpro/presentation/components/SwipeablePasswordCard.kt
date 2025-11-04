@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FractionalThreshold
-import androidx.compose.material.SwipeableState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberSwipeableState
@@ -25,9 +24,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.julien.genpwdpro.data.models.PasswordResult
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /**
  * Carte de mot de passe avec geste de swipe pour supprimer
@@ -87,7 +85,9 @@ fun SwipeablePasswordCard(
             SwipeBackground(
                 revealProgress = if (swipeableState.offset.value < 0) {
                     -swipeableState.offset.value / swipeThreshold
-                } else 0f
+                } else {
+                    0f
+                }
             )
 
             // Carte principale swipeable
@@ -280,7 +280,9 @@ private fun BiDirectionalSwipeBackground(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f + (progress * 0.2f)))
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f + (progress * 0.2f))
+                    )
                     .alpha(progress),
                 contentAlignment = Alignment.CenterStart
             ) {

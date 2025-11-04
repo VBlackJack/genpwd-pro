@@ -343,11 +343,33 @@ class VaultCryptoManager @Inject constructor() {
 
     /**
      * Génère un salt déterministe depuis une chaîne
-     * Utile pour utiliser vaultId comme base du salt
      *
-     * @param seed Chaîne source (ex: vaultId)
-     * @return Salt de 32 bytes déterministe
+     * ⚠️ AVERTISSEMENT DE SÉCURITÉ:
+     * Cette méthode génère un salt DÉTERMINISTE (même seed = même salt).
+     * Cela viole les principes cryptographiques standard où les salts doivent être ALÉATOIRES.
+     *
+     * RISQUES:
+     * 1. Salt prévisible → vulnérable aux attaques rainbow table
+     * 2. Si deux vaults utilisent le même seed → même salt → compromission potentielle
+     * 3. Ne protège pas contre les attaques par dictionnaire
+     *
+     * CAS D'USAGE LÉGITIME:
+     * - Système file-based où le salt doit être dérivable du vaultId sans stockage séparé
+     * - UNIQUEMENT si le vaultId est lui-même un UUID aléatoire et unique
+     * - Accepté comme compromis architectural pour éviter de stocker le salt séparément
+     *
+     * RECOMMANDATION:
+     * Pour une sécurité maximale, utilisez toujours generateSalt() qui génère
+     * un salt VÉRITABLEMENT ALÉATOIRE et stockez-le avec les données chiffrées.
+     *
+     * @param seed Chaîne source (ex: vaultId) - DOIT être unique et non prévisible
+     * @return Salt de 32 bytes déterministe (SHA-256 du seed)
+     * @deprecated Utiliser generateSalt() pour une sécurité optimale
      */
+    @Deprecated(
+        message = "Salt déterministe - risque de sécurité. Utiliser generateSalt() si possible.",
+        level = DeprecationLevel.WARNING
+    )
     fun generateSaltFromString(seed: String): ByteArray {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         return digest.digest(seed.toByteArray(Charsets.UTF_8))
@@ -455,17 +477,49 @@ class VaultCryptoManager @Inject constructor() {
     // ========================================
 
     /**
-     * Nettoie la mémoire (wipe les clés sensibles)
+     * Tente de nettoyer la mémoire d'une clé secrète
+     *
+     * ⚠️ LIMITATION IMPORTANTE:
+     * Cette méthode a une efficacité limitée car `key.encoded` crée une NOUVELLE copie
+     * du byte array. La copie est effacée, mais le byte array original dans le SecretKey
+     * reste en mémoire et ne peut pas être directement modifié en Java/Kotlin.
+     *
+     * RECOMMANDATION:
+     * Pour une sécurité optimale, utiliser Android Keystore (KeystoreManager) qui stocke
+     * les clés dans le hardware sécurisé au lieu de la mémoire applicative.
+     *
+     * Cette méthode reste utile pour:
+     * - Effacer les copies intermédiaires manipulées manuellement
+     * - Adopter une approche "best effort" de nettoyage mémoire
+     * - Respecter les bonnes pratiques même si l'implémentation est limitée
+     *
+     * @param key La clé à nettoyer (tentative)
      */
     fun wipeKey(key: SecretKey) {
+        // Nettoyer la copie retournée par encoded (mais pas l'original dans SecretKey)
         val encoded = key.encoded
         encoded.fill(0)
+        // Note: Le garbage collector finira par libérer la mémoire, mais le timing n'est pas garanti
     }
 
     /**
      * Nettoie un char array (pour les mots de passe)
+     * ✅ Cette méthode est efficace car elle modifie directement le tableau
      */
     fun wipePassword(password: CharArray) {
         password.fill(0.toChar())
+    }
+
+    /**
+     * Nettoie un byte array (pour les données sensibles)
+     * ✅ Cette méthode est efficace car elle modifie directement le tableau
+     *
+     * Utiliser cette méthode pour effacer:
+     * - Copies de clés (key.encoded)
+     * - Données déchiffrées temporaires
+     * - Salts ou IVs sensibles
+     */
+    fun wipeBytes(bytes: ByteArray) {
+        bytes.fill(0)
     }
 }

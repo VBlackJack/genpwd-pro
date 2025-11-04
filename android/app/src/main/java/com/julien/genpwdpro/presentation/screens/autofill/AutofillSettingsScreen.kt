@@ -23,12 +23,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.julien.genpwdpro.autofill.AutofillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Écran de configuration de l'auto-remplissage
@@ -367,7 +367,7 @@ class AutofillSettingsViewModel @Inject constructor(
             val isEnabled = if (isSupported && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val autofillManager = context.getSystemService(AutofillManager::class.java)
                 autofillManager?.hasEnabledAutofillServices() == true &&
-                autofillManager.isAutofillSupported
+                    autofillManager.isAutofillSupported
             } else {
                 false
             }

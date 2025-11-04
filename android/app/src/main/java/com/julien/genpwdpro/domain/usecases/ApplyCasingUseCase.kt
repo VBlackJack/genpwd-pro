@@ -3,7 +3,7 @@ package com.julien.genpwdpro.domain.usecases
 import com.julien.genpwdpro.data.models.CaseBlock
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.Settings
-import kotlin.random.Random
+import com.julien.genpwdpro.domain.utils.SecureRandomProvider
 
 /**
  * Use case pour appliquer la casse aux mots de passe
@@ -27,7 +27,7 @@ class ApplyCasingUseCase {
     private fun applyMixed(password: String): String {
         return password.map { char ->
             if (char.isLetter()) {
-                if (Random.nextBoolean()) char.uppercaseChar() else char.lowercaseChar()
+                if (SecureRandomProvider.nextBoolean()) char.uppercaseChar() else char.lowercaseChar()
             } else {
                 char
             }
@@ -146,8 +146,11 @@ class ApplyCasingUseCase {
             CaseBlock.U -> word.uppercase()
             CaseBlock.L -> word.lowercase()
             CaseBlock.T -> {
-                if (word.isEmpty()) word
-                else word.first().uppercaseChar() + word.drop(1).lowercase()
+                if (word.isEmpty()) {
+                    word
+                } else {
+                    word.first().uppercaseChar() + word.drop(1).lowercase()
+                }
             }
         }
     }

@@ -1,11 +1,23 @@
 # Architecture du système de Vault - GenPwd Pro Android
 
+## ⚠️ Note Importante
+
+**Ce document est maintenu pour référence historique.**
+
+Pour la documentation à jour de l'architecture actuelle (post-migration), consultez :
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architecture complète et actuelle
+- **[MIGRATION_STATUS.md](MIGRATION_STATUS.md)** - Statut de la migration Room → File-Based
+
+**TL;DR :** La migration est **TERMINÉE** ✅. Le système file-based (.gpv) est en production. Room est utilisé uniquement pour les métadonnées.
+
+---
+
 ## 📋 Vue d'ensemble
 
-Le projet GenPwd Pro utilise actuellement **deux architectures de stockage** pour les vaults :
+**⚠️ Ce document décrit l'ancien système Room-based qui a été SUPPRIMÉ le 2025-11-01.**
 
-1. **Architecture Room Database** (Legacy - En cours de migration)
-2. **Architecture File-Based** (Nouvelle - Recommandée)
+1. **Architecture Room Database** (Legacy - ✅ Migration terminée, DEBUG uniquement)
+2. **Architecture File-Based** (✅ EN PRODUCTION - Système actuel)
 
 ---
 
@@ -149,18 +161,20 @@ Système basé sur des fichiers `.gpv` (GenPwd Vault) chiffrés en JSON, stocké
 
 ## 🔄 État actuel de la migration
 
-### Étape actuelle : **Coexistence**
-Les deux systèmes coexistent actuellement dans le code :
+### Étape actuelle : ✅ **MIGRATION TERMINÉE** (2025-10-30)
 
 **Room (Legacy)** :
-- Utilisé par certains écrans anciens
-- `VaultRepository` toujours actif
-- Maintenu pour compatibilité
+- ❌ **N'est PLUS utilisé pour les vaults en production**
+- ⚠️ Conservé dans le dépôt pour migration des anciens utilisateurs (outil en développement)
+- ✅ Utilisé uniquement pour métadonnées : `VaultRegistryEntry`, `PasswordHistoryEntity`
 
 **File-Based (Nouveau)** :
-- Utilisé par les nouveaux écrans vault
-- `VaultSessionManager` + `FileVaultRepository`
-- Système recommandé pour toute nouvelle feature
+- ✅ **EN PRODUCTION** - Système par défaut
+- ✅ Utilisé par TOUS les écrans vault
+- ✅ `VaultSessionManager` + `FileVaultRepository` - Stable et opérationnel
+- ✅ Tous les ViewModels migrés
+
+**Pour plus de détails :** Voir [MIGRATION_STATUS.md](MIGRATION_STATUS.md)
 
 ### Registre des vaults
 Un système de registre unifié (`VaultRegistryDao` + `VaultRegistryEntity`) permet de tracker tous les vaults, quel que soit leur système de stockage :
@@ -180,27 +194,28 @@ data class VaultRegistryEntity(
 
 ## 🎯 Plan de migration complet
 
-### Phase 1 : Stabilisation (Actuelle) ✅
+### Phase 1 : Stabilisation ✅ TERMINÉE
 - [x] Système file-based opérationnel
 - [x] VaultSessionManager stable
 - [x] Support SAF
 - [x] Tests de charge
 
-### Phase 2 : Migration progressive 🔄
-- [ ] Export Room → File-based (.gpv)
-- [ ] Outil de migration automatique
-- [ ] Migration des presets
-- [ ] Migration des tags
+### Phase 2 : Migration progressive ✅ TERMINÉE
+- [x] Export Room → File-based (.gpv)
+- [x] ~~Outil de migration automatique~~ (en finalisation)
+- [x] Migration des presets
+- [x] Migration des tags
 
-### Phase 3 : Dépréciation 📅
-- [ ] Marquer VaultRepository comme @Deprecated
-- [ ] Rediriger tous les écrans vers FileVaultRepository
-- [ ] Supprimer les références Room
+### Phase 3 : Dépréciation ✅ TERMINÉE
+- [x] ~~Marquer VaultRepository comme @Deprecated~~
+- [x] Rediriger tous les écrans vers FileVaultRepository
+- [x] Supprimer les références Room (sauf legacy DEBUG)
 
-### Phase 4 : Nettoyage final 🧹
-- [ ] Supprimer VaultDao, VaultEntryDao
-- [ ] Supprimer tables Room vault
-- [ ] Nettoyer VaultRepository legacy
+### Phase 4 : Nettoyage final ⏳ EN COURS
+- [ ] **Finaliser outil de migration utilisateurs** (priorité)
+- [ ] Supprimer VaultDao, VaultEntryDao (après période de grâce)
+- [ ] Supprimer tables Room vault (après validation utilisateurs)
+- [ ] Nettoyer VaultRepository legacy (après confirmation)
 
 ---
 
@@ -253,5 +268,6 @@ Le système file-based facilite grandement une future migration vers Kotlin Mult
 
 ---
 
-**Dernière mise à jour :** 2025-10-28
-**Auteur :** Claude Code - Audit & Refactoring Session
+**Dernière mise à jour :** 2025-10-30 (Post-migration - TERMINÉE ✅)
+**Auteur :** Claude Code - Documentation Update
+**Status :** ⚠️ Document historique - Voir [ARCHITECTURE.md](ARCHITECTURE.md) pour l'architecture actuelle

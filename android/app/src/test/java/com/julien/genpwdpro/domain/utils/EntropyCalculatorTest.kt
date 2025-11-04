@@ -1,9 +1,7 @@
 package com.julien.genpwdpro.domain.utils
 
-import com.julien.genpwdpro.data.models.CharPolicy
 import org.junit.Assert.*
 import org.junit.Test
-import kotlin.math.abs
 
 /**
  * Tests unitaires pour le calculateur d'entropie
@@ -45,8 +43,10 @@ class EntropyCalculatorTest {
             vowelsPoolSize = vowelsPoolSize
         )
 
-        assertTrue("Longer password should have higher entropy",
-            longEntropy > shortEntropy)
+        assertTrue(
+            "Longer password should have higher entropy",
+            longEntropy > shortEntropy
+        )
     }
 
     @Test
@@ -82,8 +82,10 @@ class EntropyCalculatorTest {
         val entropy6 = EntropyCalculator.calculatePassphraseEntropy(6, dictionarySize)
         val entropy8 = EntropyCalculator.calculatePassphraseEntropy(8, dictionarySize)
 
-        assertTrue("More words should increase entropy",
-            entropy4 < entropy6 && entropy6 < entropy8)
+        assertTrue(
+            "More words should increase entropy",
+            entropy4 < entropy6 && entropy6 < entropy8
+        )
     }
 
     @Test
@@ -124,8 +126,10 @@ class EntropyCalculatorTest {
             estimatedPoolSize = estimatedPoolSize
         )
 
-        assertTrue("Longer password should have higher entropy",
-            longEntropy > shortEntropy)
+        assertTrue(
+            "Longer password should have higher entropy",
+            longEntropy > shortEntropy
+        )
     }
 
     @Test
@@ -221,8 +225,10 @@ class EntropyCalculatorTest {
 
         // Vérifier que l'entropie augmente avec la longueur
         for (i in 0 until entropies.size - 1) {
-            assertTrue("Entropy should increase with length",
-                entropies[i] < entropies[i + 1])
+            assertTrue(
+                "Entropy should increase with length",
+                entropies[i] < entropies[i + 1]
+            )
         }
     }
 
@@ -233,8 +239,10 @@ class EntropyCalculatorTest {
 
         val entropy = EntropyCalculator.calculateBruteForceEntropy(strongPassword)
 
-        assertTrue("Strong password should have > 100 bits entropy",
-            entropy > 100.0)
+        assertTrue(
+            "Strong password should have > 100 bits entropy",
+            entropy > 100.0
+        )
     }
 
     @Test

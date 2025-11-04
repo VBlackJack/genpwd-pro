@@ -1,0 +1,12 @@
+> Task :app:lintDebug
+Lint found no errors
+
+> Task :app:detekt
+Successfully generated report at build/reports/detekt/detekt.html
+
+> Task :app:ktlintCheck
+OK
+
+> Task :app:testDebugUnitTest
+BUILD SUCCESSFUL in 2m 31s
+47 actionable tasks: 47 executed

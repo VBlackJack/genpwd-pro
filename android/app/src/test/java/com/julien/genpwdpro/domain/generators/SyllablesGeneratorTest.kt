@@ -39,8 +39,10 @@ class SyllablesGeneratorTest {
         }
 
         // Au moins 90% des mots de passe doivent être uniques
-        assertTrue("Generated passwords should be mostly unique",
-            passwords.size >= 90)
+        assertTrue(
+            "Generated passwords should be mostly unique",
+            passwords.size >= 90
+        )
     }
 
     @Test
@@ -54,8 +56,10 @@ class SyllablesGeneratorTest {
 
         // Tous les caractères doivent être dans les ensembles autorisés
         password.forEach { char ->
-            assertTrue("Character $char should be in allowed sets",
-                char.lowercaseChar() in allChars)
+            assertTrue(
+                "Character $char should be in allowed sets",
+                char.lowercaseChar() in allChars
+            )
         }
     }
 
@@ -69,8 +73,10 @@ class SyllablesGeneratorTest {
         val password = generator.generate(length, policy)
 
         password.forEach { char ->
-            assertTrue("Character $char should be in allowed sets",
-                char.lowercaseChar() in allChars)
+            assertTrue(
+                "Character $char should be in allowed sets",
+                char.lowercaseChar() in allChars
+            )
         }
     }
 
@@ -115,8 +121,10 @@ class SyllablesGeneratorTest {
 
         // Un mot de passe prononçable devrait avoir un ratio équilibré
         val ratio = consonantCount.toDouble() / vowelCount.toDouble()
-        assertTrue("Consonant/vowel ratio should be balanced",
-            ratio in 0.5..3.0)
+        assertTrue(
+            "Consonant/vowel ratio should be balanced",
+            ratio in 0.5..3.0
+        )
     }
 
     @Test

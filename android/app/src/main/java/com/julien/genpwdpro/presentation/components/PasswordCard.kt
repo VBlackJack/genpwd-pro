@@ -2,8 +2,11 @@ package com.julien.genpwdpro.presentation.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Save
@@ -14,12 +17,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.models.PasswordResult
+import com.julien.genpwdpro.data.models.PasswordStrength
 
 /**
  * Carte affichant un mot de passe généré
@@ -36,15 +44,57 @@ fun PasswordCard(
 ) {
     var showContextMenu by remember { mutableStateOf(false) }
 
+    // Couleur de bordure basée sur la force
+    val borderColor = Color(result.strength.color)
+
+    // Gradient de fond basé sur la force
+    val backgroundGradient = when (result.strength) {
+        PasswordStrength.WEAK -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFFF6B6B).copy(alpha = 0.1f),
+                MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+        PasswordStrength.MEDIUM -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFF59E0B).copy(alpha = 0.1f),
+                MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+        PasswordStrength.STRONG -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF10B981).copy(alpha = 0.12f),
+                MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+        PasswordStrength.VERY_STRONG -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF15BEFF).copy(alpha = 0.15f),
+                MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(),
+            .animateContentSize()
+            .border(
+                width = 4.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(12.dp)
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = Color.Transparent
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(backgroundGradient)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,7 +132,7 @@ fun PasswordCard(
                             IconButton(onClick = onSave) {
                                 Icon(
                                     imageVector = Icons.Default.Save,
-                                    contentDescription = "Sauvegarder dans le vault",
+                                    contentDescription = stringResource(R.string.cd_save_password),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -92,7 +142,11 @@ fun PasswordCard(
                         IconButton(onClick = onToggleMask) {
                             Icon(
                                 imageVector = if (result.isMasked) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (result.isMasked) "Show" else "Hide",
+                                contentDescription = if (result.isMasked) {
+                                    stringResource(R.string.cd_show_password)
+                                } else {
+                                    stringResource(R.string.cd_hide_password)
+                                },
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -101,7 +155,7 @@ fun PasswordCard(
                         IconButton(onClick = onCopy) {
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy",
+                                contentDescription = stringResource(R.string.cd_copy_password),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -159,7 +213,9 @@ fun PasswordCard(
                     // Masquer/Afficher
                     DropdownMenuItem(
                         text = {
-                            Text(if (result.isMasked) "Afficher le mot de passe" else "Masquer le mot de passe")
+                            Text(
+                                if (result.isMasked) "Afficher le mot de passe" else "Masquer le mot de passe"
+                            )
                         },
                         onClick = {
                             onToggleMask()
@@ -192,16 +248,13 @@ fun PasswordCard(
                     )
                 }
 
-                // Barre de progression visuelle
-                LinearProgressIndicator(
-                    progress = result.strength.progress,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp),
-                    color = Color(result.strength.color),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                // Barre de force segmentée
+                SegmentedStrengthBar(
+                    strength = result.strength,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
         }
     }
 }

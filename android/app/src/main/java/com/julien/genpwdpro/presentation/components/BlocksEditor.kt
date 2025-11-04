@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Casino
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -82,7 +80,11 @@ fun BlocksEditor(
                     onBlocksChange(random)
                 }
             ) {
-                Icon(Icons.Default.Casino, "Random blocks", tint = MaterialTheme.colorScheme.primary)
+                Icon(
+                    Icons.Default.Casino,
+                    "Random blocks",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
 

@@ -2,6 +2,7 @@ package com.julien.genpwdpro.presentation.screens.security
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -11,17 +12,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.R
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.security.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Écran de configuration de la sécurité
@@ -36,19 +41,48 @@ import javax.inject.Inject
 @Composable
 fun SecuritySettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToPrivacy: () -> Unit = {},
     viewModel: SecuritySettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val unlockErrorMessage = stringResource(R.string.sensitive_actions_unlock_error)
 
     var showTimeoutDialog by remember { mutableStateOf(false) }
 
-    // Vérifier le statut biométrique au démarrage
     LaunchedEffect(Unit) {
         viewModel.checkBiometricAvailability(context)
     }
 
+    SecuritySettingsLayout(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onNavigateToPrivacy = onNavigateToPrivacy,
+        snackbarHostState = snackbarHostState,
+        unlockErrorMessage = unlockErrorMessage,
+        showTimeoutDialog = showTimeoutDialog,
+        onShowTimeoutDialogChange = { showTimeoutDialog = it },
+        viewModel = viewModel,
+        context = context,
+        scope = scope
+    )
+}
+
+@Composable
+private fun SecuritySettingsLayout(
+    uiState: SecuritySettingsUiState,
+    onNavigateBack: () -> Unit,
+    onNavigateToPrivacy: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    unlockErrorMessage: String,
+    showTimeoutDialog: Boolean,
+    onShowTimeoutDialogChange: (Boolean) -> Unit,
+    viewModel: SecuritySettingsViewModel,
+    context: Context,
+    scope: CoroutineScope
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,13 +104,11 @@ fun SecuritySettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // État de la biométrie
             BiometricStatusCard(
                 availability = uiState.biometricAvailability,
                 isEnabled = uiState.isBiometricEnabled
             )
 
-            // Verrouillage de l'application
             if (uiState.biometricAvailability == BiometricAvailability.AVAILABLE) {
                 AppLockCard(
                     isEnabled = uiState.isAppLockEnabled,
@@ -88,40 +120,59 @@ fun SecuritySettingsScreen(
                             viewModel.toggleAppLock(context, false)
                         }
                     },
-                    onTimeoutClick = { showTimeoutDialog = true },
+                    onTimeoutClick = { onShowTimeoutDialogChange(true) },
                     getTimeoutName = { viewModel.getTimeoutDisplayName(it) }
+                )
+
+                SensitiveActionsCard(
+                    isEnabled = uiState.requireBiometricForSensitiveActions,
+                    clipboardTtlMs = uiState.clipboardTtlMs,
+                    onToggle = { enabled ->
+                        val success = viewModel.setSensitiveActionBiometricRequirement(enabled)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    },
+                    onClipboardTtlChange = { ttl ->
+                        val success = viewModel.setClipboardTtlMs(ttl)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    }
                 )
             }
 
-            // Informations Keystore
             KeystoreInfoCard(
                 isHardwareBacked = uiState.isHardwareBackedKeystore,
                 keyCount = uiState.keystoreKeyCount
             )
 
-            // Actions de sécurité
             SecurityActionsCard(
                 onDeleteKeys = {
                     viewModel.deleteAllKeys()
-                    kotlinx.coroutines.GlobalScope.launch {
+                    scope.launch {
                         snackbarHostState.showSnackbar("Toutes les clés ont été supprimées")
                     }
                 }
             )
 
-            // Bonnes pratiques de sécurité
             SecurityTipsCard()
+
+            PrivacySummaryCard(onNavigateToPrivacy)
         }
 
-        // Dialogue de sélection du délai
         if (showTimeoutDialog) {
             TimeoutSelectionDialog(
                 currentTimeout = uiState.lockTimeout,
                 timeouts = viewModel.getAllTimeouts(),
-                onDismiss = { showTimeoutDialog = false },
+                onDismiss = { onShowTimeoutDialogChange(false) },
                 onSelect = { timeout ->
                     viewModel.setLockTimeout(timeout)
-                    showTimeoutDialog = false
+                    onShowTimeoutDialogChange(false)
                 }
             )
         }
@@ -254,6 +305,99 @@ private fun AppLockCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SensitiveActionsCard(
+    isEnabled: Boolean,
+    clipboardTtlMs: Long,
+    onToggle: (Boolean) -> Unit,
+    onClipboardTtlChange: (Long) -> Unit
+) {
+    val title = stringResource(R.string.sensitive_actions_title)
+    val subtitle = stringResource(R.string.sensitive_actions_subtitle)
+    val enabledLabel = stringResource(R.string.sensitive_actions_state_on)
+    val disabledLabel = stringResource(R.string.sensitive_actions_state_off)
+    val ttlOptions = listOf(5_000L, 10_000L, 30_000L, 60_000L)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.VerifiedUser,
+                    contentDescription = null
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (isEnabled) enabledLabel else disabledLabel,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = isEnabled,
+                    onCheckedChange = onToggle
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.sensitive_actions_clipboard_ttl_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(R.string.sensitive_actions_clipboard_ttl_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ttlOptions.forEach { option ->
+                    FilterChip(
+                        selected = clipboardTtlMs == option,
+                        onClick = { onClipboardTtlChange(option) },
+                        label = {
+                            Text("${option / 1000}s")
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
 /**
  * Carte d'informations Keystore
  */
@@ -361,7 +505,11 @@ private fun SecurityActionsCard(
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = { Text("Confirmer la suppression") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer toutes les clés de chiffrement ? Cette action est irréversible.") },
+            text = {
+                Text(
+                    "Êtes-vous sûr de vouloir supprimer toutes les clés de chiffrement ? Cette action est irréversible."
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -428,6 +576,44 @@ private fun SecurityTipsCard() {
     }
 }
 
+@Composable
+private fun PrivacySummaryCard(onNavigateToPrivacy: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.PrivacyTip, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.privacy_summary_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = stringResource(R.string.privacy_summary_body),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Button(
+                onClick = onNavigateToPrivacy
+            ) {
+                Text(stringResource(R.string.privacy_summary_cta))
+            }
+        }
+    }
+}
+
 /**
  * Dialogue de sélection du délai
  */
@@ -475,7 +661,8 @@ private fun TimeoutSelectionDialog(
 class SecuritySettingsViewModel @Inject constructor(
     private val biometricManager: BiometricManager,
     private val keystoreManager: KeystoreManager,
-    private val appLockManager: AppLockManager
+    private val appLockManager: AppLockManager,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SecuritySettingsUiState())
@@ -506,6 +693,18 @@ class SecuritySettingsViewModel @Inject constructor(
                     isHardwareBackedKeystore = isHardware,
                     keystoreKeyCount = keyCount
                 )
+            }
+        }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.requireBiometricForSensitiveActions.collect { required ->
+                _uiState.update { it.copy(requireBiometricForSensitiveActions = required) }
+            }
+        }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.clipboardTtlMs.collect { ttl ->
+                _uiState.update { it.copy(clipboardTtlMs = ttl) }
             }
         }
     }
@@ -543,10 +742,27 @@ class SecuritySettingsViewModel @Inject constructor(
         }
     }
 
+    fun setSensitiveActionBiometricRequirement(enabled: Boolean): Boolean {
+        val success = sensitiveActionPreferences.setRequireBiometricForSensitiveActions(enabled)
+        if (!success) {
+            return false
+        }
+        _uiState.update { it.copy(requireBiometricForSensitiveActions = enabled) }
+        return true
+    }
+
     fun setLockTimeout(timeoutMs: Long) {
         viewModelScope.launch {
             appLockManager.setLockTimeout(timeoutMs)
         }
+    }
+
+    fun setClipboardTtlMs(ttlMs: Long): Boolean {
+        val success = sensitiveActionPreferences.setClipboardTtlMs(ttlMs)
+        if (success) {
+            _uiState.update { it.copy(clipboardTtlMs = ttlMs) }
+        }
+        return success
     }
 
     fun deleteAllKeys() {
@@ -572,5 +788,7 @@ data class SecuritySettingsUiState(
     val isAppLockEnabled: Boolean = false,
     val lockTimeout: Long = AppLockManager.TIMEOUT_1_MINUTE,
     val isHardwareBackedKeystore: Boolean = false,
-    val keystoreKeyCount: Int = 0
+    val keystoreKeyCount: Int = 0,
+    val requireBiometricForSensitiveActions: Boolean = false,
+    val clipboardTtlMs: Long = SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
 )

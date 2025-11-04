@@ -2,20 +2,21 @@ package com.julien.genpwdpro.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.julien.genpwdpro.data.local.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
+import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.domain.usecases.GeneratePasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel pour le Dashboard unifié
@@ -28,11 +29,16 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val vaultSessionManager: VaultSessionManager
+    private val vaultSessionManager: VaultSessionManager,
+    private val sensitiveActionPreferences: SensitiveActionPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    val requireBiometricForSensitiveActions: StateFlow<Boolean> =
+        sensitiveActionPreferences.requireBiometricForSensitiveActions
+    val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
 
     init {
         observeVaults()

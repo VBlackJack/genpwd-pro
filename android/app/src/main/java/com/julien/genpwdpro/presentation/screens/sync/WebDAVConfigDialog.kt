@@ -106,7 +106,11 @@ fun WebDAVConfigDialog(
                         value = serverUrl,
                         onValueChange = { serverUrl = it.trim() },
                         label = { Text("URL du serveur") },
-                        placeholder = { Text("https://cloud.example.com/remote.php/dav/files/username/") },
+                        placeholder = {
+                            Text(
+                                "https://cloud.example.com/remote.php/dav/files/username/"
+                            )
+                        },
                         leadingIcon = {
                             Icon(Icons.Default.Cloud, contentDescription = null)
                         },
@@ -160,10 +164,11 @@ fun WebDAVConfigDialog(
                                 )
                             }
                         },
-                        visualTransformation = if (showPassword)
+                        visualTransformation = if (showPassword) {
                             VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                         isError = password.isNotBlank() && !isPasswordValid,
                         supportingText = {
                             Text("Mot de passe ou app password")
@@ -178,7 +183,9 @@ fun WebDAVConfigDialog(
                     // SSL Validation Toggle
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = 0.5f
+                            )
                         )
                     ) {
                         Row(
@@ -195,15 +202,17 @@ fun WebDAVConfigDialog(
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
-                                    text = if (validateSSL)
+                                    text = if (validateSSL) {
                                         "Recommandé pour une sécurité maximale"
-                                    else
-                                        "Désactivé (certificats auto-signés)",
+                                    } else {
+                                        "Désactivé (certificats auto-signés)"
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = if (validateSSL)
+                                    color = if (validateSSL) {
                                         MaterialTheme.colorScheme.primary
-                                    else
+                                    } else {
                                         MaterialTheme.colorScheme.error
+                                    }
                                 )
                             }
                             Switch(

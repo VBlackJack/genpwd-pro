@@ -16,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,12 +26,12 @@ import com.julien.genpwdpro.domain.generators.CustomPhraseFormat
 import com.julien.genpwdpro.domain.generators.CustomPhraseGenerator
 import com.julien.genpwdpro.domain.generators.WordListValidation
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Écran de configuration du générateur de phrases personnalisées
@@ -194,10 +193,11 @@ private fun WordListEditor(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (validation.isValid)
+            containerColor = if (validation.isValid) {
                 MaterialTheme.colorScheme.surfaceVariant
-            else
+            } else {
                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            }
         )
     ) {
         Column(
@@ -330,16 +330,18 @@ private fun FormatOption(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        color = if (isSelected)
+        color = if (isSelected) {
             MaterialTheme.colorScheme.primaryContainer
-        else
-            MaterialTheme.colorScheme.surface,
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
         border = BorderStroke(
             width = 1.dp,
-            color = if (isSelected)
+            color = if (isSelected) {
                 MaterialTheme.colorScheme.primary
-            else
+            } else {
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            }
         )
     ) {
         Row(

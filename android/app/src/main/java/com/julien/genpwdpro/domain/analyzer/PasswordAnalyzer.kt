@@ -58,7 +58,13 @@ class PasswordAnalyzer @Inject constructor() {
         val entropy = EntropyCalculator.calculateEntropy(password, GenerationMode.SYLLABLES)
 
         val estimatedCrackTime = estimateCrackTime(entropy)
-        val strength = determineStrength(entropy, length, uniqueChars, sequentialPatterns.isNotEmpty(), commonWords.isNotEmpty())
+        val strength = determineStrength(
+            entropy,
+            length,
+            uniqueChars,
+            sequentialPatterns.isNotEmpty(),
+            commonWords.isNotEmpty()
+        )
         val recommendations = generateRecommendations(
             length, hasLowercase, hasUppercase, hasDigits, hasSpecials,
             uniqueChars, repeatedChars, sequentialPatterns, commonWords
@@ -261,7 +267,9 @@ class PasswordAnalyzer @Inject constructor() {
         }
 
         if (sequentialPatterns.isNotEmpty()) {
-            recommendations.add("Évitez les séquences: ${sequentialPatterns.take(3).joinToString(", ")}")
+            recommendations.add(
+                "Évitez les séquences: ${sequentialPatterns.take(3).joinToString(", ")}"
+            )
         }
 
         if (commonWords.isNotEmpty()) {

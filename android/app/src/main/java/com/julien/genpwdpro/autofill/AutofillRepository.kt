@@ -10,13 +10,9 @@ import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import com.julien.genpwdpro.R
-import com.julien.genpwdpro.data.local.entity.VaultRegistryEntry
+import com.julien.genpwdpro.core.ipc.IntentSanitizer
+import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import com.julien.genpwdpro.data.local.preferences.SettingsDataStore
-import com.julien.genpwdpro.data.local.entity.VaultEntryEntity
-import com.julien.genpwdpro.data.local.entity.password
-import com.julien.genpwdpro.data.local.entity.title
-import com.julien.genpwdpro.data.local.entity.url
-import com.julien.genpwdpro.data.local.entity.username
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.PasswordResult
 import com.julien.genpwdpro.data.models.Settings
@@ -24,11 +20,11 @@ import com.julien.genpwdpro.data.repository.PasswordHistoryRepository
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import com.julien.genpwdpro.presentation.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Repository pour gérer les données d'auto-remplissage
@@ -75,7 +71,9 @@ class AutofillRepository @Inject constructor(
                 // Logique de correspondance améliorée
                 val formattedUrl = entry.url?.lowercase() ?: ""
                 val formattedPackage = packageName.lowercase()
-                formattedUrl.contains(formattedPackage) || entry.title.lowercase().contains(formattedPackage)
+                formattedUrl.contains(formattedPackage) || entry.title.lowercase().contains(
+                    formattedPackage
+                )
             }
         }
     }
@@ -92,11 +90,11 @@ class AutofillRepository @Inject constructor(
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(MainActivity.EXTRA_AUTOFILL_UNLOCK_REQUEST, true)
+            IntentSanitizer.stripAllExcept(this, setOf(MainActivity.EXTRA_AUTOFILL_UNLOCK_REQUEST))
         }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getActivity(context, 0, intent, flags)
 
         return FillResponse.Builder()
             .setAuthentication(emptyArray(), pendingIntent.intentSender, presentation)
