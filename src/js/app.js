@@ -24,6 +24,7 @@ import { setBlocks } from './config/settings.js';
 import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
 import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
+import { initThemeSystem } from './utils/theme-manager.js';
 
 class GenPwdApp {
   constructor() {
@@ -35,39 +36,43 @@ class GenPwdApp {
     try {
       safeLog(`Démarrage GenPwd Pro v${this.version} - Architecture modulaire`);
 
-      // 0. Initialiser le monitoring d'erreurs
+      // 0. Initialiser le système de thèmes (en premier pour l'UI)
+      initThemeSystem();
+      safeLog('Système de thèmes initialisé');
+
+      // 1. Initialiser le monitoring d'erreurs
       initErrorMonitoring();
       safeLog('Monitoring d\'erreurs initialisé');
 
-      // 1. Validation de l'environnement
+      // 2. Validation de l'environnement
       if (!this.validateEnvironment()) {
         throw new Error('Environnement non compatible');
       }
 
-      // 2. Validation des données critiques
+      // 3. Validation des données critiques
       if (!validateCharSets()) {
         throw new Error('Données CHAR_SETS corrompues');
       }
 
-      // 3. Initialisation DOM
+      // 4. Initialisation DOM
       await initializeDOM();
       safeLog('DOM initialisé');
 
-      // 4. Initialisation dictionnaires
+      // 5. Initialisation dictionnaires
       initializeDictionaries();
       safeLog('Système dictionnaires initialisé');
 
-      // 5. Configuration initiale des blocs
+      // 6. Configuration initiale des blocs
       const initialBlocks = defaultBlocksForMode('syllables');
       setBlocks(initialBlocks);
       safeLog(`Blocs initialisés: ${initialBlocks.join('-')}`);
 
-      // 6. Binding des événements
+      // 7. Binding des événements
       bindEventHandlers();
       bindModalEvents();
       safeLog('Événements bindés');
 
-      // 7. Génération initiale après un délai
+      // 8. Génération initiale après un délai
       setTimeout(() => this.generateInitial(), 300);
 
       this.initialized = true;
