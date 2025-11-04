@@ -23,9 +23,7 @@ import { defaultBlocksForMode } from './core/casing.js';
 import { setBlocks } from './config/settings.js';
 import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
-
-console.log('CHAR_SETS.standard.specials:', CHAR_SETS.standard.specials.join(''));
-console.log('Contient $ ?', CHAR_SETS.standard.specials.includes('$'));
+import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
 
 class GenPwdApp {
   constructor() {
@@ -36,7 +34,11 @@ class GenPwdApp {
   async init() {
     try {
       safeLog(`Démarrage GenPwd Pro v${this.version} - Architecture modulaire`);
-      
+
+      // 0. Initialiser le monitoring d'erreurs
+      initErrorMonitoring();
+      safeLog('Monitoring d\'erreurs initialisé');
+
       // 1. Validation de l'environnement
       if (!this.validateEnvironment()) {
         throw new Error('Environnement non compatible');
@@ -70,10 +72,11 @@ class GenPwdApp {
 
       this.initialized = true;
       safeLog('Application initialisée avec succès');
-      
+
     } catch (error) {
       console.error('Erreur critique initialisation:', error);
       safeLog(`Erreur critique: ${error.message}`);
+      reportError(error, { phase: 'initialization' });
       showToast('Erreur critique au démarrage', 'error');
     }
   }
@@ -147,14 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.genPwdApp.init();
 });
 
-// Gestion erreurs globales
-window.addEventListener('error', (e) => {
-  safeLog(`Erreur JS globale: ${e.message} - ${e.filename}:${e.lineno}`);
-});
-
-window.addEventListener('unhandledrejection', (e) => {
-  safeLog(`Promise rejetée: ${e.reason}`);
-  e.preventDefault();
-});
+// Note: La gestion des erreurs globales est maintenant gérée par error-monitoring.js
+// qui est initialisé dans init() via initErrorMonitoring()
 
 export { GenPwdApp };

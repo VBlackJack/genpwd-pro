@@ -407,9 +407,137 @@ async function copyAllPasswords() {
   }
 }
 
-function exportPasswords() {
-  // Implementation simplifiée - à compléter selon besoins
-  showToast('Fonction à implémenter', 'info');
+/**
+ * Exporte les mots de passe générés vers un fichier
+ * Supporte les formats: TXT, JSON, CSV
+ */
+async function exportPasswords() {
+  const results = getResults();
+  if (!results?.length) {
+    showToast('Aucun mot de passe à exporter', 'warning');
+    return;
+  }
+
+  // Demander le format d'export
+  const format = await promptExportFormat();
+  if (!format) return;
+
+  try {
+    let content, filename, mimeType;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+    switch (format) {
+      case 'txt':
+        content = results.map(r => r.value).join('\n');
+        filename = `genpwd-export-${timestamp}.txt`;
+        mimeType = 'text/plain';
+        break;
+
+      case 'json':
+        content = JSON.stringify({
+          exported: new Date().toISOString(),
+          generator: 'GenPwd Pro v2.5.1',
+          count: results.length,
+          passwords: results.map(r => ({
+            value: r.value,
+            mode: r.mode,
+            entropy: r.entropy,
+            ...(r.words && { words: r.words }),
+            ...(r.dictionary && { dictionary: r.dictionary }),
+            ...(r.policy && { policy: r.policy })
+          }))
+        }, null, 2);
+        filename = `genpwd-export-${timestamp}.json`;
+        mimeType = 'application/json';
+        break;
+
+      case 'csv':
+        const headers = ['Password', 'Mode', 'Entropy (bits)', 'Length', 'Details'];
+        const rows = results.map(r => [
+          r.value,
+          r.mode,
+          r.entropy,
+          r.value.length,
+          r.words ? r.words.join(' ') : (r.baseWord || r.policy || '')
+        ]);
+        content = [headers, ...rows]
+          .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+          .join('\n');
+        filename = `genpwd-export-${timestamp}.csv`;
+        mimeType = 'text/csv';
+        break;
+
+      default:
+        showToast('Format non supporté', 'error');
+        return;
+    }
+
+    // Créer et télécharger le fichier
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`Export ${format.toUpperCase()} réussi (${results.length} mots de passe)`, 'success');
+    safeLog(`Export réussi: ${filename} (${results.length} entrées)`);
+
+  } catch (error) {
+    safeLog(`Erreur export: ${error.message}`);
+    showToast('Erreur lors de l\'export', 'error');
+  }
+}
+
+/**
+ * Affiche une boîte de dialogue pour choisir le format d'export
+ * @returns {Promise<string|null>} Format choisi ('txt', 'json', 'csv') ou null si annulé
+ */
+function promptExportFormat() {
+  return new Promise((resolve) => {
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background: var(--bg-secondary, #fff); padding: 2rem; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    dialog.innerHTML = `
+      <h3 style="margin-top: 0; color: var(--text-primary, #333);">Choisir le format d'export</h3>
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
+        <button id="export-txt" class="btn" style="padding: 0.75rem; cursor: pointer;">
+          📄 Texte (.txt) - Simple liste
+        </button>
+        <button id="export-json" class="btn" style="padding: 0.75rem; cursor: pointer;">
+          📊 JSON (.json) - Données complètes
+        </button>
+        <button id="export-csv" class="btn" style="padding: 0.75rem; cursor: pointer;">
+          📈 CSV (.csv) - Excel/Tableur
+        </button>
+      </div>
+      <button id="export-cancel" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; cursor: pointer;">
+        Annuler
+      </button>
+    `;
+
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+
+    const cleanup = (result) => {
+      document.body.removeChild(modal);
+      resolve(result);
+    };
+
+    dialog.querySelector('#export-txt').addEventListener('click', () => cleanup('txt'));
+    dialog.querySelector('#export-json').addEventListener('click', () => cleanup('json'));
+    dialog.querySelector('#export-csv').addEventListener('click', () => cleanup('csv'));
+    dialog.querySelector('#export-cancel').addEventListener('click', () => cleanup(null));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cleanup(null);
+    });
+  });
 }
 
 function clearResults() {

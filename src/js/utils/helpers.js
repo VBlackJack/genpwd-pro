@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 // src/js/utils/helpers.js - Fonctions utilitaires extraites
+
+/**
+ * Génère un entier aléatoire entre min et max (inclus)
+ * @param {number} min - Valeur minimale (incluse)
+ * @param {number} max - Valeur maximale (incluse)
+ * @returns {number} Entier aléatoire entre min et max
+ * @throws {Error} Si min > max ou si les paramètres ne sont pas des nombres
+ * @example
+ * randInt(1, 10) // → 7 (par exemple)
+ * randInt(0, 100) // → 42 (par exemple)
+ */
 export function randInt(min, max) {
   if (typeof min !== 'number' || typeof max !== 'number' || min > max) {
     throw new Error(`randInt: paramètres invalides (${min}, ${max})`);
@@ -21,6 +32,15 @@ export function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ * Sélectionne un élément aléatoire dans un tableau
+ * @param {Array} arr - Tableau source
+ * @returns {*} Élément aléatoire du tableau
+ * @throws {Error} Si le paramètre n'est pas un tableau ou si le tableau est vide
+ * @example
+ * pick(['a', 'b', 'c']) // → 'b' (par exemple)
+ * pick([1, 2, 3, 4, 5]) // → 3 (par exemple)
+ */
 export function pick(arr) {
   if (!Array.isArray(arr)) {
     console.warn(`pick() appelé avec un non-array: ${typeof arr}`);
@@ -151,6 +171,20 @@ export function insertWithPercentages(base, charsToInsert, percentages) {
   return arr.join('');
 }
 
+/**
+ * Insère des caractères dans une chaîne selon un mode de placement
+ * @param {string} base - Chaîne de base
+ * @param {Array|string} charsToInsert - Caractères à insérer
+ * @param {string} placement - Mode de placement ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {Object} [options={}] - Options supplémentaires
+ * @param {Array<number>} [options.percentages] - Pourcentages de placement (si placement='positions')
+ * @param {string} [options.type] - Type de caractères ('digits', 'specials')
+ * @returns {string} Chaîne résultante avec les caractères insérés
+ * @example
+ * insertWithPlacement('abc', ['1', '2'], 'fin') // → 'abc12'
+ * insertWithPlacement('abc', ['1', '2'], 'debut') // → '12abc'
+ * insertWithPlacement('abc', ['1', '2'], 'aleatoire') // → 'a1b2c' (exemple)
+ */
 export function insertWithPlacement(base, charsToInsert, placement, options = {}) {
   if (typeof base !== 'string') base = '';
 
