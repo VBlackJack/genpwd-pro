@@ -524,7 +524,7 @@ async function exportPasswords() {
         mimeType = 'application/json';
         break;
 
-      case 'csv':
+      case 'csv': {
         const headers = ['Password', 'Mode', 'Entropy (bits)', 'Length', 'Details'];
         const rows = results.map(r => [
           r.value,
@@ -539,6 +539,7 @@ async function exportPasswords() {
         filename = `genpwd-export-${timestamp}.csv`;
         mimeType = 'text/csv';
         break;
+      }
 
       default:
         showToast('Format non supporté', 'error');

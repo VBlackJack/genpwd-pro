@@ -241,7 +241,7 @@ Apache 2.0 © 2025 Julien Bombled
 ---
 
 <div align="center">
-  <b>GenPwd Pro v2.5.1</b> - Générateur de mots de passe professionnel<br>
+  <b>GenPwd Pro v2.5.2</b> - Générateur de mots de passe professionnel<br>
   <a href="https://github.com/VBlackJack/genpwd-pro">GitHub</a> •
   <a href="./docs/USER-GUIDE.md">Documentation</a> •
   <a href="https://github.com/VBlackJack/genpwd-pro/issues">Issues</a>

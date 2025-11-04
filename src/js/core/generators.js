@@ -86,8 +86,6 @@ export function generateSyllables(config) {
     const { length, policy, digits, specials, customSpecials,
             placeDigits, placeSpecials, caseMode, useBlocks, blockTokens } = config;
 
-    safeLog(`Génération syllables: length=${length}, policy="${policy}"`);
-    
     const policyData = CHAR_SETS[policy];
     if (!policyData) {
       throw new Error(`Politique "${policy}" non trouvée`);
@@ -182,8 +180,6 @@ export async function generatePassphrase(config) {
     const { wordCount, separator, digits, specials, customSpecials,
             placeDigits, placeSpecials, caseMode, useBlocks, blockTokens, dictionary,
             wordListOverride } = config;
-
-    safeLog(`Génération passphrase: ${wordCount} mots, dict="${dictionary}"`);
 
     const sanitizedSeparator = typeof separator === 'string' ? separator : '';
     const overrideWords = Array.isArray(wordListOverride)
@@ -476,23 +472,17 @@ function applyLeetTransformation(word) {
 }
 
 function resolveSpecialPool(customSpecials, policyKey = 'standard') {
-  safeLog('DEBUG: resolveSpecialPool called with:', { customSpecials, policyKey });
-
   if (Array.isArray(customSpecials) && customSpecials.length > 0) {
-    safeLog('DEBUG: Using array customSpecials:', customSpecials);
     const sanitizedArray = sanitizeSpecialCandidates(customSpecials);
     if (sanitizedArray.length > 0) {
-      safeLog('DEBUG: Sanitized custom array:', sanitizedArray);
       return sanitizedArray;
     }
   }
 
   if (typeof customSpecials === 'string' && customSpecials.length > 0) {
     const rawChars = Array.from(new Set(customSpecials.split('')));
-    safeLog('DEBUG: Using string customSpecials:', rawChars);
     const sanitizedString = sanitizeSpecialCandidates(rawChars);
     if (sanitizedString.length > 0) {
-      safeLog('DEBUG: Sanitized custom string:', sanitizedString);
       return sanitizedString;
     }
   }
@@ -500,11 +490,9 @@ function resolveSpecialPool(customSpecials, policyKey = 'standard') {
   const policyData = CHAR_SETS[policyKey];
   if (policyData && Array.isArray(policyData.specials)) {
     const sanitizedPolicy = sanitizeSpecialCandidates(policyData.specials);
-    safeLog('DEBUG: Using policy specials:', sanitizedPolicy);
     return sanitizedPolicy;
   }
 
   const fallback = sanitizeSpecialCandidates(CHAR_SETS.standard.specials);
-  safeLog('DEBUG: Using policy specials:', fallback);
   return fallback;
 }
