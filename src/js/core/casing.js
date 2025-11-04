@@ -16,29 +16,60 @@
 // src/js/core/casing.js - Gestion de la casse et système de blocs
 import { pick } from '../utils/helpers.js';
 
+/**
+ * Applies case transformation to a string
+ * @param {string} str - Input string
+ * @param {string} mode - Case mode: 'upper', 'lower', 'title', 'mixte'
+ * @returns {string} Transformed string with applied case mode
+ * @example
+ * applyCase('hello', 'upper') // → 'HELLO'
+ * applyCase('HELLO', 'lower') // → 'hello'
+ * applyCase('hello world', 'title') // → 'Hello World'
+ * applyCase('hello', 'mixte') // → 'HeLlO' (cryptographically random case)
+ */
 export function applyCase(str, mode) {
   if (typeof str !== 'string') return '';
-  
+
   switch (mode) {
     case 'upper':
       return str.toUpperCase();
+
     case 'lower':
       return str.toLowerCase();
+
     case 'title':
       return str.split(/(\P{L})/u).map(seg =>
         /\p{L}+/u.test(seg) ?
         seg.charAt(0).toUpperCase() + seg.slice(1).toLowerCase() :
         seg
       ).join('');
-    default: // mixte
-      return str.split('').map(ch =>
-        /\p{L}/u.test(ch) ?
-        (Math.random() < 0.5 ? ch.toLowerCase() : ch.toUpperCase()) :
-        ch
-      ).join('');
+
+    default: // mixte - CRYPTOGRAPHICALLY SECURE
+      return str.split('').map(ch => {
+        if (!/\p{L}/u.test(ch)) return ch;
+
+        // Use crypto.getRandomValues() instead of Math.random() for security
+        const randomByte = new Uint8Array(1);
+        crypto.getRandomValues(randomByte);
+        const isUpper = (randomByte[0] & 1) === 1; // Use LSB for random boolean
+
+        return isUpper ? ch.toUpperCase() : ch.toLowerCase();
+      }).join('');
   }
 }
 
+/**
+ * Applies a case pattern to a string using block tokens
+ * @param {string} str - Input string
+ * @param {Array<string>} tokens - Array of case tokens ('U', 'l', 'T')
+ * @param {Object} opts - Options
+ * @param {boolean} opts.perWord - Apply pattern per word instead of per character
+ * @param {boolean} opts.syllableMode - Apply pattern every 3 letters (syllable mode)
+ * @returns {string} String with applied case pattern
+ * @example
+ * applyCasePattern('hello', ['U', 'l'], {}) // → 'HeLlO'
+ * applyCasePattern('hello world', ['T', 'l'], { perWord: true }) // → 'Hello world'
+ */
 export function applyCasePattern(str, tokens, opts = {}) {
   if (typeof str !== 'string' || !Array.isArray(tokens) || tokens.length === 0) {
     return str || '';
@@ -82,7 +113,15 @@ export function applyCasePattern(str, tokens, opts = {}) {
   return out;
 }
 
-// Gestion des blocs de casse
+/**
+ * Calculates the appropriate number of case blocks based on mode and parameter
+ * @param {string} mode - Generation mode (syllables, passphrase, leet)
+ * @param {number} param - Mode-specific parameter (length for syllables, word count for passphrase)
+ * @returns {number} Number of blocks to generate (1-50)
+ * @example
+ * calculateBlocksCount('syllables', 20) // → 6
+ * calculateBlocksCount('passphrase', 5) // → 5
+ */
 export function calculateBlocksCount(mode, param = 20) {
   if (mode === 'syllables') {
     return Math.max(1, Math.min(10, Math.floor(param / 3)));
@@ -95,6 +134,15 @@ export function calculateBlocksCount(mode, param = 20) {
   return 2;
 }
 
+/**
+ * Generates default case blocks for a given mode
+ * @param {string} mode - Generation mode (syllables, passphrase, leet)
+ * @param {number} param - Mode-specific parameter
+ * @returns {Array<string>} Array of case block tokens
+ * @example
+ * defaultBlocksForMode('syllables', 20) // → ['U', 'l', 'l', 'l', 'l', 'l']
+ * defaultBlocksForMode('passphrase', 5) // → ['T', 'l', 'l', 'l', 'l']
+ */
 export function defaultBlocksForMode(mode, param = 20) {
   const count = calculateBlocksCount(mode, param);
   if (mode === 'syllables') {
@@ -119,6 +167,16 @@ export function defaultBlocksForMode(mode, param = 20) {
   return ['T', 'l'];
 }
 
+/**
+ * Generates randomized case blocks for a given mode
+ * Uses cryptographically secure pick() function
+ * @param {string} mode - Generation mode (syllables, passphrase, leet)
+ * @param {number} param - Mode-specific parameter
+ * @returns {Array<string>} Array of random case block tokens
+ * @example
+ * randomizeBlocks('syllables', 20) // → ['U', 'T', 'l', 'U', 'l', 'T'] (random)
+ * randomizeBlocks('passphrase', 5) // → ['l', 'U', 'T', 'l', 'U'] (random)
+ */
 export function randomizeBlocks(mode, param = 20) {
   const count = calculateBlocksCount(mode, param);
   const options = ['U', 'l', 'T'];

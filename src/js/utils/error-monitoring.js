@@ -16,15 +16,7 @@
 
 // src/js/utils/error-monitoring.js - Système de monitoring d'erreurs
 
-/**
- * Vérifie si l'application est en mode développement
- * @returns {boolean} true si en développement
- */
-function isDevelopment() {
-  return location.hostname === 'localhost' ||
-         location.hostname === '127.0.0.1' ||
-         location.protocol === 'file:';
-}
+import { isDevelopment } from './environment.js';
 
 /**
  * Configuration du monitoring d'erreurs
@@ -201,8 +193,10 @@ export function initErrorMonitoring() {
       promise: true
     });
 
-    // Empêcher l'affichage dans la console (déjà loggé)
-    event.preventDefault();
+    // Only prevent default in production to avoid hiding errors during development
+    if (!isDevelopment()) {
+      event.preventDefault();
+    }
   });
 
   console.log('Error monitoring initialized');

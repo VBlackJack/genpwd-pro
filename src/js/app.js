@@ -25,6 +25,7 @@ import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
 import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
 import { initThemeSystem } from './utils/theme-manager.js';
+import { isDevelopment } from './utils/environment.js';
 
 class GenPwdApp {
   constructor() {
@@ -140,12 +141,6 @@ class GenPwdApp {
     } catch (error) {
       safeLog(`Erreur génération initiale: ${error.message}`);
     }
-  }
-
-  isDevelopment() {
-    return location.hostname === 'localhost' || 
-           location.hostname === '127.0.0.1' ||
-           location.protocol === 'file:';
   }
 }
 

@@ -15,11 +15,12 @@
     "start": "npm run dev"
   },
   "devDependencies": {
-    "rimraf": "^5.0.5",
+    "@eslint/js": "^9.39.1",
     "chokidar": "^3.5.3",
-    "puppeteer": "^21.6.1",
     "eslint": "^8.56.0",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "puppeteer": "^21.6.1",
+    "rimraf": "^5.0.5"
   },
   "files": [
     "src/",

@@ -16,30 +16,65 @@
 // src/js/utils/helpers.js - Fonctions utilitaires extraites
 
 /**
- * Génère un entier aléatoire entre min et max (inclus)
- * @param {number} min - Valeur minimale (incluse)
- * @param {number} max - Valeur maximale (incluse)
- * @returns {number} Entier aléatoire entre min et max
- * @throws {Error} Si min > max ou si les paramètres ne sont pas des nombres
+ * Generates a cryptographically secure random integer between min and max (inclusive)
+ * Uses Web Crypto API (crypto.getRandomValues) instead of Math.random() for unpredictability
+ * Implements rejection sampling to avoid modulo bias
+ *
+ * @param {number} min - Minimum value (inclusive)
+ * @param {number} max - Maximum value (inclusive)
+ * @returns {number} Cryptographically secure random integer in [min, max]
+ * @throws {Error} If parameters are invalid (not numbers or min > max)
+ *
  * @example
- * randInt(1, 10) // → 7 (par exemple)
- * randInt(0, 100) // → 42 (par exemple)
+ * randInt(1, 10) // → 7 (cryptographically random)
+ * randInt(0, 255) // → 142 (cryptographically random)
  */
 export function randInt(min, max) {
   if (typeof min !== 'number' || typeof max !== 'number' || min > max) {
     throw new Error(`randInt: paramètres invalides (${min}, ${max})`);
   }
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const range = max - min + 1;
+
+  // Special case: range is power of 2, use simple masking (more efficient)
+  if ((range & (range - 1)) === 0) {
+    const mask = range - 1;
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    const value = new DataView(bytes.buffer).getUint32(0, true);
+    return min + (value & mask);
+  }
+
+  // General case: rejection sampling to avoid modulo bias
+  const bytesNeeded = Math.ceil(Math.log2(range) / 8);
+  const maxValid = Math.floor((256 ** bytesNeeded) / range) * range;
+
+  let randomValue;
+  do {
+    const randomBytes = new Uint8Array(bytesNeeded);
+    crypto.getRandomValues(randomBytes);
+
+    // Convert bytes to integer (little-endian)
+    randomValue = 0;
+    for (let i = 0; i < bytesNeeded; i++) {
+      randomValue += randomBytes[i] * (256 ** i);
+    }
+  } while (randomValue >= maxValid); // Reject values that would cause bias
+
+  return min + (randomValue % range);
 }
 
 /**
- * Sélectionne un élément aléatoire dans un tableau
- * @param {Array} arr - Tableau source
- * @returns {*} Élément aléatoire du tableau
- * @throws {Error} Si le paramètre n'est pas un tableau ou si le tableau est vide
+ * Selects a cryptographically secure random element from an array
+ * Uses crypto.getRandomValues() via randInt() for unpredictability
+ *
+ * @param {Array} arr - Source array
+ * @returns {*} Cryptographically secure random element from the array
+ * @throws {Error} If parameter is not an array or if array is empty
+ *
  * @example
- * pick(['a', 'b', 'c']) // → 'b' (par exemple)
- * pick([1, 2, 3, 4, 5]) // → 3 (par exemple)
+ * pick(['a', 'b', 'c']) // → 'b' (cryptographically random)
+ * pick([1, 2, 3, 4, 5]) // → 3 (cryptographically random)
  */
 export function pick(arr) {
   if (!Array.isArray(arr)) {
@@ -50,9 +85,20 @@ export function pick(arr) {
     console.warn('pick() appelé avec un array vide');
     throw new Error('pick: tableau vide ou invalide');
   }
-  return arr[Math.floor(Math.random() * arr.length)];
+
+  // Use cryptographically secure randInt() instead of Math.random()
+  return arr[randInt(0, arr.length - 1)];
 }
 
+/**
+ * Ensures the input is converted to an array
+ * @param {*} input - Input value (array, string, or other)
+ * @returns {Array} Array representation of input
+ * @example
+ * ensureArray(['a', 'b']) // → ['a', 'b']
+ * ensureArray('hello') // → ['h', 'e', 'l', 'l', 'o']
+ * ensureArray(null) // → []
+ */
 export function ensureArray(input) {
   if (Array.isArray(input)) {
     return input;
@@ -63,6 +109,15 @@ export function ensureArray(input) {
   return [];
 }
 
+/**
+ * Clamps a percentage value between 0 and 100, rounded to 1 decimal place
+ * @param {number} value - Value to clamp
+ * @returns {number} Clamped percentage (0.0 - 100.0)
+ * @example
+ * clampPercent(150) // → 100.0
+ * clampPercent(-50) // → 0.0
+ * clampPercent(42.567) // → 42.6
+ */
 const clampPercent = (value) => {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return 0;
@@ -70,8 +125,14 @@ const clampPercent = (value) => {
   return Math.max(0, Math.min(100, Math.round(value * 10) / 10));
 };
 
-let digitPlacement = [];
-let specialPlacement = [];
+/**
+ * Encapsulated state for placement positions
+ * Prevents global scope pollution and provides controlled access
+ */
+const placementState = {
+  digits: [],
+  specials: []
+};
 
 function normalizePercentages(percentages, count) {
   if (count <= 0) {
@@ -100,24 +161,52 @@ function normalizePercentages(percentages, count) {
   return merged;
 }
 
+/**
+ * Sets the digit placement positions
+ * @param {Array<number>} positions - Array of percentage positions (0-100)
+ * @returns {Array<number>} Normalized and sorted positions
+ */
 export function setDigitPositions(positions) {
-  digitPlacement = normalizePercentages(positions, Array.isArray(positions) ? positions.length : 0);
-  return digitPlacement.slice();
+  placementState.digits = normalizePercentages(positions, Array.isArray(positions) ? positions.length : 0);
+  return [...placementState.digits]; // Return defensive copy
 }
 
+/**
+ * Sets the special character placement positions
+ * @param {Array<number>} positions - Array of percentage positions (0-100)
+ * @returns {Array<number>} Normalized and sorted positions
+ */
 export function setSpecialPositions(positions) {
-  specialPlacement = normalizePercentages(positions, Array.isArray(positions) ? positions.length : 0);
-  return specialPlacement.slice();
+  placementState.specials = normalizePercentages(positions, Array.isArray(positions) ? positions.length : 0);
+  return [...placementState.specials]; // Return defensive copy
 }
 
+/**
+ * Gets the current digit placement positions
+ * @returns {Array<number>} Copy of digit positions
+ */
 export function getDigitPositions() {
-  return digitPlacement.slice();
+  return [...placementState.digits]; // Return defensive copy
 }
 
+/**
+ * Gets the current special character placement positions
+ * @returns {Array<number>} Copy of special positions
+ */
 export function getSpecialPositions() {
-  return specialPlacement.slice();
+  return [...placementState.specials]; // Return defensive copy
 }
 
+/**
+ * Distributes a count of points evenly across a range
+ * @param {number} count - Number of points to distribute
+ * @param {number} start - Start of range (default: 0)
+ * @param {number} end - End of range (default: 100)
+ * @returns {Array<number>} Array of evenly distributed percentage points
+ * @example
+ * distributeEvenly(3) // → [0, 50, 100]
+ * distributeEvenly(5, 20, 80) // → [20, 35, 50, 65, 80]
+ */
 export function distributeEvenly(count, start = 0, end = 100) {
   const safeCount = Math.max(0, parseInt(count, 10) || 0);
   if (safeCount === 0) {
@@ -143,6 +232,16 @@ export function distributeEvenly(count, start = 0, end = 100) {
   return points;
 }
 
+/**
+ * Inserts characters into a base string at specified percentage positions
+ * @param {string} base - Base string
+ * @param {Array<string>} charsToInsert - Characters to insert
+ * @param {Array<number>} percentages - Percentage positions (0-100) for each character
+ * @returns {string} Resulting string with inserted characters
+ * @example
+ * insertWithPercentages('hello', ['!', '?'], [0, 100]) // → '!hello?'
+ * insertWithPercentages('hello', ['1', '2'], [50, 50]) // → 'hel12lo'
+ */
 export function insertWithPercentages(base, charsToInsert, percentages) {
   const baseStr = typeof base === 'string' ? base : '';
   const chars = ensureArray(charsToInsert).filter(ch => typeof ch === 'string');
@@ -249,13 +348,27 @@ export function insertWithPlacement(base, charsToInsert, placement, options = {}
         });
     }
   } catch (e) {
-    console.warn(`Erreur insertWithPlacement: ${e.message}`);
+    // Log error properly instead of silently masking it
+    console.error(`Error in insertWithPlacement: ${e.message}`, {
+      placement,
+      charsLength: chars.length,
+      baseLength: base.length,
+      error: e
+    });
+    // Return safe fallback
     return base + chars.join('');
   }
 
   return arr.join('');
 }
 
+/**
+ * Counts the composition of characters in a string
+ * @param {string} str - Input string
+ * @returns {Object} Object with counts: { U: uppercase, L: lowercase, D: digits, S: special }
+ * @example
+ * compositionCounts('Hello123!') // → { U: 1, L: 4, D: 3, S: 1 }
+ */
 export function compositionCounts(str) {
   if (typeof str !== 'string') return { U: 0, L: 0, D: 0, S: 0 };
   
@@ -269,6 +382,13 @@ export function compositionCounts(str) {
   return { U, L, D, S };
 }
 
+/**
+ * Escapes HTML special characters in a string
+ * @param {string} str - Input string
+ * @returns {string} HTML-escaped string
+ * @example
+ * escapeHtml('<script>alert("XSS")</script>') // → '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'
+ */
 export function escapeHtml(str) {
   if (typeof str !== 'string') return '';
   return str.replace(/[&<>"']/g, m => ({
@@ -280,6 +400,14 @@ export function escapeHtml(str) {
   }[m]));
 }
 
+/**
+ * Calculates the base-2 logarithm of a number
+ * @param {number} n - Input number (must be > 0)
+ * @returns {number} Log base 2 of n, or 0 if n <= 0
+ * @example
+ * log2(8) // → 3
+ * log2(256) // → 8
+ */
 export function log2(n) {
   if (typeof n !== 'number' || n <= 0) return 0;
   return Math.log(n) / Math.log(2);
