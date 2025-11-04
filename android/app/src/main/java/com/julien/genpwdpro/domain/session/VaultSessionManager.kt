@@ -46,7 +46,8 @@ import javax.inject.Singleton
 class VaultSessionManager @Inject constructor(
     private val vaultFileManager: VaultFileManager,
     private val vaultRegistryDao: VaultRegistryDao,
-    private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager
+    private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager,
+    private val unlockRateLimiter: com.julien.genpwdpro.domain.security.UnlockRateLimiter  // SECURITY FIX: Rate limiting
 ) {
     companion object {
         private const val TAG = "VaultSessionManager"
@@ -59,6 +60,7 @@ class VaultSessionManager @Inject constructor(
     data class VaultSession(
         val vaultId: String,
         val vaultKey: SecretKey,
+        val saltHex: String,  // SECURITY FIX: Store salt for re-use when saving
         val filePath: String,
         val storageStrategy: StorageStrategy,
         val fileUri: Uri?,
@@ -77,11 +79,29 @@ class VaultSessionManager @Inject constructor(
 
         /**
          * Nettoie la session (efface les clés sensibles de la mémoire)
+         *
+         * SECURITY FIX: Best-effort memory wiping
          */
         fun cleanup() {
             autoLockJob?.cancel()
-            // Note: SecretKey ne peut pas être effacée directement en Kotlin
-            // mais elle sera GC'd quand la session sera déréférencée
+
+            // SECURITY FIX: Wipe sensitive data from memory (best effort)
+            try {
+                // Note: Strings in Kotlin/Java are immutable and cannot be zeroed
+                // The best we can do is clear references and suggest GC
+
+                // Clear reference to vault data (will be GC'd)
+                // Passwords are encrypted Strings - immutable, can't wipe
+
+                // SecretKey implementation doesn't expose key bytes in Android KeyStore
+                // Key will be GC'd when session is dereferenced
+
+                // Suggest garbage collection (hint only, not guaranteed)
+                System.runFinalization()
+                System.gc()
+            } catch (e: Exception) {
+                // Silently fail - cleanup is best-effort
+            }
         }
     }
 
@@ -128,11 +148,29 @@ class VaultSessionManager @Inject constructor(
             try {
                 Log.d(TAG, "Unlocking vault: $vaultId")
 
+                // SECURITY FIX: Check rate limiting BEFORE attempting unlock
+                when (val rateLimitResult = unlockRateLimiter.checkAndRecordAttempt(vaultId)) {
+                    is com.julien.genpwdpro.domain.security.RateLimitResult.LockedOut -> {
+                        Log.w(TAG, "Vault $vaultId is locked out for ${rateLimitResult.secondsRemaining} seconds")
+                        return@withContext Result.failure(
+                            VaultException.TooManyAttempts(
+                                "Too many failed unlock attempts. Locked out for ${rateLimitResult.secondsRemaining} seconds."
+                            )
+                        )
+                    }
+                    is com.julien.genpwdpro.domain.security.RateLimitResult.Allowed -> {
+                        Log.d(TAG, "Unlock attempt allowed. ${rateLimitResult.attemptsRemaining} attempts remaining")
+                        // Continue with unlock
+                    }
+                }
+
                 // Vérifier qu'un vault n'est pas déjà déverrouillé
                 currentSession?.let {
                     if (it.vaultId == vaultId) {
                         _activeVaultId.value = vaultId
                         resetAutoLockTimer()
+                        // SECURITY FIX: Record success even if already unlocked
+                        unlockRateLimiter.recordSuccess(vaultId)
                         Log.w(TAG, "Vault already unlocked: $vaultId")
                         return@withContext Result.success(Unit)
                     } else {
@@ -159,6 +197,18 @@ class VaultSessionManager @Inject constructor(
                     null
                 }
 
+                // SECURITY FIX: Read salt from file header BEFORE loading
+                val saltHex = try {
+                    val header = vaultFileManager.getVaultFileInfo(vaultRegistry.filePath)
+                        ?: throw IllegalStateException("Cannot read vault file header")
+                    header.salt
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to read salt from vault header: $vaultId", e)
+                    return@withContext Result.failure(
+                        VaultException.InvalidFileFormat("Cannot read salt from vault file", e)
+                    )
+                }
+
                 val vaultData = try {
                     if (resolvedUri != null) {
                         vaultFileManager.loadVaultFileFromUri(vaultId, masterPassword, resolvedUri)
@@ -183,9 +233,9 @@ class VaultSessionManager @Inject constructor(
                     )
                 }
 
-                // Dériver la clé de chiffrement depuis le master password
+                // SECURITY FIX: Derive key with salt from header (not deterministic)
                 val vaultKey = try {
-                    val saltBytes = cryptoManager.generateSaltFromString(vaultId)
+                    val saltBytes = cryptoManager.hexToBytes(saltHex)
                     cryptoManager.deriveKey(masterPassword, saltBytes)
                 } catch (e: Exception) {
                     Log.e(TAG, "Key derivation failed for vault: $vaultId", e)
@@ -198,6 +248,7 @@ class VaultSessionManager @Inject constructor(
                 val session = VaultSession(
                     vaultId = vaultId,
                     vaultKey = vaultKey,
+                    saltHex = saltHex,  // SECURITY FIX: Store salt for re-use
                     filePath = vaultRegistry.filePath,
                     storageStrategy = vaultRegistry.storageStrategy,
                     fileUri = resolvedUri,
@@ -237,6 +288,9 @@ class VaultSessionManager @Inject constructor(
 
                 // Démarrer le timer d'auto-lock
                 startAutoLockTimer(DEFAULT_AUTO_LOCK_MINUTES)
+
+                // SECURITY FIX: Record successful unlock (clears failed attempts)
+                unlockRateLimiter.recordSuccess(vaultId)
 
                 Log.i(TAG, "Vault unlocked successfully: $vaultId")
                 Result.success(Unit)
@@ -744,7 +798,8 @@ class VaultSessionManager @Inject constructor(
                             data = vaultData,
                             vaultKey = session.vaultKey,
                             strategy = session.storageStrategy,
-                            customPath = null
+                            customPath = null,
+                            saltHex = session.saltHex  // SECURITY FIX: Pass salt from session
                         )
                     }
                 }

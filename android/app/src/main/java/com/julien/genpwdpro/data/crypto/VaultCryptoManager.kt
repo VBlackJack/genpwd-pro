@@ -347,7 +347,15 @@ class VaultCryptoManager @Inject constructor() {
      *
      * @param seed Chaîne source (ex: vaultId)
      * @return Salt de 32 bytes déterministe
+     *
+     * @deprecated SECURITY WARNING: Deterministic salts enable rainbow table attacks.
+     *             Use generateSalt() for random salts and store them in vault headers.
+     *             This function is kept for backwards compatibility only.
      */
+    @Deprecated(
+        message = "Use generateSalt() and store salt in vault header instead",
+        level = DeprecationLevel.WARNING
+    )
     fun generateSaltFromString(seed: String): ByteArray {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         return digest.digest(seed.toByteArray(Charsets.UTF_8))
