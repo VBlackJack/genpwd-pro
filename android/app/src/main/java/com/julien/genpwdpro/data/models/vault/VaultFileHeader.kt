@@ -10,10 +10,11 @@ data class VaultFileHeader(
     val magicNumber: String = MAGIC_NUMBER,
     val version: Int = CURRENT_VERSION,
     val vaultId: String,
+    val salt: String,                // Random salt (hex encoded, 32 bytes) - SECURITY FIX: No longer deterministic
     val createdAt: Long,
     val modifiedAt: Long,
-    val checksum: String,           // SHA-256 du contenu déchiffré
-    val keyFileHash: String? = null // SHA-256 du key file (optionnel, KeePass-style)
+    val checksum: String,            // SHA-256 du contenu déchiffré
+    val keyFileHash: String? = null  // SHA-256 du key file (optionnel, KeePass-style)
 ) {
     companion object {
         const val MAGIC_NUMBER = "GPVAULT1"

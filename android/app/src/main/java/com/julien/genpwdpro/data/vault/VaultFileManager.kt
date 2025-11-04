@@ -93,9 +93,10 @@ class VaultFileManager @Inject constructor(
         val vaultId = UUID.randomUUID().toString()
         val timestamp = System.currentTimeMillis()
 
-        // Créer la clé depuis le master password
-        // Utilise vaultId comme seed pour un salt déterministe
-        val salt = cryptoManager.generateSaltFromString(vaultId)
+        // SECURITY FIX: Generate a RANDOM salt (not deterministic)
+        // This prevents rainbow table attacks and improves Argon2id security
+        val salt = cryptoManager.generateSalt()
+        val saltHex = cryptoManager.bytesToHex(salt)
         val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         // Créer les métadonnées initiales
@@ -119,8 +120,8 @@ class VaultFileManager @Inject constructor(
             entryTags = emptyList()
         )
 
-        // Sauvegarder
-        val file = saveVaultFile(vaultId, vaultData, vaultKey, strategy, customPath)
+        // Sauvegarder avec le salt généré
+        val file = saveVaultFile(vaultId, vaultData, vaultKey, strategy, customPath, saltHex)
 
         return Pair(vaultId, file)
     }
@@ -138,9 +139,11 @@ class VaultFileManager @Inject constructor(
             throw IllegalStateException("Vault file not found: $filePath")
         }
 
-        // Dériver la clé depuis le master password
-        // Utilise vaultId comme seed pour le salt (même salt qu'à la création)
-        val salt = cryptoManager.generateSaltFromString(vaultId)
+        // SECURITY FIX: Read salt from file header (no longer deterministic)
+        val header = getVaultFileInfo(filePath)
+            ?: throw IllegalStateException("Invalid vault file header")
+
+        val salt = cryptoManager.hexToBytes(header.salt)
         val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         return readVaultFile(file, vaultKey)
@@ -154,7 +157,8 @@ class VaultFileManager @Inject constructor(
         data: VaultData,
         vaultKey: SecretKey,
         strategy: StorageStrategy,
-        customPath: Uri? = null
+        customPath: Uri? = null,
+        saltHex: String? = null  // SECURITY FIX: Pass salt for storage in header
     ): File {
         if (strategy == StorageStrategy.CUSTOM && customPath != null) {
             // Utiliser SAF pour custom paths
@@ -164,7 +168,17 @@ class VaultFileManager @Inject constructor(
         val dir = getStorageDirectory(strategy)
         val file = File(dir, getVaultFileName(vaultId))
 
-        return writeVaultFile(file, data, vaultKey, vaultId)
+        // If salt not provided, try to read from existing file header
+        val effectiveSalt = saltHex ?: run {
+            if (file.exists()) {
+                getVaultFileInfo(file.absolutePath)?.salt
+                    ?: throw IllegalStateException("Cannot read salt from existing file")
+            } else {
+                throw IllegalArgumentException("Salt must be provided for new vault files")
+            }
+        }
+
+        return writeVaultFile(file, data, vaultKey, vaultId, effectiveSalt)
     }
 
     /**
@@ -194,10 +208,13 @@ class VaultFileManager @Inject constructor(
                 // Parser le JSON
                 val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
 
-                // Valider le checksum
+                // SECURITY FIX: Valider le checksum strictement
                 val contentChecksum = calculateChecksum(decryptedString)
                 if (contentChecksum != header.checksum) {
-                    Log.w(TAG, "Checksum mismatch - file may be corrupted")
+                    Log.e(TAG, "Checksum mismatch! Expected: ${header.checksum}, Got: $contentChecksum")
+                    throw com.julien.genpwdpro.domain.exceptions.VaultException.DataCorruption(
+                        "Vault file checksum mismatch. File may be corrupted or tampered with."
+                    )
                 }
 
                 return vaultData
@@ -215,7 +232,8 @@ class VaultFileManager @Inject constructor(
         file: File,
         data: VaultData,
         vaultKey: SecretKey,
-        vaultId: String
+        vaultId: String,
+        saltHex: String  // SECURITY FIX: Salt to include in header
     ): File {
         try {
             // Mettre à jour le timestamp de modification
@@ -237,9 +255,10 @@ class VaultFileManager @Inject constructor(
             // Calculer le checksum
             val checksum = calculateChecksum(dataJson)
 
-            // Créer le header
+            // Créer le header avec le salt
             val header = VaultFileHeader(
                 vaultId = vaultId,
+                salt = effectiveSalt,  // SECURITY FIX: Store random salt in header
                 createdAt = updatedData.metadata.createdAt,
                 modifiedAt = updatedData.metadata.modifiedAt,
                 checksum = checksum
@@ -440,8 +459,9 @@ class VaultFileManager @Inject constructor(
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         )
 
-        // Créer la clé depuis le master password
-        val salt = cryptoManager.generateSaltFromString(vaultId)
+        // SECURITY FIX: Generate a RANDOM salt (not deterministic)
+        val salt = cryptoManager.generateSalt()
+        val saltHex = cryptoManager.bytesToHex(salt)
         val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
         // Créer les métadonnées initiales
@@ -465,8 +485,8 @@ class VaultFileManager @Inject constructor(
             entryTags = emptyList()
         )
 
-        // Sauvegarder dans le dossier SAF
-        val fileUri = saveVaultFileToUri(vaultId, vaultData, vaultKey, customFolderUri)
+        // Sauvegarder dans le dossier SAF avec le salt généré
+        val fileUri = saveVaultFileToUri(vaultId, vaultData, vaultKey, customFolderUri, saltHex)
 
         return Pair(vaultId, fileUri)
     }
@@ -484,7 +504,8 @@ class VaultFileManager @Inject constructor(
         vaultId: String,
         data: VaultData,
         vaultKey: SecretKey,
-        customFolderUri: Uri
+        customFolderUri: Uri,
+        saltHex: String? = null  // SECURITY FIX: Pass salt for storage in header
     ): Uri {
         try {
             val folder = DocumentFile.fromTreeUri(context, customFolderUri)
@@ -494,11 +515,34 @@ class VaultFileManager @Inject constructor(
 
             // Vérifier si le fichier existe déjà
             var vaultFile = folder.findFile(fileName)
+            var existingFile = false
 
             // Si le fichier n'existe pas, le créer
             if (vaultFile == null) {
                 vaultFile = folder.createFile("application/octet-stream", fileName)
                     ?: throw IllegalStateException("Cannot create vault file in custom folder")
+            } else {
+                existingFile = true
+            }
+
+            // SECURITY FIX: Determine effective salt
+            val effectiveSalt = saltHex ?: run {
+                if (existingFile) {
+                    // Read salt from existing file header
+                    val existingHeader = try {
+                        context.contentResolver.openInputStream(vaultFile.uri)?.use { inputStream ->
+                            val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
+                            inputStream.read(headerBytes)
+                            val headerJson = String(headerBytes).trim('\u0000')
+                            gson.fromJson(headerJson, VaultFileHeader::class.java)
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                    existingHeader?.salt ?: throw IllegalStateException("Cannot read salt from existing file")
+                } else {
+                    throw IllegalArgumentException("Salt must be provided for new vault files")
+                }
             }
 
             // Mettre à jour le timestamp de modification
@@ -520,9 +564,10 @@ class VaultFileManager @Inject constructor(
             // Calculer le checksum
             val checksum = calculateChecksum(dataJson)
 
-            // Créer le header
+            // Créer le header avec le salt
             val header = VaultFileHeader(
                 vaultId = vaultId,
+                salt = effectiveSalt,  // SECURITY FIX: Store random salt in header
                 createdAt = updatedData.metadata.createdAt,
                 modifiedAt = updatedData.metadata.modifiedAt,
                 checksum = checksum
@@ -564,6 +609,15 @@ class VaultFileManager @Inject constructor(
         vaultKey: SecretKey
     ) {
         try {
+            // SECURITY FIX: Read salt from existing file header
+            val existingSalt = context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
+                val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
+                inputStream.read(headerBytes)
+                val headerJson = String(headerBytes).trim('\u0000')
+                val header = gson.fromJson(headerJson, VaultFileHeader::class.java)
+                header.salt
+            } ?: throw IllegalStateException("Cannot read salt from existing file at URI: $fileUri")
+
             val updatedData = data.copy(
                 metadata = data.metadata.copy(
                     modifiedAt = System.currentTimeMillis()
@@ -579,6 +633,7 @@ class VaultFileManager @Inject constructor(
             val checksum = calculateChecksum(dataJson)
             val header = VaultFileHeader(
                 vaultId = updatedData.metadata.vaultId,
+                salt = existingSalt,  // SECURITY FIX: Preserve salt from existing file
                 createdAt = updatedData.metadata.createdAt,
                 modifiedAt = updatedData.metadata.modifiedAt,
                 checksum = checksum
@@ -615,16 +670,16 @@ class VaultFileManager @Inject constructor(
         fileUri: Uri
     ): VaultData {
         try {
-            // Dériver la clé depuis le master password
-            val salt = cryptoManager.generateSaltFromString(vaultId)
-            val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
-
             context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
                 // Lire le header (256 bytes)
                 val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
                 inputStream.read(headerBytes)
                 val headerJson = String(headerBytes).trim('\u0000')
                 val header = gson.fromJson(headerJson, VaultFileHeader::class.java)
+
+                // SECURITY FIX: Read salt from header (no longer deterministic)
+                val salt = cryptoManager.hexToBytes(header.salt)
+                val vaultKey = cryptoManager.deriveKey(masterPassword, salt)
 
                 // Valider le header
                 if (!header.isValid()) {
@@ -641,10 +696,13 @@ class VaultFileManager @Inject constructor(
                 // Parser le JSON
                 val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
 
-                // Valider le checksum
+                // SECURITY FIX: Valider le checksum strictement
                 val contentChecksum = calculateChecksum(decryptedString)
                 if (contentChecksum != header.checksum) {
-                    Log.w(TAG, "Checksum mismatch - file may be corrupted")
+                    Log.e(TAG, "Checksum mismatch! Expected: ${header.checksum}, Got: $contentChecksum")
+                    throw com.julien.genpwdpro.domain.exceptions.VaultException.DataCorruption(
+                        "Vault file checksum mismatch. File may be corrupted or tampered with."
+                    )
                 }
 
                 return vaultData
