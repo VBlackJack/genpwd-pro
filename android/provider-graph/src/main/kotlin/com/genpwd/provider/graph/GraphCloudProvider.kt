@@ -38,7 +38,7 @@ class GraphCloudProvider @Inject constructor(
 ) : CloudProvider {
     private val health = MutableStateFlow(ProviderHealth(ProviderHealth.Status.OK))
 
-    override val kind: ProviderKind = ProviderKind.MICROSOFT_GRAPH
+    override val kind: ProviderKind = ProviderKind.ONEDRIVE
 
     override suspend fun authenticate(): ProviderAccount = authProvider.authenticate()
 
@@ -164,7 +164,7 @@ class GraphCloudProvider @Inject constructor(
         val deleted: DeletedFacet? = null,
     ) {
         fun toMeta(accountId: String): VaultMeta = VaultMeta(
-            id = VaultId(remotePath = id, provider = ProviderKind.MICROSOFT_GRAPH, accountId = accountId),
+            id = VaultId(remotePath = id, provider = ProviderKind.ONEDRIVE, accountId = accountId),
             name = name,
             version = Instant.parse(lastModifiedDateTime).epochSecond,
             lastModifiedUtc = Instant.parse(lastModifiedDateTime).epochSecond,
