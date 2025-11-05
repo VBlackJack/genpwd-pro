@@ -50,7 +50,8 @@ class VaultSessionManager @Inject constructor(
     private val vaultFileManager: VaultFileManager,
     private val vaultRegistryDao: VaultRegistryDao,
     private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager,
-    private val keystoreManager: KeystoreManager
+    private val keystoreManager: KeystoreManager,
+    private val unlockRateLimiter: UnlockRateLimiter
 ) {
     companion object {
         private const val TAG = "VaultSessionManager"
@@ -203,6 +204,32 @@ class VaultSessionManager @Inject constructor(
             try {
                 SafeLog.d(TAG, "Unlocking vault: vaultId=${SafeLog.redact(vaultId)}")
 
+                // Vérifier le rate limiting AVANT toute tentative de déverrouillage
+                when (val rateLimitResult = unlockRateLimiter.checkAndRecordAttempt(vaultId)) {
+                    is UnlockRateLimiter.RateLimitResult.LockedOut -> {
+                        SafeLog.w(
+                            TAG,
+                            "Unlock attempt blocked: vaultId=${SafeLog.redact(vaultId)}, " +
+                            "locked for ${rateLimitResult.secondsRemaining}s"
+                        )
+                        return@withContext Result.failure(
+                            VaultException.TooManyAttempts(
+                                remainingSeconds = rateLimitResult.secondsRemaining,
+                                message = "Too many failed unlock attempts. " +
+                                    "Vault locked for ${rateLimitResult.secondsRemaining} seconds."
+                            )
+                        )
+                    }
+                    is UnlockRateLimiter.RateLimitResult.Allowed -> {
+                        SafeLog.d(
+                            TAG,
+                            "Unlock attempt allowed: vaultId=${SafeLog.redact(vaultId)}, " +
+                            "attemptsRemaining=${rateLimitResult.attemptsRemaining}"
+                        )
+                        // Continue with unlock process
+                    }
+                }
+
                 // Vérifier qu'un vault n'est pas déjà déverrouillé
                 currentSession?.let {
                     if (it.vaultId == vaultId) {
@@ -335,6 +362,9 @@ class VaultSessionManager @Inject constructor(
 
                 // Démarrer le timer d'auto-lock
                 startAutoLockTimer(DEFAULT_AUTO_LOCK_MINUTES)
+
+                // Enregistrer le succès pour réinitialiser le rate limiter
+                unlockRateLimiter.recordSuccess(vaultId)
 
                 SafeLog.i(
                     TAG,
