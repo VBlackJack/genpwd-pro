@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "node tools/dev-server.js",
     "build": "node tools/build.js",
-    "test": "node tools/run_tests.js",
-    "test:browser": "node tools/run_tests.js && node tools/browser-test.js",
-    "test:create-browser": "node tools/run_tests.js --create-browser-test",
+    "test": "node tools/run_tests.cjs",
+    "test:browser": "node tools/run_tests.cjs && node tools/browser-test.js",
+    "test:create-browser": "node tools/run_tests.cjs --create-browser-test",
     "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
     "lint": "eslint src/js/**/*.js tools/**/*.js",
     "clean": "rimraf dist/*",
