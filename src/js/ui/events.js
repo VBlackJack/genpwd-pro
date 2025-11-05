@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 // src/js/ui/events.js - Gestion centralisée des événements
-import { getElement, getAllElements, addEventListener, updateBadgeForInput, 
+import { getElement, getAllElements, addEventListener, updateBadgeForInput,
          updateVisibilityByMode, ensureBlockVisible, toggleDebugPanel,
          renderChips, updateBlockSizeLabel } from './dom.js';
 import { generateSyllables, generatePassphrase, generateLeet } from '../core/generators.js';
 import { setCurrentDictionary } from '../core/dictionaries.js';
 import { randomizeBlocks, defaultBlocksForMode } from '../core/casing.js';
 import { readSettings, getBlocks, setBlocks, setResults, getResults, getUIState, setUIState } from '../config/settings.js';
+import { RATE_LIMITING } from '../config/crypto-constants.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
@@ -32,11 +33,7 @@ let blockSyncTimeout = null;
 const BLOCK_SYNC_DELAY = 200;
 
 // Rate limiting configuration for password generation
-const GENERATION_CONFIG = {
-  COOLDOWN_MS: 500,        // Min 500ms between generations
-  MAX_BURST: 3,            // Allow 3 rapid requests
-  BURST_WINDOW_MS: 2000    // Reset burst counter after 2s
-};
+const GENERATION_CONFIG = RATE_LIMITING;
 
 // State for rate limiting
 const generationState = {

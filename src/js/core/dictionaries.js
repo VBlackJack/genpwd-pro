@@ -15,11 +15,12 @@
  */
 // src/js/core/dictionaries.js - Système de dictionnaires multilingues
 import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
+import { DICTIONARY } from '../config/crypto-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { validateDictionary } from '../utils/integrity.js';
 
 const REMOTE_PROTOCOL_REGEX = /^https?:\/\//i;
-const DICTIONARY_LOAD_TIMEOUT = 10000; // 10 seconds timeout
+const DICTIONARY_LOAD_TIMEOUT = DICTIONARY.LOAD_TIMEOUT;
 
 async function loadDictionarySource(config) {
   const { url } = config;
