@@ -63,7 +63,8 @@ export default [
         Blob: 'readonly',
         URL: 'readonly',
         performance: 'readonly',
-        Buffer: 'readonly'
+        Buffer: 'readonly',
+        AbortController: 'readonly'
       }
     },
     rules: {

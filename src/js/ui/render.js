@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 // src/js/ui/render.js - Rendu des résultats et cartes
-import { getElement, addEventListener } from './dom.js';
+import { getElement } from './dom.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { compositionCounts, escapeHtml } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
 
 const clickTimers = new WeakMap();
+let eventController = new AbortController();
 
 export function renderResults(results, mask) {
   const wrap = getElement('#results-list');
@@ -110,9 +111,9 @@ function createPasswordCard(item, id, mask) {
 
 function bindPasswordClickEvents() {
   const passwordElements = document.querySelectorAll('.pwd');
-  
+
   passwordElements.forEach(el => {
-    addEventListener(el, 'click', async (e) => {
+    el.addEventListener('click', async (e) => {
       e.preventDefault();
       
       const existingTimer = clickTimers.get(el);
@@ -152,11 +153,25 @@ function bindPasswordClickEvents() {
       }, 250);
 
       clickTimers.set(el, timer);
-    });
+    }, { signal: eventController.signal });
   });
+
+  safeLog(`Bound click events to ${passwordElements.length} password cards`);
 }
 
+/**
+ * Cleanup all password card event listeners
+ * Uses AbortController for automatic removal of all tracked listeners
+ * Also clears any pending click timers
+ */
 function cleanupPasswordListeners() {
+  // Abort all listeners registered with the current controller
+  eventController.abort();
+
+  // Create new controller for next batch of listeners
+  eventController = new AbortController();
+
+  // Clear any pending click timers
   document.querySelectorAll('.pwd').forEach(el => {
     const timer = clickTimers.get(el);
     if (timer) {
@@ -164,6 +179,8 @@ function cleanupPasswordListeners() {
       clickTimers.delete(el);
     }
   });
+
+  safeLog('Password card listeners cleaned up');
 }
 
 export function updateMaskDisplay(mask) {
