@@ -1,7 +1,8 @@
 import { CryptoEngine } from './interfaces.js';
+import { KEYSET_ENVELOPE } from '../config/crypto-constants.js';
 
-const KEYSET_ENVELOPE_VERSION = 1;
-const KEYSET_ENVELOPE_IV_BYTES = 12;
+const KEYSET_ENVELOPE_VERSION = KEYSET_ENVELOPE.VERSION;
+const KEYSET_ENVELOPE_IV_BYTES = KEYSET_ENVELOPE.IV_BYTES;
 
 let tinkModulePromise = null;
 let cryptoModulePromise = null;

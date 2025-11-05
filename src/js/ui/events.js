@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 // src/js/ui/events.js - Gestion centralisée des événements
-import { getElement, getAllElements, addEventListener, updateBadgeForInput, 
+import { getElement, getAllElements, addEventListener, updateBadgeForInput,
          updateVisibilityByMode, ensureBlockVisible, toggleDebugPanel,
          renderChips, updateBlockSizeLabel } from './dom.js';
 import { generateSyllables, generatePassphrase, generateLeet } from '../core/generators.js';
 import { setCurrentDictionary } from '../core/dictionaries.js';
 import { randomizeBlocks, defaultBlocksForMode } from '../core/casing.js';
 import { readSettings, getBlocks, setBlocks, setResults, getResults, getUIState, setUIState } from '../config/settings.js';
+import { RATE_LIMITING } from '../config/crypto-constants.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
@@ -30,6 +31,15 @@ import { initVisualPlacement, getVisualPlacement } from './placement.js';
 let previewTimeout = null;
 let blockSyncTimeout = null;
 const BLOCK_SYNC_DELAY = 200;
+
+// Rate limiting configuration for password generation
+const GENERATION_CONFIG = RATE_LIMITING;
+
+// State for rate limiting
+const generationState = {
+  lastGeneration: 0,
+  burstCount: 0
+};
 
 /**
  * Cleans up all active timeouts and event handlers
@@ -414,10 +424,35 @@ function handleGenerationResults(results, settings) {
 }
 
 /**
- * Main password generation function - REFACTORED
- * Now uses parallel generation with Promise.all for better performance
+ * Generate passwords with rate limiting
+ * Prevents client-side DoS from excessive generation requests
+ * Uses parallel generation with Promise.all for better performance
  */
 async function generatePasswords() {
+  // Rate limiting check
+  const now = Date.now();
+  const timeSinceLastGen = now - generationState.lastGeneration;
+
+  // Reset burst counter if window expired
+  if (timeSinceLastGen > GENERATION_CONFIG.BURST_WINDOW_MS) {
+    generationState.burstCount = 0;
+  }
+
+  // Check cooldown for non-burst requests
+  if (generationState.burstCount >= GENERATION_CONFIG.MAX_BURST) {
+    if (timeSinceLastGen < GENERATION_CONFIG.COOLDOWN_MS) {
+      const waitTime = Math.ceil((GENERATION_CONFIG.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
+      showToast(`Génération trop rapide. Veuillez patienter ${waitTime}s`, 'warning');
+      safeLog(`Rate limit: ${waitTime}s remaining`);
+      return;
+    }
+    generationState.burstCount = 0; // Reset after cooldown
+  }
+
+  // Update state
+  generationState.lastGeneration = now;
+  generationState.burstCount++;
+
   try {
     const settings = readSettings();
     const commonConfig = buildCommonConfig(settings);

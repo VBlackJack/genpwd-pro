@@ -15,10 +15,12 @@
  */
 // src/js/core/dictionaries.js - Système de dictionnaires multilingues
 import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
+import { DICTIONARY } from '../config/crypto-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { validateDictionary } from '../utils/integrity.js';
 
 const REMOTE_PROTOCOL_REGEX = /^https?:\/\//i;
+const DICTIONARY_LOAD_TIMEOUT = DICTIONARY.LOAD_TIMEOUT;
 
 async function loadDictionarySource(config) {
   const { url } = config;
@@ -27,19 +29,41 @@ async function loadDictionarySource(config) {
   const shouldUseHttpFetch = isBrowserContext || REMOTE_PROTOCOL_REGEX.test(url);
 
   if (shouldUseHttpFetch) {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Cache-Control': 'public, max-age=3600'
+    // Create AbortController for timeout mechanism
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      safeLog(`Dictionary load timeout after ${DICTIONARY_LOAD_TIMEOUT}ms: ${url}`);
+    }, DICTIONARY_LOAD_TIMEOUT);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal, // Link fetch to AbortController
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'public, max-age=3600'
+        }
+      });
+
+      clearTimeout(timeoutId); // Cancel timeout on success
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      return response.json();
+
+    } catch (error) {
+      clearTimeout(timeoutId); // Cancel timeout on error
+
+      // Distinguish between timeout and other errors
+      if (error.name === 'AbortError') {
+        throw new Error(`Dictionary load timeout after ${DICTIONARY_LOAD_TIMEOUT}ms: ${url}`);
+      }
+
+      throw error;
     }
-
-    return response.json();
   }
 
   const [{ readFile }, nodePath, { fileURLToPath }] = await Promise.all([
@@ -116,9 +140,19 @@ export async function loadDictionary(dictKey) {
     if (typeof data === 'string' || data instanceof ArrayBuffer) {
       const integrityResult = await validateDictionary(dictKey, data);
       if (!integrityResult.valid) {
-        safeLog(`⚠️ ${integrityResult.message}`);
-        // In production, you might want to throw an error here
-        // For now, we log a warning but continue
+        // Determine if we're in production (HTTPS + non-localhost)
+        const isProd = typeof location !== 'undefined' &&
+                       location.protocol === 'https:' &&
+                       !location.hostname.includes('localhost') &&
+                       !location.hostname.includes('127.0.0.1');
+
+        if (isProd) {
+          // In production, fail hard on integrity violations
+          throw new Error(`Dictionary integrity check FAILED: ${integrityResult.message}`);
+        } else {
+          // In development, log warning but continue
+          safeLog(`⚠️ DEV MODE: ${integrityResult.message}`);
+        }
       } else if (!integrityResult.skipped) {
         safeLog(`✓ ${integrityResult.message}`);
       }
