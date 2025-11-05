@@ -41,8 +41,7 @@ const GENERATION_CONFIG = {
 // State for rate limiting
 const generationState = {
   lastGeneration: 0,
-  burstCount: 0,
-  burstResetTimer: null
+  burstCount: 0
 };
 
 /**
