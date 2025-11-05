@@ -302,6 +302,7 @@
 
 .seg {
   height: 100%;
+  width: var(--seg-width, 0%);
   transition: width 0.3s ease;
 }
 
@@ -340,6 +341,22 @@
   height: 10px;
   border-radius: 2px;
   display: inline-block;
+}
+
+.legend-dot.u {
+  background: var(--accent-blue);
+}
+
+.legend-dot.l {
+  background: var(--accent-purple);
+}
+
+.legend-dot.d {
+  background: var(--accent-yellow);
+}
+
+.legend-dot.s {
+  background: var(--accent-green);
 }
 
 .info {
