@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import com.google.crypto.tink.Aead
-import com.julien.genpwdpro.data.crypto.TinkAesGcmCryptoEngine
-import com.julien.genpwdpro.data.models.vault.VaultEntry
+import com.julien.genpwdpro.crypto.TinkAesGcmCryptoEngine
+import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,10 +27,13 @@ import java.time.Instant
  * - Partage direct (fichier chiffré)
  * - Protection par mot de passe optionnelle
  * - Limitation du nombre d'accès
+ *
+ * TODO: Réactiver Hilt injection une fois que TinkAesGcmCryptoEngine aura un module Hilt
  */
-@Singleton
-class SecureEntrySharing @Inject constructor(
-    @ApplicationContext private val context: Context,
+// @Singleton
+class SecureEntrySharing /* @Inject */ constructor(
+    // @ApplicationContext
+    private val context: Context,
     private val cryptoEngine: TinkAesGcmCryptoEngine,
     private val gson: Gson
 ) {
@@ -50,7 +53,7 @@ class SecureEntrySharing @Inject constructor(
      * Partage une entrée de manière sécurisée
      */
     suspend fun shareEntry(
-        entry: VaultEntry,
+        entry: VaultEntryEntity,
         options: ShareOptions = ShareOptions()
     ): ShareResult = withContext(Dispatchers.IO) {
         // Générer une clé de partage aléatoire
@@ -75,8 +78,7 @@ class SecureEntrySharing @Inject constructor(
         val json = gson.toJson(sharePackage)
         val encrypted = cryptoEngine.encrypt(
             plaintext = json.toByteArray(Charsets.UTF_8),
-            key = shareKey,
-            associatedData = sharePackage.shareId.toByteArray()
+            associatedData = ByteArray(0)
         )
 
         // Créer le fichier de partage
@@ -144,7 +146,6 @@ class SecureEntrySharing @Inject constructor(
             // Déchiffrer
             val decrypted = cryptoEngine.decrypt(
                 ciphertext = shareData,
-                key = key,
                 associatedData = ByteArray(0)  // Sera validé après parsing
             )
 
@@ -330,7 +331,7 @@ enum class ShareMethod {
  */
 data class SharePackage(
     val version: Int,
-    val entryData: VaultEntry,
+    val entryData: VaultEntryEntity,
     val shareId: String,
     val createdAt: Long,
     val expiresAt: Long,
@@ -382,7 +383,7 @@ sealed class ShareResult {
  */
 sealed class ImportResult {
     data class Success(
-        val entry: VaultEntry,
+        val entry: VaultEntryEntity,
         val metadata: ShareMetadata
     ) : ImportResult()
 

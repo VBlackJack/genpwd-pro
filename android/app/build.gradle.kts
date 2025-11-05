@@ -14,8 +14,8 @@ android {
         applicationId = "com.julien.genpwdpro"
         minSdk = 24
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.2.0-alpha.11"
+        versionCode = 17
+        versionName = "1.2.0-alpha.15"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -149,6 +149,10 @@ dependencies {
 
     // Biometric Authentication
     implementation("androidx.biometric:biometric:1.1.0")
+
+    // Credentials API for Passkeys/WebAuthn
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
 
     // JSON parsing
     implementation("com.google.code.gson:gson:2.10.1")

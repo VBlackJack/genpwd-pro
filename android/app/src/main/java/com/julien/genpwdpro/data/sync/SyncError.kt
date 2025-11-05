@@ -19,7 +19,7 @@ package com.julien.genpwdpro.data.sync
  * }
  * ```
  */
-sealed class SyncError : Exception {
+sealed class SyncError : Exception() {
 
     /**
      * Network connectivity error (temporary, retryable)

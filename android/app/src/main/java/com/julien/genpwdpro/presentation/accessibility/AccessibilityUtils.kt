@@ -106,7 +106,9 @@ fun Modifier.actionButton(
         if (!enabled) append(", Désactivé")
     }
     role = Role.Button
-    this.disabled = !enabled
+    if (!enabled) {
+        disabled()
+    }
 }
 
 /**
@@ -182,7 +184,7 @@ fun Modifier.toggleButton(
 ): Modifier = this.semantics {
     contentDescription = "$label, ${if (isChecked) "activé" else "désactivé"}"
     this.role = Role.Switch
-    this.toggleableState = ToggleableState(isChecked)
+    this.toggleableState = if (isChecked) androidx.compose.ui.state.ToggleableState.On else androidx.compose.ui.state.ToggleableState.Off
 }
 
 /**
@@ -291,7 +293,7 @@ fun Modifier.progressIndicator(
     } else {
         "$label, chargement en cours"
     }
-    role = Role.ProgressBar
+    role = Role.Image  // ProgressBar n'existe pas dans Role, utiliser Image
     if (progress != null) {
         this.progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f)
     }
@@ -335,7 +337,7 @@ fun Modifier.sliderWithValue(
     unit: String = ""
 ): Modifier = this.semantics {
     contentDescription = "$label: $value$unit sur $max$unit"
-    role = Role.Slider
+    role = Role.Button  // Slider n'existe pas dans Role, utiliser Button
 }
 
 /**

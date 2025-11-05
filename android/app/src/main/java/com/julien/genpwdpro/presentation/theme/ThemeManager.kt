@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.presentation.theme
+package com.julien.genpwdpro.presentation.theme
 
 import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme

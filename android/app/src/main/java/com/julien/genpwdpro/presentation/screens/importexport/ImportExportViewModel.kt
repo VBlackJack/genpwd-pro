@@ -38,12 +38,14 @@ class ImportExportViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isExporting = true, exportError = null) }
 
-            val vaultKey = sessionManager.getVaultKey(vaultId)
+            // TODO: Implémenter getVaultKey dans VaultSessionManager
+            // val vaultKey = sessionManager.getVaultKey(vaultId)
+            val vaultKey: SecretKey? = null  // Temporaire
             if (vaultKey == null) {
                 _uiState.update {
                     it.copy(
                         isExporting = false,
-                        exportError = "Vault non déverrouillé"
+                        exportError = "Fonctionnalité d'export pas encore implémentée"
                     )
                 }
                 return@launch
@@ -81,12 +83,14 @@ class ImportExportViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isImporting = true, importError = null) }
 
-            val vaultKey = sessionManager.getVaultKey(vaultId)
+            // TODO: Implémenter getVaultKey dans VaultSessionManager
+            // val vaultKey = sessionManager.getVaultKey(vaultId)
+            val vaultKey: SecretKey? = null  // Temporaire
             if (vaultKey == null) {
                 _uiState.update {
                     it.copy(
                         isImporting = false,
-                        importError = "Vault non déverrouillé"
+                        importError = "Fonctionnalité d'import pas encore implémentée"
                     )
                 }
                 return@launch
@@ -198,7 +202,8 @@ class ImportExportViewModel @Inject constructor(
      * Obtenir la liste des vaults déverrouillés
      */
     fun getUnlockedVaults(): List<String> {
-        return sessionManager.getUnlockedVaultIds()
+        // TODO: Implémenter getUnlockedVaultIds dans VaultSessionManager
+        return emptyList()  // Temporaire
     }
 }
 

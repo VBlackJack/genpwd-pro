@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.presentation.adaptive
+package com.julien.genpwdpro.presentation.adaptive
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass

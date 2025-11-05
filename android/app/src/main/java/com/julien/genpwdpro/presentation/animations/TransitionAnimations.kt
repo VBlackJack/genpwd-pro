@@ -1,9 +1,10 @@
-package com.julien.genpwd-pro.presentation.animations
+package com.julien.genpwdpro.presentation.animations
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 

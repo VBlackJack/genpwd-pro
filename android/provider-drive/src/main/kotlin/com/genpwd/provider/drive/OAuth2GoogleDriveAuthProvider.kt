@@ -6,6 +6,8 @@ import android.net.Uri
 import com.genpwd.corevault.ProviderKind
 import com.genpwd.providers.api.ProviderAccount
 import com.genpwd.providers.api.ProviderError
+import com.genpwd.providers.api.TokenRefreshProvider
+import com.genpwd.providers.api.TokenResponse
 import com.genpwd.sync.oauth.OAuthStateStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +35,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
     @ApplicationContext private val context: Context,
     private val httpClient: OkHttpClient,
     private val oauthStateStorage: OAuthStateStorage
-) : GoogleDriveAuthProvider {
+) : GoogleDriveAuthProvider, TokenRefreshProvider {
 
     companion object {
         private const val AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -165,7 +167,7 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
     /**
      * Refresh an expired access token using the refresh token.
      */
-    suspend fun refreshAccessToken(refreshToken: String): TokenResponse {
+    override suspend fun refreshAccessToken(refreshToken: String): TokenResponse {
         val requestBody = FormBody.Builder()
             .add("client_id", CLIENT_ID)
             .add("refresh_token", refreshToken)
@@ -203,13 +205,3 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
         return Base64.getUrlEncoder().withoutPadding().encodeToString(digest)
     }
 }
-
-/**
- * OAuth token response containing access token, refresh token, and expiry information.
- */
-data class TokenResponse(
-    val accessToken: String,
-    val refreshToken: String,
-    val expiresIn: Long,
-    val email: String? = null
-)

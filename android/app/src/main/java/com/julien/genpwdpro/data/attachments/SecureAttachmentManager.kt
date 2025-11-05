@@ -3,7 +3,7 @@ package com.julien.genpwdpro.data.attachments
 import android.content.Context
 import android.net.Uri
 import com.google.crypto.tink.Aead
-import com.julien.genpwdpro.data.crypto.TinkAesGcmCryptoEngine
+import com.julien.genpwdpro.crypto.TinkAesGcmCryptoEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,10 +25,13 @@ import javax.inject.Singleton
  * - Détection de type MIME
  * - Miniatures pour les images
  * - Vérification d'intégrité (SHA-256)
+ *
+ * TODO: Réactiver Hilt injection une fois que TinkAesGcmCryptoEngine aura un module Hilt
  */
-@Singleton
-class SecureAttachmentManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+// @Singleton
+class SecureAttachmentManager /* @Inject */ constructor(
+    // @ApplicationContext
+    private val context: Context,
     private val cryptoEngine: TinkAesGcmCryptoEngine
 ) {
     companion object {
@@ -128,7 +131,7 @@ class SecureAttachmentManager @Inject constructor(
 
                 // Chiffrer le chunk
                 val chunk = buffer.copyOf(bytesRead)
-                val encrypted = cryptoEngine.encrypt(chunk, key, ByteArray(0))
+                val encrypted = cryptoEngine.encrypt(chunk, key)
                 output.write(encrypted)
             }
         }
@@ -151,7 +154,7 @@ class SecureAttachmentManager @Inject constructor(
 
         // Lire et déchiffrer
         val encrypted = encryptedFile.readBytes()
-        val decrypted = cryptoEngine.decrypt(encrypted, key, ByteArray(0))
+        val decrypted = cryptoEngine.decrypt(encrypted, encryptionKey)
 
         // Vérifier l'intégrité
         val sha256 = MessageDigest.getInstance("SHA-256")

@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.data.crypto
+package com.julien.genpwdpro.data.crypto
 
 import android.app.ActivityManager
 import android.content.Context

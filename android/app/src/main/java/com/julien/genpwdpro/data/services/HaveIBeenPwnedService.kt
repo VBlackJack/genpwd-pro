@@ -1,4 +1,4 @@
-package com.julien.genpwd-pro.data.services
+package com.julien.genpwdpro.data.services
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers

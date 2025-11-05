@@ -71,7 +71,7 @@ class VaultSyncManager @Inject constructor(
             SyncState(
                 vaultId = meta.id,
                 lastSyncUtc = Instant.now().epochSecond,
-                localEtag = newEncrypted.localHash,
+                localEtag = newEncrypted.localEtag,
                 remoteEtag = uploadResult?.newEtag ?: remoteResult?.second?.remoteEtag,
                 pendingOps = emptyList(),
             ),

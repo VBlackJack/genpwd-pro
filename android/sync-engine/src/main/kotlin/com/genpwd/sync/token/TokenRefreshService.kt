@@ -1,7 +1,8 @@
 package com.genpwd.sync.token
 
 import com.genpwd.corevault.ProviderKind
-import com.genpwd.provider.drive.OAuth2GoogleDriveAuthProvider
+import com.genpwd.providers.api.TokenRefreshProvider
+import com.genpwd.providers.api.TokenResponse
 import com.genpwd.storage.CloudAccountRepository
 import com.genpwd.storage.db.entities.CloudAccountEntity
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class TokenRefreshService @Inject constructor(
     private val cloudAccountRepository: CloudAccountRepository,
-    private val googleDriveAuthProvider: OAuth2GoogleDriveAuthProvider
+    private val googleDriveAuthProvider: TokenRefreshProvider
 ) {
 
     companion object {
