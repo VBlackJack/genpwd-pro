@@ -139,6 +139,22 @@ class DevServer {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
+      // Content Security Policy for enhanced security
+      // Matches the CSP defined in src/index.html
+      res.setHeader('Content-Security-Policy',
+        "default-src 'self'; " +
+        "script-src 'self'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self' blob:; " +
+        "object-src 'none'; " +
+        "base-uri 'self'; " +
+        "form-action 'self'; " +
+        "frame-ancestors 'none'; " +
+        "upgrade-insecure-requests;"
+      );
+
       // Gestion OPTIONS pour CORS
       if (req.method === 'OPTIONS') {
         res.writeHead(200);
