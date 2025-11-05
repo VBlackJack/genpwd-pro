@@ -20,7 +20,7 @@
     "chokidar": "^3.5.3",
     "eslint": "^8.56.0",
     "nodemon": "^3.0.2",
-    "puppeteer": "^21.6.1",
+    "puppeteer": "^24.28.0",
     "rimraf": "^5.0.5"
   },
   "files": [
