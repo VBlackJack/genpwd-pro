@@ -8,7 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self';
-    style-src 'self' 'unsafe-inline';
+    style-src 'self';
     img-src 'self' data:;
     font-src 'self' data:;
     connect-src 'self' blob:;
@@ -28,89 +28,7 @@
   <link rel="stylesheet" href="styles/components.css">
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/modal.css">
-  
-  <!-- Styles pour les tests -->
-  <style>
-    .test-modal {
-      max-width: 800px;
-      max-height: 90vh;
-    }
-
-    .test-summary {
-      background: rgba(19, 26, 52, 0.5);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .test-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .tab-button {
-      padding: 8px 16px;
-      border: 1px solid rgba(140, 148, 202, 0.3);
-      background: transparent;
-      border-radius: 6px;
-      color: #8c94ca;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tab-button.active {
-      background: rgba(21, 190, 255, 0.1);
-      color: #d6dcff;
-      border-color: #8c94ca;
-    }
-
-    .test-details {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .test-console {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    #test-console-output {
-      background: #0a0e1a;
-      border: 1px solid rgba(140, 148, 202, 0.15);
-      border-radius: 4px;
-      padding: 12px;
-      color: #d6dcff;
-      font-size: 11px;
-      line-height: 1.4;
-      margin: 0;
-      white-space: pre-wrap;
-    }
-
-    .test-item {
-      margin-bottom: 12px;
-      padding: 12px;
-      border-radius: 6px;
-    }
-
-    .test-item.success {
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      background: rgba(16, 185, 129, 0.05);
-    }
-
-    .test-item.error {
-      border: 1px solid #ef4444;
-      background: rgba(239, 68, 68, 0.05);
-    }
-
-    #test-status {
-      font-size: 11px;
-      color: #8c94ca;
-      font-family: var(--font-mono);
-      margin-left: 8px;
-    }
-  </style>
+  <link rel="stylesheet" href="styles/test-modal.css">
 </head>
 <body>
   <div class="app">

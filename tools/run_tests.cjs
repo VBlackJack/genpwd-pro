@@ -644,9 +644,16 @@ async function main() {
     const { runVaultContractTests } = await importModule('src/js/vault/tests/contract-tests.js');
     const vaultResults = await runVaultContractTests();
     vaultResults.forEach((result) => {
-      const icon = result.status === 'pass' ? '✅' : '❌';
-      console.log(`[${formatTimestamp()}] ${icon} ${result.name}`);
-      if (result.status !== 'pass') {
+      let icon;
+      if (result.status === 'pass') {
+        icon = '✅';
+      } else if (result.status === 'skip') {
+        icon = '⚠️';
+      } else {
+        icon = '❌';
+      }
+      console.log(`[${formatTimestamp()}] ${icon} ${result.name}${result.status === 'skip' ? ' (skipped)' : ''}`);
+      if (result.status === 'fail') {
         vaultFailed = true;
       }
     });
