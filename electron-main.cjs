@@ -34,9 +34,9 @@ let mainWindow;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
-    height: 900,
-    minWidth: 800,
-    minHeight: 600,
+    height: 1200,
+    minWidth: 1200,
+    minHeight: 850,
     title: 'GenPwd Pro',
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     backgroundColor: '#1a1a2e',
