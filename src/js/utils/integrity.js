@@ -71,10 +71,9 @@ export async function verifyIntegrity(data, expectedHash) {
  * ```
  */
 export const DICTIONARY_HASHES = {
-  // Note: These are placeholder hashes. Update with actual values after computing
-  // french: 'actual_sha256_hash_of_french_json',
-  // english: 'actual_sha256_hash_of_english_json',
-  // latin: 'actual_sha256_hash_of_latin_json'
+  french: '22ba9cc4fc0223e889ad5f63903db0c35e53bb4994aa09cd498c9a3e61e05d36',
+  english: 'ab8e2ddd99be10f221554bde6ec4775544e66597f8ddca08e03ff808b0946df8',
+  latin: '21b300bc7ddaa9a4e8becd73796da1a57500f6ce1c3ba1c0b8bd1e0e09aba7b0'
 };
 
 /**
