@@ -1,5 +1,6 @@
 package com.genpwd.providers.api
 
+import com.genpwd.corevault.ProviderKind
 import com.genpwd.corevault.VaultId
 import com.genpwd.corevault.VaultMeta
 import kotlinx.coroutines.flow.Flow
