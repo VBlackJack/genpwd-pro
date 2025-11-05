@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 // tools/build.js - Build système intelligent pour GenPwd Pro
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class GenPwdBuilder {
   constructor() {
-    this.sourceDir = 'src';
-    this.distDir = 'dist';
+    this.projectRoot = path.join(__dirname, '..');
+    this.sourceDir = path.join(this.projectRoot, 'src');
+    this.distDir = path.join(this.projectRoot, 'dist');
     this.moduleOrder = [
       'js/config/constants.js',
       'js/utils/helpers.js',
@@ -226,20 +231,20 @@ if (document.readyState === 'loading') {
 
   async copyAssets() {
     console.log('📋 Copie des assets...');
-    
+
     // Copier dictionnaires
-    const dictSource = 'dictionaries';
+    const dictSource = path.join(this.projectRoot, 'dictionaries');
     const dictDest = path.join(this.distDir, 'dictionaries');
-    
+
     if (fs.existsSync(dictSource)) {
       this.copyRecursive(dictSource, dictDest);
       console.log('✅ Dictionnaires copiés');
     }
 
     // Copier assets Electron si présents
-    const assetsSource = 'assets';
+    const assetsSource = path.join(this.projectRoot, 'assets');
     const assetsDest = path.join(this.distDir, 'assets');
-    
+
     if (fs.existsSync(assetsSource)) {
       this.copyRecursive(assetsSource, assetsDest);
       console.log('✅ Assets copiés');
@@ -267,9 +272,7 @@ if (document.readyState === 'loading') {
 }
 
 // Exécution si appelé directement
-if (require.main === module) {
-  const builder = new GenPwdBuilder();
-  builder.build().catch(console.error);
-}
+const builder = new GenPwdBuilder();
+builder.build().catch(console.error);
 
-module.exports = GenPwdBuilder;
+export default GenPwdBuilder;

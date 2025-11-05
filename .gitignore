@@ -170,3 +170,4 @@ rebuild.bat
 sbom.json
 sbom.xml
 sbom-*.json
+release/
