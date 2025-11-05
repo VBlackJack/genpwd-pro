@@ -36,7 +36,9 @@ android {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-    implementation("de.mkammerer:argon2-jvm:2.11")
+    implementation("de.mkammerer:argon2-jvm:2.11") {
+        exclude(group = "net.java.dev.jna", module = "jna")
+    }
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")

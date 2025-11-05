@@ -1,6 +1,7 @@
 package com.genpwd.corevault
 
 import de.mkammerer.argon2.Argon2Factory
+import de.mkammerer.argon2.Argon2Advanced
 import java.security.GeneralSecurityException
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -98,14 +99,17 @@ class VaultCryptoEngine(
 
     private fun deriveKey(secret: CharArray, params: KdfParameters): ByteArray = when (params) {
         is KdfParameters.Argon2id -> {
-            val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id)
-            argon2.hashRaw(
+            val argon2 = Argon2Factory.create(
+                Argon2Factory.Argon2Types.ARGON2id,
+                SALT_SIZE_BYTES,
+                params.hashLength
+            ) as Argon2Advanced
+            argon2.rawHash(
                 params.iterations,
                 params.memoryKb,
                 params.parallelism,
                 secret,
-                params.salt.decodeBase64(),
-                params.hashLength,
+                params.salt.decodeBase64()
             )
         }
         is KdfParameters.Pbkdf2 -> {
