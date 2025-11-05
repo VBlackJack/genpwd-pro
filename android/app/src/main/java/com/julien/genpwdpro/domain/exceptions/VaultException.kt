@@ -238,12 +238,17 @@ sealed class VaultException(
      * Too many failed unlock attempts - vault is temporarily locked
      *
      * SECURITY: Rate limiting to prevent brute-force attacks
+     *
+     * @param remainingSeconds Number of seconds until the lockout expires
+     * @param message Custom error message
+     * @param cause The underlying cause of the exception
      */
     class TooManyAttempts(
+        val remainingSeconds: Long,
         message: String? = null,
         cause: Throwable? = null
     ) : VaultException(
-        message = message ?: "Too many failed unlock attempts. Please try again later.",
+        message = message ?: "Too many failed unlock attempts. Locked for $remainingSeconds seconds.",
         cause = cause
     )
 
