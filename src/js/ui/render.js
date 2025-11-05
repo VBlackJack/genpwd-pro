@@ -91,20 +91,32 @@ function createPasswordCard(item, id, mask) {
     </div>
     <div class="card-sec comp">
       <div class="comp-bar">
-        ${segU > 0 ? `<div class="seg u" style="width:${segU}%"></div>` : ''}
-        ${segL > 0 ? `<div class="seg l" style="width:${segL}%"></div>` : ''}
-        ${segD > 0 ? `<div class="seg d" style="width:${segD}%"></div>` : ''}
-        ${segS > 0 ? `<div class="seg s" style="width:${segS}%"></div>` : ''}
+        ${segU > 0 ? `<div class="seg u" data-width="${segU}"></div>` : ''}
+        ${segL > 0 ? `<div class="seg l" data-width="${segL}"></div>` : ''}
+        ${segD > 0 ? `<div class="seg d" data-width="${segD}"></div>` : ''}
+        ${segS > 0 ? `<div class="seg s" data-width="${segS}"></div>` : ''}
       </div>
       <div class="comp-legend">
-        <span class="legend-item"><span class="legend-dot" style="background:var(--accent-blue)"></span>${counts.U} MAJ</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--accent-purple)"></span>${counts.L} min</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--accent-yellow)"></span>${counts.D} chiffres</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--accent-green)"></span>${counts.S} spé</span>
+        <span class="legend-item"><span class="legend-dot u"></span>${counts.U} MAJ</span>
+        <span class="legend-item"><span class="legend-dot l"></span>${counts.L} min</span>
+        <span class="legend-item"><span class="legend-dot d"></span>${counts.D} chiffres</span>
+        <span class="legend-item"><span class="legend-dot s"></span>${counts.S} spé</span>
       </div>
     </div>
     <div class="card-sec info"><div>Mode: ${dictInfo}</div><div>CLI-Safe: ✓</div></div>
   `;
+
+  // Apply widths via CSS custom properties (CSP-compliant)
+  const compBar = card.querySelector('.comp-bar');
+  if (compBar) {
+    const segments = compBar.querySelectorAll('.seg');
+    segments.forEach(seg => {
+      const width = seg.getAttribute('data-width');
+      if (width) {
+        seg.style.setProperty('--seg-width', `${width}%`);
+      }
+    });
+  }
 
   return card;
 }
