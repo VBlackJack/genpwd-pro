@@ -31,6 +31,20 @@ let previewTimeout = null;
 let blockSyncTimeout = null;
 const BLOCK_SYNC_DELAY = 200;
 
+// Rate limiting configuration for password generation
+const GENERATION_CONFIG = {
+  COOLDOWN_MS: 500,        // Min 500ms between generations
+  MAX_BURST: 3,            // Allow 3 rapid requests
+  BURST_WINDOW_MS: 2000    // Reset burst counter after 2s
+};
+
+// State for rate limiting
+const generationState = {
+  lastGeneration: 0,
+  burstCount: 0,
+  burstResetTimer: null
+};
+
 /**
  * Cleans up all active timeouts and event handlers
  * Should be called on page unload to prevent memory leaks
@@ -414,10 +428,35 @@ function handleGenerationResults(results, settings) {
 }
 
 /**
- * Main password generation function - REFACTORED
- * Now uses parallel generation with Promise.all for better performance
+ * Generate passwords with rate limiting
+ * Prevents client-side DoS from excessive generation requests
+ * Uses parallel generation with Promise.all for better performance
  */
 async function generatePasswords() {
+  // Rate limiting check
+  const now = Date.now();
+  const timeSinceLastGen = now - generationState.lastGeneration;
+
+  // Reset burst counter if window expired
+  if (timeSinceLastGen > GENERATION_CONFIG.BURST_WINDOW_MS) {
+    generationState.burstCount = 0;
+  }
+
+  // Check cooldown for non-burst requests
+  if (generationState.burstCount >= GENERATION_CONFIG.MAX_BURST) {
+    if (timeSinceLastGen < GENERATION_CONFIG.COOLDOWN_MS) {
+      const waitTime = Math.ceil((GENERATION_CONFIG.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
+      showToast(`Génération trop rapide. Veuillez patienter ${waitTime}s`, 'warning');
+      safeLog(`Rate limit: ${waitTime}s remaining`);
+      return;
+    }
+    generationState.burstCount = 0; // Reset after cooldown
+  }
+
+  // Update state
+  generationState.lastGeneration = now;
+  generationState.burstCount++;
+
   try {
     const settings = readSettings();
     const commonConfig = buildCommonConfig(settings);
