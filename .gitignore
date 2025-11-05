@@ -165,3 +165,8 @@ gradle-app.setting
 .claude/settings.local.json
 vault-domain/
 rebuild.bat
+
+# SBOM (generated)
+sbom.json
+sbom.xml
+sbom-*.json
