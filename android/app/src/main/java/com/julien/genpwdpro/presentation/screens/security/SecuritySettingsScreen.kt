@@ -110,6 +110,7 @@ private fun SecuritySettingsLayout(
             )
 
             if (uiState.biometricAvailability == BiometricAvailability.AVAILABLE) {
+                // Section: Verrouillage automatique
                 AppLockCard(
                     isEnabled = uiState.isAppLockEnabled,
                     timeout = uiState.lockTimeout,
@@ -124,6 +125,20 @@ private fun SecuritySettingsLayout(
                     getTimeoutName = { viewModel.getTimeoutDisplayName(it) }
                 )
 
+                // Section: Biométrie au démarrage
+                BiometricOnStartCard(
+                    isEnabled = uiState.requireBiometricOnAppStart,
+                    onToggle = { enabled ->
+                        val success = viewModel.setBiometricOnAppStart(enabled)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    }
+                )
+
+                // Section: Actions sensibles (copie, vue, suppression)
                 SensitiveActionsCard(
                     isEnabled = uiState.requireBiometricForSensitiveActions,
                     clipboardTtlMs = uiState.clipboardTtlMs,
@@ -137,6 +152,41 @@ private fun SecuritySettingsLayout(
                     },
                     onClipboardTtlChange = { ttl ->
                         val success = viewModel.setClipboardTtlMs(ttl)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    }
+                )
+
+                // Section: Import/Export
+                ImportExportBiometricCard(
+                    requireBiometricForExport = uiState.requireBiometricForExport,
+                    requireBiometricForImport = uiState.requireBiometricForImport,
+                    onExportToggle = { enabled ->
+                        val success = viewModel.setBiometricForExport(enabled)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    },
+                    onImportToggle = { enabled ->
+                        val success = viewModel.setBiometricForImport(enabled)
+                        if (!success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(unlockErrorMessage)
+                            }
+                        }
+                    }
+                )
+
+                // Section: Autofill
+                AutofillBiometricCard(
+                    requireBiometricForAutofill = uiState.requireBiometricForAutofill,
+                    onToggle = { enabled ->
+                        val success = viewModel.setBiometricForAutofill(enabled)
                         if (!success) {
                             scope.launch {
                                 snackbarHostState.showSnackbar(unlockErrorMessage)
@@ -393,6 +443,222 @@ private fun SensitiveActionsCard(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Carte de biométrie au démarrage de l'application
+ */
+@Composable
+private fun BiometricOnStartCard(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LockOpen,
+                    contentDescription = null
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Biométrie au démarrage",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Requiert l'authentification biométrique à chaque démarrage de l'application",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                Switch(
+                    checked = isEnabled,
+                    onCheckedChange = onToggle
+                )
+            }
+
+            if (isEnabled) {
+                Text(
+                    text = "ℹ️ Cette option offre une protection maximale en demandant systématiquement une authentification biométrique, même si l'app n'a pas été inactive.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Carte de protection biométrique pour Import/Export
+ */
+@Composable
+private fun ImportExportBiometricCard(
+    requireBiometricForExport: Boolean,
+    requireBiometricForImport: Boolean,
+    onExportToggle: (Boolean) -> Unit,
+    onImportToggle: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ImportExport,
+                    contentDescription = null
+                )
+                Text(
+                    text = "Protection Import/Export",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Export
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Biométrie pour export",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Protège l'export de vos données (CSV, JSON, KDBX)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                Switch(
+                    checked = requireBiometricForExport,
+                    onCheckedChange = onExportToggle
+                )
+            }
+
+            Divider()
+
+            // Import
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Biométrie pour import",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Requiert l'authentification avant d'importer",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                Switch(
+                    checked = requireBiometricForImport,
+                    onCheckedChange = onImportToggle
+                )
+            }
+
+            Text(
+                text = "💡 L'export est activé par défaut pour sécurité maximale. L'export expose vos données et nécessite une protection renforcée.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+    }
+}
+
+/**
+ * Carte de protection biométrique pour Autofill
+ */
+@Composable
+private fun AutofillBiometricCard(
+    requireBiometricForAutofill: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Biométrie pour auto-remplissage",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Requiert l'authentification biométrique avant d'utiliser l'auto-remplissage",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Switch(
+                    checked = requireBiometricForAutofill,
+                    onCheckedChange = onToggle
+                )
+            }
+
+            if (requireBiometricForAutofill) {
+                Text(
+                    text = "🔐 Chaque utilisation de l'auto-remplissage demandera votre empreinte digitale ou reconnaissance faciale.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
         }
     }
@@ -707,6 +973,31 @@ class SecuritySettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(clipboardTtlMs = ttl) }
             }
         }
+
+        // Observer les nouvelles préférences biométriques
+        viewModelScope.launch {
+            sensitiveActionPreferences.requireBiometricForAutofill.collect { required ->
+                _uiState.update { it.copy(requireBiometricForAutofill = required) }
+            }
+        }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.requireBiometricForExport.collect { required ->
+                _uiState.update { it.copy(requireBiometricForExport = required) }
+            }
+        }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.requireBiometricForImport.collect { required ->
+                _uiState.update { it.copy(requireBiometricForImport = required) }
+            }
+        }
+
+        viewModelScope.launch {
+            sensitiveActionPreferences.requireBiometricOnAppStart.collect { required ->
+                _uiState.update { it.copy(requireBiometricOnAppStart = required) }
+            }
+        }
     }
 
     fun checkBiometricAvailability(context: Context) {
@@ -765,6 +1056,38 @@ class SecuritySettingsViewModel @Inject constructor(
         return success
     }
 
+    fun setBiometricForAutofill(enabled: Boolean): Boolean {
+        val success = sensitiveActionPreferences.setRequireBiometricForAutofill(enabled)
+        if (success) {
+            _uiState.update { it.copy(requireBiometricForAutofill = enabled) }
+        }
+        return success
+    }
+
+    fun setBiometricForExport(enabled: Boolean): Boolean {
+        val success = sensitiveActionPreferences.setRequireBiometricForExport(enabled)
+        if (success) {
+            _uiState.update { it.copy(requireBiometricForExport = enabled) }
+        }
+        return success
+    }
+
+    fun setBiometricForImport(enabled: Boolean): Boolean {
+        val success = sensitiveActionPreferences.setRequireBiometricForImport(enabled)
+        if (success) {
+            _uiState.update { it.copy(requireBiometricForImport = enabled) }
+        }
+        return success
+    }
+
+    fun setBiometricOnAppStart(enabled: Boolean): Boolean {
+        val success = sensitiveActionPreferences.setRequireBiometricOnAppStart(enabled)
+        if (success) {
+            _uiState.update { it.copy(requireBiometricOnAppStart = enabled) }
+        }
+        return success
+    }
+
     fun deleteAllKeys() {
         keystoreManager.deleteAllKeys()
         _uiState.update { it.copy(keystoreKeyCount = 0) }
@@ -790,5 +1113,10 @@ data class SecuritySettingsUiState(
     val isHardwareBackedKeystore: Boolean = false,
     val keystoreKeyCount: Int = 0,
     val requireBiometricForSensitiveActions: Boolean = false,
-    val clipboardTtlMs: Long = SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS
+    val clipboardTtlMs: Long = SensitiveActionPreferences.DEFAULT_CLIPBOARD_TTL_MS,
+    // Nouvelles options biométriques
+    val requireBiometricForAutofill: Boolean = false,
+    val requireBiometricForExport: Boolean = true,
+    val requireBiometricForImport: Boolean = false,
+    val requireBiometricOnAppStart: Boolean = false
 )
