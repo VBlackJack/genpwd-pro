@@ -13,25 +13,66 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "close": "Close",
-    "tests": "Tests"
+    "tests": "Tests",
+    "about": "About"
+  },
+  "sections": {
+    "generationMode": "Generation Mode",
+    "commonSettings": "Common Settings",
+    "visualPlacement": "Visual Placement",
+    "casePattern": "Case Pattern",
+    "helpNotes": "Help & Notes"
   },
   "modes": {
-    "syllables": "Syllables",
-    "passphrase": "Passphrase",
-    "leet": "Leet"
+    "title": "Mode",
+    "syllables": "Syllables (C/V alternation)",
+    "passphrase": "Passphrase (separated words)",
+    "leet": "Word → Leet"
   },
   "settings": {
     "length": "Length",
+    "lengthRange": "Length (6–64)",
     "quantity": "Quantity",
+    "quantityRange": "Quantity (1–20)",
     "digits": "Digits",
+    "digitsRange": "Digits (0–6)",
     "specials": "Specials",
-    "policy": "Policy"
+    "specialsRange": "Specials (0–6)",
+    "policy": "Policy",
+    "customSpecials": "Custom specials",
+    "placementDigits": "Digits placement",
+    "placementSpecials": "Specials placement",
+    "maskDisplay": "Hide display",
+    "blurPasswords": "Blur passwords"
+  },
+  "policy": {
+    "standard": "Standard (all characters)",
+    "standardLayout": "Standard Layout-Safe (AZERTY/QWERTY)",
+    "alphanumeric": "Alphanumeric (letters + digits)",
+    "alphanumericLayout": "Alpha Layout-Safe (AZERTY/QWERTY)"
+  },
+  "placement": {
+    "start": "Start",
+    "end": "End",
+    "middle": "Middle",
+    "random": "Random",
+    "visual": "Visual",
+    "positions": "Positions"
+  },
+  "passphrase": {
+    "wordCount": "Word count (2–8)",
+    "separator": "Separator",
+    "dictionary": "Dictionary"
+  },
+  "leet": {
+    "wordToTransform": "Word to transform"
   },
   "presets": {
     "title": "Presets",
     "save": "Save Configuration",
     "manage": "Manage Presets",
-    "load": "Load a preset"
+    "load": "Load a preset",
+    "select": "-- Select --"
   },
   "history": {
     "title": "History",
