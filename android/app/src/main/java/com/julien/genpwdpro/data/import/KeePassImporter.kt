@@ -1,4 +1,4 @@
-package com.julien.genpwd.pro.data.import
+package com.julien.genpwdpro.data.import
 
 import android.util.Base64
 import com.julien.genpwdpro.data.models.vault.*

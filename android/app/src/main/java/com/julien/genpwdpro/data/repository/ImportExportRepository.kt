@@ -7,6 +7,7 @@ import com.google.gson.annotations.SerializedName
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
+import com.julien.genpwdpro.data.import.KeePassImporter
 import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
@@ -442,6 +443,142 @@ class ImportExportRepository @Inject constructor(
         if (password.any { !it.isLetterOrDigit() }) strength += 25
 
         return strength.coerceIn(0, 100)
+    }
+
+    /**
+     * Importe depuis un fichier KeePass KDBX
+     *
+     * Supporte KDBX 3.x et 4.x (KeePass 2.x)
+     * Crée un nouveau vault avec toutes les entrées importées
+     *
+     * @param uri URI du fichier .kdbx
+     * @param masterPassword Mot de passe du fichier KeePass
+     * @param newVaultName Nom du nouveau vault à créer
+     * @param keyFileUri URI optionnel du fichier clé
+     * @return Result contenant l'ID du vault créé
+     */
+    suspend fun importFromKdbx(
+        uri: Uri,
+        masterPassword: String,
+        newVaultName: String? = null,
+        keyFileUri: Uri? = null
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            // Ouvrir le fichier KDBX
+            val inputStream = context.contentResolver.openInputStream(uri)
+                ?: return@withContext Result.failure(Exception("Impossible d'ouvrir le fichier KDBX"))
+
+            // Ouvrir le fichier clé si fourni
+            val keyFileStream = keyFileUri?.let { keyUri ->
+                context.contentResolver.openInputStream(keyUri)
+            }
+
+            // Parser le fichier KDBX
+            val importer = KeePassImporter()
+            val keepassDb = inputStream.use { input ->
+                keyFileStream?.use { keyInput ->
+                    importer.import(input, masterPassword, keyInput)
+                } ?: importer.import(input, masterPassword, null)
+            }
+
+            // Créer un nouveau vault pour les données importées
+            val vaultName = newVaultName ?: keepassDb.name
+            val vaultId = UUID.randomUUID().toString()
+
+            // Créer l'entrée dans le registre
+            val registryEntry = VaultRegistryEntry(
+                id = vaultId,
+                name = vaultName,
+                description = "Importé depuis KeePass: ${keepassDb.name}",
+                storageStrategy = StorageStrategy.FILE.name,
+                createdAt = System.currentTimeMillis(),
+                modifiedAt = System.currentTimeMillis(),
+                lastAccessedAt = 0,
+                isFavorite = false,
+                biometricUnlockEnabled = false,
+                encryptedMasterPassword = null,
+                masterPasswordIv = null,
+                entryCount = keepassDb.entries.size,
+                fileSize = 0,
+                filePath = null,
+                syncEnabled = false,
+                syncProvider = null,
+                lastSyncTimestamp = 0,
+                cloudFileId = null
+            )
+
+            vaultRegistryDao.insert(registryEntry)
+
+            // Créer le fichier vault
+            vaultFileManager.createVault(vaultId, masterPassword)
+
+            // Ouvrir une session pour ce vault
+            vaultSessionManager.unlock(vaultId, masterPassword)
+
+            // Convertir les entrées KeePass en VaultEntryEntity
+            var importedCount = 0
+            for (keepassEntry in keepassDb.entries) {
+                try {
+                    val entryEntity = VaultEntryEntity(
+                        id = UUID.randomUUID().toString(),
+                        vaultId = vaultId,
+                        folderId = null, // Les dossiers KeePass peuvent être mappés plus tard
+                        title = keepassEntry.title,
+                        username = keepassEntry.username.takeIf { it.isNotEmpty() },
+                        password = keepassEntry.password.takeIf { it.isNotEmpty() },
+                        url = keepassEntry.url.takeIf { it.isNotEmpty() },
+                        notes = keepassEntry.notes.takeIf { it.isNotEmpty() },
+                        customFields = if (keepassEntry.customFields.isNotEmpty()) {
+                            gson.toJson(keepassEntry.customFields)
+                        } else null,
+                        entryType = EntryType.LOGIN.name,
+                        isFavorite = false,
+                        passwordStrength = calculatePasswordStrength(keepassEntry.password),
+                        passwordEntropy = 0.0,
+                        generationMode = null,
+                        createdAt = System.currentTimeMillis(),
+                        modifiedAt = System.currentTimeMillis(),
+                        lastAccessedAt = System.currentTimeMillis(),
+                        passwordExpiresAt = 0,
+                        requiresPasswordChange = false,
+                        usageCount = 0,
+                        icon = "🔐",
+                        color = "#2196F3",
+                        // TOTP - Pas supporté dans KDBX basique
+                        hasTOTP = false,
+                        totpSecret = null,
+                        totpPeriod = 30,
+                        totpDigits = 6,
+                        totpAlgorithm = "SHA1",
+                        totpIssuer = "",
+                        // Passkey
+                        hasPasskey = false,
+                        passkeyData = null,
+                        passkeyRpId = "",
+                        passkeyRpName = "",
+                        passkeyUserHandle = "",
+                        passkeyCreatedAt = 0,
+                        passkeyLastUsedAt = 0
+                    )
+
+                    fileVaultRepository.addEntry(entryEntity).getOrThrow()
+                    importedCount++
+                } catch (e: Exception) {
+                    // Ignorer les entrées qui échouent
+                    continue
+                }
+            }
+
+            // Fermer la session
+            vaultSessionManager.lock(vaultId)
+
+            // Mettre à jour le nombre d'entrées
+            vaultRegistryDao.updateEntryCount(vaultId, importedCount)
+
+            Result.success(vaultId)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     /**

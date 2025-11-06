@@ -41,6 +41,7 @@ fun ImportExportScreen(
     var showCsvExportWarning by remember { mutableStateOf(false) }
     var showJsonExportDialog by remember { mutableStateOf(false) }
     var showJsonImportDialog by remember { mutableStateOf(false) }
+    var showKdbxImportDialog by remember { mutableStateOf(false) }
 
     // Launchers pour sélection de fichiers
     val csvExportLauncher = rememberLauncherForActivityResult(
@@ -76,6 +77,16 @@ fun ImportExportScreen(
     ) { uri ->
         uri?.let {
             showJsonImportDialog = true
+        }
+    }
+
+    var kdbxImportUri by remember { mutableStateOf<Uri?>(null) }
+    val kdbxImportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            kdbxImportUri = it
+            showKdbxImportDialog = true
         }
     }
 
@@ -147,6 +158,12 @@ fun ImportExportScreen(
                     isLoading = uiState.isExporting || uiState.isImporting
                 )
 
+                // Section KeePass KDBX (Import only)
+                KdbxImportSectionCard(
+                    onImport = { kdbxImportLauncher.launch("application/octet-stream") },
+                    isLoading = uiState.isImporting
+                )
+
                 // Informations et bonnes pratiques
                 ImportExportInfoCard()
             }
@@ -182,6 +199,22 @@ fun ImportExportScreen(
                 onConfirm = { masterPassword, uri, newName ->
                     viewModel.importFromEncryptedJson(masterPassword, uri, newName)
                     showJsonImportDialog = false
+                }
+            )
+        }
+
+        // Dialogue KDBX Import (demande master password KeePass)
+        if (showKdbxImportDialog && kdbxImportUri != null) {
+            KdbxImportDialog(
+                uri = kdbxImportUri!!,
+                onDismiss = {
+                    showKdbxImportDialog = false
+                    kdbxImportUri = null
+                },
+                onConfirm = { masterPassword, uri, newName ->
+                    viewModel.importFromKdbx(masterPassword, uri, newName)
+                    showKdbxImportDialog = false
+                    kdbxImportUri = null
                 }
             )
         }
@@ -483,73 +516,124 @@ private fun CsvExportWarningDialog(
 }
 
 /**
- * Dialogue pour export JSON (demande master password)
+ * Section KeePass KDBX Import
  */
 @Composable
-private fun JsonExportDialog(
-    vaultId: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String, Uri) -> Unit
+private fun KdbxImportSectionCard(
+    onImport: () -> Unit,
+    isLoading: Boolean
 ) {
-    var masterPassword by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Lock, contentDescription = null) },
-        title = { Text("Master Password requis") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Entrez votre master password pour chiffrer le backup :")
-
-                OutlinedTextField(
-                    value = masterPassword,
-                    onValueChange = { masterPassword = it },
-                    label = { Text("Master Password") },
-                    visualTransformation = if (showPassword) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(
-                                if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (showPassword) "Masquer" else "Afficher"
-                            )
-                        }
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.Key,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+                Text(
+                    "🔑 Import KeePass (KDBX)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
-        },
-        confirmButton = {
+
+            Text(
+                "Importez vos mots de passe depuis KeePass 2.x (formats KDBX 3.x et 4.x).",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+            )
+
             Button(
-                onClick = {
-                    // Note: We need to pass the URI from the launcher
-                    // This is a simplified version - in real implementation,
-                    // we'd need to handle the URI differently
-                    onDismiss()
-                },
-                enabled = masterPassword.isNotEmpty()
+                onClick = onImport,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                )
             ) {
-                Text("Créer Backup")
+                Icon(Icons.Default.FileDownload, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Importer depuis KDBX")
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annuler")
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                shape = MaterialTheme.shapes.small
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "✅ Support KDBX 3.x et 4.x (Argon2, AES-256, ChaCha20)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "✅ Import de tous les groupes et entrées",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "✅ Création automatique d'un nouveau vault",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
             }
         }
-    )
+    }
 }
 
 /**
- * Dialogue pour import JSON (demande master password)
+ * Dialogue pour import KDBX (demande master password KeePass)
  */
 @Composable
-private fun JsonImportDialog(
+private fun KdbxImportDialog(
+    uri: Uri,
     onDismiss: () -> Unit,
     onConfirm: (String, Uri, String?) -> Unit
 ) {
@@ -559,16 +643,19 @@ private fun JsonImportDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.RestoreFromTrash, contentDescription = null) },
-        title = { Text("Restaurer Backup") },
+        icon = { Icon(Icons.Default.Key, contentDescription = null) },
+        title = { Text("Importer depuis KeePass") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Entrez le master password utilisé pour chiffrer le backup :")
+                Text(
+                    "Entrez le master password de votre fichier KeePass :",
+                    style = MaterialTheme.typography.bodyMedium
+                )
 
                 OutlinedTextField(
                     value = masterPassword,
                     onValueChange = { masterPassword = it },
-                    label = { Text("Master Password") },
+                    label = { Text("Master Password KeePass") },
                     visualTransformation = if (showPassword) {
                         VisualTransformation.None
                     } else {
@@ -589,21 +676,50 @@ private fun JsonImportDialog(
                 OutlinedTextField(
                     value = newVaultName,
                     onValueChange = { newVaultName = it },
-                    label = { Text("Nouveau nom (optionnel)") },
-                    placeholder = { Text("Vault (Importé)") },
+                    label = { Text("Nom du nouveau vault") },
+                    placeholder = { Text("KeePass Import") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            "ℹ️ Information",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Un nouveau vault sera créé avec toutes vos entrées KeePass.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "Le fichier KDBX original ne sera pas modifié.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onDismiss()
+                    onConfirm(
+                        masterPassword,
+                        uri,
+                        newVaultName.takeIf { it.isNotEmpty() }
+                    )
                 },
                 enabled = masterPassword.isNotEmpty()
             ) {
-                Text("Restaurer")
+                Text("Importer")
             }
         },
         dismissButton = {

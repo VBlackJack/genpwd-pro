@@ -185,6 +185,43 @@ class ImportExportViewModel @Inject constructor(
     }
 
     /**
+     * Import depuis KeePass KDBX
+     *
+     * Crée un nouveau vault avec toutes les entrées du fichier KeePass
+     */
+    fun importFromKdbx(masterPassword: String, uri: Uri, newVaultName: String? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isImporting = true, importError = null) }
+
+            val result = importExportRepository.importFromKdbx(
+                uri = uri,
+                masterPassword = masterPassword,
+                newVaultName = newVaultName
+            )
+
+            result.fold(
+                onSuccess = { vaultId ->
+                    _uiState.update {
+                        it.copy(
+                            isImporting = false,
+                            lastImportSuccess = true,
+                            importSuccessMessage = "Fichier KeePass importé avec succès ! Nouveau vault créé."
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isImporting = false,
+                            importError = error.message ?: "Erreur lors de l'import KDBX"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
      * Réinitialiser les messages de succès/erreur
      */
     fun clearMessages() {
