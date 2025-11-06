@@ -37,7 +37,7 @@ export function initializeLanguageSelector() {
       <span class="lang-flag" id="lang-flag">${i18n.getLocaleFlag(i18n.getLocale())}</span>
       <span class="lang-code" id="lang-code">${i18n.getLocale().toUpperCase()}</span>
     </button>
-    <div class="lang-dropdown" id="lang-dropdown" style="display: none;">
+    <div class="lang-dropdown hidden" id="lang-dropdown">
       <button class="lang-option" data-lang="fr">
         <span class="lang-flag">🇫🇷</span>
         <span class="lang-name">Français</span>
@@ -131,12 +131,12 @@ export function initializePresetsUI() {
     </div>
     <div class="section-content">
       <div class="row">
-        <button class="btn" id="btn-save-preset" style="width: 100%;">
+        <button class="btn full-width" id="btn-save-preset">
           💾 Sauvegarder Configuration
         </button>
       </div>
       <div class="row">
-        <button class="btn" id="btn-manage-presets" style="width: 100%;">
+        <button class="btn full-width" id="btn-manage-presets">
           🗂️ Gérer les Presets
         </button>
       </div>

@@ -3,6 +3,15 @@
  * Styles for v2.6.0 features (language selector, presets, history)
  */
 
+/* Utility classes for CSP compliance */
+.full-width {
+  width: 100%;
+}
+
+.hidden {
+  display: none;
+}
+
 /* Language Selector */
 .language-selector {
   position: relative;
