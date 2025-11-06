@@ -68,10 +68,14 @@ class GenPwdApp {
       }
 
       // 1.3 NEW: Initialiser i18n et charger locale
-      const detectedLocale = i18n.detectLocale();
-      await i18n.loadLocale(detectedLocale);
-      await i18n.setLocale(detectedLocale);
-      safeLog(`i18n initialisé: ${detectedLocale}`);
+      try {
+        const detectedLocale = i18n.detectLocale();
+        await i18n.loadLocale(detectedLocale);
+        await i18n.setLocale(detectedLocale);
+        safeLog(`i18n initialisé: ${detectedLocale}`);
+      } catch (i18nError) {
+        safeLog(`i18n non disponible: ${i18nError.message} - continuant sans i18n`);
+      }
 
       // 2. Validation de l'environnement
       if (!this.validateEnvironment()) {

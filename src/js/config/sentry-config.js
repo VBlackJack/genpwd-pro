@@ -29,13 +29,13 @@
 
 export const SENTRY_CONFIG = {
   // Set your Sentry DSN here or use environment variable
-  dsn: process.env.SENTRY_DSN || '',
+  dsn: (typeof process !== 'undefined' && process.env?.SENTRY_DSN) || '',
 
   // Enable/disable Sentry
   enabled: false, // Set to true when DSN is configured
 
   // Environment (development, staging, production)
-  environment: process.env.NODE_ENV || 'development',
+  environment: (typeof process !== 'undefined' && process.env?.NODE_ENV) || 'development',
 
   // Release version
   release: 'genpwd-pro@2.5.2',

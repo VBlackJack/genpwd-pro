@@ -140,6 +140,6 @@
       "artifactName": "${productName}-${version}-portable.${ext}"
     },
     "compression": "maximum",
-    "asar": true
+    "asar": false
   }
 }
