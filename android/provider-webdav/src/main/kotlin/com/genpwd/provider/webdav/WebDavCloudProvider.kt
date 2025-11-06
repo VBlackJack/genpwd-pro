@@ -18,9 +18,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.w3c.dom.Element
-import java.time.Instant
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.inject.Named
@@ -62,15 +62,15 @@ class WebDavCloudProvider @Inject constructor(
                 val etag = node.getElementsByTagName("d:getetag").item(0)?.textContent
                 val size = node.getElementsByTagName("d:getcontentlength").item(0)?.textContent?.toLongOrNull() ?: 0L
                 val modified = node.getElementsByTagName("d:getlastmodified").item(0)?.textContent
-                val lastModified = modified?.let { parseHttpDate(it) } ?: Instant.now()
+                val lastModifiedSeconds = modified?.let { parseHttpDateToEpochSeconds(it) } ?: (System.currentTimeMillis() / 1000)
                 val remotePath = if (href.startsWith("/")) href else "/$href"
                 val name = remotePath.substringAfterLast('/')
                 results.add(
                     VaultMeta(
                         id = VaultId(remotePath = remotePath, provider = kind, accountId = account.id),
                         name = name,
-                        version = lastModified.epochSecond,
-                        lastModifiedUtc = lastModified.epochSecond,
+                        version = lastModifiedSeconds,
+                        lastModifiedUtc = lastModifiedSeconds,
                         size = size,
                         remoteEtag = etag,
                     ),
@@ -111,8 +111,8 @@ class WebDavCloudProvider @Inject constructor(
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw response.toProviderError()
             val etag = response.header("ETag") ?: ifMatchEtag.orEmpty()
-            val instant = response.header("Last-Modified")?.let { parseHttpDate(it) } ?: Instant.now()
-            return ProviderWriteResult(newEtag = etag, modifiedUtc = instant.epochSecond)
+            val modifiedSeconds = response.header("Last-Modified")?.let { parseHttpDateToEpochSeconds(it) } ?: (System.currentTimeMillis() / 1000)
+            return ProviderWriteResult(newEtag = etag, modifiedUtc = modifiedSeconds)
         }
     }
 
@@ -153,10 +153,30 @@ class WebDavCloudProvider @Inject constructor(
     }
 }
 
-private fun parseHttpDate(value: String): Instant =
-    runCatching { Instant.parse(value) }.getOrElse {
-        ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
+/**
+ * Parse HTTP date string to epoch seconds.
+ * Supports both RFC 1123 and ISO 8601 formats.
+ */
+private fun parseHttpDateToEpochSeconds(value: String): Long {
+    return try {
+        // Try RFC 1123 format (e.g., "Mon, 01 Jan 2024 00:00:00 GMT")
+        val rfc1123Format = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("GMT")
+        }
+        rfc1123Format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+    } catch (e: Exception) {
+        try {
+            // Try ISO 8601 format (e.g., "2024-01-01T00:00:00Z")
+            val iso8601Format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            iso8601Format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+        } catch (e2: Exception) {
+            // Fallback to current time
+            System.currentTimeMillis() / 1000
+        }
     }
+}
 
 private fun WebDavAuthProvider.WebDavConfiguration.resolve(path: String): String {
     val cleanPath = if (path.startsWith("/")) path.drop(1) else path
