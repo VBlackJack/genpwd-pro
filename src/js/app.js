@@ -33,6 +33,7 @@ import { initSentry, captureException } from './config/sentry-config.js';
 import analytics from './utils/analytics.js';
 import presetManager from './utils/preset-manager.js';
 import historyManager from './utils/history-manager.js';
+import { initializeAllFeatures } from './ui/features-ui.js';
 
 class GenPwdApp {
   constructor() {
@@ -89,6 +90,10 @@ class GenPwdApp {
       // 4.1 NEW: Initialiser les nouveaux composants UI
       this.initializeNewFeatures();
       safeLog('Nouvelles fonctionnalités UI initialisées');
+
+      // 4.2 NEW: Initialiser UI des features (language, presets, history)
+      initializeAllFeatures();
+      safeLog('Feature UIs initialisées (language, presets, history)');
 
       // 5. Initialisation dictionnaires
       initializeDictionaries();

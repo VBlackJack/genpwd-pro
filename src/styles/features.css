@@ -1,0 +1,318 @@
+/*
+ * Copyright 2025 Julien Bombled
+ * Styles for v2.6.0 features (language selector, presets, history)
+ */
+
+/* Language Selector */
+.language-selector {
+  position: relative;
+  margin-right: 15px;
+}
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.lang-flag {
+  font-size: 18px;
+}
+
+.lang-code {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 15px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  font-size: 14px;
+}
+
+.lang-option:hover {
+  background: var(--bg-hover);
+}
+
+.lang-name {
+  flex: 1;
+  text-align: left;
+}
+
+/* Presets */
+.preset-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.preset-item:hover {
+  border-color: var(--accent-primary);
+  transform: translateX(4px);
+}
+
+.preset-info {
+  flex: 1;
+}
+
+.preset-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.preset-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.preset-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.preset-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.presets-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* History */
+.history-stats {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-search {
+  margin-bottom: 20px;
+}
+
+.history-search .input {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+}
+
+.history-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.history-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+
+.history-item:hover {
+  border-color: var(--accent-primary);
+}
+
+.history-password {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-password code {
+  background: var(--bg-code);
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.history-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.history-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: var(--accent-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.history-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* Button mini styles */
+.btn-mini {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-mini:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.btn-mini.danger {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.btn-mini.danger:hover {
+  background: var(--accent-red);
+  color: white;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Modal improvements for features */
+.modal {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .language-selector {
+    margin-right: 8px;
+  }
+
+  .lang-btn {
+    padding: 6px 10px;
+  }
+
+  .lang-code {
+    display: none;
+  }
+
+  .history-stats {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .preset-item,
+  .history-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .preset-actions,
+  .history-actions {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Dark mode variables (already defined in main.css, but ensuring consistency) */
+:root {
+  --bg-code: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] {
+  --bg-code: rgba(0, 0, 0, 0.05);
+}
