@@ -1,8 +1,8 @@
 {
   "name": "genpwd-pro",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "type": "module",
-  "description": "Générateur de mots de passe sécurisés avec tests intégrés - Architecture modulaire",
+  "description": "Générateur de mots de passe sécurisés avec PWA, i18n, presets, et analytics - Architecture ES6 modulaire",
   "main": "electron-main.cjs",
   "scripts": {
     "dev": "node tools/dev-server.js",
@@ -12,13 +12,18 @@
     "test:create-browser": "node tools/run_tests.cjs --create-browser-test",
     "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
     "lint": "eslint src/js/**/*.js tools/**/*.js",
+    "lint:fix": "eslint src/js/**/*.js tools/**/*.js --fix",
     "clean": "rimraf dist/*",
     "start": "npm run dev",
     "electron": "electron .",
     "electron:dev": "NODE_ENV=development electron .",
     "electron:build": "electron-builder",
     "electron:build:win": "electron-builder --win",
-    "electron:build:all": "electron-builder -mwl"
+    "electron:build:all": "electron-builder -mwl",
+    "compress:dictionaries": "node tools/compress-dictionaries.js",
+    "audit": "npm audit --audit-level=moderate",
+    "audit:fix": "npm audit fix",
+    "prepare": "npm run audit || true"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -44,7 +49,16 @@
     "cryptography",
     "javascript",
     "testing",
-    "automated-testing"
+    "automated-testing",
+    "pwa",
+    "progressive-web-app",
+    "i18n",
+    "internationalization",
+    "offline-first",
+    "service-worker",
+    "analytics",
+    "privacy-friendly",
+    "typescript"
   ],
   "author": "Julien Bombled",
   "license": "Apache-2.0",
