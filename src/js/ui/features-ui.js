@@ -148,8 +148,17 @@ export function initializePresetsUI() {
     </div>
   `;
 
-  // Insert at the end of config panel
-  configPanel.appendChild(presetsSection);
+  // Insert before "Aide & Notes" section
+  const helpSection = Array.from(configPanel.querySelectorAll('.section')).find(
+    section => section.textContent.includes('Aide & Notes')
+  );
+
+  if (helpSection) {
+    configPanel.insertBefore(presetsSection, helpSection);
+  } else {
+    // Fallback: insert at the end if help section not found
+    configPanel.appendChild(presetsSection);
+  }
 
   // Populate preset dropdown
   updatePresetDropdown();

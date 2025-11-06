@@ -1,0 +1,45 @@
+{
+  "app": {
+    "title": "GenPwd Pro",
+    "subtitle": "Générateur de mots de passe sécurisés"
+  },
+  "common": {
+    "generate": "Générer",
+    "copy": "Copier",
+    "export": "Export",
+    "clear": "Effacer",
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "close": "Fermer"
+  },
+  "modes": {
+    "syllables": "Syllabes",
+    "passphrase": "Passphrase",
+    "leet": "Leet"
+  },
+  "settings": {
+    "length": "Longueur",
+    "quantity": "Nombre",
+    "digits": "Chiffres",
+    "specials": "Spéciaux",
+    "policy": "Politique"
+  },
+  "presets": {
+    "title": "Presets",
+    "save": "Sauvegarder Configuration",
+    "manage": "Gérer les Presets",
+    "load": "Charger un preset"
+  },
+  "history": {
+    "title": "Historique",
+    "search": "Rechercher",
+    "empty": "Aucun mot de passe dans l'historique"
+  },
+  "language": {
+    "title": "Langue",
+    "french": "Français",
+    "english": "English",
+    "spanish": "Español"
+  }
+}
