@@ -1,0 +1,132 @@
+/*
+ * Copyright 2025 Julien Bombled
+ * Utility classes for CSP-compliant dynamic styling
+ */
+
+/* Display utilities */
+.u-display-none {
+  display: none !important;
+}
+
+.u-display-block {
+  display: block !important;
+}
+
+.u-display-flex {
+  display: flex !important;
+}
+
+.u-display-grid {
+  display: grid !important;
+}
+
+/* Color utilities for status */
+.u-color-success {
+  color: #10b981 !important;
+}
+
+.u-color-warning {
+  color: #f59e0b !important;
+}
+
+.u-color-error {
+  color: #ef4444 !important;
+}
+
+.u-color-muted {
+  color: var(--text-muted) !important;
+}
+
+.u-color-accent-red {
+  color: var(--accent-red) !important;
+}
+
+.u-color-accent-yellow {
+  color: var(--accent-yellow) !important;
+}
+
+/* Z-index utilities - ensure dropdowns appear above everything */
+.u-z-high {
+  z-index: 9999 !important;
+}
+
+/* Toast notifications */
+.toast {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 8px;
+  max-width: 320px;
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease;
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+.toast-error {
+  border-left: 4px solid var(--accent-red);
+}
+
+.toast-success {
+  border-left: 4px solid var(--accent-green);
+}
+
+.toast-info {
+  border-left: 4px solid var(--accent-blue);
+}
+
+.toast-exit {
+  opacity: 0 !important;
+  transform: translateX(20px) !important;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Toast container */
+#toasts {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Theme selector wrapper */
+.theme-selector-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.theme-selector-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.theme-selector-select {
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.theme-selector-select:hover {
+  border-color: var(--accent-primary);
+}
