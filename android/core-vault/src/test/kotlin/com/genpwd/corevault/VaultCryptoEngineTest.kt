@@ -1,7 +1,6 @@
 package com.genpwd.corevault
 
 import java.security.MessageDigest
-import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,12 +14,12 @@ class VaultCryptoEngineTest {
     fun `encrypt and decrypt restores vault`() {
         val vault = sampleVault()
         val secret = "correct horse battery staple".toCharArray()
-        val encrypted = engine.encrypt(vault, secret, deviceId = "device-A", createdUtc = vault.meta.createdUtc())
+        val encrypted = engine.encryptVault(secret, vault, deviceId = "device-A")
 
         val cipherBytes = cipherSection(encrypted.payload)
         assertEquals(cipherBytes.sha256(), encrypted.localEtag)
 
-        val decrypted = engine.decrypt(encrypted.payload, secret)
+        val decrypted = engine.decryptVault(secret, encrypted)
         assertEquals(vault.meta, decrypted.meta)
         assertEquals(vault.items, decrypted.items)
         assertEquals(vault.journal, decrypted.journal)
@@ -31,7 +30,7 @@ class VaultCryptoEngineTest {
     fun `local etag equals ciphertext digest`() {
         val vault = sampleVault()
         val secret = "hunter2".toCharArray()
-        val encrypted = engine.encrypt(vault, secret, deviceId = "device-B", createdUtc = vault.meta.createdUtc())
+        val encrypted = engine.encryptVault(secret, vault, deviceId = "device-B")
 
         val cipherBytes = cipherSection(encrypted.payload)
         val expected = cipherBytes.sha256()
@@ -42,7 +41,7 @@ class VaultCryptoEngineTest {
     fun `journal is compressed smaller than json`() {
         val vault = sampleVault(changeCount = 12)
         val payload = encodeVaultPayload(vault)
-        val raw = kotlinx.serialization.json.Json.encodeToString(vault.journal)
+        val raw = kotlinx.serialization.json.Json.encodeToString<List<VaultChange>>(vault.journal)
         assertTrue(payload.compressedJournal.size < raw.toByteArray(Charsets.UTF_8).size)
     }
 
@@ -52,11 +51,12 @@ class VaultCryptoEngineTest {
     }
 
     private fun sampleVault(changeCount: Int = 3): Vault {
+        val currentTime = System.currentTimeMillis()
         val meta = VaultMeta(
-            id = VaultId(remotePath = "/vaults/sample.vlt", provider = "webdav", accountId = "account-1"),
+            id = VaultId(remotePath = "/vaults/sample.vlt", provider = ProviderKind.WEBDAV, accountId = "account-1"),
             name = "Sample",
             version = 1,
-            lastModifiedUtc = Instant.now().toEpochMilli(),
+            lastModifiedUtc = currentTime,
             size = 1024,
             remoteEtag = "etag-1",
         )
@@ -80,8 +80,6 @@ class VaultCryptoEngineTest {
             journal = journal,
         )
     }
-
-    private fun VaultMeta.createdUtc(): Long = this.lastModifiedUtc
 
     private fun ByteArray.toInt(): Int {
         require(size == 4) { "Expected 4 bytes" }
