@@ -4,6 +4,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.serialization.builtins.ListSerializer
 import org.junit.Test
 
 class VaultCryptoEngineTest {
@@ -41,7 +42,7 @@ class VaultCryptoEngineTest {
     fun `journal is compressed smaller than json`() {
         val vault = sampleVault(changeCount = 12)
         val payload = encodeVaultPayload(vault)
-        val raw = kotlinx.serialization.json.Json.encodeToString<List<VaultChange>>(vault.journal)
+        val raw = kotlinx.serialization.json.Json.encodeToString(ListSerializer(VaultChange.serializer()), vault.journal)
         assertTrue(payload.compressedJournal.size < raw.toByteArray(Charsets.UTF_8).size)
     }
 
