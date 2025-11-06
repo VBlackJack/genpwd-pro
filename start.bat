@@ -55,8 +55,8 @@ if "!HTML_FOUND!" == "0" (
     exit /b 1
 )
 
-if not exist "tools\dev-server.js" (
-    echo [X] dev-server.js non trouve dans tools/
+if not exist "tools\dev-server.cjs" (
+    echo [X] dev-server.cjs non trouve dans tools/
     echo [i] Verifiez la structure du projet
     echo.
     pause
@@ -101,7 +101,7 @@ timeout /t 2 /nobreak >nul
 start http://localhost:3000/ >nul 2>nul
 
 REM Lancer le serveur avec gestion d'erreurs (sans argument port)
-node tools\dev-server.js
+node tools\dev-server.cjs
 set EXIT_CODE=%ERRORLEVEL%
 
 echo.
