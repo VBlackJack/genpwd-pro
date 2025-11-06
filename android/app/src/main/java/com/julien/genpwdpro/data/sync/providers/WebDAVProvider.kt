@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
+import android.util.Base64
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
@@ -8,7 +9,6 @@ import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +82,7 @@ class WebDAVProvider(
         // Ajouter l'authentification Basic
         builder.addInterceptor { chain ->
             val credentials = "$username:$password"
-            val auth = "Basic " + Base64.getEncoder().encodeToString(credentials.toByteArray())
+            val auth = "Basic " + Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)
 
             val request = chain.request().newBuilder()
                 .header("Authorization", auth)

@@ -2,8 +2,8 @@ package com.genpwd.storage.crypto
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Base64
 import java.security.KeyStore
-import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -80,7 +80,7 @@ class TokenCrypto @Inject constructor() {
         // Prepend IV to ciphertext
         val combined = iv + ciphertext
 
-        return Base64.getEncoder().encodeToString(combined)
+        return Base64.encodeToString(combined, Base64.NO_WRAP)
     }
 
     /**
@@ -93,7 +93,7 @@ class TokenCrypto @Inject constructor() {
         if (encryptedBase64.isBlank()) return ""
 
         val key = getOrCreateKey()
-        val combined = Base64.getDecoder().decode(encryptedBase64)
+        val combined = Base64.decode(encryptedBase64, Base64.NO_WRAP)
 
         // Extract IV (first 12 bytes for GCM)
         val ivSize = 12
