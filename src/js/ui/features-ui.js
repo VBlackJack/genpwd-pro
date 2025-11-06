@@ -29,7 +29,7 @@ export function initializeLanguageSelector() {
   const headerRight = document.querySelector('.header-right');
   if (!headerRight) return;
 
-  // Create language selector dropdown
+  // Create language selector button (only button, not dropdown)
   const langSelector = document.createElement('div');
   langSelector.className = 'language-selector';
   langSelector.innerHTML = `
@@ -37,20 +37,6 @@ export function initializeLanguageSelector() {
       <span class="lang-flag" id="lang-flag">${i18n.getLocaleFlag(i18n.getLocale())}</span>
       <span class="lang-code" id="lang-code">${i18n.getLocale().toUpperCase()}</span>
     </button>
-    <div class="lang-dropdown hidden" id="lang-dropdown">
-      <button class="lang-option" data-lang="fr">
-        <span class="lang-flag">🇫🇷</span>
-        <span class="lang-name">Français</span>
-      </button>
-      <button class="lang-option" data-lang="en">
-        <span class="lang-flag">🇬🇧</span>
-        <span class="lang-name">English</span>
-      </button>
-      <button class="lang-option" data-lang="es">
-        <span class="lang-flag">🇪🇸</span>
-        <span class="lang-name">Español</span>
-      </button>
-    </div>
   `;
 
   // Insert before the about button
@@ -60,6 +46,26 @@ export function initializeLanguageSelector() {
   } else {
     headerRight.appendChild(langSelector);
   }
+
+  // Create dropdown in body (to escape header z-index context)
+  const langDropdown = document.createElement('div');
+  langDropdown.className = 'lang-dropdown-portal hidden';
+  langDropdown.id = 'lang-dropdown';
+  langDropdown.innerHTML = `
+    <button class="lang-option" data-lang="fr">
+      <span class="lang-flag">🇫🇷</span>
+      <span class="lang-name">Français</span>
+    </button>
+    <button class="lang-option" data-lang="en">
+      <span class="lang-flag">🇬🇧</span>
+      <span class="lang-name">English</span>
+    </button>
+    <button class="lang-option" data-lang="es">
+      <span class="lang-flag">🇪🇸</span>
+      <span class="lang-name">Español</span>
+    </button>
+  `;
+  document.body.appendChild(langDropdown);
 
   // Bind events
   bindLanguageSelectorEvents();
@@ -76,10 +82,38 @@ function bindLanguageSelectorEvents() {
 
   if (!langBtn || !langDropdown) return;
 
+  // Position dropdown relative to button
+  function positionDropdown() {
+    const btnRect = langBtn.getBoundingClientRect();
+    langDropdown.style.setProperty('position', 'fixed');
+    langDropdown.style.setProperty('top', `${btnRect.bottom + 8}px`);
+    langDropdown.style.setProperty('right', `${window.innerWidth - btnRect.right}px`);
+  }
+
   // Toggle dropdown
   langBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    langDropdown.classList.toggle('hidden');
+    const isHidden = langDropdown.classList.contains('hidden');
+
+    if (isHidden) {
+      positionDropdown();
+      langDropdown.classList.remove('hidden');
+    } else {
+      langDropdown.classList.add('hidden');
+    }
+  });
+
+  // Reposition on scroll/resize
+  window.addEventListener('scroll', () => {
+    if (!langDropdown.classList.contains('hidden')) {
+      positionDropdown();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!langDropdown.classList.contains('hidden')) {
+      positionDropdown();
+    }
   });
 
   // Close dropdown when clicking outside

@@ -60,6 +60,18 @@
   overflow: hidden;
 }
 
+/* Language dropdown portal - positioned at body level to escape header z-index context */
+.lang-dropdown-portal {
+  position: fixed;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 999999;
+  min-width: 150px;
+  overflow: hidden;
+}
+
 .lang-option {
   display: flex;
   align-items: center;
