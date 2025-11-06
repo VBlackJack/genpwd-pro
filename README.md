@@ -1,26 +1,83 @@
-# GenPwd Pro v2.5.2 🔐
+# GenPwd Pro v2.6.0 🔐
 
-[![Version](https://img.shields.io/badge/version-2.5.2-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
 [![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
 [![Tests](https://img.shields.io/badge/tests-17%2F17%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![ES6+](https://img.shields.io/badge/ES6+-modern-orange.svg)](https://www.ecma-international.org/ecma-262/)
-[![Quality](https://img.shields.io/badge/quality-9.7%2F10-brightgreen.svg)](./DOCUMENTATION_AUDIT_2025-11-04.md)
+[![CSP](https://img.shields.io/badge/CSP-100%25%20compliant-brightgreen.svg)](./docs/TECHNICAL.md)
 
-> Générateur de mots de passe sécurisés nouvelle génération avec architecture modulaire ES6, tests intégrés, export multi-format et interface moderne personnalisable.
+> Générateur de mots de passe sécurisés nouvelle génération avec architecture modulaire ES6, internationalisation, presets, historique, tests intégrés et interface moderne personnalisable.
 
 ## ✨ Points forts
 
-- 🎯 **100% de fiabilité** - Suite de 17 tests automatisés validant chaque fonctionnalité
-- 🔒 **Haute sécurité** - Jusqu'à 140 bits d'entropie pour une protection maximale
-- 🌍 **Multilingue** - Dictionnaires français (2429 mots), anglais et latin
+- 🎯 **100% de fiabilité** - Suite de 17+ tests automatisés validant chaque fonctionnalité
+- 🔒 **Haute sécurité** - Jusqu'à 140 bits d'entropie, CSP 100% conforme
+- 🌍 **Multilingue complet** - Interface en FR/EN/ES + dictionnaires français (2429 mots), anglais et latin
+- 💾 **Gestion de presets** - Sauvegardez et partagez vos configurations favorites
+- 📜 **Historique intelligent** - Tracking avec favoris, tags et recherche avancée
 - 🎨 **Interface moderne** - 5 thèmes personnalisables, animations fluides, placement visuel interactif
 - ⚡ **Performance** - Architecture modulaire ES6 avec outils de benchmarking intégrés
 - 📤 **Export multi-format** - TXT, JSON, CSV pour tous vos besoins
-- 🛠️ **Extensible** - API complète, monitoring d'erreurs, documentation JSDoc exhaustive
+- 🛠️ **Extensible** - API complète, monitoring d'erreurs, analytics optionnel, documentation JSDoc exhaustive
 
-## 🆕 Nouvelles Fonctionnalités v2.5.2 (2025-11-04)
+## 🆕 Nouvelles Fonctionnalités v2.6.0 (2025-11-06)
+
+### 🌐 Internationalisation (i18n)
+Changez la langue de l'interface en temps réel :
+- 🇫🇷 **Français** - Langue par défaut
+- 🇬🇧 **English** - Interface complète en anglais
+- 🇪🇸 **Español** - Interface complète en espagnol
+
+Le sélecteur de langue est accessible directement dans le header avec icônes de drapeaux. La préférence est sauvegardée dans localStorage.
+
+### 💾 Système de Presets
+Gérez vos configurations favorites :
+- **Sauvegarder** - Enregistrez votre configuration actuelle comme preset
+- **Charger** - Restaurez instantanément un preset sauvegardé
+- **Gérer** - Modal complet avec liste, recherche, favoris ⭐
+- **Export/Import** - Partagez vos presets en JSON
+- **Noms personnalisés** - Identifiez facilement vos configurations
+
+```javascript
+// API disponible pour développeurs
+presetManager.createPreset('Sécurité Max', config, 'Config haute sécurité')
+presetManager.getAllPresets()
+presetManager.exportPreset(id)
+```
+
+### 📜 Historique des Mots de Passe
+Suivez vos mots de passe générés avec intelligence :
+- **Statistiques** - Total d'entrées, favoris, entropie moyenne
+- **Recherche** - Filtrez instantanément dans votre historique
+- **Favoris** - Marquez vos mots de passe importants ⭐
+- **Tags** - Organisez avec des étiquettes personnalisées
+- **Métadonnées** - Mode, entropie, date/heure de création
+- **Export** - Sauvegardez votre historique en JSON
+- **Contrôle** - Activez/désactivez selon vos besoins
+
+L'historique respecte votre vie privée avec chiffrement local optionnel.
+
+### 📊 Analytics & Monitoring (Optionnel)
+Pour les déploiements professionnels :
+- **Google Analytics** - Suivi d'usage configurable
+- **Plausible** - Alternative privacy-friendly
+- **Sentry** - Tracking d'erreurs en production
+- **Configuration simple** - Variables d'environnement
+
+```javascript
+// Configurez via .env ou directement
+SENTRY_DSN=your_sentry_dsn
+ANALYTICS_PROVIDER=google|plausible|none
+```
+
+### 🔒 Conformité CSP 100%
+Toutes les violations de Content Security Policy ont été éliminées :
+- ✅ Plus d'inline styles
+- ✅ Classes CSS uniquement
+- ✅ Sécurité maximale
+- ✅ Compatible avec les politiques strictes
 
 ### 📤 Export de Mots de Passe
 Exportez vos mots de passe générés dans 3 formats :
@@ -30,7 +87,7 @@ Exportez vos mots de passe générés dans 3 formats :
 
 ```javascript
 // Interface modale élégante avec choix du format
-// Fichiers auto-nommés: genpwd-export-2025-11-04T19-30-00.json
+// Fichiers auto-nommés: genpwd-export-2025-11-06T19-30-00.json
 ```
 
 ### 🎨 Système de Thèmes
@@ -60,12 +117,6 @@ const stats = await benchmark('password-gen', fn, 1000);
 // → { min, max, mean, median, p95, p99, stdDev }
 ```
 
-### 📚 Documentation Améliorée
-- **JSDoc complet** sur toutes les fonctions principales
-- **Guide des fonctionnalités** détaillé ([FEATURES_GUIDE.md](./docs/FEATURES_GUIDE.md))
-- **ESLint v9** avec configuration moderne
-- **+850 lignes** de documentation ajoutées
-
 **👉 [Guide complet des nouvelles fonctionnalités](./docs/FEATURES_GUIDE.md)**
 
 ---
@@ -85,6 +136,8 @@ npm install
 npm run dev
 ```
 
+L'application sera accessible sur http://localhost:3000
+
 ## 📦 Scripts disponibles
 
 | Commande | Description |
@@ -96,153 +149,121 @@ npm run dev
 | `npm run test:browser` | Vérifie l'interface via Puppeteer |
 | `npm run lint` | Analyse statique ESLint sur src/ et tools/ |
 
-## 🧱 Android build tooling
+## 🧱 Architecture Modulaire
 
-L'application Android est livrée avec un environnement de développement complet prêt à l'emploi.
-
-### Option 1 — Devcontainer (recommandé)
-
-1. Installez [VS Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers).
-2. Ouvrez le dossier racine et choisissez **Reopen in Container**. L'image installe automatiquement le SDK Android (cmdline-tools, platform-tools, build-tools 34.0.0, platforms 35 et 34).
-3. Une fois la configuration terminée, ouvrez un terminal **dans le devcontainer** et exécutez les vérifications suivantes :
-
-```bash
-cd android
-./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
+```
+genpwd-pro/
+├── src/
+│   ├── js/
+│   │   ├── core/          # Générateurs, dictionnaires, casing
+│   │   ├── ui/            # DOM, événements, modal, features-ui
+│   │   ├── utils/         # Helpers, i18n, presets, history, analytics
+│   │   ├── config/        # Constantes, settings, sentry
+│   │   ├── services/      # Services métier
+│   │   └── app.js         # Point d'entrée principal
+│   ├── styles/            # CSS modulaire
+│   ├── dictionaries/      # Dictionnaires JSON (FR, EN, Latin)
+│   └── tests/             # Suite de tests complète
+├── tools/                 # Outils de build et dev
+└── docs/                  # Documentation complète
 ```
 
-### Option 2 — Installation locale
+## 🎯 Utilisation
 
-Exécutez le script `./.devcontainer/setup-android-sdk.sh` depuis la racine. Il télécharge les composants du SDK avec `sdkmanager` et génère `android/local.properties` avec `sdk.dir=...`.
+### Interface Web
+1. **Choisissez votre langue** - Cliquez sur le sélecteur dans le header
+2. **Sélectionnez le mode** - Syllabes, Passphrase ou Leet
+3. **Configurez les paramètres** - Longueur, chiffres, spéciaux, politique
+4. **Ajustez la casse** - Pattern personnalisé (U/T/l)
+5. **Placement visuel** (optionnel) - Drag & drop pour positionner chiffres/spéciaux
+6. **Générez** - Cliquez sur "Générer" ou appuyez sur Entrée
+7. **Sauvegardez un preset** - Pour réutiliser cette configuration
+8. **Exportez** - TXT, JSON ou CSV selon vos besoins
 
-Un exemple d'exécution GitHub Actions est disponible dans [`docs/ci/android-ci-sample.txt`](docs/ci/android-ci-sample.txt).
+### API JavaScript
 
-## 🎮 Utilisation rapide
-
-### Mode Syllables (recommandé pour mémorisation)
 ```javascript
-// Génère : "nywOVyQep.OcyBoWEFY8KiLuMeRa"
-// Entropie : 95.2 bits
-// Pattern : Alternance consonnes/voyelles prononcables
+// Génération simple
+import { generateSyllablePassword } from './src/js/core/generators.js';
+const pwd = generateSyllablePassword(20, 2, 2);
+
+// Avec presets
+import presetManager from './src/js/utils/preset-manager.js';
+const preset = presetManager.createPreset('MonPreset', config);
+presetManager.loadPreset(preset.id);
+
+// Avec historique
+import historyManager from './src/js/utils/history-manager.js';
+historyManager.addEntry(password, metadata);
+const history = historyManager.getHistory({ limit: 50 });
+
+// Internationalisation
+import { i18n } from './src/js/utils/i18n.js';
+await i18n.setLocale('fr');
+const text = i18n.t('key');
 ```
-
-### Mode Passphrase (mots séparés)
-```javascript
-// Génère : "Forcer-Vague-Nature-Soleil-Temps-2024"
-// Entropie : 78.4 bits
-// Utilise le dictionnaire français
-```
-
-### Mode Leet Speak (transformation stylisée)
-```javascript
-// Génère : "P@55W0RD_"
-// Remplace : a→@, e→3, o→0, s→5
-```
-
-## 🏗️ Architecture
-
-```
-src/
-├── js/
-│   ├── config/     # Configuration et constantes
-│   ├── core/       # Logique métier (générateurs, dictionnaires)
-│   ├── ui/         # Interface utilisateur (DOM, événements, modal)
-│   ├── utils/      # Utilitaires (clipboard, logger)
-│   └── app.js      # Point d'entrée
-├── styles/         # Styles CSS modulaires
-└── tools/          # Scripts build, dev-server, tests
-```
-
-### Modules principaux
-
-- **`generators.js`** - Moteurs de génération (syllables, passphrase, leet)
-- **`dictionaries.js`** - Gestion multilingue avec chargement dynamique
-- **`casing.js`** - Système de blocs U/T/L pour patterns personnalisés
-- **`placement.js`** - Positionnement interactif des caractères spéciaux
-
-## 🔬 Tests intégrés
-
-Le projet inclut une suite complète de 13 tests validant :
-- Génération par syllables, passphrase et leet speak
-- Système de blocs de casse (UPPER/Title/lower)
-- Placement précis des caractères spéciaux
-- Interface utilisateur (masquage, copie, export)
-- Calcul d'entropie et sécurité
-
-```bash
-# Lancer les tests
-npm run test
-
-# Résultat attendu
-📊 RAPPORT FINAL - Score: 100%
-✅ Tests réussis: 13 | ❌ Tests échoués: 0
-```
-
-## 🛡️ Sécurité
-
-- **CLI-Safe** : Caractères optimisés pour ligne de commande Linux
-- **Cross-Layout** : Compatible QWERTY/AZERTY sans ambiguïté
-- **Entropie élevée** : Calcul en temps réel de la force cryptographique
-- **Pas de stockage** : Génération 100% côté client, aucune donnée transmise
 
 ## 📚 Documentation
 
-### Guides Utilisateur
-- [**Guide des Fonctionnalités v2.5.2**](./docs/FEATURES_GUIDE.md) ⭐ NOUVEAU - Export, thèmes, monitoring, performance
-- [**Guide utilisateur**](./docs/USER-GUIDE.md) - Utilisation détaillée de toutes les fonctionnalités
-- [**Changelog**](./CHANGELOG.md) - Historique des versions et évolutions
+- **[Guide Utilisateur](./docs/USER-GUIDE.md)** - Guide complet d'utilisation
+- **[Guide des Fonctionnalités](./docs/FEATURES_GUIDE.md)** - Détails sur chaque fonctionnalité
+- **[Documentation Technique](./docs/TECHNICAL.md)** - Architecture et implémentation
+- **[API Documentation](./docs/API.md)** - Référence API complète
+- **[Guide de Développement](./docs/DEVELOPMENT.md)** - Pour contribuer au projet
+- **[Index Documentation](./docs/INDEX.md)** - Vue d'ensemble de toute la documentation
 
-### Documentation Technique
-- [**Documentation technique**](./docs/TECHNICAL.md) - Architecture, API et extensibilité
-- [**API Reference**](./docs/API.md) - Référence complète de l'API
-- [**Android Architecture**](./docs/ANDROID-ARCHITECTURE.md) - Architecture de l'application Android
+## 🔒 Sécurité
 
-### Sécurité & Qualité
-- [**Audit de Sécurité 2025-11-04**](./SECURITY_AUDIT_REPORT_2025-11-04.md) - Score 9.5/10
-- [**Correctifs Implémentés**](./SECURITY_FIXES_IMPLEMENTED.md) - Vulnérabilités corrigées
-- [**Audit Documentation**](./DOCUMENTATION_AUDIT_2025-11-04.md) - État de la documentation
+GenPwd Pro implémente les meilleures pratiques de sécurité :
+- ✅ **CSP stricte** - Content Security Policy 100% conforme
+- ✅ **Pas de tracking** - Zero telemetry par défaut
+- ✅ **localStorage sécurisé** - Chiffrement optionnel
+- ✅ **Entropie élevée** - Jusqu'à 140 bits
+- ✅ **Code audité** - Revues de sécurité régulières
+- ✅ **HTTPS uniquement** - En production
 
-📖 **[Index complet de la documentation](./docs/INDEX.md)**
+Voir [SECURITY.md](./SECURITY.md) pour plus de détails.
 
-## 🤝 Contribution
+## 📱 Version Android
 
-Les contributions sont bienvenues ! Consultez notre guide de contribution pour :
-- Ajouter de nouveaux modes de génération
-- Créer des dictionnaires personnalisés
-- Améliorer l'interface utilisateur
-- Optimiser les performances
+Une version Android complète est disponible dans le dossier `/android` avec :
+- Interface Material Design 3
+- Gestion de coffres-forts chiffrés
+- Import/Export KeePass
+- Cloud sync (Google Drive, Dropbox)
+- Biométrie
 
-### 🐳 Environnement de développement (Dev Container)
+Voir [android/README.md](./android/README.md) pour plus d'informations.
 
-Un environnement VS Code Dev Container est fourni pour simplifier l'installation du JDK 17 et du SDK Android.
+## 🤝 Contribuer
 
-1. Installez l'extension **Dev Containers** dans VS Code.
-2. Ouvrez ce dépôt puis exécutez `Dev Containers: Reopen in Container`.
-3. Attendez la fin du script `setup-android-sdk.sh` (lancé automatiquement) qui installe `platform-tools`, `build-tools;34.0.0` ainsi que `platforms;android-35` et `platforms;android-34`, puis génère `android/local.properties`.
-4. Depuis le terminal du conteneur, exécutez :
+Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](./CONTRIBUTING.md) pour les guidelines.
 
-```bash
-cd android
-./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
-```
+1. Fork le projet
+2. Créez une branche pour votre feature (`git checkout -b feature/AmazingFeature`)
+3. Committez vos changements (`git commit -m 'Add AmazingFeature'`)
+4. Pushez vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
 
-### 🔍 Intégration Android
+## 📄 License
 
-Le module Android applique des contrôles stricts (Lint, ktlint, Detekt et tests JUnit). Exécutez la commande suivante depuis le dossier `android/` avant toute Pull Request :
+Ce projet est sous licence Apache 2.0 - voir le fichier [LICENSE](./LICENSE) pour plus de détails.
 
-```bash
-./gradlew :tools:doctor && ./gradlew lint detekt ktlintCheck testDebugUnitTest
-```
+## 🙏 Remerciements
 
-## 📄 Licence
+- Dictionnaire français enrichi avec 2429+ mots
+- Architecture inspirée des meilleures pratiques ES6
+- Interface utilisateur moderne et accessible
+- Communauté open source
 
-Apache 2.0 © 2025 Julien Bombled
+## 📞 Support
+
+- 🐛 **Issues** - [GitHub Issues](https://github.com/VBlackJack/genpwd-pro/issues)
+- 📖 **Documentation** - [docs/](./docs/)
+- 💬 **Discussions** - [GitHub Discussions](https://github.com/VBlackJack/genpwd-pro/discussions)
 
 ---
 
-<div align="center">
-  <b>GenPwd Pro v2.5.2</b> - Générateur de mots de passe professionnel<br>
-  <a href="https://github.com/VBlackJack/genpwd-pro">GitHub</a> •
-  <a href="./docs/USER-GUIDE.md">Documentation</a> •
-  <a href="https://github.com/VBlackJack/genpwd-pro/issues">Issues</a>
-</div>
+**Fait avec ❤️ par [Julien Bombled](https://github.com/VBlackJack)**
+
+**GenPwd Pro v2.6.0** - Le générateur de mots de passe nouvelle génération 🚀
