@@ -458,43 +458,6 @@
   <script src="js/test-integration.js"></script>
 
   <!-- PWA Service Worker Registration -->
-  <script>
-    // Register service worker for PWA support
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then((registration) => {
-            console.log('[PWA] Service Worker registered successfully:', registration.scope);
-
-            // Check for updates periodically
-            setInterval(() => {
-              registration.update();
-            }, 60000); // Check every minute
-
-            // Listen for updates
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New service worker available, prompt user
-                  if (confirm('Une nouvelle version de GenPwd Pro est disponible. Recharger maintenant ?')) {
-                    newWorker.postMessage({ type: 'SKIP_WAITING' });
-                    window.location.reload();
-                  }
-                }
-              });
-            });
-          })
-          .catch((error) => {
-            console.error('[PWA] Service Worker registration failed:', error);
-          });
-
-        // Handle controller change (after skip waiting)
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
-        });
-      });
-    }
-  </script>
+  <script src="js/pwa-registration.js"></script>
 </body>
 </html>
