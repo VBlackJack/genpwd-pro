@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const originalText = runTestsBtn.textContent;
       runTestsBtn.textContent = '⏳ Tests...';
       testStatus.textContent = 'Exécution...';
-      testStatus.style.color = '#f59e0b';
+      testStatus.className = 'u-color-warning';
 
       try {
         const results = await testSuite.runAllTests();
@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const score = Math.round((results.passed / (results.passed + results.failed)) * 100);
         testStatus.textContent = `${score}% (${results.passed}/${results.passed + results.failed})`;
-        testStatus.style.color = score === 100 ? '#10b981' : score >= 80 ? '#f59e0b' : '#ef4444';
+        testStatus.className = score === 100 ? 'u-color-success' : score >= 80 ? 'u-color-warning' : 'u-color-error';
 
       } catch (error) {
         testStatus.textContent = 'Erreur';
-        testStatus.style.color = '#ef4444';
+        testStatus.className = 'u-color-error';
         console.error('Erreur tests:', error);
       } finally {
         runTestsBtn.disabled = false;
@@ -67,15 +67,15 @@ document.addEventListener('DOMContentLoaded', function() {
     tabResults.addEventListener('click', () => {
       tabResults.classList.add('active');
       tabConsole.classList.remove('active');
-      testDetails.style.display = 'block';
-      testConsole.style.display = 'none';
+      testDetails.classList.remove('u-display-none');
+      testConsole.classList.add('u-display-none');
     });
 
     tabConsole.addEventListener('click', () => {
       tabConsole.classList.add('active');
       tabResults.classList.remove('active');
-      testDetails.style.display = 'none';
-      testConsole.style.display = 'block';
+      testDetails.classList.add('u-display-none');
+      testConsole.classList.remove('u-display-none');
     });
   }
 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('close-test-results-footer')?.addEventListener('click', closeModal);
 
   function closeModal() {
-    testModal.style.display = 'none';
+    testModal.classList.add('u-display-none');
   }
 
   // Relancer tests
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showTestModal() {
-    testModal.style.display = 'flex';
+    testModal.classList.remove('u-display-none');
   }
 
   // Fermeture modal en cliquant à l'extérieur

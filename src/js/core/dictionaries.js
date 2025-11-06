@@ -252,15 +252,15 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
 
   if (error) {
     infoEl.textContent = `Erreur: ${error}`;
-    infoEl.style.color = 'var(--accent-red)';
+    infoEl.className = 'u-color-accent-red';
   } else if (count > 0) {
     const version = metadata?.version || 'v1.0';
     const source = metadata?.source || 'inconnu';
     infoEl.textContent = `${count} mots • ${version} • Source: ${source}`;
-    infoEl.style.color = 'var(--text-muted)';
+    infoEl.className = 'u-color-muted';
   } else {
     infoEl.textContent = 'Aucun mot disponible';
-    infoEl.style.color = 'var(--accent-yellow)';
+    infoEl.className = 'u-color-accent-yellow';
   }
 }
 
