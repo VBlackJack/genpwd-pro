@@ -11,8 +11,8 @@ import com.julien.genpwdpro.data.import.KeePassImporter
 import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
+import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
-import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.BufferedReader
@@ -510,7 +510,7 @@ class ImportExportRepository @Inject constructor(
                     folderCount = 0,
                     presetCount = 0,
                     tagCount = 0,
-                    sizeInBytes = 0
+                    totalSize = 0
                 ),
                 description = "Importé depuis KeePass: ${keepassDb.name}",
                 createdAt = timestamp,
