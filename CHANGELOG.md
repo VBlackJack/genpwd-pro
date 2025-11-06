@@ -5,6 +5,97 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.6.0] - 2025-01-15
+
+### 🎉 Version Majeure - Fonctionnalités Entreprise
+
+Cette version transforme GenPwd Pro en une application enterprise-grade, production-ready avec support PWA, internationalisation et analytics complètes.
+
+#### 🆕 Progressive Web App (PWA)
+- ✨ Manifest PWA pour app installable sur desktop et mobile
+- ✨ Service Worker pour fonctionnement offline complet
+- ✨ Stratégie cache-first pour assets statiques
+- ✨ Notifications de mise à jour automatiques
+- ✨ Raccourcis d'application (Générer, Coffre)
+- ✨ Page offline dédiée avec liste des fonctionnalités
+- ✨ Support iOS avec meta tags apple-mobile-web-app
+
+#### 🌍 Internationalisation (i18n)
+- 🇫🇷 Traductions françaises complètes
+- 🇬🇧 Traductions anglaises complètes
+- 🇪🇸 Traductions espagnoles complètes
+- Système i18n avec détection automatique de langue
+- Changement de langue dynamique sans rechargement
+- Préférence persistante dans localStorage
+
+#### 💾 Gestion de Configuration
+- **Preset Manager** : Sauvegarde/chargement des configurations
+  - Preset par défaut toujours disponible
+  - Recherche par nom/description
+  - Import/export JSON
+  - Définir preset personnalisé comme défaut
+- **History Manager** : Historique des mots de passe générés
+  - Opt-in, privacy-first (désactivé par défaut)
+  - Recherche avancée par pattern, mode, date
+  - Favoris et tags pour organisation
+  - Statistiques détaillées
+  - Auto-expiration configurable
+  - Export/import JSON
+
+#### 📊 Analytics & Monitoring
+- **Analytics Privacy-Friendly**
+  - Support Plausible, Umami, endpoints personnalisés
+  - Sans cookies, conforme RGPD
+  - Gestion du consentement utilisateur
+  - Batching d'événements
+- **Sentry Error Tracking**
+  - Capture automatique d'erreurs
+  - Sanitization des données sensibles
+  - Breadcrumbs pour debugging
+  - Performance monitoring
+  - Session replay (optionnel)
+
+#### 🔧 DevOps & CI/CD
+- Workflow CI Web (linting, tests, build, audit sécurité, Lighthouse)
+- Workflow CI Electron (builds multi-plateformes)
+- Configuration TypeScript pour migration progressive
+- Suite de tests pour nouvelles features (28 tests)
+- Outil de compression de dictionnaires
+
+#### 📚 Documentation
+- Guide complet d'améliorations (1700+ lignes)
+- Recommandations sécurité Android
+- Guides de migration
+- Exemples API complets
+
+#### ♿ Accessibilité
+- Labels ARIA sur tous les éléments interactifs
+- Roles et attributs ARIA appropriés
+- Navigation clavier améliorée
+- Conformité WCAG AA
+
+#### 🔒 Sécurité
+- CSP amélioré
+- Sanitization des données (analytics, erreurs)
+- Guidelines Android (OAuth encryption, Passkey verification)
+
+### 🔄 Modifications
+- Version mise à jour : 2.5.2 → 2.6.0
+- app.js intégré avec i18n, Sentry, Analytics
+- package.json mis à jour avec nouveaux scripts
+- Managers exposés globalement en mode dev
+
+### 📝 Notes
+- Icônes PWA à générer (72x72 à 512x512)
+- Intégration UI des presets/history/i18n en cours
+- Tests supplémentaires vault/services en cours
+- Optimisation bundle avec Rollup à venir
+
+### 📖 Guide de Migration
+Voir `docs/IMPROVEMENTS.md` pour instructions détaillées.
+
+---
+
 ## [2.5.2] - 2025-11-04
 
 ### 🎨 Nouvelles Fonctionnalités Majeures

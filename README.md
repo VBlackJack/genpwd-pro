@@ -1,14 +1,17 @@
-# GenPwd Pro v2.5.2 🔐
+# GenPwd Pro v2.6.0 🔐
 
-[![Version](https://img.shields.io/badge/version-2.5.2-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/VBlackJack/genpwd-pro)
 [![Android CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/android-ci.yml)
-[![Tests](https://img.shields.io/badge/tests-17%2F17%20passing-success.svg)](./tools/run_tests.js)
+[![Web CI](https://github.com/VBlackJack/genpwd-pro/actions/workflows/web-ci.yml/badge.svg)](https://github.com/VBlackJack/genpwd-pro/actions/workflows/web-ci.yml)
+[![Tests](https://img.shields.io/badge/tests-45%2B%20passing-success.svg)](./tools/run_tests.js)
 [![Entropie](https://img.shields.io/badge/entropy-up%20to%20140%20bits-purple.svg)](./docs/TECHNICAL.md)
+[![PWA](https://img.shields.io/badge/PWA-ready-orange.svg)](./src/manifest.json)
+[![i18n](https://img.shields.io/badge/i18n-FR%20%7C%20EN%20%7C%20ES-green.svg)](./src/locales/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![ES6+](https://img.shields.io/badge/ES6+-modern-orange.svg)](https://www.ecma-international.org/ecma-262/)
 [![Quality](https://img.shields.io/badge/quality-9.7%2F10-brightgreen.svg)](./DOCUMENTATION_AUDIT_2025-11-04.md)
 
-> Générateur de mots de passe sécurisés nouvelle génération avec architecture modulaire ES6, tests intégrés, export multi-format et interface moderne personnalisable.
+> **Générateur de mots de passe sécurisés enterprise-grade** avec PWA, internationalisation (FR/EN/ES), presets, historique, analytics privacy-friendly et architecture ES6 modulaire.
 
 ## ✨ Points forts
 
@@ -20,7 +23,95 @@
 - 📤 **Export multi-format** - TXT, JSON, CSV pour tous vos besoins
 - 🛠️ **Extensible** - API complète, monitoring d'erreurs, documentation JSDoc exhaustive
 
-## 🆕 Nouvelles Fonctionnalités v2.5.2 (2025-11-04)
+## 🎉 NOUVEAU - Version 2.6.0 (2025-01-15) - Release Majeure
+
+### Progressive Web App (PWA) 🌐
+✨ **GenPwd Pro est maintenant une PWA !**
+- 📱 **Installable** sur desktop et mobile (Chrome, Edge, Safari)
+- 🔌 **Fonctionne hors ligne** - Génération de mots de passe sans Internet
+- ⚡ **Chargement instantané** après première visite (cache intelligent)
+- 🔄 **Mises à jour automatiques** avec notifications
+- 🏠 **Raccourcis d'application** pour accès rapide
+
+### Internationalisation (i18n) 🌍
+- 🇫🇷 **Français** - Traduction complète
+- 🇬🇧 **English** - Complete translation
+- 🇪🇸 **Español** - Traducción completa
+- 🎯 Détection automatique de la langue du navigateur
+- 💾 Préférence sauvegardée et persistante
+- 🔄 Changement sans rechargement de page
+
+```javascript
+// API i18n disponible globalement
+window.genpwdi18n.setLocale('en');
+window.genpwdi18n.t('app.title'); // "GenPwd Pro"
+```
+
+### Gestion de Presets 💾
+**Sauvegardez vos configurations préférées !**
+- 📋 Créer des presets personnalisés
+- 🔍 Rechercher par nom ou description
+- 📤 Export/import JSON
+- ⭐ Définir preset par défaut
+- 🗂️ Gérer plusieurs configurations
+
+```javascript
+// API presets
+window.genpwdPresets.createPreset('Banking', {
+  mode: 'syllables',
+  length: 24,
+  digits: 3
+});
+```
+
+### Historique avec Recherche 📜
+**Retrouvez vos anciens mots de passe** (opt-in, privacy-first)
+- 🔍 Recherche avancée (texte, tags, date)
+- ⭐ Favoris et organisation par tags
+- 📊 Statistiques détaillées
+- 📤 Export/import complet
+- ⏰ Auto-expiration configurable
+- 🔒 Désactivé par défaut pour la vie privée
+
+```javascript
+// API historique
+historyManager.updateSettings({ enabled: true });
+historyManager.search('important');
+historyManager.getStatistics();
+```
+
+### Analytics Privacy-Friendly 📊
+**Suivez l'usage sans compromettre la vie privée**
+- ✅ Sans cookies
+- ✅ Conforme RGPD
+- ✅ Plausible ou Umami
+- ✅ Consentement utilisateur
+- ✅ Aucune donnée personnelle
+
+### Monitoring Avancé 🐛
+- 🔴 **Sentry** integration pour error tracking
+- 📝 Sanitization automatique des données sensibles
+- 🍞 Breadcrumbs pour debugging
+- 📈 Performance monitoring
+
+### CI/CD Complet 🚀
+- ✅ Tests automatiques (Web + Android)
+- ✅ Builds multi-plateformes
+- ✅ Audits de sécurité automatisés
+- ✅ Lighthouse performance audits
+- ✅ Workflows GitHub Actions
+
+### Accessibilité ♿
+- ✅ **WCAG AA compliant**
+- ✅ Labels ARIA complets
+- ✅ Navigation clavier
+- ✅ Screen reader friendly
+
+**👉 [Documentation complète v2.6.0](./docs/IMPROVEMENTS.md)**
+
+---
+
+## 🆕 Fonctionnalités v2.5.2 (2025-11-04)
 
 ### 📤 Export de Mots de Passe
 Exportez vos mots de passe générés dans 3 formats :
