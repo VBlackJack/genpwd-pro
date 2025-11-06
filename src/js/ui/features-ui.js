@@ -135,6 +135,10 @@ function bindLanguageSelectorEvents() {
         document.getElementById('lang-code').textContent = lang.toUpperCase();
 
         langDropdown.classList.add('hidden');
+
+        // Update interface with new translations
+        updateInterfaceLanguage();
+
         showToast(`Language changed to ${i18n.getLocaleDisplayName(lang)}`, 'success');
 
         safeLog(`Language changed to: ${lang}`);
@@ -144,6 +148,61 @@ function bindLanguageSelectorEvents() {
       }
     });
   });
+}
+
+/**
+ * Update interface language with current translations
+ */
+function updateInterfaceLanguage() {
+  try {
+    // Update main buttons
+    const btnGenerate = document.getElementById('btn-generate');
+    if (btnGenerate) {
+      btnGenerate.textContent = '🔒 ' + i18n.t('common.generate');
+    }
+
+    const btnCopyAll = document.getElementById('btn-copy-all');
+    if (btnCopyAll) {
+      btnCopyAll.textContent = '📋 ' + i18n.t('common.copyAll');
+    }
+
+    const btnExport = document.getElementById('btn-export');
+    if (btnExport) {
+      btnExport.textContent = '📤 ' + i18n.t('common.export');
+    }
+
+    const btnClear = document.getElementById('btn-clear');
+    if (btnClear) {
+      btnClear.textContent = '🗑️ ' + i18n.t('common.clear');
+    }
+
+    // Update preset buttons if they exist
+    const btnSavePreset = document.getElementById('btn-save-preset');
+    if (btnSavePreset) {
+      btnSavePreset.textContent = '💾 ' + i18n.t('presets.save');
+    }
+
+    const btnManagePresets = document.getElementById('btn-manage-presets');
+    if (btnManagePresets) {
+      btnManagePresets.textContent = '🗂️ ' + i18n.t('presets.manage');
+    }
+
+    // Update history button if it exists
+    const btnHistory = document.getElementById('btn-history');
+    if (btnHistory) {
+      btnHistory.textContent = '📜 ' + i18n.t('history.title');
+    }
+
+    // Update tests button
+    const btnTests = document.getElementById('btn-run-tests');
+    if (btnTests) {
+      btnTests.textContent = '🧪 ' + i18n.t('common.tests');
+    }
+
+    safeLog('Interface language updated');
+  } catch (error) {
+    safeLog(`Error updating interface language: ${error.message}`);
+  }
 }
 
 /**

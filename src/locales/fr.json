@@ -6,12 +6,14 @@
   "common": {
     "generate": "Générer",
     "copy": "Copier",
+    "copyAll": "Tout Copier",
     "export": "Export",
     "clear": "Effacer",
     "save": "Sauvegarder",
     "cancel": "Annuler",
     "delete": "Supprimer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "tests": "Tests"
   },
   "modes": {
     "syllables": "Syllabes",
