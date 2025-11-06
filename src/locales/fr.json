@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "GenPwd Pro",
+    "subtitle": "Générateur de mots de passe sécurisés",
+    "version": "Version"
+  },
+  "header": {
+    "about": "À propos",
+    "aboutAriaLabel": "Ouvrir la fenêtre À propos"
+  },
+  "modes": {
+    "syllables": "Syllabes (alternance C/V)",
+    "passphrase": "Passphrase (mots séparés)",
+    "leet": "Mot → Leet"
+  },
+  "generation": {
+    "title": "Mode de génération",
+    "modes": "modes",
+    "length": "Longueur",
+    "policy": "Politique",
+    "wordCount": "Nombre de mots",
+    "separator": "Séparateur",
+    "dictionary": "Dictionnaire",
+    "wordToTransform": "Mot à transformer"
+  },
+  "policies": {
+    "standard": "Standard (tous caractères)",
+    "standardLayout": "Standard Layout-Safe (AZERTY/QWERTY)",
+    "alphanumeric": "Alphanumérique (lettres + chiffres)",
+    "alphanumericLayout": "Alpha Layout-Safe (AZERTY/QWERTY)"
+  },
+  "dictionaries": {
+    "french": "🇫🇷 Français",
+    "english": "🇬🇧 English",
+    "latin": "🏛️ Latin",
+    "loading": "Chargement du dictionnaire...",
+    "loaded": "chargé",
+    "words": "mots"
+  },
+  "settings": {
+    "title": "Paramètres communs",
+    "quantity": "Nombre",
+    "maskToggle": "Masquer l'affichage",
+    "maskPassword": "Flouter les mots de passe",
+    "digits": "Chiffres",
+    "specials": "Spéciaux",
+    "customSpecials": "Spéciaux personnalisés",
+    "placement": "Placement",
+    "caseManagement": "Gestion de la casse"
+  },
+  "placements": {
+    "start": "Début",
+    "end": "Fin",
+    "middle": "Milieu",
+    "random": "Aléatoire",
+    "visual": "🎯 Visuel"
+  },
+  "caseMode": {
+    "mixed": "Mixte (aléatoire)",
+    "upper": "MAJUSCULES",
+    "lower": "minuscules",
+    "title": "Title Case",
+    "blocks": "Blocs (U/T/L)"
+  },
+  "actions": {
+    "generate": "🔒 Générer",
+    "copyAll": "📋 Tout Copier",
+    "export": "📤 Export",
+    "clear": "🗑️ Effacer",
+    "tests": "🧪 Tests",
+    "debug": "🔬 Debug",
+    "close": "Fermer",
+    "rerun": "🔄 Relancer"
+  },
+  "results": {
+    "empty": "Cliquez sur \"Générer\" pour créer vos mots de passe",
+    "copied": "Copié !",
+    "allCopied": "Tous les mots de passe copiés !"
+  },
+  "help": {
+    "title": "Aide & Notes",
+    "clickToCopy": "💡 Astuce : Cliquez directement sur un mot de passe pour le copier !",
+    "cliSafe": "🛡️ CLI-Safe : Les caractères spéciaux par défaut sont optimisés pour les environnements techniques (terminal, lignes de commande).",
+    "dictionaries": "🌍 Dictionnaires : Collections multilingues chargées dynamiquement - Français (intégré), English et Latin (externalisés).",
+    "tests": "🧪 Tests intégrés : Utilisez le bouton \"Tests\" pour valider le fonctionnement (score 100% attendu).",
+    "visualPlacement": "🎯 Placement visuel : Sélectionnez \"Visuel\" dans les dropdowns de placement pour un contrôle interactif des positions.",
+    "entropy": "📊 Entropie : Les mots de passe générés atteignent jusqu'à 140 bits d'entropie pour une sécurité maximale."
+  },
+  "about": {
+    "title": "À propos de GenPwd Pro",
+    "architecture": "Architecture modulaire",
+    "securityTitle": "Sécurité par l'unicité",
+    "securityDesc": "La sécurité ne vient pas de l'illisibilité mais de l'unicité de votre pattern personnel.",
+    "featuresTitle": "Fonctionnalités avancées",
+    "author": "Julien Bombled",
+    "authorRole": "Version modulaire • Architecture ES6"
+  },
+  "notifications": {
+    "updateAvailable": "Une nouvelle version de GenPwd Pro est disponible. Recharger maintenant ?"
+  },
+  "errors": {
+    "generic": "Une erreur s'est produite",
+    "networkError": "Erreur réseau",
+    "dictionaryLoadError": "Erreur de chargement du dictionnaire"
+  }
+}

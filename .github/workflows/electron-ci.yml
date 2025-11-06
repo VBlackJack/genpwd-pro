@@ -1,0 +1,106 @@
+name: Electron CI/CD
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+    paths:
+      - 'src/**'
+      - 'electron-main.cjs'
+      - 'electron-preload.cjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/electron-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build Electron - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        node-version: ['20']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: PUPPETEER_SKIP_DOWNLOAD=true npm ci
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $env:PUPPETEER_SKIP_DOWNLOAD='true'
+          npm ci
+
+      - name: Build Electron (Windows)
+        if: runner.os == 'Windows'
+        run: npm run electron:build:win
+
+      - name: Build Electron (Linux)
+        if: runner.os == 'Linux'
+        run: npm run electron:build
+
+      - name: Build Electron (macOS)
+        if: runner.os == 'macOS'
+        run: npm run electron:build
+
+      - name: Upload artifacts (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-windows-${{ matrix.node-version }}
+          path: |
+            release/*.exe
+            release/*.zip
+          retention-days: 30
+
+      - name: Upload artifacts (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-linux-${{ matrix.node-version }}
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+          retention-days: 30
+
+      - name: Upload artifacts (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-macos-${{ matrix.node-version }}
+          path: |
+            release/*.dmg
+            release/*.zip
+          retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

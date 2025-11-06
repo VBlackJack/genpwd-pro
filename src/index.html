@@ -23,6 +23,14 @@
   <meta name="author" content="Julien Bombled">
   <meta name="description" content="Générateur de mots de passe sécurisés avec architecture ES6 modulaire, tests intégrés et cryptographie robuste">
 
+  <!-- PWA Support -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#16213e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GenPwd Pro">
+  <link rel="apple-touch-icon" href="/assets/icon-192x192.png">
+
   <!-- CSS Modulaire -->
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/components.css">
@@ -47,9 +55,9 @@
           </div>
         </div>
         <div class="header-right">
-          <div class="version-badge">v2.5.2</div>
-          <button class="about-btn" id="btn-about">
-            <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="version-badge" role="status" aria-label="Version de l'application">v2.5.2</div>
+          <button class="about-btn" id="btn-about" aria-label="Ouvrir la fenêtre À propos">
+            <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -61,17 +69,17 @@
     </header>
 
     <!-- Modal À Propos -->
-    <div class="modal-overlay" id="about-modal">
+    <div class="modal-overlay" id="about-modal" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
       <div class="modal">
         <div class="modal-header">
-          <div class="modal-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <div class="modal-title" id="about-modal-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
             </svg>
             À propos de GenPwd Pro
           </div>
-          <button class="modal-close" id="modal-close">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="modal-close" id="modal-close" aria-label="Fermer la fenêtre À propos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -447,5 +455,45 @@
 
   <!-- Intégration UI des tests -->
   <script src="js/test-integration.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    // Register service worker for PWA support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('[PWA] Service Worker registered successfully:', registration.scope);
+
+            // Check for updates periodically
+            setInterval(() => {
+              registration.update();
+            }, 60000); // Check every minute
+
+            // Listen for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New service worker available, prompt user
+                  if (confirm('Une nouvelle version de GenPwd Pro est disponible. Recharger maintenant ?')) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch((error) => {
+            console.error('[PWA] Service Worker registration failed:', error);
+          });
+
+        // Handle controller change (after skip waiting)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      });
+    }
+  </script>
 </body>
 </html>

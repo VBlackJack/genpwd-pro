@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "GenPwd Pro",
+    "subtitle": "Generador de Contraseñas Seguras",
+    "version": "Versión"
+  },
+  "header": {
+    "about": "Acerca de",
+    "aboutAriaLabel": "Abrir ventana Acerca de"
+  },
+  "modes": {
+    "syllables": "Sílabas (alternancia C/V)",
+    "passphrase": "Frase de contraseña (palabras separadas)",
+    "leet": "Palabra → Leet"
+  },
+  "generation": {
+    "title": "Modo de Generación",
+    "modes": "modos",
+    "length": "Longitud",
+    "policy": "Política",
+    "wordCount": "Número de palabras",
+    "separator": "Separador",
+    "dictionary": "Diccionario",
+    "wordToTransform": "Palabra a transformar"
+  },
+  "policies": {
+    "standard": "Estándar (todos los caracteres)",
+    "standardLayout": "Estándar Layout-Safe (AZERTY/QWERTY)",
+    "alphanumeric": "Alfanumérico (letras + dígitos)",
+    "alphanumericLayout": "Alfa Layout-Safe (AZERTY/QWERTY)"
+  },
+  "dictionaries": {
+    "french": "🇫🇷 Francés",
+    "english": "🇬🇧 Inglés",
+    "latin": "🏛️ Latín",
+    "loading": "Cargando diccionario...",
+    "loaded": "cargado",
+    "words": "palabras"
+  },
+  "settings": {
+    "title": "Configuración Común",
+    "quantity": "Cantidad",
+    "maskToggle": "Ocultar Visualización",
+    "maskPassword": "Desenfocar contraseñas",
+    "digits": "Dígitos",
+    "specials": "Especiales",
+    "customSpecials": "Caracteres especiales personalizados",
+    "placement": "Ubicación",
+    "caseManagement": "Gestión de Mayúsculas"
+  },
+  "placements": {
+    "start": "Inicio",
+    "end": "Fin",
+    "middle": "Medio",
+    "random": "Aleatorio",
+    "visual": "🎯 Visual"
+  },
+  "caseMode": {
+    "mixed": "Mixto (aleatorio)",
+    "upper": "MAYÚSCULAS",
+    "lower": "minúsculas",
+    "title": "Capitalización",
+    "blocks": "Bloques (U/T/L)"
+  },
+  "actions": {
+    "generate": "🔒 Generar",
+    "copyAll": "📋 Copiar Todo",
+    "export": "📤 Exportar",
+    "clear": "🗑️ Borrar",
+    "tests": "🧪 Pruebas",
+    "debug": "🔬 Depuración",
+    "close": "Cerrar",
+    "rerun": "🔄 Volver a ejecutar"
+  },
+  "results": {
+    "empty": "Haga clic en \"Generar\" para crear sus contraseñas",
+    "copied": "¡Copiado!",
+    "allCopied": "¡Todas las contraseñas copiadas!"
+  },
+  "help": {
+    "title": "Ayuda y Notas",
+    "clickToCopy": "💡 Consejo: ¡Haga clic directamente en una contraseña para copiarla!",
+    "cliSafe": "🛡️ CLI-Safe: Los caracteres especiales predeterminados están optimizados para entornos técnicos (terminal, línea de comandos).",
+    "dictionaries": "🌍 Diccionarios: Colecciones multilingües cargadas dinámicamente - Francés (integrado), Inglés y Latín (externos).",
+    "tests": "🧪 Pruebas integradas: Use el botón \"Pruebas\" para validar la funcionalidad (se espera puntuación del 100%).",
+    "visualPlacement": "🎯 Ubicación visual: Seleccione \"Visual\" en los menús desplegables de ubicación para control interactivo de posiciones.",
+    "entropy": "📊 Entropía: Las contraseñas generadas alcanzan hasta 140 bits de entropía para máxima seguridad."
+  },
+  "about": {
+    "title": "Acerca de GenPwd Pro",
+    "architecture": "Arquitectura modular",
+    "securityTitle": "Seguridad a través de la unicidad",
+    "securityDesc": "La seguridad no proviene de la ilegibilidad sino de la unicidad de su patrón personal.",
+    "featuresTitle": "Características avanzadas",
+    "author": "Julien Bombled",
+    "authorRole": "Versión modular • Arquitectura ES6"
+  },
+  "notifications": {
+    "updateAvailable": "Una nueva versión de GenPwd Pro está disponible. ¿Recargar ahora?"
+  },
+  "errors": {
+    "generic": "Ocurrió un error",
+    "networkError": "Error de red",
+    "dictionaryLoadError": "Error al cargar el diccionario"
+  }
+}
