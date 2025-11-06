@@ -95,3 +95,85 @@
   font-family: var(--font-mono);
   margin-left: 8px;
 }
+
+/* Test Results Summary Styles */
+.test-score {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.test-score.score-100 {
+  color: #10b981;
+}
+
+.test-score.score-80 {
+  color: #f59e0b;
+}
+
+.test-score.score-low {
+  color: #ef4444;
+}
+
+.test-score-info {
+  color: #8c94ca;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.test-score-version {
+  color: #8c94ca;
+  font-size: 12px;
+}
+
+/* Test Item Detail Styles */
+.test-item-title {
+  font-weight: 600;
+  color: #10b981;
+  margin-bottom: 6px;
+}
+
+.test-item-info {
+  font-size: 12px;
+  color: #8c94ca;
+  margin-bottom: 4px;
+}
+
+.test-item-example {
+  font-size: 11px;
+  color: #d6dcff;
+  font-family: var(--font-mono);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+/* Test Error Styles */
+.test-item-title-error {
+  font-weight: 600;
+  color: #ef4444;
+  margin-bottom: 6px;
+}
+
+.test-item-error-message {
+  font-size: 12px;
+  color: #ef4444;
+}
+
+/* Test Status Colors */
+.test-status-running {
+  color: #f59e0b !important;
+}
+
+.test-status-success {
+  color: #10b981 !important;
+}
+
+.test-status-warning {
+  color: #f59e0b !important;
+}
+
+.test-status-error {
+  color: #ef4444 !important;
+}

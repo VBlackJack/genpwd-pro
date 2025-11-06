@@ -410,7 +410,7 @@ function updateCursorElement(element, type, index) {
 
   element.dataset.index = String(index);
   element.dataset.percent = String(item.percent);
-  element.style.left = computeCursorLeft(item.percent);
+  element.style.setProperty('left', computeCursorLeft(item.percent));
 
   const label = element.querySelector('.cursor-label');
   if (label) {
@@ -650,7 +650,7 @@ function updateLabels() {
     }
 
     const projected = projectPercentToLayer(logical, metrics);
-    label.style.left = `${projected}%`;
+    label.style.setProperty('left', `${projected}%`);
   });
 }
 

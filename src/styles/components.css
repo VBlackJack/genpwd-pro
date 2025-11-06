@@ -434,6 +434,18 @@ select {
   color: var(--text-muted);
   opacity: 0.8;
 }
+
+.dict-info-error {
+  color: var(--accent-red);
+}
+
+.dict-info-success {
+  color: var(--text-muted);
+}
+
+.dict-info-warning {
+  color: var(--accent-yellow);
+}
 /* ============================================================================
     PLACEMENT VISUEL – BARRES INTERACTIVES
     ============================================================================ */
@@ -867,6 +879,31 @@ select {
   .placement-summary {
     font-size: 11px;
   }
+}
+
+/* ============================================================================
+   THEME SELECTOR
+   ============================================================================ */
+
+.theme-selector {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.theme-selector-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.theme-select {
+  padding: 0.5rem;
+  border-radius: var(--radius-small);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

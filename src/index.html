@@ -123,7 +123,7 @@
     </div>
 
     <!-- Modal Résultats Tests -->
-    <div id="test-results-modal" class="modal-overlay" style="display: none;">
+    <div id="test-results-modal" class="modal-overlay hidden">
       <div class="modal test-modal">
         <div class="modal-header">
           <div class="modal-title">📊 Résultats des Tests - GenPwd Pro v2.5.1</div>
@@ -153,7 +153,7 @@
             <!-- Détails des tests -->
           </div>
           
-          <div id="test-console" class="test-console" style="display: none;">
+          <div id="test-console" class="test-console hidden">
             <pre id="test-console-output"></pre>
           </div>
           
@@ -209,7 +209,7 @@
               </div>
 
               <!-- Options passphrase -->
-              <div id="mode-passphrase-opts" style="display:none">
+              <div id="mode-passphrase-opts" class="hidden">
                 <div class="row">
                   <label for="pp-count">Nombre de mots (2–8)</label>
                   <div class="grow slider-wrap">
@@ -243,7 +243,7 @@
               </div>
 
               <!-- Options leet -->
-              <div id="mode-leet-opts" style="display:none">
+              <div id="mode-leet-opts" class="hidden">
                 <div class="row">
                   <label for="leet-input">Mot à transformer</label>
                   <input id="leet-input" class="input grow" type="text" value="password">
@@ -345,7 +345,7 @@
                 </select>
               </div>
 
-              <div class="row" id="blocks-editor-row" style="display:none">
+              <div class="row" id="blocks-editor-row" class="hidden">
                 <div class="grow blocks-wrap">
                   <div class="block-controls">
                     <div class="block-controls-left">
@@ -370,7 +370,7 @@
                 </div>
               </div>
 
-              <div class="row" id="case-preview-row" style="display:none">
+              <div class="row" id="case-preview-row" class="hidden">
                 <label class="hint">Aperçu</label>
                 <div class="hint mono" id="case-preview"></div>
               </div>

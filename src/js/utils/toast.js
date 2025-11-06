@@ -22,18 +22,13 @@ export function showToast(message, type = 'info') {
 
   try {
     const div = document.createElement('div');
-    div.className = 'toast';
-    div.style.cssText = `
-      position: fixed; top: ${20 + activeToasts.size * 60}px; right: 20px; z-index: 1000;
-      background: var(--bg-secondary); color: var(--text-primary);
-      padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);
-      box-shadow: var(--shadow); margin-bottom: 8px; max-width: 320px;
-      border-left: 4px solid ${type === 'error' ? 'var(--accent-red)' : 
-                             type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)'};
-      opacity: 1; transform: translateX(0); transition: all 0.3s ease;
-    `;
+    div.className = `toast toast-${type}`;
     div.textContent = message;
-    
+
+    // Use CSS custom property for dynamic positioning
+    const topPosition = 20 + activeToasts.size * 60;
+    div.style.setProperty('--toast-top', `${topPosition}px`);
+
     activeToasts.add(div);
     wrap.appendChild(div);
 
@@ -44,8 +39,7 @@ export function showToast(message, type = 'info') {
 
     setTimeout(() => {
       if (div.parentNode) {
-        div.style.opacity = '0';
-        div.style.transform = 'translateX(20px)';
+        div.classList.add('toast-hiding');
       }
     }, 3200);
 

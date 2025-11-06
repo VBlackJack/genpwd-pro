@@ -116,7 +116,7 @@ class GenPwdApp {
 
     // Vérifier support CSS Grid
     const testEl = document.createElement('div');
-    testEl.style.display = 'grid';
+    testEl.style.setProperty('display', 'grid');
     if (testEl.style.display !== 'grid') {
       safeLog('CSS Grid non supporté');
       return false;

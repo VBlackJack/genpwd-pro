@@ -608,25 +608,24 @@ async function exportPasswords() {
 function promptExportFormat() {
   return new Promise((resolve) => {
     const modal = document.createElement('div');
-    modal.className = 'modal show';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    modal.className = 'export-modal-overlay';
 
     const dialog = document.createElement('div');
-    dialog.style.cssText = 'background: var(--bg-secondary, #fff); padding: 2rem; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    dialog.className = 'export-modal-dialog';
     dialog.innerHTML = `
-      <h3 style="margin-top: 0; color: var(--text-primary, #333);">Choisir le format d'export</h3>
-      <div style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
-        <button id="export-txt" class="btn" style="padding: 0.75rem; cursor: pointer;">
+      <h3 class="export-modal-title">Choisir le format d'export</h3>
+      <div class="export-modal-buttons">
+        <button id="export-txt" class="btn export-modal-button">
           📄 Texte (.txt) - Simple liste
         </button>
-        <button id="export-json" class="btn" style="padding: 0.75rem; cursor: pointer;">
+        <button id="export-json" class="btn export-modal-button">
           📊 JSON (.json) - Données complètes
         </button>
-        <button id="export-csv" class="btn" style="padding: 0.75rem; cursor: pointer;">
+        <button id="export-csv" class="btn export-modal-button">
           📈 CSV (.csv) - Excel/Tableur
         </button>
       </div>
-      <button id="export-cancel" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; cursor: pointer;">
+      <button id="export-cancel" class="btn btn-secondary export-modal-cancel">
         Annuler
       </button>
     `;

@@ -294,25 +294,15 @@ export function createThemeSelector(containerId) {
 
   const wrapper = document.createElement('div');
   wrapper.className = 'theme-selector';
-  wrapper.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
 
   const label = document.createElement('span');
   label.textContent = 'Thème:';
-  label.style.cssText = 'color: var(--text-secondary); font-size: 0.9rem;';
+  label.className = 'theme-selector-label';
   wrapper.appendChild(label);
 
   const select = document.createElement('select');
   select.id = 'theme-select';
   select.className = 'theme-select';
-  select.style.cssText = `
-    padding: 0.5rem;
-    border-radius: var(--radius-small);
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    font-size: 0.9rem;
-  `;
 
   // Ajouter les options
   getAvailableThemes().forEach(theme => {

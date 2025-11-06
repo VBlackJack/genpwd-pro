@@ -101,7 +101,7 @@ class DevServer {
     const normalizedPath = path.posix.normalize(pathname);
     const isDictionaryRequest = normalizedPath.startsWith('/dictionaries/');
     const baseDir = isDictionaryRequest
-      ? path.join(process.cwd(), 'dictionaries')
+      ? path.join(process.cwd(), this.sourceDir, 'dictionaries')
       : path.join(process.cwd(), this.sourceDir);
     const relativePath = isDictionaryRequest
       ? normalizedPath.substring('/dictionaries'.length)
