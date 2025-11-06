@@ -6,30 +6,73 @@
   "common": {
     "generate": "Générer",
     "copy": "Copier",
+    "copyAll": "Tout Copier",
     "export": "Export",
     "clear": "Effacer",
     "save": "Sauvegarder",
     "cancel": "Annuler",
     "delete": "Supprimer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "tests": "Tests",
+    "about": "À propos"
+  },
+  "sections": {
+    "generationMode": "Mode de génération",
+    "commonSettings": "Paramètres communs",
+    "visualPlacement": "Placement visuel",
+    "casePattern": "Pattern de casse",
+    "helpNotes": "Aide & Notes"
   },
   "modes": {
-    "syllables": "Syllabes",
-    "passphrase": "Passphrase",
-    "leet": "Leet"
+    "title": "Mode",
+    "syllables": "Syllabes (alternance C/V)",
+    "passphrase": "Passphrase (mots séparés)",
+    "leet": "Mot → Leet"
   },
   "settings": {
     "length": "Longueur",
+    "lengthRange": "Longueur (6–64)",
     "quantity": "Nombre",
+    "quantityRange": "Nombre (1–20)",
     "digits": "Chiffres",
+    "digitsRange": "Chiffres (0–6)",
     "specials": "Spéciaux",
-    "policy": "Politique"
+    "specialsRange": "Spéciaux (0–6)",
+    "policy": "Politique",
+    "customSpecials": "Spéciaux personnalisés",
+    "placementDigits": "Placement chiffres",
+    "placementSpecials": "Placement spéciaux",
+    "maskDisplay": "Masquer l'affichage",
+    "blurPasswords": "Flouter les mots de passe"
+  },
+  "policy": {
+    "standard": "Standard (tous caractères)",
+    "standardLayout": "Standard Layout-Safe (AZERTY/QWERTY)",
+    "alphanumeric": "Alphanumérique (lettres + chiffres)",
+    "alphanumericLayout": "Alpha Layout-Safe (AZERTY/QWERTY)"
+  },
+  "placement": {
+    "start": "Début",
+    "end": "Fin",
+    "middle": "Milieu",
+    "random": "Aléatoire",
+    "visual": "Visuel",
+    "positions": "Positions"
+  },
+  "passphrase": {
+    "wordCount": "Nombre de mots (2–8)",
+    "separator": "Séparateur",
+    "dictionary": "Dictionnaire"
+  },
+  "leet": {
+    "wordToTransform": "Mot à transformer"
   },
   "presets": {
     "title": "Presets",
     "save": "Sauvegarder Configuration",
     "manage": "Gérer les Presets",
-    "load": "Charger un preset"
+    "load": "Charger un preset",
+    "select": "-- Sélectionner --"
   },
   "history": {
     "title": "Historique",

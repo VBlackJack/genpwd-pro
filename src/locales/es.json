@@ -6,30 +6,73 @@
   "common": {
     "generate": "Generar",
     "copy": "Copiar",
+    "copyAll": "Copiar Todo",
     "export": "Exportar",
     "clear": "Limpiar",
     "save": "Guardar",
     "cancel": "Cancelar",
     "delete": "Eliminar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "tests": "Pruebas",
+    "about": "Acerca de"
+  },
+  "sections": {
+    "generationMode": "Modo de Generación",
+    "commonSettings": "Configuración Común",
+    "visualPlacement": "Ubicación Visual",
+    "casePattern": "Patrón de Mayúsculas",
+    "helpNotes": "Ayuda y Notas"
   },
   "modes": {
-    "syllables": "Sílabas",
-    "passphrase": "Frase de Contraseña",
-    "leet": "Leet"
+    "title": "Modo",
+    "syllables": "Sílabas (alternancia C/V)",
+    "passphrase": "Frase (palabras separadas)",
+    "leet": "Palabra → Leet"
   },
   "settings": {
     "length": "Longitud",
+    "lengthRange": "Longitud (6–64)",
     "quantity": "Cantidad",
+    "quantityRange": "Cantidad (1–20)",
     "digits": "Dígitos",
+    "digitsRange": "Dígitos (0–6)",
     "specials": "Especiales",
-    "policy": "Política"
+    "specialsRange": "Especiales (0–6)",
+    "policy": "Política",
+    "customSpecials": "Especiales personalizados",
+    "placementDigits": "Ubicación dígitos",
+    "placementSpecials": "Ubicación especiales",
+    "maskDisplay": "Ocultar pantalla",
+    "blurPasswords": "Difuminar contraseñas"
+  },
+  "policy": {
+    "standard": "Estándar (todos los caracteres)",
+    "standardLayout": "Estándar Layout-Safe (AZERTY/QWERTY)",
+    "alphanumeric": "Alfanumérico (letras + dígitos)",
+    "alphanumericLayout": "Alfa Layout-Safe (AZERTY/QWERTY)"
+  },
+  "placement": {
+    "start": "Inicio",
+    "end": "Fin",
+    "middle": "Medio",
+    "random": "Aleatorio",
+    "visual": "Visual",
+    "positions": "Posiciones"
+  },
+  "passphrase": {
+    "wordCount": "Número de palabras (2–8)",
+    "separator": "Separador",
+    "dictionary": "Diccionario"
+  },
+  "leet": {
+    "wordToTransform": "Palabra a transformar"
   },
   "presets": {
     "title": "Presets",
     "save": "Guardar Configuración",
     "manage": "Gestionar Presets",
-    "load": "Cargar un preset"
+    "load": "Cargar un preset",
+    "select": "-- Seleccionar --"
   },
   "history": {
     "title": "Historial",

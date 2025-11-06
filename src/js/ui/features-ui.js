@@ -135,6 +135,10 @@ function bindLanguageSelectorEvents() {
         document.getElementById('lang-code').textContent = lang.toUpperCase();
 
         langDropdown.classList.add('hidden');
+
+        // Update interface with new translations
+        updateInterfaceLanguage();
+
         showToast(`Language changed to ${i18n.getLocaleDisplayName(lang)}`, 'success');
 
         safeLog(`Language changed to: ${lang}`);
@@ -143,6 +147,273 @@ function bindLanguageSelectorEvents() {
         safeLog(`Error changing language: ${error.message}`);
       }
     });
+  });
+}
+
+/**
+ * Update interface language with current translations
+ */
+function updateInterfaceLanguage() {
+  try {
+    // Update header
+    const logoSubtitle = document.querySelector('.logo-subtitle');
+    if (logoSubtitle) {
+      logoSubtitle.textContent = i18n.t('app.subtitle');
+    }
+
+    const aboutBtn = document.querySelector('.about-btn span');
+    if (aboutBtn) {
+      aboutBtn.textContent = i18n.t('common.about');
+    }
+
+    // Update main buttons
+    const btnGenerate = document.getElementById('btn-generate');
+    if (btnGenerate) {
+      btnGenerate.textContent = '🔒 ' + i18n.t('common.generate');
+    }
+
+    const btnCopyAll = document.getElementById('btn-copy-all');
+    if (btnCopyAll) {
+      btnCopyAll.textContent = '📋 ' + i18n.t('common.copyAll');
+    }
+
+    const btnExport = document.getElementById('btn-export');
+    if (btnExport) {
+      btnExport.textContent = '📤 ' + i18n.t('common.export');
+    }
+
+    const btnClear = document.getElementById('btn-clear');
+    if (btnClear) {
+      btnClear.textContent = '🗑️ ' + i18n.t('common.clear');
+    }
+
+    // Update preset buttons if they exist
+    const btnSavePreset = document.getElementById('btn-save-preset');
+    if (btnSavePreset) {
+      btnSavePreset.textContent = '💾 ' + i18n.t('presets.save');
+    }
+
+    const btnManagePresets = document.getElementById('btn-manage-presets');
+    if (btnManagePresets) {
+      btnManagePresets.textContent = '🗂️ ' + i18n.t('presets.manage');
+    }
+
+    // Update history button if it exists
+    const btnHistory = document.getElementById('btn-history');
+    if (btnHistory) {
+      btnHistory.textContent = '📜 ' + i18n.t('history.title');
+    }
+
+    // Update tests button
+    const btnTests = document.getElementById('btn-run-tests');
+    if (btnTests) {
+      btnTests.textContent = '🧪 ' + i18n.t('common.tests');
+    }
+
+    // Update section headers
+    updateSectionHeaders();
+
+    // Update labels
+    updateLabels();
+
+    // Update select options
+    updateSelectOptions();
+
+    safeLog('Interface language updated');
+  } catch (error) {
+    safeLog(`Error updating interface language: ${error.message}`);
+  }
+}
+
+/**
+ * Update section headers
+ */
+function updateSectionHeaders() {
+  const sections = document.querySelectorAll('.section');
+  sections.forEach(section => {
+    const header = section.querySelector('.section-header strong');
+    if (!header) return;
+
+    const text = header.textContent.trim();
+
+    // Match by text content or position
+    if (text.includes('Mode') || text.includes('génération') || text.includes('Generation')) {
+      header.textContent = i18n.t('sections.generationMode');
+    } else if (text.includes('Paramètres') || text.includes('communs') || text.includes('Settings')) {
+      header.textContent = i18n.t('sections.commonSettings');
+    } else if (text.includes('Aide') || text.includes('Notes') || text.includes('Help')) {
+      header.textContent = i18n.t('sections.helpNotes');
+    } else if (text.includes('Presets') || text.includes('💾')) {
+      header.textContent = '💾 ' + i18n.t('presets.title');
+    }
+  });
+}
+
+/**
+ * Update labels
+ */
+function updateLabels() {
+  // Mode select label
+  const modeLabel = document.querySelector('label[for="mode-select"]');
+  if (modeLabel) {
+    modeLabel.textContent = i18n.t('modes.title');
+  }
+
+  // Length label
+  const lengthLabel = document.querySelector('label[for="syll-len"]');
+  if (lengthLabel) {
+    lengthLabel.textContent = i18n.t('settings.lengthRange');
+  }
+
+  // Policy label
+  const policyLabel = document.querySelector('label[for="policy-select"]');
+  if (policyLabel) {
+    policyLabel.textContent = i18n.t('settings.policy');
+  }
+
+  // Passphrase word count
+  const ppCountLabel = document.querySelector('label[for="pp-count"]');
+  if (ppCountLabel) {
+    ppCountLabel.textContent = i18n.t('passphrase.wordCount');
+  }
+
+  // Passphrase separator
+  const ppSepLabel = document.querySelector('label[for="pp-sep"]');
+  if (ppSepLabel) {
+    ppSepLabel.textContent = i18n.t('passphrase.separator');
+  }
+
+  // Dictionary
+  const dictLabel = document.querySelector('label[for="dict-select"]');
+  if (dictLabel) {
+    dictLabel.textContent = i18n.t('passphrase.dictionary');
+  }
+
+  // Leet input
+  const leetLabel = document.querySelector('label[for="leet-input"]');
+  if (leetLabel) {
+    leetLabel.textContent = i18n.t('leet.wordToTransform');
+  }
+
+  // Quantity
+  const qtyLabel = document.querySelector('label[for="qty"]');
+  if (qtyLabel) {
+    qtyLabel.textContent = i18n.t('settings.quantityRange');
+  }
+
+  // Mask display
+  const maskLabels = document.querySelectorAll('label');
+  maskLabels.forEach(label => {
+    if (label.textContent.includes('Masquer') || label.textContent.includes('Hide')) {
+      label.textContent = i18n.t('settings.maskDisplay');
+    }
+  });
+
+  // Blur passwords checkbox
+  const blurCheckbox = document.querySelector('label[for="mask-toggle"]');
+  if (blurCheckbox) {
+    blurCheckbox.innerHTML = `<input type="checkbox" id="mask-toggle" checked> ${i18n.t('settings.blurPasswords')}`;
+  }
+
+  // Digits
+  const digitsLabel = document.querySelector('label[for="digits-count"]');
+  if (digitsLabel) {
+    digitsLabel.textContent = i18n.t('settings.digitsRange');
+  }
+
+  // Specials
+  const specialsLabel = document.querySelector('label[for="specials-count"]');
+  if (specialsLabel) {
+    specialsLabel.textContent = i18n.t('settings.specialsRange');
+  }
+
+  // Custom specials
+  const customSpecialsLabel = document.querySelector('label[for="custom-specials"]');
+  if (customSpecialsLabel) {
+    customSpecialsLabel.textContent = i18n.t('settings.customSpecials');
+  }
+
+  // Placement labels
+  const placeDigitsLabels = document.querySelectorAll('label');
+  placeDigitsLabels.forEach(label => {
+    if (label.textContent.includes('Placement chiffres') || label.textContent.includes('Digits placement')) {
+      label.textContent = i18n.t('settings.placementDigits');
+    } else if (label.textContent.includes('Placement spéciaux') || label.textContent.includes('Specials placement')) {
+      label.textContent = i18n.t('settings.placementSpecials');
+    } else if (label.textContent.includes('🎯 Placement visuel') || label.textContent.includes('🎯 Visual')) {
+      label.textContent = '🎯 ' + i18n.t('sections.visualPlacement');
+    }
+  });
+
+  // Preset load label
+  const presetSelectLabel = document.querySelector('label[for="preset-select"]');
+  if (presetSelectLabel) {
+    presetSelectLabel.textContent = i18n.t('presets.load');
+  }
+}
+
+/**
+ * Update select options
+ */
+function updateSelectOptions() {
+  // Mode select options
+  const modeSelect = document.getElementById('mode-select');
+  if (modeSelect) {
+    const options = modeSelect.querySelectorAll('option');
+    if (options[0]) options[0].textContent = i18n.t('modes.syllables');
+    if (options[1]) options[1].textContent = i18n.t('modes.passphrase');
+    if (options[2]) options[2].textContent = i18n.t('modes.leet');
+  }
+
+  // Policy select options
+  const policySelect = document.getElementById('policy-select');
+  if (policySelect) {
+    const options = policySelect.querySelectorAll('option');
+    if (options[0]) options[0].textContent = i18n.t('policy.standard');
+    if (options[1]) options[1].textContent = i18n.t('policy.standardLayout');
+    if (options[2]) options[2].textContent = i18n.t('policy.alphanumeric');
+    if (options[3]) options[3].textContent = i18n.t('policy.alphanumericLayout');
+  }
+
+  // Placement selects (digits and specials)
+  updatePlacementSelectOptions('place-digits');
+  updatePlacementSelectOptions('place-specials');
+
+  // Preset select placeholder
+  const presetSelect = document.getElementById('preset-select');
+  if (presetSelect && presetSelect.options[0]) {
+    presetSelect.options[0].textContent = i18n.t('presets.select');
+  }
+}
+
+/**
+ * Update placement select options
+ * @param {string} selectId - The select element ID
+ */
+function updatePlacementSelectOptions(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const options = select.querySelectorAll('option');
+  options.forEach(option => {
+    const value = option.value;
+    switch (value) {
+      case 'debut':
+        option.textContent = i18n.t('placement.start');
+        break;
+      case 'fin':
+        option.textContent = i18n.t('placement.end');
+        break;
+      case 'milieu':
+        option.textContent = i18n.t('placement.middle');
+        break;
+      case 'aleatoire':
+        option.textContent = i18n.t('placement.random');
+        break;
+      case 'positions':
+        option.textContent = '🎯 ' + i18n.t('placement.visual');
+        break;
+    }
   });
 }
 
@@ -159,24 +430,24 @@ export function initializePresetsUI() {
   presetsSection.innerHTML = `
     <div class="section-header chevron">
       <span class="chev">▼</span>
-      <strong>💾 Presets</strong>
+      <strong>💾 ${i18n.t('presets.title')}</strong>
       <span class="badge">${presetManager.getAllPresets().length}</span>
     </div>
     <div class="section-content">
       <div class="row">
         <button class="btn full-width" id="btn-save-preset">
-          💾 Sauvegarder Configuration
+          💾 ${i18n.t('presets.save')}
         </button>
       </div>
       <div class="row">
         <button class="btn full-width" id="btn-manage-presets">
-          🗂️ Gérer les Presets
+          🗂️ ${i18n.t('presets.manage')}
         </button>
       </div>
       <div class="row">
-        <label for="preset-select">Charger un preset</label>
+        <label for="preset-select">${i18n.t('presets.load')}</label>
         <select id="preset-select" class="grow">
-          <option value="">-- Sélectionner --</option>
+          <option value="">${i18n.t('presets.select')}</option>
         </select>
       </div>
     </div>
@@ -184,7 +455,7 @@ export function initializePresetsUI() {
 
   // Insert before "Aide & Notes" section
   const helpSection = Array.from(configPanel.querySelectorAll('.section')).find(
-    section => section.textContent.includes('Aide & Notes')
+    section => section.textContent.includes('Aide & Notes') || section.textContent.includes('Help')
   );
 
   if (helpSection) {
@@ -210,7 +481,7 @@ function updatePresetDropdown() {
   if (!presetSelect) return;
 
   const presets = presetManager.getAllPresets();
-  presetSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+  presetSelect.innerHTML = `<option value="">${i18n.t('presets.select')}</option>`;
 
   presets.forEach(preset => {
     const option = document.createElement('option');
@@ -509,7 +780,7 @@ export function initializeHistoryUI() {
   const btnHistory = document.createElement('button');
   btnHistory.className = 'btn';
   btnHistory.id = 'btn-history';
-  btnHistory.innerHTML = '📜 Historique';
+  btnHistory.innerHTML = '📜 ' + i18n.t('history.title');
 
   // Insert before spacer
   const spacer = resultsPanel.querySelector('.spacer');
