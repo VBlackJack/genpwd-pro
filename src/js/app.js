@@ -30,7 +30,7 @@ import { isDevelopment } from './utils/environment.js';
 class GenPwdApp {
   constructor() {
     this.initialized = false;
-    this.version = '2.5.2';
+    this.version = '2.6.0';
   }
 
   async init() {
@@ -116,7 +116,7 @@ class GenPwdApp {
 
     // Vérifier support CSS Grid
     const testEl = document.createElement('div');
-    testEl.style.display = 'grid';
+    testEl.style.setProperty('display', 'grid');
     if (testEl.style.display !== 'grid') {
       safeLog('CSS Grid non supporté');
       return false;

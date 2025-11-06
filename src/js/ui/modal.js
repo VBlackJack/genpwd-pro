@@ -21,14 +21,14 @@ export function showAboutModal() {
   const modal = getElement('#about-modal');
   if (modal) {
     modal.classList.add('show');
-    
+
     // Focus management pour accessibilité
     const closeBtn = getElement('#modal-close');
     if (closeBtn) closeBtn.focus();
-    
+
     // Empêcher scroll body
-    document.body.style.overflow = 'hidden';
-    
+    document.body.classList.add('no-scroll');
+
     safeLog('Modal À Propos ouvert');
   }
 }
@@ -37,14 +37,14 @@ export function hideAboutModal() {
   const modal = getElement('#about-modal');
   if (modal) {
     modal.classList.remove('show');
-    
+
     // Restaurer scroll body
-    document.body.style.overflow = '';
-    
+    document.body.classList.remove('no-scroll');
+
     // Retourner focus au bouton
     const aboutBtn = getElement('#btn-about');
     if (aboutBtn) aboutBtn.focus();
-    
+
     safeLog('Modal À Propos fermé');
   }
 }

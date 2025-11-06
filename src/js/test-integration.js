@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const originalText = runTestsBtn.textContent;
       runTestsBtn.textContent = '⏳ Tests...';
       testStatus.textContent = 'Exécution...';
-      testStatus.style.color = '#f59e0b';
+      testStatus.className = 'test-status-running';
 
       try {
         const results = await testSuite.runAllTests();
@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const score = Math.round((results.passed / (results.passed + results.failed)) * 100);
         testStatus.textContent = `${score}% (${results.passed}/${results.passed + results.failed})`;
-        testStatus.style.color = score === 100 ? '#10b981' : score >= 80 ? '#f59e0b' : '#ef4444';
+        testStatus.className = score === 100 ? 'test-status-success' : score >= 80 ? 'test-status-warning' : 'test-status-error';
 
       } catch (error) {
         testStatus.textContent = 'Erreur';
-        testStatus.style.color = '#ef4444';
+        testStatus.className = 'test-status-error';
         console.error('Erreur tests:', error);
       } finally {
         runTestsBtn.disabled = false;
@@ -67,15 +67,15 @@ document.addEventListener('DOMContentLoaded', function() {
     tabResults.addEventListener('click', () => {
       tabResults.classList.add('active');
       tabConsole.classList.remove('active');
-      testDetails.style.display = 'block';
-      testConsole.style.display = 'none';
+      testDetails.classList.remove('hidden');
+      testConsole.classList.add('hidden');
     });
 
     tabConsole.addEventListener('click', () => {
       tabConsole.classList.add('active');
       tabResults.classList.remove('active');
-      testDetails.style.display = 'none';
-      testConsole.style.display = 'block';
+      testDetails.classList.add('hidden');
+      testConsole.classList.remove('hidden');
     });
   }
 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('close-test-results-footer')?.addEventListener('click', closeModal);
 
   function closeModal() {
-    testModal.style.display = 'none';
+    testModal.classList.add('hidden');
   }
 
   // Relancer tests
@@ -122,16 +122,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (summary) {
       const total = results.passed + results.failed;
       const score = Math.round((results.passed / total) * 100);
-      const scoreColor = score === 100 ? '#10b981' : score >= 80 ? '#f59e0b' : '#ef4444';
+      const scoreClass = score === 100 ? 'score-100' : score >= 80 ? 'score-80' : 'score-low';
       const duration = Math.round((results.endTime - results.startTime) / 1000);
 
       summary.innerHTML = `
-        <div style="font-size: 36px; font-weight: bold; color: ${scoreColor}; margin-bottom: 8px;">${score}%</div>
-        <div style="color: #8c94ca; font-size: 14px; margin-bottom: 4px;">
+        <div class="test-score ${scoreClass}">${score}%</div>
+        <div class="test-score-info">
           ${results.passed} réussis • ${results.failed} échoués • ${duration}s
         </div>
-        <div style="color: #8c94ca; font-size: 12px;">
-          ${total} tests exécutés sur GenPwd Pro v2.5.1
+        <div class="test-score-version">
+          ${total} tests exécutés sur GenPwd Pro v2.6.0
         </div>
       `;
     }
@@ -144,12 +144,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const configErrors = test.configErrors || 0;
         html += `
           <div class="test-item success">
-            <div style="font-weight: 600; color: #10b981; margin-bottom: 6px;">✅ ${test.test}</div>
-            <div style="font-size: 12px; color: #8c94ca; margin-bottom: 4px;">
+            <div class="test-item-title">✅ ${test.test}</div>
+            <div class="test-item-info">
               ${test.count} mots générés${configErrors > 0 ? ` • ${configErrors} éléments non trouvés` : ''}
             </div>
             ${test.passwords[0] ? `
-              <div style="font-size: 11px; color: #d6dcff; font-family: var(--font-mono); background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; margin-top: 6px;">
+              <div class="test-item-example">
                 "${test.passwords[0].password}" (${test.passwords[0].entropy})
               </div>
             ` : ''}
@@ -161,8 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
       results.errors.forEach((error) => {
         html += `
           <div class="test-item error">
-            <div style="font-weight: 600; color: #ef4444; margin-bottom: 6px;">❌ ${error.test}</div>
-            <div style="font-size: 12px; color: #ef4444;">
+            <div class="test-item-title-error">❌ ${error.test}</div>
+            <div class="test-item-error-message">
               Erreur: ${error.error}
             </div>
           </div>
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showTestModal() {
-    testModal.style.display = 'flex';
+    testModal.classList.remove('hidden');
   }
 
   // Fermeture modal en cliquant à l'extérieur

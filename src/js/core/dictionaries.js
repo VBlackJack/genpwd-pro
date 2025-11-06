@@ -250,17 +250,20 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
   const infoEl = document.getElementById('dict-info');
   if (!infoEl) return;
 
+  // Reset all state classes
+  infoEl.classList.remove('dict-info-error', 'dict-info-success', 'dict-info-warning');
+
   if (error) {
     infoEl.textContent = `Erreur: ${error}`;
-    infoEl.style.color = 'var(--accent-red)';
+    infoEl.classList.add('dict-info-error');
   } else if (count > 0) {
     const version = metadata?.version || 'v1.0';
     const source = metadata?.source || 'inconnu';
     infoEl.textContent = `${count} mots • ${version} • Source: ${source}`;
-    infoEl.style.color = 'var(--text-muted)';
+    infoEl.classList.add('dict-info-success');
   } else {
     infoEl.textContent = 'Aucun mot disponible';
-    infoEl.style.color = 'var(--accent-yellow)';
+    infoEl.classList.add('dict-info-warning');
   }
 }
 

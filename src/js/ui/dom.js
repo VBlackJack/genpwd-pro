@@ -69,16 +69,34 @@ export function updateBadgeForInput(input) {
 
 export function updateVisibilityByMode() {
   const mode = getElement('#mode-select')?.value || 'syllables';
-  
+
   const syllEl = getElement('#mode-syllables-opts');
-  if (syllEl) syllEl.style.display = (mode === 'syllables') ? '' : 'none';
-  
+  if (syllEl) {
+    if (mode === 'syllables') {
+      syllEl.classList.remove('hidden');
+    } else {
+      syllEl.classList.add('hidden');
+    }
+  }
+
   const ppEl = getElement('#mode-passphrase-opts');
-  if (ppEl) ppEl.style.display = (mode === 'passphrase') ? '' : 'none';
-  
+  if (ppEl) {
+    if (mode === 'passphrase') {
+      ppEl.classList.remove('hidden');
+    } else {
+      ppEl.classList.add('hidden');
+    }
+  }
+
   const leetEl = getElement('#mode-leet-opts');
-  if (leetEl) leetEl.style.display = (mode === 'leet') ? '' : 'none';
-  
+  if (leetEl) {
+    if (mode === 'leet') {
+      leetEl.classList.remove('hidden');
+    } else {
+      leetEl.classList.add('hidden');
+    }
+  }
+
   safeLog(`Mode affiché: ${mode}`);
 }
 
@@ -91,8 +109,20 @@ export function ensureBlockVisible() {
     const row = getElement('#blocks-editor-row');
     const prev = getElement('#case-preview-row');
 
-    if (row) row.style.display = show ? '' : 'none';
-    if (prev) prev.style.display = show ? '' : 'none';
+    if (row) {
+      if (show) {
+        row.classList.remove('hidden');
+      } else {
+        row.classList.add('hidden');
+      }
+    }
+    if (prev) {
+      if (show) {
+        prev.classList.remove('hidden');
+      } else {
+        prev.classList.add('hidden');
+      }
+    }
   } catch (e) {
     safeLog('ensureBlockVisible error: ' + (e?.message || e));
   }
@@ -102,8 +132,8 @@ export function showModal(modalSelector) {
   const modal = getElement(modalSelector);
   if (modal) {
     modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    
+    document.body.classList.add('no-scroll');
+
     // Focus management
     const closeBtn = modal.querySelector('.modal-close');
     if (closeBtn) closeBtn.focus();
@@ -114,7 +144,7 @@ export function hideModal(modalSelector) {
   const modal = getElement(modalSelector);
   if (modal) {
     modal.classList.remove('show');
-    document.body.style.overflow = '';
+    document.body.classList.remove('no-scroll');
   }
 }
 
@@ -122,8 +152,12 @@ export function toggleDebugPanel() {
   const debugPanel = getElement('#debug-panel');
   if (!debugPanel) return;
 
-  const isVisible = debugPanel.style.display !== 'none';
-  debugPanel.style.display = isVisible ? 'none' : 'block';
+  const isVisible = !debugPanel.classList.contains('hidden');
+  if (isVisible) {
+    debugPanel.classList.add('hidden');
+  } else {
+    debugPanel.classList.remove('hidden');
+  }
 
   const btn = getElement('#btn-toggle-debug');
   if (btn) {
