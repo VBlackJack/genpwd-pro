@@ -15,7 +15,7 @@
  */
 
 // Service Worker for GenPwd Pro - PWA Support
-const CACHE_VERSION = 'v2.5.2';
+const CACHE_VERSION = 'v2.6.0';
 const CACHE_NAME = `genpwd-pro-${CACHE_VERSION}`;
 
 // Assets to cache on install
@@ -23,6 +23,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/offline.html',
 
   // Styles
   '/styles/main.css',
@@ -30,6 +31,7 @@ const STATIC_ASSETS = [
   '/styles/layout.css',
   '/styles/modal.css',
   '/styles/test-modal.css',
+  '/styles/features.css',
 
   // JavaScript modules
   '/js/app.js',
@@ -39,6 +41,7 @@ const STATIC_ASSETS = [
   '/js/config/constants.js',
   '/js/config/crypto-constants.js',
   '/js/config/settings.js',
+  '/js/config/sentry-config.js',
 
   '/js/core/generators.js',
   '/js/core/dictionaries.js',
@@ -49,6 +52,7 @@ const STATIC_ASSETS = [
   '/js/ui/render.js',
   '/js/ui/modal.js',
   '/js/ui/placement.js',
+  '/js/ui/features-ui.js',
 
   '/js/utils/clipboard.js',
   '/js/utils/logger.js',
@@ -58,6 +62,11 @@ const STATIC_ASSETS = [
   '/js/utils/performance.js',
   '/js/utils/integrity.js',
   '/js/utils/helpers.js',
+  '/js/utils/i18n.js',
+  '/js/utils/preset-manager.js',
+  '/js/utils/history-manager.js',
+  '/js/utils/analytics.js',
+  '/js/utils/environment.js',
 
   '/js/vault/crypto-engine.js',
   '/js/vault/kdf-service.js',
@@ -73,8 +82,14 @@ const STATIC_ASSETS = [
   '/dictionaries/english.json',
   '/dictionaries/latin.json',
 
+  // Locales (i18n)
+  '/locales/fr.json',
+  '/locales/en.json',
+  '/locales/es.json',
+
   // Tests
-  '/tests/test-suite.js'
+  '/tests/test-suite.js',
+  '/tests/test-new-features.js'
 ];
 
 // Install event - cache static assets
