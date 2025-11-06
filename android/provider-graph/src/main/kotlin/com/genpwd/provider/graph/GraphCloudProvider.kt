@@ -22,7 +22,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.time.Instant
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.inject.Named
@@ -87,7 +89,7 @@ class GraphCloudProvider @Inject constructor(
             val meta = json.decodeFromString(GraphDriveItem.serializer(), payload)
             return ProviderWriteResult(
                 newEtag = meta.eTag ?: meta.id,
-                modifiedUtc = Instant.parse(meta.lastModifiedDateTime).epochSecond,
+                modifiedUtc = parseIso8601ToEpochSeconds(meta.lastModifiedDateTime),
             )
         }
     }
@@ -163,14 +165,17 @@ class GraphCloudProvider @Inject constructor(
         val file: FileFacet? = null,
         val deleted: DeletedFacet? = null,
     ) {
-        fun toMeta(accountId: String): VaultMeta = VaultMeta(
-            id = VaultId(remotePath = id, provider = ProviderKind.ONEDRIVE, accountId = accountId),
-            name = name,
-            version = Instant.parse(lastModifiedDateTime).epochSecond,
-            lastModifiedUtc = Instant.parse(lastModifiedDateTime).epochSecond,
-            size = size,
-            remoteEtag = eTag,
-        )
+        fun toMeta(accountId: String): VaultMeta {
+            val epochSeconds = parseIso8601ToEpochSeconds(lastModifiedDateTime)
+            return VaultMeta(
+                id = VaultId(remotePath = id, provider = ProviderKind.ONEDRIVE, accountId = accountId),
+                name = name,
+                version = epochSeconds,
+                lastModifiedUtc = epochSeconds,
+                size = size,
+                remoteEtag = eTag,
+            )
+        }
     }
 
     @Serializable
@@ -192,4 +197,29 @@ class GraphCloudProvider @Inject constructor(
         val folder: Map<String, String> = emptyMap(),
         @SerialName("@microsoft.graph.conflictBehavior") val conflictBehavior: String = "rename",
     )
+}
+
+/**
+ * Parse ISO 8601 date string (Microsoft Graph format) to epoch seconds.
+ * Example format: "2024-01-01T00:00:00.000Z" or "2024-01-01T00:00:00Z"
+ */
+private fun parseIso8601ToEpochSeconds(value: String): Long {
+    return try {
+        // Microsoft Graph uses ISO 8601 with milliseconds
+        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+    } catch (e: Exception) {
+        try {
+            // Fallback: ISO 8601 without milliseconds
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+        } catch (e2: Exception) {
+            // Ultimate fallback to current time
+            System.currentTimeMillis() / 1000
+        }
+    }
 }
