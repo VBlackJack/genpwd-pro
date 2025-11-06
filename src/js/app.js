@@ -30,7 +30,7 @@ import { isDevelopment } from './utils/environment.js';
 class GenPwdApp {
   constructor() {
     this.initialized = false;
-    this.version = '2.5.2';
+    this.version = '2.6.0';
   }
 
   async init() {

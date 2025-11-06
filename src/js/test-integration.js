@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
           ${results.passed} réussis • ${results.failed} échoués • ${duration}s
         </div>
         <div class="test-score-version">
-          ${total} tests exécutés sur GenPwd Pro v2.5.1
+          ${total} tests exécutés sur GenPwd Pro v2.6.0
         </div>
       `;
     }
