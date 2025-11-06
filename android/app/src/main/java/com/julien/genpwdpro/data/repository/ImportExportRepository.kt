@@ -12,6 +12,7 @@ import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.vault.VaultFileManager
+import com.julien.genpwdpro.domain.model.VaultStatistics
 import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.BufferedReader
@@ -483,37 +484,45 @@ class ImportExportRepository @Inject constructor(
 
             // Créer un nouveau vault pour les données importées
             val vaultName = newVaultName ?: keepassDb.name
-            val vaultId = UUID.randomUUID().toString()
 
-            // Créer l'entrée dans le registre
-            val registryEntry = VaultRegistryEntry(
-                id = vaultId,
+            // Créer d'abord le fichier vault pour obtenir le filePath
+            val (createdVaultId, vaultLocation) = vaultFileManager.createVaultFile(
                 name = vaultName,
+                masterPassword = masterPassword,
+                strategy = StorageStrategy.INTERNAL,
+                description = "Importé depuis KeePass: ${keepassDb.name}"
+            )
+
+            // Utiliser le vaultId retourné par createVaultFile
+            val timestamp = System.currentTimeMillis()
+            val registryEntry = VaultRegistryEntry(
+                id = createdVaultId,
+                name = vaultName,
+                filePath = vaultLocation.requirePath(),
+                storageStrategy = StorageStrategy.INTERNAL,
+                fileSize = 0,
+                lastModified = timestamp,
+                lastAccessed = null,
+                isDefault = false,
+                isLoaded = false,
+                statistics = VaultStatistics(
+                    entryCount = keepassDb.entries.size,
+                    folderCount = 0,
+                    presetCount = 0,
+                    tagCount = 0,
+                    sizeInBytes = 0
+                ),
                 description = "Importé depuis KeePass: ${keepassDb.name}",
-                storageStrategy = StorageStrategy.FILE.name,
-                createdAt = System.currentTimeMillis(),
-                modifiedAt = System.currentTimeMillis(),
-                lastAccessedAt = 0,
-                isFavorite = false,
+                createdAt = timestamp,
                 biometricUnlockEnabled = false,
                 encryptedMasterPassword = null,
-                masterPasswordIv = null,
-                entryCount = keepassDb.entries.size,
-                fileSize = 0,
-                filePath = null,
-                syncEnabled = false,
-                syncProvider = null,
-                lastSyncTimestamp = 0,
-                cloudFileId = null
+                masterPasswordIv = null
             )
 
             vaultRegistryDao.insert(registryEntry)
 
-            // Créer le fichier vault
-            vaultFileManager.createVault(vaultId, masterPassword)
-
             // Ouvrir une session pour ce vault
-            vaultSessionManager.unlock(vaultId, masterPassword)
+            vaultSessionManager.unlockVault(createdVaultId, masterPassword).getOrThrow()
 
             // Convertir les entrées KeePass en VaultEntryEntity
             var importedCount = 0
@@ -521,7 +530,7 @@ class ImportExportRepository @Inject constructor(
                 try {
                     val entryEntity = VaultEntryEntity(
                         id = UUID.randomUUID().toString(),
-                        vaultId = vaultId,
+                        vaultId = createdVaultId,
                         folderId = null, // Les dossiers KeePass peuvent être mappés plus tard
                         title = keepassEntry.title,
                         username = keepassEntry.username.takeIf { it.isNotEmpty() },
@@ -570,12 +579,9 @@ class ImportExportRepository @Inject constructor(
             }
 
             // Fermer la session
-            vaultSessionManager.lock(vaultId)
+            vaultSessionManager.lockVault()
 
-            // Mettre à jour le nombre d'entrées
-            vaultRegistryDao.updateEntryCount(vaultId, importedCount)
-
-            Result.success(vaultId)
+            Result.success(createdVaultId)
         } catch (e: Exception) {
             Result.failure(e)
         }

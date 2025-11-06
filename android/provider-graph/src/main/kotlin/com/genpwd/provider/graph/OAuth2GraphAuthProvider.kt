@@ -3,6 +3,7 @@ package com.genpwd.provider.graph
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Base64
 import com.genpwd.corevault.ProviderKind
 import com.genpwd.providers.api.ProviderAccount
 import com.genpwd.providers.api.ProviderError
@@ -17,7 +18,6 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.Base64
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.resumeWithException
@@ -154,7 +154,7 @@ class OAuth2GraphAuthProvider @Inject constructor(
                     accessToken = json.getString("access_token"),
                     refreshToken = json.optString("refresh_token", ""),
                     expiresIn = json.optLong("expires_in", 3600),
-                    userId = json.optString("user_id", null)
+                    userId = json.optString("user_id", "")
                 )
             }
         }
@@ -195,13 +195,13 @@ class OAuth2GraphAuthProvider @Inject constructor(
     private fun generateCodeVerifier(): String {
         val bytes = ByteArray(32)
         SecureRandom().nextBytes(bytes)
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
     private fun generateCodeChallenge(verifier: String): String {
         val bytes = verifier.toByteArray(Charsets.US_ASCII)
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest)
+        return Base64.encodeToString(digest, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 }
 

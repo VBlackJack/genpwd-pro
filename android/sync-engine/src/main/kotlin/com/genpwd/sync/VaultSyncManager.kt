@@ -15,7 +15,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,7 +51,7 @@ class VaultSyncManager @Inject constructor(
         }
 
         if (resolution.conflicts.isNotEmpty()) {
-            storage.appendAuditLog(meta.id, "WARN", "conflicts_detected", Instant.now().epochSecond)
+            storage.appendAuditLog(meta.id, "WARN", "conflicts_detected", System.currentTimeMillis() / 1000)
             return@withContext SyncOutcome.Conflict(resolution.merged, resolution.conflicts)
         }
 
@@ -70,7 +69,7 @@ class VaultSyncManager @Inject constructor(
         storage.upsertSyncState(
             SyncState(
                 vaultId = meta.id,
-                lastSyncUtc = Instant.now().epochSecond,
+                lastSyncUtc = System.currentTimeMillis() / 1000,
                 localEtag = newEncrypted.localEtag,
                 remoteEtag = uploadResult?.newEtag ?: remoteResult?.second?.remoteEtag,
                 pendingOps = emptyList(),

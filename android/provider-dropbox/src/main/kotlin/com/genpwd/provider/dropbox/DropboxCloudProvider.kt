@@ -23,7 +23,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.time.Instant
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.inject.Named
@@ -96,7 +98,7 @@ class DropboxCloudProvider @Inject constructor(
             if (!response.isSuccessful) throw response.toProviderError()
             val payload = response.body?.string().orEmpty()
             val meta = json.decodeFromString(FileMetadata.serializer(), payload)
-            return ProviderWriteResult(newEtag = meta.rev, modifiedUtc = Instant.parse(meta.serverModified).epochSecond)
+            return ProviderWriteResult(newEtag = meta.rev, modifiedUtc = parseIso8601ToEpochSeconds(meta.serverModified))
         }
     }
 
@@ -192,14 +194,17 @@ class DropboxCloudProvider @Inject constructor(
         @SerialName("server_modified") val serverModified: String,
         val size: Long = 0,
     ) {
-        fun toMeta(accountId: String): VaultMeta = VaultMeta(
-            id = VaultId(remotePath = pathLower ?: name, provider = ProviderKind.DROPBOX, accountId = accountId),
-            name = name,
-            version = Instant.parse(serverModified).epochSecond,
-            lastModifiedUtc = Instant.parse(serverModified).epochSecond,
-            size = size,
-            remoteEtag = rev,
-        )
+        fun toMeta(accountId: String): VaultMeta {
+            val epochSeconds = parseIso8601ToEpochSeconds(serverModified)
+            return VaultMeta(
+                id = VaultId(remotePath = pathLower ?: name, provider = ProviderKind.DROPBOX, accountId = accountId),
+                name = name,
+                version = epochSeconds,
+                lastModifiedUtc = epochSeconds,
+                size = size,
+                remoteEtag = rev,
+            )
+        }
     }
 
     @Serializable
@@ -217,5 +222,30 @@ class DropboxCloudProvider @Inject constructor(
 
     companion object {
         private const val FOLDER_PATH = "/GenPwdPro"
+    }
+}
+
+/**
+ * Parse ISO 8601 date string (Dropbox format) to epoch seconds.
+ * Example format: "2024-01-01T00:00:00Z"
+ */
+private fun parseIso8601ToEpochSeconds(value: String): Long {
+    return try {
+        // Dropbox uses ISO 8601 without milliseconds
+        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+    } catch (e: Exception) {
+        try {
+            // Fallback: ISO 8601 with milliseconds
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+        } catch (e2: Exception) {
+            // Ultimate fallback to current time
+            System.currentTimeMillis() / 1000
+        }
     }
 }

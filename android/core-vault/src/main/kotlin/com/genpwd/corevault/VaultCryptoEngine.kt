@@ -1,11 +1,11 @@
 package com.genpwd.corevault
 
+import android.util.Base64
 import de.mkammerer.argon2.Argon2Factory
 import de.mkammerer.argon2.Argon2Advanced
 import java.security.GeneralSecurityException
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
@@ -192,10 +192,10 @@ private fun ByteArray.sha256(): String {
 }
 
 private fun ByteArray.encodeBase64(): String =
-    Base64.getEncoder().encodeToString(this)
+    Base64.encodeToString(this, Base64.NO_WRAP)
 
 private fun String.decodeBase64(): ByteArray =
-    Base64.getDecoder().decode(this)
+    Base64.decode(this, Base64.NO_WRAP)
 
 private fun Int.toByteArray(): ByteArray = byteArrayOf(
     ((this shr 24) and 0xFF).toByte(),
