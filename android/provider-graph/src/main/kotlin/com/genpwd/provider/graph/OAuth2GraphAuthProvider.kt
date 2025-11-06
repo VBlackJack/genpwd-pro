@@ -154,7 +154,7 @@ class OAuth2GraphAuthProvider @Inject constructor(
                     accessToken = json.getString("access_token"),
                     refreshToken = json.optString("refresh_token", ""),
                     expiresIn = json.optLong("expires_in", 3600),
-                    userId = json.optString("user_id", null)
+                    userId = json.optString("user_id", "")
                 )
             }
         }

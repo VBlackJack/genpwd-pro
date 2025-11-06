@@ -24,7 +24,9 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import java.time.Instant
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -93,7 +95,7 @@ class GoogleDriveCloudProvider @Inject constructor(
             val file = json.decodeFromString(FileMetadata.serializer(), payload)
             return ProviderWriteResult(
                 newEtag = file.md5Checksum ?: file.id,
-                modifiedUtc = Instant.parse(file.modifiedTime).epochSecond,
+                modifiedUtc = parseIso8601ToEpochSeconds(file.modifiedTime),
             )
         }
     }
@@ -182,14 +184,17 @@ class GoogleDriveCloudProvider @Inject constructor(
         val size: Long? = 0,
         val md5Checksum: String? = null,
     ) {
-        fun toMeta(accountId: String): VaultMeta = VaultMeta(
-            id = VaultId(remotePath = id, provider = ProviderKind.GOOGLE_DRIVE, accountId = accountId),
-            name = name,
-            version = Instant.parse(modifiedTime).epochSecond,
-            lastModifiedUtc = Instant.parse(modifiedTime).epochSecond,
-            size = size ?: 0L,
-            remoteEtag = md5Checksum ?: id,
-        )
+        fun toMeta(accountId: String): VaultMeta {
+            val epochSeconds = parseIso8601ToEpochSeconds(modifiedTime)
+            return VaultMeta(
+                id = VaultId(remotePath = id, provider = ProviderKind.GOOGLE_DRIVE, accountId = accountId),
+                name = name,
+                version = epochSeconds,
+                lastModifiedUtc = epochSeconds,
+                size = size ?: 0L,
+                remoteEtag = md5Checksum ?: id,
+            )
+        }
     }
 
     @Serializable
@@ -211,4 +216,29 @@ class GoogleDriveCloudProvider @Inject constructor(
         @SerialName("fileId") val fileId: String? = null,
         val file: FileMetadata? = null,
     )
+}
+
+/**
+ * Parse ISO 8601 date string (Google Drive format) to epoch seconds.
+ * Example format: "2024-01-01T00:00:00.000Z"
+ */
+private fun parseIso8601ToEpochSeconds(value: String): Long {
+    return try {
+        // Google Drive uses ISO 8601 with milliseconds
+        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+    } catch (e: Exception) {
+        try {
+            // Fallback: ISO 8601 without milliseconds
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            format.parse(value)?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+        } catch (e2: Exception) {
+            // Ultimate fallback to current time
+            System.currentTimeMillis() / 1000
+        }
+    }
 }

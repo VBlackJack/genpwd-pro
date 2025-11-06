@@ -152,7 +152,7 @@ class OAuth2DropboxAuthProvider @Inject constructor(
                     accessToken = json.getString("access_token"),
                     refreshToken = json.optString("refresh_token", ""),
                     expiresIn = json.optLong("expires_in", 14400), // Dropbox default: 4 hours
-                    accountId = json.optString("account_id", null)
+                    accountId = json.optString("account_id", "")
                 )
             }
         }
