@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    GenPwd Pro - Launcher Icon Background
+    Gradient background matching the design from assets/icon-*.png
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#3B93A8"
+        android:centerColor="#376F9C"
+        android:endColor="#5761AD"
+        android:type="linear" />
+</shape>
