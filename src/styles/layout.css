@@ -405,20 +405,19 @@ header::before {
   right: 20px;
   z-index: 1000;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 350px;
 }
 
 .toast {
-  position: fixed;
-  top: var(--toast-top, 20px);
-  right: 20px;
-  z-index: 1000;
   background: var(--bg-secondary);
   color: var(--text-primary);
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  margin-bottom: 8px;
   max-width: 320px;
   opacity: 1;
   transform: translateX(0);

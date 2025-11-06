@@ -25,10 +25,6 @@ export function showToast(message, type = 'info') {
     div.className = `toast toast-${type}`;
     div.textContent = message;
 
-    // Use CSS custom property for dynamic positioning
-    const topPosition = 20 + activeToasts.size * 60;
-    div.style.setProperty('--toast-top', `${topPosition}px`);
-
     activeToasts.add(div);
     wrap.appendChild(div);
 
