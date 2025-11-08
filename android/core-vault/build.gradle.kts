@@ -47,4 +47,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.24")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    // JNA required for argon2-jvm to work in JVM unit tests
+    testImplementation("net.java.dev.jna:jna:5.13.0")
 }
