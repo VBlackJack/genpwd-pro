@@ -134,9 +134,27 @@ class AppLifecycleObserver @Inject constructor(
 
     /**
      * Verrouille tous les vaults actifs
-     * Fixed: Uses coroutine scope instead of runBlocking to prevent main thread blocking
+     *
+     * CONCURRENCY FIX (Bug #2): Handles case where lockScope is already cancelled
+     * If scope is inactive, uses GlobalScope as fallback to ensure vault is locked
      */
     private fun lockAllVaults() {
+        if (!lockScope.isActive) {
+            // FALLBACK: scope cancelled (rare lifecycle edge case)
+            // Use GlobalScope to ensure vault is locked even if our scope is dead
+            SafeLog.w(TAG, "lockScope is cancelled, using GlobalScope fallback for security")
+            GlobalScope.launch(Dispatchers.IO) {
+                try {
+                    vaultSessionManager.lockVault()
+                    SafeLog.i(TAG, "Vault locked successfully via GlobalScope fallback")
+                } catch (e: Exception) {
+                    SafeLog.e(TAG, "Error locking vault in GlobalScope fallback", e)
+                }
+            }
+            return
+        }
+
+        // Normal path: use lockScope
         lockScope.launch {
             try {
                 vaultSessionManager.lockVault()

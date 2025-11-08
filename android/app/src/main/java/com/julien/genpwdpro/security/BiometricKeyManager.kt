@@ -7,6 +7,8 @@ import androidx.security.crypto.MasterKey
 import com.google.gson.Gson
 import com.julien.genpwdpro.core.log.SafeLog
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +20,7 @@ import javax.inject.Singleton
  * - Keys can be rotated without losing access
  * - Metadata stored in EncryptedSharedPreferences
  * - Supports key revocation for security incidents
+ * - Thread-safe with Mutex protection (Bug #1 fix)
  *
  * Architecture:
  * ```
@@ -33,6 +36,9 @@ class BiometricKeyManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val keystoreManager: KeystoreManager
 ) {
+    // CONCURRENCY FIX (Bug #1): Mutex to prevent race conditions
+    // Protects all Read-Modify-Write operations on biometric keys
+    private val keyMutex = Mutex()
     companion object {
         private const val TAG = "BiometricKeyManager"
         private const val PREFS_NAME = "biometric_key_metadata"
@@ -80,14 +86,16 @@ class BiometricKeyManager @Inject constructor(
     /**
      * Creates a new versioned biometric key for a vault
      *
+     * CONCURRENCY FIX (Bug #1): Now thread-safe with Mutex
+     *
      * @param vaultId Vault identifier
      * @param masterPassword Master password to encrypt
      * @return Encrypted data with new key metadata
      */
-    fun createKeyForVault(
+    suspend fun createKeyForVault(
         vaultId: String,
         masterPassword: String
-    ): EncryptedKeystoreData {
+    ): EncryptedKeystoreData = keyMutex.withLock {
         val currentMetadata = getKeyMetadata(vaultId)
         val newVersion = (currentMetadata?.keyVersion ?: 0) + 1
         val keyAlias = buildKeyAlias(vaultId, newVersion)
@@ -115,7 +123,7 @@ class BiometricKeyManager @Inject constructor(
         }
 
         SafeLog.i(TAG, "Biometric key created successfully: version=$newVersion")
-        return encrypted
+        return@withLock encrypted
     }
 
     /**
@@ -133,9 +141,11 @@ class BiometricKeyManager @Inject constructor(
 
     /**
      * Updates last used timestamp
+     *
+     * CONCURRENCY FIX (Bug #1): Now thread-safe with Mutex
      */
-    fun updateLastUsed(vaultId: String) {
-        val metadata = getKeyMetadata(vaultId) ?: return
+    suspend fun updateLastUsed(vaultId: String) = keyMutex.withLock {
+        val metadata = getKeyMetadata(vaultId) ?: return@withLock
         val updated = metadata.copy(lastUsed = System.currentTimeMillis())
         saveKeyMetadata(updated)
     }
@@ -146,11 +156,13 @@ class BiometricKeyManager @Inject constructor(
      * This creates a new versioned key and re-encrypts the master password
      * The old key is deleted after successful rotation
      *
+     * CONCURRENCY FIX (Bug #1): Now thread-safe with Mutex
+     *
      * @param vaultId Vault identifier
      * @param masterPassword Master password to re-encrypt
      * @return New encrypted data
      */
-    fun rotateKey(vaultId: String, masterPassword: String): EncryptedKeystoreData {
+    suspend fun rotateKey(vaultId: String, masterPassword: String): EncryptedKeystoreData = keyMutex.withLock {
         val currentMetadata = getKeyMetadata(vaultId)
             ?: throw IllegalStateException("No biometric key found for vault: $vaultId")
 
@@ -186,8 +198,10 @@ class BiometricKeyManager @Inject constructor(
      * Revokes all biometric keys for a vault
      *
      * Use this for security incidents or when user wants to disable biometrics
+     *
+     * CONCURRENCY FIX (Bug #1): Now thread-safe with Mutex
      */
-    fun revokeAllKeys(vaultId: String) {
+    suspend fun revokeAllKeys(vaultId: String) = keyMutex.withLock {
         SafeLog.w(TAG, "Revoking all biometric keys for vault: ${SafeLog.redact(vaultId)}")
 
         val metadata = getKeyMetadata(vaultId)

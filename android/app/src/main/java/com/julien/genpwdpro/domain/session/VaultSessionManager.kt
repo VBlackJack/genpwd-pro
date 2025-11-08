@@ -51,6 +51,7 @@ class VaultSessionManager @Inject constructor(
     private val vaultRegistryDao: VaultRegistryDao,
     private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager,
     private val keystoreManager: KeystoreManager,
+    private val biometricKeyManager: com.julien.genpwdpro.security.BiometricKeyManager,
     private val unlockRateLimiter: UnlockRateLimiter
 ) {
     companion object {
