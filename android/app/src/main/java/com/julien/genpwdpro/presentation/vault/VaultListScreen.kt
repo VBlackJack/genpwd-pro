@@ -42,11 +42,19 @@ fun VaultListScreen(
     val filterType by viewModel.filterType.collectAsState()
     val showFavoritesOnly by viewModel.showFavoritesOnly.collectAsState()
     val statistics by viewModel.statistics.collectAsState()
+    val isVaultLocked by viewModel.isVaultLocked.collectAsState()
 
     var showSearch by remember { mutableStateOf(false) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+
+    // Vérifier si le vault est verrouillé et naviguer en arrière si nécessaire
+    LaunchedEffect(isVaultLocked) {
+        if (isVaultLocked) {
+            onNavigateToHome()
+        }
+    }
 
     // Charger les entrées
     LaunchedEffect(vaultId) {

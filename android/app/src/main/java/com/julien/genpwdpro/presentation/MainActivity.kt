@@ -4,10 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
@@ -48,6 +52,10 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Activer le mode edge-to-edge et cacher les barres système
+        enableEdgeToEdge()
+        setupImmersiveMode()
 
         // Fixed: Use lifecycleScope instead of runBlocking to avoid blocking main thread
         // This prevents ANR (Application Not Responding) during startup
@@ -157,6 +165,38 @@ class MainActivity : FragmentActivity() {
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Erreur lors du traitement du callback OAuth.", e)
             }
+        }
+    }
+
+    /**
+     * Configure le mode immersif pour masquer les barres système
+     *
+     * Mode permanent: les barres apparaissent temporairement en swipe depuis les bords
+     */
+    private fun setupImmersiveMode() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        window.decorView.setOnApplyWindowInsetsListener { view, insets ->
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller?.let {
+                // Cacher les barres système (status bar + navigation bar)
+                it.hide(WindowInsetsCompat.Type.systemBars())
+
+                // Comportement: les barres réapparaissent temporairement lors d'un swipe
+                it.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+            view.onApplyWindowInsets(insets)
+        }
+    }
+
+    /**
+     * Réactive le mode immersif quand la fenêtre regagne le focus
+     * (par exemple après avoir affiché un dialog système)
+     */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            setupImmersiveMode()
         }
     }
 }

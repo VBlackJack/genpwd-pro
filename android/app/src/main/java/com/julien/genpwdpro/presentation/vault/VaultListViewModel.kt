@@ -8,6 +8,7 @@ import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.repository.FileVaultRepository
 import com.julien.genpwdpro.data.secure.SensitiveActionPreferences
 import com.julien.genpwdpro.domain.model.VaultStatistics
+import com.julien.genpwdpro.domain.session.VaultSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.*
@@ -20,7 +21,8 @@ import kotlinx.coroutines.launch
 class VaultListViewModel @Inject constructor(
     private val fileVaultRepository: FileVaultRepository,
     private val totpGenerator: TotpGenerator,
-    private val sensitiveActionPreferences: SensitiveActionPreferences
+    private val sensitiveActionPreferences: SensitiveActionPreferences,
+    private val vaultSessionManager: VaultSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VaultListUiState>(VaultListUiState.Loading)
@@ -40,7 +42,20 @@ class VaultListViewModel @Inject constructor(
 
     val clipboardTtlMs: StateFlow<Long> = sensitiveActionPreferences.clipboardTtlMs
 
+    // Observer l'état de verrouillage du vault
+    private val _isVaultLocked = MutableStateFlow(true)
+    val isVaultLocked: StateFlow<Boolean> = _isVaultLocked.asStateFlow()
+
     private var currentVaultId: String? = null
+
+    init {
+        // Observer le changement d'état de verrouillage
+        viewModelScope.launch {
+            vaultSessionManager.isVaultUnlocked().collect { isUnlocked ->
+                _isVaultLocked.value = !isUnlocked
+            }
+        }
+    }
 
     /**
      * Charge les entrées d'un vault (nouveau système file-based)
