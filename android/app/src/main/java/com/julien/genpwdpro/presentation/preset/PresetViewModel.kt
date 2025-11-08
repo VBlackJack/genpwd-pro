@@ -70,13 +70,13 @@ class PresetViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isCreating = true) }
 
-                // Check if we can create a new preset (max 3 per mode)
+                // Check if we can create a new preset (max 15 per mode)
                 val canCreate = fileVaultRepository.canCreatePreset(mode)
                 if (!canCreate) {
                     _uiState.update {
                         it.copy(
                             isCreating = false,
-                            error = "Limit of 3 presets reached for mode ${mode.name}"
+                            error = "Limite de 15 presets atteinte pour le mode ${mode.name}"
                         )
                     }
                     return@launch

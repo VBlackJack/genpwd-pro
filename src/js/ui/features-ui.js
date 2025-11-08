@@ -759,17 +759,43 @@ function showManagePresetsModal() {
           ${presets.map(preset => `
             <div class="preset-item" data-preset-id="${preset.id}">
               <div class="preset-info">
-                <div class="preset-name">
-                  ${preset.name} ${preset.isDefault ? '⭐' : ''}
+                <div class="preset-name" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>${preset.name} ${preset.isDefault ? '⭐' : ''}</span>
+                  <button class="btn-mini" data-action="toggle-details" data-preset-id="${preset.id}" style="font-size: 0.8em;">
+                    <span class="details-toggle-icon">▼</span> Détails
+                  </button>
                 </div>
                 <div class="preset-desc">${preset.description || 'Aucune description'}</div>
-                <div class="preset-meta">
+
+                <!-- Section expandable des détails -->
+                <div class="preset-details" id="details-${preset.id}" style="display: none; background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 0.9em;">
+                  <strong style="color: #333;">Configuration :</strong>
+                  <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li><strong>Mode :</strong> ${preset.config.mode || 'Non défini'}</li>
+                    <li><strong>Longueur :</strong> ${preset.config.length || 'N/A'} caractères</li>
+                    <li><strong>Politique :</strong> ${preset.config.policy || 'Standard'}</li>
+                    <li><strong>Chiffres :</strong> ${preset.config.digits || 0}</li>
+                    <li><strong>Caractères spéciaux :</strong> ${preset.config.specials || 0}</li>
+                    ${preset.config.customSpecials ? `<li><strong>Spéciaux personnalisés :</strong> ${preset.config.customSpecials}</li>` : ''}
+                    <li><strong>Placement chiffres :</strong> ${preset.config.placeDigits || 'Aléatoire'}</li>
+                    <li><strong>Placement spéciaux :</strong> ${preset.config.placeSpecials || 'Aléatoire'}</li>
+                    <li><strong>Casse :</strong> ${preset.config.caseMode || 'Mixte'}</li>
+                    <li><strong>Quantité :</strong> ${preset.config.quantity || 1}</li>
+                  </ul>
+                  <div style="font-size: 0.85em; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+                    <div>📅 Créé : ${new Date(preset.createdAt).toLocaleDateString()} ${new Date(preset.createdAt).toLocaleTimeString()}</div>
+                    <div>🔄 Modifié : ${new Date(preset.updatedAt).toLocaleDateString()} ${new Date(preset.updatedAt).toLocaleTimeString()}</div>
+                  </div>
+                </div>
+
+                <div class="preset-meta" style="margin-top: 6px;">
                   Créé: ${new Date(preset.createdAt).toLocaleDateString()}
                 </div>
               </div>
               <div class="preset-actions">
                 <button class="btn-mini" data-action="load" data-preset-id="${preset.id}">Charger</button>
                 <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}">✏️ Éditer</button>
+                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}">📋 Dupliquer</button>
                 <button class="btn-mini" data-action="export" data-preset-id="${preset.id}">Export</button>
                 ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}">Supprimer</button>` : ''}
               </div>
@@ -826,9 +852,36 @@ function bindPresetModalEvents(modal) {
           }
           break;
 
+        case 'toggle-details':
+          const detailsSection = document.getElementById(`details-${presetId}`);
+          const toggleIcon = btn.querySelector('.details-toggle-icon');
+          if (detailsSection) {
+            const isVisible = detailsSection.style.display !== 'none';
+            detailsSection.style.display = isVisible ? 'none' : 'block';
+            if (toggleIcon) {
+              toggleIcon.textContent = isVisible ? '▼' : '▲';
+            }
+          }
+          break;
+
         case 'edit':
           modal.remove();
           showEditPresetModal(presetId);
+          break;
+
+        case 'duplicate':
+          const presetToDuplicate = presetManager.getPreset(presetId);
+          if (presetToDuplicate) {
+            const duplicatedPreset = presetManager.duplicatePreset(presetId);
+            if (duplicatedPreset) {
+              updatePresetDropdown();
+              modal.remove();
+              showManagePresetsModal();
+              showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
+            } else {
+              showToast('Échec de la duplication du preset', 'error');
+            }
+          }
           break;
 
         case 'export':

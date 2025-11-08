@@ -115,13 +115,13 @@ fun PresetListScreen(
                             )
                             Column {
                                 Text(
-                                    text = "Limite: 3 presets par mode",
+                                    text = "Limite: 15 presets par mode",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = "Syllables: ${uiState.syllablesPresets.size}/3 • Passphrase: ${uiState.passphrasePresets.size}/3",
+                                    text = "Syllables: ${uiState.syllablesPresets.size}/15 • Passphrase: ${uiState.passphrasePresets.size}/15",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -165,7 +165,7 @@ fun PresetListScreen(
                                 modifier = Modifier.padding(start = 4.dp)
                             )
                             Text(
-                                text = "${uiState.syllablesPresets.size}/3",
+                                text = "${uiState.syllablesPresets.size}/15",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -196,7 +196,7 @@ fun PresetListScreen(
                                 modifier = Modifier.padding(start = 4.dp)
                             )
                             Text(
-                                text = "${uiState.passphrasePresets.size}/3",
+                                text = "${uiState.passphrasePresets.size}/15",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -409,6 +409,8 @@ private fun PresetManagementCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -473,7 +475,8 @@ private fun PresetManagementCard(
             // Statistiques
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 StatChip(
                     icon = Icons.Default.PlayArrow,
@@ -485,6 +488,87 @@ private fun PresetManagementCard(
                         icon = Icons.Default.AccessTime,
                         label = "Il y a $timeAgo"
                     )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                // Bouton pour voir les détails
+                TextButton(
+                    onClick = { isExpanded = !isExpanded }
+                ) {
+                    Text(
+                        text = if (isExpanded) "Masquer" else "Détails",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Masquer les détails" else "Voir les détails",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            // Section expandable des détails
+            androidx.compose.animation.AnimatedVisibility(visible = isExpanded) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Configuration complète",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        DetailRow(label = "Mode", value = preset.generationMode.name)
+
+                        when (preset.generationMode) {
+                            GenerationMode.SYLLABLES -> {
+                                DetailRow(label = "Longueur", value = "${preset.settings.syllablesLength} caractères")
+                                DetailRow(label = "Politique", value = preset.settings.policy.displayName)
+                                DetailRow(label = "Chiffres", value = "${preset.settings.digitsCount}")
+                                DetailRow(label = "Placement chiffres", value = preset.settings.placeDigits.displayName)
+                                DetailRow(label = "Spéciaux", value = "${preset.settings.specialsCount}")
+                                DetailRow(label = "Placement spéciaux", value = preset.settings.placeSpecials.displayName)
+                                if (preset.settings.customSpecials.isNotEmpty()) {
+                                    DetailRow(label = "Spéciaux personnalisés", value = preset.settings.customSpecials)
+                                }
+                                DetailRow(label = "Casse", value = preset.settings.caseMode.displayName)
+                            }
+                            GenerationMode.PASSPHRASE -> {
+                                DetailRow(label = "Nombre de mots", value = "${preset.settings.passphraseWordCount}")
+                                DetailRow(label = "Dictionnaire", value = preset.settings.dictionary.displayName)
+                                DetailRow(label = "Séparateur", value = if (preset.settings.passphraseSeparator.isEmpty()) "Aucun" else preset.settings.passphraseSeparator)
+                                DetailRow(label = "Capitaliser", value = if (preset.settings.passphraseCapitalize) "Oui" else "Non")
+                            }
+                            else -> {}
+                        }
+
+                        Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Créé: ${formatDate(preset.createdAt)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Modifié: ${formatDate(preset.modifiedAt)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
@@ -644,4 +728,37 @@ private fun com.julien.genpwdpro.data.models.Settings.toSummary(): String {
         }
         else -> mode.name
     }
+}
+
+/**
+ * Composable pour afficher une ligne de détail
+ */
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1.5f)
+        )
+    }
+}
+
+/**
+ * Formatte une date en format court
+ */
+private fun formatDate(timestamp: Long): String {
+    val date = java.util.Date(timestamp)
+    val format = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+    return format.format(date)
 }
