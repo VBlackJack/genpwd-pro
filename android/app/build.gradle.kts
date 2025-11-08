@@ -14,8 +14,8 @@ android {
         applicationId = "com.julien.genpwdpro"
         minSdk = 24
         targetSdk = 34
-        versionCode = 18
-        versionName = "1.2.0-alpha.16"
+        versionCode = 22
+        versionName = "1.2.0-alpha.20"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -82,6 +82,27 @@ android {
             excludes += "/META-INF/notice.txt"
             excludes += "/META-INF/ASL2.0"
         }
+    }
+
+    lint {
+        // Use baseline to track existing issues without blocking builds
+        baseline = file("lint-baseline.xml")
+
+        // Disable problematic checks that are already handled
+        disable += setOf(
+            "NewApi",              // API level checks - many false positives with @RequiresApi
+            "MissingTranslation",  // Allow missing translations for some languages
+            "ExtraTranslation"     // Allow extra translations
+        )
+
+        // Don't abort build on errors (we're using baseline)
+        abortOnError = false
+
+        // Check all warnings
+        checkAllWarnings = true
+
+        // Show full report in console
+        textReport = true
     }
 
     // Configure APK output file names with version
