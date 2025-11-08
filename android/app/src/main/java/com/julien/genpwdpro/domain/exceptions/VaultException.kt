@@ -253,6 +253,19 @@ sealed class VaultException(
     )
 
     /**
+     * Insufficient storage space
+     *
+     * Thrown when vault cannot be saved due to disk full condition
+     */
+    class InsufficientStorage(
+        message: String? = null,
+        cause: Throwable? = null
+    ) : VaultException(
+        message = message ?: "Insufficient storage space to save vault. Please free up space and try again.",
+        cause = cause
+    )
+
+    /**
      * Erreur inconnue
      */
     class Unknown(

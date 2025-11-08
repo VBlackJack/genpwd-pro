@@ -229,6 +229,22 @@ class VaultFileManager @Inject constructor(
         }
     }
 
+    /**
+     * Migrates legacy vault from deterministic salt to random salt
+     *
+     * SECURITY: Legacy vaults used deterministic salt (derived from vaultId)
+     * which is vulnerable to rainbow table attacks. This migration is
+     * MANDATORY and happens automatically on unlock.
+     *
+     * The migration:
+     * 1. Generates cryptographically random salt
+     * 2. Re-derives encryption key with new salt
+     * 3. Re-encrypts vault with new key
+     * 4. Updates vault header with new salt
+     * 5. Persists migrated vault immediately
+     *
+     * @throws Exception if migration fails (vault remains accessible with old salt)
+     */
     private suspend fun migrateLegacyVault(
         vaultId: String,
         masterPassword: String,
@@ -238,32 +254,62 @@ class VaultFileManager @Inject constructor(
     ): VaultLoadResult {
         SafeLog.w(
             TAG,
-            "Migrating legacy vault salt to random salt: vaultId=${SafeLog.redact(vaultId)}"
+            "SECURITY MIGRATION: Upgrading vault from deterministic to random salt"
+        )
+        SafeLog.w(
+            TAG,
+            "This is a one-time security upgrade that happens automatically."
         )
 
-        val newSalt = cryptoManager.generateSalt()
-        val newKey = cryptoManager.deriveKey(masterPassword, newSalt)
+        try {
+            // Generate cryptographically random salt (vs deterministic)
+            val newSalt = cryptoManager.generateSalt()
+            val newKey = cryptoManager.deriveKey(masterPassword, newSalt)
 
-        val updatedHeader = legacyHeader.copy(
-            kdfSalt = cryptoManager.bytesToHex(newSalt),
-            kdfAlgorithm = VaultFileHeader.DEFAULT_KDF
-        )
+            // Verify data integrity before migration
+            if (vaultData.entries.isEmpty() && vaultData.metadata.entryCount > 0) {
+                SafeLog.e(TAG, "Data integrity check failed before migration - aborting")
+                throw VaultException.DataCorruption(
+                    "Cannot migrate: vault data appears corrupted " +
+                    "(0 entries loaded but metadata shows ${vaultData.metadata.entryCount})"
+                )
+            }
 
-        val payload = buildVaultPayload(
-            data = vaultData,
-            vaultKey = newKey,
-            header = updatedHeader,
-            updateModifiedTimestamp = false
-        )
+            val updatedHeader = legacyHeader.copy(
+                kdfSalt = cryptoManager.bytesToHex(newSalt),
+                kdfAlgorithm = VaultFileHeader.DEFAULT_KDF
+            )
 
-        persistPayloadToLocation(location, payload)
+            val payload = buildVaultPayload(
+                data = vaultData,
+                vaultKey = newKey,
+                header = updatedHeader,
+                updateModifiedTimestamp = false  // Don't update timestamp for migration
+            )
 
-        return VaultLoadResult(
-            data = vaultData,
-            header = payload.header,
-            vaultKey = newKey,
-            salt = newSalt
-        )
+            // Persist migrated vault
+            persistPayloadToLocation(location, payload)
+
+            SafeLog.i(TAG, "Security migration completed successfully")
+            SafeLog.i(TAG, "Vault now uses cryptographically random salt")
+
+            return VaultLoadResult(
+                data = vaultData,
+                header = payload.header,
+                vaultKey = newKey,
+                salt = newSalt
+            )
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "CRITICAL: Security migration failed!", e)
+            // Don't prevent unlock - user can still access vault with old salt
+            // but log prominently for investigation
+            throw VaultException.SaveFailed(
+                "Security migration from deterministic to random salt failed. " +
+                "Vault remains accessible but uses legacy security. " +
+                "Please contact support. Error: ${e.message}",
+                e
+            )
+        }
     }
 
     private suspend fun decryptVaultPayload(
@@ -285,9 +331,35 @@ class VaultFileManager @Inject constructor(
         val decryptedString = String(decryptedJson, Charsets.UTF_8)
         val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
 
+        // CRITICAL: Verify checksum - corruption detection
         val contentChecksum = calculateChecksum(decryptedString)
         if (contentChecksum != header.checksum) {
-            SafeLog.w(TAG, "Checksum mismatch - file may be corrupted")
+            SafeLog.e(TAG, "CRITICAL: Checksum mismatch detected - vault file is corrupted!")
+            SafeLog.e(TAG, "Expected: ${header.checksum}, Got: $contentChecksum")
+
+            // Attempt recovery from backup (only for file-based storage)
+            if (location.file != null) {
+                SafeLog.w(TAG, "Attempting to restore vault from backup...")
+                val restored = restoreVaultFromBackup(location.file)
+
+                if (restored) {
+                    // Retry loading after restoration
+                    SafeLog.i(TAG, "Backup restored, retrying vault load...")
+                    return loadVaultFile(vaultId, masterPassword, location.file.absolutePath)
+                } else {
+                    throw VaultException.DataCorruption(
+                        "Vault file corrupted (checksum mismatch) and no backup available for recovery. " +
+                        "Expected checksum: ${header.checksum}, got: $contentChecksum"
+                    )
+                }
+            } else {
+                // SAF/URI-based storage - cannot auto-restore
+                throw VaultException.DataCorruption(
+                    "Vault file corrupted (checksum mismatch). " +
+                    "Expected: ${header.checksum}, got: $contentChecksum. " +
+                    "URI-based storage cannot auto-restore from backup."
+                )
+            }
         }
 
         return if (header.hasKdfSalt()) {
@@ -464,45 +536,128 @@ class VaultFileManager @Inject constructor(
     }
 
     /**
-     * Écrit un fichier vault avec chiffrement (atomique)
+     * Écrit un fichier vault avec chiffrement (atomique + backup)
      *
-     * CRITICAL: Uses atomic write pattern to prevent data corruption:
-     * 1. Write to temporary file
-     * 2. Sync temp file to disk
-     * 3. Atomically rename temp file to target file
+     * CRITICAL: Uses atomic write pattern with backup to prevent data loss:
+     * 1. Create backup of existing file (.bak)
+     * 2. Write to temporary file
+     * 3. Sync temp file to disk
+     * 4. Atomically rename temp file to target file
+     * 5. Keep backup for recovery (deleted only after successful next write)
      *
-     * This ensures that either the old version or new version exists,
-     * but never a partially written file (which would cause data loss).
+     * This ensures:
+     * - Either old OR new version exists, never partial write
+     * - Backup available for recovery if corruption detected
+     * - Double protection against data loss
      */
     private suspend fun writeVaultFile(
         file: File,
         payload: VaultPayload
     ): File {
-        // Create temp file in same directory (required for atomic rename)
         val tempFile = File(file.parentFile, "${file.name}.tmp")
+        val backupFile = File(file.parentFile, "${file.name}.bak")
+        val oldBackupFile = File(file.parentFile, "${file.name}.bak.old")
 
         try {
-            // Step 1: Write to temporary file
+            // Step 1: Create backup of existing file (if it exists)
+            if (file.exists()) {
+                // If there's already a backup, move it to .bak.old (keep 2 generations)
+                if (backupFile.exists()) {
+                    if (oldBackupFile.exists()) {
+                        oldBackupFile.delete()
+                    }
+                    backupFile.renameTo(oldBackupFile)
+                }
+
+                // Copy current file to backup
+                file.copyTo(backupFile, overwrite = true)
+                SafeLog.d(TAG, "Created backup: ${SafeLog.redact(backupFile.absolutePath)}")
+            }
+
+            // Step 2: Write to temporary file
             FileOutputStream(tempFile).use { fos ->
                 fos.writeVaultPayload(payload)
                 // writeVaultPayload already calls fd.sync()
             }
 
-            // Step 2: Atomic rename (POSIX guarantees atomicity)
-            // This is the critical moment - either old or new file exists
+            // Step 3: Atomic rename (POSIX guarantees atomicity)
             if (!tempFile.renameTo(file)) {
+                // Restore from backup on failure
+                if (backupFile.exists()) {
+                    backupFile.copyTo(file, overwrite = true)
+                    SafeLog.w(TAG, "Restored from backup after failed rename")
+                }
                 throw IOException("Failed to atomically rename temp file to ${file.name}")
             }
 
-            SafeLog.d(TAG, "Vault file written successfully (atomic): ${SafeLog.redact(file.absolutePath)}")
+            SafeLog.d(TAG, "Vault file written successfully (atomic + backup): ${SafeLog.redact(file.absolutePath)}")
+
+            // Clean up old backup (keep only last 2 versions)
+            if (oldBackupFile.exists()) {
+                oldBackupFile.delete()
+            }
+
             return file
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             // Clean up temp file on failure
             if (tempFile.exists()) {
                 tempFile.delete()
             }
+
+            // Check for disk full condition
+            val message = e.message?.lowercase() ?: ""
+            if (message.contains("no space left on device") ||
+                message.contains("enospc") ||
+                message.contains("disk full")) {
+                SafeLog.e(TAG, "CRITICAL: Insufficient storage space to save vault", e)
+                throw VaultException.InsufficientStorage(
+                    "Cannot save vault: device storage is full. " +
+                    "Please free up at least ${file.length() / 1024}KB and try again.",
+                    e
+                )
+            }
+
             SafeLog.e(TAG, "Error writing vault file", e)
+            throw VaultException.SaveFailed("Failed to write vault file: ${e.message}", e)
+        } catch (e: Exception) {
+            // Clean up temp file on other failures
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
+            SafeLog.e(TAG, "Unexpected error writing vault file", e)
             throw e
+        }
+    }
+
+    /**
+     * Attempts to restore vault from backup file
+     *
+     * @return true if restored successfully, false if no backup available
+     */
+    private suspend fun restoreVaultFromBackup(file: File): Boolean {
+        val backupFile = File(file.parentFile, "${file.name}.bak")
+        val oldBackupFile = File(file.parentFile, "${file.name}.bak.old")
+
+        return try {
+            when {
+                backupFile.exists() -> {
+                    backupFile.copyTo(file, overwrite = true)
+                    SafeLog.i(TAG, "Restored vault from .bak: ${SafeLog.redact(file.absolutePath)}")
+                    true
+                }
+                oldBackupFile.exists() -> {
+                    oldBackupFile.copyTo(file, overwrite = true)
+                    SafeLog.i(TAG, "Restored vault from .bak.old: ${SafeLog.redact(file.absolutePath)}")
+                    true
+                }
+                else -> {
+                    SafeLog.w(TAG, "No backup available for restoration")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Failed to restore from backup", e)
+            false
         }
     }
 
