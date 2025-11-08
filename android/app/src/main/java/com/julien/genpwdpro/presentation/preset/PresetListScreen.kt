@@ -281,18 +281,117 @@ fun PresetListScreen(
         )
     }
 
-    // Dialog d'édition (à implémenter)
+    // Dialog d'édition
     showEditDialog?.let { preset ->
-        // TODO: Implémenter le dialog d'édition
+        var editName by remember { mutableStateOf(preset.name) }
+        var editIcon by remember { mutableStateOf(preset.icon) }
+        var nameError by remember { mutableStateOf<String?>(null) }
+
         AlertDialog(
             onDismissRequest = { showEditDialog = null },
-            title = { Text("Édition de preset") },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = { Text("Modifier le preset") },
             text = {
-                Text("Fonctionnalité en cours de développement...")
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Nom du preset
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = {
+                            editName = it
+                            nameError = when {
+                                it.isBlank() -> "Le nom ne peut pas être vide"
+                                it.length > 50 -> "Le nom ne peut pas dépasser 50 caractères"
+                                else -> null
+                            }
+                        },
+                        label = { Text("Nom du preset") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = nameError != null,
+                        supportingText = nameError?.let { { Text(it) } },
+                        singleLine = true
+                    )
+
+                    // Icône
+                    OutlinedTextField(
+                        value = editIcon,
+                        onValueChange = { editIcon = it },
+                        label = { Text("Icône (emoji)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        supportingText = { Text("Utilisez un emoji pour représenter ce preset") }
+                    )
+
+                    // Aperçu des paramètres (lecture seule)
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Configuration (non modifiable)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = preset.settings.toSummary(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Mode: ${preset.generationMode.name}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    if (preset.isSystemPreset) {
+                        Text(
+                            text = "⚠️ Les presets système ne peuvent pas être modifiés",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             },
             confirmButton = {
+                Button(
+                    onClick = {
+                        val updatedPreset = preset.copy(
+                            name = editName.trim(),
+                            icon = editIcon.trim(),
+                            modifiedAt = System.currentTimeMillis()
+                        )
+                        viewModel.updatePreset(updatedPreset)
+                        showEditDialog = null
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Preset modifié avec succès")
+                        }
+                    },
+                    enabled = !preset.isSystemPreset && nameError == null && editName.isNotBlank()
+                ) {
+                    Text("Sauvegarder")
+                }
+            },
+            dismissButton = {
                 TextButton(onClick = { showEditDialog = null }) {
-                    Text("OK")
+                    Text("Annuler")
                 }
             }
         )
