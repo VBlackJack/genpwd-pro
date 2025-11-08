@@ -92,7 +92,7 @@ class MainActivity : FragmentActivity() {
                 "Expired session check completed after startup lockdown (locked=$lockedExpiredSession)."
             )
         }
-        lifecycle.addObserver(AppLifecycleObserver(vaultSessionManager))
+        lifecycle.addObserver(AppLifecycleObserver(this, vaultSessionManager))
     }
 
     /**
