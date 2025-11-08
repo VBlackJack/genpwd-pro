@@ -51,8 +51,8 @@ class VaultListViewModel @Inject constructor(
     init {
         // Observer le changement d'état de verrouillage
         viewModelScope.launch {
-            vaultSessionManager.isVaultUnlocked().collect { isUnlocked ->
-                _isVaultLocked.value = !isUnlocked
+            vaultSessionManager.activeVaultId.collect { vaultId ->
+                _isVaultLocked.value = (vaultId == null)
             }
         }
     }
