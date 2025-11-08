@@ -175,7 +175,24 @@ class VaultFileManager @Inject constructor(
         }
         val updatedData = if (metadata === data.metadata) data else data.copy(metadata = metadata)
 
+        // Log data before serialization to verify presets are present
+        SafeLog.d(
+            TAG,
+            "Serializing vault data: ${updatedData.entries.size} entries, " +
+                "${updatedData.folders.size} folders, ${updatedData.tags.size} tags, " +
+                "${updatedData.presets.size} presets, ${updatedData.entryTags.size} entryTags"
+        )
+
         val dataJson = gson.toJson(updatedData)
+
+        // Log JSON length and verify presets in JSON
+        val hasPresetsInJson = dataJson.contains("\"presets\"")
+        SafeLog.d(
+            TAG,
+            "Vault JSON serialized: ${dataJson.length} bytes, " +
+                "contains presets field: $hasPresetsInJson"
+        )
+
         val encryptedContent = cryptoManager.encryptBytes(
             dataJson.toByteArray(Charsets.UTF_8),
             vaultKey
@@ -349,7 +366,24 @@ class VaultFileManager @Inject constructor(
 
         val decryptedJson = cryptoManager.decryptBytes(encryptedContent, vaultKey)
         val decryptedString = String(decryptedJson, Charsets.UTF_8)
+
+        // Log decrypted JSON to verify presets are in the file
+        val hasPresetsInJson = decryptedString.contains("\"presets\"")
+        SafeLog.d(
+            TAG,
+            "Vault JSON decrypted: ${decryptedString.length} bytes, " +
+                "contains presets field: $hasPresetsInJson"
+        )
+
         val vaultData = gson.fromJson(decryptedString, VaultData::class.java)
+
+        // Log deserialized data to verify presets are loaded
+        SafeLog.d(
+            TAG,
+            "Vault data deserialized: ${vaultData.entries.size} entries, " +
+                "${vaultData.folders.size} folders, ${vaultData.tags.size} tags, " +
+                "${vaultData.presets.size} presets, ${vaultData.entryTags.size} entryTags"
+        )
 
         // CRITICAL: Verify checksum - corruption detection
         val contentChecksum = calculateChecksum(decryptedString)
