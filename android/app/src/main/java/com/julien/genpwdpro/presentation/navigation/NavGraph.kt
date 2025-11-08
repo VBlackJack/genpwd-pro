@@ -15,6 +15,8 @@ import com.julien.genpwdpro.presentation.screens.analyzer.AnalyzerScreen
 import com.julien.genpwdpro.presentation.screens.customphrase.CustomPhraseScreen
 import com.julien.genpwdpro.presentation.screens.history.HistoryScreen
 import com.julien.genpwdpro.presentation.screens.sync.SyncSettingsScreen
+import com.julien.genpwdpro.presentation.screens.sync.SyncHistoryScreen
+import com.julien.genpwdpro.presentation.screens.autofill.AutofillSettingsScreen
 import com.julien.genpwdpro.presentation.sync.CloudAccountsScreen
 import com.julien.genpwdpro.presentation.sync.CloudAccountsViewModel
 import com.julien.genpwdpro.presentation.sync.AddCloudAccountScreen
@@ -255,9 +257,32 @@ fun AppNavGraph(
         composable(Screen.SyncSettings.route) {
             SyncSettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToHistory = {
+                    navController.navigate(Screen.SyncHistory.route)
+                },
+                onNavigateToAutofill = {
+                    navController.navigate(Screen.AutofillSettings.route)
+                },
+                onNavigateToSecurity = {
+                    navController.navigate(Screen.SecuritySettings.route)
+                },
                 onNavigateToCloudAccounts = {
                     navController.navigate(Screen.CloudAccounts.route)
                 }
+            )
+        }
+
+        // ========== Sync History ==========
+        composable(Screen.SyncHistory.route) {
+            SyncHistoryScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== Autofill Settings ==========
+        composable(Screen.AutofillSettings.route) {
+            AutofillSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
