@@ -223,8 +223,30 @@ class ImportExportRepository @Inject constructor(
             val registryEntry = vaultRegistryDao.getById(vaultId)
                 ?: return@withContext Result.failure(Exception("Vault not found"))
 
+            // Ensure vault is unlocked before exporting
+            // Check if this specific vault is already unlocked
+            val isAlreadyUnlocked = vaultSessionManager.activeVaultId.value == vaultId
+
+            if (!isAlreadyUnlocked) {
+                // Unlock the vault with the provided master password
+                val unlockResult = vaultSessionManager.unlockVault(vaultId, masterPassword)
+                if (unlockResult.isFailure) {
+                    return@withContext Result.failure(
+                        unlockResult.exceptionOrNull()
+                            ?: Exception("Failed to unlock vault for export")
+                    )
+                }
+            }
+
             // Get entries from session (already decrypted)
             val entries = fileVaultRepository.getEntries().first()
+
+            // Validate that we got entries if the vault should have data
+            if (entries.isEmpty() && registryEntry.statistics.entryCount > 0) {
+                return@withContext Result.failure(
+                    Exception("Export failed: No entries found but vault should contain ${registryEntry.statistics.entryCount} entries. Please ensure the vault is unlocked.")
+                )
+            }
 
             // Create export data
             val exportData = VaultExportData(
@@ -260,8 +282,17 @@ class ImportExportRepository @Inject constructor(
                 }
             }
 
+            // If we unlocked the vault just for export, lock it again for security
+            if (!isAlreadyUnlocked) {
+                vaultSessionManager.lockVault()
+            }
+
             Result.success(entries.size)
         } catch (e: Exception) {
+            // If we unlocked the vault for export and an error occurred, lock it for security
+            if (!isAlreadyUnlocked && vaultSessionManager.activeVaultId.value == vaultId) {
+                vaultSessionManager.lockVault()
+            }
             Result.failure(e)
         }
     }
