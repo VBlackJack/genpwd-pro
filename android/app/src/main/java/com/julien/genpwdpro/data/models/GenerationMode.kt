@@ -32,23 +32,23 @@ enum class GenerationMode {
 /**
  * Stratégies de placement des caractères
  */
-enum class Placement {
-    START, // Début
-    END, // Fin
-    MIDDLE, // Milieu
-    RANDOM, // Aléatoire
-    VISUAL // Position visuelle (pourcentage)
+enum class Placement(val displayName: String) {
+    START("Début"), // Début
+    END("Fin"), // Fin
+    MIDDLE("Milieu"), // Milieu
+    RANDOM("Aléatoire"), // Aléatoire
+    VISUAL("Position visuelle") // Position visuelle (pourcentage)
 }
 
 /**
  * Modes de casse
  */
-enum class CaseMode {
-    MIXED, // Aléatoire
-    UPPER, // MAJUSCULES
-    LOWER, // minuscules
-    TITLE, // Title Case
-    BLOCKS // Blocs personnalisés
+enum class CaseMode(val displayName: String) {
+    MIXED("Aléatoire"), // Aléatoire
+    UPPER("MAJUSCULES"), // MAJUSCULES
+    LOWER("minuscules"), // minuscules
+    TITLE("Title Case"), // Title Case
+    BLOCKS("Blocs personnalisés") // Blocs personnalisés
 }
 
 /**
@@ -63,11 +63,11 @@ enum class CaseBlock {
 /**
  * Politiques de caractères pour le mode Syllables
  */
-enum class CharPolicy {
-    STANDARD, // Tous caractères
-    STANDARD_LAYOUT, // Layout-safe (AZERTY/QWERTY)
-    ALPHANUMERIC, // Lettres + chiffres
-    ALPHANUMERIC_LAYOUT // Alpha Layout-safe
+enum class CharPolicy(val displayName: String) {
+    STANDARD("Tous caractères"), // Tous caractères
+    STANDARD_LAYOUT("Layout-safe"), // Layout-safe (AZERTY/QWERTY)
+    ALPHANUMERIC("Lettres + chiffres"), // Lettres + chiffres
+    ALPHANUMERIC_LAYOUT("Alpha Layout-safe") // Alpha Layout-safe
 }
 
 /**

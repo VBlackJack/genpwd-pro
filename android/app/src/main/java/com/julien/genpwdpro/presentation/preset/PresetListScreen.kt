@@ -603,9 +603,9 @@ private fun PresetManagementCard(
                                 DetailRow(label = "Longueur", value = "${preset.settings.syllablesLength} caractères")
                                 DetailRow(label = "Politique", value = preset.settings.policy.displayName)
                                 DetailRow(label = "Chiffres", value = "${preset.settings.digitsCount}")
-                                DetailRow(label = "Placement chiffres", value = preset.settings.placeDigits.displayName)
+                                DetailRow(label = "Placement chiffres", value = preset.settings.digitsPlacement.displayName)
                                 DetailRow(label = "Spéciaux", value = "${preset.settings.specialsCount}")
-                                DetailRow(label = "Placement spéciaux", value = preset.settings.placeSpecials.displayName)
+                                DetailRow(label = "Placement spéciaux", value = preset.settings.specialsPlacement.displayName)
                                 if (preset.settings.customSpecials.isNotEmpty()) {
                                     DetailRow(label = "Spéciaux personnalisés", value = preset.settings.customSpecials)
                                 }
