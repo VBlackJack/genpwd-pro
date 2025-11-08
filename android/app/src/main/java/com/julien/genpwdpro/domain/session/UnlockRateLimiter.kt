@@ -1,6 +1,11 @@
 package com.julien.genpwdpro.domain.session
 
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.julien.genpwdpro.core.log.SafeLog
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -9,24 +14,43 @@ import javax.inject.Singleton
 /**
  * Rate limiter pour les tentatives de déverrouillage de vault
  *
- * Empêche les attaques par brute force en limitant le nombre de tentatives
- * de déverrouillage échouées et en imposant un verrouillage temporaire.
+ * CRITICAL SECURITY COMPONENT: Empêche les attaques par brute force en limitant
+ * le nombre de tentatives de déverrouillage échouées et en imposant un verrouillage temporaire.
  *
- * Fonctionnalités:
- * - Compteur de tentatives échouées par vault
- * - Verrouillage automatique après MAX_ATTEMPTS tentatives
- * - Durée de verrouillage configurable (par défaut 5 minutes)
- * - Réinitialisation automatique après expiration du verrouillage
- * - Thread-safe avec Mutex
+ * ARCHITECTURE:
+ * - Dual-storage: In-memory cache + EncryptedSharedPreferences
+ * - Thread-safe: All operations protected by Mutex
+ * - Persistent: Survit aux app restarts et force-kills
+ * - Per-vault tracking: Chaque vault a son propre compteur
  *
- * Sécurité:
- * - Protection contre brute force attacks
- * - Limite à 5 tentatives par défaut (configurable)
- * - Lockout de 5 minutes (300 secondes)
- * - Logs sécurisés (vaultId redacted)
+ * SECURITY FEATURES:
+ * - MAX_ATTEMPTS = 5 tentatives avant lockout
+ * - LOCKOUT_DURATION = 5 minutes (300 secondes)
+ * - ANTI-BYPASS: État persisté en chiffré, force-kill ne reset pas le compteur
+ * - Automatic restoration: État restauré au démarrage de l'app
+ * - Encrypted storage: EncryptedSharedPreferences with AES256-GCM
+ * - Secure logging: VaultIds are always redacted
+ *
+ * USAGE WORKFLOW:
+ * 1. BEFORE unlock attempt: Call checkAndRecordAttempt()
+ *    - Returns LockedOut if too many attempts
+ *    - Returns Allowed (with remaining attempts) if OK
+ * 2. AFTER successful unlock: Call recordSuccess() to reset counters
+ * 3. Manual reset: Call reset(vaultId) for admin override
+ *
+ * ATTACK MITIGATION:
+ * - Brute force: Limited to 5 attempts per 5 minutes = 12 attempts/hour max
+ * - Force-kill bypass: State persisted to EncryptedSharedPreferences
+ * - Multiple vaults: Each vault tracked independently
+ * - Memory attacks: State encrypted at rest
+ *
+ * @see VaultSessionManager.unlockVault Uses this before attempting unlock
+ * @see EncryptedSharedPreferences Storage backend for persistence
  */
 @Singleton
-class UnlockRateLimiter @Inject constructor() {
+class UnlockRateLimiter @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     companion object {
         private const val TAG = "UnlockRateLimiter"
@@ -40,6 +64,21 @@ class UnlockRateLimiter @Inject constructor() {
          * Durée du verrouillage en millisecondes (5 minutes)
          */
         private const val LOCKOUT_DURATION_MS = 5 * 60 * 1000L // 5 minutes
+
+        /**
+         * Nom du fichier EncryptedSharedPreferences
+         */
+        private const val PREFS_NAME = "rate_limiter_secure"
+
+        /**
+         * Clé de préfixe pour les tentatives échouées
+         */
+        private const val KEY_PREFIX_ATTEMPTS = "attempts_"
+
+        /**
+         * Clé de préfixe pour les timestamps de lockout
+         */
+        private const val KEY_PREFIX_LOCKOUT = "lockout_"
     }
 
     /**
@@ -59,14 +98,35 @@ class UnlockRateLimiter @Inject constructor() {
         data class LockedOut(val secondsRemaining: Long) : RateLimitResult()
     }
 
-    // Map: vaultId → nombre de tentatives échouées
+    // PERSISTENCE: EncryptedSharedPreferences pour survie au restart
+    private val encryptedPrefs: SharedPreferences by lazy {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        EncryptedSharedPreferences.create(
+            context,
+            PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    // Map: vaultId → nombre de tentatives échouées (in-memory cache)
     private val failedAttempts = mutableMapOf<String, Int>()
 
-    // Map: vaultId → timestamp de fin de verrouillage
+    // Map: vaultId → timestamp de fin de verrouillage (in-memory cache)
     private val lockoutUntil = mutableMapOf<String, Long>()
 
     // Mutex pour garantir thread-safety
     private val mutex = Mutex()
+
+    init {
+        // Restore state from encrypted storage on startup
+        restoreStateFromStorage()
+        SafeLog.i(TAG, "UnlockRateLimiter initialized with persisted state")
+    }
 
     /**
      * Vérifie si une tentative de déverrouillage est autorisée et incrémente le compteur
@@ -108,6 +168,9 @@ class UnlockRateLimiter @Inject constructor() {
                 val lockoutEndTime = now + LOCKOUT_DURATION_MS
                 lockoutUntil[vaultId] = lockoutEndTime
 
+                // PERSIST lockout state to survive restart
+                persistState(vaultId)
+
                 SafeLog.w(
                     TAG,
                     "Max attempts reached for vault: vaultId=${SafeLog.redact(vaultId)}, " +
@@ -120,6 +183,9 @@ class UnlockRateLimiter @Inject constructor() {
             // 3. Incrémenter le compteur de tentatives
             val newAttempts = attempts + 1
             failedAttempts[vaultId] = newAttempts
+
+            // PERSIST state to survive restart
+            persistState(vaultId)
 
             val remaining = MAX_ATTEMPTS - newAttempts
             SafeLog.d(
@@ -145,6 +211,9 @@ class UnlockRateLimiter @Inject constructor() {
             failedAttempts.remove(vaultId)
             lockoutUntil.remove(vaultId)
 
+            // PERSIST success (removes from storage)
+            persistState(vaultId)
+
             if (hadFailures) {
                 SafeLog.i(
                     TAG,
@@ -165,6 +234,10 @@ class UnlockRateLimiter @Inject constructor() {
         mutex.withLock {
             failedAttempts.remove(vaultId)
             lockoutUntil.remove(vaultId)
+
+            // PERSIST reset
+            persistState(vaultId)
+
             SafeLog.i(
                 TAG,
                 "Rate limiter reset for vault: vaultId=${SafeLog.redact(vaultId)}"
@@ -181,7 +254,87 @@ class UnlockRateLimiter @Inject constructor() {
         mutex.withLock {
             failedAttempts.clear()
             lockoutUntil.clear()
+            encryptedPrefs.edit().clear().apply()
             SafeLog.i(TAG, "All rate limiters reset")
+        }
+    }
+
+    /**
+     * Persists current state to EncryptedSharedPreferences
+     *
+     * SECURITY: All data is encrypted at rest to prevent tampering
+     */
+    private fun persistState(vaultId: String) {
+        try {
+            val editor = encryptedPrefs.edit()
+
+            // Persist failed attempts
+            val attempts = failedAttempts[vaultId]
+            if (attempts != null) {
+                editor.putInt(KEY_PREFIX_ATTEMPTS + vaultId, attempts)
+            } else {
+                editor.remove(KEY_PREFIX_ATTEMPTS + vaultId)
+            }
+
+            // Persist lockout timestamp
+            val lockout = lockoutUntil[vaultId]
+            if (lockout != null) {
+                editor.putLong(KEY_PREFIX_LOCKOUT + vaultId, lockout)
+            } else {
+                editor.remove(KEY_PREFIX_LOCKOUT + vaultId)
+            }
+
+            editor.apply()
+            SafeLog.d(TAG, "State persisted for vault: ${SafeLog.redact(vaultId)}")
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Failed to persist rate limiter state", e)
+            // Non-fatal - continue with in-memory state
+        }
+    }
+
+    /**
+     * Restores state from EncryptedSharedPreferences on startup
+     *
+     * ANTI-BYPASS: Attackers cannot bypass rate limiting by force-killing app
+     */
+    private fun restoreStateFromStorage() {
+        try {
+            val all = encryptedPrefs.all
+            val now = System.currentTimeMillis()
+
+            all.forEach { (key, value) ->
+                when {
+                    key.startsWith(KEY_PREFIX_ATTEMPTS) -> {
+                        val vaultId = key.removePrefix(KEY_PREFIX_ATTEMPTS)
+                        val attempts = value as? Int ?: 0
+                        if (attempts > 0) {
+                            failedAttempts[vaultId] = attempts
+                            SafeLog.d(TAG, "Restored ${attempts} failed attempts for vault: ${SafeLog.redact(vaultId)}")
+                        }
+                    }
+                    key.startsWith(KEY_PREFIX_LOCKOUT) -> {
+                        val vaultId = key.removePrefix(KEY_PREFIX_LOCKOUT)
+                        val lockoutEnd = value as? Long ?: 0L
+                        // Only restore if lockout hasn't expired
+                        if (lockoutEnd > now) {
+                            lockoutUntil[vaultId] = lockoutEnd
+                            val remainingSeconds = (lockoutEnd - now) / 1000
+                            SafeLog.w(TAG, "Restored lockout for vault: ${SafeLog.redact(vaultId)}, remaining=${remainingSeconds}s")
+                        } else {
+                            // Lockout expired, clean up
+                            encryptedPrefs.edit()
+                                .remove(KEY_PREFIX_LOCKOUT + vaultId)
+                                .remove(KEY_PREFIX_ATTEMPTS + vaultId)
+                                .apply()
+                        }
+                    }
+                }
+            }
+
+            SafeLog.i(TAG, "State restored from encrypted storage: ${failedAttempts.size} vaults tracked")
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Failed to restore rate limiter state", e)
+            // Non-fatal - start with clean state
         }
     }
 
