@@ -158,6 +158,51 @@ class PresetViewModel @Inject constructor(
     }
 
     /**
+     * Duplicates a preset
+     */
+    fun duplicatePreset(preset: DecryptedPreset) {
+        viewModelScope.launch {
+            try {
+                // Check if we can create a new preset (max 15 per mode)
+                val canCreate = fileVaultRepository.canCreatePreset(preset.generationMode)
+                if (!canCreate) {
+                    _uiState.update {
+                        it.copy(
+                            error = "Limite de 15 presets atteinte pour le mode ${preset.generationMode.name}"
+                        )
+                    }
+                    return@launch
+                }
+
+                // Create a duplicate with a new ID and name
+                val duplicatedPreset = preset.copy(
+                    id = UUID.randomUUID().toString(),
+                    name = "Copie de ${preset.name}",
+                    isDefault = false,
+                    isSystemPreset = false,
+                    createdAt = System.currentTimeMillis(),
+                    modifiedAt = System.currentTimeMillis(),
+                    lastUsedAt = null,
+                    usageCount = 0
+                )
+
+                val createdId = fileVaultRepository.createPreset(duplicatedPreset)
+                if (createdId != null) {
+                    _uiState.update { it.copy(error = null) }
+                } else {
+                    _uiState.update {
+                        it.copy(error = "Impossible de dupliquer le preset")
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = e.message ?: "Erreur lors de la duplication du preset")
+                }
+            }
+        }
+    }
+
+    /**
      * Sets a preset as default
      */
     fun setAsDefault(presetId: String) {

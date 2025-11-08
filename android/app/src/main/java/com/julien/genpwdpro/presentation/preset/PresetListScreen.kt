@@ -33,6 +33,28 @@ fun PresetListScreen(
 
     var showDeleteDialog by remember { mutableStateOf<DecryptedPreset?>(null) }
     var showEditDialog by remember { mutableStateOf<DecryptedPreset?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Filtrer les presets selon la recherche
+    val filteredSyllablesPresets = remember(uiState.syllablesPresets, searchQuery) {
+        if (searchQuery.isBlank()) {
+            uiState.syllablesPresets
+        } else {
+            uiState.syllablesPresets.filter {
+                it.name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    val filteredPassphrasePresets = remember(uiState.passphrasePresets, searchQuery) {
+        if (searchQuery.isBlank()) {
+            uiState.passphrasePresets
+        } else {
+            uiState.passphrasePresets.filter {
+                it.name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     // Charger les presets
     LaunchedEffect(vaultId) {
@@ -130,6 +152,34 @@ fun PresetListScreen(
                     }
                 }
 
+                // Champ de recherche
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Rechercher un preset...") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Rechercher"
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Effacer"
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                }
+
                 // Preset par défaut
                 uiState.defaultPreset?.let { preset ->
                     item {
@@ -145,13 +195,19 @@ fun PresetListScreen(
                             preset = preset,
                             onSetDefault = { /* Already default */ },
                             onEdit = { showEditDialog = preset },
-                            onDelete = { showDeleteDialog = preset }
+                            onDelete = { showDeleteDialog = preset },
+                            onDuplicate = {
+                                viewModel.duplicatePreset(preset)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Preset dupliqué avec succès")
+                                }
+                            }
                         )
                     }
                 }
 
                 // Presets Syllables
-                if (uiState.syllablesPresets.isNotEmpty()) {
+                if (filteredSyllablesPresets.isNotEmpty()) {
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -165,24 +221,30 @@ fun PresetListScreen(
                                 modifier = Modifier.padding(start = 4.dp)
                             )
                             Text(
-                                text = "${uiState.syllablesPresets.size}/15",
+                                text = "${filteredSyllablesPresets.size}/${uiState.syllablesPresets.size}",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                    items(uiState.syllablesPresets) { preset ->
+                    items(filteredSyllablesPresets) { preset ->
                         PresetManagementCard(
                             preset = preset,
                             onSetDefault = { viewModel.setAsDefault(preset.id) },
                             onEdit = { showEditDialog = preset },
-                            onDelete = { showDeleteDialog = preset }
+                            onDelete = { showDeleteDialog = preset },
+                            onDuplicate = {
+                                viewModel.duplicatePreset(preset)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Preset dupliqué avec succès")
+                                }
+                            }
                         )
                     }
                 }
 
                 // Presets Passphrase
-                if (uiState.passphrasePresets.isNotEmpty()) {
+                if (filteredPassphrasePresets.isNotEmpty()) {
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -196,18 +258,24 @@ fun PresetListScreen(
                                 modifier = Modifier.padding(start = 4.dp)
                             )
                             Text(
-                                text = "${uiState.passphrasePresets.size}/15",
+                                text = "${filteredPassphrasePresets.size}/${uiState.passphrasePresets.size}",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                    items(uiState.passphrasePresets) { preset ->
+                    items(filteredPassphrasePresets) { preset ->
                         PresetManagementCard(
                             preset = preset,
                             onSetDefault = { viewModel.setAsDefault(preset.id) },
                             onEdit = { showEditDialog = preset },
-                            onDelete = { showDeleteDialog = preset }
+                            onDelete = { showDeleteDialog = preset },
+                            onDuplicate = {
+                                viewModel.duplicatePreset(preset)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Preset dupliqué avec succès")
+                                }
+                            }
                         )
                     }
                 }
@@ -407,7 +475,8 @@ private fun PresetManagementCard(
     preset: DecryptedPreset,
     onSetDefault: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onDuplicate: () -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -605,6 +674,18 @@ private fun PresetManagementCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Éditer")
+                    }
+                    OutlinedButton(
+                        onClick = onDuplicate,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Dupliquer")
                     }
                     OutlinedButton(
                         onClick = onDelete,

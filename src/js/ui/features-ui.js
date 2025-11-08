@@ -755,6 +755,15 @@ function showManagePresetsModal() {
         </button>
       </div>
       <div class="modal-body">
+        <div class="search-container" style="margin-bottom: 16px;">
+          <input
+            type="text"
+            id="preset-search"
+            class="input-field"
+            placeholder="🔍 Rechercher un preset..."
+            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+          >
+        </div>
         <div class="presets-list">
           ${presets.map(preset => `
             <div class="preset-item" data-preset-id="${preset.id}">
@@ -831,6 +840,29 @@ function bindPresetModalEvents(modal) {
   modal.querySelector('#close-presets-modal-footer')?.addEventListener('click', () => {
     modal.remove();
   });
+
+  // Search functionality
+  const searchInput = modal.querySelector('#preset-search');
+  const presetItems = modal.querySelectorAll('.preset-item');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase().trim();
+
+      presetItems.forEach(item => {
+        const presetId = item.dataset.presetId;
+        const preset = presetManager.getPreset(presetId);
+
+        if (preset) {
+          const matchesSearch =
+            preset.name.toLowerCase().includes(searchTerm) ||
+            (preset.description && preset.description.toLowerCase().includes(searchTerm));
+
+          item.style.display = matchesSearch ? 'block' : 'none';
+        }
+      });
+    });
+  }
 
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
