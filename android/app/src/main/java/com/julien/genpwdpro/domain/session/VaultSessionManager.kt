@@ -158,7 +158,7 @@ class VaultSessionManager @Inject constructor(
                 Result.success(Unit)
             } catch (e: CancellationException) {
                 session.updateData(previousData)
-                throw e
+                throw e  // Always rethrow cancellation
             } catch (e: VaultException) {
                 session.updateData(previousData)
                 SafeLog.w(
@@ -166,9 +166,17 @@ class VaultSessionManager @Inject constructor(
                     "Business rule failed during $operationName: ${e.message}"
                 )
                 Result.failure(e)
+            } catch (e: OutOfMemoryError) {
+                // CRITICAL: Don't catch OOM - let it propagate to crash handler
+                SafeLog.e(TAG, "CRITICAL: Out of memory during $operationName", e)
+                throw e
+            } catch (e: StackOverflowError) {
+                // CRITICAL: Don't catch stack overflow - let it propagate
+                SafeLog.e(TAG, "CRITICAL: Stack overflow during $operationName", e)
+                throw e
             } catch (e: Exception) {
                 session.updateData(previousData)
-                SafeLog.e(TAG, "Failed to $operationName", e)
+                SafeLog.e(TAG, "Failed to $operationName: ${e.javaClass.simpleName}", e)
                 Result.failure(e)
             }
         }

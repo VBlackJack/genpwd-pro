@@ -749,16 +749,30 @@ class VaultFileManager @Inject constructor(
             }
             throw e
         } finally {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val finalizeValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+            // CRITICAL: Always clear IS_PENDING flag, even on severe errors
+            // Wrap in try-catch to ensure this never fails
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val finalizeValues = ContentValues().apply {
+                        put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    }
+                    val updated = resolver.update(targetUri, finalizeValues, null, null)
+                    if (updated == 0) {
+                        SafeLog.w(TAG, "Failed to clear IS_PENDING flag - no rows updated")
+                    }
                 }
-                resolver.update(targetUri, finalizeValues, null, null)
-            }
 
-            if (!writeSucceeded && isNewEntry) {
-                // Ensure cleanup when write failed before reaching catch (rare cases)
-                resolver.delete(targetUri, null, null)
+                if (!writeSucceeded && isNewEntry) {
+                    // Ensure cleanup when write failed before reaching catch (rare cases)
+                    resolver.delete(targetUri, null, null)
+                }
+            } catch (e: Exception) {
+                // Log but don't throw - this is cleanup code
+                SafeLog.e(TAG, "Error during IS_PENDING cleanup (non-fatal)", e)
+            } catch (e: OutOfMemoryError) {
+                // Even on OOM, try to log it
+                SafeLog.e(TAG, "CRITICAL: OOM during IS_PENDING cleanup", e)
+                // Don't rethrow - let original error propagate
             }
         }
 
@@ -1071,11 +1085,36 @@ class VaultFileManager @Inject constructor(
         val vaultId = UUID.randomUUID().toString()
         val timestamp = System.currentTimeMillis()
 
-        // Prendre les permissions persistantes sur le dossier
-        context.contentResolver.takePersistableUriPermission(
-            customFolderUri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
+        // CRITICAL: Take and validate persistable URI permissions
+        try {
+            context.contentResolver.takePersistableUriPermission(
+                customFolderUri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+
+            // Verify permissions were actually granted
+            val persistedPermissions = context.contentResolver.persistedUriPermissions
+            val hasPermission = persistedPermissions.any { permission ->
+                permission.uri == customFolderUri &&
+                permission.isReadPermission &&
+                permission.isWritePermission
+            }
+
+            if (!hasPermission) {
+                throw SecurityException(
+                    "Failed to obtain persistent read/write permissions for URI: $customFolderUri. " +
+                    "User may have denied permission or URI is invalid."
+                )
+            }
+
+            SafeLog.d(TAG, "SAF permissions granted and verified for URI")
+        } catch (e: SecurityException) {
+            SafeLog.e(TAG, "Failed to take persistent URI permissions", e)
+            throw VaultException.FileAccessError(
+                "Cannot access selected folder. Please ensure you granted read/write permissions.",
+                e
+            )
+        }
 
         // Créer la clé depuis le master password
         val salt = cryptoManager.generateSalt()
@@ -1185,6 +1224,9 @@ class VaultFileManager @Inject constructor(
         vaultKey: SecretKey,
         header: VaultFileHeader
     ): VaultFileHeader {
+        // SECURITY: Validate SAF permissions before write
+        validateSafPermissions(fileUri, requireWrite = true)
+
         try {
             val payload = buildVaultPayload(data, vaultKey, header)
 
@@ -1192,9 +1234,47 @@ class VaultFileManager @Inject constructor(
 
             SafeLog.d(TAG, "Vault file updated at SAF URI: ${SafeLog.redact(fileUri)}")
             return payload.header
+        } catch (e: VaultException) {
+            throw e  // Already wrapped
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error updating vault file at SAF URI", e)
-            throw e
+            throw VaultException.SaveFailed("Failed to update vault at URI: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Validates SAF URI permissions before attempting access
+     *
+     * @throws VaultException.FileAccessError if permissions are not available
+     */
+    private fun validateSafPermissions(uri: Uri, requireWrite: Boolean = false) {
+        try {
+            val persistedPermissions = context.contentResolver.persistedUriPermissions
+            val permission = persistedPermissions.find { it.uri == uri }
+
+            if (permission == null) {
+                throw SecurityException(
+                    "No persisted permissions found for URI. " +
+                    "File may have been moved or permissions revoked by user."
+                )
+            }
+
+            if (!permission.isReadPermission) {
+                throw SecurityException("Read permission not granted for URI")
+            }
+
+            if (requireWrite && !permission.isWritePermission) {
+                throw SecurityException("Write permission not granted for URI")
+            }
+
+            SafeLog.d(TAG, "SAF permissions validated for URI")
+        } catch (e: SecurityException) {
+            SafeLog.e(TAG, "SAF permission validation failed", e)
+            throw VaultException.FileAccessError(
+                "Cannot access vault file. Permissions may have been revoked. " +
+                "Please re-select the file location in settings.",
+                e
+            )
         }
     }
 
@@ -1211,6 +1291,9 @@ class VaultFileManager @Inject constructor(
         masterPassword: String,
         fileUri: Uri
     ): VaultLoadResult {
+        // SECURITY: Validate SAF permissions before access
+        validateSafPermissions(fileUri, requireWrite = false)
+
         try {
             context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
                 val header = readVaultHeader(inputStream)
@@ -1223,9 +1306,11 @@ class VaultFileManager @Inject constructor(
                     location = VaultFileLocation(uri = fileUri)
                 )
             } ?: throw IllegalStateException("Cannot open input stream from URI")
+        } catch (e: VaultException) {
+            throw e  // Already wrapped
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error reading vault file from SAF", e)
-            throw e
+            throw VaultException.FileAccessError("Failed to read vault from URI: ${e.message}", e)
         }
     }
 
