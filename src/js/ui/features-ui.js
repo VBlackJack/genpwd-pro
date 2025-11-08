@@ -513,14 +513,9 @@ function bindPresetEvents() {
 }
 
 /**
- * Show save preset dialog
+ * Show save preset dialog (modal version)
  */
 function showSavePresetDialog() {
-  const name = prompt('Nom du preset:');
-  if (!name) return;
-
-  const description = prompt('Description (optionnelle):') || '';
-
   // Gather current configuration
   const config = {
     mode: document.getElementById('mode-select')?.value,
@@ -535,15 +530,131 @@ function showSavePresetDialog() {
     quantity: parseInt(document.getElementById('qty')?.value)
   };
 
-  try {
-    const preset = presetManager.createPreset(name, config, description);
-    updatePresetDropdown();
-    showToast(`Preset "${name}" saved!`, 'success');
-    safeLog(`Preset created: ${preset.id}`);
-  } catch (error) {
-    showToast('Failed to save preset', 'error');
-    safeLog(`Error saving preset: ${error.message}`);
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'save-preset-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">💾 Sauvegarder le Preset</div>
+        <button class="modal-close" id="close-save-modal" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="preset-name">Nom du preset <span style="color: red;">*</span></label>
+          <input type="text" id="preset-name" class="input-field" placeholder="Ex: Mon preset sécurisé" required maxlength="50">
+          <span class="error-message" id="name-error" style="display:none; color: red; font-size: 0.85em;"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="preset-description">Description</label>
+          <textarea id="preset-description" class="input-field" rows="2" placeholder="Description optionnelle..."></textarea>
+        </div>
+
+        <div class="config-preview">
+          <strong>Configuration à sauvegarder :</strong>
+          <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
+            <li>Mode: ${config.mode || 'Non défini'}</li>
+            <li>Longueur: ${config.length || 'N/A'} caractères</li>
+            <li>Politique: ${config.policy || 'Standard'}</li>
+            <li>Chiffres: ${config.digits || 0}</li>
+            <li>Caractères spéciaux: ${config.specials || 0}</li>
+            ${config.customSpecials ? `<li>Spéciaux personnalisés: ${config.customSpecials}</li>` : ''}
+            <li>Placement chiffres: ${config.placeDigits || 'Aléatoire'}</li>
+            <li>Placement spéciaux: ${config.placeSpecials || 'Aléatoire'}</li>
+            <li>Casse: ${config.caseMode || 'Mixte'}</li>
+            <li>Quantité: ${config.quantity || 1}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-save-preset-confirm">💾 Sauvegarder</button>
+        <button class="btn" id="btn-cancel-save">Annuler</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Focus on name input
+  setTimeout(() => {
+    modal.classList.add('show');
+    document.getElementById('preset-name')?.focus();
+  }, 10);
+
+  // Validation
+  const nameInput = document.getElementById('preset-name');
+  const nameError = document.getElementById('name-error');
+
+  function validateName() {
+    const name = nameInput.value.trim();
+    if (!name) {
+      nameError.textContent = 'Le nom est requis';
+      nameError.style.display = 'block';
+      return false;
+    }
+    if (name.length > 50) {
+      nameError.textContent = 'Le nom ne peut pas dépasser 50 caractères';
+      nameError.style.display = 'block';
+      return false;
+    }
+    nameError.style.display = 'none';
+    return true;
   }
+
+  nameInput.addEventListener('input', validateName);
+
+  // Save button
+  document.getElementById('btn-save-preset-confirm')?.addEventListener('click', () => {
+    if (!validateName()) return;
+
+    const name = nameInput.value.trim();
+    const description = document.getElementById('preset-description')?.value.trim() || '';
+
+    try {
+      const preset = presetManager.createPreset(name, config, description);
+      updatePresetDropdown();
+      modal.remove();
+      showToast(`Preset "${name}" sauvegardé !`, 'success');
+      safeLog(`Preset created: ${preset.id}`);
+    } catch (error) {
+      showToast('Échec de la sauvegarde du preset', 'error');
+      safeLog(`Error saving preset: ${error.message}`);
+    }
+  });
+
+  // Cancel button
+  document.getElementById('btn-cancel-save')?.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close button
+  document.getElementById('close-save-modal')?.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close on overlay click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+
+  // Handle Enter key
+  nameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('btn-save-preset-confirm')?.click();
+    }
+  });
 }
 
 /**
@@ -644,20 +755,56 @@ function showManagePresetsModal() {
         </button>
       </div>
       <div class="modal-body">
+        <div class="search-container" style="margin-bottom: 16px;">
+          <input
+            type="text"
+            id="preset-search"
+            class="input-field"
+            placeholder="🔍 Rechercher un preset..."
+            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+          >
+        </div>
         <div class="presets-list">
           ${presets.map(preset => `
             <div class="preset-item" data-preset-id="${preset.id}">
               <div class="preset-info">
-                <div class="preset-name">
-                  ${preset.name} ${preset.isDefault ? '⭐' : ''}
+                <div class="preset-name" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>${preset.name} ${preset.isDefault ? '⭐' : ''}</span>
+                  <button class="btn-mini" data-action="toggle-details" data-preset-id="${preset.id}" style="font-size: 0.8em;">
+                    <span class="details-toggle-icon">▼</span> Détails
+                  </button>
                 </div>
                 <div class="preset-desc">${preset.description || 'Aucune description'}</div>
-                <div class="preset-meta">
+
+                <!-- Section expandable des détails -->
+                <div class="preset-details" id="details-${preset.id}" style="display: none; background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 0.9em;">
+                  <strong style="color: #333;">Configuration :</strong>
+                  <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li><strong>Mode :</strong> ${preset.config.mode || 'Non défini'}</li>
+                    <li><strong>Longueur :</strong> ${preset.config.length || 'N/A'} caractères</li>
+                    <li><strong>Politique :</strong> ${preset.config.policy || 'Standard'}</li>
+                    <li><strong>Chiffres :</strong> ${preset.config.digits || 0}</li>
+                    <li><strong>Caractères spéciaux :</strong> ${preset.config.specials || 0}</li>
+                    ${preset.config.customSpecials ? `<li><strong>Spéciaux personnalisés :</strong> ${preset.config.customSpecials}</li>` : ''}
+                    <li><strong>Placement chiffres :</strong> ${preset.config.placeDigits || 'Aléatoire'}</li>
+                    <li><strong>Placement spéciaux :</strong> ${preset.config.placeSpecials || 'Aléatoire'}</li>
+                    <li><strong>Casse :</strong> ${preset.config.caseMode || 'Mixte'}</li>
+                    <li><strong>Quantité :</strong> ${preset.config.quantity || 1}</li>
+                  </ul>
+                  <div style="font-size: 0.85em; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+                    <div>📅 Créé : ${new Date(preset.createdAt).toLocaleDateString()} ${new Date(preset.createdAt).toLocaleTimeString()}</div>
+                    <div>🔄 Modifié : ${new Date(preset.updatedAt).toLocaleDateString()} ${new Date(preset.updatedAt).toLocaleTimeString()}</div>
+                  </div>
+                </div>
+
+                <div class="preset-meta" style="margin-top: 6px;">
                   Créé: ${new Date(preset.createdAt).toLocaleDateString()}
                 </div>
               </div>
               <div class="preset-actions">
                 <button class="btn-mini" data-action="load" data-preset-id="${preset.id}">Charger</button>
+                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}">✏️ Éditer</button>
+                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}">📋 Dupliquer</button>
                 <button class="btn-mini" data-action="export" data-preset-id="${preset.id}">Export</button>
                 ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}">Supprimer</button>` : ''}
               </div>
@@ -694,6 +841,29 @@ function bindPresetModalEvents(modal) {
     modal.remove();
   });
 
+  // Search functionality
+  const searchInput = modal.querySelector('#preset-search');
+  const presetItems = modal.querySelectorAll('.preset-item');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase().trim();
+
+      presetItems.forEach(item => {
+        const presetId = item.dataset.presetId;
+        const preset = presetManager.getPreset(presetId);
+
+        if (preset) {
+          const matchesSearch =
+            preset.name.toLowerCase().includes(searchTerm) ||
+            (preset.description && preset.description.toLowerCase().includes(searchTerm));
+
+          item.style.display = matchesSearch ? 'block' : 'none';
+        }
+      });
+    });
+  }
+
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -711,6 +881,38 @@ function bindPresetModalEvents(modal) {
               presetSelect.dispatchEvent(new Event('change'));
             }
             modal.remove();
+          }
+          break;
+
+        case 'toggle-details':
+          const detailsSection = document.getElementById(`details-${presetId}`);
+          const toggleIcon = btn.querySelector('.details-toggle-icon');
+          if (detailsSection) {
+            const isVisible = detailsSection.style.display !== 'none';
+            detailsSection.style.display = isVisible ? 'none' : 'block';
+            if (toggleIcon) {
+              toggleIcon.textContent = isVisible ? '▼' : '▲';
+            }
+          }
+          break;
+
+        case 'edit':
+          modal.remove();
+          showEditPresetModal(presetId);
+          break;
+
+        case 'duplicate':
+          const presetToDuplicate = presetManager.getPreset(presetId);
+          if (presetToDuplicate) {
+            const duplicatedPreset = presetManager.duplicatePreset(presetId);
+            if (duplicatedPreset) {
+              updatePresetDropdown();
+              modal.remove();
+              showManagePresetsModal();
+              showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
+            } else {
+              showToast('Échec de la duplication du preset', 'error');
+            }
           }
           break;
 
@@ -766,6 +968,155 @@ function bindPresetModalEvents(modal) {
     const json = presetManager.exportAll();
     downloadFile(json, 'genpwd-presets-all.json', 'application/json');
     showToast('All presets exported!', 'success');
+  });
+}
+
+/**
+ * Show edit preset modal
+ */
+function showEditPresetModal(presetId) {
+  const preset = presetManager.getPreset(presetId);
+  if (!preset) {
+    showToast('Preset introuvable', 'error');
+    return;
+  }
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'edit-preset-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Modifier le Preset</div>
+        <button class="modal-close" id="close-edit-modal" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="edit-preset-name">Nom du preset <span style="color: red;">*</span></label>
+          <input type="text" id="edit-preset-name" class="input-field" value="${preset.name}" required maxlength="50">
+          <span class="error-message" id="edit-name-error" style="display:none; color: red; font-size: 0.85em;"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-preset-description">Description</label>
+          <textarea id="edit-preset-description" class="input-field" rows="2">${preset.description || ''}</textarea>
+        </div>
+
+        <div class="config-preview" style="background: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 12px;">
+          <strong>Configuration (non modifiable) :</strong>
+          <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
+            <li>Mode: ${preset.config.mode || 'Non défini'}</li>
+            <li>Longueur: ${preset.config.length || 'N/A'} caractères</li>
+            <li>Politique: ${preset.config.policy || 'Standard'}</li>
+            <li>Chiffres: ${preset.config.digits || 0}</li>
+            <li>Caractères spéciaux: ${preset.config.specials || 0}</li>
+            ${preset.config.customSpecials ? `<li>Spéciaux personnalisés: ${preset.config.customSpecials}</li>` : ''}
+            <li>Placement chiffres: ${preset.config.placeDigits || 'Aléatoire'}</li>
+            <li>Placement spéciaux: ${preset.config.placeSpecials || 'Aléatoire'}</li>
+            <li>Casse: ${preset.config.caseMode || 'Mixte'}</li>
+            <li>Quantité: ${preset.config.quantity || 1}</li>
+          </ul>
+          <p style="font-size: 0.85em; color: #666; margin-top: 8px;">
+            💡 Pour modifier la configuration, supprimez ce preset et créez-en un nouveau avec les paramètres souhaités.
+          </p>
+        </div>
+
+        ${preset.isDefault ? `
+          <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.9em;">
+            ⚠️ Ceci est le preset par défaut. Vous pouvez modifier son nom et sa description.
+          </div>
+        ` : ''}
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-edit-preset-confirm">💾 Sauvegarder</button>
+        <button class="btn" id="btn-cancel-edit">Annuler</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Focus on name input
+  setTimeout(() => {
+    modal.classList.add('show');
+    document.getElementById('edit-preset-name')?.focus();
+  }, 10);
+
+  // Validation
+  const nameInput = document.getElementById('edit-preset-name');
+  const nameError = document.getElementById('edit-name-error');
+
+  function validateName() {
+    const name = nameInput.value.trim();
+    if (!name) {
+      nameError.textContent = 'Le nom est requis';
+      nameError.style.display = 'block';
+      return false;
+    }
+    if (name.length > 50) {
+      nameError.textContent = 'Le nom ne peut pas dépasser 50 caractères';
+      nameError.style.display = 'block';
+      return false;
+    }
+    nameError.style.display = 'none';
+    return true;
+  }
+
+  nameInput.addEventListener('input', validateName);
+
+  // Save button
+  document.getElementById('btn-edit-preset-confirm')?.addEventListener('click', () => {
+    if (!validateName()) return;
+
+    const name = nameInput.value.trim();
+    const description = document.getElementById('edit-preset-description')?.value.trim() || '';
+
+    const success = presetManager.updatePreset(presetId, {
+      name: name,
+      description: description
+    });
+
+    if (success) {
+      updatePresetDropdown();
+      modal.remove();
+      showToast(`Preset "${name}" modifié avec succès !`, 'success');
+      safeLog(`Preset updated: ${presetId}`);
+    } else {
+      showToast('Échec de la modification du preset', 'error');
+    }
+  });
+
+  // Cancel button
+  document.getElementById('btn-cancel-edit')?.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close button
+  document.getElementById('close-edit-modal')?.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close on overlay click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+
+  // Handle Enter key
+  nameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('btn-edit-preset-confirm')?.click();
+    }
   });
 }
 

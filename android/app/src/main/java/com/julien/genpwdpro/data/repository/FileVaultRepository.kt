@@ -356,7 +356,7 @@ class FileVaultRepository @Inject constructor(
     }
 
     /**
-     * Vérifie si on peut créer un nouveau preset pour un mode donné (limite de 3 par mode)
+     * Vérifie si on peut créer un nouveau preset pour un mode donné (limite de 15 par mode)
      *
      * @param generationMode Mode de génération
      * @return true si on peut créer, false sinon
@@ -364,7 +364,7 @@ class FileVaultRepository @Inject constructor(
     suspend fun canCreatePreset(generationMode: String): Boolean {
         val presets = getPresets().first()
         val presetsForMode = presets.filter { it.generationMode == generationMode && !it.isSystemPreset }
-        return presetsForMode.size < 3
+        return presetsForMode.size < 15
     }
 
     /**

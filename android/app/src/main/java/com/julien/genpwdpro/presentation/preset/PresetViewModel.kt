@@ -70,13 +70,13 @@ class PresetViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isCreating = true) }
 
-                // Check if we can create a new preset (max 3 per mode)
+                // Check if we can create a new preset (max 15 per mode)
                 val canCreate = fileVaultRepository.canCreatePreset(mode)
                 if (!canCreate) {
                     _uiState.update {
                         it.copy(
                             isCreating = false,
-                            error = "Limit of 3 presets reached for mode ${mode.name}"
+                            error = "Limite de 15 presets atteinte pour le mode ${mode.name}"
                         )
                     }
                     return@launch
@@ -152,6 +152,51 @@ class PresetViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(error = e.message ?: "Error deleting preset")
+                }
+            }
+        }
+    }
+
+    /**
+     * Duplicates a preset
+     */
+    fun duplicatePreset(preset: DecryptedPreset) {
+        viewModelScope.launch {
+            try {
+                // Check if we can create a new preset (max 15 per mode)
+                val canCreate = fileVaultRepository.canCreatePreset(preset.generationMode)
+                if (!canCreate) {
+                    _uiState.update {
+                        it.copy(
+                            error = "Limite de 15 presets atteinte pour le mode ${preset.generationMode.name}"
+                        )
+                    }
+                    return@launch
+                }
+
+                // Create a duplicate with a new ID and name
+                val duplicatedPreset = preset.copy(
+                    id = UUID.randomUUID().toString(),
+                    name = "Copie de ${preset.name}",
+                    isDefault = false,
+                    isSystemPreset = false,
+                    createdAt = System.currentTimeMillis(),
+                    modifiedAt = System.currentTimeMillis(),
+                    lastUsedAt = null,
+                    usageCount = 0
+                )
+
+                val createdId = fileVaultRepository.createPreset(duplicatedPreset)
+                if (createdId != null) {
+                    _uiState.update { it.copy(error = null) }
+                } else {
+                    _uiState.update {
+                        it.copy(error = "Impossible de dupliquer le preset")
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = e.message ?: "Erreur lors de la duplication du preset")
                 }
             }
         }

@@ -195,6 +195,37 @@ class PresetManager {
   }
 
   /**
+   * Duplicate a preset
+   * @param {string} id - Preset ID to duplicate
+   * @returns {Preset|null} The duplicated preset or null on error
+   */
+  duplicatePreset(id) {
+    const preset = this.presets.get(id);
+    if (!preset) {
+      safeLog(`[PresetManager] Preset not found: ${id}`);
+      return null;
+    }
+
+    // Create a copy with a new ID and name
+    const newId = this.generateId();
+    const duplicatedPreset = {
+      id: newId,
+      name: `Copie de ${preset.name}`,
+      description: preset.description,
+      config: { ...preset.config },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isDefault: false
+    };
+
+    this.presets.set(newId, duplicatedPreset);
+    this.savePresets();
+    safeLog(`[PresetManager] Duplicated preset: ${duplicatedPreset.name}`);
+
+    return duplicatedPreset;
+  }
+
+  /**
    * Delete a preset
    * @param {string} id - Preset ID
    * @returns {boolean} Success status
