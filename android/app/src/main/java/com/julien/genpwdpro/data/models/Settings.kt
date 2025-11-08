@@ -33,6 +33,7 @@ data class Settings(
     val passphraseWordCount: Int = 5,
     val passphraseSeparator: String = "-",
     val dictionary: DictionaryType = DictionaryType.FRENCH,
+    val passphraseCapitalize: Boolean = true,
 
     // Mode Leet
     val leetWord: String = "password",
