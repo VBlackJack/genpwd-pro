@@ -449,13 +449,44 @@ class VaultManagerViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 // Importer le fichier vers le stockage interne
-                val (vaultId, location) = vaultFileManager.importVault(
+                val (originalVaultId, location) = vaultFileManager.importVault(
                     sourceUri = fileUri,
                     destinationStrategy = StorageStrategy.INTERNAL
                 )
 
-                val file = location.file
-                val uri = location.uri
+                // ✅ FIX: Vérifier si le vaultId existe déjà
+                val existingVault = vaultRegistryDao.getById(originalVaultId)
+                val finalVaultId: String
+                val finalLocation: VaultFileManager.VaultFileLocation
+
+                if (existingVault != null) {
+                    // Vault avec ce vaultId existe déjà - générer un nouveau vaultId
+                    SafeLog.w(
+                        "VaultManagerViewModel",
+                        "Vault with id ${SafeLog.redact(originalVaultId)} already exists, generating new vaultId"
+                    )
+
+                    // Générer un nouveau vaultId unique
+                    finalVaultId = java.util.UUID.randomUUID().toString()
+
+                    // Modifier le fichier vault pour utiliser le nouveau vaultId
+                    finalLocation = vaultFileManager.changeVaultId(
+                        location = location,
+                        newVaultId = finalVaultId
+                    )
+
+                    SafeLog.i(
+                        "VaultManagerViewModel",
+                        "Vault imported with new vaultId: ${SafeLog.redact(finalVaultId)} (original: ${SafeLog.redact(originalVaultId)})"
+                    )
+                } else {
+                    // Pas de conflit - garder le vaultId original
+                    finalVaultId = originalVaultId
+                    finalLocation = location
+                }
+
+                val file = finalLocation.file
+                val uri = finalLocation.uri
                 val filePath = file?.absolutePath ?: uri?.let { vaultFileManager.uriToPath(it) }
                     ?: throw IllegalStateException("Imported vault location unavailable")
                 val fileSize = file?.length() ?: uri?.let { vaultFileManager.getVaultFileSizeFromUri(it) }
@@ -464,7 +495,7 @@ class VaultManagerViewModel @Inject constructor(
 
                 // Créer une entrée dans le registry avec les paramètres corrects
                 val registryEntry = VaultRegistryEntry(
-                    id = vaultId,
+                    id = finalVaultId,
                     name = vaultName,
                     filePath = filePath,
                     storageStrategy = StorageStrategy.INTERNAL,

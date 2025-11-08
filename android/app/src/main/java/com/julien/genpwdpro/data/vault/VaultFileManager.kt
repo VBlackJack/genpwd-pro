@@ -26,6 +26,8 @@ import java.util.UUID
 import javax.crypto.SecretKey
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Gestionnaire de fichiers vault (.gpv)
@@ -1144,6 +1146,79 @@ class VaultFileManager @Inject constructor(
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error importing vault", e)
             throw e
+        }
+    }
+
+    /**
+     * Change le vaultId d'un fichier vault en modifiant son header
+     * Utilisé pour éviter les conflits lors de l'import
+     *
+     * @param location Location du fichier vault original
+     * @param newVaultId Nouveau vaultId à utiliser
+     * @return Nouvelle location avec le nouveau vaultId
+     */
+    suspend fun changeVaultId(
+        location: VaultFileLocation,
+        newVaultId: String
+    ): VaultFileLocation {
+        return withContext(Dispatchers.IO) {
+            try {
+                val oldFile = location.file
+                    ?: throw IllegalStateException("changeVaultId only supports file-based vaults")
+
+                // Lire le header actuel
+                val oldHeader = getVaultFileInfo(oldFile.absolutePath)
+                    ?: throw IllegalStateException("Cannot read vault header")
+
+                // Créer un nouveau header avec le nouveau vaultId
+                val newHeader = oldHeader.copy(vaultId = newVaultId)
+
+                // Créer le nouveau fichier
+                val newFile = File(oldFile.parent, getVaultFileName(newVaultId))
+
+                // Lire le contenu chiffré (tout sauf le header)
+                val encryptedContent = FileInputStream(oldFile).use { fis ->
+                    // Skip header
+                    fis.skip(VaultFileHeader.HEADER_SIZE.toLong())
+                    // Lire le reste (contenu chiffré)
+                    fis.readBytes()
+                }
+
+                // Écrire le nouveau fichier
+                FileOutputStream(newFile).use { fos ->
+                    // Écrire le nouveau header
+                    val headerJson = gson.toJson(newHeader)
+                    val headerBytes = ByteArray(VaultFileHeader.HEADER_SIZE)
+                    val jsonBytes = headerJson.toByteArray(Charsets.UTF_8)
+
+                    if (jsonBytes.size > VaultFileHeader.HEADER_SIZE) {
+                        throw IllegalStateException("Header too large: ${jsonBytes.size} > ${VaultFileHeader.HEADER_SIZE}")
+                    }
+
+                    System.arraycopy(jsonBytes, 0, headerBytes, 0, jsonBytes.size)
+                    fos.write(headerBytes)
+
+                    // Écrire le contenu chiffré (inchangé)
+                    fos.write(encryptedContent)
+                    fos.flush()
+                    fos.fd.sync()
+                }
+
+                // Supprimer l'ancien fichier
+                if (!oldFile.delete()) {
+                    SafeLog.w(TAG, "Failed to delete old vault file: ${oldFile.absolutePath}")
+                }
+
+                SafeLog.i(
+                    TAG,
+                    "Vault ID changed: ${SafeLog.redact(oldHeader.vaultId)} -> ${SafeLog.redact(newVaultId)}"
+                )
+
+                VaultFileLocation(file = newFile)
+            } catch (e: Exception) {
+                SafeLog.e(TAG, "Error changing vault ID", e)
+                throw e
+            }
         }
     }
 
