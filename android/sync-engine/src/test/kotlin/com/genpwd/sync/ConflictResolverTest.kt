@@ -17,30 +17,30 @@ class ConflictResolverTest {
     fun `merge prioritises remote updates by timestamp`() {
         val local = createVault(
             items = listOf(
-                VaultItem("1", "local", updatedAt = 10, updatedBy = "device"),
+                VaultItem("1", "local", updatedAtUtc = 10),
             ),
         )
         val remote = createVault(
             items = listOf(
-                VaultItem("1", "remote", updatedAt = 20, updatedBy = "remote"),
+                VaultItem("1", "remote", updatedAtUtc = 20),
             ),
         )
 
         val result = resolver.merge(local, remote, pendingOps = emptyList())
 
-        assertEquals("remote", result.merged.items.single().encryptedPayload)
+        assertEquals("remote", result.merged.items.single().encryptedBlob)
     }
 
     @Test
     fun `merge duplicates conflict with identical timestamp`() {
         val local = createVault(
             items = listOf(
-                VaultItem("1", "local", updatedAt = 10, updatedBy = "device"),
+                VaultItem("1", "local", updatedAtUtc = 10),
             ),
         )
         val remote = createVault(
             items = listOf(
-                VaultItem("1", "remote", updatedAt = 10, updatedBy = "remote"),
+                VaultItem("1", "remote", updatedAtUtc = 10),
             ),
         )
 
@@ -55,7 +55,7 @@ class ConflictResolverTest {
         val local = createVault(emptyList())
         val remote = createVault(emptyList())
         val pending = listOf(
-            PendingOp.Add("op1", updatedAtUtc = 10, item = VaultItem("1", "local", 10, "device")),
+            PendingOp.Add(item = VaultItem("1", "local", updatedAtUtc = 10)),
         )
 
         val result = resolver.merge(local, remote, pending)
@@ -75,5 +75,6 @@ class ConflictResolverTest {
         ),
         items = items,
         changeVector = "device#0",
+        journal = emptyList(),
     )
 }
