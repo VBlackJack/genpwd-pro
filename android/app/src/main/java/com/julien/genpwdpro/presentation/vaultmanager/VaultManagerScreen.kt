@@ -15,7 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
@@ -101,6 +107,27 @@ fun VaultManagerScreen(
                     viewModel.deleteVault(vaultId)
                 },
                 onDismiss = { viewModel.hideDeleteConfirmation() }
+            )
+        }
+    }
+
+    // Dialog de configuration de la biométrie
+    uiState.biometricPromptVaultId?.let { vaultId ->
+        val vault = vaults.find { it.id == vaultId }
+        if (vault != null) {
+            BiometricPasswordDialog(
+                vaultName = vault.name,
+                biometricEnabled = vault.biometricUnlockEnabled,
+                onConfirm = { password ->
+                    viewModel.toggleBiometric(
+                        activity,
+                        vaultId,
+                        password,
+                        !vault.biometricUnlockEnabled
+                    )
+                    viewModel.hideBiometricPrompt()
+                },
+                onDismiss = { viewModel.hideBiometricPrompt() }
             )
         }
     }
@@ -220,7 +247,8 @@ fun VaultManagerScreen(
                         onUnload = { viewModel.unloadVault(vault.id) },
                         onDelete = { viewModel.showDeleteConfirmation(vault.id) },
                         onOpen = { onNavigateToVault(vault.id) },
-                        onExport = { viewModel.showExportDialog(vault.id) }
+                        onExport = { viewModel.showExportDialog(vault.id) },
+                        onToggleBiometric = { viewModel.showBiometricPrompt(vault.id) }
                     )
                 }
             }
@@ -242,7 +270,8 @@ fun VaultCard(
     onUnload: () -> Unit,
     onDelete: () -> Unit,
     onOpen: () -> Unit,
-    onExport: () -> Unit
+    onExport: () -> Unit,
+    onToggleBiometric: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -436,6 +465,24 @@ fun VaultCard(
                         Spacer(Modifier.width(4.dp))
                         Text("Delete", style = MaterialTheme.typography.labelMedium)
                     }
+                }
+
+                // Troisième ligne : Biométrie
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onToggleBiometric,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.Fingerprint,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        if (vault.biometricUnlockEnabled) "Désactiver la biométrie" else "Activer la biométrie",
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
         }
@@ -963,6 +1010,112 @@ fun ExportVaultDialog(
             }
         },
         confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
+}
+
+/**
+ * Dialog pour activer/désactiver la biométrie
+ * Demande le mot de passe maître pour confirmation
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BiometricPasswordDialog(
+    vaultName: String,
+    biometricEnabled: Boolean,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    val isValid = password.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Fingerprint,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = {
+            Text(if (biometricEnabled) "Désactiver la biométrie" else "Activer la biométrie")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Coffre: $vaultName",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (biometricEnabled) {
+                    Text(
+                        text = "La biométrie sera désactivée pour ce coffre.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    Text(
+                        text = "Votre mot de passe sera chiffré et stocké de manière sécurisée dans le Keystore Android.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Mot de passe maître") },
+                    placeholder = { Text("Entrez votre mot de passe") },
+                    visualTransformation = if (showPassword)
+                        VisualTransformation.None
+                    else
+                        PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (isValid) {
+                                onConfirm(password)
+                            }
+                        }
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                imageVector = if (showPassword)
+                                    Icons.Default.VisibilityOff
+                                else
+                                    Icons.Default.Visibility,
+                                contentDescription = if (showPassword)
+                                    "Masquer le mot de passe"
+                                else
+                                    "Afficher le mot de passe"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(password) },
+                enabled = isValid
+            ) {
+                Text(if (biometricEnabled) "Désactiver" else "Activer")
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Annuler")
             }

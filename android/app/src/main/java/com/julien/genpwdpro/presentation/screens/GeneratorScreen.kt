@@ -44,6 +44,10 @@ fun GeneratorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val currentPreset by viewModel.currentPreset.collectAsState()
     val presets by viewModel.presets.collectAsState()
+    val availableVaults by viewModel.availableVaults.collectAsState()
+    val showUnlockDialog by viewModel.showUnlockDialog.collectAsState()
+    val isUnlocking by viewModel.isUnlocking.collectAsState()
+    val unlockError by viewModel.unlockError.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -220,6 +224,10 @@ fun GeneratorScreen(
                                 },
                                 onCreatePreset = {
                                     showSavePresetDialog = true
+                                },
+                                onEditPreset = { preset ->
+                                    // Navigation vers l'écran de gestion des presets pour édition complète
+                                    onNavigateToPresetManager()
                                 }
                             )
                         }
@@ -395,6 +403,19 @@ fun GeneratorScreen(
                     snackbarHostState.showSnackbar("Preset '$name' créé !")
                 }
             }
+        )
+    }
+
+    // Dialog de déverrouillage rapide
+    if (showUnlockDialog) {
+        QuickUnlockDialog(
+            vaults = availableVaults,
+            onDismiss = { viewModel.hideUnlockDialog() },
+            onUnlock = { vaultId, password ->
+                viewModel.unlockVault(vaultId, password)
+            },
+            isUnlocking = isUnlocking,
+            error = unlockError
         )
     }
 

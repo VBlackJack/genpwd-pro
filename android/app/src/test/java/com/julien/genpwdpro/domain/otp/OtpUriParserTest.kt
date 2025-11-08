@@ -2,9 +2,9 @@ package com.julien.genpwdpro.domain.otp
 
 import android.net.Uri
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.test.assertFailsWith
 
 class OtpUriParserTest {
 
@@ -32,7 +32,7 @@ class OtpUriParserTest {
     fun `parse HOTP uri requires counter`() {
         val uri = Uri.parse("otpauth://hotp/Label?secret=JBSWY3DPEHPK3PXP")
 
-        assertThrows(OtpUriParserException::class.java) {
+        assertFailsWith<OtpUriParserException> {
             parser.parse(uri)
         }
     }
@@ -41,7 +41,7 @@ class OtpUriParserTest {
     fun `parse rejects invalid algorithm`() {
         val uri = Uri.parse("otpauth://totp/Label?secret=JBSWY3DPEHPK3PXP&algorithm=MD5")
 
-        assertThrows(OtpUriParserException::class.java) {
+        assertFailsWith<OtpUriParserException> {
             parser.parse(uri)
         }
     }
@@ -50,7 +50,7 @@ class OtpUriParserTest {
     fun `parse rejects unsupported digit length`() {
         val uri = Uri.parse("otpauth://totp/Label?secret=JBSWY3DPEHPK3PXP&digits=7")
 
-        assertThrows(OtpUriParserException::class.java) {
+        assertFailsWith<OtpUriParserException> {
             parser.parse(uri)
         }
     }
@@ -72,7 +72,7 @@ class OtpUriParserTest {
     fun `parse rejects migration payload`() {
         val uri = Uri.parse("otpauth-migration://offline?data=AbCd")
 
-        val exception = assertThrows(OtpUriMigrationNotSupportedException::class.java) {
+        val exception = assertFailsWith<OtpUriMigrationNotSupportedException> {
             parser.parse(uri)
         }
         assertTrue(exception.message!!.contains("not supported"))
@@ -85,7 +85,7 @@ class OtpUriParserTest {
         }
         val uri = Uri.parse("otpauth://totp/Label?secret=$longSecret")
 
-        assertThrows(OtpUriParserException::class.java) {
+        assertFailsWith<OtpUriParserException> {
             parser.parse(uri)
         }
     }
@@ -96,7 +96,7 @@ class OtpUriParserTest {
         val maxUriLabel = "Issuer:" + "L".repeat(4000)
         val veryLongSecret = "A".repeat(1024)
         buildInvalidOtpCases(baseSecret, maxUriLabel, veryLongSecret).forEach { case ->
-            val exception = assertThrows(OtpUriParserException::class.java, case.description) {
+            val exception = assertFailsWith<OtpUriParserException>(case.description) {
                 parser.parse(Uri.parse(case.uri))
             }
 

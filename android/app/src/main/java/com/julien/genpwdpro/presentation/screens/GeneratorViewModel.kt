@@ -28,7 +28,8 @@ class GeneratorViewModel @Inject constructor(
     private val historyRepository: PasswordHistoryRepository,
     private val settingsDataStore: SettingsDataStore,
     private val fileVaultRepository: FileVaultRepository,
-    private val vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager
+    private val vaultSessionManager: com.julien.genpwdpro.domain.session.VaultSessionManager,
+    private val vaultRegistryDao: com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
@@ -39,6 +40,19 @@ class GeneratorViewModel @Inject constructor(
 
     private val _presets = MutableStateFlow<List<DecryptedPreset>>(emptyList())
     val presets: StateFlow<List<DecryptedPreset>> = _presets.asStateFlow()
+
+    // Vault unlock dialog state
+    private val _availableVaults = MutableStateFlow<List<com.julien.genpwdpro.data.db.entity.VaultRegistryEntry>>(emptyList())
+    val availableVaults: StateFlow<List<com.julien.genpwdpro.data.db.entity.VaultRegistryEntry>> = _availableVaults.asStateFlow()
+
+    private val _showUnlockDialog = MutableStateFlow(false)
+    val showUnlockDialog: StateFlow<Boolean> = _showUnlockDialog.asStateFlow()
+
+    private val _isUnlocking = MutableStateFlow(false)
+    val isUnlocking: StateFlow<Boolean> = _isUnlocking.asStateFlow()
+
+    private val _unlockError = MutableStateFlow<String?>(null)
+    val unlockError: StateFlow<String?> = _unlockError.asStateFlow()
 
     private var currentVaultId: String? = null
 
@@ -53,6 +67,13 @@ class GeneratorViewModel @Inject constructor(
         viewModelScope.launch {
             settingsDataStore.settingsFlow.collectLatest { savedSettings ->
                 _uiState.update { it.copy(settings = savedSettings) }
+            }
+        }
+
+        // Charger la liste des vaults disponibles
+        viewModelScope.launch {
+            vaultRegistryDao.getAllVaults().collectLatest { vaults ->
+                _availableVaults.value = vaults
             }
         }
     }
@@ -142,9 +163,8 @@ class GeneratorViewModel @Inject constructor(
             try {
                 // Vérifier que le vault est déverrouillé
                 if (!vaultSessionManager.isVaultUnlocked()) {
-                    _uiState.update {
-                        it.copy(error = "Le coffre doit être déverrouillé pour sauvegarder un preset")
-                    }
+                    // Afficher le dialog de déverrouillage au lieu d'une erreur
+                    showUnlockDialog()
                     return@launch
                 }
 
@@ -271,6 +291,63 @@ class GeneratorViewModel @Inject constructor(
                 expanded.add(section)
             }
             state.copy(expandedSections = expanded)
+        }
+    }
+
+    /**
+     * Affiche le dialog de déverrouillage rapide
+     */
+    fun showUnlockDialog() {
+        _showUnlockDialog.value = true
+        _unlockError.value = null
+    }
+
+    /**
+     * Masque le dialog de déverrouillage rapide
+     */
+    fun hideUnlockDialog() {
+        _showUnlockDialog.value = false
+        _unlockError.value = null
+        _isUnlocking.value = false
+    }
+
+    /**
+     * Déverrouille un coffre
+     */
+    fun unlockVault(vaultId: String, password: String) {
+        viewModelScope.launch {
+            _isUnlocking.value = true
+            _unlockError.value = null
+
+            try {
+                val result = vaultSessionManager.unlockVault(vaultId, password)
+                result.fold(
+                    onSuccess = {
+                        // Mise à jour du vault ID actuel
+                        currentVaultId = vaultId
+
+                        // Masquer le dialog
+                        hideUnlockDialog()
+
+                        // Recharger les presets
+                        loadPresets(vaultId)
+
+                        // Effacer l'erreur dans l'UI state
+                        _uiState.update { it.copy(error = null) }
+
+                        SafeLog.i("GeneratorViewModel", "Vault unlocked successfully: $vaultId")
+                    },
+                    onFailure = { exception ->
+                        _unlockError.value = exception.message ?: "Échec du déverrouillage"
+                        SafeLog.e("GeneratorViewModel", "Failed to unlock vault: ${exception.message}", exception)
+                    }
+                )
+            } catch (e: Exception) {
+                _unlockError.value = e.message ?: "Erreur lors du déverrouillage"
+                SafeLog.e("GeneratorViewModel", "Error unlocking vault: ${e.message}", e)
+            } finally {
+                _isUnlocking.value = false
+            }
         }
     }
 }

@@ -500,6 +500,103 @@ class VaultManagerViewModel @Inject constructor(
         }
     }
 
+    fun showBiometricPrompt(vaultId: String) {
+        _uiState.update {
+            it.copy(biometricPromptVaultId = vaultId)
+        }
+    }
+
+    fun hideBiometricPrompt() {
+        _uiState.update {
+            it.copy(biometricPromptVaultId = null)
+        }
+    }
+
+    /**
+     * Active ou désactive la biométrie pour un vault existant
+     */
+    fun toggleBiometric(
+        activity: androidx.fragment.app.FragmentActivity?,
+        vaultId: String,
+        masterPassword: String,
+        enable: Boolean
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            try {
+                if (enable) {
+                    // Activer la biométrie
+                    if (activity != null) {
+                        val result = biometricVaultManager.enableBiometric(
+                            activity,
+                            vaultId,
+                            masterPassword
+                        )
+                        result.fold(
+                            onSuccess = {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        successMessage = "Biométrie activée avec succès"
+                                    )
+                                }
+                                SafeLog.i("VaultManagerVM", "Biometric enabled for vault=${SafeLog.redact(vaultId)}")
+                            },
+                            onFailure = { exception ->
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        error = exception.message ?: "Échec de l'activation de la biométrie"
+                                    )
+                                }
+                                SafeLog.e("VaultManagerVM", "Failed to enable biometric", exception)
+                            }
+                        )
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "Activity requise pour activer la biométrie"
+                            )
+                        }
+                    }
+                } else {
+                    // Désactiver la biométrie
+                    val result = biometricVaultManager.disableBiometric(vaultId)
+                    result.fold(
+                        onSuccess = {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Biométrie désactivée avec succès"
+                                )
+                            }
+                            SafeLog.i("VaultManagerVM", "Biometric disabled for vault=${SafeLog.redact(vaultId)}")
+                        },
+                        onFailure = { exception ->
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = exception.message ?: "Échec de la désactivation de la biométrie"
+                                )
+                            }
+                            SafeLog.e("VaultManagerVM", "Failed to disable biometric", exception)
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                SafeLog.e("VaultManagerVM", "Toggle biometric error", e)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erreur: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
@@ -520,5 +617,6 @@ data class VaultManagerUiState(
     val showImportDialog: Boolean = false,
     val confirmDeleteVaultId: String? = null,
     val exportVaultId: String? = null,  // ID du coffre à exporter
-    val customFolderUri: Uri? = null // URI du dossier sélectionné pour CUSTOM storage
+    val customFolderUri: Uri? = null, // URI du dossier sélectionné pour CUSTOM storage
+    val biometricPromptVaultId: String? = null // ID du coffre pour activer/désactiver la biométrie
 )

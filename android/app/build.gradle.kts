@@ -14,8 +14,8 @@ android {
         applicationId = "com.julien.genpwdpro"
         minSdk = 24
         targetSdk = 34
-        versionCode = 22
-        versionName = "1.2.0-alpha.20"
+        versionCode = 29
+        versionName = "1.2.0-alpha.27"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -252,6 +252,7 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.mockk:mockk:1.13.8")
 

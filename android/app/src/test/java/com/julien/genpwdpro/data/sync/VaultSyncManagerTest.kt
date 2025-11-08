@@ -152,8 +152,10 @@ class VaultSyncManagerTest {
     fun `syncVault returns error when no provider configured`() = runTest {
         val result = syncManager.syncVault("vault-1", "password")
 
-        assertTrue(result is SyncResult.Error)
-        assertEquals("Aucun provider configuré", (result as SyncResult.Error).message)
+        assertTrue("Expected SyncResult.Error but got ${result::class.simpleName}", result is SyncResult.Error)
+        if (result is SyncResult.Error) {
+            assertEquals("Aucun provider configuré", result.message)
+        }
     }
 
     @Test

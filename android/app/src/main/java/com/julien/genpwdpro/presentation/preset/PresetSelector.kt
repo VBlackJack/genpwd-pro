@@ -25,6 +25,7 @@ fun PresetSelector(
     presets: List<DecryptedPreset>,
     onPresetSelected: (DecryptedPreset) -> Unit,
     onCreatePreset: () -> Unit,
+    onEditPreset: ((DecryptedPreset) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -82,6 +83,12 @@ fun PresetSelector(
                 onCreatePreset = {
                     onCreatePreset()
                     showBottomSheet = false
+                },
+                onEditPreset = onEditPreset?.let { callback ->
+                    { preset ->
+                        callback(preset)
+                        showBottomSheet = false
+                    }
                 }
             )
         }
@@ -96,7 +103,8 @@ private fun PresetListContent(
     presets: List<DecryptedPreset>,
     currentPresetId: String?,
     onPresetSelected: (DecryptedPreset) -> Unit,
-    onCreatePreset: () -> Unit
+    onCreatePreset: () -> Unit,
+    onEditPreset: ((DecryptedPreset) -> Unit)? = null
 ) {
     LazyColumn(
         modifier = Modifier
@@ -121,7 +129,8 @@ private fun PresetListContent(
                 PresetItem(
                     preset = defaultPreset,
                     isSelected = defaultPreset.id == currentPresetId,
-                    onClick = { onPresetSelected(defaultPreset) }
+                    onClick = { onPresetSelected(defaultPreset) },
+                    onEdit = onEditPreset?.let { { onEditPreset(defaultPreset) } }
                 )
             }
             item {
@@ -146,7 +155,8 @@ private fun PresetListContent(
                 PresetItem(
                     preset = preset,
                     isSelected = preset.id == currentPresetId,
-                    onClick = { onPresetSelected(preset) }
+                    onClick = { onPresetSelected(preset) },
+                    onEdit = onEditPreset?.let { { onEditPreset(preset) } }
                 )
             }
         }
@@ -168,7 +178,8 @@ private fun PresetListContent(
                 PresetItem(
                     preset = preset,
                     isSelected = preset.id == currentPresetId,
-                    onClick = { onPresetSelected(preset) }
+                    onClick = { onPresetSelected(preset) },
+                    onEdit = onEditPreset?.let { { onEditPreset(preset) } }
                 )
             }
         }
@@ -202,7 +213,8 @@ private fun PresetListContent(
 private fun PresetItem(
     preset: DecryptedPreset,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEdit: (() -> Unit)? = null
 ) {
     Card(
         onClick = onClick,
@@ -276,13 +288,33 @@ private fun PresetItem(
                 }
             }
 
-            // Checkmark si sélectionné
-            if (isSelected) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Sélectionné",
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            // Actions
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Bouton éditer (si non-système et callback fourni)
+                if (!preset.isSystemPreset && onEdit != null) {
+                    FilledTonalIconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Éditer",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                // Checkmark si sélectionné
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Sélectionné",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

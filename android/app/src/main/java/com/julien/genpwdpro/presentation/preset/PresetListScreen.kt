@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.vault.DecryptedPreset
+import com.julien.genpwdpro.data.models.Settings as SettingsModel
 import kotlinx.coroutines.launch
 
 /**
@@ -353,7 +354,17 @@ fun PresetListScreen(
     showEditDialog?.let { preset ->
         var editName by remember { mutableStateOf(preset.name) }
         var editIcon by remember { mutableStateOf(preset.icon) }
+        var editSettings by remember { mutableStateOf(preset.settings) }
         var nameError by remember { mutableStateOf<String?>(null) }
+        var showEmojiPicker by remember { mutableStateOf(false) }
+
+        if (showEmojiPicker) {
+            EmojiPickerDialog(
+                onDismiss = { showEmojiPicker = false },
+                onEmojiSelected = { editIcon = it },
+                currentEmoji = editIcon
+            )
+        }
 
         AlertDialog(
             onDismissRequest = { showEditDialog = null },
@@ -389,16 +400,38 @@ fun PresetListScreen(
                     )
 
                     // Icône
-                    OutlinedTextField(
-                        value = editIcon,
-                        onValueChange = { editIcon = it },
-                        label = { Text("Icône (emoji)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        supportingText = { Text("Utilisez un emoji pour représenter ce preset") }
-                    )
+                    OutlinedCard(
+                        onClick = { showEmojiPicker = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Icône (emoji)",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Touchez pour choisir une icône",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(
+                                text = editIcon,
+                                style = MaterialTheme.typography.displaySmall
+                            )
+                        }
+                    }
 
-                    // Aperçu des paramètres (lecture seule)
+                    // Configuration éditable
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -408,24 +441,248 @@ fun PresetListScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "Configuration (non modifiable)",
+                                text = "Configuration",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Text(
-                                text = preset.settings.toSummary(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+
+                            // Mode (lecture seule)
                             Text(
                                 text = "Mode: ${preset.generationMode.name}",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+
+                            // Paramètres spécifiques au mode
+                            when (preset.generationMode) {
+                                GenerationMode.SYLLABLES -> {
+                                    // Longueur
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Longueur:",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            FilledTonalIconButton(
+                                                onClick = {
+                                                    if (editSettings.syllablesLength > SettingsModel.MIN_SYLLABLES_LENGTH) {
+                                                        editSettings = editSettings.copy(
+                                                            syllablesLength = editSettings.syllablesLength - 2
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Remove,
+                                                    contentDescription = "Diminuer",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                            Text(
+                                                text = "${editSettings.syllablesLength}",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                modifier = Modifier.widthIn(min = 32.dp),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                            FilledTonalIconButton(
+                                                onClick = {
+                                                    if (editSettings.syllablesLength < SettingsModel.MAX_SYLLABLES_LENGTH) {
+                                                        editSettings = editSettings.copy(
+                                                            syllablesLength = editSettings.syllablesLength + 2
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = "Augmenter",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                GenerationMode.PASSPHRASE -> {
+                                    // Nombre de mots
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Nombre de mots:",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            FilledTonalIconButton(
+                                                onClick = {
+                                                    if (editSettings.passphraseWordCount > SettingsModel.MIN_PASSPHRASE_WORDS) {
+                                                        editSettings = editSettings.copy(
+                                                            passphraseWordCount = editSettings.passphraseWordCount - 1
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Remove,
+                                                    contentDescription = "Diminuer",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                            Text(
+                                                text = "${editSettings.passphraseWordCount}",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                modifier = Modifier.widthIn(min = 32.dp),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                            FilledTonalIconButton(
+                                                onClick = {
+                                                    if (editSettings.passphraseWordCount < SettingsModel.MAX_PASSPHRASE_WORDS) {
+                                                        editSettings = editSettings.copy(
+                                                            passphraseWordCount = editSettings.passphraseWordCount + 1
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = "Augmenter",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                else -> {}
+                            }
+
+                            // Chiffres
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Chiffres:",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    FilledTonalIconButton(
+                                        onClick = {
+                                            if (editSettings.digitsCount > SettingsModel.MIN_DIGITS) {
+                                                editSettings = editSettings.copy(
+                                                    digitsCount = editSettings.digitsCount - 1
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Remove,
+                                            contentDescription = "Diminuer",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = "${editSettings.digitsCount}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.widthIn(min = 32.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                    FilledTonalIconButton(
+                                        onClick = {
+                                            if (editSettings.digitsCount < SettingsModel.MAX_DIGITS) {
+                                                editSettings = editSettings.copy(
+                                                    digitsCount = editSettings.digitsCount + 1
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Augmenter",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Caractères spéciaux
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Spéciaux:",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    FilledTonalIconButton(
+                                        onClick = {
+                                            if (editSettings.specialsCount > SettingsModel.MIN_SPECIALS) {
+                                                editSettings = editSettings.copy(
+                                                    specialsCount = editSettings.specialsCount - 1
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Remove,
+                                            contentDescription = "Diminuer",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = "${editSettings.specialsCount}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.widthIn(min = 32.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                    FilledTonalIconButton(
+                                        onClick = {
+                                            if (editSettings.specialsCount < SettingsModel.MAX_SPECIALS) {
+                                                editSettings = editSettings.copy(
+                                                    specialsCount = editSettings.specialsCount + 1
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Augmenter",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -444,6 +701,7 @@ fun PresetListScreen(
                         val updatedPreset = preset.copy(
                             name = editName.trim(),
                             icon = editIcon.trim(),
+                            settings = editSettings.validate(),
                             modifiedAt = System.currentTimeMillis()
                         )
                         viewModel.updatePreset(updatedPreset)
@@ -646,61 +904,56 @@ private fun PresetManagementCard(
             // Actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 if (!preset.isDefault) {
-                    OutlinedButton(
+                    FilledTonalIconButton(
                         onClick = onSetDefault,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            contentDescription = "Définir par défaut",
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Défaut")
                     }
                 }
+                Spacer(modifier = Modifier.weight(1f))
                 if (!preset.isSystemPreset) {
-                    OutlinedButton(
+                    FilledTonalIconButton(
                         onClick = onEdit,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            contentDescription = "Éditer",
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Éditer")
                     }
-                    OutlinedButton(
+                    FilledTonalIconButton(
                         onClick = onDuplicate,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            contentDescription = "Dupliquer",
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Dupliquer")
                     }
-                    OutlinedButton(
+                    FilledTonalIconButton(
                         onClick = onDelete,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            contentDescription = "Supprimer",
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Supprimer")
                     }
                 }
             }
@@ -799,7 +1052,7 @@ private fun getTimeAgo(timestamp: Long): String {
 /**
  * Extension pour générer un résumé des settings
  */
-private fun com.julien.genpwdpro.data.models.Settings.toSummary(): String {
+private fun SettingsModel.toSummary(): String {
     return when (mode) {
         GenerationMode.SYLLABLES -> {
             "$syllablesLength chars • $digitsCount chiffres • $specialsCount spéciaux"
