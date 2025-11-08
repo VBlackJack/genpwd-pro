@@ -468,7 +468,28 @@ class VaultFileManager @Inject constructor(
     }
 
     /**
-     * Charge un fichier vault
+     * Loads and decrypts a vault file from disk
+     *
+     * CRITICAL OPERATION: This method performs several security-critical operations:
+     * 1. Reads vault header (contains KDF parameters, version, checksum)
+     * 2. Derives encryption key from masterPassword using Argon2id
+     * 3. Decrypts vault content using AES-256-GCM
+     * 4. Validates checksum to detect corruption
+     * 5. Auto-recovers from backup if corruption detected
+     *
+     * SECURITY GUARANTEES:
+     * - Wrong password results in decryption failure (not corruption)
+     * - Checksum validation detects tampered/corrupted files
+     * - Automatic backup recovery if corruption detected
+     * - Key derivation uses Argon2id (memory-hard, resistant to GPU attacks)
+     *
+     * @param vaultId Unique identifier of the vault
+     * @param masterPassword User's master password (will be used for key derivation)
+     * @param filePath Absolute path to the .gpv file
+     * @return VaultLoadResult containing decrypted data, header, derived key, and salt
+     * @throws IllegalStateException if vault file doesn't exist
+     * @throws VaultException.DecryptionFailed if wrong password or decryption fails
+     * @throws VaultException.DataCorruption if checksum validation fails and backup recovery fails
      */
     suspend fun loadVaultFile(
         vaultId: String,
@@ -499,7 +520,38 @@ class VaultFileManager @Inject constructor(
     }
 
     /**
-     * Sauvegarde un fichier vault
+     * Saves and encrypts a vault file to disk
+     *
+     * CRITICAL OPERATION: This method performs several security-critical operations:
+     * 1. Encrypts vault data using AES-256-GCM with the provided vaultKey
+     * 2. Generates SHA-256 checksum of encrypted content
+     * 3. Writes to disk using atomic write pattern (temp file + rename)
+     * 4. Creates backup (.bak) before overwriting existing file
+     * 5. Syncs to physical disk using FileDescriptor.sync()
+     *
+     * ATOMICITY GUARANTEE:
+     * - Uses temp file + atomic rename pattern
+     * - Either old OR new version exists, never partial write
+     * - Backup (.bak) created before overwrite
+     * - Second backup (.bak.old) kept for double protection
+     * - On failure, restores from backup automatically
+     *
+     * SECURITY GUARANTEES:
+     * - Data encrypted before writing (never touches disk in plaintext)
+     * - Checksum stored in header for corruption detection
+     * - fd.sync() ensures data persists to physical media
+     * - Works across all storage strategies (INTERNAL, APP_STORAGE, PUBLIC_DOCUMENTS)
+     *
+     * @param vaultId Unique identifier of the vault
+     * @param data Plaintext vault data to encrypt and save
+     * @param vaultKey Pre-derived encryption key (from master password)
+     * @param header Vault header containing KDF params, version, etc.
+     * @param strategy Storage strategy (where to save the file)
+     * @param customPath Optional custom URI (for CUSTOM strategy, use saveVaultFileToUri instead)
+     * @return VaultFileSaveResult containing updated header and file location
+     * @throws VaultException.InsufficientStorage if disk is full
+     * @throws VaultException.SaveFailed if write operation fails
+     * @throws UnsupportedOperationException if trying to use customPath with this method
      */
     suspend fun saveVaultFile(
         vaultId: String,

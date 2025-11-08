@@ -14,24 +14,38 @@ import javax.inject.Singleton
 /**
  * Rate limiter pour les tentatives de déverrouillage de vault
  *
- * Empêche les attaques par brute force en limitant le nombre de tentatives
- * de déverrouillage échouées et en imposant un verrouillage temporaire.
+ * CRITICAL SECURITY COMPONENT: Empêche les attaques par brute force en limitant
+ * le nombre de tentatives de déverrouillage échouées et en imposant un verrouillage temporaire.
  *
- * Fonctionnalités:
- * - Compteur de tentatives échouées par vault
- * - Verrouillage automatique après MAX_ATTEMPTS tentatives
- * - Durée de verrouillage configurable (par défaut 5 minutes)
- * - Réinitialisation automatique après expiration du verrouillage
- * - Thread-safe avec Mutex
- * - PERSISTENCE: État sauvegardé dans EncryptedSharedPreferences (survit au restart)
+ * ARCHITECTURE:
+ * - Dual-storage: In-memory cache + EncryptedSharedPreferences
+ * - Thread-safe: All operations protected by Mutex
+ * - Persistent: Survit aux app restarts et force-kills
+ * - Per-vault tracking: Chaque vault a son propre compteur
  *
- * Sécurité:
- * - Protection contre brute force attacks
- * - Limite à 5 tentatives par défaut (configurable)
- * - Lockout de 5 minutes (300 secondes)
- * - Logs sécurisés (vaultId redacted)
- * - État persisté de manière chiffrée (EncryptedSharedPreferences)
- * - ANTI-BYPASS: Attaquant ne peut pas bypass en force-kill + restart
+ * SECURITY FEATURES:
+ * - MAX_ATTEMPTS = 5 tentatives avant lockout
+ * - LOCKOUT_DURATION = 5 minutes (300 secondes)
+ * - ANTI-BYPASS: État persisté en chiffré, force-kill ne reset pas le compteur
+ * - Automatic restoration: État restauré au démarrage de l'app
+ * - Encrypted storage: EncryptedSharedPreferences with AES256-GCM
+ * - Secure logging: VaultIds are always redacted
+ *
+ * USAGE WORKFLOW:
+ * 1. BEFORE unlock attempt: Call checkAndRecordAttempt()
+ *    - Returns LockedOut if too many attempts
+ *    - Returns Allowed (with remaining attempts) if OK
+ * 2. AFTER successful unlock: Call recordSuccess() to reset counters
+ * 3. Manual reset: Call reset(vaultId) for admin override
+ *
+ * ATTACK MITIGATION:
+ * - Brute force: Limited to 5 attempts per 5 minutes = 12 attempts/hour max
+ * - Force-kill bypass: State persisted to EncryptedSharedPreferences
+ * - Multiple vaults: Each vault tracked independently
+ * - Memory attacks: State encrypted at rest
+ *
+ * @see VaultSessionManager.unlockVault Uses this before attempting unlock
+ * @see EncryptedSharedPreferences Storage backend for persistence
  */
 @Singleton
 class UnlockRateLimiter @Inject constructor(

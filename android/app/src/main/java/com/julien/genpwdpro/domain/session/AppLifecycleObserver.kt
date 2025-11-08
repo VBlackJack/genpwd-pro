@@ -6,6 +6,7 @@ import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
@@ -37,6 +38,7 @@ class AppLifecycleObserver(
 
     // Fixed: Use dedicated CoroutineScope instead of runBlocking
     // This prevents blocking the main thread during vault locking
+    // MEMORY LEAK FIX: CoroutineScope must be cancelled in onDestroy()
     private val lockScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
@@ -75,6 +77,16 @@ class AppLifecycleObserver(
         SafeLog.d(TAG, "App moved to background - locking vaults immediately")
         lockAllVaults()
         backgroundTimestamp = System.currentTimeMillis()
+    }
+
+    /**
+     * Appelé quand le lifecycle owner est détruit
+     * MEMORY LEAK FIX: Cancel coroutine scope to prevent memory leak
+     */
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
+        SafeLog.d(TAG, "Lifecycle destroyed - cleaning up coroutine scope")
+        lockScope.cancel()
     }
 
     /**
