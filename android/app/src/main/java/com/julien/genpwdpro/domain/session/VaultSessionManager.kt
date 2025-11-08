@@ -51,6 +51,7 @@ class VaultSessionManager @Inject constructor(
     private val vaultRegistryDao: VaultRegistryDao,
     private val cryptoManager: com.julien.genpwdpro.data.crypto.VaultCryptoManager,
     private val keystoreManager: KeystoreManager,
+    private val biometricKeyManager: com.julien.genpwdpro.security.BiometricKeyManager,
     private val unlockRateLimiter: UnlockRateLimiter
 ) {
     companion object {
@@ -58,6 +59,14 @@ class VaultSessionManager @Inject constructor(
         private const val DEFAULT_AUTO_LOCK_MINUTES = 5
         private const val FOREGROUND_RECHECK_DELAY_MS = 5_000L
     }
+
+    // MEMORY LEAK FIX: Reusable empty StateFlows to prevent memory leaks
+    // When no session is active, return these singletons instead of creating new MutableStateFlows
+    // that would never be garbage collected
+    private val emptyEntriesFlow = MutableStateFlow<List<VaultEntryEntity>>(emptyList()).asStateFlow()
+    private val emptyFoldersFlow = MutableStateFlow<List<FolderEntity>>(emptyList()).asStateFlow()
+    private val emptyTagsFlow = MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
+    private val emptyPresetsFlow = MutableStateFlow<List<PresetEntity>>(emptyList()).asStateFlow()
 
     /**
      * Session active représentant un vault déverrouillé
@@ -390,6 +399,12 @@ class VaultSessionManager @Inject constructor(
                 // Enregistrer le succès pour réinitialiser le rate limiter
                 unlockRateLimiter.recordSuccess(vaultId)
 
+                // Update biometric key last used timestamp if biometric is enabled
+                val registry = vaultRegistryDao.getById(vaultId)
+                if (registry?.biometricUnlockEnabled == true) {
+                    biometricKeyManager.updateLastUsed(vaultId)
+                }
+
                 SafeLog.i(
                     TAG,
                     "Vault unlocked successfully: vaultId=${SafeLog.redact(vaultId)}"
@@ -490,8 +505,7 @@ class VaultSessionManager @Inject constructor(
      * Récupère toutes les entries du vault déverrouillé
      */
     fun getEntries(): StateFlow<List<VaultEntryEntity>> {
-        val session = currentSession
-            ?: return MutableStateFlow<List<VaultEntryEntity>>(emptyList()).asStateFlow()
+        val session = currentSession ?: return emptyEntriesFlow
 
         return session.vaultData.map { it.entries }.stateIn<List<VaultEntryEntity>>(
             scope = sessionScope,
@@ -599,8 +613,7 @@ class VaultSessionManager @Inject constructor(
      * Récupère tous les folders
      */
     fun getFolders(): StateFlow<List<FolderEntity>> {
-        val session = currentSession
-            ?: return MutableStateFlow<List<FolderEntity>>(emptyList()).asStateFlow()
+        val session = currentSession ?: return emptyFoldersFlow
 
         return session.vaultData.map { it.folders }.stateIn<List<FolderEntity>>(
             scope = sessionScope,
@@ -702,8 +715,7 @@ class VaultSessionManager @Inject constructor(
      * Récupère tous les tags
      */
     fun getTags(): StateFlow<List<TagEntity>> {
-        val session = currentSession
-            ?: return MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
+        val session = currentSession ?: return emptyTagsFlow
 
         return session.vaultData.map { it.tags }.stateIn<List<TagEntity>>(
             scope = sessionScope,
@@ -864,8 +876,7 @@ class VaultSessionManager @Inject constructor(
      * Gets all tags for a specific entry
      */
     fun getTagsForEntry(entryId: String): StateFlow<List<TagEntity>> {
-        val session = currentSession
-            ?: return MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
+        val session = currentSession ?: return emptyTagsFlow
 
         return session.vaultData.map { vaultData ->
             val tagIds = vaultData.entryTags
@@ -892,8 +903,7 @@ class VaultSessionManager @Inject constructor(
      * Searches tags by name (case-insensitive)
      */
     fun searchTags(query: String): StateFlow<List<TagEntity>> {
-        val session = currentSession
-            ?: return MutableStateFlow<List<TagEntity>>(emptyList()).asStateFlow()
+        val session = currentSession ?: return emptyTagsFlow
 
         return session.vaultData.map { vaultData ->
             vaultData.tags.filter { tag ->
@@ -912,8 +922,7 @@ class VaultSessionManager @Inject constructor(
      * Récupère tous les presets
      */
     fun getPresets(): StateFlow<List<PresetEntity>> {
-        val session = currentSession
-            ?: return MutableStateFlow<List<PresetEntity>>(emptyList()).asStateFlow()
+        val session = currentSession ?: return emptyPresetsFlow
 
         return session.vaultData.map { it.presets }.stateIn<List<PresetEntity>>(
             scope = sessionScope,
@@ -1006,6 +1015,11 @@ class VaultSessionManager @Inject constructor(
     /**
      * Active le déverrouillage biométrique pour le vault actuel
      *
+     * SECURITY IMPROVEMENTS (Bug #2):
+     * - Uses BiometricKeyManager for versioned keys
+     * - Supports key rotation and revocation
+     * - Metadata stored in EncryptedSharedPreferences
+     *
      * @param masterPassword Le mot de passe maître (pour le chiffrer avec Keystore)
      * @return Result indiquant le succès ou l'échec
      */
@@ -1020,16 +1034,11 @@ class VaultSessionManager @Inject constructor(
                     "Enabling biometric unlock for vault: vaultId=${SafeLog.redact(session.vaultId)}"
                 )
 
-                val keyAlias = "genpwd_vault_${session.vaultId}_biometric"
-
-                // Fixed: Créer la nouvelle clé AVANT de supprimer l'ancienne pour éviter race condition
-                // Si le processus crash entre delete et create, l'utilisateur perdrait l'accès biométrique
-
-                // Étape 1: Chiffrer avec la nouvelle clé (crée automatiquement la clé si inexistante)
-                val encryptedData = keystoreManager.encryptString(masterPassword, keyAlias)
-
-                // Étape 2: La clé existe maintenant, on peut procéder en toute sécurité
-                // Note: Si l'ancienne clé existait, elle a été écrasée automatiquement par encryptString
+                // Use BiometricKeyManager for versioned key creation
+                val encryptedData = biometricKeyManager.createKeyForVault(
+                    session.vaultId,
+                    masterPassword
+                )
 
                 // Mettre à jour la registry avec les données biométriques
                 vaultRegistryDao.updateById(session.vaultId) { entry ->
@@ -1040,7 +1049,7 @@ class VaultSessionManager @Inject constructor(
                     )
                 }
 
-                SafeLog.d(TAG, "Biometric unlock enabled successfully with new key")
+                SafeLog.i(TAG, "Biometric unlock enabled successfully with versioned key")
                 Result.success(Unit)
 
             } catch (e: Exception) {
@@ -1048,6 +1057,60 @@ class VaultSessionManager @Inject constructor(
                 Result.failure(e)
             }
         }
+    }
+
+    /**
+     * Rotates the biometric key for the current vault
+     *
+     * This re-encrypts the master password with a new versioned key
+     * Recommended to call this every 90 days for security
+     *
+     * @param masterPassword Current master password
+     * @return Result indicating success or failure
+     */
+    suspend fun rotateBiometricKey(masterPassword: String): Result<Unit> {
+        val session = currentSession
+            ?: return Result.failure(IllegalStateException("No vault unlocked"))
+
+        return withContext(Dispatchers.IO) {
+            try {
+                SafeLog.i(
+                    TAG,
+                    "Rotating biometric key for vault: vaultId=${SafeLog.redact(session.vaultId)}"
+                )
+
+                // Rotate key using BiometricKeyManager
+                val encryptedData = biometricKeyManager.rotateKey(
+                    session.vaultId,
+                    masterPassword
+                )
+
+                // Update registry with new encrypted data
+                vaultRegistryDao.updateById(session.vaultId) { entry ->
+                    entry.copy(
+                        encryptedMasterPassword = encryptedData.ciphertext,
+                        masterPasswordIv = encryptedData.iv
+                    )
+                }
+
+                SafeLog.i(TAG, "Biometric key rotated successfully")
+                Result.success(Unit)
+
+            } catch (e: Exception) {
+                SafeLog.e(TAG, "Failed to rotate biometric key", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Checks if biometric key should be auto-rotated
+     *
+     * @return true if key is older than 90 days
+     */
+    fun shouldRotateBiometricKey(): Boolean {
+        val session = currentSession ?: return false
+        return biometricKeyManager.shouldRotateKey(session.vaultId)
     }
 
     /**
@@ -1119,7 +1182,10 @@ class VaultSessionManager @Inject constructor(
                     }
                 }
 
-                // 5. Désactiver la biométrie (l'ancien mot de passe chiffré n'est plus valide)
+                // 5. Désactiver et révoquer la biométrie (l'ancien mot de passe chiffré n'est plus valide)
+                // Use BiometricKeyManager to properly revoke all keys
+                biometricKeyManager.revokeAllKeys(session.vaultId)
+
                 vaultRegistryDao.updateById(session.vaultId) { entry ->
                     entry.copy(
                         biometricUnlockEnabled = false,
