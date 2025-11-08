@@ -79,6 +79,16 @@ class VaultFileManager @Inject constructor(
 
     /**
      * Récupère le répertoire de stockage selon la stratégie
+     *
+     * SCOPED STORAGE COMPLIANCE (Bug #1 - Android 11+):
+     * - INTERNAL: /data/data/app/files/vaults (private, always works)
+     * - APP_STORAGE: /Android/data/app/files/vaults (private, always works)
+     * - PUBLIC_DOCUMENTS: Uses MediaStore API on Android 10+ (Scoped Storage compliant)
+     *   Legacy File API only on Android 9 and below
+     * - CUSTOM: Uses Storage Access Framework (SAF)
+     *
+     * This method only returns File objects for INTERNAL and APP_STORAGE.
+     * PUBLIC_DOCUMENTS and CUSTOM use URIs instead (see saveVaultFile).
      */
     fun getStorageDirectory(strategy: StorageStrategy, customPath: Uri? = null): File {
         val directory = when (strategy) {
@@ -90,10 +100,16 @@ class VaultFileManager @Inject constructor(
             }
             StorageStrategy.PUBLIC_DOCUMENTS -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    // Android 10+ (Scoped Storage): Use MediaStore API instead
+                    // This method should not be called for PUBLIC_DOCUMENTS on Android 10+
+                    // Use saveVaultFile() which automatically uses MediaStore
                     throw UnsupportedOperationException(
-                        "Public documents strategy uses MediaStore on Android 10+"
+                        "PUBLIC_DOCUMENTS uses MediaStore API on Android 10+ (Scoped Storage). " +
+                        "Use saveVaultFile() which handles this automatically. " +
+                        "This ensures Play Store compliance and Android 11-14 compatibility."
                     )
                 }
+                // Android 9 and below: Legacy File API
                 File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
                     PUBLIC_DIR_NAME
@@ -101,7 +117,10 @@ class VaultFileManager @Inject constructor(
             }
             StorageStrategy.CUSTOM -> {
                 // Pour custom, on utilise le SAF, géré séparément
-                throw UnsupportedOperationException("Custom paths use Storage Access Framework")
+                throw UnsupportedOperationException(
+                    "CUSTOM strategy uses Storage Access Framework (SAF) with URIs. " +
+                    "Use saveVaultFileToUri() instead."
+                )
             }
         }
 
@@ -769,10 +788,20 @@ class VaultFileManager @Inject constructor(
     /**
      * Writes vault file to PUBLIC_DOCUMENTS using MediaStore
      *
+     * SCOPED STORAGE COMPLIANCE (Bug #1 - Android 11+):
+     * - Uses MediaStore API (required for Android 10+)
+     * - Compatible with Android 11-14 Scoped Storage restrictions
+     * - No MANAGE_EXTERNAL_STORAGE permission needed
+     * - Play Store compliant
+     *
      * Uses IS_PENDING flag for atomic-like behavior:
      * - File is hidden (pending) while writing
      * - Only made visible after successful write
      * - On error, pending file is deleted
+     *
+     * @param vaultId Vault identifier
+     * @param payload Encrypted vault data
+     * @return MediaStore URI for the created file
      */
     private suspend fun writeVaultFileToPublicDocuments(
         vaultId: String,

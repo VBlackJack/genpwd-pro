@@ -144,6 +144,11 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    // WorkManager for background tasks (auto-lock in doze mode)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    ksp("androidx.hilt:hilt-compiler:1.1.0")
+
     // DocumentFile for Storage Access Framework (SAF)
     implementation("androidx.documentfile:documentfile:1.0.1")
 
