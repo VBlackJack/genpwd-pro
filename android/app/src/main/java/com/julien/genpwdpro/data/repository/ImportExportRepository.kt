@@ -218,6 +218,8 @@ class ImportExportRepository @Inject constructor(
         masterPassword: String,
         uri: Uri
     ): Result<Int> = withContext(Dispatchers.IO) {
+        // Track if vault was already unlocked before export (for cleanup)
+        var isAlreadyUnlocked = false
         try {
             // Get vault metadata from registry
             val registryEntry = vaultRegistryDao.getById(vaultId)
@@ -225,7 +227,7 @@ class ImportExportRepository @Inject constructor(
 
             // Ensure vault is unlocked before exporting
             // Check if this specific vault is already unlocked
-            val isAlreadyUnlocked = vaultSessionManager.activeVaultId.value == vaultId
+            isAlreadyUnlocked = vaultSessionManager.activeVaultId.value == vaultId
 
             if (!isAlreadyUnlocked) {
                 // Unlock the vault with the provided master password

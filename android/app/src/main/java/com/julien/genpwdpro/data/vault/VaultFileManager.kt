@@ -14,6 +14,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.julien.genpwdpro.data.crypto.VaultCryptoManager
 import com.julien.genpwdpro.data.models.vault.*
+import com.julien.genpwdpro.domain.exceptions.VaultException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileInputStream
@@ -286,11 +287,11 @@ class VaultFileManager @Inject constructor(
             val newKey = cryptoManager.deriveKey(masterPassword, newSalt)
 
             // Verify data integrity before migration
-            if (vaultData.entries.isEmpty() && vaultData.metadata.entryCount > 0) {
+            if (vaultData.entries.isEmpty() && vaultData.metadata.statistics.entryCount > 0) {
                 SafeLog.e(TAG, "Data integrity check failed before migration - aborting")
                 throw VaultException.DataCorruption(
                     "Cannot migrate: vault data appears corrupted " +
-                    "(0 entries loaded but metadata shows ${vaultData.metadata.entryCount})"
+                    "(0 entries loaded but metadata shows ${vaultData.metadata.statistics.entryCount})"
                 )
             }
 
