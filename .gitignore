@@ -166,6 +166,11 @@ gradle-app.setting
 vault-domain/
 rebuild.bat
 
+# Build tools generated files
+android/build-report-*.txt
+android/app/build.gradle.kts.backup
+android/dist/
+
 # SBOM (generated)
 sbom.json
 sbom.xml
