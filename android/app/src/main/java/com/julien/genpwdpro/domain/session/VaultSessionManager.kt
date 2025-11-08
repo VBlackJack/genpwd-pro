@@ -99,6 +99,10 @@ class VaultSessionManager @Inject constructor(
 
     private val mutationMutex = Mutex()
 
+    // CRITICAL: Protects session state transitions (lock/unlock) to prevent race conditions
+    // Without this, concurrent lock/unlock operations could create inconsistent state
+    private val sessionStateMutex = Mutex()
+
     // Flux d'observation de la session active
     private val _activeVaultId = MutableStateFlow<String?>(null)
     val activeVaultId: StateFlow<String?> = _activeVaultId.asStateFlow()
@@ -230,21 +234,30 @@ class VaultSessionManager @Inject constructor(
                     }
                 }
 
-                // Vérifier qu'un vault n'est pas déjà déverrouillé
-                currentSession?.let {
-                    if (it.vaultId == vaultId) {
-                        _activeVaultId.value = vaultId
-                        resetAutoLockTimer()
-                        SafeLog.w(
-                            TAG,
-                            "Vault already unlocked: vaultId=${SafeLog.redact(vaultId)}"
-                        )
-                        return@withContext Result.success(Unit)
-                    } else {
-                        // Verrouiller l'ancien vault d'abord
+                // CRITICAL: Check current session state with mutex protection
+                // This prevents race conditions where unlock/lock happen concurrently
+                sessionStateMutex.withLock {
+                    currentSession?.let {
+                        if (it.vaultId == vaultId) {
+                            _activeVaultId.value = vaultId
+                            resetAutoLockTimer()
+                            SafeLog.w(
+                                TAG,
+                                "Vault already unlocked: vaultId=${SafeLog.redact(vaultId)}"
+                            )
+                            return@withContext Result.success(Unit)
+                        }
+                        // If different vault is unlocked, we need to lock it first
+                        // but we release the mutex to avoid deadlock
+                    }
+                }
+
+                // Lock previous vault if needed (outside mutex to avoid deadlock)
+                currentSession?.let { previousSession ->
+                    if (previousSession.vaultId != vaultId) {
                         SafeLog.d(
                             TAG,
-                            "Locking previous vault: vaultId=${SafeLog.redact(it.vaultId)}"
+                            "Locking previous vault: vaultId=${SafeLog.redact(previousSession.vaultId)}"
                         )
                         lockVault()
                     }
@@ -321,8 +334,11 @@ class VaultSessionManager @Inject constructor(
                     _vaultData = MutableStateFlow(loadResult.data)
                 )
 
-                currentSession = session
-                _activeVaultId.value = vaultId
+                // CRITICAL: Assign session with mutex protection
+                sessionStateMutex.withLock {
+                    currentSession = session
+                    _activeVaultId.value = vaultId
+                }
 
                 // Mettre à jour les statistiques et métadonnées
                 try {
@@ -412,7 +428,10 @@ class VaultSessionManager @Inject constructor(
      */
     suspend fun lockVault() {
         withContext(Dispatchers.IO) {
-            val session = currentSession ?: return@withContext
+            // CRITICAL: Get session reference with mutex protection
+            val session = sessionStateMutex.withLock {
+                currentSession
+            } ?: return@withContext
 
             try {
                 SafeLog.d(
@@ -432,10 +451,13 @@ class VaultSessionManager @Inject constructor(
                 // Mettre à jour le statut dans le registry
                 vaultRegistryDao.updateLoadedStatus(session.vaultId, false)
 
-                // Nettoyer la session
-                session.cleanup()
-                currentSession = null
-                _activeVaultId.value = null
+                // CRITICAL: Clear session with mutex protection
+                sessionStateMutex.withLock {
+                    // Nettoyer la session
+                    session.cleanup()
+                    currentSession = null
+                    _activeVaultId.value = null
+                }
 
                 SafeLog.i(TAG, "Vault locked successfully")
             } catch (e: Exception) {
@@ -445,9 +467,11 @@ class VaultSessionManager @Inject constructor(
                     e
                 )
                 // Forcer le nettoyage même en cas d'erreur
-                session.cleanup()
-                currentSession = null
-                _activeVaultId.value = null
+                sessionStateMutex.withLock {
+                    session.cleanup()
+                    currentSession = null
+                    _activeVaultId.value = null
+                }
             }
         }
     }

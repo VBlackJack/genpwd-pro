@@ -208,9 +208,14 @@ class VaultFileManager @Inject constructor(
     }
 
     private fun writeVaultPayloadToUri(uri: Uri, payload: VaultPayload) {
-        context.contentResolver.openOutputStream(uri, "wt")?.use { outputStream ->
-            outputStream.writeVaultPayload(payload)
-        } ?: throw IllegalStateException("Cannot open output stream for URI: $uri")
+        // CRITICAL: Use ParcelFileDescriptor to get access to sync()
+        // ContentResolver streams may not support fd.sync() directly
+        context.contentResolver.openFileDescriptor(uri, "wt")?.use { pfd ->
+            FileOutputStream(pfd.fileDescriptor).use { outputStream ->
+                outputStream.writeVaultPayload(payload)
+                // fd.sync() is already called in writeVaultPayload for FileOutputStream
+            }
+        } ?: throw IllegalStateException("Cannot open file descriptor for URI: $uri")
     }
 
     private suspend fun persistPayloadToLocation(
@@ -459,20 +464,43 @@ class VaultFileManager @Inject constructor(
     }
 
     /**
-     * Écrit un fichier vault avec chiffrement
+     * Écrit un fichier vault avec chiffrement (atomique)
+     *
+     * CRITICAL: Uses atomic write pattern to prevent data corruption:
+     * 1. Write to temporary file
+     * 2. Sync temp file to disk
+     * 3. Atomically rename temp file to target file
+     *
+     * This ensures that either the old version or new version exists,
+     * but never a partially written file (which would cause data loss).
      */
     private suspend fun writeVaultFile(
         file: File,
         payload: VaultPayload
     ): File {
+        // Create temp file in same directory (required for atomic rename)
+        val tempFile = File(file.parentFile, "${file.name}.tmp")
+
         try {
-            FileOutputStream(file).use { fos ->
+            // Step 1: Write to temporary file
+            FileOutputStream(tempFile).use { fos ->
                 fos.writeVaultPayload(payload)
+                // writeVaultPayload already calls fd.sync()
             }
 
-            SafeLog.d(TAG, "Vault file written successfully: ${SafeLog.redact(file.absolutePath)}")
+            // Step 2: Atomic rename (POSIX guarantees atomicity)
+            // This is the critical moment - either old or new file exists
+            if (!tempFile.renameTo(file)) {
+                throw IOException("Failed to atomically rename temp file to ${file.name}")
+            }
+
+            SafeLog.d(TAG, "Vault file written successfully (atomic): ${SafeLog.redact(file.absolutePath)}")
             return file
         } catch (e: Exception) {
+            // Clean up temp file on failure
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
             SafeLog.e(TAG, "Error writing vault file", e)
             throw e
         }
@@ -531,6 +559,14 @@ class VaultFileManager @Inject constructor(
         return createdUri to true
     }
 
+    /**
+     * Writes vault file to PUBLIC_DOCUMENTS using MediaStore
+     *
+     * Uses IS_PENDING flag for atomic-like behavior:
+     * - File is hidden (pending) while writing
+     * - Only made visible after successful write
+     * - On error, pending file is deleted
+     */
     private suspend fun writeVaultFileToPublicDocuments(
         vaultId: String,
         payload: VaultPayload
@@ -545,6 +581,7 @@ class VaultFileManager @Inject constructor(
 
         var writeSucceeded = false
         try {
+            // Write to pending file (hidden from user)
             resolver.openOutputStream(targetUri, "wt")?.use { outputStream ->
                 outputStream.writeVaultPayload(payload)
             } ?: throw IOException("Cannot open output stream for MediaStore URI")
