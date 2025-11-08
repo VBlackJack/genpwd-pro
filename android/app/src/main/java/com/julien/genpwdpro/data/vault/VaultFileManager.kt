@@ -198,6 +198,13 @@ class VaultFileManager @Inject constructor(
         write(payload.headerBytes)
         write(payload.encryptedContent)
         flush()
+
+        // CRITICAL: Ensure data is synced to disk to prevent data loss
+        // flush() only writes to OS buffer, not to physical disk
+        // We MUST call sync() to guarantee persistence
+        if (this is FileOutputStream) {
+            fd.sync()
+        }
     }
 
     private fun writeVaultPayloadToUri(uri: Uri, payload: VaultPayload) {
