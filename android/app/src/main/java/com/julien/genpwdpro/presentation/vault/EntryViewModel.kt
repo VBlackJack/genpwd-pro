@@ -151,11 +151,31 @@ class EntryViewModel @Inject constructor(
         // Analyser la force du mot de passe
         if (value.isNotEmpty()) {
             val analysis = passwordAnalyzer.analyze(value)
-            _passwordStrength.value = analysis.strength.ordinal
+            _passwordStrength.value = entropyToPercentage(analysis.entropy)
             _passwordEntropy.value = analysis.entropy
         } else {
             _passwordStrength.value = 0
             _passwordEntropy.value = 0.0
+        }
+    }
+
+    /**
+     * Convertit l'entropie (bits) en pourcentage de force (0-100)
+     *
+     * Échelle d'entropie:
+     * - < 30 bits: Très faible (0-20%)
+     * - 30-50 bits: Faible (20-40%)
+     * - 50-70 bits: Moyen (40-60%)
+     * - 70-90 bits: Fort (60-80%)
+     * - >= 90 bits: Très fort (80-100%)
+     */
+    private fun entropyToPercentage(entropy: Double): Int {
+        return when {
+            entropy < 30 -> (entropy / 30 * 20).toInt().coerceIn(0, 20)
+            entropy < 50 -> (20 + (entropy - 30) / 20 * 20).toInt().coerceIn(20, 40)
+            entropy < 70 -> (40 + (entropy - 50) / 20 * 20).toInt().coerceIn(40, 60)
+            entropy < 90 -> (60 + (entropy - 70) / 20 * 20).toInt().coerceIn(60, 80)
+            else -> (80 + (entropy - 90) / 30 * 20).toInt().coerceIn(80, 100)
         }
     }
 

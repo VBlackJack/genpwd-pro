@@ -137,6 +137,18 @@
     <string name="privacy_summary_body">Récapitulatif de l’usage de la caméra, du stockage chiffré, du presse-papiers et des politiques de sauvegarde.</string>
     <string name="privacy_summary_cta">Consulter</string>
 
+    <!-- About screen -->
+    <string name="about_screen_title">À propos</string>
+    <string name="about_app_name">GenPwd Pro</string>
+    <string name="about_app_description">Gestionnaire de mots de passe sécurisé avec génération avancée et chiffrement de bout en bout</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_author_title">Auteur</string>
+    <string name="about_author_role">Développeur principal</string>
+    <string name="about_technology_title">Technologies</string>
+    <string name="about_technology_description">Application native Android développée avec Jetpack Compose, utilisant SQLCipher, Tink Crypto, et l\'Android Keystore pour un chiffrement matériel.</string>
+    <string name="about_security_title">Sécurité</string>
+    <string name="about_security_description">Chiffrement AES-256-GCM, dérivation de clé avec Argon2id et Scrypt, protection biométrique, et aucune collecte de données personnelles.</string>
+
     <!-- Synchronisation -->
     <string name="sync_snackbar_error_prefix">Erreur : %1$s</string>
     <string name="sync_common_back">Retour</string>

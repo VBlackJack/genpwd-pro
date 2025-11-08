@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 fun SecuritySettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToPrivacy: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
     viewModel: SecuritySettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -60,6 +61,7 @@ fun SecuritySettingsScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onNavigateToPrivacy = onNavigateToPrivacy,
+        onNavigateToAbout = onNavigateToAbout,
         snackbarHostState = snackbarHostState,
         unlockErrorMessage = unlockErrorMessage,
         showTimeoutDialog = showTimeoutDialog,
@@ -75,6 +77,7 @@ private fun SecuritySettingsLayout(
     uiState: SecuritySettingsUiState,
     onNavigateBack: () -> Unit,
     onNavigateToPrivacy: () -> Unit,
+    onNavigateToAbout: () -> Unit,
     snackbarHostState: SnackbarHostState,
     unlockErrorMessage: String,
     showTimeoutDialog: Boolean,
@@ -213,6 +216,8 @@ private fun SecuritySettingsLayout(
             SecurityTipsCard()
 
             PrivacySummaryCard(onNavigateToPrivacy)
+
+            AboutSummaryCard(onNavigateToAbout)
         }
 
         if (showTimeoutDialog) {
@@ -875,6 +880,44 @@ private fun PrivacySummaryCard(onNavigateToPrivacy: () -> Unit) {
                 onClick = onNavigateToPrivacy
             ) {
                 Text(stringResource(R.string.privacy_summary_cta))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AboutSummaryCard(onNavigateToAbout: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.Info, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.about_screen_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = "Informations sur l'application, l'auteur et les technologies utilisées",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Button(
+                onClick = onNavigateToAbout
+            ) {
+                Text("Consulter")
             }
         }
     }

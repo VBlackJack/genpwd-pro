@@ -62,6 +62,7 @@ sealed class Screen(val route: String) {
     // Security Settings
     object SecuritySettings : Screen("security_settings")
     object Privacy : Screen("privacy")
+    object About : Screen("about")
 
     // Preset Manager
     object PresetManager : Screen("preset_manager/{vaultId}") {
@@ -607,6 +608,9 @@ fun AppNavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPrivacy = {
                     navController.navigate(Screen.Privacy.route)
+                },
+                onNavigateToAbout = {
+                    navController.navigate(Screen.About.route)
                 }
             )
         }
@@ -614,6 +618,13 @@ fun AppNavGraph(
         // ========== Privacy ==========
         composable(Screen.Privacy.route) {
             com.julien.genpwdpro.presentation.screens.privacy.PrivacyScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ========== About ==========
+        composable(Screen.About.route) {
+            com.julien.genpwdpro.presentation.screens.about.AboutScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
