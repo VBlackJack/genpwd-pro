@@ -116,6 +116,11 @@ class VaultSessionManager @Inject constructor(
     private val _activeVaultId = MutableStateFlow<String?>(null)
     val activeVaultId: StateFlow<String?> = _activeVaultId.asStateFlow()
 
+    // État de déverrouillage requis (pour prompt après retour de l'app)
+    data class RequiresUnlockState(val vaultId: String, val hasBiometric: Boolean)
+    private val _requiresUnlock = MutableStateFlow<RequiresUnlockState?>(null)
+    val requiresUnlock: StateFlow<RequiresUnlockState?> = _requiresUnlock.asStateFlow()
+
     // Scope pour les coroutines de session
     private var sessionScope = newSessionScope()
 
@@ -211,6 +216,25 @@ class VaultSessionManager @Inject constructor(
      */
     fun getCurrentSession(): VaultSession? {
         return currentSession
+    }
+
+    /**
+     * Signale qu'un déverrouillage est requis (appelé après retour de l'app)
+     */
+    suspend fun setRequiresUnlock(vaultId: String) {
+        val vault = vaultRegistryDao.getById(vaultId)
+        _requiresUnlock.value = RequiresUnlockState(
+            vaultId = vaultId,
+            hasBiometric = vault?.biometricUnlockEnabled ?: false
+        )
+        SafeLog.d(TAG, "Unlock required for vault: $vaultId (biometric=${vault?.biometricUnlockEnabled})")
+    }
+
+    /**
+     * Efface l'état de déverrouillage requis
+     */
+    fun clearRequiresUnlock() {
+        _requiresUnlock.value = null
     }
 
     /**

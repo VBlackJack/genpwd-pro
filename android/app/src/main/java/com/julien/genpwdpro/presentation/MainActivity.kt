@@ -43,6 +43,9 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var vaultStartupLocker: VaultStartupLocker
 
+    @Inject
+    lateinit var biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -110,6 +113,7 @@ class MainActivity : FragmentActivity() {
                     MainScreen(
                         navController = navController,
                         vaultSessionManager = vaultSessionManager,
+                        biometricVaultManager = biometricVaultManager,
                         startDestination = startDestination // Fournir la destination de départ
                     )
                 }

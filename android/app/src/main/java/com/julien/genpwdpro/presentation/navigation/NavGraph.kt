@@ -575,6 +575,23 @@ fun AppNavGraph(
                 }
             )
         }
+
+        // ========== Security Settings ==========
+        composable(Screen.SecuritySettings.route) {
+            com.julien.genpwdpro.presentation.screens.security.SecuritySettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPrivacy = {
+                    navController.navigate(Screen.Privacy.route)
+                }
+            )
+        }
+
+        // ========== Privacy ==========
+        composable(Screen.Privacy.route) {
+            com.julien.genpwdpro.presentation.screens.privacy.PrivacyScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
     }
 }
 

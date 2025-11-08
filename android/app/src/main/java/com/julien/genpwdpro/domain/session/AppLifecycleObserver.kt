@@ -84,6 +84,10 @@ class AppLifecycleObserver @Inject constructor(
         // Cancel WorkManager job since app is active
         cancelAutoLockWorker()
 
+        // Récupérer le vaultId avant qu'il soit verrouillé
+        val wasVaultUnlocked = vaultSessionManager.isVaultUnlocked()
+        val vaultIdBeforeLock = vaultSessionManager.getCurrentVaultId()
+
         // Vérifier si l'app est restée en background trop longtemps
         if (backgroundTimestamp > 0) {
             val backgroundDuration = System.currentTimeMillis() - backgroundTimestamp
@@ -95,6 +99,13 @@ class AppLifecycleObserver @Inject constructor(
                     "Background timeout exceeded ($backgroundDuration ms > $timeoutMillis ms), locking vaults"
                 )
                 lockAllVaults()
+
+                // Si un vault était déverrouillé, signaler qu'un déverrouillage est requis
+                if (wasVaultUnlocked && vaultIdBeforeLock != null) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        vaultSessionManager.setRequiresUnlock(vaultIdBeforeLock)
+                    }
+                }
             } else {
                 SafeLog.d(TAG, "Background duration within timeout: $backgroundDuration ms")
             }

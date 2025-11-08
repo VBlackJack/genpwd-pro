@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     navController: NavHostController,
     vaultSessionManager: VaultSessionManager,
+    biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager,
     startDestination: String = Screen.Dashboard.route // Destination de départ
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -33,6 +34,10 @@ fun MainScreen(
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    // Observer l'état de déverrouillage requis
+    val requiresUnlock by vaultSessionManager.requiresUnlock.collectAsState()
+    val activity = androidx.compose.ui.platform.LocalContext.current as? androidx.fragment.app.FragmentActivity
 
     val screensWithDrawer = listOf(
         Screen.Dashboard.route,
@@ -120,6 +125,23 @@ fun MainScreen(
                 )
             }
         }
+
+        // Overlay de déverrouillage automatique après retour de l'app
+        requiresUnlock?.let { unlockState ->
+            QuickUnlockOverlay(
+                vaultId = unlockState.vaultId,
+                hasBiometric = unlockState.hasBiometric,
+                activity = activity,
+                vaultSessionManager = vaultSessionManager,
+                biometricVaultManager = biometricVaultManager,
+                onDismiss = {
+                    vaultSessionManager.clearRequiresUnlock()
+                },
+                onUnlockSuccess = {
+                    vaultSessionManager.clearRequiresUnlock()
+                }
+            )
+        }
     }
 }
 
@@ -203,3 +225,178 @@ private val secondaryDrawerItems = listOf(
         "Paramètres"
     )
 )
+
+/**
+ * Overlay de déverrouillage rapide après retour de l'app
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuickUnlockOverlay(
+    vaultId: String,
+    hasBiometric: Boolean,
+    activity: androidx.fragment.app.FragmentActivity?,
+    vaultSessionManager: VaultSessionManager,
+    biometricVaultManager: com.julien.genpwdpro.security.BiometricVaultManager,
+    onDismiss: () -> Unit,
+    onUnlockSuccess: () -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var isUnlocking by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var biometricAttempted by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    // Tentative automatique de déverrouillage biométrique
+    LaunchedEffect(hasBiometric, biometricAttempted) {
+        if (hasBiometric && !biometricAttempted && activity != null) {
+            biometricAttempted = true
+            isUnlocking = true
+
+            val result = biometricVaultManager.unlockWithBiometric(activity, vaultId)
+            result.fold(
+                onSuccess = { decryptedPassword ->
+                    // Utiliser le password déchiffré pour déverrouiller le vault
+                    val unlockResult = vaultSessionManager.unlockVault(vaultId, decryptedPassword)
+                    unlockResult.fold(
+                        onSuccess = {
+                            onUnlockSuccess()
+                        },
+                        onFailure = { error ->
+                            errorMessage = error.message ?: "Échec du déverrouillage"
+                            isUnlocking = false
+                        }
+                    )
+                },
+                onFailure = { error ->
+                    // Si biométrie échoue, afficher le formulaire de mot de passe
+                    errorMessage = when (error) {
+                        is com.julien.genpwdpro.security.BiometricEnrollmentInvalidatedException ->
+                            "Biométrie invalidée. Veuillez utiliser votre mot de passe."
+                        else -> "Biométrie échouée. Utilisez votre mot de passe."
+                    }
+                    isUnlocking = false
+                }
+            )
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { /* Empêcher la fermeture involontaire */ },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = {
+            Text("Déverr ouillage requis")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Votre session a expiré. Veuillez déverrouiller le coffre pour continuer.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                androidx.compose.material3.OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Mot de passe maître") },
+                    placeholder = { Text("Entrez votre mot de passe") },
+                    visualTransformation = if (showPassword)
+                        androidx.compose.ui.text.input.VisualTransformation.None
+                    else
+                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onDone = {
+                            if (password.isNotBlank()) {
+                                scope.launch {
+                                    isUnlocking = true
+                                    errorMessage = null
+                                    val result = vaultSessionManager.unlockVault(vaultId, password)
+                                    result.fold(
+                                        onSuccess = { onUnlockSuccess() },
+                                        onFailure = {
+                                            errorMessage = it.message ?: "Échec du déverrouillage"
+                                            isUnlocking = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                imageVector = if (showPassword)
+                                    Icons.Default.VisibilityOff
+                                else
+                                    Icons.Default.Visibility,
+                                contentDescription = if (showPassword)
+                                    "Masquer le mot de passe"
+                                else
+                                    "Afficher le mot de passe"
+                            )
+                        }
+                    },
+                    enabled = !isUnlocking,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    scope.launch {
+                        isUnlocking = true
+                        errorMessage = null
+                        val result = vaultSessionManager.unlockVault(vaultId, password)
+                        result.fold(
+                            onSuccess = { onUnlockSuccess() },
+                            onFailure = {
+                                errorMessage = it.message ?: "Échec du déverrouillage"
+                                isUnlocking = false
+                            }
+                        )
+                    }
+                },
+                enabled = password.isNotBlank() && !isUnlocking
+            ) {
+                if (isUnlocking) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Déverrouiller")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isUnlocking
+            ) {
+                Text("Annuler")
+            }
+        }
+    )
+}
