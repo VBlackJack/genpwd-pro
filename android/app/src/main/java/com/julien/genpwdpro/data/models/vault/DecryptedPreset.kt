@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.models.vault
 
 import com.google.gson.Gson
+import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.models.GenerationMode
 import com.julien.genpwdpro.data.models.Settings
 
@@ -29,21 +30,35 @@ data class DecryptedPreset(
 private val gson = Gson()
 
 fun PresetEntity.toDecrypted(): DecryptedPreset {
+    val parsedGenerationMode = try {
+        GenerationMode.valueOf(generationMode)
+    } catch (e: Exception) {
+        SafeLog.w(
+            "DecryptedPreset",
+            "Failed to parse generationMode '${SafeLog.redact(generationMode)}' for preset ${SafeLog.redact(id)}, using SYLLABLES. Error: ${e.message}"
+        )
+        GenerationMode.SYLLABLES
+    }
+
+    val parsedSettings = try {
+        gson.fromJson(settings, Settings::class.java)
+    } catch (e: Exception) {
+        SafeLog.e(
+            "DecryptedPreset",
+            "Failed to deserialize Settings for preset ${SafeLog.redact(id)} (${SafeLog.redact(name)}). " +
+                "JSON length: ${settings.length}, Error: ${e.message}",
+            e
+        )
+        Settings() // Default settings
+    }
+
     return DecryptedPreset(
         id = id,
         vaultId = vaultId,
         name = name,
         icon = icon,
-        generationMode = try {
-            GenerationMode.valueOf(generationMode)
-        } catch (e: Exception) {
-            GenerationMode.SYLLABLES
-        },
-        settings = try {
-            gson.fromJson(settings, Settings::class.java)
-        } catch (e: Exception) {
-            Settings() // Default settings
-        },
+        generationMode = parsedGenerationMode,
+        settings = parsedSettings,
         isDefault = isDefault,
         isSystemPreset = isSystemPreset,
         createdAt = createdAt,

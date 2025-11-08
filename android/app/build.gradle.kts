@@ -14,8 +14,8 @@ android {
         applicationId = "com.julien.genpwdpro"
         minSdk = 24
         targetSdk = 34
-        versionCode = 31
-        versionName = "1.2.0-alpha.29"
+        versionCode = 32
+        versionName = "1.2.0-alpha.30"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
