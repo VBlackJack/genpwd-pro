@@ -152,6 +152,12 @@ export async function validateDictionary(dictionaryName, content) {
 
 /**
  * Generates SHA-256 hash for a dictionary file (development/maintenance utility)
+ *
+ * NOTE: This function intentionally uses console.log instead of safeLog because it is
+ * a development/maintenance utility meant to be called from browser console during
+ * dictionary file updates. The output needs to be directly visible to developers
+ * for copying into DICTIONARY_HASHES configuration.
+ *
  * @param {string} dictionaryName - Name of dictionary
  * @param {string} content - Dictionary content (JSON string)
  * @returns {Promise<string>} SHA-256 hash for configuration
@@ -161,7 +167,9 @@ export async function validateDictionary(dictionaryName, content) {
  */
 export async function generateDictionaryHash(dictionaryName, content) {
   const hash = await computeSHA256(content);
+  // eslint-disable-next-line no-console -- Development/maintenance utility, needs direct console output
   console.log(`Generated hash for ${dictionaryName}:`, hash);
+  // eslint-disable-next-line no-console -- Development/maintenance utility, needs direct console output
   console.log(`Add to DICTIONARY_HASHES: ${dictionaryName}: '${hash}',`);
   return hash;
 }

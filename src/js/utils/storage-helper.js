@@ -112,6 +112,7 @@ export function safeSetItem(key, value) {
       if (freeSpace(dataSize)) {
         // Retry after freeing space
         localStorage.setItem(key, data);
+        invalidateStorageInfoCache(); // Invalidate cache after modification
         return true;
       }
 
@@ -119,6 +120,7 @@ export function safeSetItem(key, value) {
     }
 
     localStorage.setItem(key, data);
+    invalidateStorageInfoCache(); // Invalidate cache after modification
     return true;
 
   } catch (error) {
@@ -131,6 +133,7 @@ export function safeSetItem(key, value) {
         try {
           const data = typeof value === 'string' ? value : JSON.stringify(value);
           localStorage.setItem(key, data);
+          invalidateStorageInfoCache(); // Invalidate cache after modification
           safeLog(`Successfully stored ${key} after freeing space`);
           return true;
         } catch (retryError) {
@@ -182,6 +185,7 @@ export function safeRemoveItem(key) {
 
   try {
     localStorage.removeItem(key);
+    invalidateStorageInfoCache(); // Invalidate cache after modification
     return true;
   } catch (error) {
     safeLog(`Error removing localStorage item ${key}: ${error.message}`);
@@ -190,11 +194,32 @@ export function safeRemoveItem(key) {
 }
 
 /**
- * Gets the current localStorage usage
- * @returns {Object} { used: number, estimated: number, keys: number }
+ * Cache for storage info to avoid expensive recalculation
+ * @private
  */
-export function getStorageInfo() {
+let cachedStorageInfo = null;
+let lastStorageInfoCalculation = 0;
+const STORAGE_INFO_CACHE_TTL = 5000; // 5 seconds cache TTL
+
+/**
+ * Gets the current localStorage usage (cached for performance)
+ *
+ * Performance optimization: This function calculates the size of all localStorage items,
+ * which can be expensive if called frequently. Results are cached for 5 seconds.
+ *
+ * @param {boolean} forceRefresh - Force cache refresh (default: false)
+ * @returns {Object} { used: number, estimated: number, keys: number, percentUsed: string }
+ */
+export function getStorageInfo(forceRefresh = false) {
   try {
+    const now = Date.now();
+
+    // Return cached result if available and not expired
+    if (!forceRefresh && cachedStorageInfo && (now - lastStorageInfoCalculation) < STORAGE_INFO_CACHE_TTL) {
+      return { ...cachedStorageInfo }; // Return defensive copy
+    }
+
+    // Recalculate storage info
     const keys = Object.keys(localStorage);
     let totalSize = 0;
 
@@ -203,16 +228,31 @@ export function getStorageInfo() {
       totalSize += estimateSize(item) + estimateSize(key);
     }
 
-    return {
+    const info = {
       used: totalSize,
       estimated: SIZE_LIMITS.MAX_STORAGE_SIZE,
       keys: keys.length,
       percentUsed: ((totalSize / SIZE_LIMITS.MAX_STORAGE_SIZE) * 100).toFixed(2)
     };
+
+    // Update cache
+    cachedStorageInfo = info;
+    lastStorageInfoCalculation = now;
+
+    return { ...info }; // Return defensive copy
   } catch (error) {
     safeLog(`Error getting storage info: ${error.message}`);
-    return { used: 0, estimated: SIZE_LIMITS.MAX_STORAGE_SIZE, keys: 0, percentUsed: 0 };
+    return { used: 0, estimated: SIZE_LIMITS.MAX_STORAGE_SIZE, keys: 0, percentUsed: '0.00' };
   }
+}
+
+/**
+ * Invalidates the storage info cache
+ * Should be called after any localStorage modification
+ */
+export function invalidateStorageInfoCache() {
+  cachedStorageInfo = null;
+  lastStorageInfoCalculation = 0;
 }
 
 /**
@@ -222,6 +262,7 @@ export function getStorageInfo() {
 export function clearAllStorage() {
   try {
     localStorage.clear();
+    invalidateStorageInfoCache(); // Invalidate cache after modification
     safeLog('localStorage cleared');
     return true;
   } catch (error) {
@@ -235,5 +276,6 @@ export default {
   safeGetItem,
   safeRemoveItem,
   getStorageInfo,
+  invalidateStorageInfoCache,
   clearAllStorage
 };

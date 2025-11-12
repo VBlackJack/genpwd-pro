@@ -15,6 +15,8 @@
  */
 // src/js/utils/helpers.js - Fonctions utilitaires extraites
 
+import { safeLog } from './logger.js';
+
 /**
  * Generates a cryptographically secure random integer between min and max (inclusive)
  * Uses Web Crypto API (crypto.getRandomValues) instead of Math.random() for unpredictability
@@ -78,11 +80,11 @@ export function randInt(min, max) {
  */
 export function pick(arr) {
   if (!Array.isArray(arr)) {
-    console.warn(`pick() appelé avec un non-array: ${typeof arr}`);
+    safeLog(`pick() appelé avec un non-array: ${typeof arr}`);
     throw new Error(`pick: paramètre doit être un array, reçu: ${typeof arr}`);
   }
   if (arr.length === 0) {
-    console.warn('pick() appelé avec un array vide');
+    safeLog('pick() appelé avec un array vide');
     throw new Error('pick: tableau vide ou invalide');
   }
 
