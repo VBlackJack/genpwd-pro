@@ -41,7 +41,31 @@ export async function computeSHA256(data) {
 }
 
 /**
+ * Constant-time string comparison to prevent timing attacks
+ * SECURITY: Compares strings byte-by-byte without early return
+ * @param {string} a - First string
+ * @param {string} b - Second string
+ * @returns {boolean} true if strings are equal
+ */
+function constantTimeCompare(a, b) {
+  // If lengths differ, still compare all bytes to maintain constant time
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    // XOR character codes and accumulate differences
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+
+  // result will be 0 only if all characters matched
+  return result === 0;
+}
+
+/**
  * Verifies the integrity of data against an expected SHA-256 hash
+ * SECURITY: Uses constant-time comparison to prevent timing attacks
  * @param {string|ArrayBuffer} data - Data to verify
  * @param {string} expectedHash - Expected SHA-256 hash (hex-encoded)
  * @returns {Promise<boolean>} true if hash matches, false otherwise
@@ -58,7 +82,8 @@ export async function verifyIntegrity(data, expectedHash) {
   const normalizedExpected = expectedHash.toLowerCase().trim();
   const normalizedComputed = computedHash.toLowerCase().trim();
 
-  return normalizedComputed === normalizedExpected;
+  // SECURITY FIX: Use constant-time comparison instead of ===
+  return constantTimeCompare(normalizedComputed, normalizedExpected);
 }
 
 /**

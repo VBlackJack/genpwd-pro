@@ -36,6 +36,21 @@ async function loadDictionarySource(config) {
   const shouldUseHttpFetch = isBrowserContext || REMOTE_PROTOCOL_REGEX.test(url);
 
   if (shouldUseHttpFetch) {
+    // SECURITY: Validate URL origin for remote fetches
+    if (REMOTE_PROTOCOL_REGEX.test(url)) {
+      try {
+        const urlObj = new URL(url);
+        // Only allow HTTPS for remote dictionaries (except localhost for dev)
+        if (urlObj.protocol !== 'https:' &&
+            !urlObj.hostname.includes('localhost') &&
+            !urlObj.hostname.includes('127.0.0.1')) {
+          throw new Error('Remote dictionaries must use HTTPS');
+        }
+      } catch (error) {
+        throw new Error(`Invalid dictionary URL: ${error.message}`);
+      }
+    }
+
     // Create AbortController for timeout mechanism
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -46,6 +61,8 @@ async function loadDictionarySource(config) {
     try {
       const response = await fetch(url, {
         method: 'GET',
+        mode: 'cors', // SECURITY: Enforce CORS for cross-origin requests
+        credentials: 'omit', // SECURITY: Never send credentials
         signal: controller.signal, // Link fetch to AbortController
         headers: {
           'Accept': 'application/json',
@@ -194,9 +211,11 @@ export async function loadDictionary(dictKey) {
       if (typeof word !== 'string') return false;
 
       // Length constraints (3-12 chars for optimal passphrase entropy/usability)
+      // SECURITY: Pre-check length to prevent ReDoS attack
       if (word.length < 3 || word.length > 12) return false;
 
       // Only letters (including accented characters)
+      // NOTE: Length is already validated above, preventing ReDoS
       if (!/^[a-zA-ZàâäéèêëïîôöùûüÿñçæœÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÑÇÆŒ]+$/.test(word)) return false;
 
       return true;

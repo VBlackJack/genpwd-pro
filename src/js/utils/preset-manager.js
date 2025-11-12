@@ -113,11 +113,18 @@ class PresetManager {
   }
 
   /**
-   * Generate unique preset ID
+   * Generate unique preset ID using cryptographically secure random values
+   * SECURITY FIX: Uses crypto.getRandomValues() instead of Math.random()
    * @returns {string} Unique ID
    */
   generateId() {
-    return `preset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+    // Generate 6 random bytes for better uniqueness
+    const randomBytes = new Uint8Array(6);
+    crypto.getRandomValues(randomBytes);
+    // Convert to base36 string
+    const randomStr = Array.from(randomBytes, b => b.toString(36)).join('').slice(0, 9);
+    return `preset_${timestamp}_${randomStr}`;
   }
 
   /**
