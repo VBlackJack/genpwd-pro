@@ -18,9 +18,16 @@ import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
 import { DICTIONARY } from '../config/crypto-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { validateDictionary } from '../utils/integrity.js';
+import { validateString, validateArray } from '../utils/validators.js';
 
 const REMOTE_PROTOCOL_REGEX = /^https?:\/\//i;
 const DICTIONARY_LOAD_TIMEOUT = DICTIONARY.LOAD_TIMEOUT;
+
+// Maximum number of words allowed in dictionary (security limit)
+const MAX_DICTIONARY_WORDS = 50000;
+
+// Minimum words required for a valid dictionary
+const MIN_DICTIONARY_WORDS = 100;
 
 async function loadDictionarySource(config) {
   const { url } = config;
@@ -115,16 +122,29 @@ const dictionaries = {
 };
 
 export async function loadDictionary(dictKey) {
-  if (!DICTIONARY_CONFIG[dictKey]) {
-    throw new Error(`Dictionnaire "${dictKey}" non configuré`);
+  // Input validation
+  const keyValidation = validateString(dictKey, 'dictKey');
+  if (!keyValidation.valid) {
+    throw new Error(`Invalid dictionary key: ${keyValidation.error}`);
   }
 
-  // Vérifier le cache
+  if (!DICTIONARY_CONFIG[dictKey]) {
+    const availableKeys = Object.keys(DICTIONARY_CONFIG).join(', ');
+    throw new Error(`Dictionary "${dictKey}" not configured. Available: ${availableKeys}`);
+  }
+
+  // Check cache with validation
   if (dictionaries.cache.has(dictKey)) {
     const cached = dictionaries.cache.get(dictKey);
-    if (Array.isArray(cached) && cached.length > 0) {
-      safeLog(`Dictionnaire ${dictKey} trouvé en cache (${cached.length} mots)`);
+    const cacheValidation = validateArray(cached, 1, 'cached dictionary');
+
+    if (cacheValidation.valid) {
+      safeLog(`Dictionary ${dictKey} found in cache (${cached.length} words)`);
       return cached;
+    } else {
+      // Cache is corrupted, remove it
+      safeLog(`Cache corrupted for ${dictKey}, reloading: ${cacheValidation.error}`);
+      dictionaries.cache.delete(dictKey);
     }
   }
 
@@ -160,29 +180,47 @@ export async function loadDictionary(dictKey) {
 
     // Validation du format
     if (!data || !Array.isArray(data.words)) {
-      throw new Error('Format de dictionnaire invalide (propriété "words" manquante)');
+      throw new Error('Invalid dictionary format: missing "words" property');
     }
 
-    const words = data.words.filter(word => 
-      typeof word === 'string' && 
-      word.length >= 3 && 
-      word.length <= 12 &&
-      /^[a-zA-ZàâäéèêëïîôöùûüÿñçæœÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÑÇÆŒ]+$/.test(word)
-    );
-
-    if (words.length === 0) {
-      throw new Error('Aucun mot valide trouvé dans le dictionnaire');
+    // Security check: prevent excessive memory allocation
+    if (data.words.length > MAX_DICTIONARY_WORDS) {
+      throw new Error(`Dictionary too large: ${data.words.length} words > ${MAX_DICTIONARY_WORDS} maximum`);
     }
 
-    // Mise en cache
-    dictionaries.cache.set(dictKey, words);
+    // Filter and validate words
+    const words = data.words.filter(word => {
+      // Must be string
+      if (typeof word !== 'string') return false;
+
+      // Length constraints (3-12 chars for optimal passphrase entropy/usability)
+      if (word.length < 3 || word.length > 12) return false;
+
+      // Only letters (including accented characters)
+      if (!/^[a-zA-ZàâäéèêëïîôöùûüÿñçæœÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÑÇÆŒ]+$/.test(word)) return false;
+
+      return true;
+    });
+
+    // Ensure minimum dictionary size for security
+    if (words.length < MIN_DICTIONARY_WORDS) {
+      throw new Error(`Dictionary too small: ${words.length} valid words < ${MIN_DICTIONARY_WORDS} minimum required`);
+    }
+
+    // Store in cache (with additional validation)
+    dictionaries.cache.set(dictKey, Object.freeze([...words])); // Freeze for immutability
     updateDictionaryStatus(dictKey, 'loaded', words.length);
-    
-    safeLog(`Dictionnaire ${dictKey} chargé: ${words.length} mots validés`);
-    
-    // Mettre à jour les infos UI
+
+    const filteredCount = data.words.length - words.length;
+    if (filteredCount > 0) {
+      safeLog(`Dictionary ${dictKey}: filtered out ${filteredCount} invalid words`);
+    }
+
+    safeLog(`Dictionary ${dictKey} loaded successfully: ${words.length} validated words`);
+
+    // Update UI info
     updateDictionaryInfo(dictKey, words.length, data.metadata);
-    
+
     return words;
     
   } catch (error) {
@@ -214,9 +252,53 @@ export async function getCurrentDictionary(dictKey = null) {
 }
 
 export function setCurrentDictionary(dictKey) {
-  if (DICTIONARY_CONFIG[dictKey]) {
-    dictionaries.current = dictKey;
-    safeLog(`Dictionnaire courant changé vers: ${dictKey}`);
+  // Input validation
+  const keyValidation = validateString(dictKey, 'dictKey');
+  if (!keyValidation.valid) {
+    safeLog(`setCurrentDictionary: ${keyValidation.error}`);
+    return false;
+  }
+
+  if (!DICTIONARY_CONFIG[dictKey]) {
+    const available = Object.keys(DICTIONARY_CONFIG).join(', ');
+    safeLog(`setCurrentDictionary: unknown key "${dictKey}". Available: ${available}`);
+    return false;
+  }
+
+  dictionaries.current = dictKey;
+  safeLog(`Current dictionary changed to: ${dictKey}`);
+  return true;
+}
+
+/**
+ * Gets the current dictionary key
+ * @returns {string} Current dictionary key
+ */
+export function getCurrentDictionaryKey() {
+  return dictionaries.current;
+}
+
+/**
+ * Gets all available dictionary keys
+ * @returns {Array<string>} Array of dictionary keys
+ */
+export function getAvailableDictionaries() {
+  return Object.keys(DICTIONARY_CONFIG);
+}
+
+/**
+ * Clears the dictionary cache
+ * @param {string} [dictKey] - Optional specific dictionary to clear, or all if omitted
+ */
+export function clearDictionaryCache(dictKey = null) {
+  if (dictKey) {
+    if (dictionaries.cache.has(dictKey)) {
+      dictionaries.cache.delete(dictKey);
+      safeLog(`Cache cleared for dictionary: ${dictKey}`);
+    }
+  } else {
+    dictionaries.cache.clear();
+    safeLog('All dictionary caches cleared');
   }
 }
 

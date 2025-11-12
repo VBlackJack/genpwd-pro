@@ -544,7 +544,7 @@ async function exportPasswords() {
       case 'json':
         content = JSON.stringify({
           exported: new Date().toISOString(),
-          generator: 'GenPwd Pro v2.5.1',
+          generator: 'GenPwd Pro v2.6.0', // Synchronized with package.json
           count: results.length,
           passwords: results.map(r => ({
             value: r.value,
