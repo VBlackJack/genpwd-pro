@@ -23,6 +23,7 @@ import {
   distributeEvenly
 } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 // Stocke les pourcentages logiques utilisés par l'API de génération.
 // Le rendu visuel compense les marges/insets de la barre, il est donc
@@ -940,6 +941,11 @@ function updateSummary() {
 function notifyCallbacks() {
   const snapshot = getVisualPlacement();
   state.callbacks.forEach((cb) => {
+    // ROBUSTNESS: Double-check callback is function before calling
+    if (typeof cb !== 'function') {
+      safeLog('placement.js: invalid callback type, skipping');
+      return;
+    }
     try {
       cb(snapshot);
     } catch (error) {

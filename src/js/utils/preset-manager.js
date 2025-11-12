@@ -17,6 +17,7 @@
 // src/js/utils/preset-manager.js - Configuration preset management
 
 import { safeLog } from './logger.js';
+import { safeSetItem, safeGetItem } from './storage-helper.js';
 
 /**
  * @typedef {Object} Preset
@@ -44,7 +45,7 @@ class PresetManager {
    */
   loadPresets() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeGetItem(STORAGE_KEY);
       if (!stored) {
         safeLog('[PresetManager] No stored presets found');
         return;
@@ -75,7 +76,9 @@ class PresetManager {
   savePresets() {
     try {
       const data = Array.from(this.presets.values());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (!safeSetItem(STORAGE_KEY, data)) {
+        throw new Error('Failed to save to localStorage (quota exceeded?)');
+      }
       safeLog(`[PresetManager] Saved ${data.length} presets`);
     } catch (error) {
       safeLog(`[PresetManager] Error saving presets: ${error.message}`);
@@ -113,11 +116,18 @@ class PresetManager {
   }
 
   /**
-   * Generate unique preset ID
+   * Generate unique preset ID using cryptographically secure random values
+   * SECURITY FIX: Uses crypto.getRandomValues() instead of Math.random()
    * @returns {string} Unique ID
    */
   generateId() {
-    return `preset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+    // Generate 6 random bytes for better uniqueness
+    const randomBytes = new Uint8Array(6);
+    crypto.getRandomValues(randomBytes);
+    // Convert to base36 string
+    const randomStr = Array.from(randomBytes, b => b.toString(36)).join('').slice(0, 9);
+    return `preset_${timestamp}_${randomStr}`;
   }
 
   /**

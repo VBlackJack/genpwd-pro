@@ -21,6 +21,8 @@ import presetManager from '../utils/preset-manager.js';
 import historyManager from '../utils/history-manager.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog } from '../utils/logger.js';
+import { escapeHtml } from '../utils/helpers.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 /**
  * Initialize language selector in header
@@ -769,12 +771,12 @@ function showManagePresetsModal() {
             <div class="preset-item" data-preset-id="${preset.id}">
               <div class="preset-info">
                 <div class="preset-name" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span>${preset.name} ${preset.isDefault ? '⭐' : ''}</span>
+                  <span>${escapeHtml(preset.name)} ${preset.isDefault ? '⭐' : ''}</span>
                   <button class="btn-mini" data-action="toggle-details" data-preset-id="${preset.id}" style="font-size: 0.8em;">
                     <span class="details-toggle-icon">▼</span> Détails
                   </button>
                 </div>
-                <div class="preset-desc">${preset.description || 'Aucune description'}</div>
+                <div class="preset-desc">${escapeHtml(preset.description || 'Aucune description')}</div>
 
                 <!-- Section expandable des détails -->
                 <div class="preset-details" id="details-${preset.id}" style="display: none; background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 0.9em;">
@@ -826,7 +828,7 @@ function showManagePresetsModal() {
   bindPresetModalEvents(modal);
 
   // Show modal
-  setTimeout(() => modal.classList.add('show'), 10);
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
 }
 
 /**
@@ -1002,13 +1004,13 @@ function showEditPresetModal(presetId) {
       <div class="modal-body">
         <div class="form-group">
           <label for="edit-preset-name">Nom du preset <span style="color: red;">*</span></label>
-          <input type="text" id="edit-preset-name" class="input-field" value="${preset.name}" required maxlength="50">
+          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50">
           <span class="error-message" id="edit-name-error" style="display:none; color: red; font-size: 0.85em;"></span>
         </div>
 
         <div class="form-group">
           <label for="edit-preset-description">Description</label>
-          <textarea id="edit-preset-description" class="input-field" rows="2">${preset.description || ''}</textarea>
+          <textarea id="edit-preset-description" class="input-field" rows="2">${escapeHtml(preset.description || '')}</textarea>
         </div>
 
         <div class="config-preview" style="background: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 12px;">
@@ -1244,7 +1246,7 @@ function showHistoryModal() {
   bindHistoryModalEvents(modal);
 
   // Show modal
-  setTimeout(() => modal.classList.add('show'), 10);
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
 }
 
 /**

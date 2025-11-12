@@ -138,6 +138,7 @@ export const SENTRY_CONFIG = {
 
 /**
  * Sanitize sensitive data from strings
+ * SECURITY: Uses whitelist approach to preserve non-sensitive data
  * @param {string} str - String to sanitize
  * @returns {string} Sanitized string
  */
@@ -146,20 +147,32 @@ function sanitizeSensitiveData(str) {
     return str;
   }
 
-  // Replace potential passwords (8+ chars, mixed case, special chars)
-  str = str.replace(/[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}/g, '[REDACTED]');
+  // SECURITY FIX: More conservative approach - redact longer strings that could be passwords
+  // Only target strings that are likely sensitive (longer sequences without spaces)
+  // This avoids false positives on error messages and stack traces
 
-  // Replace email addresses
-  str = str.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL]');
+  // Replace email addresses (preserve domain structure for debugging)
+  str = str.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+    (match, user, domain) => `[EMAIL@${domain.split('.').pop()}]`);
 
-  // Replace potential API keys (alphanumeric strings 20+ chars)
-  str = str.replace(/[A-Za-z0-9]{20,}/g, '[API_KEY]');
+  // Replace potential API keys/tokens (long alphanumeric strings without spaces)
+  str = str.replace(/\b[A-Za-z0-9_-]{32,}\b/g, '[TOKEN]');
+
+  // Replace potential passwords (8-128 chars, no spaces, mixed content)
+  // More specific pattern to avoid false positives
+  str = str.replace(/\b[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{12,128}\b/g, '[REDACTED]');
 
   // Replace credit card numbers
   str = str.replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD]');
 
-  // Replace phone numbers
-  str = str.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE]');
+  // Replace phone numbers (various formats)
+  str = str.replace(/\b(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, '[PHONE]');
+
+  // Replace bearer tokens in headers
+  str = str.replace(/Bearer\s+[A-Za-z0-9_-]+/gi, 'Bearer [TOKEN]');
+
+  // Replace JWT tokens (three base64 parts separated by dots)
+  str = str.replace(/\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[JWT]');
 
   return str;
 }

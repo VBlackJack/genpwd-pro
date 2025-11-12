@@ -153,7 +153,7 @@ function createApplicationMenu() {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'À propos de GenPwd Pro',
-              message: 'GenPwd Pro v2.5.2',
+              message: 'GenPwd Pro v2.6.0', // Synchronized with package.json
               detail: 'Générateur de mots de passe sécurisé\n\n' +
                       'Copyright © 2025 Julien Bombled\n' +
                       'Licence Apache 2.0\n\n' +

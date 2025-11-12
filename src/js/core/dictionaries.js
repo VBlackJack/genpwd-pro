@@ -36,6 +36,21 @@ async function loadDictionarySource(config) {
   const shouldUseHttpFetch = isBrowserContext || REMOTE_PROTOCOL_REGEX.test(url);
 
   if (shouldUseHttpFetch) {
+    // SECURITY: Validate URL origin for remote fetches
+    if (REMOTE_PROTOCOL_REGEX.test(url)) {
+      try {
+        const urlObj = new URL(url);
+        // Only allow HTTPS for remote dictionaries (except localhost for dev)
+        if (urlObj.protocol !== 'https:' &&
+            !urlObj.hostname.includes('localhost') &&
+            !urlObj.hostname.includes('127.0.0.1')) {
+          throw new Error('Remote dictionaries must use HTTPS');
+        }
+      } catch (error) {
+        throw new Error(`Invalid dictionary URL: ${error.message}`);
+      }
+    }
+
     // Create AbortController for timeout mechanism
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -46,6 +61,8 @@ async function loadDictionarySource(config) {
     try {
       const response = await fetch(url, {
         method: 'GET',
+        mode: 'cors', // SECURITY: Enforce CORS for cross-origin requests
+        credentials: 'omit', // SECURITY: Never send credentials
         signal: controller.signal, // Link fetch to AbortController
         headers: {
           'Accept': 'application/json',
@@ -118,7 +135,9 @@ async function loadDictionarySource(config) {
 const dictionaries = {
   current: 'french',
   cache: new Map(),
-  status: new Map()
+  status: new Map(),
+  // RACE CONDITION FIX: Track pending loads to prevent duplicate loads
+  pendingLoads: new Map()
 };
 
 export async function loadDictionary(dictKey) {
@@ -148,11 +167,19 @@ export async function loadDictionary(dictKey) {
     }
   }
 
+  // RACE CONDITION FIX: Check if already loading
+  if (dictionaries.pendingLoads.has(dictKey)) {
+    safeLog(`Dictionary ${dictKey} is already loading, waiting...`);
+    return dictionaries.pendingLoads.get(dictKey);
+  }
+
   const config = DICTIONARY_CONFIG[dictKey];
   updateDictionaryStatus(dictKey, 'loading');
-  
-  try {
-    safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
+
+  // RACE CONDITION FIX: Create promise for this load
+  const loadPromise = (async () => {
+    try {
+      safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
 
     const data = await loadDictionarySource(config);
 
@@ -194,9 +221,11 @@ export async function loadDictionary(dictKey) {
       if (typeof word !== 'string') return false;
 
       // Length constraints (3-12 chars for optimal passphrase entropy/usability)
+      // SECURITY: Pre-check length to prevent ReDoS attack
       if (word.length < 3 || word.length > 12) return false;
 
       // Only letters (including accented characters)
+      // NOTE: Length is already validated above, preventing ReDoS
       if (!/^[a-zA-ZàâäéèêëïîôöùûüÿñçæœÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÑÇÆŒ]+$/.test(word)) return false;
 
       return true;
@@ -221,23 +250,32 @@ export async function loadDictionary(dictKey) {
     // Update UI info
     updateDictionaryInfo(dictKey, words.length, data.metadata);
 
-    return words;
-    
-  } catch (error) {
-    safeLog(`Erreur chargement dictionnaire ${dictKey}: ${error.message}`);
-    updateDictionaryStatus(dictKey, 'error');
-    updateDictionaryInfo(dictKey, 0, null, error.message);
-    
-    // Fallback vers le dictionnaire français intégré
-    if (dictKey !== 'french') {
-      safeLog('Fallback vers dictionnaire français intégré');
-      updateDictionaryStatus(dictKey, 'fallback');
-      updateDictionaryInfo(dictKey, FALLBACK_DICTIONARY.length, null, 'Utilisation du fallback français');
-      return FALLBACK_DICTIONARY;
+      return words;
+
+    } catch (error) {
+      safeLog(`Erreur chargement dictionnaire ${dictKey}: ${error.message}`);
+      updateDictionaryStatus(dictKey, 'error');
+      updateDictionaryInfo(dictKey, 0, null, error.message);
+
+      // Fallback vers le dictionnaire français intégré
+      if (dictKey !== 'french') {
+        safeLog('Fallback vers dictionnaire français intégré');
+        updateDictionaryStatus(dictKey, 'fallback');
+        updateDictionaryInfo(dictKey, FALLBACK_DICTIONARY.length, null, 'Utilisation du fallback français');
+        return FALLBACK_DICTIONARY;
+      }
+
+      throw error;
+    } finally {
+      // RACE CONDITION FIX: Clean up pending load
+      dictionaries.pendingLoads.delete(dictKey);
     }
-    
-    throw error;
-  }
+  })();
+
+  // RACE CONDITION FIX: Store pending promise
+  dictionaries.pendingLoads.set(dictKey, loadPromise);
+
+  return loadPromise;
 }
 
 export async function getCurrentDictionary(dictKey = null) {

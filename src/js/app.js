@@ -24,6 +24,7 @@ import { setBlocks } from './config/settings.js';
 import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
 import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
+import { ANIMATION_DURATION } from './config/ui-constants.js';
 import { initThemeSystem } from './utils/theme-manager.js';
 import { isDevelopment } from './utils/environment.js';
 
@@ -118,7 +119,7 @@ class GenPwdApp {
       safeLog('Nouveaux événements bindés');
 
       // 8. Génération initiale après un délai
-      setTimeout(() => this.generateInitial(), 300);
+      setTimeout(() => this.generateInitial(), ANIMATION_DURATION.INITIAL_GENERATION_DELAY);
 
       // 9. NEW: Track page view
       if (analytics.config.provider !== 'none') {

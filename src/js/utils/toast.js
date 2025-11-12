@@ -15,6 +15,7 @@
  */
 // src/js/utils/toast.js - Système de notifications temporaires
 import { safeLog } from './logger.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 const activeToasts = new Set();
 
@@ -60,9 +61,9 @@ export function showToast(message, type = 'info') {
       if (div.parentNode) {
         div.classList.add('toast-hiding');
       }
-    }, 3200);
+    }, ANIMATION_DURATION.TOAST_DISPLAY);
 
-    setTimeout(cleanup, 3600);
+    setTimeout(cleanup, ANIMATION_DURATION.TOAST_DISPLAY + ANIMATION_DURATION.TOAST_FADE_OUT);
   } catch (e) {
     safeLog(`showToast error: ${e.message}`);
   }

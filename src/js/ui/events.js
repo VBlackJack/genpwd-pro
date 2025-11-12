@@ -25,8 +25,10 @@ import { RATE_LIMITING } from '../config/crypto-constants.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { renderResults, updateMaskDisplay, renderEmptyState } from './render.js';
 import { initVisualPlacement, getVisualPlacement } from './placement.js';
+import { createModal } from './modal-manager.js';
 
 let previewTimeout = null;
 let blockSyncTimeout = null;
@@ -607,13 +609,7 @@ async function exportPasswords() {
  */
 function promptExportFormat() {
   return new Promise((resolve) => {
-    const modal = document.createElement('div');
-    modal.className = 'export-modal-overlay';
-
-    const dialog = document.createElement('div');
-    dialog.className = 'export-modal-dialog';
-    dialog.innerHTML = `
-      <h3 class="export-modal-title">Choisir le format d'export</h3>
+    const content = `
       <div class="export-modal-buttons">
         <button id="export-txt" class="btn export-modal-button">
           📄 Texte (.txt) - Simple liste
@@ -625,25 +621,38 @@ function promptExportFormat() {
           📈 CSV (.csv) - Excel/Tableur
         </button>
       </div>
-      <button id="export-cancel" class="btn btn-secondary export-modal-cancel">
-        Annuler
-      </button>
     `;
 
-    modal.appendChild(dialog);
-    document.body.appendChild(modal);
+    const modal = createModal({
+      id: 'export-format-modal',
+      title: 'Choisir le format d\'export',
+      content,
+      actions: [
+        {
+          label: 'Annuler',
+          className: 'btn btn-secondary',
+          onClick: () => {
+            modal.close();
+            resolve(null);
+          }
+        }
+      ],
+      closeOnEscape: true,
+      onClose: () => resolve(null)
+    });
 
-    const cleanup = (result) => {
-      document.body.removeChild(modal);
-      resolve(result);
-    };
-
-    dialog.querySelector('#export-txt').addEventListener('click', () => cleanup('txt'));
-    dialog.querySelector('#export-json').addEventListener('click', () => cleanup('json'));
-    dialog.querySelector('#export-csv').addEventListener('click', () => cleanup('csv'));
-    dialog.querySelector('#export-cancel').addEventListener('click', () => cleanup(null));
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) cleanup(null);
+    // Ajouter les handlers pour les boutons de format
+    modal.element.querySelector('#export-txt')?.addEventListener('click', () => {
+      modal.close();
+      resolve('txt');
+    });
+    modal.element.querySelector('#export-json')?.addEventListener('click', () => {
+      modal.close();
+      resolve('json');
+    });
+    modal.element.querySelector('#export-csv')?.addEventListener('click', () => {
+      modal.close();
+      resolve('csv');
     });
   });
 }
@@ -817,7 +826,7 @@ function debouncedUpdatePreview() {
   if (previewTimeout) {
     clearTimeout(previewTimeout);
   }
-  previewTimeout = setTimeout(updatePreview, 150);
+  previewTimeout = setTimeout(updatePreview, ANIMATION_DURATION.DEBOUNCE_INPUT);
 }
 
 function updatePreview() {

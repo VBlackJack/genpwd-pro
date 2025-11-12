@@ -17,6 +17,7 @@
 // src/js/utils/theme-manager.js - Gestionnaire de thèmes
 
 import { safeLog } from './logger.js';
+import { safeGetItem, safeSetItem } from './storage-helper.js';
 
 /**
  * Thèmes disponibles avec leurs variables CSS
@@ -159,7 +160,7 @@ export function applyTheme(themeName) {
   // Sauvegarder le choix
   currentTheme = themeName;
   try {
-    localStorage.setItem(STORAGE_KEY, themeName);
+    safeSetItem(STORAGE_KEY, themeName);
   } catch (e) {
     safeLog('Impossible de sauvegarder le thème dans localStorage');
   }
@@ -198,7 +199,7 @@ export function loadSavedTheme() {
 
   // 1. Vérifier localStorage
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeGetItem(STORAGE_KEY);
     if (saved && THEMES[saved]) {
       themeName = saved;
       safeLog(`Thème chargé depuis localStorage: ${themeName}`);
@@ -240,7 +241,7 @@ export function watchSystemThemeChanges() {
   const handleChange = (e) => {
     // Ne changer que si aucun thème n'est explicitement sauvegardé
     try {
-      const hasSavedTheme = localStorage.getItem(STORAGE_KEY);
+      const hasSavedTheme = safeGetItem(STORAGE_KEY);
       if (!hasSavedTheme) {
         applyTheme(e.matches ? 'dark' : 'light');
         safeLog('Thème mis à jour suite au changement système');
