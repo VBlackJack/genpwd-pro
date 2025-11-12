@@ -231,14 +231,27 @@ export function loadSavedTheme() {
 }
 
 /**
+ * State for system theme change listener
+ * @private
+ */
+let systemThemeChangeHandler = null;
+let systemThemeMediaQuery = null;
+
+/**
  * Écoute les changements de préférence système
+ *
+ * Note: Pour nettoyer le listener, appelez unwatchSystemThemeChanges()
+ * avant de détruire l'application ou lors du cleanup.
  */
 export function watchSystemThemeChanges() {
   if (!window.matchMedia) return;
 
-  const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  // Cleanup any existing listener first
+  unwatchSystemThemeChanges();
 
-  const handleChange = (e) => {
+  systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+  systemThemeChangeHandler = (e) => {
     // Ne changer que si aucun thème n'est explicitement sauvegardé
     try {
       const hasSavedTheme = safeGetItem(STORAGE_KEY);
@@ -252,11 +265,43 @@ export function watchSystemThemeChanges() {
   };
 
   // addEventListener pour les navigateurs modernes
-  if (darkModeQuery.addEventListener) {
-    darkModeQuery.addEventListener('change', handleChange);
+  if (systemThemeMediaQuery.addEventListener) {
+    systemThemeMediaQuery.addEventListener('change', systemThemeChangeHandler);
   } else {
     // fallback pour les anciens navigateurs
-    darkModeQuery.addListener(handleChange);
+    systemThemeMediaQuery.addListener(systemThemeChangeHandler);
+  }
+
+  safeLog('System theme change watcher initialized');
+}
+
+/**
+ * Arrête d'écouter les changements de préférence système
+ * Nettoie l'event listener pour éviter les fuites mémoire
+ *
+ * À appeler lors du cleanup de l'application ou avant de recréer le watcher
+ */
+export function unwatchSystemThemeChanges() {
+  if (!systemThemeMediaQuery || !systemThemeChangeHandler) {
+    return; // Nothing to cleanup
+  }
+
+  try {
+    // removeEventListener pour les navigateurs modernes
+    if (systemThemeMediaQuery.removeEventListener) {
+      systemThemeMediaQuery.removeEventListener('change', systemThemeChangeHandler);
+    } else {
+      // fallback pour les anciens navigateurs
+      systemThemeMediaQuery.removeListener(systemThemeChangeHandler);
+    }
+
+    safeLog('System theme change watcher cleaned up');
+  } catch (err) {
+    safeLog(`Error cleaning up system theme watcher: ${err.message}`);
+  } finally {
+    // Reset references
+    systemThemeChangeHandler = null;
+    systemThemeMediaQuery = null;
   }
 }
 

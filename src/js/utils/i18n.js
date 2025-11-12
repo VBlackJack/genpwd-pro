@@ -17,6 +17,7 @@
 // src/js/utils/i18n.js - Internationalization module
 
 import { safeGetItem, safeSetItem } from './storage-helper.js';
+import { safeLog } from './logger.js';
 
 /**
  * @typedef {Object} I18nConfig
@@ -69,12 +70,12 @@ class I18n {
    */
   async loadLocale(locale) {
     if (!this.config.supportedLocales.includes(locale)) {
-      console.warn(`[i18n] Unsupported locale: ${locale}`);
+      safeLog(`[i18n] Unsupported locale: ${locale}`);
       return false;
     }
 
     if (this.loadedLocales.has(locale)) {
-      console.log(`[i18n] Locale already loaded: ${locale}`);
+      safeLog(`[i18n] Locale already loaded: ${locale}`);
       return true;
     }
 
@@ -88,10 +89,10 @@ class I18n {
       this.translations.set(locale, translations);
       this.loadedLocales.add(locale);
 
-      console.log(`[i18n] Loaded locale: ${locale}`);
+      safeLog(`[i18n] Loaded locale: ${locale}`);
       return true;
     } catch (error) {
-      console.error(`[i18n] Failed to load locale ${locale}:`, error);
+      safeLog(`[i18n] Failed to load locale ${locale}: ${error.message}`);
       return false;
     }
   }
@@ -103,7 +104,7 @@ class I18n {
    */
   async setLocale(locale) {
     if (!this.config.supportedLocales.includes(locale)) {
-      console.warn(`[i18n] Invalid locale: ${locale}`);
+      safeLog(`[i18n] Invalid locale: ${locale}`);
       return false;
     }
 
@@ -118,7 +119,7 @@ class I18n {
     this.currentLocale = locale;
     safeSetItem(this.config.storageKey, locale);
 
-    console.log(`[i18n] Locale set to: ${locale}`);
+    safeLog(`[i18n] Locale set to: ${locale}`);
     return true;
   }
 
@@ -133,7 +134,7 @@ class I18n {
     const translations = this.translations.get(locale);
 
     if (!translations) {
-      console.warn(`[i18n] No translations loaded for: ${locale}`);
+      safeLog(`[i18n] No translations loaded for: ${locale}`);
       return key;
     }
 
@@ -145,14 +146,14 @@ class I18n {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
-        console.warn(`[i18n] Translation not found: ${key}`);
+        safeLog(`[i18n] Translation not found: ${key}`);
         return key;
       }
     }
 
     // If value is not a string, return key
     if (typeof value !== 'string') {
-      console.warn(`[i18n] Translation value is not a string: ${key}`);
+      safeLog(`[i18n] Translation value is not a string: ${key}`);
       return key;
     }
 

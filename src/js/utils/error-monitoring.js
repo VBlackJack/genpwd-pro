@@ -17,6 +17,7 @@
 // src/js/utils/error-monitoring.js - Système de monitoring d'erreurs
 
 import { isDevelopment } from './environment.js';
+import { safeLog } from './logger.js';
 
 /**
  * Configuration du monitoring d'erreurs
@@ -199,7 +200,7 @@ export function initErrorMonitoring() {
     }
   });
 
-  console.log('Error monitoring initialized');
+  safeLog('Error monitoring initialized');
 }
 
 /**
