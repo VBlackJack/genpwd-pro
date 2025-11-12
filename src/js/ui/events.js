@@ -25,6 +25,7 @@ import { RATE_LIMITING } from '../config/crypto-constants.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { renderResults, updateMaskDisplay, renderEmptyState } from './render.js';
 import { initVisualPlacement, getVisualPlacement } from './placement.js';
 
@@ -817,7 +818,7 @@ function debouncedUpdatePreview() {
   if (previewTimeout) {
     clearTimeout(previewTimeout);
   }
-  previewTimeout = setTimeout(updatePreview, 150);
+  previewTimeout = setTimeout(updatePreview, ANIMATION_DURATION.DEBOUNCE_INPUT);
 }
 
 function updatePreview() {

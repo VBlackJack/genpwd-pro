@@ -17,6 +17,7 @@
 // src/js/utils/preset-manager.js - Configuration preset management
 
 import { safeLog } from './logger.js';
+import { safeSetItem, safeGetItem } from './storage-helper.js';
 
 /**
  * @typedef {Object} Preset
@@ -44,7 +45,7 @@ class PresetManager {
    */
   loadPresets() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeGetItem(STORAGE_KEY);
       if (!stored) {
         safeLog('[PresetManager] No stored presets found');
         return;
@@ -75,7 +76,9 @@ class PresetManager {
   savePresets() {
     try {
       const data = Array.from(this.presets.values());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (!safeSetItem(STORAGE_KEY, data)) {
+        throw new Error('Failed to save to localStorage (quota exceeded?)');
+      }
       safeLog(`[PresetManager] Saved ${data.length} presets`);
     } catch (error) {
       safeLog(`[PresetManager] Error saving presets: ${error.message}`);

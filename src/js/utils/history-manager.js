@@ -17,6 +17,7 @@
 // src/js/utils/history-manager.js - Password generation history
 
 import { safeLog } from './logger.js';
+import { safeSetItem, safeGetItem } from './storage-helper.js';
 
 /**
  * @typedef {Object} HistoryEntry
@@ -54,7 +55,7 @@ class HistoryManager {
    */
   loadSettings() {
     try {
-      const stored = localStorage.getItem('genpwd_history_settings');
+      const stored = safeGetItem('genpwd_history_settings');
       if (stored) {
         return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
       }
@@ -69,7 +70,7 @@ class HistoryManager {
    */
   saveSettings() {
     try {
-      localStorage.setItem('genpwd_history_settings', JSON.stringify(this.settings));
+      safeSetItem('genpwd_history_settings', this.settings);
     } catch (error) {
       safeLog(`[HistoryManager] Error saving settings: ${error.message}`);
     }
@@ -111,7 +112,7 @@ class HistoryManager {
     }
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeGetItem(STORAGE_KEY);
       if (!stored) {
         return;
       }
@@ -143,7 +144,7 @@ class HistoryManager {
     }
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.history));
+      safeSetItem(STORAGE_KEY, this.history);
       safeLog(`[HistoryManager] Saved ${this.history.length} entries`);
     } catch (error) {
       safeLog(`[HistoryManager] Error saving history: ${error.message}`);

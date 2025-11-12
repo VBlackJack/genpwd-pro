@@ -22,6 +22,7 @@ import historyManager from '../utils/history-manager.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog } from '../utils/logger.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 /**
  * Initialize language selector in header
@@ -827,7 +828,7 @@ function showManagePresetsModal() {
   bindPresetModalEvents(modal);
 
   // Show modal
-  setTimeout(() => modal.classList.add('show'), 10);
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
 }
 
 /**
@@ -1245,7 +1246,7 @@ function showHistoryModal() {
   bindHistoryModalEvents(modal);
 
   // Show modal
-  setTimeout(() => modal.classList.add('show'), 10);
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
 }
 
 /**

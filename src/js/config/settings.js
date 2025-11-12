@@ -16,6 +16,7 @@
 // src/js/config/settings.js - Gestion de l'état et validation
 import { DEFAULT_SETTINGS, CHAR_SETS, DICTIONARY_CONFIG, LIMITS } from './constants.js';
 import { safeLog } from '../utils/logger.js';
+import { LRUCache } from '../utils/lru-cache.js';
 
 // État global de l'application
 const AppState = {
@@ -29,10 +30,44 @@ const AppState = {
     blockAutoSync: true
   },
   cache: {
-    domElements: new Map(),
+    domElements: new LRUCache(50), // LRU cache with max 50 elements
     lastPreview: ''
   }
 };
+
+/**
+ * Validates and sanitizes custom special characters
+ * SECURITY: Whitelist approach - only allow safe special characters
+ * @param {string} input - Custom specials string
+ * @returns {string} Validated and sanitized string
+ */
+function validateCustomSpecials(input) {
+  if (typeof input !== 'string') {
+    return CHAR_SETS.SPECIALS_SAFE;
+  }
+
+  // Whitelist of allowed special characters (CLI-safe + commonly used)
+  // Excludes: $ (shell variable), ^ (escape), & (background), * (glob), ' (quote), ` (command sub)
+  const ALLOWED_SPECIALS = '!@#%_+-=.,:;?/\\|[]{}()<>~';
+
+  // Filter to only allowed characters and remove duplicates
+  const filtered = [...new Set(
+    input
+      .split('')
+      .filter(char => ALLOWED_SPECIALS.includes(char))
+  )].join('');
+
+  // Limit length
+  const validated = filtered.slice(0, 20);
+
+  // If empty after validation, return safe defaults
+  if (validated.length === 0) {
+    safeLog('validateCustomSpecials: No valid characters, using defaults');
+    return CHAR_SETS.SPECIALS_SAFE;
+  }
+
+  return validated;
+}
 
 export function validateSettings(settings) {
   const safe = {
@@ -41,8 +76,7 @@ export function validateSettings(settings) {
     mask: Boolean(settings.mask),
     digitsNum: Math.max(LIMITS.MIN_DIGITS, Math.min(LIMITS.MAX_DIGITS, parseInt(settings.digitsNum) || 0)),
     specialsNum: Math.max(LIMITS.MIN_SPECIALS, Math.min(LIMITS.MAX_SPECIALS, parseInt(settings.specialsNum) || 0)),
-    customSpecials: typeof settings.customSpecials === 'string' ? 
-      settings.customSpecials.slice(0, 20) : '',
+    customSpecials: validateCustomSpecials(settings.customSpecials),
     placeDigits: ['debut', 'fin', 'milieu', 'aleatoire', 'positions'].includes(settings.placeDigits) ?
       settings.placeDigits : 'aleatoire',
     placeSpecials: ['debut', 'fin', 'milieu', 'aleatoire', 'positions'].includes(settings.placeSpecials) ?

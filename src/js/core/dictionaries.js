@@ -135,7 +135,9 @@ async function loadDictionarySource(config) {
 const dictionaries = {
   current: 'french',
   cache: new Map(),
-  status: new Map()
+  status: new Map(),
+  // RACE CONDITION FIX: Track pending loads to prevent duplicate loads
+  pendingLoads: new Map()
 };
 
 export async function loadDictionary(dictKey) {
@@ -165,11 +167,19 @@ export async function loadDictionary(dictKey) {
     }
   }
 
+  // RACE CONDITION FIX: Check if already loading
+  if (dictionaries.pendingLoads.has(dictKey)) {
+    safeLog(`Dictionary ${dictKey} is already loading, waiting...`);
+    return dictionaries.pendingLoads.get(dictKey);
+  }
+
   const config = DICTIONARY_CONFIG[dictKey];
   updateDictionaryStatus(dictKey, 'loading');
-  
-  try {
-    safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
+
+  // RACE CONDITION FIX: Create promise for this load
+  const loadPromise = (async () => {
+    try {
+      safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
 
     const data = await loadDictionarySource(config);
 
@@ -240,23 +250,32 @@ export async function loadDictionary(dictKey) {
     // Update UI info
     updateDictionaryInfo(dictKey, words.length, data.metadata);
 
-    return words;
-    
-  } catch (error) {
-    safeLog(`Erreur chargement dictionnaire ${dictKey}: ${error.message}`);
-    updateDictionaryStatus(dictKey, 'error');
-    updateDictionaryInfo(dictKey, 0, null, error.message);
-    
-    // Fallback vers le dictionnaire français intégré
-    if (dictKey !== 'french') {
-      safeLog('Fallback vers dictionnaire français intégré');
-      updateDictionaryStatus(dictKey, 'fallback');
-      updateDictionaryInfo(dictKey, FALLBACK_DICTIONARY.length, null, 'Utilisation du fallback français');
-      return FALLBACK_DICTIONARY;
+      return words;
+
+    } catch (error) {
+      safeLog(`Erreur chargement dictionnaire ${dictKey}: ${error.message}`);
+      updateDictionaryStatus(dictKey, 'error');
+      updateDictionaryInfo(dictKey, 0, null, error.message);
+
+      // Fallback vers le dictionnaire français intégré
+      if (dictKey !== 'french') {
+        safeLog('Fallback vers dictionnaire français intégré');
+        updateDictionaryStatus(dictKey, 'fallback');
+        updateDictionaryInfo(dictKey, FALLBACK_DICTIONARY.length, null, 'Utilisation du fallback français');
+        return FALLBACK_DICTIONARY;
+      }
+
+      throw error;
+    } finally {
+      // RACE CONDITION FIX: Clean up pending load
+      dictionaries.pendingLoads.delete(dictKey);
     }
-    
-    throw error;
-  }
+  })();
+
+  // RACE CONDITION FIX: Store pending promise
+  dictionaries.pendingLoads.set(dictKey, loadPromise);
+
+  return loadPromise;
 }
 
 export async function getCurrentDictionary(dictKey = null) {

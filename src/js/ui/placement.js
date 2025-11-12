@@ -23,6 +23,7 @@ import {
   distributeEvenly
 } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
+import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 // Stocke les pourcentages logiques utilisés par l'API de génération.
 // Le rendu visuel compense les marges/insets de la barre, il est donc
