@@ -16,6 +16,8 @@
 
 // src/js/utils/i18n.js - Internationalization module
 
+import { safeGetItem, safeSetItem } from './storage-helper.js';
+
 /**
  * @typedef {Object} I18nConfig
  * @property {string} defaultLocale - Default locale to use
@@ -43,7 +45,7 @@ class I18n {
    */
   detectLocale() {
     // 1. Check localStorage
-    const stored = localStorage.getItem(this.config.storageKey);
+    const stored = safeGetItem(this.config.storageKey);
     if (stored && this.config.supportedLocales.includes(stored)) {
       return stored;
     }
@@ -114,7 +116,7 @@ class I18n {
     }
 
     this.currentLocale = locale;
-    localStorage.setItem(this.config.storageKey, locale);
+    safeSetItem(this.config.storageKey, locale);
 
     console.log(`[i18n] Locale set to: ${locale}`);
     return true;

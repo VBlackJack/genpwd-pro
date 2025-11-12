@@ -180,6 +180,18 @@ export const DEBUG = {
   MOCK_API_DELAY: 500 // ms
 };
 
+/**
+ * Analytics configuration constants
+ */
+export const ANALYTICS = {
+  // Event batching
+  BATCH_INTERVAL: 5000, // ms - flush events every 5 seconds
+  BATCH_SIZE: 10, // events - flush when queue reaches this size
+
+  // Network
+  REQUEST_TIMEOUT: 10000 // ms - analytics request timeout
+};
+
 // Object.freeze all exported objects to prevent mutations
 Object.freeze(ANIMATION_DURATION);
 Object.freeze(SIZE_LIMITS);
@@ -190,3 +202,4 @@ Object.freeze(A11Y);
 Object.freeze(ERROR_HANDLING);
 Object.freeze(PERFORMANCE);
 Object.freeze(DEBUG);
+Object.freeze(ANALYTICS);

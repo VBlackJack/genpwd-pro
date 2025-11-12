@@ -17,6 +17,8 @@
 // src/js/utils/analytics.js - Privacy-friendly analytics
 
 import { safeLog } from './logger.js';
+import { safeGetItem, safeSetItem } from './storage-helper.js';
+import { ANALYTICS } from '../config/ui-constants.js';
 
 /**
  * Privacy-friendly analytics configuration
@@ -66,8 +68,8 @@ const ANALYTICS_CONFIG = {
 
   // Event batching
   batchEvents: true,
-  batchSize: 10,
-  batchInterval: 5000, // 5 seconds
+  batchSize: ANALYTICS.BATCH_SIZE,
+  batchInterval: ANALYTICS.BATCH_INTERVAL
 
   // Debug mode
   debug: false
@@ -192,7 +194,7 @@ class Analytics {
     }
 
     try {
-      const stored = localStorage.getItem(this.config.consentStorageKey);
+      const stored = safeGetItem(this.config.consentStorageKey);
       return stored === 'true';
     } catch (error) {
       return false;
@@ -213,7 +215,7 @@ class Analytics {
     this.consent = granted;
 
     try {
-      localStorage.setItem(this.config.consentStorageKey, String(granted));
+      safeSetItem(this.config.consentStorageKey, String(granted));
     } catch (error) {
       safeLog('[Analytics] Failed to save consent:', error);
     }
