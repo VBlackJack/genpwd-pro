@@ -1,0 +1,32 @@
+{
+  "all": true,
+  "include": [
+    "src/js/**/*.js"
+  ],
+  "exclude": [
+    "src/tests/**",
+    "src/js/vault/tests/**",
+    "tools/**",
+    "**/*.spec.js",
+    "**/*.test.js",
+    "coverage/**",
+    "dist/**",
+    "node_modules/**",
+    "android/**"
+  ],
+  "reporter": [
+    "html",
+    "text",
+    "lcov",
+    "text-summary"
+  ],
+  "reports-dir": "coverage",
+  "lines": 95,
+  "statements": 95,
+  "functions": 90,
+  "branches": 85,
+  "check-coverage": true,
+  "skip-full": false,
+  "clean": true,
+  "temp-directory": ".nyc_output"
+}

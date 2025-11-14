@@ -557,6 +557,282 @@ class NodeTestRunner {
           assert(insertWithPlacement(base, chars, 'milieu') === 'a12bc', 'Insertion milieu invalide');
           return { sample: '12abc / abc12 / a12bc' };
         }
+      },
+      // Validators tests
+      {
+        name: 'Validators - validateString success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const result = validators.validateString('hello', 'test');
+          assert(result.valid === true, 'Should validate non-empty string');
+          assert(result.error === null, 'Should have no error');
+          return { sample: 'Valid string' };
+        }
+      },
+      {
+        name: 'Validators - validateString failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateString(123, 'test');
+          const r2 = validators.validateString('', 'test');
+          const r3 = validators.validateString('   ', 'test');
+          assert(r1.valid === false, 'Should reject non-string');
+          assert(r2.valid === false, 'Should reject empty string');
+          assert(r3.valid === false, 'Should reject whitespace-only string');
+          return { sample: 'Invalid strings detected' };
+        }
+      },
+      {
+        name: 'Validators - validateInteger success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateInteger(5, 1, 10, 'test');
+          const r2 = validators.validateInteger('7', 1, 10, 'test');
+          assert(r1.valid === true && r1.value === 5, 'Should validate integer');
+          assert(r2.valid === true && r2.value === 7, 'Should validate string integer');
+          return { sample: 'Valid integers' };
+        }
+      },
+      {
+        name: 'Validators - validateInteger failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateInteger(3.5, 1, 10, 'test');
+          const r2 = validators.validateInteger(15, 1, 10, 'test');
+          const r3 = validators.validateInteger('abc', 1, 10, 'test');
+          const r4 = validators.validateInteger(NaN, 1, 10, 'test');
+          assert(r1.valid === false, 'Should reject float');
+          assert(r2.valid === false, 'Should reject out of range');
+          assert(r3.valid === false, 'Should reject non-number string');
+          assert(r4.valid === false, 'Should reject NaN');
+          return { sample: 'Invalid integers detected' };
+        }
+      },
+      {
+        name: 'Validators - validateArray success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateArray([1, 2, 3], 2, 'test');
+          const r2 = validators.validateArray([], 0, 'test');
+          assert(r1.valid === true, 'Should validate array with sufficient length');
+          assert(r2.valid === true, 'Should validate empty array when minLength is 0');
+          return { sample: 'Valid arrays' };
+        }
+      },
+      {
+        name: 'Validators - validateArray failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateArray('not array', 0, 'test');
+          const r2 = validators.validateArray([1], 2, 'test');
+          assert(r1.valid === false, 'Should reject non-array');
+          assert(r2.valid === false, 'Should reject array with insufficient length');
+          return { sample: 'Invalid arrays detected' };
+        }
+      },
+      {
+        name: 'Validators - validateEnum success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const result = validators.validateEnum('red', ['red', 'green', 'blue'], 'color');
+          assert(result.valid === true, 'Should validate enum value');
+          return { sample: 'Valid enum' };
+        }
+      },
+      {
+        name: 'Validators - validateEnum failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateEnum('yellow', ['red', 'green', 'blue'], 'color');
+          const r2 = validators.validateEnum('red', [], 'color');
+          assert(r1.valid === false, 'Should reject value not in enum');
+          assert(r2.valid === false, 'Should reject empty allowedValues');
+          return { sample: 'Invalid enums detected' };
+        }
+      },
+      {
+        name: 'Validators - validatePercentage success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validatePercentage(50, 'test');
+          const r2 = validators.validatePercentage('75.5', 'test');
+          const r3 = validators.validatePercentage(0, 'test');
+          const r4 = validators.validatePercentage(100, 'test');
+          assert(r1.valid === true && r1.value === 50, 'Should validate percentage');
+          assert(r2.valid === true && r2.value === 75.5, 'Should validate string percentage');
+          assert(r3.valid === true, 'Should validate 0');
+          assert(r4.valid === true, 'Should validate 100');
+          return { sample: 'Valid percentages' };
+        }
+      },
+      {
+        name: 'Validators - validatePercentage failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validatePercentage(-5, 'test');
+          const r2 = validators.validatePercentage(150, 'test');
+          const r3 = validators.validatePercentage('abc', 'test');
+          assert(r1.valid === false, 'Should reject negative percentage');
+          assert(r2.valid === false, 'Should reject percentage > 100');
+          assert(r3.valid === false, 'Should reject non-number string');
+          return { sample: 'Invalid percentages detected' };
+        }
+      },
+      {
+        name: 'Validators - validateObject success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateObject({ a: 1, b: 2 }, ['a', 'b'], 'test');
+          const r2 = validators.validateObject({ a: 1, b: 2, c: 3 }, ['a'], 'test');
+          assert(r1.valid === true, 'Should validate object with all required keys');
+          assert(r2.valid === true, 'Should validate object with extra keys');
+          return { sample: 'Valid objects' };
+        }
+      },
+      {
+        name: 'Validators - validateObject failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateObject(null, ['a'], 'test');
+          const r2 = validators.validateObject([1, 2], ['a'], 'test');
+          const r3 = validators.validateObject({ a: 1 }, ['a', 'b'], 'test');
+          assert(r1.valid === false, 'Should reject null');
+          assert(r2.valid === false, 'Should reject array');
+          assert(r3.valid === false, 'Should reject object missing required keys');
+          return { sample: 'Invalid objects detected' };
+        }
+      },
+      {
+        name: 'Validators - validateEntropy success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateEntropy(100, 40);
+          const r2 = validators.validateEntropy(40, 40);
+          assert(r1.valid === true, 'Should validate sufficient entropy');
+          assert(r2.valid === true, 'Should validate exact minimum entropy');
+          return { sample: 'Valid entropy' };
+        }
+      },
+      {
+        name: 'Validators - validateEntropy failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateEntropy(30, 40);
+          const r2 = validators.validateEntropy('abc', 40);
+          const r3 = validators.validateEntropy(NaN, 40);
+          assert(r1.valid === false, 'Should reject insufficient entropy');
+          assert(r2.valid === false, 'Should reject non-number');
+          assert(r3.valid === false, 'Should reject NaN');
+          return { sample: 'Invalid entropy detected' };
+        }
+      },
+      {
+        name: 'Validators - validatePasswordStrength weak',
+        run: async () => {
+          const validators = this.modules.validators;
+          const result = validators.validatePasswordStrength('abc');
+          assert(result.strength === 'weak', 'Should detect weak password');
+          assert(result.valid === false, 'Weak password should not be valid');
+          assert(result.score <= 2, 'Weak password should have low score');
+          return { sample: 'Weak password detected' };
+        }
+      },
+      {
+        name: 'Validators - validatePasswordStrength strong',
+        run: async () => {
+          const validators = this.modules.validators;
+          const result = validators.validatePasswordStrength('MyP@ssw0rd123!');
+          assert(result.strength === 'very-strong', 'Should detect very strong password');
+          assert(result.valid === true, 'Strong password should be valid');
+          assert(result.score >= 6, 'Strong password should have high score');
+          assert(result.checks.lowercase && result.checks.uppercase, 'Should detect mixed case');
+          assert(result.checks.digits && result.checks.specials, 'Should detect digits and specials');
+          return { sample: 'Strong password detected' };
+        }
+      },
+      {
+        name: 'Validators - validateURL success',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateURL('https://example.com');
+          const r2 = validators.validateURL('http://localhost:8080/path');
+          assert(r1.valid === true, 'Should validate HTTPS URL');
+          assert(r2.valid === true, 'Should validate HTTP URL');
+          return { sample: 'Valid URLs' };
+        }
+      },
+      {
+        name: 'Validators - validateURL failures',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.validateURL('ftp://example.com');
+          const r2 = validators.validateURL('not a url');
+          const r3 = validators.validateURL('');
+          assert(r1.valid === false, 'Should reject non-HTTP(S) protocol');
+          assert(r2.valid === false, 'Should reject invalid URL format');
+          assert(r3.valid === false, 'Should reject empty URL');
+          return { sample: 'Invalid URLs detected' };
+        }
+      },
+      {
+        name: 'Validators - sanitizeInput basic',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.sanitizeInput('  hello  ');
+          const r2 = validators.sanitizeInput('<script>alert(1)</script>');
+          assert(r1 === 'hello', 'Should trim whitespace');
+          assert(!r2.includes('<script>'), 'Should escape HTML tags');
+          assert(r2.includes('&lt;') && r2.includes('&gt;'), 'Should convert < and >');
+          return { sample: 'Sanitized input' };
+        }
+      },
+      {
+        name: 'Validators - sanitizeInput options',
+        run: async () => {
+          const validators = this.modules.validators;
+          const r1 = validators.sanitizeInput('hello\nworld', { allowNewlines: true });
+          const r2 = validators.sanitizeInput('hello\nworld', { allowNewlines: false });
+          const longText = 'a'.repeat(20000);
+          const r3 = validators.sanitizeInput(longText, { maxLength: 100 });
+          assert(r1.includes('\n'), 'Should preserve newlines when allowed');
+          assert(!r2.includes('\n'), 'Should remove newlines when not allowed');
+          assert(r3.length === 100, 'Should enforce maxLength');
+          return { sample: 'Sanitize options work' };
+        }
+      },
+      // Casing tests
+      {
+        name: 'Casing - applyCase mixte',
+        run: async () => {
+          const { applyCase } = this.modules.casing;
+          const result = applyCase('abcdefgh', 'mixte');
+          assert(/[a-z]/.test(result) && /[A-Z]/.test(result), 'Should have mixed case');
+          return { sample: result };
+        }
+      },
+      {
+        name: 'Casing - applyCase modes',
+        run: async () => {
+          const { applyCase } = this.modules.casing;
+          const input = 'hello';
+          const upper = applyCase(input, 'upper');
+          const lower = applyCase(input, 'lower');
+          const title = applyCase(input, 'title');
+          assert(upper === 'HELLO', 'Should convert to uppercase');
+          assert(lower === 'hello', 'Should convert to lowercase');
+          assert(title === 'Hello', 'Should convert to title case');
+          return { sample: `${upper} / ${lower} / ${title}` };
+        }
+      },
+      {
+        name: 'Casing - applyCasePattern with tokens',
+        run: async () => {
+          const { applyCasePattern } = this.modules.casing;
+          const result = applyCasePattern('abcdef', ['U', 'l', 'T']);
+          assert(/[A-Z]/.test(result.charAt(0)), 'First char should be uppercase (U token)');
+          assert(/[a-z]/.test(result.charAt(1)), 'Second char should be lowercase (l token)');
+          return { sample: result };
+        }
       }
     ];
   }
@@ -623,6 +899,8 @@ async function main() {
 
   const generatorsModule = await importModule('src/js/core/generators.js');
   const helpersModule = await importModule('src/js/utils/helpers.js');
+  const validatorsModule = await importModule('src/js/utils/validators.js');
+  const casingModule = await importModule('src/js/core/casing.js');
 
   const runner = new NodeTestRunner({
     generateSyllables: generatorsModule.generateSyllables,
@@ -631,7 +909,9 @@ async function main() {
     ensureMinimumEntropy: generatorsModule.ensureMinimumEntropy,
     insertWithPlacement: helpersModule.insertWithPlacement,
     setDigitPositions: helpersModule.setDigitPositions,
-    setSpecialPositions: helpersModule.setSpecialPositions
+    setSpecialPositions: helpersModule.setSpecialPositions,
+    validators: validatorsModule,
+    casing: casingModule
   });
 
   const results = await runner.runAll(runs);
