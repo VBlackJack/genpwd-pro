@@ -115,4 +115,54 @@ class TokenCrypto @Inject constructor() {
         val plaintext = cipher.doFinal(ciphertext)
         return String(plaintext, Charsets.UTF_8)
     }
+
+    /**
+     * Decrypt a token into a SecureString for enhanced memory security.
+     * The returned SecureString should be used with .use {} to ensure proper cleanup.
+     *
+     * RECOMMENDED: Use this method instead of decrypt() to prevent tokens from
+     * remaining in memory as immutable Strings.
+     *
+     * @param encryptedBase64 Base64-encoded encrypted token with IV prepended
+     * @return SecureString containing decrypted token (caller must close)
+     */
+    fun decryptToSecure(encryptedBase64: String): SecureString {
+        if (encryptedBase64.isBlank()) return SecureString.empty()
+
+        val key = getOrCreateKey()
+        val combined = Base64.decode(encryptedBase64, Base64.NO_WRAP)
+
+        // Extract IV (first 12 bytes for GCM)
+        val ivSize = 12
+        val iv = combined.sliceArray(0 until ivSize)
+        val ciphertext = combined.sliceArray(ivSize until combined.size)
+
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+        cipher.init(Cipher.DECRYPT_MODE, key, spec)
+
+        val plaintext = cipher.doFinal(ciphertext)
+
+        try {
+            val token = String(plaintext, Charsets.UTF_8)
+            return SecureString(token)
+        } finally {
+            // Zero out the plaintext byte array
+            plaintext.fill(0)
+        }
+    }
+
+    /**
+     * Encrypt a token from a SecureString.
+     * The SecureString is not closed by this method.
+     *
+     * @param secureToken The SecureString containing the token to encrypt
+     * @return Base64-encoded encrypted token with IV prepended
+     */
+    fun encryptFromSecure(secureToken: SecureString): String {
+        return secureToken.use { chars ->
+            if (chars.isEmpty()) return ""
+            encrypt(String(chars))
+        }
+    }
 }

@@ -309,7 +309,7 @@ class ProtonDriveProvider(
             val response = api.getUserInfo("Bearer $accessToken")
 
             if (response.code == 1000 && response.user != null) {
-                SafeLog.d(TAG, "Authentication valid for user: ${response.user.email}")
+                SafeLog.d(TAG, "Authentication valid for user: ${SafeLog.redact(response.user.email)}")
                 true
             } else {
                 SafeLog.w(TAG, "Authentication failed: code ${response.code}")

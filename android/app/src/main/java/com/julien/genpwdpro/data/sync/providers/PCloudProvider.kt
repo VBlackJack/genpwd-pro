@@ -268,7 +268,7 @@ class PCloudProvider(
             // Vérifier le token avec userinfo
             val response = api.getUserInfo(accessToken!!)
             if (response.result == 0 && response.email != null) {
-                SafeLog.d(TAG, "Authentication valid for user: ${response.email}")
+                SafeLog.d(TAG, "Authentication valid for user: ${SafeLog.redact(response.email)}")
                 true
             } else {
                 SafeLog.w(TAG, "Authentication failed: ${response.error}")

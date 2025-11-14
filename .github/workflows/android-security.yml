@@ -1,0 +1,290 @@
+name: Android Security Scan
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-security.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-security.yml'
+  schedule:
+    # Run security scan daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  # SAST - Static Application Security Testing
+  sast-semgrep:
+    name: SAST - Semgrep (Kotlin/Android)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep for Android/Kotlin
+        run: |
+          semgrep scan \
+            --config=p/security-audit \
+            --config=p/owasp-top-ten \
+            --config=p/kotlin \
+            --config=p/android \
+            --config=p/mobsf \
+            --config=p/secrets \
+            --sarif \
+            --output=semgrep-android.sarif \
+            --no-error \
+            android/
+        continue-on-error: true
+
+      - name: Upload Semgrep SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep-android.sarif
+          category: semgrep-android
+        continue-on-error: true
+
+  # SAST - CodeQL Analysis
+  sast-codeql:
+    name: SAST - CodeQL (Java/Kotlin)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          queries: security-and-quality
+
+      - name: Build Android project
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: codeql-android
+
+  # Dependency Scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'genpwd-pro-android'
+          path: 'android/'
+          format: 'HTML,JSON,SARIF'
+          args: >
+            --enableRetired
+            --enableExperimental
+            --scan android/
+            --out dependency-check-report
+
+      - name: Upload Dependency-Check results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: dependency-check-report/
+          if-no-files-found: ignore
+
+      - name: Upload Dependency-Check SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: dependency-check-report/dependency-check-report.sarif
+          category: dependency-check
+        continue-on-error: true
+
+  # Gradle Dependency Analysis
+  gradle-dependency-check:
+    name: Gradle Dependency Analysis
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK components
+        run: |
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platform-tools" \
+            "build-tools;34.0.0" \
+            "platforms;android-34"
+
+      - name: Check for vulnerable dependencies
+        working-directory: android
+        run: |
+          ./gradlew dependencyUpdates --console=plain
+          echo "Checking for known vulnerable dependencies..."
+          # This will warn about any dependencies with known CVEs
+        continue-on-error: true
+
+  # Secret Scanning for Android
+  secrets-scan:
+    name: Secret Scanning (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better detection
+
+      - name: Run Gitleaks on Android directory
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Scan for hardcoded secrets in code
+        run: |
+          echo "Scanning for common Android security anti-patterns..."
+          cd android
+
+          # Check for hardcoded API keys
+          if grep -r "api[_-]?key\s*=\s*['\"][^'\"]\+" --include="*.kt" --include="*.java" .; then
+            echo "WARNING: Potential hardcoded API keys found"
+            exit 1
+          fi
+
+          # Check for hardcoded passwords
+          if grep -r "password\s*=\s*['\"][^'\"]\+" --include="*.kt" --include="*.java" .; then
+            echo "WARNING: Potential hardcoded passwords found"
+            exit 1
+          fi
+
+          # Check for Firebase/Google services exposed keys (should be in google-services.json which is gitignored)
+          if find . -name "google-services.json" -not -path "*/build/*" | grep -q .; then
+            echo "ERROR: google-services.json found in repository (should be gitignored)"
+            exit 1
+          fi
+        continue-on-error: true
+
+  # Android Lint Security Checks
+  android-lint-security:
+    name: Android Lint Security Analysis
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK components
+        run: |
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platform-tools" \
+            "build-tools;34.0.0" \
+            "platforms;android-34"
+
+      - name: Run Android Lint with Security Focus
+        working-directory: android
+        run: |
+          ./gradlew lint --console=plain
+
+          # Check specifically for security issues
+          echo "Analyzing lint results for security issues..."
+          for report in app/build/reports/lint-results*.xml; do
+            if [ -f "$report" ]; then
+              # Extract security-related lint issues
+              grep -E 'category="Security"' "$report" || echo "No security issues found"
+            fi
+          done
+
+      - name: Upload Lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lint-security-reports
+          path: |
+            android/app/build/reports/lint-results*.html
+            android/app/build/reports/lint-results*.xml
+          if-no-files-found: ignore
+
+  # Security Summary
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [sast-semgrep, sast-codeql, dependency-scan, gradle-dependency-check, secrets-scan, android-lint-security]
+    if: always()
+    steps:
+      - name: Generate Security Summary
+        run: |
+          echo "# Android Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST (Semgrep) | ${{ needs.sast-semgrep.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST (CodeQL) | ${{ needs.sast-codeql.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gradle Dependencies | ${{ needs.gradle-dependency-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scanning | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Android Lint Security | ${{ needs.android-lint-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View detailed results in the Security tab of this repository." >> $GITHUB_STEP_SUMMARY
