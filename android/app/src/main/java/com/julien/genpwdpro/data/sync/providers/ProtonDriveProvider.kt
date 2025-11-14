@@ -446,7 +446,8 @@ class ProtonDriveProvider(
             if (!response.accessToken.isNullOrEmpty()) {
                 accessToken = response.accessToken
                 refreshToken = response.refreshToken
-                SafeLog.d(TAG, "Access token obtained successfully")
+                // SECURITY: Use sensitive() to avoid logging token-related operations
+                SafeLog.sensitive(TAG, "Access token obtained successfully")
 
                 // Sauvegarder les tokens de manière sécurisée
                 credentialManager?.saveAccessToken(

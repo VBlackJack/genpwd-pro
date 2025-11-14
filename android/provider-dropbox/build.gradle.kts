@@ -14,6 +14,23 @@ android {
         minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        // OAuth Client IDs - Load from local.properties (not committed to version control)
+        val properties = org.jetbrains.kotlin.konan.properties.Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { properties.load(it) }
+        }
+
+        buildConfigField(
+            "String",
+            "DROPBOX_CLIENT_ID",
+            "\"${properties.getProperty("dropbox.client.id", "YOUR_DROPBOX_CLIENT_ID")}\""
+        )
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

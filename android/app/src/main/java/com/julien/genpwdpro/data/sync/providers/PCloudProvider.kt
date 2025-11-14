@@ -363,7 +363,8 @@ class PCloudProvider(
 
             if (response.result == 0 && !response.accessToken.isNullOrEmpty()) {
                 accessToken = response.accessToken
-                SafeLog.d(TAG, "Access token obtained successfully")
+                // SECURITY: Use sensitive() to avoid logging token-related operations
+                SafeLog.sensitive(TAG, "Access token obtained successfully")
 
                 // Sauvegarder le token de manière sécurisée
                 credentialManager?.saveAccessToken(

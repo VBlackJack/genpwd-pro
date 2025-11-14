@@ -16,6 +16,7 @@ import com.genpwd.corevault.ProviderKind
 import com.genpwd.provider.drive.OAuth2GoogleDriveAuthProvider
 import com.genpwd.storage.CloudAccountRepository
 import com.genpwd.sync.ProviderRegistry
+import com.genpwd.sync.oauth.OAuthStateStorage
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.presentation.theme.GenPwdProTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +39,9 @@ class OAuthCallbackActivity : ComponentActivity() {
 
     @Inject
     lateinit var googleDriveAuthProvider: OAuth2GoogleDriveAuthProvider
+
+    @Inject
+    lateinit var oauthStateStorage: OAuthStateStorage
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,14 +96,14 @@ class OAuthCallbackActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             try {
-                SafeLog.d(TAG, "Processing OAuth callback with state: $state")
+                SafeLog.d(TAG, "Processing OAuth callback")
 
-                // Extract provider kind from state parameter
-                // Format: "PROVIDER_KIND:random_state"
+                // SECURITY: Validate state parameter format first
+                // Format: "PROVIDER_KIND:UUID"
                 val providerKind = try {
                     val parts = state.split(":", limit = 2)
-                    if (parts.isEmpty()) {
-                        throw IllegalArgumentException("Invalid state parameter")
+                    if (parts.size != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+                        throw IllegalArgumentException("Invalid state parameter format")
                     }
                     ProviderKind.valueOf(parts[0])
                 } catch (e: Exception) {
@@ -107,7 +111,15 @@ class OAuthCallbackActivity : ComponentActivity() {
                     throw IllegalArgumentException("Invalid state parameter: ${e.message}")
                 }
 
-                SafeLog.d(TAG, "Provider kind: $providerKind")
+                // SECURITY: Verify state exists in secure storage (CSRF protection)
+                // This ensures the OAuth flow was initiated by this app instance
+                val codeVerifier = oauthStateStorage.getCodeVerifier(state)
+                if (codeVerifier == null) {
+                    SafeLog.w(TAG, "State parameter not found in storage or expired")
+                    throw IllegalStateException("Invalid or expired OAuth state. Please try again.")
+                }
+
+                SafeLog.d(TAG, "State validated, provider kind: $providerKind")
 
                 // Currently only Google Drive is implemented
                 if (providerKind != ProviderKind.GOOGLE_DRIVE) {
@@ -121,8 +133,7 @@ class OAuthCallbackActivity : ComponentActivity() {
 
                 SafeLog.d(TAG, "Token exchange successful, saving account...")
 
-                // Save account to database
-                // TODO: Encrypt tokens before storage
+                // Save account to database (tokens are automatically encrypted by CloudAccountRepository)
                 val account = cloudAccountRepository.saveAccount(
                     kind = providerKind,
                     displayName = tokens.email ?: "Google Drive Account",

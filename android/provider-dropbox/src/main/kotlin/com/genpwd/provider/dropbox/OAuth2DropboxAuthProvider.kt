@@ -38,7 +38,10 @@ class OAuth2DropboxAuthProvider @Inject constructor(
         private const val AUTH_ENDPOINT = "https://www.dropbox.com/oauth2/authorize"
         private const val TOKEN_ENDPOINT = "https://api.dropboxapi.com/oauth2/token"
         private const val REDIRECT_URI = "com.julien.genpwdpro:/oauth2callback"
-        private const val CLIENT_ID = "YOUR_DROPBOX_APP_KEY"
+
+        // CLIENT_ID loaded from BuildConfig (configured in local.properties)
+        // SECURITY: Never hardcode OAuth client IDs in source code
+        private val CLIENT_ID = BuildConfig.DROPBOX_CLIENT_ID
 
         // Minimal scope for file operations
         private const val SCOPES = "files.content.write files.content.read"
