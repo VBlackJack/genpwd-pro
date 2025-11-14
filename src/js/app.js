@@ -27,6 +27,7 @@ import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
 import { ANIMATION_DURATION } from './config/ui-constants.js';
 import { initThemeSystem } from './utils/theme-manager.js';
 import { isDevelopment } from './utils/environment.js';
+import { initKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
 
 // New v2.6.0 imports
 import { i18n } from './utils/i18n.js';
@@ -117,6 +118,10 @@ class GenPwdApp {
       // 7.1 NEW: Binding des nouveaux événements
       this.bindNewFeatureEvents();
       safeLog('Nouveaux événements bindés');
+
+      // 7.2 NEW: Initialize keyboard shortcuts (accessibility)
+      initKeyboardShortcuts();
+      safeLog('Raccourcis clavier initialisés (Alt+G/C/R/S, Escape)');
 
       // 8. Génération initiale après un délai
       setTimeout(() => this.generateInitial(), ANIMATION_DURATION.INITIAL_GENERATION_DELAY);

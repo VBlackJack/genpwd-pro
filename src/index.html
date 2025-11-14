@@ -22,6 +22,14 @@
   <meta name="author" content="Julien Bombled">
   <meta name="description" content="Générateur de mots de passe sécurisés avec architecture ES6 modulaire, tests intégrés et cryptographie robuste">
 
+  <!-- Resource Hints for Performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="prefetch" href="dictionaries/french.json" as="fetch" crossorigin>
+  <link rel="preload" href="styles/main.css" as="style">
+  <link rel="preload" href="styles/components.css" as="style">
+  <link rel="preload" href="js/app.js" as="script">
+
   <!-- CSS Modulaire -->
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/components.css">
@@ -33,11 +41,14 @@
   <link rel="stylesheet" href="styles/utilities.css">
 </head>
 <body>
-  <div class="app">
-    <header id="app-header">
+  <!-- Skip Navigation Link for Accessibility -->
+  <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+
+  <div class="app" role="application" aria-label="GenPwd Pro - Générateur de mots de passe sécurisés">
+    <header id="app-header" role="banner">
       <div class="header-inner">
         <div class="logo">
-          <div class="logo-badge">
+          <div class="logo-badge" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
               <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -49,9 +60,9 @@
           </div>
         </div>
         <div class="header-right">
-          <div class="version-badge">v2.6.0</div>
-          <button class="about-btn" id="btn-about">
-            <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="version-badge" aria-label="Version 2.6.0">v2.6.0</div>
+          <button class="about-btn" id="btn-about" aria-label="Afficher les informations à propos de GenPwd Pro">
+            <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -63,17 +74,17 @@
     </header>
 
     <!-- Modal À Propos -->
-    <div class="modal-overlay" id="about-modal">
+    <div class="modal-overlay" id="about-modal" role="dialog" aria-labelledby="about-modal-title" aria-modal="true" aria-hidden="true">
       <div class="modal">
         <div class="modal-header">
-          <div class="modal-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <div class="modal-title" id="about-modal-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
             </svg>
             À propos de GenPwd Pro
           </div>
-          <button class="modal-close" id="modal-close">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="modal-close" id="modal-close" aria-label="Fermer la modal à propos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -125,12 +136,12 @@
     </div>
 
     <!-- Modal Résultats Tests -->
-    <div id="test-results-modal" class="modal-overlay hidden">
+    <div id="test-results-modal" class="modal-overlay hidden" role="dialog" aria-labelledby="test-results-title" aria-modal="true" aria-hidden="true">
       <div class="modal test-modal">
         <div class="modal-header">
-          <div class="modal-title">📊 Résultats des Tests - GenPwd Pro v2.6.0</div>
-          <button type="button" class="modal-close" id="close-test-results">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="modal-title" id="test-results-title">📊 Résultats des Tests - GenPwd Pro v2.6.0</div>
+          <button type="button" class="modal-close" id="close-test-results" aria-label="Fermer les résultats des tests">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -168,22 +179,22 @@
       </div>
     </div>
 
-    <div class="main">
+    <div class="main" id="main-content">
       <!-- Configuration Panel -->
-      <aside class="panel" id="config-panel">
+      <aside class="panel" id="config-panel" role="complementary" aria-label="Panneau de configuration">
         <div class="panel-body">
-          
+
           <!-- Mode de génération -->
-          <section class="section">
+          <section class="section" aria-labelledby="section-mode">
             <div class="section-header chevron">
-              <span class="chev">▼</span>
-              <strong>Mode de génération</strong>
-              <span class="badge">3 modes</span>
+              <span class="chev" aria-hidden="true">▼</span>
+              <strong id="section-mode">Mode de génération</strong>
+              <span class="badge" aria-label="3 modes disponibles">3 modes</span>
             </div>
             <div class="section-content">
               <div class="row">
                 <label for="mode-select">Mode</label>
-                <select id="mode-select" class="grow">
+                <select id="mode-select" class="grow" aria-label="Sélectionner le mode de génération">
                   <option value="syllables">Syllabes (alternance C/V)</option>
                   <option value="passphrase">Passphrase (mots séparés)</option>
                   <option value="leet">Mot → Leet</option>
@@ -191,17 +202,17 @@
               </div>
 
               <!-- Options syllables -->
-              <div id="mode-syllables-opts">
+              <div id="mode-syllables-opts" aria-label="Options du mode syllabes">
                 <div class="row">
                   <label for="syll-len">Longueur (6–64)</label>
                   <div class="grow slider-wrap">
-                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20">
-                    <span class="badge" id="syll-len-val">20</span>
+                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20" aria-label="Longueur du mot de passe" aria-valuemin="6" aria-valuemax="64" aria-valuenow="20">
+                    <span class="badge" id="syll-len-val" aria-live="polite">20</span>
                   </div>
                 </div>
                 <div class="row">
                   <label for="policy-select">Politique</label>
-                  <select id="policy-select" class="grow">
+                  <select id="policy-select" class="grow" aria-label="Politique de caractères">
                     <option value="standard" selected>Standard (tous caractères)</option>
                     <option value="standard-layout">Standard Layout-Safe (AZERTY/QWERTY)</option>
                     <option value="alphanumerique">Alphanumérique (lettres + chiffres)</option>
@@ -405,20 +416,20 @@
       </aside>
 
       <!-- Results Panel -->
-      <section class="results" id="results-panel">
-        <div class="actions">
-          <button class="btn primary" id="btn-generate">🔒 Générer</button>
-          <button class="btn" id="btn-copy-all">📋 Tout Copier</button>
-          <button class="btn" id="btn-export">📤 Export</button>
-          <button class="btn danger" id="btn-clear">🗑️ Effacer</button>
-          <span class="spacer"></span>
-          <button class="btn ghost" id="btn-run-tests">🧪 Tests</button>
-          <span id="test-status"></span>
-          <button class="btn ghost" id="btn-toggle-debug">🔬 Debug</button>
+      <section class="results" id="results-panel" role="main" aria-label="Panneau de résultats">
+        <div class="actions" role="toolbar" aria-label="Actions principales">
+          <button class="btn primary" id="btn-generate" aria-label="Générer de nouveaux mots de passe (Raccourci: Alt+G)">🔒 Générer</button>
+          <button class="btn" id="btn-copy-all" aria-label="Copier tous les mots de passe générés (Raccourci: Alt+C)">📋 Tout Copier</button>
+          <button class="btn" id="btn-export" aria-label="Exporter les résultats">📤 Export</button>
+          <button class="btn danger" id="btn-clear" aria-label="Effacer tous les résultats">🗑️ Effacer</button>
+          <span class="spacer" aria-hidden="true"></span>
+          <button class="btn ghost" id="btn-run-tests" aria-label="Exécuter les tests de validation (Raccourci: Alt+R)">🧪 Tests</button>
+          <span id="test-status" role="status" aria-live="polite"></span>
+          <button class="btn ghost" id="btn-toggle-debug" aria-label="Basculer le panneau de débogage">🔬 Debug</button>
         </div>
-        <div class="results-list" id="results-list">
+        <div class="results-list" id="results-list" role="region" aria-label="Liste des mots de passe générés" aria-live="polite">
           <div class="empty-state">
-            <div class="empty-icon">🔐</div>
+            <div class="empty-icon" aria-hidden="true">🔐</div>
             <p>Cliquez sur "Générer" pour créer vos mots de passe</p>
           </div>
         </div>
@@ -426,19 +437,19 @@
     </div>
 
     <!-- Debug Panel -->
-    <aside class="debug" id="debug-panel">
+    <aside class="debug" id="debug-panel" role="complementary" aria-label="Panneau de débogage">
       <div class="debug-header">
         <strong>Debug</strong>
-        <button class="btn ghost small" id="btn-clear-logs">Effacer logs</button>
+        <button class="btn ghost small" id="btn-clear-logs" aria-label="Effacer les logs de débogage">Effacer logs</button>
       </div>
       <div class="debug-body">
         <div id="tests"></div>
-        <pre class="log" id="logs">[--:--:--] En attente d'initialisation...</pre>
+        <pre class="log" id="logs" role="log" aria-live="polite">[--:--:--] En attente d'initialisation...</pre>
       </div>
     </aside>
 
     <!-- Toast Container -->
-    <div class="toasts" id="toasts"></div>
+    <div class="toasts" id="toasts" role="alert" aria-live="assertive" aria-atomic="true"></div>
   </div>
 
   <!-- Suite de tests -->
