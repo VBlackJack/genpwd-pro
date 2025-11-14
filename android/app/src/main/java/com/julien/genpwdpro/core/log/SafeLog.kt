@@ -40,10 +40,17 @@ object SafeLog {
 
     /**
      * Warning log (always logged, even in production).
+     * SECURITY NOTE: In RELEASE builds, only logs the exception type, not the full stack trace.
      */
     fun w(tag: String? = null, message: String, throwable: Throwable? = null) {
         if (throwable != null) {
-            Log.w(resolveTag(tag), message, throwable)
+            if (BuildConfig.DEBUG) {
+                // In DEBUG: Full stack trace for debugging
+                Log.w(resolveTag(tag), message, throwable)
+            } else {
+                // In RELEASE: Only exception type to avoid leaking sensitive data in stack traces
+                Log.w(resolveTag(tag), "$message [${throwable.javaClass.simpleName}]")
+            }
         } else {
             Log.w(resolveTag(tag), message)
         }
@@ -51,13 +58,29 @@ object SafeLog {
 
     /**
      * Error log (always logged, even in production).
+     * SECURITY NOTE: In RELEASE builds, only logs the exception type, not the full stack trace.
      */
     fun e(tag: String? = null, message: String, throwable: Throwable? = null) {
         if (throwable != null) {
-            Log.e(resolveTag(tag), message, throwable)
+            if (BuildConfig.DEBUG) {
+                // In DEBUG: Full stack trace for debugging
+                Log.e(resolveTag(tag), message, throwable)
+            } else {
+                // In RELEASE: Only exception type to avoid leaking sensitive data in stack traces
+                Log.e(resolveTag(tag), "$message [${throwable.javaClass.simpleName}]")
+            }
         } else {
             Log.e(resolveTag(tag), message)
         }
+    }
+
+    /**
+     * Error log with full stack trace (even in production).
+     * WARNING: Only use this when you're certain the stack trace contains no sensitive data.
+     * For most cases, use e() which automatically sanitizes stack traces in production.
+     */
+    fun eWithStackTrace(tag: String? = null, message: String, throwable: Throwable) {
+        Log.e(resolveTag(tag), message, throwable)
     }
 
     /**

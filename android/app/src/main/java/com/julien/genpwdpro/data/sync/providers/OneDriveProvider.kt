@@ -137,7 +137,7 @@ class OneDriveProvider(
                     val userInfo = JsonParser.parseString(response.body?.string() ?: "{}")
                         .asJsonObject
                     val email = userInfo.get("userPrincipalName")?.asString
-                    SafeLog.d(TAG, "Authentication valid for user: $email")
+                    SafeLog.d(TAG, "Authentication valid for user: ${SafeLog.redact(email)}")
                     true
                 } else {
                     SafeLog.w(TAG, "Authentication failed: ${response.code}")

@@ -135,13 +135,103 @@ class SqlCipherPassphraseProvider @Inject constructor(
         return EncryptedDataEncoded(parts[0], parts[1])
     }
 
+    /**
+     * Check if passphrase rotation is needed (older than 90 days).
+     * Returns true if rotation is recommended.
+     */
+    fun needsRotation(): Boolean {
+        val lastRotation = securePrefs.getLong(PREF_LAST_ROTATION, 0L)
+        if (lastRotation == 0L) {
+            // No rotation timestamp recorded, set it to now
+            recordRotation()
+            return false
+        }
+
+        val daysSinceRotation = (System.currentTimeMillis() - lastRotation) / (1000 * 60 * 60 * 24)
+        return daysSinceRotation >= ROTATION_INTERVAL_DAYS
+    }
+
+    /**
+     * Rotate the SQLCipher passphrase to a new randomly generated one.
+     * This method handles the complete rotation process:
+     * 1. Generate new passphrase
+     * 2. Execute PRAGMA rekey on the database
+     * 3. Store encrypted new passphrase
+     * 4. Update rotation timestamp
+     *
+     * CRITICAL: This must be called with an open database connection.
+     *
+     * @param database The open SQLiteDatabase instance
+     * @return true if rotation succeeded, false otherwise
+     */
+    fun rotatePassphrase(database: SQLiteDatabase): Boolean {
+        check(securePrefs.isUnlocked()) { "Secure storage unavailable while device locked" }
+
+        return synchronized(lock) {
+            try {
+                SafeLog.i(TAG, "Starting SQLCipher passphrase rotation")
+
+                // Generate new passphrase
+                val newPassphrase = ByteArray(PASSPHRASE_LENGTH)
+                secureRandom.nextBytes(newPassphrase)
+
+                try {
+                    // Convert to hex string for PRAGMA rekey
+                    val newPassphraseHex = newPassphrase.joinToString("") { "%02x".format(it) }
+
+                    // Rekey the database
+                    database.rawExecSQL("PRAGMA rekey = \"x'$newPassphraseHex'\";")
+
+                    // Store encrypted new passphrase
+                    val engine = currentEngine()
+                    val encrypted = encryptionManager.encrypt(newPassphrase, engine)
+                    val encoded = encrypted.toBase64()
+                    securePrefs.putString(PREF_KEY, encode(encoded))
+
+                    // Record rotation timestamp
+                    recordRotation()
+
+                    SafeLog.i(TAG, "SQLCipher passphrase rotation completed successfully")
+                    true
+                } finally {
+                    // Zero out sensitive data
+                    newPassphrase.fill(0)
+                }
+            } catch (e: Exception) {
+                SafeLog.e(TAG, "Failed to rotate SQLCipher passphrase", e)
+                false
+            }
+        }
+    }
+
+    /**
+     * Record the current timestamp as the last rotation time.
+     */
+    private fun recordRotation() {
+        securePrefs.putLong(PREF_LAST_ROTATION, System.currentTimeMillis())
+    }
+
+    /**
+     * Get the number of days since last passphrase rotation.
+     * Returns -1 if no rotation has been recorded.
+     */
+    fun daysSinceLastRotation(): Int {
+        val lastRotation = securePrefs.getLong(PREF_LAST_ROTATION, 0L)
+        if (lastRotation == 0L) return -1
+
+        val daysSince = (System.currentTimeMillis() - lastRotation) / (1000 * 60 * 60 * 24)
+        return daysSince.toInt()
+    }
+
     companion object {
         private const val TAG = "SqlCipherPassphrase"
         private const val PREF_KEY = "sqlcipher_passphrase_encrypted"
+        private const val PREF_LAST_ROTATION = "sqlcipher_passphrase_last_rotation"
         private const val KEYSET_PREFS = "sqlcipher_passphrase_keyset_store"
         private const val KEYSET_NAME = "sqlcipher_passphrase_keyset"
         private const val PASSPHRASE_LENGTH = 32
         private const val DELIMITER = ":"
+        private const val ROTATION_INTERVAL_DAYS = 90L
         private val lock = Any()
     }
 }
