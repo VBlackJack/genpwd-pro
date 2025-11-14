@@ -41,7 +41,10 @@ class OAuth2GoogleDriveAuthProvider @Inject constructor(
         private const val AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
         private const val TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
         private const val REDIRECT_URI = "com.julien.genpwdpro:/oauth2callback"
-        private const val CLIENT_ID = "617397885959-dejdholrsq2mulvuu24fmr6pfm2cter4.apps.googleusercontent.com"
+
+        // CLIENT_ID loaded from BuildConfig (configured in local.properties)
+        // SECURITY: Never hardcode OAuth client IDs in source code
+        private val CLIENT_ID = BuildConfig.GOOGLE_DRIVE_CLIENT_ID
 
         // Scopes minimal for Google Drive
         private const val SCOPES = "https://www.googleapis.com/auth/drive.appdata " +

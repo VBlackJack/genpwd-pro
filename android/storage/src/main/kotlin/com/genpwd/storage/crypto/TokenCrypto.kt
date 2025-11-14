@@ -54,7 +54,15 @@ class TokenCrypto @Inject constructor() {
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
-            .setUserAuthenticationRequired(false) // No user auth for automatic sync
+            // SECURITY: Require biometric/device credential authentication for token decryption
+            // This prevents malicious apps from extracting tokens even if keystore is compromised
+            .setUserAuthenticationRequired(true)
+            .setUserAuthenticationParameters(
+                300, // 5 minutes validity after authentication
+                KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL
+            )
+            // Invalidate key if new biometric is enrolled (security enhancement)
+            .setInvalidatedByBiometricEnrollment(true)
             .build()
 
         keyGenerator.init(keyGenSpec)

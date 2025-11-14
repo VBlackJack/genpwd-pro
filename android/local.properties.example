@@ -1,0 +1,25 @@
+# OAuth Client IDs Configuration
+# SECURITY: This file contains example values. Copy to local.properties and replace with real credentials.
+# WARNING: Never commit local.properties to version control!
+
+# Google Drive OAuth 2.0 Client ID
+# Obtain from: https://console.cloud.google.com/apis/credentials
+# 1. Create a new OAuth 2.0 Client ID
+# 2. Application type: Android
+# 3. Package name: com.julien.genpwdpro
+# 4. SHA-1 certificate fingerprint: (run: keytool -list -v -keystore ~/.android/debug.keystore)
+google.drive.client.id=YOUR_GOOGLE_DRIVE_CLIENT_ID
+
+# Dropbox OAuth App Key
+# Obtain from: https://www.dropbox.com/developers/apps
+# 1. Create a new app
+# 2. Choose "Scoped access"
+# 3. Choose "Full Dropbox" or "App folder"
+# 4. Add permissions: files.content.write, files.content.read
+dropbox.client.id=YOUR_DROPBOX_CLIENT_ID
+
+# Instructions:
+# 1. Copy this file to local.properties: cp local.properties.example local.properties
+# 2. Replace YOUR_GOOGLE_DRIVE_CLIENT_ID with your actual Google OAuth Client ID
+# 3. Replace YOUR_DROPBOX_CLIENT_ID with your actual Dropbox App Key
+# 4. Never commit local.properties to git (it's in .gitignore)
