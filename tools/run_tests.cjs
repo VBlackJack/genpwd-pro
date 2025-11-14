@@ -833,6 +833,185 @@ class NodeTestRunner {
           assert(/[a-z]/.test(result.charAt(1)), 'Second char should be lowercase (l token)');
           return { sample: result };
         }
+      },
+      // Dictionaries tests
+      {
+        name: 'Dictionaries - loadDictionary french',
+        run: async () => {
+          const { loadDictionary } = this.modules.dictionaries;
+          const words = await loadDictionary('french');
+          assert(Array.isArray(words), 'Dictionary should return an array');
+          assert(words.length > 100, 'Dictionary should have at least 100 words');
+          assert(words.every(w => typeof w === 'string'), 'All words should be strings');
+          return { sample: `Loaded ${words.length} words` };
+        }
+      },
+      {
+        name: 'Dictionaries - getCurrentDictionary',
+        run: async () => {
+          const { getCurrentDictionary } = this.modules.dictionaries;
+          const words = await getCurrentDictionary('french');
+          assert(Array.isArray(words), 'Should return an array');
+          assert(words.length > 0, 'Should have words');
+          return { sample: `Got ${words.length} words` };
+        }
+      },
+      {
+        name: 'Dictionaries - setCurrentDictionary',
+        run: async () => {
+          const { setCurrentDictionary, getCurrentDictionary } = this.modules.dictionaries;
+          const result = setCurrentDictionary('french');
+          assert(result === true, 'Should return true on success');
+          const words = await getCurrentDictionary();
+          assert(words.length > 0, 'Current dictionary should have words');
+          return { sample: 'Dictionary set successfully' };
+        }
+      },
+      {
+        name: 'Dictionaries - invalid dictionary key',
+        run: async () => {
+          const { loadDictionary } = this.modules.dictionaries;
+          let errorThrown = false;
+          try {
+            await loadDictionary('invalid-dict-key');
+          } catch (error) {
+            errorThrown = true;
+            assert(error.message.includes('not configured'), 'Should throw meaningful error');
+          }
+          assert(errorThrown, 'Should throw error for invalid dictionary');
+          return { sample: 'Error handling works' };
+        }
+      },
+      {
+        name: 'Dictionaries - cache mechanism',
+        run: async () => {
+          const { loadDictionary } = this.modules.dictionaries;
+          const words1 = await loadDictionary('french');
+          const words2 = await loadDictionary('french'); // Should use cache
+          assert(words1.length === words2.length, 'Cached dictionary should match');
+          assert(words1 === words2, 'Should return same reference from cache');
+          return { sample: 'Cache working correctly' };
+        }
+      },
+      // Helpers tests
+      {
+        name: 'Helpers - randInt basic',
+        run: async () => {
+          const { randInt } = this.modules.helpers;
+          const value = randInt(0, 10);
+          assert(Number.isInteger(value), 'Should return integer');
+          assert(value >= 0 && value < 10, 'Should be within range');
+          return { sample: `Generated: ${value}` };
+        }
+      },
+      {
+        name: 'Helpers - randInt multiple calls',
+        run: async () => {
+          const { randInt } = this.modules.helpers;
+          const values = Array.from({ length: 5 }, () => randInt(1, 11));
+          assert(values.every(v => v >= 1 && v < 11), 'All values should be in range');
+          return { sample: `Values: [${values.join(',')}]` };
+        }
+      },
+      {
+        name: 'Helpers - pick from array',
+        run: async () => {
+          const { pick } = this.modules.helpers;
+          const items = ['a', 'b', 'c', 'd'];
+          const choice = pick(items);
+          assert(items.includes(choice), 'Should pick from array');
+          return { sample: `Chose: ${choice}` };
+        }
+      },
+      {
+        name: 'Helpers - ensureArray empty',
+        run: async () => {
+          const { ensureArray } = this.modules.helpers;
+          const result = ensureArray([]);
+          assert(Array.isArray(result), 'Should return array');
+          assert(result.length === 0, 'Should be empty array');
+          return { sample: 'Empty array handled' };
+        }
+      },
+      {
+        name: 'Helpers - ensureArray already array',
+        run: async () => {
+          const { ensureArray } = this.modules.helpers;
+          const input = ['a', 'b'];
+          const result = ensureArray(input);
+          assert(Array.isArray(result), 'Should return array');
+          assert(result.length === 2, 'Should preserve length');
+          return { sample: 'Array preserved' };
+        }
+      },
+      {
+        name: 'Helpers - setDigitPositions',
+        run: async () => {
+          const { setDigitPositions, getDigitPositions } = this.modules.helpers;
+          setDigitPositions([1, 3, 5]);
+          const positions = getDigitPositions();
+          assert(Array.isArray(positions), 'Should return array');
+          assert(positions.length === 3, 'Should have 3 positions');
+          assert(positions[0] === 1, 'First position should be 1');
+          return { sample: `Positions: [${positions.join(',')}]` };
+        }
+      },
+      {
+        name: 'Helpers - setSpecialPositions',
+        run: async () => {
+          const { setSpecialPositions, getSpecialPositions } = this.modules.helpers;
+          setSpecialPositions([2, 4]);
+          const positions = getSpecialPositions();
+          assert(Array.isArray(positions), 'Should return array');
+          assert(positions.length === 2, 'Should have 2 positions');
+          return { sample: `Positions: [${positions.join(',')}]` };
+        }
+      },
+      {
+        name: 'Helpers - distributeEvenly',
+        run: async () => {
+          const { distributeEvenly } = this.modules.helpers;
+          const positions = distributeEvenly(3, 0, 100);
+          assert(Array.isArray(positions), 'Should return array');
+          assert(positions.length === 3, 'Should have 3 positions');
+          assert(positions.every(p => p >= 0 && p <= 100), 'All positions in range');
+          return { sample: `Distributed: [${positions.join(',')}]` };
+        }
+      },
+      {
+        name: 'Helpers - compositionCounts',
+        run: async () => {
+          const { compositionCounts } = this.modules.helpers;
+          const counts = compositionCounts('Abc123!@#');
+          assert(typeof counts === 'object', 'Should return object');
+          // Correct field names: U (uppercase), L (lowercase), D (digits), S (specials)
+          assert(counts.hasOwnProperty('U'), 'Should have U (uppercase) count');
+          assert(counts.hasOwnProperty('L'), 'Should have L (lowercase) count');
+          assert(counts.hasOwnProperty('D'), 'Should have D (digit) count');
+          assert(counts.hasOwnProperty('S'), 'Should have S (special) count');
+          assert(counts.U > 0 && counts.L > 0 && counts.D > 0 && counts.S > 0, 'All counts should be > 0');
+          return { sample: `U:${counts.U}, L:${counts.L}, D:${counts.D}, S:${counts.S}` };
+        }
+      },
+      {
+        name: 'Helpers - escapeHtml',
+        run: async () => {
+          const { escapeHtml } = this.modules.helpers;
+          const result = escapeHtml('<script>alert("xss")</script>');
+          assert(!result.includes('<'), 'Should escape <');
+          assert(!result.includes('>'), 'Should escape >');
+          assert(result.includes('&lt;'), 'Should contain escaped <');
+          return { sample: 'HTML escaped successfully' };
+        }
+      },
+      {
+        name: 'Helpers - log2 calculation',
+        run: async () => {
+          const { log2 } = this.modules.helpers;
+          const result = log2(8);
+          assert(Math.abs(result - 3) < 0.001, 'log2(8) should be 3');
+          return { sample: `log2(8) = ${result}` };
+        }
       }
     ];
   }
@@ -901,6 +1080,7 @@ async function main() {
   const helpersModule = await importModule('src/js/utils/helpers.js');
   const validatorsModule = await importModule('src/js/utils/validators.js');
   const casingModule = await importModule('src/js/core/casing.js');
+  const dictionariesModule = await importModule('src/js/core/dictionaries.js');
 
   const runner = new NodeTestRunner({
     generateSyllables: generatorsModule.generateSyllables,
@@ -911,7 +1091,9 @@ async function main() {
     setDigitPositions: helpersModule.setDigitPositions,
     setSpecialPositions: helpersModule.setSpecialPositions,
     validators: validatorsModule,
-    casing: casingModule
+    casing: casingModule,
+    dictionaries: dictionariesModule,
+    helpers: helpersModule
   });
 
   const results = await runner.runAll(runs);
