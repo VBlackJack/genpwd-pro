@@ -16,6 +16,58 @@
 // src/js/core/casing.js - Gestion de la casse et système de blocs
 import { pick } from '../utils/helpers.js';
 
+// Cross-environment crypto support
+let cryptoCache = null;
+
+/**
+ * Initialize crypto API asynchronously for Node.js if needed
+ */
+async function initCrypto() {
+  if (cryptoCache) return cryptoCache;
+
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    cryptoCache = globalThis.crypto;
+    return cryptoCache;
+  }
+
+  try {
+    const nodeCrypto = await import('node:crypto');
+    if (nodeCrypto?.webcrypto) {
+      cryptoCache = nodeCrypto.webcrypto;
+      return cryptoCache;
+    }
+  } catch (e) {
+    try {
+      const nodeCrypto = await import('crypto');
+      if (nodeCrypto?.webcrypto) {
+        cryptoCache = nodeCrypto.webcrypto;
+        return cryptoCache;
+      }
+    } catch (e2) {
+      throw new Error('Crypto API not available');
+    }
+  }
+  throw new Error('Crypto API not available');
+}
+
+/**
+ * Gets the crypto API for both browser and Node.js environments
+ * @returns {Crypto} The crypto API object
+ */
+function getCrypto() {
+  if (cryptoCache) return cryptoCache;
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    cryptoCache = globalThis.crypto;
+    return cryptoCache;
+  }
+  throw new Error('Crypto API not initialized');
+}
+
+// Initialize on module load
+if (!globalThis.crypto) {
+  initCrypto().catch(() => {});
+}
+
 /**
  * Applies case transformation to a string
  * @param {string} str - Input string
@@ -49,6 +101,7 @@ export function applyCase(str, mode) {
         if (!/\p{L}/u.test(ch)) return ch;
 
         // Use crypto.getRandomValues() instead of Math.random() for security
+        const crypto = getCrypto();
         const randomByte = new Uint8Array(1);
         crypto.getRandomValues(randomByte);
         const isUpper = (randomByte[0] & 1) === 1; // Use LSB for random boolean
