@@ -83,7 +83,30 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-  # Primary test job - Node 20 with coverage (fast path)
+  # Fast test job - runs main tests only (parallel with full test suite)
+  test-fast:
+    name: Test Fast (Core Tests)
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Run fast tests
+        run: npm run test:fast
+
+  # Primary test job - Node 20 with coverage (full test suite)
   test:
     name: Test (Node 20 + Coverage)
     runs-on: ubuntu-latest
@@ -282,13 +305,14 @@ jobs:
   status-check:
     name: CI Status Check
     runs-on: ubuntu-latest
-    needs: [lint, test, test-compat, build]
+    needs: [lint, test, test-fast, test-compat, build]
     if: always()
     steps:
       - name: Check job statuses
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] || \
              [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.test-fast.result }}" != "success" ] || \
              [ "${{ needs.test-compat.result }}" != "success" ] || \
              [ "${{ needs.build.result }}" != "success" ]; then
             echo "❌ CI checks failed"

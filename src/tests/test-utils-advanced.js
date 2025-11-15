@@ -74,18 +74,47 @@ global.localStorage = localStorageMock;
 
 // Mock document for DOM-dependent utils
 if (typeof global.document === 'undefined') {
+  // Create a more complete DOM mock
+  const createMockElement = () => ({
+    textContent: '',
+    innerHTML: '',
+    className: '',
+    style: {},
+    dataset: {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    setAttribute: () => {},
+    getAttribute: () => null,
+    appendChild: () => {},
+    removeChild: () => {},
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    focus: () => {},
+    click: () => {},
+    remove: () => {}
+  });
+
   global.document = {
     documentElement: {
       style: {},
       setAttribute: () => {},
       getAttribute: () => null
     },
+    body: {
+      appendChild: () => {},
+      removeChild: () => {},
+      style: {},
+      setAttribute: () => {},
+      getAttribute: () => null
+    },
     getElementById: () => null,
-    createElement: () => ({
-      textContent: '',
-      innerHTML: ''
+    createElement: (tag) => ({
+      ...createMockElement(),
+      tagName: tag.toUpperCase()
     }),
-    createTextNode: (text) => ({ nodeValue: text })
+    createTextNode: (text) => ({ nodeValue: text }),
+    querySelector: () => null,
+    querySelectorAll: () => []
   };
 }
 
@@ -402,8 +431,9 @@ function setupPresetTests(runner) {
       specials: 2
     };
 
-    const id = presetManager.createPreset('My Custom', config, '');
-    assert.ok(id, 'Should create custom preset and return ID');
+    const preset = presetManager.createPreset('My Custom', config, '');
+    assert.ok(preset, 'Should create custom preset');
+    assert.ok(preset.id, 'Preset should have an ID');
 
     const presets = presetManager.getAllPresets();
     assert.ok(presets.some(p => p.name === 'My Custom'), 'Should include custom preset');
@@ -415,7 +445,8 @@ function setupPresetTests(runner) {
 
     const config = { mode: 'syllables' };
 
-    const presetId = presetManager.createPreset('To Remove', config, '');
+    const preset = presetManager.createPreset('To Remove', config, '');
+    const presetId = preset.id;
     const presets = presetManager.getAllPresets();
     assert.ok(presets.find(p => p.id === presetId), 'Preset should exist');
 

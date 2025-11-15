@@ -16,7 +16,7 @@
 
 // src/js/ui/features-ui.js - UI components for v2.6.0 features
 
-import { i18n, t } from '../utils/i18n.js';
+import { i18n } from '../utils/i18n.js';
 import presetManager from '../utils/preset-manager.js';
 import historyManager from '../utils/history-manager.js';
 import pluginManager from '../utils/plugin-manager.js';
@@ -872,7 +872,7 @@ function bindPresetModalEvents(modal) {
 
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', (_e) => {
       const action = btn.dataset.action;
       const presetId = btn.dataset.presetId;
 
@@ -1267,7 +1267,7 @@ function bindHistoryModalEvents(modal) {
 
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', (_e) => {
       const action = btn.dataset.action;
       const entryId = btn.dataset.entryId;
 
@@ -1891,7 +1891,7 @@ function showAdvancedExportModal() {
   // Export button
   modal.querySelector('#btn-export-download').addEventListener('click', () => {
     const format = formatSelect.value;
-    const includeMetadata = modal.querySelector('#include-metadata').checked;
+    const _includeMetadata = modal.querySelector('#include-metadata').checked;
 
     try {
       // Export passwords
