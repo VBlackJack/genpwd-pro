@@ -20,6 +20,29 @@ import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
 import { safeLog } from '../utils/logger.js';
 
+/**
+ * Gets the crypto API for both browser and Node.js environments
+ * @returns {Crypto} The crypto API object
+ */
+function getCrypto() {
+  // Browser environment
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    return globalThis.crypto;
+  }
+
+  // Node.js environment
+  try {
+    const nodeCrypto = require('crypto');
+    if (nodeCrypto && nodeCrypto.webcrypto) {
+      return nodeCrypto.webcrypto;
+    }
+  } catch (e) {
+    throw new Error('Crypto API not available in this environment');
+  }
+
+  throw new Error('Crypto API not available');
+}
+
 const CLI_SAFE_SPECIAL_SET = new Set(CHAR_SETS.standard.specials);
 const DANGEROUS_CHARS = new Set(['$', '^', '&', '*', "'"]);
 
@@ -462,6 +485,7 @@ export async function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
 }
 
 function generateRandomString(length, alphabet) {
+  const crypto = getCrypto();
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
   return Array.from(array, byte => alphabet[byte % alphabet.length]).join('');

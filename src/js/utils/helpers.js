@@ -17,8 +17,38 @@
 
 import { safeLog } from './logger.js';
 
-// Polyfill for crypto in Node.js environment
-const crypto = globalThis.crypto;
+// Cross-environment crypto support (browser + Node.js)
+let cryptoCache = null;
+
+/**
+ * Gets the crypto API for both browser and Node.js environments
+ * @returns {Crypto} The crypto API object
+ */
+function getCrypto() {
+  if (cryptoCache) {
+    return cryptoCache;
+  }
+
+  // Browser environment
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    cryptoCache = globalThis.crypto;
+    return cryptoCache;
+  }
+
+  // Node.js environment
+  try {
+    // Use dynamic import for Node.js crypto module
+    const nodeCrypto = require('crypto');
+    if (nodeCrypto && nodeCrypto.webcrypto) {
+      cryptoCache = nodeCrypto.webcrypto;
+      return cryptoCache;
+    }
+  } catch (e) {
+    throw new Error('Crypto API not available in this environment');
+  }
+
+  throw new Error('Crypto API not available');
+}
 
 /**
  * Generates a cryptographically secure random integer between min and max (inclusive)
@@ -40,6 +70,8 @@ export function randInt(min, max) {
   }
 
   const range = max - min + 1;
+
+  const crypto = getCrypto();
 
   // Special case: range is power of 2, use simple masking (more efficient)
   if ((range & (range - 1)) === 0) {

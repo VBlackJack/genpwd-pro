@@ -20,6 +20,29 @@ import { safeLog } from './logger.js';
 import { safeSetItem, safeGetItem } from './storage-helper.js';
 
 /**
+ * Gets the crypto API for both browser and Node.js environments
+ * @returns {Crypto} The crypto API object
+ */
+function getCrypto() {
+  // Browser environment
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    return globalThis.crypto;
+  }
+
+  // Node.js environment
+  try {
+    const nodeCrypto = require('crypto');
+    if (nodeCrypto && nodeCrypto.webcrypto) {
+      return nodeCrypto.webcrypto;
+    }
+  } catch (e) {
+    throw new Error('Crypto API not available in this environment');
+  }
+
+  throw new Error('Crypto API not available');
+}
+
+/**
  * @typedef {Object} Preset
  * @property {string} id - Unique preset ID
  * @property {string} name - User-friendly preset name
@@ -121,6 +144,7 @@ class PresetManager {
    * @returns {string} Unique ID
    */
   generateId() {
+    const crypto = getCrypto();
     const timestamp = Date.now();
     // Generate 6 random bytes for better uniqueness
     const randomBytes = new Uint8Array(6);

@@ -17,6 +17,29 @@
 import { pick } from '../utils/helpers.js';
 
 /**
+ * Gets the crypto API for both browser and Node.js environments
+ * @returns {Crypto} The crypto API object
+ */
+function getCrypto() {
+  // Browser environment
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    return globalThis.crypto;
+  }
+
+  // Node.js environment
+  try {
+    const nodeCrypto = require('crypto');
+    if (nodeCrypto && nodeCrypto.webcrypto) {
+      return nodeCrypto.webcrypto;
+    }
+  } catch (e) {
+    throw new Error('Crypto API not available in this environment');
+  }
+
+  throw new Error('Crypto API not available');
+}
+
+/**
  * Applies case transformation to a string
  * @param {string} str - Input string
  * @param {string} mode - Case mode: 'upper', 'lower', 'title', 'mixte'
@@ -49,6 +72,7 @@ export function applyCase(str, mode) {
         if (!/\p{L}/u.test(ch)) return ch;
 
         // Use crypto.getRandomValues() instead of Math.random() for security
+        const crypto = getCrypto();
         const randomByte = new Uint8Array(1);
         crypto.getRandomValues(randomByte);
         const isUpper = (randomByte[0] & 1) === 1; // Use LSB for random boolean
