@@ -146,6 +146,31 @@ const XMLExportPlugin = {
       }
 
       try {
+        // SECURITY: Validate XML size (limit to 5MB for plugin)
+        const MAX_XML_SIZE = 5 * 1024 * 1024;
+        if (xmlString.length > MAX_XML_SIZE) {
+          console.error('[XML Export Plugin] XML file too large');
+          return null;
+        }
+
+        // SECURITY: Check for dangerous XML patterns (XXE protection)
+        const dangerousPatterns = [
+          /<!ENTITY/i,
+          /<!DOCTYPE[^>]*\[/i,
+          /SYSTEM\s+["']/i,
+          /PUBLIC\s+["']/i,
+        ];
+
+        for (const pattern of dangerousPatterns) {
+          if (pattern.test(xmlString)) {
+            console.error('[XML Export Plugin] XML contains forbidden patterns');
+            return null;
+          }
+        }
+
+        // SECURITY: Strip DOCTYPE declarations
+        xmlString = xmlString.replace(/<!DOCTYPE[^>]*>/gi, '');
+
         // Parse XML
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlString, 'text/xml');

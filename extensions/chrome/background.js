@@ -54,6 +54,27 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // Message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // SECURITY: Validate message origin - must come from our own extension
+  if (!sender || !sender.id || sender.id !== chrome.runtime.id) {
+    console.warn('GenPwd Pro: Rejected message from unauthorized sender:', sender);
+    sendResponse({ success: false, error: 'Unauthorized' });
+    return false;
+  }
+
+  // SECURITY: Validate that sender is from a tab (not external)
+  if (!sender.tab && !sender.url) {
+    console.warn('GenPwd Pro: Rejected message from non-tab context');
+    sendResponse({ success: false, error: 'Invalid context' });
+    return false;
+  }
+
+  // SECURITY: Validate request structure
+  if (!request || typeof request !== 'object' || typeof request.action !== 'string') {
+    console.warn('GenPwd Pro: Rejected malformed message');
+    sendResponse({ success: false, error: 'Malformed request' });
+    return false;
+  }
+
   if (request.action === 'generatePassword') {
     // Generate password using stored settings
     chrome.storage.sync.get(['settings'], (data) => {
@@ -69,6 +90,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     return true; // Keep the message channel open for async response
   }
+
+  // Unknown action
+  sendResponse({ success: false, error: 'Unknown action' });
+  return false;
 });
 
 function generateSimplePassword(settings) {

@@ -441,55 +441,72 @@ class PluginManager {
   }
 
   /**
-   * Load plugin from code string (for dynamic loading)
-   * SECURITY: This uses eval-like functionality and should be used carefully
-   * @param {string} code - Plugin code
+   * Load plugin from ES6 module URL (secure dynamic loading)
+   * SECURITY: Only accepts ES6 module URLs, no eval/Function constructor
+   * @param {string} moduleUrl - URL to ES6 module (must be HTTPS or local)
    * @param {string} source - Source identifier (for tracking)
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    */
-  loadPluginFromCode(code, source = 'unknown') {
+  async loadPluginFromModule(moduleUrl, source = 'unknown') {
     try {
-      // Security check: code size limit
-      if (code.length > this.config.maxPluginSize) {
-        showToast('Plugin code too large', 'error');
+      // Security check: URL validation
+      const url = new URL(moduleUrl, window.location.origin);
+
+      // Only allow HTTPS or local file protocol
+      if (!['https:', 'http:', 'file:'].includes(url.protocol)) {
+        safeLog(`Plugin from ${source}: Invalid protocol ${url.protocol}`);
+        showToast('Plugin URL must use HTTPS or local file', 'error');
         return false;
       }
 
-      // Security check: dangerous patterns
-      const dangerousPatterns = [
-        /eval\s*\(/,
-        /Function\s*\(/,
-        /setTimeout\s*\(/,
-        /setInterval\s*\(/,
-        /<script/i,
-        /document\.write/i,
-        /window\.location/i
-      ];
-
-      for (const pattern of dangerousPatterns) {
-        if (pattern.test(code)) {
-          safeLog(`Plugin from ${source} contains dangerous pattern: ${pattern}`);
-          showToast('Plugin contains forbidden code patterns', 'error');
-          return false;
-        }
+      // For production, only allow HTTPS (except localhost)
+      if (window.location.hostname !== 'localhost' &&
+          url.protocol !== 'https:' &&
+          url.protocol !== 'file:') {
+        safeLog(`Plugin from ${source}: HTTPS required in production`);
+        showToast('Plugin must be loaded over HTTPS', 'error');
+        return false;
       }
 
-      // Create sandboxed function
-      // We expect the code to return a plugin object
-      const pluginFactory = new Function('return ' + code);
-      const plugin = pluginFactory();
+      // Dynamic import (secure, no eval)
+      const module = await import(/* webpackIgnore: true */ moduleUrl);
+
+      // Module must export default as plugin object
+      if (!module.default) {
+        safeLog(`Plugin from ${source}: No default export found`);
+        showToast('Plugin module must have default export', 'error');
+        return false;
+      }
+
+      const plugin = module.default;
 
       // Add source metadata
       plugin._source = source;
+      plugin._moduleUrl = moduleUrl;
       plugin._loadedAt = new Date().toISOString();
 
       // Register plugin
       return this.registerPlugin(plugin);
     } catch (error) {
       safeLog(`Error loading plugin from ${source}: ${error.message}`);
-      showToast('Failed to load plugin', 'error');
+      showToast('Failed to load plugin module', 'error');
       return false;
     }
+  }
+
+  /**
+   * Load plugin from code string - DEPRECATED AND DISABLED
+   * SECURITY WARNING: This method has been disabled due to code injection risks
+   * Use loadPluginFromModule() instead with ES6 modules
+   * @deprecated Use loadPluginFromModule() instead
+   * @param {string} code - Plugin code (IGNORED)
+   * @param {string} source - Source identifier
+   * @returns {boolean} - Always returns false
+   */
+  loadPluginFromCode(code, source = 'unknown') {
+    safeLog(`SECURITY: loadPluginFromCode() is deprecated and disabled. Use loadPluginFromModule() instead.`);
+    showToast('Direct code loading disabled for security. Use ES6 modules.', 'error');
+    return false;
   }
 
   /**

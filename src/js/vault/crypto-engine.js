@@ -16,10 +16,16 @@ function ensureSelf() {
 async function getTink() {
   if (!tinkModulePromise) {
     ensureSelf();
-    tinkModulePromise = import('tink-crypto').then((module) => {
-      module.aead.register();
-      return module;
-    });
+    tinkModulePromise = import('tink-crypto')
+      .then((module) => {
+        module.aead.register();
+        return module;
+      })
+      .catch((error) => {
+        // Reset promise so next call will retry
+        tinkModulePromise = null;
+        throw new Error(`Failed to load tink-crypto module: ${error.message}`);
+      });
   }
   return tinkModulePromise;
 }
@@ -29,7 +35,13 @@ async function getCryptoApi() {
     return globalThis.crypto;
   }
   if (!cryptoModulePromise) {
-    cryptoModulePromise = import('node:crypto').then(({ webcrypto }) => webcrypto);
+    cryptoModulePromise = import('node:crypto')
+      .then(({ webcrypto }) => webcrypto)
+      .catch((error) => {
+        // Reset promise so next call will retry
+        cryptoModulePromise = null;
+        throw new Error(`Failed to load node:crypto module: ${error.message}`);
+      });
   }
   return cryptoModulePromise;
 }
