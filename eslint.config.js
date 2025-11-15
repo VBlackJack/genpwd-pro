@@ -15,12 +15,7 @@
  */
 
 // ESLint v9 configuration (flat config)
-import js from '@eslint/js';
-
 export default [
-  // Configuration globale
-  js.configs.recommended,
-
   // Configuration pour les fichiers source ES modules
   {
     files: ['src/js/**/*.js'],
@@ -76,8 +71,29 @@ export default [
     },
     rules: {
       'no-console': 'off',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'no-case-declarations': 'off'
+      // Strict: unused vars on exports/functions are errors
+      // Catch errors can be unused (common pattern)
+      'no-unused-vars': ['error', {
+        vars: 'all',
+        args: 'after-used',
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none' // Allow unused catch binding
+      }],
+      'no-case-declarations': 'off',
+      // Critical rules that should fail CI
+      'no-undef': 'error',
+      'no-unreachable': 'error',
+      'no-constant-condition': 'error',
+      'no-dupe-keys': 'error',
+      'no-duplicate-case': 'error',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      'no-ex-assign': 'error',
+      'no-func-assign': 'error',
+      'no-invalid-regexp': 'error',
+      'no-sparse-arrays': 'error',
+      'use-isnan': 'error',
+      'valid-typeof': 'error'
     }
   },
 

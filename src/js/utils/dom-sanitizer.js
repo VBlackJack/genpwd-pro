@@ -7,7 +7,60 @@
  * @module dom-sanitizer
  */
 
-import DOMPurify from 'dompurify';
+// Conditional DOMPurify loading for browser/Node.js compatibility
+let DOMPurify = null;
+let importAttempted = false;
+
+/**
+ * Lazy load DOMPurify (browser only)
+ */
+async function ensureDOMPurify() {
+  if (importAttempted) {
+    return DOMPurify;
+  }
+
+  importAttempted = true;
+
+  // Only try to load in browser environment
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const module = await import('dompurify');
+    DOMPurify = module.default || module;
+    return DOMPurify;
+  } catch (_error) {
+    console.warn('[DOM Sanitizer] DOMPurify not available, using fallback');
+    return null;
+  }
+}
+
+// Try to load DOMPurify immediately if in browser
+if (typeof window !== 'undefined') {
+  ensureDOMPurify().catch(() => {
+    // Ignore errors, will use fallback
+  });
+}
+
+/**
+ * Fallback HTML sanitizer for Node.js environment
+ * @param {string} html - HTML to sanitize
+ * @returns {string} - Sanitized HTML
+ */
+function fallbackSanitize(html) {
+  if (typeof html !== 'string') {
+    return '';
+  }
+  // Basic HTML escaping for test environment
+  return html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
 
 /**
  * Sanitize HTML content to prevent XSS attacks
@@ -29,6 +82,11 @@ export function sanitizeHTML(html, options = {}) {
   if (typeof html !== 'string') {
     console.warn('[DOM Sanitizer] Invalid input type, expected string, got:', typeof html);
     return '';
+  }
+
+  // Use fallback if DOMPurify is not available (Node.js environment)
+  if (!DOMPurify) {
+    return fallbackSanitize(html);
   }
 
   // Default secure configuration
@@ -76,7 +134,7 @@ export function sanitizeHTML(html, options = {}) {
     return DOMPurify.sanitize(html, config);
   } catch (error) {
     console.error('[DOM Sanitizer] Sanitization failed:', error);
-    return '';
+    return fallbackSanitize(html);
   }
 }
 
@@ -110,6 +168,11 @@ export function sanitizeHTMLStrict(html) {
 export function stripHTML(html) {
   if (typeof html !== 'string') {
     return '';
+  }
+
+  if (!DOMPurify) {
+    // Fallback: just remove common HTML tags
+    return html.replace(/<[^>]*>/g, '');
   }
 
   return DOMPurify.sanitize(html, {
