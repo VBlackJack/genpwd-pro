@@ -167,10 +167,17 @@ function displayResults(results) {
   resultsContainer.replaceChildren();
   resultsSection.classList.remove('hidden');
 
+  // PERFORMANCE: Use DocumentFragment to batch DOM updates
+  // Reduces reflows from O(n) to O(1) for multiple password generation
+  const fragment = document.createDocumentFragment();
+
   results.forEach((result, index) => {
     const item = createPasswordItem(result, index);
-    resultsContainer.appendChild(item);
+    fragment.appendChild(item);
   });
+
+  // Single DOM update instead of n updates
+  resultsContainer.appendChild(fragment);
 }
 
 function createPasswordItem(result, index) {
