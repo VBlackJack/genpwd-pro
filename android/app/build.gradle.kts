@@ -105,10 +105,11 @@ android {
         textReport = true
     }
 
-    // Skip test compilation to unblock APK builds
+    // Enable unit tests for Sprint S3 Release Candidate
     testOptions {
-        unitTests.all {
-            it.enabled = false
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
         }
     }
 

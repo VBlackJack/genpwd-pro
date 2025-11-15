@@ -1,0 +1,51 @@
+{
+  "name": "@genpwd-pro/cli",
+  "version": "1.0.0",
+  "description": "GenPwd Pro - CLI password generator for developers",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "genpwd": "./bin/genpwd.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "eslint .",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "password",
+    "generator",
+    "cli",
+    "security",
+    "cryptography",
+    "random",
+    "passphrase",
+    "entropy"
+  ],
+  "author": "Julien Bombled",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VBlackJack/genpwd-pro.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/VBlackJack/genpwd-pro/issues"
+  },
+  "homepage": "https://github.com/VBlackJack/genpwd-pro#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ]
+}

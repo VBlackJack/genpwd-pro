@@ -1,0 +1,251 @@
+/*
+ * GenPwd Pro - Chrome Extension Popup Script
+ * Copyright 2025 Julien Bombled
+ */
+
+import { generateSyllables, generatePassphrase, generateLeet } from './core/generators.js';
+import { getStrengthLevel, calculateEntropy } from './utils/helpers.js';
+
+// DOM Elements
+let modeSelect, lengthInput, policySelect, wordCountInput, separatorInput, dictionarySelect;
+let leetWordInput, digitsInput, specialsInput, caseModeSelect, quantityInput;
+let generateBtn, resultsSection, resultsContainer;
+let syllablesOptions, passphraseOptions, leetOptions;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
+
+function init() {
+  // Get all DOM elements
+  modeSelect = document.getElementById('mode');
+  lengthInput = document.getElementById('length');
+  policySelect = document.getElementById('policy');
+  wordCountInput = document.getElementById('wordCount');
+  separatorInput = document.getElementById('separator');
+  dictionarySelect = document.getElementById('dictionary');
+  leetWordInput = document.getElementById('leetWord');
+  digitsInput = document.getElementById('digits');
+  specialsInput = document.getElementById('specials');
+  caseModeSelect = document.getElementById('caseMode');
+  quantityInput = document.getElementById('quantity');
+  generateBtn = document.getElementById('generate-btn');
+  resultsSection = document.getElementById('results-section');
+  resultsContainer = document.getElementById('results-container');
+
+  syllablesOptions = document.getElementById('syllables-options');
+  passphraseOptions = document.getElementById('passphrase-options');
+  leetOptions = document.getElementById('leet-options');
+
+  // Event listeners
+  modeSelect.addEventListener('change', handleModeChange);
+  generateBtn.addEventListener('click', handleGenerate);
+
+  // Load saved settings
+  loadSettings();
+}
+
+function handleModeChange() {
+  const mode = modeSelect.value;
+
+  // Hide all options
+  syllablesOptions.classList.add('hidden');
+  passphraseOptions.classList.add('hidden');
+  leetOptions.classList.add('hidden');
+
+  // Show relevant options
+  switch (mode) {
+    case 'syllables':
+      syllablesOptions.classList.remove('hidden');
+      break;
+    case 'passphrase':
+      passphraseOptions.classList.remove('hidden');
+      break;
+    case 'leet':
+      leetOptions.classList.remove('hidden');
+      break;
+  }
+
+  // Save settings
+  saveSettings();
+}
+
+async function handleGenerate() {
+  try {
+    generateBtn.disabled = true;
+    generateBtn.textContent = '⏳ Génération...';
+
+    const mode = modeSelect.value;
+    const quantity = parseInt(quantityInput.value) || 5;
+    const results = [];
+
+    for (let i = 0; i < quantity; i++) {
+      let result;
+
+      switch (mode) {
+        case 'syllables':
+          result = await generateSyllablesPassword();
+          break;
+        case 'passphrase':
+          result = await generatePassphrasePassword();
+          break;
+        case 'leet':
+          result = await generateLeetPassword();
+          break;
+        default:
+          throw new Error(`Mode inconnu: ${mode}`);
+      }
+
+      results.push(result);
+    }
+
+    displayResults(results);
+    saveSettings();
+
+  } catch (error) {
+    console.error('Erreur génération:', error);
+    alert(`Erreur: ${error.message}`);
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = '🎲 Générer';
+  }
+}
+
+async function generateSyllablesPassword() {
+  const config = {
+    length: parseInt(lengthInput.value) || 20,
+    policy: policySelect.value || 'standard',
+    digits: parseInt(digitsInput.value) || 2,
+    specials: parseInt(specialsInput.value) || 2,
+    customSpecials: '!#%+,-./:=@_',
+    placeDigits: 'aleatoire',
+    placeSpecials: 'aleatoire',
+    caseMode: caseModeSelect.value || 'mixte',
+    useBlocks: false,
+    blockTokens: ['T', 'l']
+  };
+
+  return generateSyllables(config);
+}
+
+async function generatePassphrasePassword() {
+  const config = {
+    wordCount: parseInt(wordCountInput.value) || 5,
+    separator: separatorInput.value || '-',
+    dictionary: dictionarySelect.value || 'french',
+    digits: parseInt(digitsInput.value) || 2,
+    specials: parseInt(specialsInput.value) || 2,
+    customSpecials: '!#%+,-./:=@_',
+    placeDigits: 'aleatoire',
+    placeSpecials: 'aleatoire',
+    caseMode: caseModeSelect.value || 'mixte'
+  };
+
+  return generatePassphrase(config);
+}
+
+async function generateLeetPassword() {
+  const config = {
+    word: leetWordInput.value || 'password',
+    digits: parseInt(digitsInput.value) || 2,
+    specials: parseInt(specialsInput.value) || 2,
+    customSpecials: '!#%+,-./:=@_',
+    placeDigits: 'aleatoire',
+    placeSpecials: 'aleatoire'
+  };
+
+  return generateLeet(config);
+}
+
+function displayResults(results) {
+  resultsContainer.innerHTML = '';
+  resultsSection.classList.remove('hidden');
+
+  results.forEach((result, index) => {
+    const item = createPasswordItem(result, index);
+    resultsContainer.appendChild(item);
+  });
+}
+
+function createPasswordItem(result, index) {
+  const div = document.createElement('div');
+  div.className = 'password-item';
+
+  const strength = getStrengthLevel(result.entropy);
+
+  div.innerHTML = `
+    <div class="password-value" data-password="${result.value}">${result.value}</div>
+    <div class="password-meta">
+      <span class="entropy-badge ${strength.class}">
+        ${result.entropy.toFixed(1)} bits - ${strength.label}
+      </span>
+      <button class="copy-btn" data-index="${index}">📋 Copier</button>
+    </div>
+  `;
+
+  const copyBtn = div.querySelector('.copy-btn');
+  copyBtn.addEventListener('click', () => copyPassword(result.value, copyBtn));
+
+  return div;
+}
+
+async function copyPassword(password, button) {
+  try {
+    await navigator.clipboard.writeText(password);
+
+    const originalText = button.textContent;
+    button.textContent = '✓ Copié!';
+    button.classList.add('copied');
+
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.classList.remove('copied');
+    }, 2000);
+
+  } catch (error) {
+    console.error('Erreur copie:', error);
+    alert('Erreur lors de la copie');
+  }
+}
+
+function saveSettings() {
+  const settings = {
+    mode: modeSelect.value,
+    length: lengthInput.value,
+    policy: policySelect.value,
+    wordCount: wordCountInput.value,
+    separator: separatorInput.value,
+    dictionary: dictionarySelect.value,
+    leetWord: leetWordInput.value,
+    digits: digitsInput.value,
+    specials: specialsInput.value,
+    caseMode: caseModeSelect.value,
+    quantity: quantityInput.value
+  };
+
+  chrome.storage.sync.set({ settings }, () => {
+    console.log('Paramètres sauvegardés');
+  });
+}
+
+function loadSettings() {
+  chrome.storage.sync.get(['settings'], (data) => {
+    if (data.settings) {
+      const s = data.settings;
+
+      if (s.mode) modeSelect.value = s.mode;
+      if (s.length) lengthInput.value = s.length;
+      if (s.policy) policySelect.value = s.policy;
+      if (s.wordCount) wordCountInput.value = s.wordCount;
+      if (s.separator) separatorInput.value = s.separator;
+      if (s.dictionary) dictionarySelect.value = s.dictionary;
+      if (s.leetWord) leetWordInput.value = s.leetWord;
+      if (s.digits) digitsInput.value = s.digits;
+      if (s.specials) specialsInput.value = s.specials;
+      if (s.caseMode) caseModeSelect.value = s.caseMode;
+      if (s.quantity) quantityInput.value = s.quantity;
+
+      // Trigger mode change to show correct options
+      handleModeChange();
+    }
+  });
+}
