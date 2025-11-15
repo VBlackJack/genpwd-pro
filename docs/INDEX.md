@@ -60,7 +60,7 @@
   - Contribution
 
 ### Cahier des Charges
-- **[CDC-GENPWD-2024-v2.5.md](CDC-GENPWD-2024-v2.5.md)** - Spécifications complètes
+- **[CDC-GENPWD-2024.md](architecture/CDC-GENPWD-2024.md)** - Spécifications complètes
   - Exigences fonctionnelles
   - Exigences techniques
   - Calculs d'entropie
@@ -104,17 +104,15 @@ Située dans `/android/docs/` :
 ## 🔒 SÉCURITÉ & AUDITS
 
 ### Rapports de Sécurité
-- **[SECURITY_AUDIT_REPORT_2025-11-04.md](../SECURITY_AUDIT_REPORT_2025-11-04.md)** - Audit complet
+- **[AUDIT_REPORT.md](../AUDIT_REPORT.md)** - Audit de code complet
   - Score : 9.5/10
-  - Vulnérabilités identifiées
-  - Recommandations
+  - Vulnérabilités identifiées et corrigées
+  - Recommandations implémentées
 
-- **[SECURITY_FIXES_IMPLEMENTED.md](../SECURITY_FIXES_IMPLEMENTED.md)** - Correctifs appliqués
-  - Salt aléatoire (CRITIQUE)
-  - Rate limiting (CRITIQUE)
-  - Validation checksums (CRITIQUE)
-  - SecureLogger
-  - Memory wiping
+- **Archives des audits de sécurité** - Consultez [archive/audits_2025/](../archive/audits_2025/)
+  - SECURITY_AUDIT_REPORT_2025-11-04.md
+  - SECURITY_FIXES_IMPLEMENTED.md
+  - SECURITY_AUDIT_NOTES.md
 
 - **[SECURITY.md](../SECURITY.md)** - Politique de sécurité
   - Signalement de vulnérabilités
@@ -190,11 +188,11 @@ Située dans `/android/docs/` :
 
 ## 📊 QUALITÉ & AUDITS
 
-- **[DOCUMENTATION_AUDIT_2025-11-04.md](../DOCUMENTATION_AUDIT_2025-11-04.md)** ⭐ **NOUVEAU**
+- **Documentation Quality** - Voir [archive/audits_2025/](../archive/audits_2025/)
+  - Documentation audit complet (2025-11-04)
   - État de la documentation
   - Fichiers pertinents vs obsolètes
-  - Plan de nettoyage
-  - Métriques de qualité
+  - Plan de nettoyage appliqué
 
 ---
 
@@ -236,8 +234,8 @@ Situé dans `/android/archive/` :
 4. `android/docs/ANDROID_APP_CODE_AUDIT.md`
 
 ### 🔒 Je m'intéresse à la sécurité
-1. [SECURITY_AUDIT_REPORT_2025-11-04.md](../SECURITY_AUDIT_REPORT_2025-11-04.md)
-2. [SECURITY_FIXES_IMPLEMENTED.md](../SECURITY_FIXES_IMPLEMENTED.md)
+1. [AUDIT_REPORT.md](../AUDIT_REPORT.md)
+2. [SECURITY.md](../SECURITY.md)
 3. [data-safety.md](data-safety.md)
 4. [cloud-sync-spec.md](cloud-sync-spec.md)
 

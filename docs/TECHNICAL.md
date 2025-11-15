@@ -233,7 +233,7 @@ Les tests navigateur (Puppeteer) valident la console de debug, la copie presse-p
 
 - [Guide de développement](./DEVELOPMENT.md)
 - [API Documentation](./API.md)
-- [Cahier des Charges](./CDC-GENPWD-2024-v2.5.md)
+- [Cahier des Charges](./architecture/CDC-GENPWD-2024.md)
 - [Guide utilisateur](./USER-GUIDE.md)
 
 ---

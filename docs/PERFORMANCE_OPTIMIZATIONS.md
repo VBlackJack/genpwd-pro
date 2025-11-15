@@ -454,6 +454,6 @@ These optimizations establish a solid performance foundation for GenPwd Pro v2.6
 ---
 
 **Related Documents**:
-- [COMPREHENSIVE_CODE_AUDIT_2025-11-15.md](../COMPREHENSIVE_CODE_AUDIT_2025-11-15.md)
+- [COMPREHENSIVE_CODE_AUDIT_2025-11-15.md](../_archive/2025-11/COMPREHENSIVE_CODE_AUDIT_2025-11-15.md) (archived)
 - [Benchmark Tool](../tools/benchmark.js)
 - [Phase 1-3 Documentation](../)

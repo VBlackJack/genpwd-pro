@@ -321,7 +321,7 @@ Les scripts correspondants se trouvent dans `tools/` (build, dev-server, run_tes
 
 - [Documentation technique](./TECHNICAL.md)
 - [Guide de développement](./DEVELOPMENT.md)
-- [Cahier des charges](./CDC-GENPWD-2024-v2.5.md)
+- [Cahier des charges](./architecture/CDC-GENPWD-2024.md)
 - [Guide utilisateur](./USER-GUIDE.md)
 
 ---

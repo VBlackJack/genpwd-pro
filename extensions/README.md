@@ -181,5 +181,5 @@ Apache License 2.0 - Copyright 2025 Julien Bombled
 ## 🔗 Liens
 
 - [Projet GitHub](https://github.com/VBlackJack/genpwd-pro)
-- [Documentation complète](../../docs/BROWSER_EXTENSIONS.md)
+- [Documentation complète](../docs/BROWSER_EXTENSIONS.md)
 - [Signaler un bug](https://github.com/VBlackJack/genpwd-pro/issues)

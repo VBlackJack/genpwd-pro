@@ -266,10 +266,10 @@ npm run build
 
 ### Documentation
 
-- [README Principal](./README.md) - Vue d'ensemble du projet
-- [Guide Utilisateur](./docs/USER-GUIDE.md) - Utilisation de l'application
-- [Documentation Technique](./docs/TECHNICAL.md) - Architecture détaillée
-- [Cahier des Charges](./docs/CDC-GENPWD-2024-v2.5.md) - Spécifications complètes
+- [README Principal](../README.md) - Vue d'ensemble du projet
+- [Guide Utilisateur](./USER-GUIDE.md) - Utilisation de l'application
+- [Documentation Technique](./TECHNICAL.md) - Architecture détaillée
+- [Cahier des Charges](./architecture/CDC-GENPWD-2024.md) - Spécifications complètes
 
 ### Liens utiles
 
