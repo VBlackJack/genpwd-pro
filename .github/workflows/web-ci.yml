@@ -24,8 +24,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint:
-    name: Lint & Format Check
+  # Central dependency installation job
+  install:
+    name: Install Dependencies
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -35,23 +36,106 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
 
       - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: npm ci
         env:
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
+      - name: Cache node_modules
+        uses: actions/cache/save@v4
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Run ESLint
         run: npm run lint
 
+  # Primary test job - Node 20 with coverage (fast path)
   test:
+    name: Test (Node 20 + Coverage)
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-genpwd-pro
+          fail_ci_if_error: true
+
+      - name: Cache coverage artifacts
+        uses: actions/cache/save@v4
+        with:
+          path: coverage/
+          key: coverage-${{ runner.os }}-${{ github.sha }}
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # Compatibility tests - Node 18 and 22 (parallel, no coverage)
+  test-compat:
     name: Test (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    needs: install
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [18, 22]
 
     steps:
       - name: Checkout code
@@ -61,39 +145,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
 
-      - name: Install dependencies
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies for Node ${{ matrix.node-version }}
         run: npm ci
         env:
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
-      - name: Run tests
+      - name: Run tests (no coverage)
         run: npm test
-
-      - name: Run tests with coverage
-        run: npm run test:coverage
-
-      - name: Upload coverage to Codecov
-        if: matrix.node-version == 20
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-genpwd-pro
-          fail_ci_if_error: false
-
-      - name: Upload coverage artifacts
-        if: matrix.node-version == 20
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
 
   browser-test:
     name: Browser Tests (Chromium)
     runs-on: ubuntu-latest
+    needs: install
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,12 +172,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
       - name: Install Playwright
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install chromium --with-deps
 
       - name: Run browser tests
@@ -126,7 +208,7 @@ jobs:
   build:
     name: Build Validation
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [install, lint]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -135,14 +217,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache build artifacts
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: dist/
+          key: build-${{ runner.os }}-${{ hashFiles('src/**', 'tools/build.js', 'package.json') }}
+          restore-keys: |
+            build-${{ runner.os }}-
 
       - name: Build production
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: npm run build
 
       - name: Upload build artifacts
@@ -155,6 +247,7 @@ jobs:
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    needs: install
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -163,7 +256,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate || true
@@ -184,13 +282,14 @@ jobs:
   status-check:
     name: CI Status Check
     runs-on: ubuntu-latest
-    needs: [lint, test, build]
+    needs: [lint, test, test-compat, build]
     if: always()
     steps:
       - name: Check job statuses
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] || \
              [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.test-compat.result }}" != "success" ] || \
              [ "${{ needs.build.result }}" != "success" ]; then
             echo "❌ CI checks failed"
             exit 1
