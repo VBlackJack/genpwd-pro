@@ -8,6 +8,8 @@
     "dev": "node tools/dev-server.cjs",
     "build": "node tools/build.js",
     "test": "node tools/run_tests.cjs",
+    "test:fast": "FAST_ONLY=1 node tools/run_tests.cjs",
+    "test:slow": "SLOW_ONLY=1 node tools/run_tests.cjs",
     "test:coverage": "c8 --reporter=html --reporter=text --reporter=lcov node tools/run_tests.cjs",
     "test:coverage:report": "c8 report --reporter=html",
     "test:browser": "node tools/run_tests.cjs && node tools/browser-test.js",

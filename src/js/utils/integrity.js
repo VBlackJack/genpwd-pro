@@ -167,9 +167,9 @@ export async function validateDictionary(dictionaryName, content) {
  */
 export async function generateDictionaryHash(dictionaryName, content) {
   const hash = await computeSHA256(content);
-  // eslint-disable-next-line no-console -- Development/maintenance utility, needs direct console output
+   
   console.log(`Generated hash for ${dictionaryName}:`, hash);
-  // eslint-disable-next-line no-console -- Development/maintenance utility, needs direct console output
+   
   console.log(`Add to DICTIONARY_HASHES: ${dictionaryName}: '${hash}',`);
   return hash;
 }
