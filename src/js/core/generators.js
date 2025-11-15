@@ -32,6 +32,7 @@ function getCrypto() {
 
   // Node.js environment
   try {
+    // eslint-disable-next-line no-undef
     const nodeCrypto = require('crypto');
     if (nodeCrypto && nodeCrypto.webcrypto) {
       return nodeCrypto.webcrypto;

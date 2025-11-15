@@ -38,6 +38,7 @@ function getCrypto() {
   // Node.js environment
   try {
     // Use dynamic import for Node.js crypto module
+    // eslint-disable-next-line no-undef
     const nodeCrypto = require('crypto');
     if (nodeCrypto && nodeCrypto.webcrypto) {
       cryptoCache = nodeCrypto.webcrypto;
