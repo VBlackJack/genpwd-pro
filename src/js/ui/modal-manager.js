@@ -87,7 +87,7 @@ export function createModal(options) {
       <div class="modal-body">
         ${content}
       </div>
-      ${actions.length > 0 ? `)
+      ${actions.length > 0 ? `
         <div class="modal-footer">
           ${actions.map(action => `
             <button
@@ -100,7 +100,7 @@ export function createModal(options) {
         </div>
       ` : ''}
     </div>
-  `;
+  `);
 
   // Add to DOM
   document.body.appendChild(modal);

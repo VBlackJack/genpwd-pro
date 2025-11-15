@@ -92,7 +92,7 @@ function createPasswordCard(item, id, mask) {
     </div>
     <div class="card-sec comp">
       <div class="comp-bar">
-        ${segU > 0 ? `)<div class="seg u" data-width="${segU}"></div>` : ''}
+        ${segU > 0 ? `<div class="seg u" data-width="${segU}"></div>` : ''}
         ${segL > 0 ? `<div class="seg l" data-width="${segL}"></div>` : ''}
         ${segD > 0 ? `<div class="seg d" data-width="${segD}"></div>` : ''}
         ${segS > 0 ? `<div class="seg s" data-width="${segS}"></div>` : ''}
@@ -105,7 +105,7 @@ function createPasswordCard(item, id, mask) {
       </div>
     </div>
     <div class="card-sec info"><div>Mode: ${dictInfo}</div><div>CLI-Safe: ✓</div></div>
-  `;
+  `);
 
   // Apply widths via CSS custom properties (CSP-compliant)
   const compBar = card.querySelector('.comp-bar');

@@ -397,7 +397,7 @@ function createCursorElement(type, index) {
   button.dataset.type = type;
   button.dataset.index = String(index);
   button.setAttribute('tabindex', '0');
-  button.innerHTML = sanitizeHTML('<span class=")cursor-label"></span>';
+  button.innerHTML = sanitizeHTML('<span class="cursor-label"></span>');
 
   addEventListener(button, 'pointerdown', handlePointerDown);
   addEventListener(button, 'wheel', handleWheel, { passive: false });

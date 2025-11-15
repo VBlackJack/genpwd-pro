@@ -68,7 +68,7 @@ export const SENTRY_CONFIG = {
   },
 
   // Before send hook - sanitize sensitive data
-  beforeSend(event, hint) {
+  beforeSend(event, _hint) {
     // Remove sensitive data from error messages
     if (event.message) {
       event.message = sanitizeSensitiveData(event.message);
@@ -160,7 +160,7 @@ function sanitizeSensitiveData(str) {
 
   // Replace potential passwords (8-128 chars, no spaces, mixed content)
   // More specific pattern to avoid false positives
-  str = str.replace(/\b[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{12,128}\b/g, '[REDACTED]');
+  str = str.replace(/\b[A-Za-z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]{12,128}\b/g, '[REDACTED]');
 
   // Replace credit card numbers
   str = str.replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD]');

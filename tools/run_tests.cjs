@@ -12,7 +12,42 @@ const { pathToFileURL } = require('url');
 // Stubs DOM/api nécessaires aux modules front
 if (typeof global.document === 'undefined') {
   global.document = {
-    getElementById: () => null
+    getElementById: () => null,
+    createElement: (tag) => ({
+      tagName: tag.toUpperCase(),
+      style: {
+        setProperty: () => {},
+        removeProperty: () => {},
+        getPropertyValue: () => ''
+      },
+      classList: {
+        add: () => {},
+        remove: () => {},
+        contains: () => false
+      },
+      setAttribute: () => {},
+      getAttribute: () => null,
+      appendChild: () => {},
+      innerHTML: '',
+      querySelector: () => null,
+      querySelectorAll: () => []
+    }),
+    documentElement: {
+      style: {
+        setProperty: () => {},
+        removeProperty: () => {},
+        getPropertyValue: () => ''
+      },
+      setAttribute: () => {}
+    },
+    body: {
+      appendChild: () => {},
+      removeChild: () => {},
+      setAttribute: () => {},
+      getAttribute: () => null
+    },
+    querySelector: () => null,
+    querySelectorAll: () => []
   };
 }
 

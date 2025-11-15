@@ -386,7 +386,7 @@ function setupPresetTests(runner) {
     localStorageMock.clear();
     const { default: presetManager } = await import('../js/utils/preset-manager.js');
 
-    const presets = presetManager.getPresets();
+    const presets = presetManager.getAllPresets();
     assert.ok(Array.isArray(presets), 'Should return array');
     assert.ok(presets.length > 0, 'Should have default presets');
   });
@@ -395,20 +395,17 @@ function setupPresetTests(runner) {
     localStorageMock.clear();
     const { default: presetManager } = await import('../js/utils/preset-manager.js');
 
-    const customPreset = {
-      name: 'My Custom',
-      settings: {
-        mode: 'syllables',
-        length: 16,
-        digits: 2,
-        specials: 2
-      }
+    const config = {
+      mode: 'syllables',
+      length: 16,
+      digits: 2,
+      specials: 2
     };
 
-    const result = presetManager.addPreset(customPreset);
-    assert.strictEqual(result, true, 'Should add custom preset');
+    const id = presetManager.createPreset('My Custom', config, '');
+    assert.ok(id, 'Should create custom preset and return ID');
 
-    const presets = presetManager.getPresets();
+    const presets = presetManager.getAllPresets();
     assert.ok(presets.some(p => p.name === 'My Custom'), 'Should include custom preset');
   });
 
@@ -416,19 +413,16 @@ function setupPresetTests(runner) {
     localStorageMock.clear();
     const { default: presetManager } = await import('../js/utils/preset-manager.js');
 
-    const customPreset = {
-      name: 'To Remove',
-      settings: { mode: 'syllables' }
-    };
+    const config = { mode: 'syllables' };
 
-    presetManager.addPreset(customPreset);
-    const presets = presetManager.getPresets();
-    const presetId = presets.find(p => p.name === 'To Remove').id;
+    const presetId = presetManager.createPreset('To Remove', config, '');
+    const presets = presetManager.getAllPresets();
+    assert.ok(presets.find(p => p.id === presetId), 'Preset should exist');
 
-    const result = presetManager.removePreset(presetId);
-    assert.strictEqual(result, true, 'Should remove preset');
+    const result = presetManager.deletePreset(presetId);
+    assert.strictEqual(result, true, 'Should delete preset');
 
-    const updatedPresets = presetManager.getPresets();
+    const updatedPresets = presetManager.getAllPresets();
     assert.ok(!updatedPresets.some(p => p.id === presetId), 'Preset should be removed');
   });
 
@@ -436,7 +430,7 @@ function setupPresetTests(runner) {
     localStorageMock.clear();
     const { default: presetManager } = await import('../js/utils/preset-manager.js');
 
-    const presets = presetManager.getPresets();
+    const presets = presetManager.getAllPresets();
     const presetId = presets[0].id;
 
     const preset = presetManager.getPreset(presetId);
