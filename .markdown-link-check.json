@@ -1,0 +1,29 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://github.com/VBlackJack/genpwd-pro/issues/"
+    },
+    {
+      "pattern": "^https://github.com/VBlackJack/genpwd-pro/pull/"
+    },
+    {
+      "pattern": "^https://github.com/VBlackJack/genpwd-pro/projects"
+    },
+    {
+      "pattern": "^https://github.com/VBlackJack/genpwd-pro/discussions"
+    },
+    {
+      "pattern": "^#"
+    },
+    {
+      "pattern": "^mailto:"
+    }
+  ],
+  "replacementPatterns": [],
+  "httpHeaders": [],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206, 301, 302]
+}

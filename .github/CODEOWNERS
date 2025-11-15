@@ -1,0 +1,47 @@
+# Documentation ownership - GenPwd Pro
+
+# Docs racine
+/README.md                    @VBlackJack
+/CHANGELOG.md                 @VBlackJack
+/SECURITY.md                  @VBlackJack
+/CONTRIBUTING.md              @VBlackJack
+/BACKLOG.md                   @VBlackJack
+/RELEASE_CHECKLIST.md         @VBlackJack
+
+# Docs utilisateur
+/docs/USER-GUIDE.md           @VBlackJack
+/docs/FEATURES_GUIDE.md       @VBlackJack
+/docs/IMPORT_EXPORT.md        @VBlackJack
+/docs/troubleshooting.md      @VBlackJack
+
+# Docs développeur
+/docs/DEVELOPMENT.md          @VBlackJack
+/docs/API.md                  @VBlackJack
+/docs/TECHNICAL.md            @VBlackJack
+/docs/TESTING.md              @VBlackJack
+/docs/PLUGIN_DEVELOPMENT.md   @VBlackJack
+
+# Architecture
+/docs/architecture/           @VBlackJack
+/docs/ANDROID-ARCHITECTURE.md @VBlackJack
+/docs/SYNC_ARCHITECTURE.md    @VBlackJack
+
+# Android
+/android/*.md                 @VBlackJack
+/android/docs/                @VBlackJack
+
+# CI/CD
+/docs/ci/                     @VBlackJack
+/docs/CI-CD.md                @VBlackJack
+/.github/workflows/           @VBlackJack
+
+# Sécurité
+/docs/data-safety.md          @VBlackJack
+/docs/cloud-sync-spec.md      @VBlackJack
+
+# Specs
+/docs/preset-management/      @VBlackJack
+
+# CLI et extensions
+/cli/*.md                     @VBlackJack
+/extensions/README.md         @VBlackJack

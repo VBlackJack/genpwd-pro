@@ -1,0 +1,104 @@
+name: Documentation Linting
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+      - '.markdownlint.json'
+      - '.markdown-link-check.json'
+  push:
+    branches: [main]
+    paths:
+      - '**.md'
+
+jobs:
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Run markdownlint
+        run: markdownlint-cli2 "**/*.md" "#node_modules" "#archive" "#android/archive" "#docs/_archive"
+        continue-on-error: true
+
+  link-check:
+    name: Link Checking
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check links in README
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.markdown-link-check.json'
+          file-path: 'README.md'
+        continue-on-error: true
+
+      - name: Check links in main docs
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.markdown-link-check.json'
+          folder-path: 'docs/'
+          file-extension: '.md'
+          check-modified-files-only: 'yes'
+        continue-on-error: true
+
+  todo-check:
+    name: TODO/FIXME Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for TODO/FIXME in active docs
+        run: |
+          if grep -rn "TODO\|FIXME" --include="*.md" docs/ android/*.md *.md 2>/dev/null | grep -v "archive" | grep -v "_archive"; then
+            echo "::warning::TODO/FIXME found in active documentation. Consider resolving before merge."
+            exit 0
+          else
+            echo "✅ No TODO/FIXME found in active documentation"
+          fi
+
+  version-check:
+    name: Version Consistency Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check version consistency
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Check for outdated versions in docs (excluding CHANGELOG and archives)
+          OUTDATED=$(grep -r "v[0-9]\.[0-9]\.[0-9]" --include="*.md" . 2>/dev/null | \
+                     grep -v "CHANGELOG\|archive\|_archive\|node_modules" | \
+                     grep -v "$CURRENT_VERSION" | \
+                     grep -v "v1\.0\.0\|v2\.0\.0" || true)
+
+          if [ -n "$OUTDATED" ]; then
+            echo "::warning::Outdated version references found (current: $CURRENT_VERSION):"
+            echo "$OUTDATED"
+            exit 0
+          else
+            echo "✅ All version references are up to date"
+          fi

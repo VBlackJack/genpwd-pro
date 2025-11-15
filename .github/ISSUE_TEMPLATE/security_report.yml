@@ -1,0 +1,80 @@
+name: 🔒 Security Vulnerability (Private)
+description: Report a security vulnerability (PRIVATE - do not use for non-security bugs)
+title: "[Security]: "
+labels: ["security", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **IMPORTANT**: For critical security vulnerabilities, please email security@genpwd.app instead of creating a public issue.
+
+        Use this form only for lower-severity security concerns that don't require immediate private disclosure.
+
+  - type: textarea
+    id: vulnerability
+    attributes:
+      label: Vulnerability Description
+      description: Describe the security issue
+      placeholder: What is the security concern?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this vulnerability?
+      options:
+        - Low (information disclosure, minor)
+        - Medium (requires user interaction)
+        - High (direct exploit possible)
+        - Critical (remote code execution, data breach)
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What could an attacker achieve?
+      placeholder: An attacker could...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How to reproduce the vulnerability
+      placeholder: |
+        1. Navigate to...
+        2. Enter payload...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested Fix
+      description: If you have a suggestion for how to fix this, describe it here
+
+  - type: input
+    id: version
+    attributes:
+      label: Affected Version(s)
+      description: Which version(s) are affected?
+      placeholder: "2.6.0, 2.5.x"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Disclosure Confirmation
+      description: Please confirm you understand our security policy
+      options:
+        - label: I have read the [SECURITY.md](https://github.com/VBlackJack/genpwd-pro/blob/main/SECURITY.md) policy
+          required: true
+        - label: For critical vulnerabilities, I will email security@genpwd.app instead
+          required: true

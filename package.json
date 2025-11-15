@@ -16,6 +16,7 @@
     "test:create-browser": "node tools/run_tests.cjs --create-browser-test",
     "test:watch": "nodemon --watch src --watch tools --exec 'npm run test'",
     "lint": "eslint src/js/**/*.js tools/**/*.js",
+    "lint:docs": "bash tools/check-docs.sh",
     "clean": "rimraf dist/*",
     "start": "npm run dev",
     "electron": "electron .",
