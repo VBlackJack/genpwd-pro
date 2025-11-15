@@ -5,19 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Content Security Policy for Enhanced Security -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self';
-    style-src 'self';
-    img-src 'self' data:;
-    font-src 'self' data:;
-    connect-src 'self' blob: https://api.pwnedpasswords.com;
-    worker-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    upgrade-insecure-requests;
-  ">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.pwnedpasswords.com">
 
   <title>GenPwd Pro – Secure Password Generator</title>
   <meta name="author" content="Julien Bombled">

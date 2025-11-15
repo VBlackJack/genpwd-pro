@@ -17,6 +17,7 @@
 // electron-main.js - Point d'entrée principal Electron pour GenPwd Pro
 const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('path');
+const { version: APP_VERSION } = require('./package.json');
 
 // Configuration de sécurité renforcée
 const SECURITY_CONFIG = {
@@ -153,7 +154,7 @@ function createApplicationMenu() {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'À propos de GenPwd Pro',
-              message: 'GenPwd Pro v2.6.0', // Synchronized with package.json
+              message: `GenPwd Pro v${APP_VERSION}`,
               detail: 'Générateur de mots de passe sécurisé\n\n' +
                       'Copyright © 2025 Julien Bombled\n' +
                       'Licence Apache 2.0\n\n' +
