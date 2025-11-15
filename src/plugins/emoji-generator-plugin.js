@@ -31,6 +31,27 @@
 
 import { sanitizeHTML } from '../js/utils/dom-sanitizer.js';
 
+/**
+ * Secure random number generator using Web Crypto API
+ * @param {number} max - Maximum value (exclusive)
+ * @returns {number} - Random integer between 0 and max-1
+ */
+function getSecureRandomInt(max) {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+}
+
+/**
+ * Secure random float between 0 and 1
+ * @returns {number} - Random float [0, 1)
+ */
+function getSecureRandomFloat() {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] / (0xFFFFFFFF + 1);
+}
+
 const EmojiGeneratorPlugin = {
   name: 'emoji-generator',
   version: '1.0.0',
@@ -90,23 +111,23 @@ const EmojiGeneratorPlugin = {
       while (password.length < length) {
         // Add emoji every N characters
         if (charCount > 0 && charCount % EmojiGeneratorPlugin.config.emojiFrequency === 0 && includeEmojis) {
-          const randomEmoji = allEmojis[Math.floor(Math.random() * allEmojis.length)];
+          const randomEmoji = allEmojis[getSecureRandomInt(allEmojis.length)];
           password += randomEmoji;
         } else {
           // Add regular character
-          const rand = Math.random();
+          const rand = getSecureRandomFloat();
           if (rand < 0.7) {
             // 70% letters
-            password += chars[Math.floor(Math.random() * chars.length)];
+            password += chars[getSecureRandomInt(chars.length)];
           } else if (rand < 0.9 && EmojiGeneratorPlugin.config.includeNumbers) {
             // 20% numbers
-            password += numbers[Math.floor(Math.random() * numbers.length)];
+            password += numbers[getSecureRandomInt(numbers.length)];
           } else if (EmojiGeneratorPlugin.config.includeSymbols) {
             // 10% symbols
-            password += symbols[Math.floor(Math.random() * symbols.length)];
+            password += symbols[getSecureRandomInt(symbols.length)];
           } else {
             // Fallback to letter
-            password += chars[Math.floor(Math.random() * chars.length)];
+            password += chars[getSecureRandomInt(chars.length)];
           }
           charCount++;
         }

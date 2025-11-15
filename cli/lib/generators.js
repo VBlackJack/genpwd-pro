@@ -177,9 +177,12 @@ export function generateSyllables(options = {}) {
 
   // Apply transformations
   if (uppercase) {
-    // Randomly uppercase some letters
+    // Randomly uppercase some letters (30% chance using secure random)
     for (let i = 0; i < chars.length; i++) {
-      if (Math.random() < 0.3) {  // 30% chance
+      const randomArray = new Uint32Array(1);
+      crypto.getRandomValues(randomArray);
+      const secureRandom = randomArray[0] / (0xFFFFFFFF + 1);
+      if (secureRandom < 0.3) {  // 30% chance
         chars[i] = chars[i].toUpperCase();
       }
     }

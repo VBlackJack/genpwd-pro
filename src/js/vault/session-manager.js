@@ -30,6 +30,10 @@ export class InMemorySessionManager extends SessionManager {
       if (!allowed) {
         return null;
       }
+      // SECURITY: Re-check expiration after biometric gate to prevent TOCTOU
+      if (this.isExpired()) {
+        return null;
+      }
     }
     return cloneKey(this.masterKey);
   }
