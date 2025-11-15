@@ -8,6 +8,7 @@
 
 const path = require('path');
 const { pathToFileURL } = require('url');
+const { webcrypto } = require('node:crypto');
 
 // Stubs DOM/api nécessaires aux modules front
 if (typeof global.document === 'undefined') {
@@ -53,6 +54,11 @@ if (typeof global.document === 'undefined') {
 
 if (typeof global.requestAnimationFrame === 'undefined') {
   global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+}
+
+// Polyfill crypto for Node.js environment
+if (typeof global.crypto === 'undefined') {
+  global.crypto = webcrypto;
 }
 
 const originalMathRandom = Math.random;
