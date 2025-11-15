@@ -512,10 +512,14 @@ async function runAllTests() {
   // Run tests
   const results = await runner.run();
 
-  // Exit with appropriate code
-  if (results.failed > 0) {
-    process.exit(1);
+  // Exit with appropriate code (only when run directly)
+  if (import.meta.url === `file://${process.argv[1]}`) {
+    if (results.failed > 0) {
+      process.exit(1);
+    }
   }
+
+  return results;
 }
 
 // Run tests if executed directly

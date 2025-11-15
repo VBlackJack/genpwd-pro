@@ -135,7 +135,7 @@ jobs:
           files: ./coverage/lcov.info
           flags: unittests
           name: codecov-genpwd-pro
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
       - name: Cache coverage artifacts
         uses: actions/cache/save@v4

@@ -17,6 +17,9 @@
 
 import { safeLog } from './logger.js';
 
+// Polyfill for crypto in Node.js environment
+const crypto = globalThis.crypto;
+
 /**
  * Generates a cryptographically secure random integer between min and max (inclusive)
  * Uses Web Crypto API (crypto.getRandomValues) instead of Math.random() for unpredictability

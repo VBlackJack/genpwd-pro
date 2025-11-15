@@ -378,13 +378,24 @@ async function runPerformanceTests() {
 
   const results = await runner.run();
 
-  // Exit with appropriate code
-  if (results.failed > 0) {
-    console.log('\n⚠️  Some performance benchmarks failed. Review and optimize as needed.');
-    process.exit(1);
+  // Exit with appropriate code (only when run directly)
+  if (import.meta.url === `file://${process.argv[1]}`) {
+    if (results.failed > 0) {
+      console.log('\n⚠️  Some performance benchmarks failed. Review and optimize as needed.');
+      process.exit(1);
+    } else {
+      console.log('\n✅ All performance benchmarks passed!');
+    }
   } else {
-    console.log('\n✅ All performance benchmarks passed!');
+    // When imported, just log and return results
+    if (results.failed === 0) {
+      console.log('\n✅ All performance benchmarks passed!');
+    } else {
+      console.log('\n⚠️  Some performance benchmarks failed. Review and optimize as needed.');
+    }
   }
+
+  return results;
 }
 
 // Run tests if executed directly
