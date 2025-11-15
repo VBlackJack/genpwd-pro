@@ -257,11 +257,23 @@ class HistoryManager {
   }
 
   /**
-   * Generate unique entry ID
+   * Generate unique entry ID using cryptographically secure random values
    * @returns {string} Unique ID
    */
   generateId() {
-    return `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+
+    // Use crypto.getRandomValues() for cryptographically secure randomness
+    const randomBytes = new Uint8Array(8);
+    crypto.getRandomValues(randomBytes);
+
+    // Convert to base36 string
+    const randomStr = Array.from(randomBytes)
+      .map(b => b.toString(36))
+      .join('')
+      .substr(0, 12); // Take first 12 chars for consistent length
+
+    return `entry_${timestamp}_${randomStr}`;
   }
 
   /**

@@ -20,20 +20,16 @@
     "storage",
     "activeTab",
     "clipboardWrite",
-    "contextMenus",
-    "<all_urls>"
+    "contextMenus"
+  ],
+  "optional_permissions": [
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "scripts": ["background.js"]
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
-  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "content_security_policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'",
   "applications": {
     "gecko": {
       "id": "genpwd-pro@julienbombled.com",

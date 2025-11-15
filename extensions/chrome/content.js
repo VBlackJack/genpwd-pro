@@ -5,10 +5,25 @@
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // SECURITY: Validate message origin
+  if (!sender || !sender.id || sender.id !== chrome.runtime.id) {
+    console.warn('GenPwd Pro: Rejected message from unauthorized sender');
+    return false;
+  }
+
+  // SECURITY: Validate request structure
+  if (!request || typeof request !== 'object' || typeof request.action !== 'string') {
+    console.warn('GenPwd Pro: Rejected malformed message');
+    return false;
+  }
+
   if (request.action === 'fillPassword') {
     fillActiveElement();
     sendResponse({ success: true });
+    return true; // Keep channel open for async response
   }
+
+  return false;
 });
 
 function fillActiveElement() {

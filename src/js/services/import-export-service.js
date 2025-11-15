@@ -180,12 +180,44 @@ class ImportExportService {
    */
   importKeePassXML(xmlContent) {
     try {
+      // SECURITY: Validate XML size (limit to 10MB)
+      const MAX_XML_SIZE = 10 * 1024 * 1024; // 10MB
+      if (xmlContent.length > MAX_XML_SIZE) {
+        throw new Error('XML file too large (max 10MB)');
+      }
+
+      // SECURITY: Check for dangerous XML patterns (XXE, billion laughs, etc.)
+      const dangerousPatterns = [
+        /<!ENTITY/i,           // External entity definitions
+        /<!DOCTYPE[^>]*\[/i,   // DOCTYPE with internal subset
+        /SYSTEM\s+["']/i,      // System identifiers
+        /PUBLIC\s+["']/i,      // Public identifiers
+      ];
+
+      for (const pattern of dangerousPatterns) {
+        if (pattern.test(xmlContent)) {
+          throw new Error('XML contains forbidden patterns (potential XXE attack)');
+        }
+      }
+
+      // SECURITY: Strip any DOCTYPE declarations entirely
+      xmlContent = xmlContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
 
       const parseError = xmlDoc.querySelector('parsererror');
       if (parseError) {
-        throw new Error('Invalid XML format');
+        throw new Error('Invalid XML format: ' + parseError.textContent);
+      }
+
+      // SECURITY: Validate root element
+      if (!xmlDoc.documentElement || xmlDoc.documentElement.nodeName !== 'KeePassFile') {
+        // Allow some flexibility for different KeePass formats
+        const validRoots = ['KeePassFile', 'database', 'pwlist'];
+        if (!validRoots.includes(xmlDoc.documentElement.nodeName)) {
+          safeLog('Warning: Unexpected XML root element:', xmlDoc.documentElement.nodeName);
+        }
       }
 
       const entries = [];
