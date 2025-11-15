@@ -1111,6 +1111,10 @@ async function main() {
     }
   }
 
+  // Check for FAST_ONLY and SLOW_ONLY environment variables
+  const fastOnly = process.env.FAST_ONLY === '1' || process.env.FAST_ONLY === 'true';
+  const slowOnly = process.env.SLOW_ONLY === '1' || process.env.SLOW_ONLY === 'true';
+
   const generatorsModule = await importModule('src/js/core/generators.js');
   const helpersModule = await importModule('src/js/utils/helpers.js');
   const validatorsModule = await importModule('src/js/utils/validators.js');
@@ -1131,77 +1135,91 @@ async function main() {
     helpers: helpersModule
   });
 
-  const results = await runner.runAll(runs);
-  const lastRun = results[results.length - 1];
+  // Run main test suite (fast tests)
+  let mainResults = null;
+  if (!slowOnly) {
+    mainResults = await runner.runAll(runs);
+  } else {
+    console.log(`[${formatTimestamp()}] ℹ️ Skipping main tests (SLOW_ONLY mode)`);
+  }
 
+  const lastRun = mainResults ? mainResults[mainResults.length - 1] : { failed: 0 };
+
+  // Run vault, utils, services, and performance tests (slow tests)
   let vaultFailed = false;
-  try {
-    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
-    console.log(`[${formatTimestamp()}] ℹ️ 🔐 TESTS CONTRAT VAULT`);
-    const { runVaultContractTests } = await importModule('src/js/vault/tests/contract-tests.js');
-    const vaultResults = await runVaultContractTests();
-    vaultResults.forEach((result) => {
-      let icon;
-      if (result.status === 'pass') {
-        icon = '✅';
-      } else if (result.status === 'skip') {
-        icon = '⚠️';
-      } else {
-        icon = '❌';
-      }
-      console.log(`[${formatTimestamp()}] ${icon} ${result.name}${result.status === 'skip' ? ' (skipped)' : ''}`);
-      if (result.status === 'fail') {
-        vaultFailed = true;
-      }
-    });
-  } catch (error) {
-    vaultFailed = true;
-    console.log(`[${formatTimestamp()}] ❌ Tests contrat vault - ${error.message}`);
-  }
-
-  // Run advanced utils tests
   let utilsFailed = false;
-  try {
-    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
-    console.log(`[${formatTimestamp()}] ℹ️ 🛠️  TESTS UTILS AVANCÉS`);
-    const { runAllTests: runUtilsTests } = await importModule('src/tests/test-utils-advanced.js');
-    const utilsResults = await runUtilsTests();
-    if (utilsResults.failed > 0) {
-      utilsFailed = true;
-    }
-  } catch (error) {
-    utilsFailed = true;
-    console.log(`[${formatTimestamp()}] ❌ Tests utils avancés - ${error.message}`);
-  }
-
-  // Run services tests
   let servicesFailed = false;
-  try {
-    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
-    console.log(`[${formatTimestamp()}] ℹ️ 🔧 TESTS SERVICES`);
-    const { runAllTests: runServicesTests } = await importModule('src/tests/test-services.js');
-    const servicesResults = await runServicesTests();
-    if (servicesResults.failed > 0) {
-      servicesFailed = true;
-    }
-  } catch (error) {
-    servicesFailed = true;
-    console.log(`[${formatTimestamp()}] ❌ Tests services - ${error.message}`);
-  }
-
-  // Run performance tests
   let perfFailed = false;
-  try {
-    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
-    console.log(`[${formatTimestamp()}] ℹ️ ⚡ TESTS PERFORMANCE`);
-    const { runPerformanceTests } = await importModule('src/tests/test-performance.js');
-    const perfResults = await runPerformanceTests();
-    if (perfResults.failed > 0) {
-      perfFailed = true;
+
+  if (!fastOnly) {
+    // Vault contract tests
+    try {
+      console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+      console.log(`[${formatTimestamp()}] ℹ️ 🔐 TESTS CONTRAT VAULT`);
+      const { runVaultContractTests } = await importModule('src/js/vault/tests/contract-tests.js');
+      const vaultResults = await runVaultContractTests();
+      vaultResults.forEach((result) => {
+        let icon;
+        if (result.status === 'pass') {
+          icon = '✅';
+        } else if (result.status === 'skip') {
+          icon = '⚠️';
+        } else {
+          icon = '❌';
+        }
+        console.log(`[${formatTimestamp()}] ${icon} ${result.name}${result.status === 'skip' ? ' (skipped)' : ''}`);
+        if (result.status === 'fail') {
+          vaultFailed = true;
+        }
+      });
+    } catch (error) {
+      vaultFailed = true;
+      console.log(`[${formatTimestamp()}] ❌ Tests contrat vault - ${error.message}`);
     }
-  } catch (error) {
-    perfFailed = true;
-    console.log(`[${formatTimestamp()}] ❌ Tests performance - ${error.message}`);
+
+    // Advanced utils tests
+    try {
+      console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+      console.log(`[${formatTimestamp()}] ℹ️ 🛠️  TESTS UTILS AVANCÉS`);
+      const { runAllTests: runUtilsTests } = await importModule('src/tests/test-utils-advanced.js');
+      const utilsResults = await runUtilsTests();
+      if (utilsResults.failed > 0) {
+        utilsFailed = true;
+      }
+    } catch (error) {
+      utilsFailed = true;
+      console.log(`[${formatTimestamp()}] ❌ Tests utils avancés - ${error.message}`);
+    }
+
+    // Services tests
+    try {
+      console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+      console.log(`[${formatTimestamp()}] ℹ️ 🔧 TESTS SERVICES`);
+      const { runAllTests: runServicesTests } = await importModule('src/tests/test-services.js');
+      const servicesResults = await runServicesTests();
+      if (servicesResults.failed > 0) {
+        servicesFailed = true;
+      }
+    } catch (error) {
+      servicesFailed = true;
+      console.log(`[${formatTimestamp()}] ❌ Tests services - ${error.message}`);
+    }
+
+    // Performance tests
+    try {
+      console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+      console.log(`[${formatTimestamp()}] ℹ️ ⚡ TESTS PERFORMANCE`);
+      const { runPerformanceTests } = await importModule('src/tests/test-performance.js');
+      const perfResults = await runPerformanceTests();
+      if (perfResults.failed > 0) {
+        perfFailed = true;
+      }
+    } catch (error) {
+      perfFailed = true;
+      console.log(`[${formatTimestamp()}] ❌ Tests performance - ${error.message}`);
+    }
+  } else {
+    console.log(`[${formatTimestamp()}] ℹ️ Skipping slow tests (FAST_ONLY mode)`);
   }
 
   if (lastRun.failed > 0 || vaultFailed || utilsFailed || servicesFailed || perfFailed) {

@@ -116,6 +116,12 @@ class HistoryManager {
    * This is displayed when history is enabled for the first time
    */
   showSecurityWarning() {
+    // Skip in non-browser environments (e.g., Node.js tests)
+    if (typeof window === 'undefined' || !document.body) {
+      safeLog('[HistoryManager] Security warning skipped (non-browser environment)');
+      return;
+    }
+
     // Create warning modal
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -262,11 +268,11 @@ class HistoryManager {
    * Add entry to history
    * @param {string} password - Generated password
    * @param {Object} metadata - Generation metadata
-   * @returns {HistoryEntry|null} Added entry or null if disabled
+   * @returns {HistoryEntry|false} Added entry or false if disabled
    */
   addEntry(password, metadata = {}) {
     if (!this.settings.enabled) {
-      return null;
+      return false;
     }
 
     const entry = {
