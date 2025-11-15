@@ -32,7 +32,17 @@ jobs:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
           build-root-directory: android
 
+      - name: Cache Android SDK
+        id: cache-android-sdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/android-sdk
+          key: android-sdk-${{ runner.os }}-v2
+          restore-keys: |
+            android-sdk-${{ runner.os }}-
+
       - name: Install Android SDK components
+        if: steps.cache-android-sdk.outputs.cache-hit != 'true'
         run: |
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o /tmp/cmdline-tools.zip
