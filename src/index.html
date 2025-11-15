@@ -11,7 +11,8 @@
     style-src 'self';
     img-src 'self' data:;
     font-src 'self' data:;
-    connect-src 'self' blob:;
+    connect-src 'self' blob: https://api.pwnedpasswords.com;
+    worker-src 'self';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -21,6 +22,13 @@
   <title>GenPwd Pro – Secure Password Generator</title>
   <meta name="author" content="Julien Bombled">
   <meta name="description" content="Générateur de mots de passe sécurisés avec architecture ES6 modulaire, tests intégrés et cryptographie robuste">
+
+  <!-- PWA Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GenPwd Pro">
 
   <!-- Resource Hints for Performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>

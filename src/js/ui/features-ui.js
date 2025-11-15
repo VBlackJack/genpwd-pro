@@ -19,6 +19,9 @@
 import { i18n, t } from '../utils/i18n.js';
 import presetManager from '../utils/preset-manager.js';
 import historyManager from '../utils/history-manager.js';
+import pluginManager from '../utils/plugin-manager.js';
+import importExportService from '../services/import-export-service.js';
+import hibpService from '../services/hibp-service.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog } from '../utils/logger.js';
 import { escapeHtml } from '../utils/helpers.js';
@@ -1341,11 +1344,1011 @@ function downloadFile(content, filename, mimeType) {
 }
 
 /**
+ * Initialize plugins UI
+ */
+export function initializePluginsUI() {
+  const configPanel = document.querySelector('#config-panel .panel-body');
+  if (!configPanel) return;
+
+  // Add plugins section
+  const pluginsSection = document.createElement('section');
+  pluginsSection.className = 'section';
+  const pluginStats = pluginManager.getStats();
+
+  pluginsSection.innerHTML = `
+    <div class="section-header chevron">
+      <span class="chev">▼</span>
+      <strong>🔌 Plugins & Extensions</strong>
+      <span class="badge">${pluginStats.enabledPlugins}/${pluginStats.totalPlugins}</span>
+    </div>
+    <div class="section-content">
+      <div class="row">
+        <button class="btn full-width" id="btn-manage-plugins">
+          🔌 Manage Plugins
+        </button>
+      </div>
+      <div class="row">
+        <button class="btn full-width" id="btn-load-demo-plugins">
+          🎨 Load Demo Plugins
+        </button>
+      </div>
+      <div class="plugin-status" style="font-size: 0.9em; color: #666; margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+        <div><strong>Status:</strong> ${pluginStats.totalPlugins} plugin(s) installed</div>
+        <div><strong>Hooks:</strong> ${pluginStats.totalHooks} active hook(s)</div>
+      </div>
+    </div>
+  `;
+
+  // Insert after Presets section
+  const presetsSection = Array.from(configPanel.querySelectorAll('.section')).find(
+    section => section.textContent.includes('Presets') || section.textContent.includes('💾')
+  );
+
+  if (presetsSection && presetsSection.nextSibling) {
+    configPanel.insertBefore(pluginsSection, presetsSection.nextSibling);
+  } else if (presetsSection) {
+    presetsSection.parentNode.insertBefore(pluginsSection, presetsSection.nextSibling);
+  } else {
+    // Fallback: insert before help section
+    const helpSection = Array.from(configPanel.querySelectorAll('.section')).find(
+      section => section.textContent.includes('Aide & Notes') || section.textContent.includes('Help')
+    );
+    if (helpSection) {
+      configPanel.insertBefore(pluginsSection, helpSection);
+    } else {
+      configPanel.appendChild(pluginsSection);
+    }
+  }
+
+  // Bind events
+  bindPluginEvents();
+  safeLog('Plugins UI initialized');
+}
+
+/**
+ * Bind plugin events
+ */
+function bindPluginEvents() {
+  const btnManagePlugins = document.getElementById('btn-manage-plugins');
+  const btnLoadDemoPlugins = document.getElementById('btn-load-demo-plugins');
+
+  if (btnManagePlugins) {
+    btnManagePlugins.addEventListener('click', showPluginManagerModal);
+  }
+
+  if (btnLoadDemoPlugins) {
+    btnLoadDemoPlugins.addEventListener('click', loadDemoPlugins);
+  }
+}
+
+/**
+ * Load demo plugins
+ */
+async function loadDemoPlugins() {
+  try {
+    // Dynamically import demo plugins
+    const emojiPlugin = await import('../plugins/emoji-generator-plugin.js');
+    const xmlPlugin = await import('../plugins/xml-export-plugin.js');
+
+    // Register plugins
+    const emojiSuccess = pluginManager.registerPlugin(emojiPlugin.default);
+    const xmlSuccess = pluginManager.registerPlugin(xmlPlugin.default);
+
+    if (emojiSuccess && xmlSuccess) {
+      showToast('Demo plugins loaded successfully!', 'success');
+      updatePluginStatus();
+    } else if (emojiSuccess || xmlSuccess) {
+      showToast('Some demo plugins loaded', 'warning');
+      updatePluginStatus();
+    } else {
+      showToast('Failed to load demo plugins', 'error');
+    }
+  } catch (error) {
+    safeLog(`Error loading demo plugins: ${error.message}`);
+    showToast('Error loading demo plugins', 'error');
+  }
+}
+
+/**
+ * Update plugin status display
+ */
+function updatePluginStatus() {
+  const statusDiv = document.querySelector('.plugin-status');
+  if (statusDiv) {
+    const stats = pluginManager.getStats();
+    statusDiv.innerHTML = `
+      <div><strong>Status:</strong> ${stats.totalPlugins} plugin(s) installed</div>
+      <div><strong>Hooks:</strong> ${stats.totalHooks} active hook(s)</div>
+    `;
+  }
+
+  // Update badge
+  const badge = document.querySelector('.section-header .badge');
+  if (badge) {
+    const stats = pluginManager.getStats();
+    badge.textContent = `${stats.enabledPlugins}/${stats.totalPlugins}`;
+  }
+}
+
+/**
+ * Show plugin manager modal
+ */
+function showPluginManagerModal() {
+  const plugins = pluginManager.getAllPlugins();
+  const stats = pluginManager.getStats();
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'plugins-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">
+          🔌 Plugin Manager
+        </div>
+        <button class="modal-close" id="close-plugins-modal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="plugin-stats" style="display: flex; gap: 20px; margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 6px;">
+          <div class="stat-item">
+            <div class="stat-value" style="font-size: 2em; font-weight: bold; color: #4CAF50;">${stats.totalPlugins}</div>
+            <div class="stat-label" style="font-size: 0.9em; color: #666;">Total Plugins</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" style="font-size: 2em; font-weight: bold; color: #2196F3;">${stats.enabledPlugins}</div>
+            <div class="stat-label" style="font-size: 0.9em; color: #666;">Enabled</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" style="font-size: 2em; font-weight: bold; color: #FF9800;">${stats.totalHooks}</div>
+            <div class="stat-label" style="font-size: 0.9em; color: #666;">Active Hooks</div>
+          </div>
+        </div>
+
+        <div class="plugins-list">
+          ${plugins.length === 0 ? '<p class="empty-state" style="text-align: center; padding: 40px; color: #999;">No plugins installed. Click "Load Demo Plugins" to get started!</p>' :
+            plugins.map(plugin => `
+              <div class="plugin-item" data-plugin-name="${plugin.name}" style="border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 15px; background: ${plugin.enabled ? '#fff' : '#f9f9f9'};">
+                <div class="plugin-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                  <div class="plugin-info" style="flex: 1;">
+                    <h4 style="margin: 0 0 5px 0; font-size: 1.1em;">
+                      ${escapeHtml(plugin.name)}
+                      ${plugin.enabled ? '<span style="color: #4CAF50; margin-left: 8px;">●</span>' : '<span style="color: #999; margin-left: 8px;">○</span>'}
+                    </h4>
+                    <div style="font-size: 0.85em; color: #666;">
+                      v${escapeHtml(plugin.version)} by ${escapeHtml(plugin.author)}
+                    </div>
+                  </div>
+                  <div class="plugin-toggle">
+                    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                      <input type="checkbox" data-action="toggle" data-plugin-name="${plugin.name}" ${plugin.enabled ? 'checked' : ''}>
+                      <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${plugin.enabled ? '#4CAF50' : '#ccc'}; transition: .4s; border-radius: 24px;"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="plugin-description" style="font-size: 0.95em; color: #333; margin-bottom: 10px;">
+                  ${escapeHtml(plugin.description)}
+                </div>
+
+                <div class="plugin-hooks" style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
+                  <strong>Hooks:</strong>
+                  ${plugin.hooks ? Object.keys(plugin.hooks).map(h => `<span style="display: inline-block; background: #e3f2fd; padding: 2px 8px; border-radius: 3px; margin: 2px;">${h}</span>`).join('') : '<span>None</span>'}
+                </div>
+
+                <div class="plugin-meta" style="font-size: 0.8em; color: #999; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+                  ${plugin._loadedAt ? `Loaded: ${new Date(plugin._loadedAt).toLocaleString()}` : ''}
+                </div>
+
+                <div class="plugin-actions" style="margin-top: 10px; display: flex; gap: 8px;">
+                  <button class="btn-mini" data-action="settings" data-plugin-name="${plugin.name}">⚙️ Settings</button>
+                  <button class="btn-mini" data-action="export" data-plugin-name="${plugin.name}">📤 Export</button>
+                  <button class="btn-mini danger" data-action="uninstall" data-plugin-name="${plugin.name}">🗑️ Uninstall</button>
+                </div>
+              </div>
+            `).join('')
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-install-plugin-file">📁 Install from File</button>
+        <button class="btn" id="btn-clear-all-plugins" style="background: #f44336; color: white;">🗑️ Clear All</button>
+        <button class="btn" id="close-plugins-modal-footer">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Bind events
+  bindPluginModalEvents(modal);
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+}
+
+/**
+ * Bind plugin modal events
+ */
+function bindPluginModalEvents(modal) {
+  // Close buttons
+  modal.querySelector('#close-plugins-modal')?.addEventListener('click', () => {
+    modal.remove();
+  });
+  modal.querySelector('#close-plugins-modal-footer')?.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Action buttons
+  modal.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const action = btn.dataset.action;
+      const pluginName = btn.dataset.pluginName;
+
+      switch (action) {
+        case 'toggle':
+          const checkbox = e.target;
+          if (checkbox.checked) {
+            pluginManager.enablePlugin(pluginName);
+          } else {
+            pluginManager.disablePlugin(pluginName);
+          }
+          updatePluginStatus();
+          break;
+
+        case 'settings':
+          showPluginSettingsModal(pluginName);
+          break;
+
+        case 'export':
+          const json = pluginManager.exportPlugin(pluginName);
+          if (json) {
+            downloadFile(json, `plugin-${pluginName}.json`, 'application/json');
+            showToast('Plugin metadata exported!', 'success');
+          }
+          break;
+
+        case 'uninstall':
+          if (confirm(`Uninstall plugin "${pluginName}"?`)) {
+            pluginManager.unregisterPlugin(pluginName);
+            modal.remove();
+            showPluginManagerModal(); // Refresh
+            updatePluginStatus();
+          }
+          break;
+      }
+    });
+  });
+
+  // Install from file
+  modal.querySelector('#btn-install-plugin-file')?.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.js,application/javascript';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const success = pluginManager.loadPluginFromCode(event.target.result, file.name);
+          if (success) {
+            modal.remove();
+            showPluginManagerModal(); // Refresh
+            updatePluginStatus();
+          }
+        } catch (error) {
+          showToast('Failed to install plugin', 'error');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  });
+
+  // Clear all plugins
+  modal.querySelector('#btn-clear-all-plugins')?.addEventListener('click', () => {
+    if (confirm('Clear all plugins? This action cannot be undone!')) {
+      pluginManager.clearAllPlugins();
+      modal.remove();
+      showPluginManagerModal(); // Refresh
+      updatePluginStatus();
+    }
+  });
+}
+
+/**
+ * Show plugin settings modal
+ */
+function showPluginSettingsModal(pluginName) {
+  const plugin = pluginManager.getPlugin(pluginName);
+  if (!plugin) {
+    showToast('Plugin not found', 'error');
+    return;
+  }
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'plugin-settings-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ ${escapeHtml(plugin.name)} Settings</div>
+        <button class="modal-close" id="close-plugin-settings-modal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="plugin-settings-container"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="close-plugin-settings-footer">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Call plugin's onUIRender hook if available
+  const container = modal.querySelector('#plugin-settings-container');
+  if (plugin.hooks && plugin.hooks.onUIRender && container) {
+    try {
+      plugin.hooks.onUIRender(container);
+    } catch (error) {
+      container.innerHTML = `<p style="color: #f44336;">Error rendering plugin settings: ${escapeHtml(error.message)}</p>`;
+    }
+  } else {
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #666;">
+        <p>This plugin does not have configurable settings.</p>
+        <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 6px; text-align: left;">
+          <strong>Plugin Configuration:</strong>
+          <pre style="margin-top: 10px; font-size: 0.85em; overflow: auto;">${JSON.stringify(plugin.config || {}, null, 2)}</pre>
+        </div>
+      </div>
+    `;
+  }
+
+  // Bind close events
+  modal.querySelector('#close-plugin-settings-modal')?.addEventListener('click', () => {
+    modal.remove();
+  });
+  modal.querySelector('#close-plugin-settings-footer')?.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+}
+
+/**
+ * Initialize advanced import/export UI
+ */
+export function initializeAdvancedImportExportUI() {
+  // Add event listener to existing export button if it exists
+  const existingExportBtn = document.getElementById('btn-export');
+  if (existingExportBtn) {
+    // Replace click handler with advanced export
+    const newExportBtn = existingExportBtn.cloneNode(true);
+    existingExportBtn.parentNode.replaceChild(newExportBtn, existingExportBtn);
+
+    newExportBtn.addEventListener('click', showAdvancedExportModal);
+  }
+
+  // Add import button next to export if not already there
+  const resultsPanel = document.querySelector('.results .actions');
+  if (resultsPanel) {
+    const existingImportBtn = document.getElementById('btn-import-advanced');
+    if (!existingImportBtn) {
+      const importBtn = document.createElement('button');
+      importBtn.className = 'btn';
+      importBtn.id = 'btn-import-advanced';
+      importBtn.innerHTML = '📥 Import';
+
+      // Insert after export button
+      const exportBtn = document.getElementById('btn-export');
+      if (exportBtn && exportBtn.nextSibling) {
+        exportBtn.parentNode.insertBefore(importBtn, exportBtn.nextSibling);
+      } else if (exportBtn) {
+        exportBtn.parentNode.appendChild(importBtn);
+      }
+
+      importBtn.addEventListener('click', showAdvancedImportModal);
+    }
+  }
+
+  safeLog('Advanced Import/Export UI initialized');
+}
+
+/**
+ * Show advanced export modal
+ */
+function showAdvancedExportModal() {
+  // Get current passwords from results
+  const passwordElements = document.querySelectorAll('.result-item');
+  if (passwordElements.length === 0) {
+    showToast('No passwords to export', 'warning');
+    return;
+  }
+
+  const passwords = Array.from(passwordElements).map((el, index) => ({
+    title: `Password ${index + 1}`,
+    username: '',
+    password: el.textContent.trim(),
+    url: '',
+    notes: `Generated by GenPwd Pro on ${new Date().toLocaleDateString()}`,
+    tags: [],
+    metadata: {},
+    folder: 'GenPwd Pro',
+    createdAt: new Date(),
+    modifiedAt: new Date()
+  }));
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'advanced-export-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">📤 Advanced Export</div>
+        <button class="modal-close" id="close-export-modal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px; color: #666;">
+          Export ${passwords.length} password(s) to various password manager formats
+        </p>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="export-format" style="display: block; margin-bottom: 8px; font-weight: 500;">
+            Select Export Format:
+          </label>
+          <select id="export-format" class="input-field" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <optgroup label="Password Managers">
+              <option value="keepass-csv">KeePass (CSV)</option>
+              <option value="bitwarden-json">Bitwarden (JSON)</option>
+              <option value="lastpass-csv">LastPass (CSV)</option>
+              <option value="1password-csv">1Password (CSV)</option>
+            </optgroup>
+            <optgroup label="Generic Formats">
+              <option value="generic-json">Generic JSON</option>
+              <option value="generic-csv">Generic CSV</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="format-info" style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+          <strong>Format Information:</strong>
+          <div id="format-description" style="margin-top: 8px; font-size: 0.9em; color: #666;">
+            Select a format to see details
+          </div>
+        </div>
+
+        <div class="export-options" style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px;">
+            <input type="checkbox" id="include-metadata" checked>
+            Include metadata (timestamps, notes)
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-export-download" style="background: #4CAF50; color: white;">
+          📥 Download Export
+        </button>
+        <button class="btn" id="close-export-modal-footer">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Update format description
+  const formatSelect = modal.querySelector('#export-format');
+  const formatDescription = modal.querySelector('#format-description');
+
+  const formatDescriptions = {
+    'keepass-csv': 'CSV format compatible with KeePass password manager. Fields: Account, Login Name, Password, Web Site, Comments.',
+    'bitwarden-json': 'JSON format for Bitwarden. Full-featured with folders, favorites, and timestamps.',
+    'lastpass-csv': 'CSV format compatible with LastPass. Fields: url, username, password, extra, name, grouping.',
+    '1password-csv': 'CSV format for 1Password. Fields: Title, URL, Username, Password, Notes, Category.',
+    'generic-json': 'Universal JSON format with all fields. Can be re-imported to GenPwd Pro.',
+    'generic-csv': 'Simple CSV format with basic fields: title, username, password, url, notes.'
+  };
+
+  formatSelect.addEventListener('change', () => {
+    const format = formatSelect.value;
+    formatDescription.textContent = formatDescriptions[format] || 'Select a format to see details';
+  });
+
+  // Trigger initial description
+  formatSelect.dispatchEvent(new Event('change'));
+
+  // Export button
+  modal.querySelector('#btn-export-download').addEventListener('click', () => {
+    const format = formatSelect.value;
+    const includeMetadata = modal.querySelector('#include-metadata').checked;
+
+    try {
+      // Export passwords
+      const exported = importExportService.export(passwords, format);
+      const formatInfo = importExportService.getFormatInfo(format);
+
+      // Download file
+      const filename = `genpwd-export-${new Date().toISOString().slice(0, 10)}${formatInfo.extension}`;
+      downloadFile(exported, filename, format.includes('json') ? 'application/json' : 'text/csv');
+
+      showToast(`Exported ${passwords.length} passwords to ${formatInfo.name}`, 'success');
+      modal.remove();
+    } catch (error) {
+      showToast(`Export failed: ${error.message}`, 'error');
+      safeLog(`Export error: ${error.message}`);
+    }
+  });
+
+  // Close buttons
+  modal.querySelector('#close-export-modal').addEventListener('click', () => modal.remove());
+  modal.querySelector('#close-export-modal-footer').addEventListener('click', () => modal.remove());
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+}
+
+/**
+ * Show advanced import modal
+ */
+function showAdvancedImportModal() {
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'advanced-import-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">📥 Advanced Import</div>
+        <button class="modal-close" id="close-import-modal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px; color: #666;">
+          Import passwords from popular password managers
+        </p>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="import-format" style="display: block; margin-bottom: 8px; font-weight: 500;">
+            Select Import Format:
+          </label>
+          <select id="import-format" class="input-field" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <optgroup label="Password Managers">
+              <option value="keepass-xml">KeePass (XML)</option>
+              <option value="keepass-csv">KeePass (CSV)</option>
+              <option value="bitwarden-json">Bitwarden (JSON)</option>
+              <option value="lastpass-csv">LastPass (CSV)</option>
+              <option value="1password-csv">1Password (CSV)</option>
+            </optgroup>
+            <optgroup label="Generic Formats">
+              <option value="generic-json">Generic JSON</option>
+              <option value="generic-csv">Generic CSV</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="format-info" style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+          <strong>Format Information:</strong>
+          <div id="import-format-description" style="margin-top: 8px; font-size: 0.9em; color: #666;">
+            Select a format to see details
+          </div>
+        </div>
+
+        <div class="file-upload" style="margin-bottom: 20px;">
+          <input type="file" id="import-file-input" accept=".xml,.csv,.json" style="display: none;">
+          <button class="btn full-width" id="btn-select-file" style="background: #2196F3; color: white;">
+            📁 Select File
+          </button>
+          <div id="selected-file-name" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+        </div>
+
+        <div id="import-preview" style="display: none; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+          <strong>Preview:</strong>
+          <div id="import-preview-content" style="margin-top: 10px; font-size: 0.9em;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-import-execute" style="background: #4CAF50; color: white;" disabled>
+          ✅ Import Passwords
+        </button>
+        <button class="btn" id="close-import-modal-footer">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  let importedData = null;
+
+  // Update format description
+  const formatSelect = modal.querySelector('#import-format');
+  const formatDescription = modal.querySelector('#import-format-description');
+
+  const formatDescriptions = {
+    'keepass-xml': 'Import from KeePass XML export. Supports full metadata including groups, timestamps, and custom fields.',
+    'keepass-csv': 'Import from KeePass CSV export. Basic fields: Account, Login Name, Password, Web Site, Comments.',
+    'bitwarden-json': 'Import from Bitwarden JSON export. Full-featured with folders and timestamps.',
+    'lastpass-csv': 'Import from LastPass CSV export. Fields: url, username, password, extra, name, grouping.',
+    '1password-csv': 'Import from 1Password CSV export. Fields: Title, URL, Username, Password, Notes.',
+    'generic-json': 'Import from GenPwd Pro or other generic JSON formats.',
+    'generic-csv': 'Import from generic CSV with fields: title, username, password, url, notes.'
+  };
+
+  formatSelect.addEventListener('change', () => {
+    const format = formatSelect.value;
+    formatDescription.textContent = formatDescriptions[format] || 'Select a format to see details';
+  });
+
+  // Trigger initial description
+  formatSelect.dispatchEvent(new Event('change'));
+
+  // File selection
+  const fileInput = modal.querySelector('#import-file-input');
+  const selectFileBtn = modal.querySelector('#btn-select-file');
+  const selectedFileName = modal.querySelector('#selected-file-name');
+  const importPreview = modal.querySelector('#import-preview');
+  const importPreviewContent = modal.querySelector('#import-preview-content');
+  const importButton = modal.querySelector('#btn-import-execute');
+
+  selectFileBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    selectedFileName.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+
+    try {
+      const content = await file.text();
+      const format = formatSelect.value;
+
+      // Import and preview
+      importedData = importExportService.import(content, format);
+
+      // Show preview
+      importPreview.style.display = 'block';
+      importPreviewContent.innerHTML = `
+        <div style="margin-bottom: 10px;">
+          <strong>Entries found:</strong> ${importedData.length}
+        </div>
+        <div style="max-height: 200px; overflow-y: auto;">
+          ${importedData.slice(0, 5).map((entry, i) => `
+            <div style="padding: 8px; margin: 4px 0; background: #f9f9f9; border-radius: 4px;">
+              <div style="font-weight: 500;">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
+              <div style="font-size: 0.85em; color: #666;">
+                ${entry.username ? `👤 ${escapeHtml(entry.username)}` : ''}
+                ${entry.url ? `🔗 ${escapeHtml(entry.url)}` : ''}
+              </div>
+            </div>
+          `).join('')}
+          ${importedData.length > 5 ? `<div style="padding: 8px; text-align: center; color: #999;">... and ${importedData.length - 5} more</div>` : ''}
+        </div>
+      `;
+
+      importButton.disabled = false;
+      showToast(`Found ${importedData.length} password entries`, 'success');
+    } catch (error) {
+      showToast(`Import failed: ${error.message}`, 'error');
+      safeLog(`Import error: ${error.message}`);
+      importPreview.style.display = 'none';
+      importButton.disabled = true;
+    }
+  });
+
+  // Import button
+  importButton.addEventListener('click', () => {
+    if (!importedData || importedData.length === 0) {
+      showToast('No data to import', 'warning');
+      return;
+    }
+
+    // Display imported passwords in results
+    const resultsDiv = document.getElementById('results');
+    if (resultsDiv) {
+      resultsDiv.innerHTML = `
+        <div class="import-results">
+          <h3 style="margin-bottom: 15px;">Imported ${importedData.length} Passwords</h3>
+          ${importedData.map((entry, i) => `
+            <div class="result-item" style="padding: 12px; margin: 8px 0; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #4CAF50;">
+              <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                  <div style="font-weight: 500; margin-bottom: 5px;">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
+                  ${entry.username ? `<div style="font-size: 0.9em; color: #666;">👤 ${escapeHtml(entry.username)}</div>` : ''}
+                  ${entry.url ? `<div style="font-size: 0.9em; color: #666;">🔗 ${escapeHtml(entry.url)}</div>` : ''}
+                  ${entry.notes ? `<div style="font-size: 0.85em; color: #999; margin-top: 5px;">📝 ${escapeHtml(entry.notes.slice(0, 100))}${entry.notes.length > 100 ? '...' : ''}</div>` : ''}
+                  <div style="font-family: monospace; background: white; padding: 8px; border-radius: 4px; margin-top: 8px; word-break: break-all;">
+                    ${entry.password}
+                  </div>
+                </div>
+                <button class="btn-mini copy-btn" data-password="${entry.password}" style="margin-left: 10px;">
+                  📋 Copy
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Bind copy buttons
+      resultsDiv.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const password = btn.dataset.password;
+          navigator.clipboard.writeText(password);
+          showToast('Password copied!', 'success');
+        });
+      });
+    }
+
+    showToast(`Successfully imported ${importedData.length} passwords`, 'success');
+    modal.remove();
+  });
+
+  // Close buttons
+  modal.querySelector('#close-import-modal').addEventListener('click', () => modal.remove());
+  modal.querySelector('#close-import-modal-footer').addEventListener('click', () => modal.remove());
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+}
+
+/**
+ * Initialize HIBP (Have I Been Pwned) Breach Checker UI
+ */
+export function initializeHIBPUI() {
+  // Add HIBP Check button to actions toolbar
+  const actionsToolbar = document.querySelector('.actions');
+  if (!actionsToolbar) return;
+
+  // Check if button already exists
+  if (document.getElementById('btn-hibp-check')) return;
+
+  // Create HIBP check button
+  const hibpBtn = document.createElement('button');
+  hibpBtn.className = 'btn';
+  hibpBtn.id = 'btn-hibp-check';
+  hibpBtn.setAttribute('aria-label', 'Check passwords against breach database');
+  hibpBtn.innerHTML = '🔍 Check Breaches';
+
+  // Insert after Export button
+  const exportBtn = document.getElementById('btn-export');
+  if (exportBtn) {
+    exportBtn.after(hibpBtn);
+  } else {
+    actionsToolbar.appendChild(hibpBtn);
+  }
+
+  // Bind click event
+  hibpBtn.addEventListener('click', () => showHIBPCheckModal());
+
+  safeLog('HIBP UI initialized');
+}
+
+/**
+ * Show HIBP Check Modal
+ */
+function showHIBPCheckModal() {
+  // Get all generated passwords from results list
+  const passwordItems = document.querySelectorAll('.password-item');
+
+  if (passwordItems.length === 0) {
+    showToast('No passwords to check. Generate some passwords first.', 'warning');
+    return;
+  }
+
+  // Extract passwords
+  const passwords = Array.from(passwordItems).map(item => {
+    const pwdSpan = item.querySelector('.password-text');
+    return pwdSpan ? pwdSpan.textContent : '';
+  }).filter(pwd => pwd.length > 0);
+
+  if (passwords.length === 0) {
+    showToast('No valid passwords found to check', 'warning');
+    return;
+  }
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal large">
+      <div class="modal-header">
+        <div class="modal-title">
+          🔍 HIBP Breach Check
+        </div>
+        <button class="modal-close" id="close-hibp-modal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="info-box">
+          <strong>🛡️ Privacy-Preserving Check</strong>
+          <p style="margin-top: 8px; font-size: 0.9em; opacity: 0.9;">
+            This check uses <strong>k-anonymity</strong> to preserve your privacy.
+            Only the first 5 characters of the password hash are sent to the HIBP API.
+            Your actual password never leaves your device.
+          </p>
+        </div>
+
+        <div id="hibp-checking-status" class="checking-status">
+          <div class="spinner"></div>
+          <p>Checking ${passwords.length} password(s) against breach database...</p>
+        </div>
+
+        <div id="hibp-results" class="hibp-results hidden"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" id="close-hibp-modal-footer">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close button handlers
+  modal.querySelector('#close-hibp-modal').addEventListener('click', () => modal.remove());
+  modal.querySelector('#close-hibp-modal-footer').addEventListener('click', () => modal.remove());
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+
+  // Check passwords
+  checkPasswordsWithHIBP(passwords, modal);
+}
+
+/**
+ * Check passwords with HIBP
+ */
+async function checkPasswordsWithHIBP(passwords, modal) {
+  const statusDiv = modal.querySelector('#hibp-checking-status');
+  const resultsDiv = modal.querySelector('#hibp-results');
+
+  try {
+    const results = [];
+
+    // Check each password
+    for (let i = 0; i < passwords.length; i++) {
+      const password = passwords[i];
+
+      // Update status
+      statusDiv.querySelector('p').textContent =
+        `Checking password ${i + 1} of ${passwords.length}...`;
+
+      const result = await hibpService.checkPassword(password);
+      results.push({
+        password: password,
+        ...result
+      });
+    }
+
+    // Hide status, show results
+    statusDiv.classList.add('hidden');
+    resultsDiv.classList.remove('hidden');
+
+    // Render results
+    renderHIBPResults(results, resultsDiv);
+
+  } catch (error) {
+    statusDiv.classList.add('hidden');
+    resultsDiv.classList.remove('hidden');
+    resultsDiv.innerHTML = `
+      <div class="error-box">
+        <strong>❌ Error checking passwords</strong>
+        <p>${escapeHtml(error.message)}</p>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Render HIBP results
+ */
+function renderHIBPResults(results, container) {
+  // Summary statistics
+  const pwnedCount = results.filter(r => r.isPwned).length;
+  const safeCount = results.length - pwnedCount;
+
+  let summaryHtml = `
+    <div class="hibp-summary">
+      <div class="summary-stat ${safeCount > 0 ? 'safe' : ''}">
+        <div class="stat-value">${safeCount}</div>
+        <div class="stat-label">Safe</div>
+      </div>
+      <div class="summary-stat ${pwnedCount > 0 ? 'danger' : ''}">
+        <div class="stat-value">${pwnedCount}</div>
+        <div class="stat-label">Breached</div>
+      </div>
+    </div>
+  `;
+
+  // Individual results
+  let resultsHtml = '<div class="hibp-results-list">';
+
+  for (const result of results) {
+    const severity = hibpService.getSeverity(result.count);
+    const message = hibpService.getMessage(result.isPwned, result.count);
+    const color = hibpService.getSeverityColor(severity);
+
+    resultsHtml += `
+      <div class="hibp-result-item ${severity}">
+        <div class="hibp-result-header">
+          <div class="password-display">
+            <code>${escapeHtml(result.password.substring(0, 20))}${result.password.length > 20 ? '...' : ''}</code>
+          </div>
+          <div class="hibp-badge" style="background-color: ${color}">
+            ${result.isPwned ? `${result.count.toLocaleString()} breaches` : 'Safe'}
+          </div>
+        </div>
+        <div class="hibp-result-message">
+          ${escapeHtml(message)}
+        </div>
+      </div>
+    `;
+  }
+
+  resultsHtml += '</div>';
+
+  container.innerHTML = summaryHtml + resultsHtml;
+
+  // Show toast with summary
+  if (pwnedCount > 0) {
+    showToast(`⚠️ ${pwnedCount} password(s) found in breach database`, 'warning');
+  } else {
+    showToast(`✅ All ${safeCount} password(s) are safe`, 'success');
+  }
+}
+
+/**
  * Initialize all feature UIs
  */
 export function initializeAllFeatures() {
   initializeLanguageSelector();
   initializePresetsUI();
   initializeHistoryUI();
+  initializePluginsUI();
+  initializeAdvancedImportExportUI();
+  initializeHIBPUI();
   safeLog('All feature UIs initialized');
 }
