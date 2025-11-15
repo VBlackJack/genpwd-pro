@@ -25,6 +25,7 @@ import hibpService from '../services/hibp-service.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog } from '../utils/logger.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 /**
@@ -37,12 +38,12 @@ export function initializeLanguageSelector() {
   // Create language selector button (only button, not dropdown)
   const langSelector = document.createElement('div');
   langSelector.className = 'language-selector';
-  langSelector.innerHTML = `
+  langSelector.innerHTML = sanitizeHTML(`
     <button class="lang-btn" id="lang-btn" aria-label="Changer la langue" title="Langue">
-      <span class="lang-flag" id="lang-flag">${i18n.getLocaleFlag(i18n.getLocale())}</span>
-      <span class="lang-code" id="lang-code">${i18n.getLocale().toUpperCase()}</span>
+      <span class="lang-flag" id="lang-flag">${escapeHtml(i18n.getLocaleFlag(i18n.getLocale()))}</span>
+      <span class="lang-code" id="lang-code">${escapeHtml(i18n.getLocale().toUpperCase())}</span>
     </button>
-  `;
+  `);
 
   // Insert before the about button
   const aboutBtn = document.querySelector('.about-btn');
@@ -56,7 +57,7 @@ export function initializeLanguageSelector() {
   const langDropdown = document.createElement('div');
   langDropdown.className = 'lang-dropdown-portal hidden';
   langDropdown.id = 'lang-dropdown';
-  langDropdown.innerHTML = `
+  langDropdown.innerHTML = sanitizeHTML(`
     <button class="lang-option" data-lang="fr">
       <span class="lang-flag">🇫🇷</span>
       <span class="lang-name">Français</span>
@@ -69,7 +70,7 @@ export function initializeLanguageSelector() {
       <span class="lang-flag">🇪🇸</span>
       <span class="lang-name">Español</span>
     </button>
-  `;
+  `);
   document.body.appendChild(langDropdown);
 
   // Bind events
@@ -317,7 +318,7 @@ function updateLabels() {
   // Blur passwords checkbox
   const blurCheckbox = document.querySelector('label[for="mask-toggle"]');
   if (blurCheckbox) {
-    blurCheckbox.innerHTML = `<input type="checkbox" id="mask-toggle" checked> ${i18n.t('settings.blurPasswords')}`;
+    blurCheckbox.innerHTML = sanitizeHTML(`<input type="checkbox" id="mask-toggle" checked> ${escapeHtml(i18n.t('settings.blurPasswords'))}`);
   }
 
   // Digits
@@ -432,7 +433,7 @@ export function initializePresetsUI() {
   // Add presets section
   const presetsSection = document.createElement('section');
   presetsSection.className = 'section';
-  presetsSection.innerHTML = `
+  presetsSection.innerHTML = sanitizeHTML(`
     <div class="section-header chevron">
       <span class="chev">▼</span>
       <strong>💾 ${i18n.t('presets.title')}</strong>
@@ -456,7 +457,7 @@ export function initializePresetsUI() {
         </select>
       </div>
     </div>
-  `;
+  `);
 
   // Insert before "Aide & Notes" section
   const helpSection = Array.from(configPanel.querySelectorAll('.section')).find(
@@ -486,7 +487,7 @@ function updatePresetDropdown() {
   if (!presetSelect) return;
 
   const presets = presetManager.getAllPresets();
-  presetSelect.innerHTML = `<option value="">${i18n.t('presets.select')}</option>`;
+  presetSelect.innerHTML = sanitizeHTML(`<option value="">${i18n.t('presets.select')}</option>`);
 
   presets.forEach(preset => {
     const option = document.createElement('option');
@@ -542,7 +543,7 @@ function showSavePresetDialog() {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">💾 Sauvegarder le Preset</div>
@@ -573,7 +574,7 @@ function showSavePresetDialog() {
             <li>Politique: ${config.policy || 'Standard'}</li>
             <li>Chiffres: ${config.digits || 0}</li>
             <li>Caractères spéciaux: ${config.specials || 0}</li>
-            ${config.customSpecials ? `<li>Spéciaux personnalisés: ${config.customSpecials}</li>` : ''}
+            ${config.customSpecials ? `)<li>Spéciaux personnalisés: ${config.customSpecials}</li>` : ''}
             <li>Placement chiffres: ${config.placeDigits || 'Aléatoire'}</li>
             <li>Placement spéciaux: ${config.placeSpecials || 'Aléatoire'}</li>
             <li>Casse: ${config.caseMode || 'Mixte'}</li>
@@ -746,7 +747,7 @@ function showManagePresetsModal() {
 
   const presets = presetManager.getAllPresets();
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title" id="presets-modal-title">
@@ -770,7 +771,7 @@ function showManagePresetsModal() {
           >
         </div>
         <div class="presets-list">
-          ${presets.map(preset => `
+          ${presets.map(preset => `)
             <div class="preset-item" data-preset-id="${preset.id}">
               <div class="preset-info">
                 <div class="preset-name" style="display: flex; justify-content: space-between; align-items: center;">
@@ -993,7 +994,7 @@ function showEditPresetModal(presetId) {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">✏️ Modifier le Preset</div>
@@ -1024,7 +1025,7 @@ function showEditPresetModal(presetId) {
             <li>Politique: ${preset.config.policy || 'Standard'}</li>
             <li>Chiffres: ${preset.config.digits || 0}</li>
             <li>Caractères spéciaux: ${preset.config.specials || 0}</li>
-            ${preset.config.customSpecials ? `<li>Spéciaux personnalisés: ${preset.config.customSpecials}</li>` : ''}
+            ${preset.config.customSpecials ? `)<li>Spéciaux personnalisés: ${preset.config.customSpecials}</li>` : ''}
             <li>Placement chiffres: ${preset.config.placeDigits || 'Aléatoire'}</li>
             <li>Placement spéciaux: ${preset.config.placeSpecials || 'Aléatoire'}</li>
             <li>Casse: ${preset.config.caseMode || 'Mixte'}</li>
@@ -1136,7 +1137,7 @@ export function initializeHistoryUI() {
   const btnHistory = document.createElement('button');
   btnHistory.className = 'btn';
   btnHistory.id = 'btn-history';
-  btnHistory.innerHTML = '📜 ' + i18n.t('history.title');
+  btnHistory.innerHTML = sanitizeHTML('📜 ' + escapeHtml(i18n.t('history.title')));
 
   // Insert before spacer
   const spacer = resultsPanel.querySelector('.spacer');
@@ -1177,7 +1178,7 @@ function showHistoryModal() {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">
@@ -1212,7 +1213,7 @@ function showHistoryModal() {
 
         <div class="history-list">
           ${history.length === 0 ? '<p class="empty-state">Aucun mot de passe dans l\'historique</p>' :
-            history.map(entry => `
+            history.map(entry => `)
               <div class="history-item" data-entry-id="${entry.id}">
                 <div class="history-password">
                   <code>${entry.password}</code>
@@ -1355,7 +1356,7 @@ export function initializePluginsUI() {
   pluginsSection.className = 'section';
   const pluginStats = pluginManager.getStats();
 
-  pluginsSection.innerHTML = `
+  pluginsSection.innerHTML = sanitizeHTML(`
     <div class="section-header chevron">
       <span class="chev">▼</span>
       <strong>🔌 Plugins & Extensions</strong>
@@ -1377,7 +1378,7 @@ export function initializePluginsUI() {
         <div><strong>Hooks:</strong> ${pluginStats.totalHooks} active hook(s)</div>
       </div>
     </div>
-  `;
+  `);
 
   // Insert after Presets section
   const presetsSection = Array.from(configPanel.querySelectorAll('.section')).find(
@@ -1456,10 +1457,10 @@ function updatePluginStatus() {
   const statusDiv = document.querySelector('.plugin-status');
   if (statusDiv) {
     const stats = pluginManager.getStats();
-    statusDiv.innerHTML = `
+    statusDiv.innerHTML = sanitizeHTML(`
       <div><strong>Status:</strong> ${stats.totalPlugins} plugin(s) installed</div>
       <div><strong>Hooks:</strong> ${stats.totalHooks} active hook(s)</div>
-    `;
+    `);
   }
 
   // Update badge
@@ -1484,7 +1485,7 @@ function showPluginManagerModal() {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">
@@ -1515,7 +1516,7 @@ function showPluginManagerModal() {
 
         <div class="plugins-list">
           ${plugins.length === 0 ? '<p class="empty-state" style="text-align: center; padding: 40px; color: #999;">No plugins installed. Click "Load Demo Plugins" to get started!</p>' :
-            plugins.map(plugin => `
+            plugins.map(plugin => `)
               <div class="plugin-item" data-plugin-name="${plugin.name}" style="border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 15px; background: ${plugin.enabled ? '#fff' : '#f9f9f9'};">
                 <div class="plugin-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                   <div class="plugin-info" style="flex: 1;">
@@ -1683,7 +1684,7 @@ function showPluginSettingsModal(pluginName) {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">⚙️ ${escapeHtml(plugin.name)} Settings</div>
@@ -1701,7 +1702,7 @@ function showPluginSettingsModal(pluginName) {
         <button class="btn" id="close-plugin-settings-footer">Close</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -1711,10 +1712,10 @@ function showPluginSettingsModal(pluginName) {
     try {
       plugin.hooks.onUIRender(container);
     } catch (error) {
-      container.innerHTML = `<p style="color: #f44336;">Error rendering plugin settings: ${escapeHtml(error.message)}</p>`;
+      container.innerHTML = sanitizeHTML(`<p style="color: #f44336;">Error rendering plugin settings: ${escapeHtml(error.message)}</p>`);
     }
   } else {
-    container.innerHTML = `
+    container.innerHTML = sanitizeHTML(`
       <div style="padding: 20px; text-align: center; color: #666;">
         <p>This plugin does not have configurable settings.</p>
         <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 6px; text-align: left;">
@@ -1722,7 +1723,7 @@ function showPluginSettingsModal(pluginName) {
           <pre style="margin-top: 10px; font-size: 0.85em; overflow: auto;">${JSON.stringify(plugin.config || {}, null, 2)}</pre>
         </div>
       </div>
-    `;
+    `);
   }
 
   // Bind close events
@@ -1759,7 +1760,7 @@ export function initializeAdvancedImportExportUI() {
       const importBtn = document.createElement('button');
       importBtn.className = 'btn';
       importBtn.id = 'btn-import-advanced';
-      importBtn.innerHTML = '📥 Import';
+      importBtn.innerHTML = sanitizeHTML('📥 Import');
 
       // Insert after export button
       const exportBtn = document.getElementById('btn-export');
@@ -1807,7 +1808,7 @@ function showAdvancedExportModal() {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">📤 Advanced Export</div>
@@ -1862,7 +1863,7 @@ function showAdvancedExportModal() {
         <button class="btn" id="close-export-modal-footer">Cancel</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -1928,7 +1929,7 @@ function showAdvancedImportModal() {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
 
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">📥 Advanced Import</div>
@@ -1990,7 +1991,7 @@ function showAdvancedImportModal() {
         <button class="btn" id="close-import-modal-footer">Cancel</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -2045,12 +2046,12 @@ function showAdvancedImportModal() {
 
       // Show preview
       importPreview.style.display = 'block';
-      importPreviewContent.innerHTML = `
+      importPreviewContent.innerHTML = sanitizeHTML(`
         <div style="margin-bottom: 10px;">
           <strong>Entries found:</strong> ${importedData.length}
         </div>
         <div style="max-height: 200px; overflow-y: auto;">
-          ${importedData.slice(0, 5).map((entry, i) => `
+          ${importedData.slice(0, 5).map((entry, i) => `)
             <div style="padding: 8px; margin: 4px 0; background: #f9f9f9; border-radius: 4px;">
               <div style="font-weight: 500;">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
               <div style="font-size: 0.85em; color: #666;">
@@ -2083,10 +2084,10 @@ function showAdvancedImportModal() {
     // Display imported passwords in results
     const resultsDiv = document.getElementById('results');
     if (resultsDiv) {
-      resultsDiv.innerHTML = `
+      resultsDiv.innerHTML = sanitizeHTML(`
         <div class="import-results">
           <h3 style="margin-bottom: 15px;">Imported ${importedData.length} Passwords</h3>
-          ${importedData.map((entry, i) => `
+          ${importedData.map((entry, i) => `)
             <div class="result-item" style="padding: 12px; margin: 8px 0; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #4CAF50;">
               <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
@@ -2145,7 +2146,7 @@ export function initializeHIBPUI() {
   hibpBtn.className = 'btn';
   hibpBtn.id = 'btn-hibp-check';
   hibpBtn.setAttribute('aria-label', 'Check passwords against breach database');
-  hibpBtn.innerHTML = '🔍 Check Breaches';
+  hibpBtn.innerHTML = sanitizeHTML('🔍 Check Breaches');
 
   // Insert after Export button
   const exportBtn = document.getElementById('btn-export');
@@ -2187,7 +2188,7 @@ function showHIBPCheckModal() {
   // Create modal
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal large">
       <div class="modal-header">
         <div class="modal-title">
@@ -2223,7 +2224,7 @@ function showHIBPCheckModal() {
         <button class="btn" id="close-hibp-modal-footer">Close</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -2273,12 +2274,12 @@ async function checkPasswordsWithHIBP(passwords, modal) {
   } catch (error) {
     statusDiv.classList.add('hidden');
     resultsDiv.classList.remove('hidden');
-    resultsDiv.innerHTML = `
+    resultsDiv.innerHTML = sanitizeHTML(`
       <div class="error-box">
         <strong>❌ Error checking passwords</strong>
         <p>${escapeHtml(error.message)}</p>
       </div>
-    `;
+    `);
   }
 }
 

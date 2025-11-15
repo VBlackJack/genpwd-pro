@@ -16,6 +16,8 @@
 
 // src/js/test-integration.js - UI integration for test suite
 
+import { sanitizeHTML } from './utils/dom-sanitizer.js';
+
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof GenPwdTestSuite === 'undefined') {
     console.warn('Suite de tests non chargée');
@@ -125,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const scoreClass = score === 100 ? 'score-100' : score >= 80 ? 'score-80' : 'score-low';
       const duration = Math.round((results.endTime - results.startTime) / 1000);
 
-      summary.innerHTML = `
+      summary.innerHTML = sanitizeHTML(`
         <div class="test-score ${scoreClass}">${score}%</div>
         <div class="test-score-info">
           ${results.passed} réussis • ${results.failed} échoués • ${duration}s
@@ -133,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="test-score-version">
           ${total} tests exécutés sur GenPwd Pro v2.6.0
         </div>
-      `;
+      `);
     }
 
     if (details) {

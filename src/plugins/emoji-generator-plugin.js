@@ -29,6 +29,8 @@
  * - onPasswordStrength: Custom strength calculation for emoji passwords
  */
 
+import { sanitizeHTML } from '../js/utils/dom-sanitizer.js';
+
 const EmojiGeneratorPlugin = {
   name: 'emoji-generator',
   version: '1.0.0',
@@ -177,7 +179,7 @@ const EmojiGeneratorPlugin = {
         </div>
       `;
 
-      container.innerHTML = settingsHTML;
+      container.innerHTML = sanitizeHTML(settingsHTML);
 
       // Bind test button
       const testBtn = container.querySelector('#emoji-test-generate');

@@ -23,6 +23,7 @@ import {
   distributeEvenly
 } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
+import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 
 // Stocke les pourcentages logiques utilisés par l'API de génération.
@@ -199,12 +200,12 @@ function setupStructure() {
   state.layers.specials = document.createElement('div');
   state.layers.specials.className = 'cursor-layer specials-layer';
 
-  state.cursorLayer.innerHTML = '';
+  state.cursorLayer.innerHTML = sanitizeHTML('');
   state.cursorLayer.appendChild(state.layers.digits);
   state.cursorLayer.appendChild(state.layers.specials);
 
   if (state.labelLayer) {
-    state.labelLayer.innerHTML = '';
+    state.labelLayer.innerHTML = sanitizeHTML('');
     [0, 25, 50, 75, 100].forEach((value) => {
       const label = document.createElement('span');
       label.className = 'bar-label';
@@ -396,7 +397,7 @@ function createCursorElement(type, index) {
   button.dataset.type = type;
   button.dataset.index = String(index);
   button.setAttribute('tabindex', '0');
-  button.innerHTML = '<span class="cursor-label"></span>';
+  button.innerHTML = sanitizeHTML('<span class=")cursor-label"></span>';
 
   addEventListener(button, 'pointerdown', handlePointerDown);
   addEventListener(button, 'wheel', handleWheel, { passive: false });
@@ -932,10 +933,10 @@ function updateSummary() {
     ? state.specials.map(item => formatPercent(item.percent)).join(' · ')
     : '--';
 
-  state.summaryEl.innerHTML = `
+  state.summaryEl.innerHTML = sanitizeHTML(`
     <span>Chiffres : <strong>${digitsText}</strong></span>
     <span>Spéciaux : <strong>${specialsText}</strong></span>
-  `;
+  `);
 }
 
 function notifyCallbacks() {

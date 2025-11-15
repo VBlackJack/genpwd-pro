@@ -6,6 +6,13 @@
 import { generateSyllables, generatePassphrase, generateLeet } from './core/generators.js';
 import { getStrengthLevel, calculateEntropy } from './utils/helpers.js';
 
+// XSS Protection: Escape HTML entities
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // DOM Elements
 let modeSelect, lengthInput, policySelect, wordCountInput, separatorInput, dictionarySelect;
 let leetWordInput, digitsInput, specialsInput, caseModeSelect, quantityInput;
@@ -157,7 +164,7 @@ async function generateLeetPassword() {
 }
 
 function displayResults(results) {
-  resultsContainer.innerHTML = '';
+  resultsContainer.replaceChildren();
   resultsSection.classList.remove('hidden');
 
   results.forEach((result, index) => {
@@ -173,10 +180,10 @@ function createPasswordItem(result, index) {
   const strength = getStrengthLevel(result.entropy);
 
   div.innerHTML = `
-    <div class="password-value" data-password="${result.value}">${result.value}</div>
+    <div class="password-value" data-password="${escapeHTML(result.value)}">${escapeHTML(result.value)}</div>
     <div class="password-meta">
-      <span class="entropy-badge ${strength.class}">
-        ${result.entropy.toFixed(1)} bits - ${strength.label}
+      <span class="entropy-badge ${escapeHTML(strength.class)}">
+        ${result.entropy.toFixed(1)} bits - ${escapeHTML(strength.label)}
       </span>
       <button class="copy-btn" data-index="${index}">📋 Copier</button>
     </div>

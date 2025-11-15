@@ -69,6 +69,7 @@
     "retries": 1
   },
   "dependencies": {
+    "dompurify": "^3.2.3",
     "tink-crypto": "^0.1.1"
   },
   "build": {
