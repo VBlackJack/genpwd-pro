@@ -90,26 +90,90 @@ class ImportExportService {
   }
 
   /**
-   * Parse CSV content
+   * Parse CSV content (supports multiline fields in quotes)
    * @param {string} csv - CSV content
    * @param {string} delimiter - CSV delimiter (default: ',')
    * @returns {Array<Object>} - Array of row objects
    */
   parseCSV(csv, delimiter = ',') {
-    const lines = csv.split(/\r?\n/).filter(line => line.trim());
-    if (lines.length === 0) return [];
+    if (!csv || !csv.trim()) return [];
 
-    const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
+    // Parse all rows first (respects quotes for multiline fields)
+    const allRows = this.parseCSVRows(csv, delimiter);
+    if (allRows.length === 0) return [];
+
+    // First row is headers
+    const headers = allRows[0].map(h => h.trim().replace(/^"|"$/g, ''));
     const rows = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = this.parseCSVLine(lines[i], delimiter);
+    // Convert remaining rows to objects
+    for (let i = 1; i < allRows.length; i++) {
+      const values = allRows[i];
       if (values.length === headers.length) {
         const row = {};
         headers.forEach((header, index) => {
           row[header] = values[index];
         });
         rows.push(row);
+      }
+    }
+
+    return rows;
+  }
+
+  /**
+   * Parse CSV into rows (handles multiline quoted fields)
+   * @param {string} csv - CSV content
+   * @param {string} delimiter - Delimiter
+   * @returns {Array<Array<string>>} - 2D array of values
+   */
+  parseCSVRows(csv, delimiter = ',') {
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < csv.length; i++) {
+      const char = csv[i];
+      const nextChar = csv[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote inside quoted field
+          currentField += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        // End of field
+        currentRow.push(currentField.trim());
+        currentField = '';
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        // End of row (only if not in quotes)
+        if (char === '\r' && nextChar === '\n') {
+          i++; // Skip \n in \r\n
+        }
+        if (currentField || currentRow.length > 0) {
+          currentRow.push(currentField.trim());
+          if (currentRow.some(field => field.length > 0)) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+        }
+      } else {
+        // Regular character (including \n inside quotes)
+        currentField += char;
+      }
+    }
+
+    // Push last field and row if exists
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField.trim());
+      if (currentRow.some(field => field.length > 0)) {
+        rows.push(currentRow);
       }
     }
 

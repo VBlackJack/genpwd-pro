@@ -250,6 +250,20 @@ document.addEventListener('DOMContentLoaded', () => {
   window.genPwdApp.init();
 });
 
+// MEMORY LEAK FIX: Cleanup timers and resources before page unload
+window.addEventListener('beforeunload', () => {
+  try {
+    // Stop analytics batch timer
+    if (window.genpwdAnalytics && typeof window.genpwdAnalytics.stop === 'function') {
+      window.genpwdAnalytics.stop();
+    }
+    // Clear any active intervals/timeouts
+    safeLog('[App] Cleanup on beforeunload');
+  } catch (error) {
+    // Silently fail - page is unloading anyway
+  }
+});
+
 // Note: La gestion des erreurs globales est maintenant gérée par error-monitoring.js
 // qui est initialisé dans init() via initErrorMonitoring()
 

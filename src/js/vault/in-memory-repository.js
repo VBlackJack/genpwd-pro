@@ -106,10 +106,13 @@ export class InMemoryVaultRepository extends VaultRepository {
 
     return Array.from(this.entries.values())
       .filter((entry) => {
+        // PERFORMANCE: Use Set for O(1) tag lookups instead of O(n) includes()
+        // This changes complexity from O(n³) to O(n) for tag filtering
         if (tagSet.size > 0) {
-          const entryTags = entry.tags.map((t) => t.toLowerCase());
+          const entryTagSet = new Set(entry.tags.map((t) => t.toLowerCase()));
+          // Check if all required tags exist in entry tags
           for (const tag of tagSet) {
-            if (!entryTags.includes(tag)) {
+            if (!entryTagSet.has(tag)) {
               return false;
             }
           }

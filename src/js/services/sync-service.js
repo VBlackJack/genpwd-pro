@@ -268,7 +268,7 @@ class SyncService {
    * Resolve conflicts using Last-Write-Wins (LWW)
    */
   resolveConflicts(local, remote) {
-    let _conflicts = 0;
+    let conflicts = 0;
 
     // Compare top-level timestamps
     const localTimestamp = local.timestamp || 0;
@@ -276,20 +276,22 @@ class SyncService {
 
     if (localTimestamp > remoteTimestamp) {
       // Local is newer, keep local
+      if (localTimestamp !== remoteTimestamp) conflicts = 1;
       safeLog('Conflict resolution: Local wins');
-      return { resolved: local, conflicts: 0 };
+      return { resolved: local, conflicts };
     } else if (remoteTimestamp > localTimestamp) {
       // Remote is newer, keep remote
+      conflicts = 1;
       safeLog('Conflict resolution: Remote wins');
-      return { resolved: remote, conflicts: 0 };
+      return { resolved: remote, conflicts };
     } else {
       // Same timestamp, compare device ID (deterministic)
       if (local.deviceId > remote.deviceId) {
         safeLog('Conflict resolution: Local wins (same timestamp, device ID tie-breaker)');
-        return { resolved: local, conflicts: 0 };
+        return { resolved: local, conflicts };
       } else {
         safeLog('Conflict resolution: Remote wins (same timestamp, device ID tie-breaker)');
-        return { resolved: remote, conflicts: 0 };
+        return { resolved: remote, conflicts };
       }
     }
   }
@@ -377,8 +379,8 @@ class SyncService {
     let deviceId = localStorage.getItem('sync_device_id');
 
     if (!deviceId) {
-      // Generate random device ID
-      deviceId = 'device_' + Math.random().toString(36).substring(2, 15);
+      // Generate cryptographically secure random device ID using UUID
+      deviceId = 'device_' + crypto.randomUUID();
       localStorage.setItem('sync_device_id', deviceId);
     }
 

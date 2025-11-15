@@ -301,6 +301,14 @@ class Analytics {
     }
 
     if (this.config.batchEvents) {
+      // SECURITY: Prevent unbounded queue growth - max 1000 events
+      const MAX_QUEUE_SIZE = 1000;
+      if (this.eventQueue.length >= MAX_QUEUE_SIZE) {
+        // FIFO: Remove oldest event when queue is full
+        this.eventQueue.shift();
+        safeLog('[Analytics] Queue full, dropped oldest event');
+      }
+
       this.eventQueue.push(event);
 
       if (this.eventQueue.length >= this.config.batchSize) {

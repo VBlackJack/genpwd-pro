@@ -160,13 +160,38 @@ export function readSettings() {
   }
 }
 
+/**
+ * Get element value with DOM caching
+ * PERFORMANCE: Cache DOM queries to avoid repeated querySelectorAll
+ * @param {string} selector - CSS selector
+ * @param {*} defaultValue - Default value if element not found
+ * @returns {*} Element value or default
+ */
 function getElementValue(selector, defaultValue) {
-  const el = document.querySelector(selector);
+  let el = AppState.cache.domElements.get(selector);
+  if (!el) {
+    el = document.querySelector(selector);
+    if (el) {
+      AppState.cache.domElements.set(selector, el);
+    }
+  }
   return el ? el.value : defaultValue;
 }
 
+/**
+ * Get element checked state with DOM caching
+ * @param {string} selector - CSS selector
+ * @param {*} defaultValue - Default value if element not found
+ * @returns {boolean} Element checked state or default
+ */
 function getElementChecked(selector, defaultValue) {
-  const el = document.querySelector(selector);
+  let el = AppState.cache.domElements.get(selector);
+  if (!el) {
+    el = document.querySelector(selector);
+    if (el) {
+      AppState.cache.domElements.set(selector, el);
+    }
+  }
   return el ? el.checked : defaultValue;
 }
 
