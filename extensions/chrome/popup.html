@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenPwd Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 GenPwd Pro</h1>
+      <p class="tagline">Générateur de mots de passe sécurisés</p>
+    </header>
+
+    <main>
+      <!-- Mode Selection -->
+      <section class="mode-section">
+        <label for="mode">Mode de génération</label>
+        <select id="mode" class="input-field">
+          <option value="syllables">Syllabes (recommandé)</option>
+          <option value="passphrase">Passphrase</option>
+          <option value="leet">Leet Speak</option>
+        </select>
+      </section>
+
+      <!-- Syllables Mode Options -->
+      <div id="syllables-options" class="mode-options">
+        <div class="option-group">
+          <label for="length">Longueur</label>
+          <input type="number" id="length" class="input-field" value="20" min="6" max="64">
+        </div>
+
+        <div class="option-group">
+          <label for="policy">Politique</label>
+          <select id="policy" class="input-field">
+            <option value="standard">Standard</option>
+            <option value="standard-layout">Standard Layout</option>
+            <option value="alphanumerique">Alphanumérique</option>
+            <option value="alphanumerique-layout">Alphanumérique Layout</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Passphrase Mode Options -->
+      <div id="passphrase-options" class="mode-options hidden">
+        <div class="option-group">
+          <label for="wordCount">Nombre de mots</label>
+          <input type="number" id="wordCount" class="input-field" value="5" min="2" max="8">
+        </div>
+
+        <div class="option-group">
+          <label for="separator">Séparateur</label>
+          <input type="text" id="separator" class="input-field" value="-" maxlength="3">
+        </div>
+
+        <div class="option-group">
+          <label for="dictionary">Dictionnaire</label>
+          <select id="dictionary" class="input-field">
+            <option value="french">Français</option>
+            <option value="english">English</option>
+            <option value="latin">Latin</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Leet Mode Options -->
+      <div id="leet-options" class="mode-options hidden">
+        <div class="option-group">
+          <label for="leetWord">Mot à transformer</label>
+          <input type="text" id="leetWord" class="input-field" value="password">
+        </div>
+      </div>
+
+      <!-- Common Options -->
+      <section class="common-options">
+        <div class="option-row">
+          <div class="option-group">
+            <label for="digits">Chiffres</label>
+            <input type="number" id="digits" class="input-field" value="2" min="0" max="6">
+          </div>
+
+          <div class="option-group">
+            <label for="specials">Spéciaux</label>
+            <input type="number" id="specials" class="input-field" value="2" min="0" max="6">
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label for="caseMode">Casse</label>
+          <select id="caseMode" class="input-field">
+            <option value="mixte">Mixte</option>
+            <option value="minuscule">Minuscule</option>
+            <option value="majuscule">Majuscule</option>
+            <option value="title">Title Case</option>
+          </select>
+        </div>
+
+        <div class="option-group">
+          <label for="quantity">Quantité</label>
+          <input type="number" id="quantity" class="input-field" value="5" min="1" max="20">
+        </div>
+      </section>
+
+      <!-- Generate Button -->
+      <button id="generate-btn" class="btn-primary">🎲 Générer</button>
+
+      <!-- Results Section -->
+      <section id="results-section" class="results-section hidden">
+        <h2>Résultats</h2>
+        <div id="results-container" class="results-container"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p class="footer-text">© 2025 GenPwd Pro | <a href="https://github.com/VBlackJack/genpwd-pro" target="_blank">GitHub</a></p>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

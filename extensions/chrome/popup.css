@@ -1,0 +1,271 @@
+/*
+ * GenPwd Pro - Chrome Extension Popup Styles
+ * Copyright 2025 Julien Bombled
+ */
+
+:root {
+  --primary-color: #4A90E2;
+  --primary-hover: #357ABD;
+  --success-color: #50C878;
+  --danger-color: #E74C3C;
+  --text-color: #2C3E50;
+  --bg-color: #FFFFFF;
+  --border-color: #E0E0E0;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --border-radius: 6px;
+  --spacing: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 400px;
+  min-height: 500px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 14px;
+  color: var(--text-color);
+  background: var(--bg-color);
+  line-height: 1.6;
+}
+
+.container {
+  padding: 16px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 12px;
+}
+
+h1 {
+  font-size: 24px;
+  color: var(--primary-color);
+  margin-bottom: 4px;
+}
+
+.tagline {
+  font-size: 12px;
+  color: #7F8C8D;
+}
+
+.mode-section,
+.common-options {
+  margin-bottom: 16px;
+}
+
+.option-group {
+  margin-bottom: 12px;
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.input-field {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.mode-options {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #F7F9FC;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+}
+
+.mode-options.hidden {
+  display: none;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+  margin: 16px 0;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.results-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.results-section.hidden {
+  display: none;
+}
+
+.results-section h2 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: var(--primary-color);
+}
+
+.results-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.password-item {
+  background: #F7F9FC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  margin-bottom: 8px;
+  position: relative;
+  transition: box-shadow 0.3s;
+}
+
+.password-item:hover {
+  box-shadow: var(--shadow);
+}
+
+.password-value {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  word-break: break-all;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  user-select: all;
+}
+
+.password-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #7F8C8D;
+}
+
+.entropy-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.entropy-weak {
+  background: #FFE5E5;
+  color: var(--danger-color);
+}
+
+.entropy-medium {
+  background: #FFF4E5;
+  color: #F39C12;
+}
+
+.entropy-strong {
+  background: #E5F4E5;
+  color: var(--success-color);
+}
+
+.entropy-very-strong {
+  background: #E5F0FF;
+  color: var(--primary-color);
+}
+
+.copy-btn {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.copy-btn:hover {
+  background: #45B366;
+}
+
+.copy-btn:active {
+  background: #3AA05A;
+}
+
+.copy-btn.copied {
+  background: var(--primary-color);
+}
+
+footer {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.footer-text {
+  font-size: 11px;
+  color: #7F8C8D;
+}
+
+.footer-text a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.footer-text a:hover {
+  text-decoration: underline;
+}
+
+/* Scrollbar styling */
+.results-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.results-container::-webkit-scrollbar-track {
+  background: #F7F9FC;
+  border-radius: 4px;
+}
+
+.results-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.results-container::-webkit-scrollbar-thumb:hover {
+  background: #BDC3C7;
+}
