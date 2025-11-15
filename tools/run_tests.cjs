@@ -1124,7 +1124,52 @@ async function main() {
     console.log(`[${formatTimestamp()}] ❌ Tests contrat vault - ${error.message}`);
   }
 
-  if (lastRun.failed > 0 || vaultFailed) {
+  // Run advanced utils tests
+  let utilsFailed = false;
+  try {
+    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+    console.log(`[${formatTimestamp()}] ℹ️ 🛠️  TESTS UTILS AVANCÉS`);
+    const { runAllTests: runUtilsTests } = await importModule('src/tests/test-utils-advanced.js');
+    const utilsResults = await runUtilsTests();
+    if (utilsResults.failed > 0) {
+      utilsFailed = true;
+    }
+  } catch (error) {
+    utilsFailed = true;
+    console.log(`[${formatTimestamp()}] ❌ Tests utils avancés - ${error.message}`);
+  }
+
+  // Run services tests
+  let servicesFailed = false;
+  try {
+    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+    console.log(`[${formatTimestamp()}] ℹ️ 🔧 TESTS SERVICES`);
+    const { runAllTests: runServicesTests } = await importModule('src/tests/test-services.js');
+    const servicesResults = await runServicesTests();
+    if (servicesResults.failed > 0) {
+      servicesFailed = true;
+    }
+  } catch (error) {
+    servicesFailed = true;
+    console.log(`[${formatTimestamp()}] ❌ Tests services - ${error.message}`);
+  }
+
+  // Run performance tests
+  let perfFailed = false;
+  try {
+    console.log(`[${formatTimestamp()}] ℹ️ --------------------------------------------------`);
+    console.log(`[${formatTimestamp()}] ℹ️ ⚡ TESTS PERFORMANCE`);
+    const { runPerformanceTests } = await importModule('src/tests/test-performance.js');
+    const perfResults = await runPerformanceTests();
+    if (perfResults.failed > 0) {
+      perfFailed = true;
+    }
+  } catch (error) {
+    perfFailed = true;
+    console.log(`[${formatTimestamp()}] ❌ Tests performance - ${error.message}`);
+  }
+
+  if (lastRun.failed > 0 || vaultFailed || utilsFailed || servicesFailed || perfFailed) {
     process.exitCode = 1;
   }
 }
