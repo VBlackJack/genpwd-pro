@@ -19,6 +19,7 @@ import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { compositionCounts, escapeHtml } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
+import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 
 const clickTimers = new WeakMap();
 let eventController = new AbortController();
@@ -29,14 +30,14 @@ export function renderResults(results, mask) {
 
   try {
     cleanupPasswordListeners();
-    wrap.innerHTML = '';
+    wrap.innerHTML = sanitizeHTML('');
 
     if (!Array.isArray(results) || results.length === 0) {
-      wrap.innerHTML = `
+      wrap.innerHTML = sanitizeHTML(`
         <div class="empty-state">
           <div class="empty-icon">🔐</div>
           <p>Cliquez sur "Générer" pour créer vos mots de passe</p>
-        </div>`;
+        </div>`);
       return;
     }
 
@@ -72,7 +73,7 @@ function createPasswordCard(item, id, mask) {
 
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = `
+  card.innerHTML = sanitizeHTML(`
     <div class="card-sec card-header">
       <div class="id">#${id}</div>
       <span class="spacer"></span>
@@ -91,7 +92,7 @@ function createPasswordCard(item, id, mask) {
     </div>
     <div class="card-sec comp">
       <div class="comp-bar">
-        ${segU > 0 ? `<div class="seg u" data-width="${segU}"></div>` : ''}
+        ${segU > 0 ? `)<div class="seg u" data-width="${segU}"></div>` : ''}
         ${segL > 0 ? `<div class="seg l" data-width="${segL}"></div>` : ''}
         ${segD > 0 ? `<div class="seg d" data-width="${segD}"></div>` : ''}
         ${segS > 0 ? `<div class="seg s" data-width="${segS}"></div>` : ''}
@@ -204,10 +205,10 @@ export function updateMaskDisplay(mask) {
 export function renderEmptyState() {
   const wrap = getElement('#results-list');
   if (wrap) {
-    wrap.innerHTML = `
+    wrap.innerHTML = sanitizeHTML(`
       <div class="empty-state">
         <div class="empty-icon">🔐</div>
         <p>Cliquez sur "Générer" pour créer vos mots de passe</p>
-      </div>`;
+      </div>`);
   }
 }

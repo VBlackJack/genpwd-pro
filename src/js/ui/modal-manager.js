@@ -18,6 +18,7 @@
 
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { safeLog } from '../utils/logger.js';
+import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 
 /**
  * Creates a modal element with consistent structure and behavior
@@ -67,7 +68,7 @@ export function createModal(options) {
   modal.setAttribute('aria-labelledby', `${id}-title`);
 
   // Modal HTML structure
-  modal.innerHTML = `
+  modal.innerHTML = sanitizeHTML(`
     <div class="modal-overlay" data-modal-overlay></div>
     <div class="modal-container">
       <div class="modal-header">
@@ -86,7 +87,7 @@ export function createModal(options) {
       <div class="modal-body">
         ${content}
       </div>
-      ${actions.length > 0 ? `
+      ${actions.length > 0 ? `)
         <div class="modal-footer">
           ${actions.map(action => `
             <button

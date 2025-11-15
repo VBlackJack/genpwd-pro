@@ -16,6 +16,7 @@
 // src/js/ui/dom.js - Utilitaires DOM optimisés
 import { getCachedElement } from '../config/settings.js';
 import { safeLog } from '../utils/logger.js';
+import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 
 export function getElement(selector, useCache = true) {
   if (!selector) return null;
@@ -171,7 +172,7 @@ export function renderChips(containerSelector, blocks, onChipClick) {
   const container = getElement(containerSelector);
   if (!container) return;
 
-  container.innerHTML = '';
+  container.innerHTML = sanitizeHTML('');
 
   blocks.forEach((token, index) => {
     const chip = document.createElement('button');

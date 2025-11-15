@@ -18,6 +18,7 @@
 
 import { safeLog } from './logger.js';
 import { safeSetItem, safeGetItem } from './storage-helper.js';
+import { sanitizeHTML } from './dom-sanitizer.js';
 
 /**
  * @typedef {Object} HistoryEntry
@@ -35,7 +36,8 @@ const DEFAULT_SETTINGS = {
   enabled: false, // History disabled by default for privacy
   maxSize: MAX_HISTORY_SIZE,
   autoExpire: false,
-  expireDays: 30
+  expireDays: 30,
+  securityWarningShown: false // Track if security warning was shown
 };
 
 class HistoryManager {
@@ -81,6 +83,12 @@ class HistoryManager {
    * @param {Object} updates - Settings to update
    */
   updateSettings(updates) {
+    // Show security warning when enabling history for the first time
+    if (updates.enabled === true && !this.settings.enabled && !this.settings.securityWarningShown) {
+      this.showSecurityWarning();
+      updates.securityWarningShown = true;
+    }
+
     this.settings = { ...this.settings, ...updates };
     this.saveSettings();
 
@@ -101,6 +109,91 @@ class HistoryManager {
    */
   getSettings() {
     return { ...this.settings };
+  }
+
+  /**
+   * Show security warning about unencrypted localStorage
+   * This is displayed when history is enabled for the first time
+   */
+  showSecurityWarning() {
+    // Create warning modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'security-warning-title');
+    modal.setAttribute('aria-modal', 'true');
+
+    modal.innerHTML = sanitizeHTML(`
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="security-warning-title">⚠️ Avertissement de Sécurité</h2>
+        </div>
+        <div class="modal-body">
+          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #856404;">Stockage non chiffré</h3>
+            <p><strong>Important :</strong> L'historique des mots de passe est stocké dans le <code>localStorage</code> de votre navigateur <strong>sans chiffrement</strong>.</p>
+            <p>Cela signifie que :</p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li>Les mots de passe sont stockés en texte clair sur votre appareil</li>
+              <li>Toute personne ayant accès à votre ordinateur peut les voir</li>
+              <li>Des extensions malveillantes pourraient y accéder</li>
+              <li>Les mots de passe ne sont pas synchronisés entre appareils</li>
+            </ul>
+          </div>
+
+          <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 15px; margin-bottom: 15px;">
+            <h4 style="margin-top: 0; color: #0c5460;">Recommandations</h4>
+            <ul style="margin: 5px 0; padding-left: 20px;">
+              <li>N'activez cette fonctionnalité que sur un appareil personnel sécurisé</li>
+              <li>Videz régulièrement l'historique</li>
+              <li>Ne stockez pas les mots de passe de comptes critiques</li>
+              <li>Utilisez un gestionnaire de mots de passe dédié pour un usage à long terme</li>
+            </ul>
+          </div>
+
+          <p style="font-size: 0.9em; color: #666;">
+            Note : Une future version pourrait inclure le chiffrement de l'historique avec une clé maître.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button id="security-warning-understood" class="btn btn-primary">J'ai compris</button>
+          <button id="security-warning-cancel" class="btn">Annuler et désactiver</button>
+        </div>
+      </div>
+    `);
+
+    document.body.appendChild(modal);
+
+    // Handle understood button
+    const understoodBtn = modal.querySelector('#security-warning-understood');
+    understoodBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+      safeLog('[HistoryManager] Security warning acknowledged');
+    });
+
+    // Handle cancel button
+    const cancelBtn = modal.querySelector('#security-warning-cancel');
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+      this.settings.enabled = false;
+      this.saveSettings();
+      safeLog('[HistoryManager] History disabled after security warning');
+
+      // Notify user
+      if (typeof window.showToast === 'function') {
+        window.showToast('Historique désactivé', 'info');
+      }
+    });
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        understoodBtn.click();
+      }
+    });
+
+    // Focus first button for accessibility
+    setTimeout(() => understoodBtn.focus(), 100);
   }
 
   /**

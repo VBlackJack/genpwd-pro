@@ -47,7 +47,7 @@ function enhancePasswordFields() {
 
     // Add a small icon next to the field (optional feature)
     const icon = document.createElement('span');
-    icon.innerHTML = '🔐';
+    icon.textContent = '🔐';
     icon.style.cssText = `
       cursor: pointer;
       margin-left: 5px;

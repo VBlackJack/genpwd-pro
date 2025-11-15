@@ -40,6 +40,8 @@
  * - onImport: Parse XML format to passwords
  */
 
+import { sanitizeHTML } from '../js/utils/dom-sanitizer.js';
+
 const XMLExportPlugin = {
   name: 'xml-export',
   version: '1.0.0',
@@ -229,7 +231,7 @@ const XMLExportPlugin = {
         </div>
       `;
 
-      container.innerHTML = settingsHTML;
+      container.innerHTML = sanitizeHTML(settingsHTML);
 
       // Bind settings
       const prettyPrintCheck = container.querySelector('#xml-pretty-print');

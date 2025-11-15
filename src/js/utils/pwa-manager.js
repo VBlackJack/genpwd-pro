@@ -18,6 +18,7 @@
 
 import { safeLog } from './logger.js';
 import { showToast } from './toast.js';
+import { sanitizeHTML } from './dom-sanitizer.js';
 
 /**
  * PWA Manager - Handles Service Worker registration and PWA installation
@@ -148,7 +149,7 @@ class PWAManager {
       cursor: pointer;
       font-family: system-ui, -apple-system, sans-serif;
     `;
-    updateBtn.innerHTML = `
+    updateBtn.innerHTML = sanitizeHTML(`
       <div style="display: flex; align-items: center; gap: 10px;">
         <span>✨ New version available!</span>
         <button id="update-app-btn" style="background: white; color: #4CAF50; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: 600;">
@@ -158,7 +159,7 @@ class PWAManager {
           Later
         </button>
       </div>
-    `;
+    `);
 
     document.body.appendChild(updateBtn);
 
@@ -227,7 +228,7 @@ class PWAManager {
       font-family: system-ui, -apple-system, sans-serif;
     `;
 
-    installBanner.innerHTML = `
+    installBanner.innerHTML = sanitizeHTML(`
       <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; margin-bottom: 5px;">📱 Install GenPwd Pro</div>
@@ -242,7 +243,7 @@ class PWAManager {
           </button>
         </div>
       </div>
-    `;
+    `);
 
     document.body.appendChild(installBanner);
 
