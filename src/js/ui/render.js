@@ -41,13 +41,20 @@ export function renderResults(results, mask) {
       return;
     }
 
+    // PERFORMANCE: Use DocumentFragment to batch DOM updates
+    // This reduces reflows from O(n) to O(1) when rendering multiple passwords
+    const fragment = document.createDocumentFragment();
+
     results.forEach((item, idx) => {
       const { value } = item;
       if (typeof value !== 'string') return;
 
       const card = createPasswordCard(item, idx + 1, mask);
-      wrap.appendChild(card);
+      fragment.appendChild(card);
     });
+
+    // Single DOM update instead of n updates
+    wrap.appendChild(fragment);
 
     bindPasswordClickEvents();
   } catch (e) {

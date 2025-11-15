@@ -92,11 +92,12 @@ const STATIC_ASSETS = [
   '/src/plugins/xml-export-plugin.js'
 ];
 
-// Dictionaries for offline access
+// PERFORMANCE: Lazy load dictionaries - only cache default dictionary on install
+// Other dictionaries are cached on first use (saves ~66% initial cache size)
+const DEFAULT_DICTIONARY = '/src/dictionaries/french.json';
 const DICTIONARY_ASSETS = [
-  '/src/dictionaries/french.json',
-  '/src/dictionaries/english.json',
-  '/src/dictionaries/latin.json'
+  DEFAULT_DICTIONARY
+  // english.json and latin.json will be cached on-demand via Cache-First strategy
 ];
 
 // Locales
@@ -181,13 +182,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy: Cache-First for static assets
+  // Strategy: Stale-While-Revalidate for JS/CSS (instant load + background update)
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(staleWhileRevalidate(request, CACHE_NAME));
+    return;
+  }
+
+  // Strategy: Cache-First for other static assets (images, fonts, HTML)
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request, CACHE_NAME));
     return;
   }
 
-  // Strategy: Cache-First for dictionaries
+  // Strategy: Cache-First for dictionaries (immutable large files)
   if (isDictionary(url.pathname)) {
     event.respondWith(cacheFirst(request, CACHE_DICTIONARIES));
     return;
@@ -224,8 +231,43 @@ function isDictionary(pathname) {
 }
 
 /**
+ * Stale-While-Revalidate Strategy
+ * Return cached version immediately, update cache in background
+ * Best for static assets that change occasionally (JS, CSS)
+ */
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+
+  // Start fetch in background regardless of cache hit
+  const fetchPromise = fetch(request)
+    .then(response => {
+      // Update cache with fresh response (fire and forget)
+      if (response && response.ok) {
+        cache.put(request, response.clone());
+        console.log('[SW] Cache updated in background:', request.url);
+      }
+      return response;
+    })
+    .catch(error => {
+      console.warn('[SW] Background fetch failed:', request.url, error);
+      return cachedResponse; // Fallback to cached if fetch fails
+    });
+
+  // Return cached immediately if available, otherwise wait for fetch
+  if (cachedResponse) {
+    console.log('[SW] Serving from cache (will revalidate):', request.url);
+    return cachedResponse;
+  }
+
+  console.log('[SW] No cache, waiting for network:', request.url);
+  return fetchPromise;
+}
+
+/**
  * Cache-First Strategy
  * Try cache first, then network, then cache any result
+ * Best for immutable assets (dictionaries)
  */
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);

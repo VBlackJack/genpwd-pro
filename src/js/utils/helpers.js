@@ -453,3 +453,129 @@ export function log2(n) {
   if (typeof n !== 'number' || n <= 0) return 0;
   return Math.log(n) / Math.log(2);
 }
+
+// ============================================================================
+// PERFORMANCE UTILITIES
+// ============================================================================
+
+/**
+ * Debounce function - delays execution until after wait ms have elapsed since last call
+ * Perfect for input events, resize, scroll where you want to wait for user to stop
+ *
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Milliseconds to wait
+ * @param {boolean} immediate - Trigger on leading edge instead of trailing
+ * @returns {Function} Debounced function
+ *
+ * @example
+ * const debouncedSearch = debounce((query) => fetchResults(query), 300);
+ * searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value));
+ */
+export function debounce(func, wait = 250, immediate = false) {
+  let timeoutId = null;
+
+  return function debounced(...args) {
+    const context = this;
+
+    const later = () => {
+      timeoutId = null;
+      if (!immediate) {
+        func.apply(context, args);
+      }
+    };
+
+    const callNow = immediate && !timeoutId;
+
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(later, wait);
+
+    if (callNow) {
+      func.apply(context, args);
+    }
+  };
+}
+
+/**
+ * Throttle function - limits execution to once per wait ms
+ * Perfect for scroll, resize, mousemove where you want regular updates but not on every event
+ *
+ * @param {Function} func - Function to throttle
+ * @param {number} wait - Milliseconds between allowed calls
+ * @param {Object} options - Options { leading: boolean, trailing: boolean }
+ * @returns {Function} Throttled function
+ *
+ * @example
+ * const throttledScroll = throttle(() => updateScrollPosition(), 100);
+ * window.addEventListener('scroll', throttledScroll);
+ */
+export function throttle(func, wait = 250, options = {}) {
+  let timeoutId = null;
+  let lastCallTime = 0;
+  let lastArgs = null;
+  let lastContext = null;
+
+  const { leading = true, trailing = true } = options;
+
+  return function throttled(...args) {
+    const context = this;
+    const now = Date.now();
+    const timeSinceLastCall = now - lastCallTime;
+
+    lastArgs = args;
+    lastContext = context;
+
+    const invoke = () => {
+      lastCallTime = now;
+      func.apply(context, args);
+    };
+
+    // First call or wait period has passed
+    if (!lastCallTime && leading) {
+      invoke();
+    } else if (timeSinceLastCall >= wait) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      invoke();
+    } else if (!timeoutId && trailing) {
+      // Schedule trailing call
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        if (trailing) {
+          lastCallTime = Date.now();
+          func.apply(lastContext, lastArgs);
+        }
+      }, wait - timeSinceLastCall);
+    }
+  };
+}
+
+/**
+ * Request Animation Frame throttle - limits execution to browser's animation frame rate (~60fps)
+ * Best for visual updates that should sync with browser repaints
+ *
+ * @param {Function} func - Function to throttle
+ * @returns {Function} RAF-throttled function
+ *
+ * @example
+ * const rafUpdate = rafThrottle(() => updateVisualElement());
+ * window.addEventListener('scroll', rafUpdate);
+ */
+export function rafThrottle(func) {
+  let rafId = null;
+  let lastArgs = null;
+  let lastContext = null;
+
+  return function rafThrottled(...args) {
+    lastArgs = args;
+    lastContext = this;
+
+    if (!rafId) {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        func.apply(lastContext, lastArgs);
+      });
+    }
+  };
+}
