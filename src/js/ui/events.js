@@ -269,7 +269,7 @@ function bindCaseAndBlocks() {
   addEventListener(getElement('#btn-block-inc'), 'click', () => {
     const blocks = getBlocks();
     if (blocks.length < 10) {
-      const last = blocks[blocks.length - 1];
+      const last = blocks.length > 0 ? blocks[blocks.length - 1] : 'U';
       const next = last === 'U' ? 'l' : last === 'l' ? 'T' : 'U';
       blocks.push(next);
       setBlocks(blocks);

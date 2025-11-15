@@ -516,8 +516,8 @@ class HistoryManager {
       averageEntropy: 0,
       averageLength: 0,
       modeDistribution: {},
-      oldestEntry: this.history[this.history.length - 1].timestamp,
-      newestEntry: this.history[0].timestamp
+      oldestEntry: this.history.length > 0 ? this.history[this.history.length - 1].timestamp : null,
+      newestEntry: this.history.length > 0 ? this.history[0].timestamp : null
     };
 
     let totalEntropy = 0;
