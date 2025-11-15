@@ -42,7 +42,9 @@ if (typeof global.document === 'undefined') {
     },
     body: {
       appendChild: () => {},
-      removeChild: () => {}
+      removeChild: () => {},
+      setAttribute: () => {},
+      getAttribute: () => null
     },
     querySelector: () => null,
     querySelectorAll: () => []
