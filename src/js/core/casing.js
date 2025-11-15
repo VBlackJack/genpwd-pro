@@ -16,28 +16,56 @@
 // src/js/core/casing.js - Gestion de la casse et système de blocs
 import { pick } from '../utils/helpers.js';
 
+// Cross-environment crypto support
+let cryptoCache = null;
+
+/**
+ * Initialize crypto API asynchronously for Node.js if needed
+ */
+async function initCrypto() {
+  if (cryptoCache) return cryptoCache;
+
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    cryptoCache = globalThis.crypto;
+    return cryptoCache;
+  }
+
+  try {
+    const nodeCrypto = await import('node:crypto');
+    if (nodeCrypto?.webcrypto) {
+      cryptoCache = nodeCrypto.webcrypto;
+      return cryptoCache;
+    }
+  } catch (e) {
+    try {
+      const nodeCrypto = await import('crypto');
+      if (nodeCrypto?.webcrypto) {
+        cryptoCache = nodeCrypto.webcrypto;
+        return cryptoCache;
+      }
+    } catch (e2) {
+      throw new Error('Crypto API not available');
+    }
+  }
+  throw new Error('Crypto API not available');
+}
+
 /**
  * Gets the crypto API for both browser and Node.js environments
  * @returns {Crypto} The crypto API object
  */
 function getCrypto() {
-  // Browser environment
+  if (cryptoCache) return cryptoCache;
   if (typeof globalThis !== 'undefined' && globalThis.crypto) {
-    return globalThis.crypto;
+    cryptoCache = globalThis.crypto;
+    return cryptoCache;
   }
+  throw new Error('Crypto API not initialized');
+}
 
-  // Node.js environment
-  try {
-    // eslint-disable-next-line no-undef
-    const nodeCrypto = require('crypto');
-    if (nodeCrypto && nodeCrypto.webcrypto) {
-      return nodeCrypto.webcrypto;
-    }
-  } catch (e) {
-    throw new Error('Crypto API not available in this environment');
-  }
-
-  throw new Error('Crypto API not available');
+// Initialize on module load
+if (!globalThis.crypto) {
+  initCrypto().catch(() => {});
 }
 
 /**

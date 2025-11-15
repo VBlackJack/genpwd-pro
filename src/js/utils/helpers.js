@@ -21,34 +21,68 @@ import { safeLog } from './logger.js';
 let cryptoCache = null;
 
 /**
- * Gets the crypto API for both browser and Node.js environments
- * @returns {Crypto} The crypto API object
+ * Initialize crypto API asynchronously for Node.js if needed
+ * @returns {Promise<Crypto>} The crypto API object
  */
-function getCrypto() {
+async function initCrypto() {
   if (cryptoCache) {
     return cryptoCache;
   }
 
-  // Browser environment
+  // Browser environment or Node.js 15+ with global crypto
   if (typeof globalThis !== 'undefined' && globalThis.crypto) {
     cryptoCache = globalThis.crypto;
     return cryptoCache;
   }
 
-  // Node.js environment
+  // Node.js environment - use dynamic import for ES modules
   try {
-    // Use dynamic import for Node.js crypto module
-    // eslint-disable-next-line no-undef
-    const nodeCrypto = require('crypto');
+    const nodeCrypto = await import('node:crypto');
     if (nodeCrypto && nodeCrypto.webcrypto) {
       cryptoCache = nodeCrypto.webcrypto;
       return cryptoCache;
     }
   } catch (e) {
-    throw new Error('Crypto API not available in this environment');
+    // Fallback: try without 'node:' prefix for older Node.js
+    try {
+      const nodeCrypto = await import('crypto');
+      if (nodeCrypto && nodeCrypto.webcrypto) {
+        cryptoCache = nodeCrypto.webcrypto;
+        return cryptoCache;
+      }
+    } catch (e2) {
+      throw new Error('Crypto API not available in this environment');
+    }
   }
 
   throw new Error('Crypto API not available');
+}
+
+/**
+ * Gets the crypto API for both browser and Node.js environments (synchronous)
+ * @returns {Crypto} The crypto API object
+ */
+function getCrypto() {
+  // If already initialized, return cached version
+  if (cryptoCache) {
+    return cryptoCache;
+  }
+
+  // Try globalThis.crypto first (works in browser and modern Node.js)
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    cryptoCache = globalThis.crypto;
+    return cryptoCache;
+  }
+
+  // If not available synchronously, throw error with helpful message
+  throw new Error('Crypto API not initialized. This is a Node.js environment issue - globalThis.crypto not available');
+}
+
+// Initialize crypto asynchronously on module load for Node.js
+if (!globalThis.crypto) {
+  initCrypto().catch(() => {
+    // Silent fail - will throw error when getCrypto() is called
+  });
 }
 
 /**
