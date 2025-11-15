@@ -36,6 +36,7 @@ import analytics from './utils/analytics.js';
 import presetManager from './utils/preset-manager.js';
 import historyManager from './utils/history-manager.js';
 import { initializeAllFeatures } from './ui/features-ui.js';
+import pwaManager from './utils/pwa-manager.js';
 
 class GenPwdApp {
   constructor() {
@@ -181,6 +182,7 @@ class GenPwdApp {
       window.genpwdHistory = historyManager;
       window.genpwdi18n = i18n;
       window.genpwdAnalytics = analytics;
+      window.genpwdPWA = pwaManager;
       safeLog('Managers exposed globally for debugging');
     }
   }

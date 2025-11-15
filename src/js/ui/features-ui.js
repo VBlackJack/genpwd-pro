@@ -21,6 +21,7 @@ import presetManager from '../utils/preset-manager.js';
 import historyManager from '../utils/history-manager.js';
 import pluginManager from '../utils/plugin-manager.js';
 import importExportService from '../services/import-export-service.js';
+import hibpService from '../services/hibp-service.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog } from '../utils/logger.js';
 import { escapeHtml } from '../utils/helpers.js';
@@ -2129,6 +2130,217 @@ function showAdvancedImportModal() {
 }
 
 /**
+ * Initialize HIBP (Have I Been Pwned) Breach Checker UI
+ */
+export function initializeHIBPUI() {
+  // Add HIBP Check button to actions toolbar
+  const actionsToolbar = document.querySelector('.actions');
+  if (!actionsToolbar) return;
+
+  // Check if button already exists
+  if (document.getElementById('btn-hibp-check')) return;
+
+  // Create HIBP check button
+  const hibpBtn = document.createElement('button');
+  hibpBtn.className = 'btn';
+  hibpBtn.id = 'btn-hibp-check';
+  hibpBtn.setAttribute('aria-label', 'Check passwords against breach database');
+  hibpBtn.innerHTML = '🔍 Check Breaches';
+
+  // Insert after Export button
+  const exportBtn = document.getElementById('btn-export');
+  if (exportBtn) {
+    exportBtn.after(hibpBtn);
+  } else {
+    actionsToolbar.appendChild(hibpBtn);
+  }
+
+  // Bind click event
+  hibpBtn.addEventListener('click', () => showHIBPCheckModal());
+
+  safeLog('HIBP UI initialized');
+}
+
+/**
+ * Show HIBP Check Modal
+ */
+function showHIBPCheckModal() {
+  // Get all generated passwords from results list
+  const passwordItems = document.querySelectorAll('.password-item');
+
+  if (passwordItems.length === 0) {
+    showToast('No passwords to check. Generate some passwords first.', 'warning');
+    return;
+  }
+
+  // Extract passwords
+  const passwords = Array.from(passwordItems).map(item => {
+    const pwdSpan = item.querySelector('.password-text');
+    return pwdSpan ? pwdSpan.textContent : '';
+  }).filter(pwd => pwd.length > 0);
+
+  if (passwords.length === 0) {
+    showToast('No valid passwords found to check', 'warning');
+    return;
+  }
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal large">
+      <div class="modal-header">
+        <div class="modal-title">
+          🔍 HIBP Breach Check
+        </div>
+        <button class="modal-close" id="close-hibp-modal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="info-box">
+          <strong>🛡️ Privacy-Preserving Check</strong>
+          <p style="margin-top: 8px; font-size: 0.9em; opacity: 0.9;">
+            This check uses <strong>k-anonymity</strong> to preserve your privacy.
+            Only the first 5 characters of the password hash are sent to the HIBP API.
+            Your actual password never leaves your device.
+          </p>
+        </div>
+
+        <div id="hibp-checking-status" class="checking-status">
+          <div class="spinner"></div>
+          <p>Checking ${passwords.length} password(s) against breach database...</p>
+        </div>
+
+        <div id="hibp-results" class="hibp-results hidden"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" id="close-hibp-modal-footer">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close button handlers
+  modal.querySelector('#close-hibp-modal').addEventListener('click', () => modal.remove());
+  modal.querySelector('#close-hibp-modal-footer').addEventListener('click', () => modal.remove());
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+
+  // Check passwords
+  checkPasswordsWithHIBP(passwords, modal);
+}
+
+/**
+ * Check passwords with HIBP
+ */
+async function checkPasswordsWithHIBP(passwords, modal) {
+  const statusDiv = modal.querySelector('#hibp-checking-status');
+  const resultsDiv = modal.querySelector('#hibp-results');
+
+  try {
+    const results = [];
+
+    // Check each password
+    for (let i = 0; i < passwords.length; i++) {
+      const password = passwords[i];
+
+      // Update status
+      statusDiv.querySelector('p').textContent =
+        `Checking password ${i + 1} of ${passwords.length}...`;
+
+      const result = await hibpService.checkPassword(password);
+      results.push({
+        password: password,
+        ...result
+      });
+    }
+
+    // Hide status, show results
+    statusDiv.classList.add('hidden');
+    resultsDiv.classList.remove('hidden');
+
+    // Render results
+    renderHIBPResults(results, resultsDiv);
+
+  } catch (error) {
+    statusDiv.classList.add('hidden');
+    resultsDiv.classList.remove('hidden');
+    resultsDiv.innerHTML = `
+      <div class="error-box">
+        <strong>❌ Error checking passwords</strong>
+        <p>${escapeHtml(error.message)}</p>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Render HIBP results
+ */
+function renderHIBPResults(results, container) {
+  // Summary statistics
+  const pwnedCount = results.filter(r => r.isPwned).length;
+  const safeCount = results.length - pwnedCount;
+
+  let summaryHtml = `
+    <div class="hibp-summary">
+      <div class="summary-stat ${safeCount > 0 ? 'safe' : ''}">
+        <div class="stat-value">${safeCount}</div>
+        <div class="stat-label">Safe</div>
+      </div>
+      <div class="summary-stat ${pwnedCount > 0 ? 'danger' : ''}">
+        <div class="stat-value">${pwnedCount}</div>
+        <div class="stat-label">Breached</div>
+      </div>
+    </div>
+  `;
+
+  // Individual results
+  let resultsHtml = '<div class="hibp-results-list">';
+
+  for (const result of results) {
+    const severity = hibpService.getSeverity(result.count);
+    const message = hibpService.getMessage(result.isPwned, result.count);
+    const color = hibpService.getSeverityColor(severity);
+
+    resultsHtml += `
+      <div class="hibp-result-item ${severity}">
+        <div class="hibp-result-header">
+          <div class="password-display">
+            <code>${escapeHtml(result.password.substring(0, 20))}${result.password.length > 20 ? '...' : ''}</code>
+          </div>
+          <div class="hibp-badge" style="background-color: ${color}">
+            ${result.isPwned ? `${result.count.toLocaleString()} breaches` : 'Safe'}
+          </div>
+        </div>
+        <div class="hibp-result-message">
+          ${escapeHtml(message)}
+        </div>
+      </div>
+    `;
+  }
+
+  resultsHtml += '</div>';
+
+  container.innerHTML = summaryHtml + resultsHtml;
+
+  // Show toast with summary
+  if (pwnedCount > 0) {
+    showToast(`⚠️ ${pwnedCount} password(s) found in breach database`, 'warning');
+  } else {
+    showToast(`✅ All ${safeCount} password(s) are safe`, 'success');
+  }
+}
+
+/**
  * Initialize all feature UIs
  */
 export function initializeAllFeatures() {
@@ -2137,5 +2349,6 @@ export function initializeAllFeatures() {
   initializeHistoryUI();
   initializePluginsUI();
   initializeAdvancedImportExportUI();
+  initializeHIBPUI();
   safeLog('All feature UIs initialized');
 }
