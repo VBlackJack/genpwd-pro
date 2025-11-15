@@ -400,7 +400,7 @@ Every month, you'll receive a survey asking:
 **A**: Yes, anytime. Just uninstall the beta and install the production version when it's available.
 
 ### Q: What if I find a critical security vulnerability?
-**A**: Email us directly at security@genpwd-pro.app (if set up) or use GitHub's private vulnerability reporting feature. Do NOT post publicly.
+**A**: Email us directly at security@genpwd.app or use GitHub's private vulnerability reporting feature. Do NOT post publicly.
 
 ### Q: Can I use GenPwd Pro beta for my real passwords?
 **A**: We recommend using a separate test vault during beta. While we test thoroughly, beta may have bugs that could cause data loss.

@@ -1,4 +1,4 @@
-# Guide Utilisateur - GenPwd Pro v2.5.1
+# Guide Utilisateur - GenPwd Pro v2.6.0
 
 > Guide complet pour maîtriser toutes les fonctionnalités du générateur de mots de passe
 

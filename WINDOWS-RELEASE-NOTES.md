@@ -1,4 +1,4 @@
-# GenPwd Pro v2.5.2 - Version Windows
+# GenPwd Pro v2.6.0 - Version Windows
 
 ## 📦 Packages Disponibles
 

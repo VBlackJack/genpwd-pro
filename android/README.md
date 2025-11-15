@@ -885,7 +885,7 @@ Les contributions sont les bienvenues ! Pour contribuer :
 
 Si vous découvrez une vulnérabilité de sécurité, **NE PAS** ouvrir une issue publique. Contactez directement :
 
-- **Email** : [security@genpwd.com](mailto:security@genpwd.com)
+- **Email** : [security@genpwd.app](mailto:security@genpwd.app)
 
 ### Bonnes pratiques
 

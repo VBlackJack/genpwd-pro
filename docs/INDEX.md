@@ -1,9 +1,9 @@
-# 📚 Index de la Documentation - GenPwd Pro v2.5.2
+# 📚 Index de la Documentation - GenPwd Pro v2.6.0
 
 > Navigation complète de toute la documentation du projet
 
-**Dernière mise à jour :** 2025-11-04
-**Version :** 2.5.2
+**Dernière mise à jour :** 2025-11-15
+**Version :** 2.6.0
 **Score Qualité :** 9.7/10
 
 ---

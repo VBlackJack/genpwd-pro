@@ -1,4 +1,4 @@
-# Instructions de Build Windows - GenPwd Pro v2.5.2
+# Instructions de Build Windows - GenPwd Pro v2.6.0
 
 Ce document explique comment construire l'exécutable Windows et l'installeur pour GenPwd Pro.
 

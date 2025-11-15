@@ -1,6 +1,6 @@
 # GenPwd Pro - Version Electron
 
-Application desktop multiplateforme basée sur Electron pour GenPwd Pro v2.5.2.
+Application desktop multiplateforme basée sur Electron pour GenPwd Pro v2.6.0.
 
 ## 🎯 Caractéristiques de la Version Electron
 

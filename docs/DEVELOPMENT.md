@@ -1,4 +1,4 @@
-# Guide de Développement - GenPwd Pro v2.5.1
+# Guide de Développement - GenPwd Pro v2.6.0
 
 > Configuration et bonnes pratiques pour le développement local
 
