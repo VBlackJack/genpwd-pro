@@ -64,12 +64,20 @@ export default [
         URL: 'readonly',
         performance: 'readonly',
         Buffer: 'readonly',
-        AbortController: 'readonly'
+        AbortController: 'readonly',
+        DOMParser: 'readonly',
+        Element: 'readonly',
+        confirm: 'readonly',
+        MessageChannel: 'readonly',
+        process: 'readonly',
+        Event: 'readonly',
+        FileReader: 'readonly'
       }
     },
     rules: {
       'no-console': 'off',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-case-declarations': 'off'
     }
   },
 

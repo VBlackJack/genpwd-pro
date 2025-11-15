@@ -69,7 +69,7 @@ const ANALYTICS_CONFIG = {
   // Event batching
   batchEvents: true,
   batchSize: ANALYTICS.BATCH_SIZE,
-  batchInterval: ANALYTICS.BATCH_INTERVAL
+  batchInterval: ANALYTICS.BATCH_INTERVAL,
 
   // Debug mode
   debug: false

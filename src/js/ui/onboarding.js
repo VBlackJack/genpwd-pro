@@ -6,8 +6,6 @@
  * @license MIT
  */
 
-import { sanitizeHTML } from '../utils/dom-sanitizer.js';
-
 export class Onboarding {
   constructor() {
     this.currentStep = 0;

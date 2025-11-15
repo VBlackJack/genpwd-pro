@@ -268,7 +268,7 @@ class SyncService {
    * Resolve conflicts using Last-Write-Wins (LWW)
    */
   resolveConflicts(local, remote) {
-    let conflicts = 0;
+    let _conflicts = 0;
 
     // Compare top-level timestamps
     const localTimestamp = local.timestamp || 0;

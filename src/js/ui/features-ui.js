@@ -574,7 +574,7 @@ function showSavePresetDialog() {
             <li>Politique: ${config.policy || 'Standard'}</li>
             <li>Chiffres: ${config.digits || 0}</li>
             <li>Caractères spéciaux: ${config.specials || 0}</li>
-            ${config.customSpecials ? `)<li>Spéciaux personnalisés: ${config.customSpecials}</li>` : ''}
+            ${config.customSpecials ? `<li>Spéciaux personnalisés: ${config.customSpecials}</li>` : ''}
             <li>Placement chiffres: ${config.placeDigits || 'Aléatoire'}</li>
             <li>Placement spéciaux: ${config.placeSpecials || 'Aléatoire'}</li>
             <li>Casse: ${config.caseMode || 'Mixte'}</li>
@@ -587,7 +587,7 @@ function showSavePresetDialog() {
         <button class="btn" id="btn-cancel-save">Annuler</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -824,7 +824,7 @@ function showManagePresetsModal() {
         <button class="btn danger" id="close-presets-modal-footer">Fermer</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -1047,7 +1047,7 @@ function showEditPresetModal(presetId) {
         <button class="btn" id="btn-cancel-edit">Annuler</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -1242,7 +1242,7 @@ function showHistoryModal() {
         <button class="btn" id="close-history-modal-footer">Fermer</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -1565,7 +1565,7 @@ function showPluginManagerModal() {
         <button class="btn" id="close-plugins-modal-footer">Close</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -2062,7 +2062,7 @@ function showAdvancedImportModal() {
           `).join('')}
           ${importedData.length > 5 ? `<div style="padding: 8px; text-align: center; color: #999;">... and ${importedData.length - 5} more</div>` : ''}
         </div>
-      `;
+      `);
 
       importButton.disabled = false;
       showToast(`Found ${importedData.length} password entries`, 'success');
@@ -2106,7 +2106,7 @@ function showAdvancedImportModal() {
             </div>
           `).join('')}
         </div>
-      `;
+      `);
 
       // Bind copy buttons
       resultsDiv.querySelectorAll('.copy-btn').forEach(btn => {
