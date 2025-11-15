@@ -16,7 +16,10 @@
 
 // sw.js - Service Worker for GenPwd Pro PWA
 
-const CACHE_VERSION = 'genpwd-pro-v2.6.0';
+// Import version from external file
+importScripts('/version.js');
+
+const CACHE_VERSION = `genpwd-pro-v${APP_VERSION}`;
 const CACHE_NAME = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 const CACHE_DICTIONARIES = `${CACHE_VERSION}-dictionaries`;
@@ -91,11 +94,9 @@ const STATIC_ASSETS = [
 
 // Dictionaries for offline access
 const DICTIONARY_ASSETS = [
-  '/dictionaries/french.json',
-  '/dictionaries/english.json',
-  '/dictionaries/spanish.json',
-  '/dictionaries/german.json',
-  '/dictionaries/italian.json'
+  '/src/dictionaries/french.json',
+  '/src/dictionaries/english.json',
+  '/src/dictionaries/latin.json'
 ];
 
 // Locales
