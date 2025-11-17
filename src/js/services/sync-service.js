@@ -59,8 +59,24 @@ class SyncService {
    * Derives encryption key from master password
    */
   async unlock(masterPassword) {
-    if (!masterPassword || masterPassword.length < 8) {
-      throw new Error('Master password must be at least 8 characters');
+    // SECURITY: Enforce strong master password (OWASP recommendation)
+    if (!masterPassword || typeof masterPassword !== 'string') {
+      throw new Error('Master password is required');
+    }
+
+    if (masterPassword.length < 12) {
+      throw new Error('Master password must be at least 12 characters for adequate security');
+    }
+
+    // Check password complexity (at least 3 of: lowercase, uppercase, digits, specials)
+    const hasLower = /[a-z]/.test(masterPassword);
+    const hasUpper = /[A-Z]/.test(masterPassword);
+    const hasDigit = /[0-9]/.test(masterPassword);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(masterPassword);
+    const complexity = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
+
+    if (complexity < 3) {
+      throw new Error('Master password must include at least 3 of: lowercase, uppercase, digits, special characters');
     }
 
     try {
