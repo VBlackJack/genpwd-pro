@@ -269,5 +269,5 @@ Le système file-based facilite grandement une future migration vers Kotlin Mult
 ---
 
 **Dernière mise à jour :** 2025-10-30 (Post-migration - TERMINÉE ✅)
-**Auteur :** Claude Code - Documentation Update
+**Auteur :** Julien Bombled
 **Status :** ⚠️ Document historique - Voir [ARCHITECTURE.md](ARCHITECTURE.md) pour l'architecture actuelle

@@ -3,7 +3,6 @@
 Guide complet pour configurer l'authentification OAuth2 avec les différents providers cloud.
 
 **Dernière mise à jour**: Phase 35
-**Branch**: `claude/cloud-sync-architecture-011CUWBT1ZwQ1bMVcvRttQdq`
 
 ---
 
@@ -654,7 +653,5 @@ A:
 *Temps d'attente pour obtenir l'accès développeur
 
 ---
-
-**🤖 Généré avec [Claude Code](https://claude.com/claude-code)**
 
 **Dernière mise à jour**: Phase 35 - Navigation Integration Complete

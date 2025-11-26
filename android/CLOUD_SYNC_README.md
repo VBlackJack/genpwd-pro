@@ -797,5 +797,3 @@ Pour contribuer:
 ---
 
 **Construit avec ❤️ et sécurité par l'équipe GenPwd Pro**
-
-🤖 Architecture générée avec [Claude Code](https://claude.com/claude-code)

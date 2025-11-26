@@ -506,5 +506,5 @@ La base est solide et extensible. L'implémentation de l'UI est maintenant strai
 
 **Version** : 2.5.1 (port Android en développement)
 **Date** : 2025-01-25
-**Auteur** : Claude (assistant IA)
+**Auteur** : Julien Bombled
 **Licence** : Apache 2.0

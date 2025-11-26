@@ -682,10 +682,6 @@ when (importResult) {
 
 ---
 
-## 🏆 Contributeurs
-
-Cette mise à jour majeure a été développée avec l'aide de **Claude Code** (Anthropic).
-
 **Date**: 5 novembre 2025
 **Version**: 1.3.0 (à venir)
 **Statut**: ✅ Développement terminé, tests en cours

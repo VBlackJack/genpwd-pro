@@ -133,7 +133,4 @@ R : Les presets sont stockés localement dans chaque vault. Si vous utilisez la 
 ---
 
 **Version** : 2.5.2
-**Branch** : claude/android-ux-design-011CUXbWzXbED17n7GUmyX47
 **Documentation** : Complète et à jour
-
-🤖 Généré avec [Claude Code](https://claude.com/claude-code)
