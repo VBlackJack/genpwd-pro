@@ -10,7 +10,7 @@ Ce document liste les hypothèses prises lors de la configuration et stabilisati
 **Décision:**
 - Web CI déclenché sur changements `src/**`, `tools/**`, `package*.json`
 - Android CI déclenché uniquement sur changements `android/**`
-- Security scans déclenchés sur tous les pushs vers `main` et `claude/**`
+- Security scans déclenchés sur tous les pushs vers `main` et branches de feature
 
 **Justification:** Économie de ressources et réduction du temps de feedback (~60% de réduction sur commits Android-only).
 

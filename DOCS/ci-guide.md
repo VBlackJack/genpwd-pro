@@ -9,7 +9,7 @@ GenPwd Pro utilise GitHub Actions pour l'intégration et le déploiement continu
 ### 1. Web CI/CD (`web-ci.yml`)
 
 **Déclencheurs:**
-- Push sur `main` et `claude/**`
+- Push sur `main` et branches de feature
 - Pull requests vers `main`
 - Schedule quotidien à 2h UTC
 - Déclenchement manuel
@@ -73,7 +73,7 @@ GenPwd Pro utilise GitHub Actions pour l'intégration et le déploiement continu
 ### 2. Security Scan (`security-scan.yml`)
 
 **Déclencheurs:**
-- Push sur `main` et `claude/**`
+- Push sur `main` et branches de feature
 - Pull requests
 - Schedule quotidien à 00:00 UTC
 

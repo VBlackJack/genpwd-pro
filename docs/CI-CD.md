@@ -12,7 +12,7 @@ GenPwd Pro uses GitHub Actions for Continuous Integration and Continuous Deploym
 
 **Triggers:**
 - Push to `main` branch
-- Push to any `claude/**` branch
+- Push to feature branches
 - Pull requests to `main`
 - Daily at 2 AM UTC (scheduled)
 - Manual dispatch
