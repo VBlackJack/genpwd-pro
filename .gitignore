@@ -176,3 +176,4 @@ sbom.json
 sbom.xml
 sbom-*.json
 release/
+android/*/build/
