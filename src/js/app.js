@@ -245,10 +245,10 @@ class GenPwdApp {
 
     safeLog('Initialisation du système de coffre...');
 
-    // Show tabs
+    // Show header tabs
     const tabsEl = document.getElementById('app-tabs');
     if (tabsEl) {
-      tabsEl.style.display = 'flex';
+      tabsEl.style.display = '';  // Use CSS default (flex)
     }
 
     // Initialize vault UI
@@ -268,7 +268,7 @@ class GenPwdApp {
    * Bind vault tab switching events
    */
   bindVaultTabEvents() {
-    const tabs = document.querySelectorAll('.vault-tab');
+    const tabs = document.querySelectorAll('.header-tab');
     const mainContent = document.getElementById('main-content');
     const vaultContainer = document.getElementById('vault-container');
     const debugPanel = document.getElementById('debug-panel');
@@ -305,7 +305,7 @@ class GenPwdApp {
     if (typeof ipcRenderer !== 'undefined') {
       ipcRenderer.on('vault:menu:create', () => {
         // Switch to vault tab and trigger create
-        document.querySelector('.vault-tab[data-tab="vault"]')?.click();
+        document.querySelector('.header-tab[data-tab="vault"]')?.click();
         setTimeout(() => {
           document.getElementById('btn-create-vault')?.click();
         }, 100);
@@ -313,7 +313,7 @@ class GenPwdApp {
 
       ipcRenderer.on('vault:menu:open', () => {
         // Switch to vault tab
-        document.querySelector('.vault-tab[data-tab="vault"]')?.click();
+        document.querySelector('.header-tab[data-tab="vault"]')?.click();
       });
     }
   }

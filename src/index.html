@@ -56,6 +56,12 @@
             <div class="logo-subtitle">Générateur de mots de passe sécurisés</div>
           </div>
         </div>
+        <!-- App Tabs (Electron only) -->
+        <div class="header-tabs" id="app-tabs" style="display: none;">
+          <button class="header-tab active" data-tab="generator">🔒 Générateur</button>
+          <button class="header-tab" data-tab="vault">🗄️ Coffre</button>
+        </div>
+
         <div class="header-right">
           <div class="version-badge" aria-label="Version 2.6.0">v2.6.0</div>
           <button class="about-btn" id="btn-about" aria-label="Afficher les informations à propos de GenPwd Pro">
@@ -174,12 +180,6 @@
           <button type="button" class="btn danger" id="close-test-results-footer">Fermer</button>
         </div>
       </div>
-    </div>
-
-    <!-- App Tabs (Electron only) -->
-    <div class="vault-tabs" id="app-tabs" style="display: none; max-width: 400px; margin: 16px auto;">
-      <button class="vault-tab active" data-tab="generator">🔒 Générateur</button>
-      <button class="vault-tab" data-tab="vault">🗄️ Coffre</button>
     </div>
 
     <!-- Vault Container (hidden by default) -->

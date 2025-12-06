@@ -3,36 +3,36 @@
  * GenPwd Pro - Encrypted Password Vault
  */
 
-/* ==================== VAULT TAB ====================  */
-.vault-tabs {
+/* ==================== HEADER TABS ====================  */
+.header-tabs {
   display: flex;
-  gap: 0;
-  background: var(--bg-secondary, #1e1e2e);
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   padding: 4px;
-  margin-bottom: 16px;
 }
 
-.vault-tab {
-  flex: 1;
-  padding: 10px 20px;
+.header-tab {
+  padding: 8px 16px;
   border: none;
   background: transparent;
-  color: var(--text-secondary, #888);
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   border-radius: 6px;
   font-weight: 500;
+  font-size: 14px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.vault-tab:hover {
-  color: var(--text-primary, #fff);
-  background: rgba(255, 255, 255, 0.05);
+.header-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.vault-tab.active {
+.header-tab.active {
   background: var(--accent, #4ade80);
-  color: var(--bg-primary, #1a1a2e);
+  color: #1a1a2e;
 }
 
 /* ==================== VAULT LOCK SCREEN ====================  */
