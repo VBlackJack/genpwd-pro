@@ -72,7 +72,10 @@
   },
   "dependencies": {
     "dompurify": "^3.2.3",
-    "tink-crypto": "^0.1.1"
+    "hash-wasm": "^4.12.0",
+    "tink-crypto": "^0.1.1",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
   },
   "build": {
     "appId": "com.julienbombled.genpwdpro",
@@ -83,7 +86,10 @@
       "assets/**/*",
       "electron-main.cjs",
       "electron-preload.cjs",
-      "package.json"
+      "package.json",
+      "node_modules/hash-wasm/**/*",
+      "node_modules/tweetnacl/**/*",
+      "node_modules/tweetnacl-util/**/*"
     ],
     "directories": {
       "output": "release"

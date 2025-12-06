@@ -34,7 +34,67 @@ contextBridge.exposeInMainWorld('electronAPI', {
   }
 });
 
+// Exposer l'API Vault au renderer process
+contextBridge.exposeInMainWorld('vault', {
+  // ==================== STATE ====================
+  getState: () => ipcRenderer.invoke('vault:getState'),
+  list: () => ipcRenderer.invoke('vault:list'),
+  create: (name, password) => ipcRenderer.invoke('vault:create', { name, password }),
+  unlock: (vaultId, password) => ipcRenderer.invoke('vault:unlock', { vaultId, password }),
+  lock: () => ipcRenderer.invoke('vault:lock'),
+  getMetadata: () => ipcRenderer.invoke('vault:getMetadata'),
+  resetActivity: () => ipcRenderer.invoke('vault:resetActivity'),
+  changePassword: (vaultId, currentPassword, newPassword) =>
+    ipcRenderer.invoke('vault:changePassword', { vaultId, currentPassword, newPassword }),
+  delete: (vaultId) => ipcRenderer.invoke('vault:delete', { vaultId }),
+
+  // ==================== ENTRIES ====================
+  entries: {
+    getAll: () => ipcRenderer.invoke('vault:entries:getAll'),
+    get: (id) => ipcRenderer.invoke('vault:entries:get', { id }),
+    getByFolder: (folderId) => ipcRenderer.invoke('vault:entries:getByFolder', { folderId }),
+    search: (query) => ipcRenderer.invoke('vault:entries:search', { query }),
+    add: (type, title, data) => ipcRenderer.invoke('vault:entries:add', { type, title, data }),
+    update: (id, updates) => ipcRenderer.invoke('vault:entries:update', { id, updates }),
+    delete: (id) => ipcRenderer.invoke('vault:entries:delete', { id })
+  },
+
+  // ==================== FOLDERS ====================
+  folders: {
+    getAll: () => ipcRenderer.invoke('vault:folders:getAll'),
+    add: (name, parentId) => ipcRenderer.invoke('vault:folders:add', { name, parentId }),
+    update: (id, updates) => ipcRenderer.invoke('vault:folders:update', { id, updates }),
+    delete: (id, deleteEntries) => ipcRenderer.invoke('vault:folders:delete', { id, deleteEntries })
+  },
+
+  // ==================== TAGS ====================
+  tags: {
+    getAll: () => ipcRenderer.invoke('vault:tags:getAll'),
+    add: (name, color) => ipcRenderer.invoke('vault:tags:add', { name, color }),
+    delete: (id) => ipcRenderer.invoke('vault:tags:delete', { id })
+  },
+
+  // ==================== IMPORT/EXPORT ====================
+  export: (vaultId, password, exportPath) =>
+    ipcRenderer.invoke('vault:export', { vaultId, password, exportPath }),
+  import: (importPath, password) =>
+    ipcRenderer.invoke('vault:import', { importPath, password }),
+
+  // ==================== EVENTS ====================
+  on: (event, callback) => {
+    const channel = `vault:${event}`;
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
+  once: (event, callback) => {
+    const channel = `vault:${event}`;
+    ipcRenderer.once(channel, (_, data) => callback(data));
+  }
+});
+
 // Log pour debug
 console.log('GenPwd Pro - Preload script chargé');
 console.log('Platform:', process.platform);
 console.log('Electron version:', process.versions.electron);
+console.log('Vault API: enabled');

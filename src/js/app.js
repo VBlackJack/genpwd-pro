@@ -38,10 +38,14 @@ import historyManager from './utils/history-manager.js';
 import { initializeAllFeatures } from './ui/features-ui.js';
 import pwaManager from './utils/pwa-manager.js';
 
+// Vault UI (Electron only)
+import { VaultUI } from './vault-ui.js';
+
 class GenPwdApp {
   constructor() {
     this.initialized = false;
     this.version = '2.6.0';
+    this.vaultUI = null;
   }
 
   async init() {
@@ -136,6 +140,9 @@ class GenPwdApp {
       safeLog('Application initialisée avec succès');
       showToast('GenPwd Pro v2.6.0 chargé avec succès', 'success');
 
+      // 10. Initialize Vault UI (Electron only)
+      this.initializeVault();
+
     } catch (error) {
       console.error('Erreur critique initialisation:', error);
       safeLog(`Erreur critique: ${error.message}`);
@@ -224,6 +231,91 @@ class GenPwdApp {
 
     safeLog('Environnement validé avec succès');
     return true;
+  }
+
+  /**
+   * Initialize Vault UI (Electron only)
+   */
+  initializeVault() {
+    // Check if running in Electron (vault API available)
+    if (!window.vault) {
+      safeLog('Vault API non disponible (mode navigateur)');
+      return;
+    }
+
+    safeLog('Initialisation du système de coffre...');
+
+    // Show tabs
+    const tabsEl = document.getElementById('app-tabs');
+    if (tabsEl) {
+      tabsEl.style.display = 'flex';
+    }
+
+    // Initialize vault UI
+    const vaultContainer = document.getElementById('vault-container');
+    if (vaultContainer) {
+      this.vaultUI = new VaultUI(vaultContainer);
+      this.vaultUI.init();
+    }
+
+    // Bind tab events
+    this.bindVaultTabEvents();
+
+    safeLog('Système de coffre initialisé');
+  }
+
+  /**
+   * Bind vault tab switching events
+   */
+  bindVaultTabEvents() {
+    const tabs = document.querySelectorAll('.vault-tab');
+    const mainContent = document.getElementById('main-content');
+    const vaultContainer = document.getElementById('vault-container');
+    const debugPanel = document.getElementById('debug-panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const targetTab = tab.dataset.tab;
+
+        if (targetTab === 'generator') {
+          // Show generator, hide vault
+          if (mainContent) mainContent.style.display = '';
+          if (vaultContainer) vaultContainer.style.display = 'none';
+          if (debugPanel) debugPanel.style.display = '';
+        } else if (targetTab === 'vault') {
+          // Show vault, hide generator
+          if (mainContent) mainContent.style.display = 'none';
+          if (vaultContainer) vaultContainer.style.display = 'block';
+          if (debugPanel) debugPanel.style.display = 'none';
+        }
+      });
+    });
+
+    // Listen for menu events from main process
+    if (window.electronAPI?.onGeneratePassword) {
+      // Already handled elsewhere
+    }
+
+    // Listen for vault menu events
+    const { ipcRenderer } = window.require?.('electron') || {};
+    if (typeof ipcRenderer !== 'undefined') {
+      ipcRenderer.on('vault:menu:create', () => {
+        // Switch to vault tab and trigger create
+        document.querySelector('.vault-tab[data-tab="vault"]')?.click();
+        setTimeout(() => {
+          document.getElementById('btn-create-vault')?.click();
+        }, 100);
+      });
+
+      ipcRenderer.on('vault:menu:open', () => {
+        // Switch to vault tab
+        document.querySelector('.vault-tab[data-tab="vault"]')?.click();
+      });
+    }
   }
 
   async generateInitial() {

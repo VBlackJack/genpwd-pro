@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="styles/features.css">
   <link rel="stylesheet" href="styles/dynamic-modals.css">
   <link rel="stylesheet" href="styles/utilities.css">
+  <link rel="stylesheet" href="styles/vault.css">
 </head>
 <body>
   <!-- Skip Navigation Link for Accessibility -->
@@ -174,6 +175,15 @@
         </div>
       </div>
     </div>
+
+    <!-- App Tabs (Electron only) -->
+    <div class="vault-tabs" id="app-tabs" style="display: none; max-width: 400px; margin: 16px auto;">
+      <button class="vault-tab active" data-tab="generator">🔒 Générateur</button>
+      <button class="vault-tab" data-tab="vault">🗄️ Coffre</button>
+    </div>
+
+    <!-- Vault Container (hidden by default) -->
+    <div id="vault-container" style="display: none; padding: 16px; max-width: 800px; margin: 0 auto;"></div>
 
     <div class="main" id="main-content">
       <!-- Configuration Panel -->

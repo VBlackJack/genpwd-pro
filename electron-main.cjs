@@ -15,9 +15,12 @@
  */
 
 // electron-main.js - Point d'entrée principal Electron pour GenPwd Pro
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 const { version: APP_VERSION } = require('./package.json');
+
+// Vault module (loaded dynamically as ESM)
+let vaultModule = null;
 
 // Configuration de sécurité renforcée
 const SECURITY_CONFIG = {
@@ -111,6 +114,42 @@ function createApplicationMenu() {
       ]
     },
     {
+      label: 'Coffre',
+      submenu: [
+        {
+          label: 'Nouveau coffre...',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('vault:menu:create');
+            }
+          }
+        },
+        {
+          label: 'Ouvrir coffre...',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('vault:menu:open');
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Verrouiller',
+          accelerator: 'CmdOrCtrl+L',
+          click: async () => {
+            if (vaultModule) {
+              const session = vaultModule.getSession();
+              if (session && session.isUnlocked()) {
+                await session.lock();
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       label: 'Édition',
       submenu: [
         { role: 'copy', label: 'Copier' },
@@ -192,14 +231,31 @@ function createApplicationMenu() {
 }
 
 // Gestion du cycle de vie de l'application
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Load vault module (ESM dynamic import)
+  try {
+    vaultModule = await import('./src/desktop/vault/index.js');
+    vaultModule.registerVaultIPC(ipcMain);
+    console.log('[GenPwd Pro] Vault IPC handlers registered');
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to load vault module:', error);
+  }
+
   createWindow();
   createApplicationMenu();
+
+  // Set main window for vault events
+  if (vaultModule && mainWindow) {
+    vaultModule.setMainWindow(mainWindow);
+  }
 
   app.on('activate', () => {
     // Sur macOS, recréer la fenêtre si elle n'existe pas
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+      if (vaultModule && mainWindow) {
+        vaultModule.setMainWindow(mainWindow);
+      }
     }
   });
 });

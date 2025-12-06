@@ -1,0 +1,695 @@
+/**
+ * Vault UI Styles
+ * GenPwd Pro - Encrypted Password Vault
+ */
+
+/* ==================== VAULT TAB ====================  */
+.vault-tabs {
+  display: flex;
+  gap: 0;
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.vault-tab {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.vault-tab:hover {
+  color: var(--text-primary, #fff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vault-tab.active {
+  background: var(--accent, #4ade80);
+  color: var(--bg-primary, #1a1a2e);
+}
+
+/* ==================== VAULT LOCK SCREEN ====================  */
+.vault-lock-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: 40px;
+}
+
+.vault-lock-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 24px;
+  color: var(--accent, #4ade80);
+}
+
+.vault-lock-screen h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: var(--text-primary, #fff);
+}
+
+.vault-lock-screen p {
+  margin: 0 0 24px;
+  color: var(--text-secondary, #888);
+}
+
+.vault-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.vault-password-input {
+  padding: 12px 16px;
+  border: 2px solid var(--border, #333);
+  border-radius: 8px;
+  background: var(--bg-secondary, #1e1e2e);
+  color: var(--text-primary, #fff);
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.vault-password-input:focus {
+  outline: none;
+  border-color: var(--accent, #4ade80);
+}
+
+.vault-password-input::placeholder {
+  color: var(--text-secondary, #666);
+}
+
+.vault-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-btn-primary {
+  background: var(--accent, #4ade80);
+  color: var(--bg-primary, #1a1a2e);
+}
+
+.vault-btn-primary:hover {
+  background: var(--accent-hover, #22c55e);
+  transform: translateY(-1px);
+}
+
+.vault-btn-secondary {
+  background: transparent;
+  border: 2px solid var(--border, #333);
+  color: var(--text-primary, #fff);
+}
+
+.vault-btn-secondary:hover {
+  border-color: var(--accent, #4ade80);
+  color: var(--accent, #4ade80);
+}
+
+.vault-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.vault-list-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border, #333);
+  color: var(--text-secondary, #888);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-list-btn:hover {
+  border-color: var(--accent, #4ade80);
+  color: var(--text-primary, #fff);
+}
+
+/* ==================== VAULT SELECTOR ====================  */
+.vault-selector {
+  margin-bottom: 24px;
+}
+
+.vault-selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.vault-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-secondary, #1e1e2e);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-selector-item:hover {
+  border-color: var(--accent, #4ade80);
+}
+
+.vault-selector-item.selected {
+  border-color: var(--accent, #4ade80);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.vault-selector-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary, #1a1a2e);
+  border-radius: 8px;
+  color: var(--accent, #4ade80);
+}
+
+.vault-selector-info {
+  flex: 1;
+}
+
+.vault-selector-name {
+  font-weight: 500;
+  color: var(--text-primary, #fff);
+}
+
+.vault-selector-meta {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+}
+
+/* ==================== VAULT HEADER ====================  */
+.vault-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.vault-header-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74, 222, 128, 0.15);
+  border-radius: 12px;
+  color: var(--accent, #4ade80);
+}
+
+.vault-header-info {
+  flex: 1;
+}
+
+.vault-header-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+.vault-header-meta {
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  margin: 4px 0 0;
+}
+
+.vault-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vault-action-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-action-btn:hover {
+  border-color: var(--accent, #4ade80);
+  color: var(--accent, #4ade80);
+}
+
+.vault-action-btn.danger:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* ==================== VAULT SEARCH ====================  */
+.vault-search {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.vault-search-input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid var(--border, #333);
+  border-radius: 8px;
+  background: var(--bg-secondary, #1e1e2e);
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+}
+
+.vault-search-input:focus {
+  outline: none;
+  border-color: var(--accent, #4ade80);
+}
+
+.vault-add-btn {
+  padding: 10px 20px;
+  background: var(--accent, #4ade80);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg-primary, #1a1a2e);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-add-btn:hover {
+  background: var(--accent-hover, #22c55e);
+}
+
+/* ==================== VAULT ENTRIES LIST ====================  */
+.vault-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vault-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-secondary, #1e1e2e);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-entry:hover {
+  border-color: var(--accent, #4ade80);
+  transform: translateX(4px);
+}
+
+.vault-entry-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary, #1a1a2e);
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.vault-entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vault-entry-title {
+  font-weight: 500;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-entry-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-entry-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.vault-entry:hover .vault-entry-actions {
+  opacity: 1;
+}
+
+.vault-entry-action {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary, #1a1a2e);
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-entry-action:hover {
+  color: var(--accent, #4ade80);
+}
+
+.vault-entry-action.copy:hover {
+  color: #60a5fa;
+}
+
+/* ==================== VAULT ENTRY DETAIL ====================  */
+.vault-detail {
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.vault-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border, #333);
+}
+
+.vault-detail-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74, 222, 128, 0.15);
+  border-radius: 12px;
+  font-size: 24px;
+}
+
+.vault-detail-title-wrap {
+  flex: 1;
+}
+
+.vault-detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+.vault-detail-type {
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  margin: 4px 0 0;
+}
+
+.vault-detail-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+}
+
+.vault-detail-close:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.vault-field {
+  margin-bottom: 16px;
+}
+
+.vault-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #888);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vault-field-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-primary, #1a1a2e);
+  border-radius: 8px;
+}
+
+.vault-field-text {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary, #fff);
+  word-break: break-all;
+}
+
+.vault-field-text.masked {
+  font-family: inherit;
+  letter-spacing: 2px;
+}
+
+.vault-field-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-field-btn:hover {
+  color: var(--accent, #4ade80);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+/* ==================== VAULT EMPTY STATE ====================  */
+.vault-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.vault-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.vault-empty h3 {
+  margin: 0 0 8px;
+  color: var(--text-primary, #fff);
+}
+
+.vault-empty p {
+  margin: 0;
+  color: var(--text-secondary, #888);
+}
+
+/* ==================== VAULT CREATE MODAL ====================  */
+.vault-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+
+.vault-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.vault-modal {
+  background: var(--bg-primary, #1a1a2e);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  transform: translateY(20px);
+  transition: transform 0.2s;
+}
+
+.vault-modal-overlay.active .vault-modal {
+  transform: translateY(0);
+}
+
+.vault-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.vault-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+.vault-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+}
+
+.vault-modal-close:hover {
+  color: #ef4444;
+}
+
+.vault-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vault-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vault-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, #888);
+}
+
+.vault-form-input {
+  padding: 12px 14px;
+  border: 2px solid var(--border, #333);
+  border-radius: 8px;
+  background: var(--bg-secondary, #1e1e2e);
+  color: var(--text-primary, #fff);
+  font-size: 15px;
+}
+
+.vault-form-input:focus {
+  outline: none;
+  border-color: var(--accent, #4ade80);
+}
+
+.vault-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.vault-modal-actions .vault-btn {
+  flex: 1;
+}
+
+/* ==================== VAULT ENTRY TYPES ====================  */
+.entry-type-login { --entry-color: #60a5fa; }
+.entry-type-note { --entry-color: #fbbf24; }
+.entry-type-card { --entry-color: #f472b6; }
+.entry-type-identity { --entry-color: #a78bfa; }
+.entry-type-ssh { --entry-color: #34d399; }
+
+/* ==================== LOADING STATE ====================  */
+.vault-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.vault-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border, #333);
+  border-top-color: var(--accent, #4ade80);
+  border-radius: 50%;
+  animation: vault-spin 0.8s linear infinite;
+}
+
+@keyframes vault-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ==================== RESPONSIVE ====================  */
+@media (max-width: 768px) {
+  .vault-header {
+    flex-wrap: wrap;
+  }
+
+  .vault-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .vault-search {
+    flex-direction: column;
+  }
+
+  .vault-add-btn {
+    width: 100%;
+  }
+}
