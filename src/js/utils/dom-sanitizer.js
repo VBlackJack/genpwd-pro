@@ -44,7 +44,8 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Fallback HTML sanitizer for Node.js environment
+ * Fallback HTML sanitizer when DOMPurify is not available
+ * In browser/Electron context, we trust internal HTML and just remove dangerous patterns
  * @param {string} html - HTML to sanitize
  * @returns {string} - Sanitized HTML
  */
@@ -52,7 +53,17 @@ function fallbackSanitize(html) {
   if (typeof html !== 'string') {
     return '';
   }
-  // Basic HTML escaping for test environment
+
+  // In browser/Electron environment, trust internal HTML but remove dangerous patterns
+  if (typeof window !== 'undefined') {
+    // Remove script tags and event handlers
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/javascript:/gi, '');
+  }
+
+  // In Node.js test environment, escape everything for safety
   return html
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
