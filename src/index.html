@@ -90,57 +90,70 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
             </svg>
-            À propos de GenPwd Pro
+            GenPwd Pro
           </div>
-          <button class="modal-close" id="modal-close" aria-label="Fermer la modal à propos">
+          <button class="modal-close" id="modal-close" aria-label="Fermer">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
         </div>
-		<div class="modal-body">
-		  <div class="about-section">
-                       <h3>Architecture modulaire v2.6.7</h3>
-                       <p><strong>GenPwd Pro v2.6.7</strong> propose une architecture ES6 modulaire avec dictionnaires externalisés et tests intégrés :</p>
-			<ul class="feature-list">
-			  <li><strong>Français :</strong> 2400+ mots et expressions courantes</li>
-			  <li><strong>English :</strong> Collection étendue de mots et phrases</li>
-			  <li><strong>Latin :</strong> Mots latins classiques et académiques</li>
-			  <li><strong>Chargement dynamique :</strong> Dictionnaires externalisés sans alourdir le code</li>
-			  <li><strong>Fallback intelligent :</strong> Dictionnaire français intégré en cas d'erreur</li>
-			  <li><strong>Tests automatisés :</strong> Suite de validation complète (score 100%)</li>
-			</ul>
-		  </div>
+        <div class="modal-body">
+          <div class="about-section about-hero">
+            <div class="about-version">Version 2.6.8</div>
+            <p class="about-tagline">Gestionnaire de mots de passe professionnel avec coffre-fort chiffré</p>
+          </div>
 
-		  <div class="about-section">
-			<h3>Sécurité par l'unicité</h3>
-			<p>La sécurité ne vient pas de l'illisibilité mais de l'<strong>unicité de votre pattern personnel</strong>.</p>
-			<ul class="feature-list">
-			  <li><strong>Politique adaptée :</strong> Standard, Layout-safe, Alphanumerique selon vos contraintes</li>
-			  <li><strong>Pattern de casse :</strong> Votre séquence U-T-l devient votre signature cryptographique</li>
-			  <li><strong>Placement personnel :</strong> Contrôle précis des positions (début/milieu/fin/visuel)</li>
-			  <li><strong>Entropie optimisée :</strong> Jusqu'à 140 bits pour une sécurité maximale</li>
-			  <li><strong>CLI-Safe :</strong> Caractères optimisés pour les environnements techniques</li>
-			</ul>
-		  </div>
+          <div class="about-section">
+            <h3>Coffre-fort sécurisé</h3>
+            <ul class="feature-list">
+              <li><strong>Chiffrement AES-256</strong> avec Argon2id pour la dérivation de clés</li>
+              <li><strong>Windows Hello</strong> : Déverrouillage biométrique (empreinte, visage)</li>
+              <li><strong>Auto-lock</strong> : Verrouillage automatique après inactivité</li>
+              <li><strong>Stockage externe</strong> : OneDrive, Dropbox, emplacements personnalisés</li>
+            </ul>
+          </div>
 
-		  <div class="about-section">
-			<h3>Fonctionnalités avancées</h3>
-			<ul class="feature-list">
-			  <li><strong>3 modes de génération :</strong> Syllabes, Passphrase, Leet speak</li>
-			  <li><strong>Placement visuel :</strong> Interface interactive pour positionnement précis</li>
-			  <li><strong>Blocs de casse :</strong> Système U/T/L pour patterns complexes</li>
-			  <li><strong>Tests intégrés :</strong> Validation automatique avec score en temps réel</li>
-			  <li><strong>Export/Import :</strong> Sauvegarde des résultats et configurations</li>
-			</ul>
-		  </div>
+          <div class="about-section">
+            <h3>Générateur avancé</h3>
+            <ul class="feature-list">
+              <li><strong>3 modes</strong> : Syllabes, Passphrase, Leet speak</li>
+              <li><strong>Multi-langues</strong> : Français, English, Latin (2400+ mots)</li>
+              <li><strong>Entropie</strong> : Jusqu'à 140 bits de sécurité</li>
+              <li><strong>Presets</strong> : Configurations sauvegardables et synchronisables</li>
+            </ul>
+          </div>
 
-		  <div class="author-credit">
-			<div class="author-name">Julien Bombled</div>
-                       <div class="author-role">Version modulaire v2.6.7 • Architecture ES6</div>
-		  </div>
-		</div>
+          <div class="about-section">
+            <h3>Fonctionnalités</h3>
+            <ul class="feature-list">
+              <li><strong>Import/Export</strong> : CSV compatible avec les autres gestionnaires</li>
+              <li><strong>Organisation</strong> : Dossiers, tags et recherche avancée</li>
+              <li><strong>TOTP</strong> : Support des codes 2FA (Google Authenticator)</li>
+              <li><strong>Multiplateforme</strong> : Web, Windows, bientôt macOS et Linux</li>
+            </ul>
+          </div>
+
+          <div class="about-section about-tech">
+            <h3>Technologies</h3>
+            <div class="tech-badges">
+              <span class="tech-badge">Electron</span>
+              <span class="tech-badge">ES6 Modules</span>
+              <span class="tech-badge">TweetNaCl</span>
+              <span class="tech-badge">Argon2id</span>
+              <span class="tech-badge">Web Crypto API</span>
+            </div>
+          </div>
+
+          <div class="author-credit">
+            <div class="author-name">Julien Bombled</div>
+            <div class="author-role">Open Source sous licence Apache 2.0</div>
+            <div class="about-links">
+              <a href="https://github.com/VBlackJack/genpwd-pro" target="_blank" rel="noopener">GitHub</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

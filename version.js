@@ -17,4 +17,4 @@
 // version.js - Version configuration for Service Worker
 // This file is imported by sw.js using importScripts()
 // Synchronized with package.json
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.6.8';
