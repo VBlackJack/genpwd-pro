@@ -90,15 +90,45 @@ export class VaultSessionManager extends EventEmitter {
    * Create a new vault
    * @param {string} name - Vault name
    * @param {string} password - Master password
+   * @param {string} [customPath] - Custom file path for external vaults
    * @returns {Promise<string>} Vault ID
    */
-  async create(name, password) {
-    const { vaultId } = await this.#fileManager.createVault(name, password);
+  async create(name, password, customPath = null) {
+    const { vaultId } = await this.#fileManager.createVault(name, password, customPath);
 
     // Auto-unlock the newly created vault
     await this.unlock(vaultId, password);
 
     return vaultId;
+  }
+
+  /**
+   * Initialize session with an already-loaded vault (for external vaults)
+   * @param {string} vaultId - Vault ID
+   * @param {Object} vaultData - Decrypted vault data
+   * @param {Uint8Array} key - Encryption key
+   * @returns {Promise<void>}
+   */
+  async initWithVault(vaultId, vaultData, key) {
+    // Lock current vault if any
+    if (this.isUnlocked()) {
+      await this.lock();
+    }
+
+    this.#vaultData = vaultData;
+    this.#key = key;
+    this.#vaultId = vaultId;
+    this.#isDirty = false;
+
+    // Set auto-lock timer
+    this.#resetAutoLockTimer();
+
+    // Configure auto-lock from vault settings
+    if (vaultData.metadata?.settings?.autoLockMinutes) {
+      this.#autoLockMs = vaultData.metadata.settings.autoLockMinutes * 60 * 1000;
+    }
+
+    this.emit('unlocked', { vaultId, name: vaultData.metadata.name });
   }
 
   /**
@@ -506,6 +536,59 @@ export class VaultSessionManager extends EventEmitter {
     this.#autoLockMs = minutes * 60 * 1000;
     if (this.isUnlocked()) {
       this.#resetAutoLockTimer();
+    }
+  }
+
+  // ==================== WINDOWS HELLO ====================
+
+  /**
+   * Get derived key for a vault (for Windows Hello enablement)
+   * @param {string} vaultId - Vault ID
+   * @param {string} password - Master password
+   * @returns {Promise<Uint8Array|null>} The derived key or null if password incorrect
+   */
+  async getDerivedKey(vaultId, password) {
+    try {
+      const { key } = await this.#fileManager.openVault(vaultId, password);
+      return key;
+    } catch (error) {
+      console.error('[VaultSession] getDerivedKey error:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Unlock vault with a pre-derived key (for Windows Hello unlock)
+   * @param {string} vaultId - Vault ID
+   * @param {Uint8Array} key - Pre-derived encryption key
+   * @returns {Promise<void>}
+   */
+  async unlockWithKey(vaultId, key) {
+    // Lock current vault if any
+    if (this.isUnlocked()) {
+      await this.lock();
+    }
+
+    try {
+      const { vaultData } = await this.#fileManager.openVaultWithKey(vaultId, key);
+
+      this.#vaultData = vaultData;
+      this.#key = key;
+      this.#vaultId = vaultId;
+      this.#isDirty = false;
+
+      // Set auto-lock timer
+      this.#resetAutoLockTimer();
+
+      // Configure auto-lock from vault settings
+      if (vaultData.metadata?.settings?.autoLockMinutes) {
+        this.#autoLockMs = vaultData.metadata.settings.autoLockMinutes * 60 * 1000;
+      }
+
+      this.emit('unlocked', { vaultId, name: vaultData.metadata.name });
+    } catch (error) {
+      this.emit('error', { type: 'unlock', message: error.message });
+      throw error;
     }
   }
 }

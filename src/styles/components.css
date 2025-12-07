@@ -916,3 +916,119 @@ select {
     animation: none !important;
   }
 }
+
+/* ============================================================================
+   BREACH CHECK (HIBP)
+   ============================================================================ */
+
+.breach-check-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--accent-blue);
+}
+
+.breach-check-btn:hover {
+  background: rgba(96, 165, 250, 0.2);
+  border-color: rgba(96, 165, 250, 0.5);
+  transform: scale(1.05);
+}
+
+.breach-check-btn:active {
+  transform: scale(0.95);
+}
+
+.breach-check-btn.checking {
+  pointer-events: none;
+  opacity: 0.6;
+  animation: breachPulse 1s ease-in-out infinite;
+}
+
+.breach-check-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Breach status display */
+.breach-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  animation: breachFadeIn 0.3s ease;
+}
+
+.breach-status.loading {
+  background: rgba(96, 165, 250, 0.1);
+  color: var(--accent-blue);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.breach-status.safe {
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--accent-green);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.breach-status.warning {
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--accent-yellow);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.breach-status.danger {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--accent-red);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.breach-status.critical {
+  background: rgba(248, 113, 113, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  font-weight: 600;
+}
+
+.breach-status.error {
+  background: rgba(156, 163, 175, 0.1);
+  color: var(--text-muted);
+  border: 1px solid rgba(156, 163, 175, 0.2);
+}
+
+.breach-icon {
+  font-size: 1rem;
+}
+
+.breach-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(96, 165, 250, 0.3);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: breachSpin 0.8s linear infinite;
+}
+
+@keyframes breachPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes breachFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breachSpin {
+  to { transform: rotate(360deg); }
+}

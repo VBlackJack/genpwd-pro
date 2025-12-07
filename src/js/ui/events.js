@@ -22,7 +22,7 @@ import { setCurrentDictionary } from '../core/dictionaries.js';
 import { randomizeBlocks, defaultBlocksForMode } from '../core/casing.js';
 import { readSettings, getBlocks, setBlocks, setResults, getResults, getUIState, setUIState } from '../config/settings.js';
 import { RATE_LIMITING } from '../config/crypto-constants.js';
-import { copyToClipboard } from '../utils/clipboard.js';
+import { copyToClipboard, getClipboardTimeout, setClipboardTimeout, CLIPBOARD_TIMEOUT_OPTIONS } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
@@ -91,7 +91,10 @@ function bindMainActions() {
   addEventListener(getElement('#btn-copy-all'), 'click', copyAllPasswords);
   addEventListener(getElement('#btn-export'), 'click', exportPasswords);
   addEventListener(getElement('#btn-clear'), 'click', clearResults);
-  
+
+  // Clipboard settings
+  addEventListener(getElement('#btn-clipboard-settings'), 'click', showClipboardSettings);
+
   // Actions debug
   addEventListener(getElement('#btn-run-tests'), 'click', runTests);
   addEventListener(getElement('#btn-toggle-debug'), 'click', () => {
@@ -515,6 +518,75 @@ async function copyAllPasswords() {
   if (success) {
     safeLog(`Copie groupée: ${count} entrées`);
   }
+}
+
+/**
+ * Show clipboard settings popover
+ */
+function showClipboardSettings() {
+  // Remove existing popover
+  document.querySelector('.clipboard-settings-popover')?.remove();
+
+  const btn = getElement('#btn-clipboard-settings');
+  if (!btn) return;
+
+  const currentTimeout = getClipboardTimeout();
+
+  const popover = document.createElement('div');
+  popover.className = 'clipboard-settings-popover';
+  popover.innerHTML = `
+    <div class="clipboard-settings-header">
+      <span>⏱️ Auto-effacement</span>
+    </div>
+    <div class="clipboard-settings-body">
+      <p class="clipboard-settings-desc">
+        Effacer le presse-papiers automatiquement après copie
+      </p>
+      <div class="clipboard-settings-options">
+        ${CLIPBOARD_TIMEOUT_OPTIONS.map(opt => `
+          <button class="clipboard-option ${opt.value === currentTimeout ? 'active' : ''}"
+                  data-timeout="${opt.value}">
+            ${opt.label}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // Position popover
+  const rect = btn.getBoundingClientRect();
+  popover.style.position = 'fixed';
+  popover.style.top = `${rect.bottom + 8}px`;
+  popover.style.left = `${rect.left}px`;
+  popover.style.zIndex = '1000';
+
+  document.body.appendChild(popover);
+
+  // Event handlers
+  popover.querySelectorAll('.clipboard-option').forEach(optBtn => {
+    optBtn.addEventListener('click', () => {
+      const timeout = parseInt(optBtn.dataset.timeout, 10);
+      setClipboardTimeout(timeout);
+
+      // Update active state
+      popover.querySelectorAll('.clipboard-option').forEach(b => b.classList.remove('active'));
+      optBtn.classList.add('active');
+
+      showToast(timeout > 0 ? `Auto-effacement: ${optBtn.textContent.trim()}` : 'Auto-effacement désactivé', 'success');
+      setTimeout(() => popover.remove(), 300);
+    });
+  });
+
+  // Close on click outside
+  setTimeout(() => {
+    const handler = (e) => {
+      if (!popover.contains(e.target) && e.target !== btn) {
+        popover.remove();
+        document.removeEventListener('click', handler);
+      }
+    };
+    document.addEventListener('click', handler);
+  }, 0);
 }
 
 /**

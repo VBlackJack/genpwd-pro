@@ -818,9 +818,10 @@ function showManagePresetsModal() {
           `).join('')}
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
         <button class="btn" id="btn-import-preset">📥 Importer</button>
         <button class="btn" id="btn-export-all-presets">📤 Tout Exporter</button>
+        <button class="btn" id="btn-vault-sync-presets" style="display: ${window.vault ? 'inline-flex' : 'none'};">🗄️ Coffre</button>
         <button class="btn danger" id="close-presets-modal-footer">Fermer</button>
       </div>
     </div>
@@ -975,6 +976,12 @@ function bindPresetModalEvents(modal) {
     downloadFile(json, 'genpwd-presets-all.json', 'application/json');
     showToast('All presets exported!', 'success');
   });
+
+  // Vault sync button
+  modal.querySelector('#btn-vault-sync-presets')?.addEventListener('click', () => {
+    modal.remove();
+    showVaultPresetSyncModal();
+  });
 }
 
 /**
@@ -1124,6 +1131,149 @@ function showEditPresetModal(presetId) {
       document.getElementById('btn-edit-preset-confirm')?.click();
     }
   });
+}
+
+/**
+ * Show vault preset sync modal
+ * Allows import/export of presets to/from the vault
+ */
+async function showVaultPresetSyncModal() {
+  // Check if vault is available
+  if (!window.vault) {
+    showToast('Coffre non disponible', 'error');
+    return;
+  }
+
+  // Check vault state
+  const isVaultReady = await presetManager.isVaultReady();
+  const vaultPresetCount = isVaultReady ? await presetManager.getVaultPresetCount() : 0;
+  const localPresetCount = presetManager.getAllPresets().length;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'vault-preset-sync-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  modal.innerHTML = sanitizeHTML(`
+    <div class="modal" style="max-width: 450px;">
+      <div class="modal-header">
+        <div class="modal-title">🗄️ Presets & Coffre</div>
+        <button class="modal-close" id="close-vault-sync-modal" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        ${!isVaultReady ? `
+          <div style="text-align: center; padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">🔒</div>
+            <p style="margin: 0; color: #f87171;">Le coffre est verrouillé</p>
+            <p style="margin: 8px 0 0; font-size: 0.9em; color: #94a3b8;">Déverrouillez-le pour synchroniser vos presets</p>
+            <button class="btn" id="btn-go-to-vault" style="margin-top: 12px;">Aller au coffre</button>
+          </div>
+        ` : `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.1); border-radius: 8px;">
+              <div style="font-size: 1.5em; font-weight: bold; color: #3b82f6;">${localPresetCount}</div>
+              <div style="font-size: 0.85em; color: #94a3b8;">Presets locaux</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: rgba(139, 92, 246, 0.1); border-radius: 8px;">
+              <div style="font-size: 1.5em; font-weight: bold; color: #8b5cf6;">${vaultPresetCount}</div>
+              <div style="font-size: 0.85em; color: #94a3b8;">Presets dans coffre</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button class="btn full-width" id="btn-export-to-vault" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Exporter vers le coffre
+            </button>
+            <button class="btn full-width" id="btn-import-from-vault" style="display: flex; align-items: center; justify-content: center; gap: 8px;" ${vaultPresetCount === 0 ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Importer depuis le coffre
+            </button>
+          </div>
+
+          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em;">
+              <input type="checkbox" id="vault-sync-overwrite" style="width: 16px; height: 16px;">
+              Écraser les presets existants lors de l'import
+            </label>
+          </div>
+        `}
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="close-vault-sync-footer">Fermer</button>
+      </div>
+    </div>
+  `);
+
+  document.body.appendChild(modal);
+
+  // Bind events
+  modal.querySelector('#close-vault-sync-modal')?.addEventListener('click', () => modal.remove());
+  modal.querySelector('#close-vault-sync-footer')?.addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+  // Go to vault button
+  modal.querySelector('#btn-go-to-vault')?.addEventListener('click', () => {
+    modal.remove();
+    const vaultTab = document.querySelector('.header-tab[data-tab="vault"]');
+    if (vaultTab) vaultTab.click();
+  });
+
+  // Export to vault
+  modal.querySelector('#btn-export-to-vault')?.addEventListener('click', async () => {
+    const btn = modal.querySelector('#btn-export-to-vault');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Export en cours...';
+
+    const result = await presetManager.exportAllToVault();
+
+    if (result.success > 0) {
+      showToast(`${result.success} preset(s) exporté(s) vers le coffre`, 'success');
+    } else {
+      showToast('Aucun preset exporté', 'warning');
+    }
+
+    modal.remove();
+  });
+
+  // Import from vault
+  modal.querySelector('#btn-import-from-vault')?.addEventListener('click', async () => {
+    const btn = modal.querySelector('#btn-import-from-vault');
+    const overwrite = modal.querySelector('#vault-sync-overwrite')?.checked || false;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Import en cours...';
+
+    const result = await presetManager.importFromVault(overwrite);
+
+    if (result.imported > 0) {
+      updatePresetDropdown();
+      showToast(`${result.imported} preset(s) importé(s) depuis le coffre`, 'success');
+    } else if (result.skipped > 0) {
+      showToast(`${result.skipped} preset(s) ignoré(s) (déjà existants)`, 'info');
+    } else {
+      showToast('Aucun preset à importer', 'warning');
+    }
+
+    modal.remove();
+  });
+
+  // Show modal
+  setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
 }
 
 /**

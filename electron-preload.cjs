@@ -39,7 +39,7 @@ contextBridge.exposeInMainWorld('vault', {
   // ==================== STATE ====================
   getState: () => ipcRenderer.invoke('vault:getState'),
   list: () => ipcRenderer.invoke('vault:list'),
-  create: (name, password) => ipcRenderer.invoke('vault:create', { name, password }),
+  create: (name, password, customPath = null) => ipcRenderer.invoke('vault:create', { name, password, customPath }),
   unlock: (vaultId, password) => ipcRenderer.invoke('vault:unlock', { vaultId, password }),
   lock: () => ipcRenderer.invoke('vault:lock'),
   getMetadata: () => ipcRenderer.invoke('vault:getMetadata'),
@@ -47,6 +47,12 @@ contextBridge.exposeInMainWorld('vault', {
   changePassword: (vaultId, currentPassword, newPassword) =>
     ipcRenderer.invoke('vault:changePassword', { vaultId, currentPassword, newPassword }),
   delete: (vaultId) => ipcRenderer.invoke('vault:delete', { vaultId }),
+
+  // ==================== EXTERNAL VAULTS ====================
+  showSaveDialog: (defaultName) => ipcRenderer.invoke('vault:showSaveDialog', { defaultName }),
+  showOpenDialog: () => ipcRenderer.invoke('vault:showOpenDialog'),
+  openFromPath: (filePath, password) => ipcRenderer.invoke('vault:openFromPath', { filePath, password }),
+  unregister: (vaultId) => ipcRenderer.invoke('vault:unregister', { vaultId }),
 
   // ==================== ENTRIES ====================
   entries: {
@@ -79,6 +85,15 @@ contextBridge.exposeInMainWorld('vault', {
     ipcRenderer.invoke('vault:export', { vaultId, password, exportPath }),
   import: (importPath, password) =>
     ipcRenderer.invoke('vault:import', { importPath, password }),
+
+  // ==================== WINDOWS HELLO ====================
+  hello: {
+    isAvailable: () => ipcRenderer.invoke('vault:hello:isAvailable'),
+    isEnabled: (vaultId) => ipcRenderer.invoke('vault:hello:isEnabled', { vaultId }),
+    enable: (vaultId, password) => ipcRenderer.invoke('vault:hello:enable', { vaultId, password }),
+    disable: (vaultId) => ipcRenderer.invoke('vault:hello:disable', { vaultId }),
+    unlock: (vaultId) => ipcRenderer.invoke('vault:hello:unlock', { vaultId })
+  },
 
   // ==================== EVENTS ====================
   on: (event, callback) => {

@@ -40,6 +40,7 @@ import pwaManager from './utils/pwa-manager.js';
 
 // Vault UI (Electron only)
 import { VaultUI } from './vault-ui.js';
+import { VaultBridge } from './ui/vault-bridge.js';
 
 class GenPwdApp {
   constructor() {
@@ -140,7 +141,16 @@ class GenPwdApp {
       safeLog('Application initialisée avec succès');
       showToast('GenPwd Pro v2.6.0 chargé avec succès', 'success');
 
-      // 10. Initialize Vault UI (Electron only)
+      // 10. Initialize Vault Bridge (for Generator-Vault communication)
+      VaultBridge.init();
+      safeLog('VaultBridge initialisé');
+
+      // 11. Clipboard auto-clear listener
+      window.addEventListener('clipboard-cleared', () => {
+        showToast('Presse-papiers vidé', 'info', 2000);
+      });
+
+      // 12. Initialize Vault UI (Electron only)
       this.initializeVault();
 
     } catch (error) {
@@ -272,6 +282,7 @@ class GenPwdApp {
     const mainContent = document.getElementById('main-content');
     const vaultContainer = document.getElementById('vault-container');
     const debugPanel = document.getElementById('debug-panel');
+    const appContainer = document.querySelector('.app');
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -286,11 +297,13 @@ class GenPwdApp {
           if (mainContent) mainContent.style.display = '';
           if (vaultContainer) vaultContainer.style.display = 'none';
           if (debugPanel) debugPanel.style.display = '';
+          if (appContainer) appContainer.classList.remove('vault-mode');
         } else if (targetTab === 'vault') {
           // Show vault, hide generator
           if (mainContent) mainContent.style.display = 'none';
-          if (vaultContainer) vaultContainer.style.display = 'block';
+          if (vaultContainer) vaultContainer.style.display = 'flex';
           if (debugPanel) debugPanel.style.display = 'none';
+          if (appContainer) appContainer.classList.add('vault-mode');
         }
       });
     });

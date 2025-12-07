@@ -45,32 +45,81 @@ if (typeof window !== 'undefined') {
 
 /**
  * Fallback HTML sanitizer when DOMPurify is not available
- * In browser/Electron context, we trust internal HTML and just remove dangerous patterns
+ * SECURITY: Always escape HTML to prevent XSS - regex filtering is NOT safe
  * @param {string} html - HTML to sanitize
- * @returns {string} - Sanitized HTML
+ * @returns {string} - Escaped HTML (safe but no formatting preserved)
  */
 function fallbackSanitize(html) {
   if (typeof html !== 'string') {
     return '';
   }
 
-  // In browser/Electron environment, trust internal HTML but remove dangerous patterns
-  if (typeof window !== 'undefined') {
-    // Remove script tags and event handlers
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
-      .replace(/javascript:/gi, '');
-  }
-
-  // In Node.js test environment, escape everything for safety
+  // SECURITY FIX: Always escape HTML regardless of environment
+  // Regex-based filtering can be bypassed with:
+  // - <img src=x onerror=alert(1)>
+  // - <svg/onload=alert(1)>
+  // - Various encoding attacks
+  // The only safe fallback is full HTML escaping
   return html
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
+    .replace(/'/g, '&#x27;');
+}
+
+/**
+ * Use browser's built-in DOM parser for safer sanitization
+ * Only allows specific safe tags when DOMPurify unavailable
+ * @param {string} html - HTML to sanitize
+ * @param {string[]} allowedTags - List of allowed tag names
+ * @returns {string} - Sanitized HTML
+ */
+function fallbackSanitizeWithDOM(html, allowedTags = ['b', 'i', 'em', 'strong', 'u', 'br', 'span', 'p']) {
+  if (typeof html !== 'string' || typeof document === 'undefined') {
+    return fallbackSanitize(html);
+  }
+
+  try {
+    // Parse HTML using browser's DOM parser (safer than regex)
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const doc = template.content;
+
+    // Remove all script elements
+    doc.querySelectorAll('script, style, iframe, object, embed, form, link, meta').forEach(el => el.remove());
+
+    // Remove all event handlers and dangerous attributes
+    doc.querySelectorAll('*').forEach(el => {
+      // Check if tag is allowed
+      if (!allowedTags.includes(el.tagName.toLowerCase())) {
+        // Replace with text content
+        el.replaceWith(document.createTextNode(el.textContent || ''));
+        return;
+      }
+
+      // Remove all attributes except safe ones
+      const safeAttrs = ['class', 'id', 'href', 'title'];
+      Array.from(el.attributes).forEach(attr => {
+        const name = attr.name.toLowerCase();
+        // Remove event handlers and dangerous attributes
+        if (name.startsWith('on') ||
+            name === 'style' ||
+            name === 'srcset' ||
+            (name === 'href' && attr.value.toLowerCase().includes('javascript:'))) {
+          el.removeAttribute(attr.name);
+        } else if (!safeAttrs.includes(name) && !name.startsWith('data-') && !name.startsWith('aria-')) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+
+    return template.innerHTML;
+  } catch (error) {
+    // If DOM parsing fails, fall back to full escaping
+    console.warn('[DOM Sanitizer] DOM-based fallback failed, using escape:', error);
+    return fallbackSanitize(html);
+  }
 }
 
 /**
@@ -95,8 +144,18 @@ export function sanitizeHTML(html, options = {}) {
     return '';
   }
 
-  // Use fallback if DOMPurify is not available (Node.js environment)
+  // Use fallback if DOMPurify is not available
   if (!DOMPurify) {
+    // In browser context, use DOM-based sanitization (safer than regex)
+    if (typeof document !== 'undefined') {
+      const allowedTags = options.ALLOWED_TAGS || [
+        'b', 'i', 'em', 'strong', 'u', 'p', 'br', 'span', 'div',
+        'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'code', 'pre', 'blockquote'
+      ];
+      return fallbackSanitizeWithDOM(html, allowedTags);
+    }
+    // In Node.js, escape everything
     return fallbackSanitize(html);
   }
 
@@ -145,6 +204,10 @@ export function sanitizeHTML(html, options = {}) {
     return DOMPurify.sanitize(html, config);
   } catch (error) {
     console.error('[DOM Sanitizer] Sanitization failed:', error);
+    // Use DOM-based fallback in browser, escape in Node.js
+    if (typeof document !== 'undefined') {
+      return fallbackSanitizeWithDOM(html, config.ALLOWED_TAGS);
+    }
     return fallbackSanitize(html);
   }
 }

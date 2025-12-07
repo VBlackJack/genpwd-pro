@@ -10,17 +10,13 @@
  *     - IPC Handlers (vault operations exposed to renderer)
  *
  *   Renderer Process:
- *     - window.vault API (via contextBridge)
+ *     - window.vault API (via contextBridge in electron-preload.cjs)
  *     - Event listeners for vault state changes
  *
  * Usage (Main Process):
  *   import { registerVaultIPC, setMainWindow } from './vault/index.js';
  *   registerVaultIPC(ipcMain);
  *   setMainWindow(mainWindow);
- *
- * Usage (Preload):
- *   const { exposeVaultAPI } = require('./vault/ipc/vault-preload.js');
- *   exposeVaultAPI(contextBridge, ipcRenderer);
  *
  * Usage (Renderer):
  *   await window.vault.create('My Vault', 'password123');
@@ -43,6 +39,3 @@ export {
   createEmptyVault,
   VAULT_FORMAT_VERSION
 } from './models/vault-types.js';
-
-// Re-export preload for convenience (though it needs CommonJS in preload)
-export { exposeVaultAPI } from './ipc/vault-preload.js';

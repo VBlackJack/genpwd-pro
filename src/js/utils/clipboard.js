@@ -23,12 +23,110 @@ import { safeLog } from './logger.js';
 const MAX_CLIPBOARD_LENGTH = 100000; // 100KB
 
 /**
+ * Auto-clear timer ID
+ * @type {number|null}
+ */
+let autoClearTimer = null;
+
+/**
+ * Default auto-clear timeout options (in seconds)
+ */
+export const CLIPBOARD_TIMEOUT_OPTIONS = [
+  { value: 0, label: 'Désactivé' },
+  { value: 15, label: '15 secondes' },
+  { value: 30, label: '30 secondes' },
+  { value: 60, label: '1 minute' },
+  { value: 120, label: '2 minutes' }
+];
+
+/**
+ * Get clipboard auto-clear timeout from settings
+ * @returns {number} Timeout in seconds (0 = disabled)
+ */
+export function getClipboardTimeout() {
+  const stored = localStorage.getItem('clipboard-auto-clear');
+  if (stored === null) return 30; // Default: 30 seconds
+  const value = parseInt(stored, 10);
+  return isNaN(value) ? 30 : value;
+}
+
+/**
+ * Set clipboard auto-clear timeout
+ * @param {number} seconds - Timeout in seconds (0 to disable)
+ */
+export function setClipboardTimeout(seconds) {
+  localStorage.setItem('clipboard-auto-clear', seconds.toString());
+}
+
+/**
+ * Clear the clipboard
+ * @returns {Promise<boolean>} Success status
+ */
+export async function clearClipboard() {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText('');
+      safeLog('Clipboard cleared');
+      return true;
+    }
+    return false;
+  } catch (err) {
+    safeLog(`Failed to clear clipboard: ${err.message}`);
+    return false;
+  }
+}
+
+/**
+ * Schedule clipboard auto-clear
+ * @param {number} [timeout] - Override timeout in seconds
+ */
+function scheduleAutoClear(timeout) {
+  // Cancel any existing timer
+  if (autoClearTimer) {
+    clearTimeout(autoClearTimer);
+    autoClearTimer = null;
+  }
+
+  const seconds = timeout ?? getClipboardTimeout();
+  if (seconds <= 0) return; // Auto-clear disabled
+
+  autoClearTimer = setTimeout(async () => {
+    await clearClipboard();
+    autoClearTimer = null;
+
+    // Dispatch event for UI feedback
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('clipboard-cleared', {
+        detail: { auto: true }
+      }));
+    }
+  }, seconds * 1000);
+
+  safeLog(`Clipboard will auto-clear in ${seconds}s`);
+}
+
+/**
+ * Cancel scheduled clipboard clear
+ */
+export function cancelAutoClear() {
+  if (autoClearTimer) {
+    clearTimeout(autoClearTimer);
+    autoClearTimer = null;
+    safeLog('Auto-clear cancelled');
+  }
+}
+
+/**
  * Copies text to clipboard using modern Clipboard API or fallback
  * @param {string} text - Text to copy
+ * @param {Object} [options] - Options
+ * @param {boolean} [options.autoClear=true] - Whether to schedule auto-clear
+ * @param {number} [options.timeout] - Override auto-clear timeout
  * @returns {Promise<boolean>} Success status
  * @throws {Error} If text exceeds maximum length
  */
-export async function copyToClipboard(text) {
+export async function copyToClipboard(text, options = {}) {
+  const { autoClear = true, timeout } = options;
   // Input validation
   if (!text || typeof text !== 'string') {
     safeLog('copyToClipboard: text must be a non-empty string');
@@ -42,19 +140,32 @@ export async function copyToClipboard(text) {
   }
 
   try {
+    let success = false;
+
     // Prefer modern Clipboard API in secure contexts
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
       safeLog('Text copied to clipboard using Clipboard API');
-      return true;
+      success = true;
+    } else {
+      // Fallback for non-secure contexts or older browsers
+      safeLog('Using fallback clipboard method (non-secure context or old browser)');
+      success = fallbackCopyTextToClipboard(text);
     }
 
-    // Fallback for non-secure contexts or older browsers
-    safeLog('Using fallback clipboard method (non-secure context or old browser)');
-    return fallbackCopyTextToClipboard(text);
+    // Schedule auto-clear if copy was successful
+    if (success && autoClear) {
+      scheduleAutoClear(timeout);
+    }
+
+    return success;
   } catch (err) {
     safeLog(`Clipboard API failed: ${err.message}, trying fallback`);
-    return fallbackCopyTextToClipboard(text);
+    const success = fallbackCopyTextToClipboard(text);
+    if (success && autoClear) {
+      scheduleAutoClear(timeout);
+    }
+    return success;
   }
 }
 

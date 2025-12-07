@@ -411,6 +411,201 @@ class PresetManager {
     this.savePresets();
     safeLog('[PresetManager] Cleared all non-default presets');
   }
+
+  // ==================== VAULT INTEGRATION ====================
+
+  /**
+   * Check if vault is available and unlocked
+   * @returns {Promise<boolean>}
+   */
+  async isVaultReady() {
+    if (!window.vault) return false;
+    try {
+      const state = await window.vault.getState();
+      return state?.status === 'unlocked';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Export a single preset to the vault
+   * @param {string} id - Preset ID to export
+   * @returns {Promise<{success: boolean, entryId?: string, error?: string}>}
+   */
+  async exportToVault(id) {
+    const preset = this.presets.get(id);
+    if (!preset) {
+      return { success: false, error: 'Preset non trouvé' };
+    }
+
+    if (!await this.isVaultReady()) {
+      return { success: false, error: 'Coffre non disponible ou verrouillé' };
+    }
+
+    try {
+      const entryData = {
+        presetId: preset.id,
+        description: preset.description,
+        config: preset.config,
+        exportedAt: new Date().toISOString()
+      };
+
+      const result = await window.vault.entries.add(
+        'preset',
+        preset.name,
+        entryData,
+        { favorite: false }
+      );
+
+      if (result?.id) {
+        safeLog(`[PresetManager] Exported preset to vault: ${preset.name}`);
+        return { success: true, entryId: result.id };
+      }
+      return { success: false, error: 'Erreur lors de l\'export' };
+    } catch (error) {
+      safeLog(`[PresetManager] Vault export error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Export all presets to the vault
+   * @returns {Promise<{success: number, failed: number}>}
+   */
+  async exportAllToVault() {
+    if (!await this.isVaultReady()) {
+      return { success: 0, failed: this.presets.size };
+    }
+
+    let success = 0;
+    let failed = 0;
+
+    for (const preset of this.presets.values()) {
+      const result = await this.exportToVault(preset.id);
+      if (result.success) {
+        success++;
+      } else {
+        failed++;
+      }
+    }
+
+    safeLog(`[PresetManager] Exported ${success}/${success + failed} presets to vault`);
+    return { success, failed };
+  }
+
+  /**
+   * Get all presets stored in the vault
+   * @returns {Promise<Array>}
+   */
+  async getVaultPresets() {
+    if (!await this.isVaultReady()) {
+      return [];
+    }
+
+    try {
+      const entries = await window.vault.entries.getAll();
+      return entries.filter(e => e.type === 'preset');
+    } catch (error) {
+      safeLog(`[PresetManager] Error fetching vault presets: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Import presets from the vault
+   * @param {boolean} overwrite - Whether to overwrite existing presets with same name
+   * @returns {Promise<{imported: number, skipped: number}>}
+   */
+  async importFromVault(overwrite = false) {
+    const vaultPresets = await this.getVaultPresets();
+    if (vaultPresets.length === 0) {
+      return { imported: 0, skipped: 0 };
+    }
+
+    let imported = 0;
+    let skipped = 0;
+
+    for (const entry of vaultPresets) {
+      const data = entry.data;
+      if (!data?.config) {
+        skipped++;
+        continue;
+      }
+
+      // Check for existing preset with same name
+      const existingByName = Array.from(this.presets.values()).find(
+        p => p.name.toLowerCase() === entry.title.toLowerCase()
+      );
+
+      if (existingByName && !overwrite) {
+        skipped++;
+        continue;
+      }
+
+      // If overwrite, delete existing
+      if (existingByName && overwrite) {
+        this.presets.delete(existingByName.id);
+      }
+
+      // Create new preset from vault data
+      const preset = {
+        id: this.generateId(),
+        name: entry.title,
+        description: data.description || '',
+        config: { ...data.config },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDefault: false
+      };
+
+      this.presets.set(preset.id, preset);
+      imported++;
+    }
+
+    if (imported > 0) {
+      this.savePresets();
+    }
+
+    safeLog(`[PresetManager] Imported ${imported} presets from vault (${skipped} skipped)`);
+    return { imported, skipped };
+  }
+
+  /**
+   * Sync presets with vault (bidirectional)
+   * @param {'toVault' | 'fromVault' | 'merge'} direction
+   * @returns {Promise<{exported: number, imported: number}>}
+   */
+  async syncWithVault(direction = 'merge') {
+    if (!await this.isVaultReady()) {
+      return { exported: 0, imported: 0 };
+    }
+
+    let exported = 0;
+    let imported = 0;
+
+    if (direction === 'toVault' || direction === 'merge') {
+      const result = await this.exportAllToVault();
+      exported = result.success;
+    }
+
+    if (direction === 'fromVault' || direction === 'merge') {
+      const result = await this.importFromVault(direction === 'merge');
+      imported = result.imported;
+    }
+
+    safeLog(`[PresetManager] Sync complete: ${exported} exported, ${imported} imported`);
+    return { exported, imported };
+  }
+
+  /**
+   * Get count of presets in vault
+   * @returns {Promise<number>}
+   */
+  async getVaultPresetCount() {
+    const presets = await this.getVaultPresets();
+    return presets.length;
+  }
 }
 
 // Create singleton instance

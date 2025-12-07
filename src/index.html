@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="styles/dynamic-modals.css">
   <link rel="stylesheet" href="styles/utilities.css">
   <link rel="stylesheet" href="styles/vault.css">
+  <link rel="stylesheet" href="styles/save-modal.css">
 </head>
 <body>
   <!-- Skip Navigation Link for Accessibility -->
@@ -63,7 +64,12 @@
         </div>
 
         <div class="header-right">
-          <div class="version-badge" aria-label="Version 2.6.0">v2.6.0</div>
+          <!-- Vault Status Indicator (Electron only) -->
+          <button class="vault-status-indicator" id="vault-status-indicator" hidden aria-label="Status du coffre" title="Cliquez pour accéder au coffre">
+            <span class="vault-status-icon">🔒</span>
+            <span class="vault-status-text">Verrouillé</span>
+          </button>
+          <div class="version-badge" aria-label="Version 2.6.7">v2.6.7</div>
           <button class="about-btn" id="btn-about" aria-label="Afficher les informations à propos de GenPwd Pro">
             <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
@@ -95,8 +101,8 @@
         </div>
 		<div class="modal-body">
 		  <div class="about-section">
-                       <h3>Architecture modulaire v2.6.0</h3>
-                       <p><strong>GenPwd Pro v2.6.0</strong> propose une architecture ES6 modulaire avec dictionnaires externalisés et tests intégrés :</p>
+                       <h3>Architecture modulaire v2.6.7</h3>
+                       <p><strong>GenPwd Pro v2.6.7</strong> propose une architecture ES6 modulaire avec dictionnaires externalisés et tests intégrés :</p>
 			<ul class="feature-list">
 			  <li><strong>Français :</strong> 2400+ mots et expressions courantes</li>
 			  <li><strong>English :</strong> Collection étendue de mots et phrases</li>
@@ -132,7 +138,7 @@
 
 		  <div class="author-credit">
 			<div class="author-name">Julien Bombled</div>
-                       <div class="author-role">Version modulaire v2.6.0 • Architecture ES6</div>
+                       <div class="author-role">Version modulaire v2.6.7 • Architecture ES6</div>
 		  </div>
 		</div>
       </div>
@@ -142,7 +148,7 @@
     <div id="test-results-modal" class="modal-overlay hidden" role="dialog" aria-labelledby="test-results-title" aria-modal="true" aria-hidden="true">
       <div class="modal test-modal">
         <div class="modal-header">
-          <div class="modal-title" id="test-results-title">📊 Résultats des Tests - GenPwd Pro v2.6.0</div>
+          <div class="modal-title" id="test-results-title">📊 Résultats des Tests - GenPwd Pro v2.6.7</div>
           <button type="button" class="modal-close" id="close-test-results" aria-label="Fermer les résultats des tests">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -182,8 +188,8 @@
       </div>
     </div>
 
-    <!-- Vault Container (hidden by default) -->
-    <div id="vault-container" style="display: none; padding: 16px; max-width: 800px; margin: 0 auto;"></div>
+    <!-- Vault Container (hidden by default, full width for 3-panel layout) -->
+    <div id="vault-container" style="display: none;"></div>
 
     <div class="main" id="main-content">
       <!-- Configuration Panel -->
@@ -426,6 +432,7 @@
         <div class="actions" role="toolbar" aria-label="Actions principales">
           <button class="btn primary" id="btn-generate" aria-label="Générer de nouveaux mots de passe (Raccourci: Alt+G)">🔒 Générer</button>
           <button class="btn" id="btn-copy-all" aria-label="Copier tous les mots de passe générés (Raccourci: Alt+C)">📋 Tout Copier</button>
+          <button class="btn icon-btn" id="btn-clipboard-settings" title="Paramètres presse-papiers" aria-label="Configurer l'effacement automatique du presse-papiers">⏱️</button>
           <button class="btn" id="btn-export" aria-label="Exporter les résultats">📤 Export</button>
           <button class="btn danger" id="btn-clear" aria-label="Effacer tous les résultats">🗑️ Effacer</button>
           <span class="spacer" aria-hidden="true"></span>
