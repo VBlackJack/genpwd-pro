@@ -2,7 +2,7 @@
  * @fileoverview Auto-type Simulation
  * Keyboard simulation for automatic form filling
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

@@ -2,7 +2,7 @@
  * @fileoverview Entry Templates
  * Predefined templates for common sites and services
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 /**

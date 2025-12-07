@@ -3698,7 +3698,7 @@ export class VaultUI {
     if (format === 'json') {
       // Native JSON format
       const exportData = {
-        version: '2.6.7',
+        version: '2.6.8',
         exportedAt: new Date().toISOString(),
         entries: entries.map(e => ({
           type: e.type,

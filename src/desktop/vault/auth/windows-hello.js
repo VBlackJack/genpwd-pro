@@ -5,7 +5,7 @@
  * Uses PowerShell to interact with Windows Hello and Credential Manager
  * No native module dependencies required
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { exec, execSync } from 'child_process';

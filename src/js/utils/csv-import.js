@@ -2,7 +2,7 @@
  * @fileoverview CSV Import for Password Managers
  * Supports: Bitwarden, LastPass, 1Password, Chrome/Edge, Firefox
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

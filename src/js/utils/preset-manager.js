@@ -34,54 +34,196 @@ const STORAGE_KEY = 'genpwd_presets';
 const DEFAULT_PRESET_ID = 'default';
 
 class PresetManager {
+  // Private properties for vault event unsubscribe functions
+  #unsubscribeUnlocked = null;
+  #unsubscribeLocked = null;
+
   constructor() {
     this.presets = new Map();
-    this.loadPresets();
+    this.vaultListenersInitialized = false;
+    this.updateUICallback = null;
+    // Only load default preset at startup (custom presets come from vault)
     this.ensureDefaultPreset();
+    // Initialize vault listeners for unlock/lock events
+    this.initVaultListeners();
   }
 
   /**
-   * Load presets from localStorage
+   * Set callback to update UI when presets change
+   * @param {Function} callback
    */
-  loadPresets() {
+  setUpdateUICallback(callback) {
+    this.updateUICallback = callback;
+  }
+
+  /**
+   * Notify UI of preset changes
+   */
+  notifyUIUpdate() {
+    if (typeof this.updateUICallback === 'function') {
+      this.updateUICallback();
+    }
+    // Also dispatch custom event for other listeners
+    window.dispatchEvent(new CustomEvent('presets-changed'));
+  }
+
+  /**
+   * Initialize vault event listeners for unlock/lock
+   * Uses window.vault.on() API which works with Electron's context isolation
+   */
+  initVaultListeners() {
+    if (this.vaultListenersInitialized) return;
+    if (typeof window === 'undefined') return;
+
+    // Wait for vault API to be available (Electron only)
+    // Use setTimeout to allow the app to fully initialize
+    const checkVaultAndSubscribe = () => {
+      if (!window.vault) {
+        safeLog('[PresetManager] Vault API not available - browser mode');
+        return;
+      }
+
+      // Listen for vault unlock via IPC bridge (works with context isolation)
+      this.#unsubscribeUnlocked = window.vault.on('unlocked', async () => {
+        safeLog('[PresetManager] Vault unlocked - loading custom presets');
+        await this.loadCustomPresetsFromVault();
+        this.notifyUIUpdate();
+      });
+
+      // Listen for vault lock
+      this.#unsubscribeLocked = window.vault.on('locked', () => {
+        safeLog('[PresetManager] Vault locked - clearing custom presets');
+        this.clearCustomPresets();
+        this.notifyUIUpdate();
+      });
+
+      this.vaultListenersInitialized = true;
+      safeLog('[PresetManager] Vault event listeners initialized (using vault.on API)');
+    };
+
+    // Check immediately and also after a short delay for timing issues
+    checkVaultAndSubscribe();
+  }
+
+  /**
+   * Load custom presets from vault (called on vault unlock)
+   * @returns {Promise<number>} Number of presets loaded
+   */
+  async loadCustomPresetsFromVault() {
+    if (!await this.isVaultReady()) {
+      safeLog('[PresetManager] Vault not ready, skipping load');
+      return 0;
+    }
+
     try {
-      const stored = safeGetItem(STORAGE_KEY);
-      if (!stored) {
-        safeLog('[PresetManager] No stored presets found');
-        return;
-      }
+      const vaultPresets = await this.getVaultPresets();
+      let loaded = 0;
 
-      const data = JSON.parse(stored);
-      if (!Array.isArray(data)) {
-        safeLog('[PresetManager] Invalid preset data format');
-        return;
-      }
+      for (const entry of vaultPresets) {
+        const data = entry.data;
+        if (!data?.config) continue;
 
-      for (const preset of data) {
-        // Convert date strings back to Date objects
-        preset.createdAt = new Date(preset.createdAt);
-        preset.updatedAt = new Date(preset.updatedAt);
+        // Create preset from vault entry
+        const preset = {
+          id: entry.id, // Use vault entry ID as preset ID for sync
+          name: entry.title,
+          description: data.description || '',
+          config: { ...data.config },
+          createdAt: new Date(entry.createdAt || Date.now()),
+          updatedAt: new Date(entry.modifiedAt || Date.now()),
+          isDefault: false,
+          vaultEntryId: entry.id // Reference to vault entry
+        };
+
         this.presets.set(preset.id, preset);
+        loaded++;
       }
 
-      safeLog(`[PresetManager] Loaded ${this.presets.size} presets`);
+      safeLog(`[PresetManager] Loaded ${loaded} custom presets from vault`);
+      return loaded;
     } catch (error) {
-      safeLog(`[PresetManager] Error loading presets: ${error.message}`);
+      safeLog(`[PresetManager] Error loading from vault: ${error.message}`);
+      return 0;
     }
   }
 
   /**
-   * Save all presets to localStorage
+   * Clear all custom presets (keep only default)
+   * Called on vault lock
+   */
+  clearCustomPresets() {
+    const defaultPreset = this.presets.get(DEFAULT_PRESET_ID);
+    this.presets.clear();
+    if (defaultPreset) {
+      this.presets.set(DEFAULT_PRESET_ID, defaultPreset);
+    }
+    safeLog('[PresetManager] Custom presets cleared (vault locked)');
+  }
+
+  /**
+   * Load presets from localStorage (legacy - only for migration)
+   * @deprecated Use loadCustomPresetsFromVault instead
+   */
+  loadPresets() {
+    // No longer load from localStorage - presets are vault-only
+    safeLog('[PresetManager] localStorage loading disabled - use vault');
+  }
+
+  /**
+   * Save all presets to localStorage (legacy - disabled)
+   * @deprecated Presets are now saved to vault
    */
   savePresets() {
+    // No longer save to localStorage - presets are vault-only
+    // This is kept for API compatibility but does nothing
+    safeLog('[PresetManager] localStorage saving disabled - using vault');
+  }
+
+  /**
+   * Save a preset to the vault
+   * @param {Object} preset - Preset to save
+   * @returns {Promise<boolean>} Success status
+   */
+  async savePresetToVault(preset) {
+    if (!await this.isVaultReady()) {
+      safeLog('[PresetManager] Cannot save to vault - not ready');
+      return false;
+    }
+
     try {
-      const data = Array.from(this.presets.values());
-      if (!safeSetItem(STORAGE_KEY, data)) {
-        throw new Error('Failed to save to localStorage (quota exceeded?)');
+      const entryData = {
+        presetId: preset.id,
+        description: preset.description,
+        config: preset.config,
+        savedAt: new Date().toISOString()
+      };
+
+      // If preset has a vault entry ID, update it; otherwise create new
+      if (preset.vaultEntryId) {
+        await window.vault.entries.update(preset.vaultEntryId, {
+          title: preset.name,
+          data: entryData
+        });
+        safeLog(`[PresetManager] Updated preset in vault: ${preset.name}`);
+      } else {
+        const result = await window.vault.entries.add(
+          'preset',
+          preset.name,
+          entryData,
+          { favorite: false }
+        );
+        if (result?.id) {
+          preset.vaultEntryId = result.id;
+          preset.id = result.id; // Use vault ID
+          this.presets.delete(preset.id); // Remove old entry
+          this.presets.set(result.id, preset); // Add with new ID
+          safeLog(`[PresetManager] Created preset in vault: ${preset.name}`);
+        }
       }
-      safeLog(`[PresetManager] Saved ${data.length} presets`);
+      return true;
     } catch (error) {
-      safeLog(`[PresetManager] Error saving presets: ${error.message}`);
+      safeLog(`[PresetManager] Error saving to vault: ${error.message}`);
+      return false;
     }
   }
 
@@ -131,13 +273,19 @@ class PresetManager {
   }
 
   /**
-   * Create a new preset
+   * Create a new preset (saves to vault)
    * @param {string} name - Preset name
    * @param {Object} config - Password generation configuration
    * @param {string} description - Optional description
-   * @returns {Preset} Created preset
+   * @returns {Promise<Preset|null>} Created preset or null if vault unavailable
    */
-  createPreset(name, config, description = '') {
+  async createPreset(name, config, description = '') {
+    // Check vault is ready
+    if (!await this.isVaultReady()) {
+      safeLog('[PresetManager] Cannot create preset - vault not ready');
+      return null;
+    }
+
     const id = this.generateId();
     const preset = {
       id,
@@ -149,9 +297,17 @@ class PresetManager {
       isDefault: false
     };
 
-    this.presets.set(id, preset);
-    this.savePresets();
+    // Save to vault first
+    const saved = await this.savePresetToVault(preset);
+    if (!saved) {
+      safeLog(`[PresetManager] Failed to save preset to vault: ${name}`);
+      return null;
+    }
+
+    // Add to local map (ID may have been updated by savePresetToVault)
+    this.presets.set(preset.id, preset);
     safeLog(`[PresetManager] Created preset: ${name}`);
+    this.notifyUIUpdate();
 
     return preset;
   }
@@ -174,12 +330,12 @@ class PresetManager {
   }
 
   /**
-   * Update an existing preset
+   * Update an existing preset (saves to vault for non-default)
    * @param {string} id - Preset ID
    * @param {Object} updates - Fields to update
-   * @returns {boolean} Success status
+   * @returns {Promise<boolean>} Success status
    */
-  updatePreset(id, updates) {
+  async updatePreset(id, updates) {
     const preset = this.presets.get(id);
     if (!preset) {
       safeLog(`[PresetManager] Preset not found: ${id}`);
@@ -198,21 +354,40 @@ class PresetManager {
     if (updates.config !== undefined) preset.config = { ...updates.config };
 
     preset.updatedAt = new Date();
-    this.savePresets();
-    safeLog(`[PresetManager] Updated preset: ${preset.name}`);
 
+    // Save to vault for non-default presets
+    if (!preset.isDefault) {
+      if (!await this.isVaultReady()) {
+        safeLog('[PresetManager] Cannot update preset - vault not ready');
+        return false;
+      }
+      const saved = await this.savePresetToVault(preset);
+      if (!saved) {
+        safeLog(`[PresetManager] Failed to update preset in vault: ${preset.name}`);
+        return false;
+      }
+    }
+
+    safeLog(`[PresetManager] Updated preset: ${preset.name}`);
+    this.notifyUIUpdate();
     return true;
   }
 
   /**
-   * Duplicate a preset
+   * Duplicate a preset (saves to vault)
    * @param {string} id - Preset ID to duplicate
-   * @returns {Preset|null} The duplicated preset or null on error
+   * @returns {Promise<Preset|null>} The duplicated preset or null on error
    */
-  duplicatePreset(id) {
+  async duplicatePreset(id) {
     const preset = this.presets.get(id);
     if (!preset) {
       safeLog(`[PresetManager] Preset not found: ${id}`);
+      return null;
+    }
+
+    // Check vault is ready
+    if (!await this.isVaultReady()) {
+      safeLog('[PresetManager] Cannot duplicate preset - vault not ready');
       return null;
     }
 
@@ -228,19 +403,26 @@ class PresetManager {
       isDefault: false
     };
 
-    this.presets.set(newId, duplicatedPreset);
-    this.savePresets();
+    // Save to vault
+    const saved = await this.savePresetToVault(duplicatedPreset);
+    if (!saved) {
+      safeLog(`[PresetManager] Failed to save duplicated preset to vault`);
+      return null;
+    }
+
+    this.presets.set(duplicatedPreset.id, duplicatedPreset);
     safeLog(`[PresetManager] Duplicated preset: ${duplicatedPreset.name}`);
+    this.notifyUIUpdate();
 
     return duplicatedPreset;
   }
 
   /**
-   * Delete a preset
+   * Delete a preset (removes from vault)
    * @param {string} id - Preset ID
-   * @returns {boolean} Success status
+   * @returns {Promise<boolean>} Success status
    */
-  deletePreset(id) {
+  async deletePreset(id) {
     const preset = this.presets.get(id);
     if (!preset) {
       safeLog(`[PresetManager] Preset not found: ${id}`);
@@ -253,9 +435,20 @@ class PresetManager {
       return false;
     }
 
+    // Delete from vault if has vault entry
+    if (preset.vaultEntryId && await this.isVaultReady()) {
+      try {
+        await window.vault.entries.delete(preset.vaultEntryId);
+        safeLog(`[PresetManager] Deleted preset from vault: ${preset.name}`);
+      } catch (error) {
+        safeLog(`[PresetManager] Error deleting from vault: ${error.message}`);
+        // Continue with local deletion anyway
+      }
+    }
+
     this.presets.delete(id);
-    this.savePresets();
     safeLog(`[PresetManager] Deleted preset: ${preset.name}`);
+    this.notifyUIUpdate();
 
     return true;
   }
@@ -280,12 +473,18 @@ class PresetManager {
   }
 
   /**
-   * Import preset from JSON
+   * Import preset from JSON (saves to vault)
    * @param {string} json - JSON string
-   * @returns {Preset|null} Imported preset or null
+   * @returns {Promise<Preset|null>} Imported preset or null
    */
-  importPreset(json) {
+  async importPreset(json) {
     try {
+      // Check vault is ready
+      if (!await this.isVaultReady()) {
+        safeLog('[PresetManager] Cannot import preset - vault not ready');
+        return null;
+      }
+
       const data = JSON.parse(json);
 
       // Validate required fields
@@ -305,9 +504,16 @@ class PresetManager {
         isDefault: false
       };
 
+      // Save to vault first
+      const saved = await this.savePresetToVault(preset);
+      if (!saved) {
+        safeLog(`[PresetManager] Failed to save imported preset to vault`);
+        return null;
+      }
+
       this.presets.set(preset.id, preset);
-      this.savePresets();
       safeLog(`[PresetManager] Imported preset: ${preset.name}`);
+      this.notifyUIUpdate();
 
       return preset;
     } catch (error) {
@@ -326,12 +532,18 @@ class PresetManager {
   }
 
   /**
-   * Import multiple presets from JSON
+   * Import multiple presets from JSON (saves to vault)
    * @param {string} json - JSON string
-   * @returns {number} Number of imported presets
+   * @returns {Promise<number>} Number of imported presets
    */
-  importAll(json) {
+  async importAll(json) {
     try {
+      // Check vault is ready
+      if (!await this.isVaultReady()) {
+        safeLog('[PresetManager] Cannot import presets - vault not ready');
+        return 0;
+      }
+
       const data = JSON.parse(json);
       if (!Array.isArray(data)) {
         safeLog('[PresetManager] Import data must be an array');
@@ -340,7 +552,7 @@ class PresetManager {
 
       let imported = 0;
       for (const item of data) {
-        const preset = this.importPreset(JSON.stringify(item));
+        const preset = await this.importPreset(JSON.stringify(item));
         if (preset) {
           imported++;
         }

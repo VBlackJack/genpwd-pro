@@ -2,7 +2,7 @@
  * @fileoverview SaveToVaultModal - Modal component for saving generated passwords to vault
  * Displays an overlay modal on the Generator tab with entry creation form
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { VaultBridge, VaultState } from './vault-bridge.js';

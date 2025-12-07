@@ -86,8 +86,8 @@ function fallbackSanitizeWithDOM(html, allowedTags = ['b', 'i', 'em', 'strong', 
     template.innerHTML = html;
     const doc = template.content;
 
-    // Remove all script elements
-    doc.querySelectorAll('script, style, iframe, object, embed, form, link, meta').forEach(el => el.remove());
+    // Remove dangerous elements (form allowed for UI components)
+    doc.querySelectorAll('script, style, iframe, object, embed, link, meta').forEach(el => el.remove());
 
     // Remove all event handlers and dangerous attributes
     doc.querySelectorAll('*').forEach(el => {
@@ -99,7 +99,18 @@ function fallbackSanitizeWithDOM(html, allowedTags = ['b', 'i', 'em', 'strong', 
       }
 
       // Remove all attributes except safe ones
-      const safeAttrs = ['class', 'id', 'href', 'title'];
+      const safeAttrs = [
+        'class', 'id', 'href', 'title', 'target', 'rel',
+        // Form attributes
+        'type', 'name', 'value', 'placeholder', 'for', 'disabled', 'readonly',
+        'required', 'checked', 'selected', 'maxlength', 'minlength', 'rows', 'cols',
+        // SVG attributes
+        'viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+        'd', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
+        'width', 'height', 'points', 'transform',
+        // Image attributes
+        'src', 'alt', 'loading'
+      ];
       Array.from(el.attributes).forEach(attr => {
         const name = attr.name.toLowerCase();
         // Remove event handlers and dangerous attributes
@@ -151,7 +162,11 @@ export function sanitizeHTML(html, options = {}) {
       const allowedTags = options.ALLOWED_TAGS || [
         'b', 'i', 'em', 'strong', 'u', 'p', 'br', 'span', 'div',
         'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'code', 'pre', 'blockquote'
+        'code', 'pre', 'blockquote',
+        'button', 'select', 'option', 'label', 'input', 'textarea',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td', 'svg', 'path', 'line', 'circle', 'polyline', 'rect',
+        'details', 'summary', 'section', 'header', 'footer', 'nav', 'article', 'aside', 'main',
+        'img', 'figure', 'figcaption', 'hr'
       ];
       return fallbackSanitizeWithDOM(html, allowedTags);
     }
@@ -161,17 +176,34 @@ export function sanitizeHTML(html, options = {}) {
 
   // Default secure configuration
   const defaultConfig = {
-    // Allow only safe tags by default
+    // Allow safe tags including form elements and SVG
     ALLOWED_TAGS: [
       'b', 'i', 'em', 'strong', 'u', 'p', 'br', 'span', 'div',
       'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'code', 'pre', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td'
+      'code', 'pre', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      // Form elements (needed for UI components)
+      'button', 'select', 'option', 'label', 'input', 'textarea',
+      // SVG elements
+      'svg', 'path', 'line', 'circle', 'polyline', 'rect', 'g',
+      // Semantic elements
+      'details', 'summary', 'section', 'header', 'footer', 'nav', 'article', 'aside', 'main',
+      // Media elements
+      'img', 'figure', 'figcaption', 'hr'
     ],
 
-    // Allow only safe attributes
+    // Allow safe attributes including form attributes
     ALLOWED_ATTR: [
       'href', 'title', 'class', 'id', 'target', 'rel',
-      'data-*', 'aria-*', 'role'
+      'data-*', 'aria-*', 'role',
+      // Form attributes
+      'type', 'name', 'value', 'placeholder', 'for', 'disabled', 'readonly',
+      'required', 'checked', 'selected', 'maxlength', 'minlength', 'rows', 'cols',
+      // SVG attributes
+      'viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+      'd', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
+      'width', 'height', 'points', 'transform',
+      // Image attributes
+      'src', 'alt', 'loading'
     ],
 
     // Allow data attributes
@@ -190,8 +222,8 @@ export function sanitizeHTML(html, options = {}) {
     RETURN_DOM: false,
     RETURN_DOM_FRAGMENT: false,
 
-    // Forbid dangerous tags
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
+    // Forbid dangerous tags (form/input removed - needed for UI components)
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
 
     // Forbid dangerous attributes
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur']

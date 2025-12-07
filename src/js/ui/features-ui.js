@@ -27,6 +27,8 @@ import { safeLog } from '../utils/logger.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
+import { getBlocks, setBlocks, setUIState } from '../config/settings.js';
+import { renderChips, updateBlockSizeLabel } from './dom.js';
 
 /**
  * Initialize language selector in header
@@ -450,11 +452,17 @@ export function initializePresetsUI() {
           🗂️ ${i18n.t('presets.manage')}
         </button>
       </div>
-      <div class="row">
+      <div class="row" style="gap: 8px;">
         <label for="preset-select">${i18n.t('presets.load')}</label>
         <select id="preset-select" class="grow">
           <option value="">${i18n.t('presets.select')}</option>
         </select>
+        <button class="btn-icon" id="btn-quick-save-preset" title="Mettre à jour le preset avec la config actuelle" disabled style="padding: 4px 8px; font-size: 1em;">
+          💾
+        </button>
+        <button class="btn-icon" id="btn-refresh-presets" title="Charger les presets depuis le coffre" style="padding: 4px 8px; font-size: 1em; display: none;">
+          🔄
+        </button>
       </div>
     </div>
   `);
@@ -476,6 +484,13 @@ export function initializePresetsUI() {
 
   // Bind events
   bindPresetEvents();
+
+  // Set up callback for automatic UI updates on vault unlock/lock
+  presetManager.setUpdateUICallback(() => {
+    updatePresetDropdown();
+    updatePresetBadge();
+  });
+
   safeLog('Presets UI initialized');
 }
 
@@ -498,12 +513,24 @@ function updatePresetDropdown() {
 }
 
 /**
+ * Update preset count badge in section header
+ */
+function updatePresetBadge() {
+  const badge = document.querySelector('.section-header .badge');
+  if (badge) {
+    badge.textContent = presetManager.getAllPresets().length;
+  }
+}
+
+/**
  * Bind preset events
  */
 function bindPresetEvents() {
   const btnSavePreset = document.getElementById('btn-save-preset');
   const btnManagePresets = document.getElementById('btn-manage-presets');
   const presetSelect = document.getElementById('preset-select');
+  const btnQuickSave = document.getElementById('btn-quick-save-preset');
+  const btnRefreshPresets = document.getElementById('btn-refresh-presets');
 
   if (btnSavePreset) {
     btnSavePreset.addEventListener('click', showSavePresetDialog);
@@ -514,8 +541,98 @@ function bindPresetEvents() {
   }
 
   if (presetSelect) {
-    presetSelect.addEventListener('change', loadPreset);
+    presetSelect.addEventListener('change', (event) => {
+      loadPreset(event);
+      // Enable/disable quick save button
+      if (btnQuickSave) {
+        btnQuickSave.disabled = !event.target.value;
+      }
+    });
   }
+
+  // Quick save button - update selected preset with current config
+  if (btnQuickSave) {
+    btnQuickSave.addEventListener('click', () => {
+      const presetId = presetSelect?.value;
+      if (!presetId) return;
+
+      const preset = presetManager.getPreset(presetId);
+      if (!preset) return;
+
+      if (confirm(`Mettre à jour "${preset.name}" avec la configuration actuelle ?`)) {
+        const currentConfig = getCurrentGeneratorConfig();
+        presetManager.updatePreset(presetId, { config: currentConfig }).then(success => {
+          if (success) {
+            showToast(`Preset "${preset.name}" mis à jour !`, 'success');
+            safeLog(`[QuickSave] Updated preset: ${presetId}`);
+          } else {
+            showToast('Échec de la mise à jour (coffre verrouillé ?)', 'error');
+          }
+        });
+      }
+    });
+  }
+
+  // Refresh presets button - load from vault (Electron only)
+  if (btnRefreshPresets && window.vault) {
+    btnRefreshPresets.style.display = 'inline-flex';
+
+    btnRefreshPresets.addEventListener('click', async () => {
+      btnRefreshPresets.disabled = true;
+      btnRefreshPresets.textContent = '⏳';
+
+      try {
+        const isReady = await presetManager.isVaultReady();
+        if (!isReady) {
+          showToast('Coffre verrouillé - déverrouillez-le d\'abord', 'warning');
+          return;
+        }
+
+        const loaded = await presetManager.loadCustomPresetsFromVault();
+        updatePresetDropdown();
+        updatePresetBadge();
+
+        if (loaded > 0) {
+          showToast(`${loaded} preset(s) chargé(s) depuis le coffre`, 'success');
+        } else {
+          showToast('Aucun preset trouvé dans le coffre', 'info');
+        }
+        safeLog(`[RefreshPresets] Loaded ${loaded} presets from vault`);
+      } catch (error) {
+        showToast('Erreur lors du chargement des presets', 'error');
+        safeLog(`[RefreshPresets] Error: ${error.message}`);
+      } finally {
+        btnRefreshPresets.disabled = false;
+        btnRefreshPresets.textContent = '🔄';
+      }
+    });
+  }
+}
+
+/**
+ * Get current generator configuration from DOM elements
+ * @returns {Object} Current configuration
+ */
+function getCurrentGeneratorConfig() {
+  const caseMode = document.getElementById('case-mode-select')?.value || 'mixte';
+  const blocks = getBlocks();
+
+  safeLog(`[getCurrentGeneratorConfig] caseMode=${caseMode}, blocks=${JSON.stringify(blocks)}`);
+
+  return {
+    mode: document.getElementById('mode-select')?.value || 'syllables',
+    length: parseInt(document.getElementById('syll-len')?.value) || 20,
+    policy: document.getElementById('policy-select')?.value || 'standard',
+    digits: parseInt(document.getElementById('digits-count')?.value) || 2,
+    specials: parseInt(document.getElementById('specials-count')?.value) || 2,
+    customSpecials: document.getElementById('custom-specials')?.value || '_+-=.@#%',
+    placeDigits: document.getElementById('place-digits')?.value || 'aleatoire',
+    placeSpecials: document.getElementById('place-specials')?.value || 'aleatoire',
+    caseMode: caseMode,
+    // Always save blocks (they exist even when not in blocks mode)
+    blocks: blocks,
+    quantity: parseInt(document.getElementById('qty')?.value) || 5
+  };
 }
 
 /**
@@ -523,18 +640,7 @@ function bindPresetEvents() {
  */
 function showSavePresetDialog() {
   // Gather current configuration
-  const config = {
-    mode: document.getElementById('mode-select')?.value,
-    length: parseInt(document.getElementById('syll-len')?.value),
-    policy: document.getElementById('policy-select')?.value,
-    digits: parseInt(document.getElementById('digits-count')?.value),
-    specials: parseInt(document.getElementById('specials-count')?.value),
-    customSpecials: document.getElementById('custom-specials')?.value,
-    placeDigits: document.getElementById('place-digits')?.value,
-    placeSpecials: document.getElementById('place-specials')?.value,
-    caseMode: document.getElementById('case-mode-select')?.value,
-    quantity: parseInt(document.getElementById('qty')?.value)
-  };
+  const config = getCurrentGeneratorConfig();
 
   // Create modal
   const modal = document.createElement('div');
@@ -620,18 +726,22 @@ function showSavePresetDialog() {
   nameInput.addEventListener('input', validateName);
 
   // Save button
-  document.getElementById('btn-save-preset-confirm')?.addEventListener('click', () => {
+  document.getElementById('btn-save-preset-confirm')?.addEventListener('click', async () => {
     if (!validateName()) return;
 
     const name = nameInput.value.trim();
     const description = document.getElementById('preset-description')?.value.trim() || '';
 
     try {
-      const preset = presetManager.createPreset(name, config, description);
-      updatePresetDropdown();
-      modal.remove();
-      showToast(`Preset "${name}" sauvegardé !`, 'success');
-      safeLog(`Preset created: ${preset.id}`);
+      const preset = await presetManager.createPreset(name, config, description);
+      if (preset) {
+        updatePresetDropdown();
+        modal.remove();
+        showToast(`Preset "${name}" sauvegardé !`, 'success');
+        safeLog(`Preset created: ${preset.id}`);
+      } else {
+        showToast('Coffre verrouillé - déverrouillez le coffre pour sauvegarder', 'error');
+      }
     } catch (error) {
       showToast('Échec de la sauvegarde du preset', 'error');
       safeLog(`Error saving preset: ${error.message}`);
@@ -661,6 +771,21 @@ function showSavePresetDialog() {
       document.getElementById('btn-save-preset-confirm')?.click();
     }
   });
+}
+
+/**
+ * Update blocks chips UI after setting blocks
+ */
+function updateBlocksChipsUI() {
+  const blocks = getBlocks();
+  renderChips('#chips', blocks, (index) => {
+    const currentBlocks = getBlocks();
+    const current = currentBlocks[index];
+    currentBlocks[index] = current === 'U' ? 'l' : current === 'l' ? 'T' : 'U';
+    setBlocks(currentBlocks);
+    updateBlocksChipsUI();
+  });
+  updateBlockSizeLabel('#block-size-label', blocks.length);
 }
 
 /**
@@ -721,6 +846,35 @@ function loadPreset(event) {
     if (customSpecials) customSpecials.value = config.customSpecials;
   }
 
+  if (config.placeDigits) {
+    const placeDigits = document.getElementById('place-digits');
+    if (placeDigits) placeDigits.value = config.placeDigits;
+  }
+
+  if (config.placeSpecials) {
+    const placeSpecials = document.getElementById('place-specials');
+    if (placeSpecials) placeSpecials.value = config.placeSpecials;
+  }
+
+  if (config.caseMode) {
+    const caseModeSelect = document.getElementById('case-mode-select');
+    if (caseModeSelect) {
+      caseModeSelect.value = config.caseMode;
+      caseModeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  // Restore blocks if in blocks mode
+  // IMPORTANT: Must set blocks AFTER dispatchEvent and mark as dirty to prevent
+  // async scheduleBlockSync from overwriting them
+  if (config.caseMode === 'blocks' && config.blocks && Array.isArray(config.blocks)) {
+    setBlocks(config.blocks);
+    setUIState('blockDirty', true); // Prevent auto-sync from overwriting
+    // Update chips UI
+    updateBlocksChipsUI();
+    safeLog(`[loadPreset] Restored blocks: ${config.blocks.join('-')}`);
+  }
+
   if (config.quantity) {
     const qty = document.getElementById('qty');
     if (qty) {
@@ -729,7 +883,7 @@ function loadPreset(event) {
     }
   }
 
-  showToast(`Preset "${preset.name}" loaded!`, 'success');
+  showToast(`Preset "${preset.name}" chargé !`, 'success');
   safeLog(`Preset loaded: ${preset.id}`);
 }
 
@@ -809,6 +963,7 @@ function showManagePresetsModal() {
               </div>
               <div class="preset-actions">
                 <button class="btn-mini" data-action="load" data-preset-id="${preset.id}">Charger</button>
+                <button class="btn-mini" data-action="update-config" data-preset-id="${preset.id}" title="Remplacer la config par les paramètres actuels">🔄 Màj Config</button>
                 <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}">✏️ Éditer</button>
                 <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}">📋 Dupliquer</button>
                 <button class="btn-mini" data-action="export" data-preset-id="${preset.id}">Export</button>
@@ -911,15 +1066,16 @@ function bindPresetModalEvents(modal) {
         case 'duplicate':
           const presetToDuplicate = presetManager.getPreset(presetId);
           if (presetToDuplicate) {
-            const duplicatedPreset = presetManager.duplicatePreset(presetId);
-            if (duplicatedPreset) {
-              updatePresetDropdown();
-              modal.remove();
-              showManagePresetsModal();
-              showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
-            } else {
-              showToast('Échec de la duplication du preset', 'error');
-            }
+            presetManager.duplicatePreset(presetId).then(duplicatedPreset => {
+              if (duplicatedPreset) {
+                updatePresetDropdown();
+                modal.remove();
+                showManagePresetsModal();
+                showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
+              } else {
+                showToast('Coffre verrouillé - déverrouillez pour dupliquer', 'error');
+              }
+            });
           }
           break;
 
@@ -931,12 +1087,36 @@ function bindPresetModalEvents(modal) {
           }
           break;
 
+        case 'update-config':
+          const presetToUpdate = presetManager.getPreset(presetId);
+          if (presetToUpdate) {
+            if (confirm(`Remplacer la configuration de "${presetToUpdate.name}" par les paramètres actuels ?`)) {
+              const currentConfig = getCurrentGeneratorConfig();
+              presetManager.updatePreset(presetId, { config: currentConfig }).then(success => {
+                if (success) {
+                  updatePresetDropdown();
+                  modal.remove();
+                  showManagePresetsModal(); // Refresh the modal
+                  showToast(`Configuration de "${presetToUpdate.name}" mise à jour !`, 'success');
+                } else {
+                  showToast('Coffre verrouillé - déverrouillez pour mettre à jour', 'error');
+                }
+              });
+            }
+          }
+          break;
+
         case 'delete':
           if (confirm('Supprimer ce preset ?')) {
-            presetManager.deletePreset(presetId);
-            updatePresetDropdown();
-            modal.remove();
-            showToast('Preset deleted', 'success');
+            presetManager.deletePreset(presetId).then(success => {
+              if (success) {
+                updatePresetDropdown();
+                modal.remove();
+                showToast('Preset supprimé', 'success');
+              } else {
+                showToast('Échec de la suppression', 'error');
+              }
+            });
           }
           break;
       }
@@ -953,16 +1133,18 @@ function bindPresetModalEvents(modal) {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const preset = presetManager.importPreset(event.target.result);
+          const preset = await presetManager.importPreset(event.target.result);
           if (preset) {
             updatePresetDropdown();
             modal.remove();
-            showToast(`Preset "${preset.name}" imported!`, 'success');
+            showToast(`Preset "${preset.name}" importé !`, 'success');
+          } else {
+            showToast('Coffre verrouillé - déverrouillez pour importer', 'error');
           }
         } catch (error) {
-          showToast('Failed to import preset', 'error');
+          showToast('Échec de l\'import du preset', 'error');
         }
       };
       reader.readAsText(file);
@@ -985,6 +1167,33 @@ function bindPresetModalEvents(modal) {
 }
 
 /**
+ * Format case mode label for display
+ */
+function formatCaseModeLabel(caseMode, blocks) {
+  const labels = {
+    'mixte': 'Mixte (aléatoire)',
+    'upper': 'MAJUSCULES',
+    'lower': 'minuscules',
+    'title': 'Title Case',
+    'blocks': blocks ? `Blocs (${blocks.join('-')})` : 'Blocs'
+  };
+  return labels[caseMode] || caseMode || 'Mixte';
+}
+
+/**
+ * Format placement label for display
+ */
+function formatPlacementLabel(placement) {
+  const labels = {
+    'aleatoire': 'Aléatoire',
+    'debut': 'Au début',
+    'fin': 'À la fin',
+    'milieu': 'Au milieu'
+  };
+  return labels[placement] || placement || 'Aléatoire';
+}
+
+/**
  * Show edit preset modal
  */
 function showEditPresetModal(presetId) {
@@ -994,6 +1203,8 @@ function showEditPresetModal(presetId) {
     return;
   }
 
+  const config = preset.config;
+
   // Create modal
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
@@ -1002,9 +1213,9 @@ function showEditPresetModal(presetId) {
   modal.setAttribute('aria-modal', 'true');
 
   modal.innerHTML = sanitizeHTML(`
-    <div class="modal">
+    <div class="modal" style="max-width: 500px;">
       <div class="modal-header">
-        <div class="modal-title">✏️ Modifier le Preset</div>
+        <div class="modal-title">✏️ Modifier "${escapeHtml(preset.name)}"</div>
         <button class="modal-close" id="close-edit-modal" aria-label="Fermer">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1013,44 +1224,63 @@ function showEditPresetModal(presetId) {
         </button>
       </div>
       <div class="modal-body">
+        <!-- Info section -->
         <div class="form-group">
-          <label for="edit-preset-name">Nom du preset <span style="color: red;">*</span></label>
-          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50">
-          <span class="error-message" id="edit-name-error" style="display:none; color: red; font-size: 0.85em;"></span>
+          <label for="edit-preset-name">Nom <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb;">
+          <span class="error-message" id="edit-name-error" style="display:none; color: #ef4444; font-size: 0.85em; margin-top: 4px;"></span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="margin-top: 12px;">
           <label for="edit-preset-description">Description</label>
-          <textarea id="edit-preset-description" class="input-field" rows="2">${escapeHtml(preset.description || '')}</textarea>
+          <textarea id="edit-preset-description" class="input-field" rows="2" placeholder="Description optionnelle..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; resize: vertical;">${escapeHtml(preset.description || '')}</textarea>
         </div>
 
-        <div class="config-preview" style="background: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 12px;">
-          <strong>Configuration (non modifiable) :</strong>
-          <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
-            <li>Mode: ${preset.config.mode || 'Non défini'}</li>
-            <li>Longueur: ${preset.config.length || 'N/A'} caractères</li>
-            <li>Politique: ${preset.config.policy || 'Standard'}</li>
-            <li>Chiffres: ${preset.config.digits || 0}</li>
-            <li>Caractères spéciaux: ${preset.config.specials || 0}</li>
-            ${preset.config.customSpecials ? `)<li>Spéciaux personnalisés: ${preset.config.customSpecials}</li>` : ''}
-            <li>Placement chiffres: ${preset.config.placeDigits || 'Aléatoire'}</li>
-            <li>Placement spéciaux: ${preset.config.placeSpecials || 'Aléatoire'}</li>
-            <li>Casse: ${preset.config.caseMode || 'Mixte'}</li>
-            <li>Quantité: ${preset.config.quantity || 1}</li>
-          </ul>
-          <p style="font-size: 0.85em; color: #666; margin-top: 8px;">
-            💡 Pour modifier la configuration, supprimez ce preset et créez-en un nouveau avec les paramètres souhaités.
-          </p>
+        <!-- Config section -->
+        <div style="margin-top: 16px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <strong style="color: #60a5fa;">⚙️ Configuration</strong>
+            <button class="btn-mini" id="btn-update-config-inline" title="Remplacer par les paramètres actuels" style="font-size: 0.8em;">
+              🔄 Màj config
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+              <span style="color: #94a3b8;">Mode:</span> <span style="color: #e5e7eb;">${escapeHtml(config.mode || 'syllables')}</span>
+            </div>
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+              <span style="color: #94a3b8;">Longueur:</span> <span style="color: #e5e7eb;">${config.length || 20}</span>
+            </div>
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+              <span style="color: #94a3b8;">Chiffres:</span> <span style="color: #e5e7eb;">${config.digits || 0}</span>
+            </div>
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+              <span style="color: #94a3b8;">Spéciaux:</span> <span style="color: #e5e7eb;">${config.specials || 0}</span>
+            </div>
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; grid-column: span 2;">
+              <span style="color: #94a3b8;">Casse:</span> <span style="color: #e5e7eb;">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
+            </div>
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+              <span style="color: #94a3b8;">Place chiffres:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeDigits)}</span>
+            </div>
+            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+              <span style="color: #94a3b8;">Place spéciaux:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeSpecials)}</span>
+            </div>
+          </div>
         </div>
 
         ${preset.isDefault ? `
-          <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.9em;">
-            ⚠️ Ceci est le preset par défaut. Vous pouvez modifier son nom et sa description.
+          <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.9em; color: #fbbf24;">
+            ⭐ Preset par défaut
           </div>
         ` : ''}
+
+        <div style="font-size: 0.8em; color: #6b7280; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+          📅 Créé: ${new Date(preset.createdAt).toLocaleDateString('fr-FR')} • Modifié: ${new Date(preset.updatedAt).toLocaleDateString('fr-FR')}
+        </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-edit-preset-confirm">💾 Sauvegarder</button>
+        <button class="btn" id="btn-edit-preset-confirm" style="background: #3b82f6;">💾 Sauvegarder</button>
         <button class="btn" id="btn-cancel-edit">Annuler</button>
       </div>
     </div>
@@ -1087,13 +1317,13 @@ function showEditPresetModal(presetId) {
   nameInput.addEventListener('input', validateName);
 
   // Save button
-  document.getElementById('btn-edit-preset-confirm')?.addEventListener('click', () => {
+  document.getElementById('btn-edit-preset-confirm')?.addEventListener('click', async () => {
     if (!validateName()) return;
 
     const name = nameInput.value.trim();
     const description = document.getElementById('edit-preset-description')?.value.trim() || '';
 
-    const success = presetManager.updatePreset(presetId, {
+    const success = await presetManager.updatePreset(presetId, {
       name: name,
       description: description
     });
@@ -1104,7 +1334,25 @@ function showEditPresetModal(presetId) {
       showToast(`Preset "${name}" modifié avec succès !`, 'success');
       safeLog(`Preset updated: ${presetId}`);
     } else {
-      showToast('Échec de la modification du preset', 'error');
+      showToast('Coffre verrouillé - déverrouillez pour modifier', 'error');
+    }
+  });
+
+  // Update config inline button
+  document.getElementById('btn-update-config-inline')?.addEventListener('click', async () => {
+    const preset = presetManager.getPreset(presetId);
+    if (!preset) return;
+
+    if (confirm(`Remplacer la configuration de "${preset.name}" par les paramètres actuels du générateur ?`)) {
+      const currentConfig = getCurrentGeneratorConfig();
+      const success = await presetManager.updatePreset(presetId, { config: currentConfig });
+      if (success) {
+        modal.remove();
+        showEditPresetModal(presetId); // Refresh modal with new config
+        showToast('Configuration mise à jour !', 'success');
+      } else {
+        showToast('Coffre verrouillé - déverrouillez pour modifier', 'error');
+      }
     }
   });
 
@@ -1193,7 +1441,7 @@ async function showVaultPresetSyncModal() {
                 <polyline points="17 8 12 3 7 8"/>
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
-              Exporter vers le coffre
+              Exporter tous vers le coffre
             </button>
             <button class="btn full-width" id="btn-import-from-vault" style="display: flex; align-items: center; justify-content: center; gap: 8px;" ${vaultPresetCount === 0 ? 'disabled' : ''}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -1201,7 +1449,7 @@ async function showVaultPresetSyncModal() {
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Importer depuis le coffre
+              Importer tous depuis le coffre
             </button>
           </div>
 
@@ -1211,6 +1459,15 @@ async function showVaultPresetSyncModal() {
               Écraser les presets existants lors de l'import
             </label>
           </div>
+
+          ${vaultPresetCount > 0 ? `
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #e2e8f0;">📦 Presets dans le coffre</h4>
+            <div id="vault-presets-list" style="max-height: 200px; overflow-y: auto;">
+              <div style="text-align: center; padding: 20px; color: #94a3b8;">Chargement...</div>
+            </div>
+          </div>
+          ` : ''}
         `}
       </div>
       <div class="modal-footer">
@@ -1272,8 +1529,106 @@ async function showVaultPresetSyncModal() {
     modal.remove();
   });
 
+  // Load vault presets list if container exists
+  if (vaultPresetCount > 0) {
+    loadVaultPresetsList(modal);
+  }
+
   // Show modal
   setTimeout(() => modal.classList.add('show'), ANIMATION_DURATION.MODAL_FADE_IN);
+}
+
+/**
+ * Load and display vault presets in the sync modal
+ */
+async function loadVaultPresetsList(modal) {
+  const container = modal.querySelector('#vault-presets-list');
+  if (!container) return;
+
+  try {
+    const vaultPresets = await presetManager.getVaultPresets();
+
+    if (vaultPresets.length === 0) {
+      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">Aucun preset dans le coffre</div>';
+      return;
+    }
+
+    container.innerHTML = vaultPresets.map(entry => `
+      <div class="vault-preset-item" data-entry-id="${entry.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 500; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(entry.title)}</div>
+          <div style="font-size: 0.8em; color: #94a3b8;">
+            ${entry.data?.config?.mode || 'Mode inconnu'} • ${entry.data?.config?.length || '?'} car.
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+          <button class="btn-mini" data-action="load-vault-preset" data-entry-id="${entry.id}" title="Charger ce preset">📥</button>
+          <button class="btn-mini danger" data-action="delete-vault-preset" data-entry-id="${entry.id}" title="Supprimer du coffre">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Bind actions
+    container.querySelectorAll('[data-action="load-vault-preset"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const entryId = btn.dataset.entryId;
+        const entry = vaultPresets.find(e => e.id === entryId);
+        if (entry?.data?.config) {
+          // Preset is already in vault, just load it into local map if not already there
+          let preset = presetManager.getPreset(entryId);
+          if (!preset) {
+            // Not in local map, load from vault entry
+            preset = await presetManager.createPreset(
+              entry.title,
+              entry.data.config,
+              entry.data.description || `Importé du coffre`
+            );
+          }
+          if (preset) {
+            updatePresetDropdown();
+            // Apply the preset
+            const presetSelect = document.getElementById('preset-select');
+            if (presetSelect) {
+              presetSelect.value = preset.id;
+              presetSelect.dispatchEvent(new Event('change'));
+            }
+            showToast(`Preset "${entry.title}" chargé !`, 'success');
+            modal.remove();
+          } else {
+            showToast('Échec du chargement du preset', 'error');
+          }
+        }
+      });
+    });
+
+    container.querySelectorAll('[data-action="delete-vault-preset"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const entryId = btn.dataset.entryId;
+        const entry = vaultPresets.find(e => e.id === entryId);
+        if (entry && confirm(`Supprimer "${entry.title}" du coffre ?`)) {
+          try {
+            await window.vault.entries.delete(entryId);
+            // Remove from UI
+            btn.closest('.vault-preset-item')?.remove();
+            showToast('Preset supprimé du coffre', 'success');
+            // Update count display
+            const countEl = modal.querySelector('[style*="rgba(139, 92, 246"]');
+            if (countEl) {
+              const currentCount = parseInt(countEl.querySelector('div')?.textContent || '0');
+              const newCount = Math.max(0, currentCount - 1);
+              countEl.querySelector('div').textContent = newCount;
+            }
+          } catch (error) {
+            showToast('Erreur lors de la suppression', 'error');
+          }
+        }
+      });
+    });
+
+  } catch (error) {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f87171;">Erreur de chargement</div>';
+    safeLog(`[VaultPresets] Error loading: ${error.message}`);
+  }
 }
 
 /**

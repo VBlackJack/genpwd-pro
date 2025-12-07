@@ -113,3 +113,7 @@ console.log('GenPwd Pro - Preload script chargé');
 console.log('Platform:', process.platform);
 console.log('Electron version:', process.versions.electron);
 console.log('Vault API: enabled');
+
+// Note: Vault events are handled via the vault.on() API exposed above.
+// Components should use window.vault.on('unlocked', callback) instead of
+// window.addEventListener('vault:unlocked', callback) due to context isolation.

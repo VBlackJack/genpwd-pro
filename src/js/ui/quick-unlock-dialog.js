@@ -2,7 +2,7 @@
  * @fileoverview QuickUnlockDialog - Inline vault unlock dialog
  * Allows unlocking the vault without switching tabs
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { showToast } from '../utils/toast.js';

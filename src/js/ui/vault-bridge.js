@@ -2,7 +2,7 @@
  * @fileoverview VaultBridge - Bridge between Password Generator and Vault
  * Provides a clean API for generator components to interact with the vault
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { showToast } from '../utils/toast.js';

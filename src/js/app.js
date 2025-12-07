@@ -139,7 +139,7 @@ class GenPwdApp {
 
       this.initialized = true;
       safeLog('Application initialisée avec succès');
-      showToast('GenPwd Pro v2.6.0 chargé avec succès', 'success');
+      showToast('GenPwd Pro v2.6.8 chargé avec succès', 'success');
 
       // 10. Initialize Vault Bridge (for Generator-Vault communication)
       VaultBridge.init();

@@ -2,7 +2,7 @@
  * @fileoverview Password History Manager
  * Tracks password changes per entry with restore capability
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

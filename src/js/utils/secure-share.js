@@ -2,7 +2,7 @@
  * @fileoverview Secure Sharing
  * Generate encrypted shareable entries
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

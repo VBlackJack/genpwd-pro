@@ -2,7 +2,7 @@
  * @fileoverview TOTP (Time-based One-Time Password) Generator
  * RFC 6238 compliant implementation
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

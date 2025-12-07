@@ -167,7 +167,9 @@ function createApplicationMenu() {
         { role: 'zoomIn', label: 'Zoomer' },
         { role: 'zoomOut', label: 'Dézoomer' },
         { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Plein écran' }
+        { role: 'togglefullscreen', label: 'Plein écran' },
+        { type: 'separator' },
+        { role: 'toggleDevTools', label: 'Outils développeur', accelerator: 'F12' }
       ]
     },
     {
@@ -208,23 +210,21 @@ function createApplicationMenu() {
     }
   ];
 
-  // Ajouter le menu DevTools en mode développement
-  if (process.env.NODE_ENV === 'development') {
-    template.push({
-      label: 'Développement',
-      submenu: [
-        { role: 'toggleDevTools', label: 'Outils de développement' },
-        { type: 'separator' },
-        {
-          label: 'Recharger et effacer le cache',
-          click: () => {
-            mainWindow.webContents.session.clearCache();
-            mainWindow.reload();
-          }
+  // Menu Développement (toujours disponible pour debug)
+  template.push({
+    label: 'Développement',
+    submenu: [
+      { role: 'toggleDevTools', label: 'Outils de développement' },
+      { type: 'separator' },
+      {
+        label: 'Recharger et effacer le cache',
+        click: () => {
+          mainWindow.webContents.session.clearCache();
+          mainWindow.reload();
         }
-      ]
-    });
-  }
+      }
+    ]
+  });
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);

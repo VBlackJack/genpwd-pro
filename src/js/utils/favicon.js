@@ -2,7 +2,7 @@
  * @fileoverview Favicon Auto-fetch
  * Fetches site icons from URLs for vault entries
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

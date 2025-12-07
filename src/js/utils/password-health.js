@@ -2,7 +2,7 @@
  * @fileoverview Password Health Analyzer
  * Analyzes vault entries for security issues
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

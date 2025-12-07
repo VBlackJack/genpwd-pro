@@ -2,7 +2,7 @@
  * @fileoverview Have I Been Pwned (HIBP) Breach Check
  * Uses k-anonymity model - only sends first 5 chars of SHA-1 hash
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 import { safeLog } from './logger.js';

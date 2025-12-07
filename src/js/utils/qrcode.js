@@ -5,7 +5,7 @@
  * Based on QR Code specification ISO/IEC 18004
  * Simplified implementation for alphanumeric data
  *
- * @version 2.6.7
+ * @version 2.6.8
  */
 
 // QR Code constants
