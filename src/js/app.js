@@ -45,6 +45,9 @@ import { VaultBridge } from './ui/vault-bridge.js';
 // Phase 4+5: Native integration
 import { initNativeIntegration } from './ui/native-integration.js';
 
+// Singleton tooltip manager
+import { initTooltips } from './ui/tooltip-manager.js';
+
 class GenPwdApp {
   constructor() {
     this.initialized = false;
@@ -131,6 +134,10 @@ class GenPwdApp {
       // 7.2 NEW: Initialize keyboard shortcuts (accessibility)
       initKeyboardShortcuts();
       safeLog('Raccourcis clavier initialisés (Alt+G/C/R/S, Escape)');
+
+      // 7.3 Initialize singleton tooltips (premium UI)
+      initTooltips();
+      safeLog('Singleton tooltips initialisés');
 
       // 8. Génération initiale après un délai
       setTimeout(() => this.generateInitial(), ANIMATION_DURATION.INITIAL_GENERATION_DELAY);

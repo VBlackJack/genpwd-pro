@@ -298,15 +298,16 @@
    ============================================================================ */
 
 .pwd {
-  /* Grid: password takes remaining space, actions take what they need */
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  /* Flexbox: simple row layout */
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   gap: 12px;
+  flex-wrap: wrap;
 
-  /* Comfortable sizing */
-  padding: 12px;
-  min-height: 48px;
+  /* Sizing */
+  padding: 10px 12px;
 
   /* Visual styling */
   cursor: pointer;
@@ -324,9 +325,10 @@
   border-color: var(--accent-cyan);
 }
 
-/* Password value - MUST have min-width: 0 for truncation in Grid */
+/* Password value - takes available space */
 .pwd .value {
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -338,31 +340,42 @@
   filter: blur(6px);
 }
 
-/* Breach status spans full width below the main row */
+/* Actions container - stays on the right */
+.pwd .actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Breach status below */
 .pwd .breach-status {
-  grid-column: 1 / -1;
+  width: 100%;
+  flex-basis: 100%;
   margin-top: 4px;
 }
 
 /* ============================================================================
-   ACTION BUTTON - Premium, crisp icon-only button
+   ACTION BUTTONS - Visible, colorful icon buttons
    ============================================================================ */
 
 .pwd .action-btn {
-  /* Fixed size */
-  width: 36px;
-  height: 36px;
+  /* Compact size to fit within card row */
+  width: 28px;
+  height: 28px;
 
   /* Perfect centering */
   display: grid;
   place-items: center;
   padding: 0;
 
-  /* Visual styling */
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted, #9ca3af);
+  /* Base styling */
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #d1d5db);
   cursor: pointer;
 
   /* Smooth transition */
@@ -370,8 +383,7 @@
 }
 
 .pwd .action-btn:hover {
-  background-color: rgba(0, 212, 255, 0.1);
-  color: var(--accent-cyan, #00d4ff);
+  transform: scale(1.08);
 }
 
 .pwd .action-btn:active {
@@ -379,27 +391,101 @@
 }
 
 .pwd .action-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
+}
+
+/* Copy button - Cyan */
+.pwd .action-btn.copy-btn {
+  border-color: rgba(0, 212, 255, 0.4);
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--accent-cyan, #00d4ff);
+}
+.pwd .action-btn.copy-btn:hover {
+  background: rgba(0, 212, 255, 0.3);
+  border-color: var(--accent-cyan, #00d4ff);
+  color: #fff;
+}
+
+/* Save to vault button - Blue */
+.pwd .action-btn.save-to-vault-btn {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue, #3b82f6);
+}
+.pwd .action-btn.save-to-vault-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: var(--accent-blue, #3b82f6);
+  color: #fff;
+}
+
+/* Breach check button - Purple */
+.pwd .action-btn.breach-check-btn {
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent-purple, #8b5cf6);
+}
+.pwd .action-btn.breach-check-btn:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: var(--accent-purple, #8b5cf6);
+  color: #fff;
+}
+
+/* ============================================================================
+   SINGLETON TOOLTIP (position:fixed, bypasses overflow:hidden)
+   ============================================================================ */
+
+#app-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: #1a1d29;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(5px) scale(0.95);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+#app-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 /* ============================================================================
    COMPOSITION VISUELLE
    ============================================================================ */
 
+/* Force visibility for card sections */
+.card-sec.comp,
+.card-sec.info {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 .comp {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 8px;
+  min-height: 40px;
 }
 
 .comp-bar {
-  height: 10px;
+  height: 10px !important;
+  min-height: 10px !important;
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  display: flex;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex !important;
+  visibility: visible !important;
 }
 
 .seg {
@@ -461,10 +547,14 @@
   background: var(--accent-green);
 }
 
-.info {
-  display: flex;
+.info,
+.card-sec.info {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   align-items: center;
   justify-content: space-between;
+  min-height: 24px;
   gap: 10px;
   color: var(--text-muted);
   font-size: 12px;

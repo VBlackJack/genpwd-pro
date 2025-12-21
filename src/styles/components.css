@@ -345,7 +345,7 @@ select {
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   min-width: 320px;
   transition: all 0.2s ease;
 }
