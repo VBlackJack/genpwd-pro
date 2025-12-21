@@ -2,6 +2,8 @@ package com.julien.genpwdpro.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.encryption.EncryptedDataEncoded
 import com.julien.genpwdpro.data.sync.CloudProvider
@@ -508,18 +510,21 @@ class CloudProviderSyncRepository @Inject constructor(
             )
 
             // Upload via le provider
-            val fileId = provider.uploadVault(data.id, vaultSyncData)
-
-            if (fileId != null) {
-                SafeLog.d(TAG, "Upload successful: ${SafeLog.redact(fileId)}")
-                SyncResult.Success
-            } else {
-                SafeLog.w(TAG, "Upload failed: provider returned null fileId")
-                recordSyncError(
-                    message = "Upload failed – provider returned null fileId",
-                    category = SyncErrorCategory.UPLOAD
-                )
-                SyncResult.Error("Échec de l'upload")
+            when (val result = provider.uploadVault(data.id, vaultSyncData)) {
+                is CloudResult.Success -> {
+                    SafeLog.d(TAG, "Upload successful: ${SafeLog.redact(result.data)}")
+                    SyncResult.Success
+                }
+                is CloudResult.Error -> {
+                    val errorMessage = mapCloudErrorToMessage(result)
+                    SafeLog.w(TAG, "Upload failed: ${result.type} - ${result.message}")
+                    recordSyncError(
+                        message = "Upload failed – ${result.type}: ${result.message}",
+                        category = SyncErrorCategory.UPLOAD,
+                        throwable = result.exception as? Exception
+                    )
+                    SyncResult.Error(errorMessage)
+                }
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Upload error", e)
@@ -557,29 +562,43 @@ class CloudProviderSyncRepository @Inject constructor(
                         .removeSuffix(".enc")
 
                     // Télécharger le vault
-                    val vaultData = provider.downloadVault(vaultId)
+                    when (val result = provider.downloadVault(vaultId)) {
+                        is CloudResult.Success -> {
+                            val vaultData = result.data
+                            // Encoder ByteArray → EncryptedDataEncoded
+                            val encodedData = android.util.Base64.encodeToString(
+                                vaultData.encryptedData,
+                                android.util.Base64.NO_WRAP
+                            )
 
-                    if (vaultData != null) {
-                        // Encoder ByteArray → EncryptedDataEncoded
-                        val encodedData = android.util.Base64.encodeToString(
-                            vaultData.encryptedData,
-                            android.util.Base64.NO_WRAP
-                        )
-
-                        SyncData(
-                            id = vaultData.vaultId,
-                            dataType = dataType,
-                            deviceId = vaultData.deviceId,
-                            timestamp = vaultData.timestamp,
-                            version = vaultData.version,
-                            encryptedPayload = EncryptedDataEncoded(
-                                ciphertext = encodedData,
-                                iv = "" // IV non utilisé dans ce contexte
-                            ),
-                            checksum = vaultData.checksum
-                        )
-                    } else {
-                        null
+                            SyncData(
+                                id = vaultData.vaultId,
+                                dataType = dataType,
+                                deviceId = vaultData.deviceId,
+                                timestamp = vaultData.timestamp,
+                                version = vaultData.version,
+                                encryptedPayload = EncryptedDataEncoded(
+                                    ciphertext = encodedData,
+                                    iv = "" // IV non utilisé dans ce contexte
+                                ),
+                                checksum = vaultData.checksum
+                            )
+                        }
+                        is CloudResult.Error -> {
+                            SafeLog.w(
+                                TAG,
+                                "Download failed for ${SafeLog.redact(vaultId)}: ${result.type} - ${result.message}"
+                            )
+                            // NOT_FOUND is expected for deleted files, don't record as error
+                            if (result.type != CloudErrorType.NOT_FOUND) {
+                                recordSyncError(
+                                    message = "Download failed for vault – ${result.type}: ${result.message}",
+                                    category = SyncErrorCategory.DOWNLOAD,
+                                    throwable = result.exception as? Exception
+                                )
+                            }
+                            null
+                        }
                     }
                 } catch (e: Exception) {
                     SafeLog.e(TAG, "Error downloading file: ${SafeLog.redact(metadata.fileName)}", e)
@@ -610,29 +629,40 @@ class CloudProviderSyncRepository @Inject constructor(
         return try {
             SafeLog.d(TAG, "Downloading vault by ID: ${SafeLog.redact(id)}")
 
-            val vaultData = provider.downloadVault(id)
+            when (val result = provider.downloadVault(id)) {
+                is CloudResult.Success -> {
+                    val vaultData = result.data
+                    // Encoder ByteArray → EncryptedDataEncoded
+                    val encodedData = android.util.Base64.encodeToString(
+                        vaultData.encryptedData,
+                        android.util.Base64.NO_WRAP
+                    )
 
-            if (vaultData != null) {
-                // Encoder ByteArray → EncryptedDataEncoded
-                val encodedData = android.util.Base64.encodeToString(
-                    vaultData.encryptedData,
-                    android.util.Base64.NO_WRAP
-                )
-
-                SyncData(
-                    id = vaultData.vaultId,
-                    dataType = dataType,
-                    deviceId = vaultData.deviceId,
-                    timestamp = vaultData.timestamp,
-                    version = vaultData.version,
-                    encryptedPayload = EncryptedDataEncoded(
-                        ciphertext = encodedData,
-                        iv = "" // IV non utilisé dans ce contexte
-                    ),
-                    checksum = vaultData.checksum
-                )
-            } else {
-                null
+                    SyncData(
+                        id = vaultData.vaultId,
+                        dataType = dataType,
+                        deviceId = vaultData.deviceId,
+                        timestamp = vaultData.timestamp,
+                        version = vaultData.version,
+                        encryptedPayload = EncryptedDataEncoded(
+                            ciphertext = encodedData,
+                            iv = "" // IV non utilisé dans ce contexte
+                        ),
+                        checksum = vaultData.checksum
+                    )
+                }
+                is CloudResult.Error -> {
+                    SafeLog.w(TAG, "Download by ID failed: ${result.type} - ${result.message}")
+                    // NOT_FOUND is expected when vault doesn't exist yet
+                    if (result.type != CloudErrorType.NOT_FOUND) {
+                        recordSyncError(
+                            message = "Download by ID failed – ${result.type}: ${result.message}",
+                            category = SyncErrorCategory.DOWNLOAD,
+                            throwable = result.exception as? Exception
+                        )
+                    }
+                    null
+                }
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Download by ID error", e)
@@ -658,18 +688,21 @@ class CloudProviderSyncRepository @Inject constructor(
         return try {
             SafeLog.d(TAG, "Deleting vault: ${SafeLog.redact(id)}")
 
-            val success = provider.deleteVault(id)
-
-            if (success) {
-                SafeLog.d(TAG, "Delete successful")
-                SyncResult.Success
-            } else {
-                SafeLog.w(TAG, "Delete failed")
-                recordSyncError(
-                    message = "Delete failed for vault ${SafeLog.redact(id)}",
-                    category = SyncErrorCategory.DELETE
-                )
-                SyncResult.Error("Échec de la suppression")
+            when (val result = provider.deleteVault(id)) {
+                is CloudResult.Success -> {
+                    SafeLog.d(TAG, "Delete successful")
+                    SyncResult.Success
+                }
+                is CloudResult.Error -> {
+                    val errorMessage = mapCloudErrorToMessage(result)
+                    SafeLog.w(TAG, "Delete failed: ${result.type} - ${result.message}")
+                    recordSyncError(
+                        message = "Delete failed – ${result.type}: ${result.message}",
+                        category = SyncErrorCategory.DELETE,
+                        throwable = result.exception as? Exception
+                    )
+                    SyncResult.Error(errorMessage)
+                }
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Delete error", e)
@@ -877,6 +910,34 @@ class CloudProviderSyncRepository @Inject constructor(
 
     override suspend fun clearHistory() {
         clearSyncHistory()
+    }
+
+    /**
+     * Maps CloudResult.Error to a user-friendly message based on error type.
+     *
+     * This provides localized/context-appropriate messages for the UI layer.
+     */
+    private fun mapCloudErrorToMessage(error: CloudResult.Error): String {
+        return when (error.type) {
+            CloudErrorType.AUTH_EXPIRED ->
+                "Authentification expirée. Veuillez vous reconnecter."
+            CloudErrorType.NETWORK ->
+                "Erreur réseau. Vérifiez votre connexion internet."
+            CloudErrorType.QUOTA_EXCEEDED ->
+                "Quota de stockage dépassé. Libérez de l'espace dans le cloud."
+            CloudErrorType.NOT_FOUND ->
+                "Ressource non trouvée dans le cloud."
+            CloudErrorType.RATE_LIMITED -> {
+                val retryInfo = error.retryAfterSeconds?.let { " Réessayez dans $it secondes." } ?: ""
+                "Trop de requêtes.$retryInfo"
+            }
+            CloudErrorType.PERMISSION_DENIED ->
+                "Permission refusée. Vérifiez les autorisations de l'application."
+            CloudErrorType.CONFLICT ->
+                "Conflit de version. Les données cloud ont changé."
+            CloudErrorType.GENERIC ->
+                error.message ?: "Erreur inconnue"
+        }
     }
 
     /**

@@ -2,7 +2,8 @@ package com.genpwd.provider.graph.di
 
 import com.genpwd.provider.graph.GraphAuthProvider
 import com.genpwd.provider.graph.GraphCloudProvider
-import com.genpwd.provider.graph.ThrowingGraphAuthProvider
+import com.genpwd.provider.graph.GraphConfig
+import com.genpwd.provider.graph.OAuth2GraphAuthProvider
 import com.genpwd.providers.api.CloudProvider
 import dagger.Binds
 import dagger.Module
@@ -22,8 +23,18 @@ abstract class GraphBindModule {
     @IntoSet
     abstract fun bindGraphProvider(provider: GraphCloudProvider): CloudProvider
 
+    /**
+     * Binds the OAuth2 implementation of GraphAuthProvider.
+     *
+     * Note: OAuth2GraphAuthProvider requires proper configuration:
+     * 1. Set CLIENT_ID in OAuth2GraphAuthProvider (or via BuildConfig)
+     * 2. Register redirect URI in Azure AD: com.julien.genpwdpro:/oauth2callback
+     * 3. Add Files.ReadWrite and offline_access scopes
+     *
+     * For development/testing without Azure registration, bind ThrowingGraphAuthProvider instead.
+     */
     @Binds
-    abstract fun bindGraphAuthProvider(impl: ThrowingGraphAuthProvider): GraphAuthProvider
+    abstract fun bindGraphAuthProvider(impl: OAuth2GraphAuthProvider): GraphAuthProvider
 }
 
 @Module

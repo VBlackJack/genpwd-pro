@@ -27,22 +27,46 @@ import kotlin.coroutines.resumeWithException
  *
  * This implementation follows the OAuth 2.0 authorization code flow with PKCE
  * (Proof Key for Code Exchange) as specified in RFC 7636.
+ *
+ * Configuration:
+ * 1. Register app in Azure AD Portal: https://portal.azure.com
+ * 2. Add redirect URI: com.julien.genpwdpro:/oauth2callback (Mobile/Desktop)
+ * 3. Add permissions: Files.ReadWrite, offline_access
+ * 4. Copy Application (client) ID to GraphConfig
+ *
+ * @param context Application context for launching browser intent
+ * @param httpClient OkHttp client for token exchange
+ * @param oauthStateStorage Storage for PKCE code_verifier
+ * @param graphConfig Configuration containing CLIENT_ID
  */
 class OAuth2GraphAuthProvider @Inject constructor(
     @ApplicationContext private val context: Context,
     private val httpClient: OkHttpClient,
-    private val oauthStateStorage: OAuthStateStorage
+    private val oauthStateStorage: OAuthStateStorage,
+    private val graphConfig: GraphConfig
 ) : GraphAuthProvider {
 
     companion object {
         private const val AUTH_ENDPOINT = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
         private const val TOKEN_ENDPOINT = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+
+        // Redirect URI must match Azure AD app registration
+        // Format: {scheme}://{host} where scheme is your app's package name or custom scheme
         private const val REDIRECT_URI = "com.julien.genpwdpro:/oauth2callback"
-        private const val CLIENT_ID = "YOUR_MICROSOFT_CLIENT_ID"
 
         // Scopes for OneDrive file access
+        // - Files.ReadWrite: Read/write files in user's OneDrive
+        // - offline_access: Required for refresh tokens
         private const val SCOPES = "Files.ReadWrite offline_access"
     }
+
+    private val clientId: String
+        get() = graphConfig.clientId.also {
+            require(it.isNotBlank()) {
+                "Microsoft CLIENT_ID not configured. " +
+                "Please set clientId in GraphConfig or via Azure AD app registration."
+            }
+        }
 
     override suspend fun authenticate(): ProviderAccount = suspendCancellableCoroutine { continuation ->
         try {
@@ -60,7 +84,7 @@ class OAuth2GraphAuthProvider @Inject constructor(
 
             // Build authorization URL
             val authUrl = Uri.parse(AUTH_ENDPOINT).buildUpon()
-                .appendQueryParameter("client_id", CLIENT_ID)
+                .appendQueryParameter("client_id", clientId)
                 .appendQueryParameter("redirect_uri", REDIRECT_URI)
                 .appendQueryParameter("response_type", "code")
                 .appendQueryParameter("scope", SCOPES)
@@ -127,7 +151,7 @@ class OAuth2GraphAuthProvider @Inject constructor(
         codeVerifier: String
     ): TokenResponse {
         val requestBody = FormBody.Builder()
-            .add("client_id", CLIENT_ID)
+            .add("client_id", clientId)
             .add("code", authCode)
             .add("code_verifier", codeVerifier)
             .add("grant_type", "authorization_code")
@@ -165,7 +189,7 @@ class OAuth2GraphAuthProvider @Inject constructor(
      */
     suspend fun refreshAccessToken(refreshToken: String): TokenResponse {
         val requestBody = FormBody.Builder()
-            .add("client_id", CLIENT_ID)
+            .add("client_id", clientId)
             .add("refresh_token", refreshToken)
             .add("grant_type", "refresh_token")
             .add("scope", SCOPES)

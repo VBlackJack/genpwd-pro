@@ -7,6 +7,7 @@ import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
 import com.julien.genpwdpro.data.sync.SyncManager
 import com.julien.genpwdpro.data.sync.VaultSyncManager
 import com.julien.genpwdpro.data.sync.models.CloudProviderType
+import com.julien.genpwdpro.workers.BiometricMaintenanceWorker
 import com.julien.genpwdpro.workers.CloudSyncWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -76,10 +77,31 @@ class SyncInitializer @Inject constructor(
                     SafeLog.d(TAG, "Auto-sync scheduled: interval=${config.syncInterval}ms")
                 }
 
+                // 5. Schedule biometric key maintenance worker (runs daily)
+                // This checks if biometric keys need rotation (age > 90 days)
+                scheduleBiometricMaintenance()
+
                 SafeLog.i(TAG, "Sync system initialized successfully")
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Failed to initialize sync system", e)
             }
+        }
+    }
+
+    /**
+     * Schedules the daily biometric key maintenance worker.
+     *
+     * The worker checks if biometric keys are older than 90 days and
+     * prompts the user to rotate them for security.
+     */
+    private fun scheduleBiometricMaintenance() {
+        try {
+            BiometricMaintenanceWorker.schedule(context)
+            SafeLog.d(TAG, "Biometric maintenance worker scheduled")
+        } catch (e: Exception) {
+            // Non-fatal - biometric features will still work,
+            // just won't get automatic rotation prompts
+            SafeLog.w(TAG, "Failed to schedule biometric maintenance worker", e)
         }
     }
 

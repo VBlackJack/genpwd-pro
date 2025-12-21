@@ -3,6 +3,8 @@ package com.julien.genpwdpro.data.sync
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -16,13 +18,14 @@ import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.secure.SecurePrefs
-import com.julien.genpwdpro.data.sync.models.CloudError
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -156,15 +159,17 @@ class GoogleDriveProvider @Inject constructor(
         SafeLog.d(TAG, "Google Drive disconnected")
     }
 
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String> = withContext(
         Dispatchers.IO
     ) {
-        try {
-            val service = driveService ?: run {
-                SafeLog.e(TAG, "Drive service not initialized for upload")
-                return@withContext null
-            }
+        val service = driveService ?: run {
+            SafeLog.e(TAG, "Drive service not initialized for upload")
+            return@withContext CloudResult.authExpired(
+                message = "Drive service not initialized. Please re-authenticate."
+            )
+        }
 
+        try {
             // Vérifier si le fichier existe déjà
             val existingFile = findVaultFile(vaultId)
 
@@ -192,31 +197,34 @@ class GoogleDriveProvider @Inject constructor(
             }
 
             SafeLog.d(TAG, "Vault uploaded successfully: vaultId=${SafeLog.redact(vaultId)}")
-            file.id
+            CloudResult.success(file.id)
         } catch (e: GoogleJsonResponseException) {
-            handleDriveException(e, "upload vault", vaultId)
-            null
+            mapDriveException(e, "upload vault", vaultId)
         } catch (e: IOException) {
             SafeLog.e(TAG, "Network error uploading vault: vaultId=${SafeLog.redact(vaultId)}", e)
-            null
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error uploading vault: vaultId=${SafeLog.redact(vaultId)}", e)
-            null
+            CloudResult.genericError(e.message, e)
         }
     }
 
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+    override suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData> = withContext(
         Dispatchers.IO
     ) {
-        try {
-            val service = driveService ?: run {
-                SafeLog.e(TAG, "Drive service not initialized for download")
-                return@withContext null
-            }
+        val service = driveService ?: run {
+            SafeLog.e(TAG, "Drive service not initialized for download")
+            return@withContext CloudResult.authExpired(
+                message = "Drive service not initialized. Please re-authenticate."
+            )
+        }
 
+        try {
             val file = findVaultFile(vaultId) ?: run {
                 SafeLog.w(TAG, "Vault file not found: vaultId=${SafeLog.redact(vaultId)}")
-                return@withContext null
+                return@withContext CloudResult.notFound(
+                    message = "Vault not found in cloud storage"
+                )
             }
 
             val outputStream = ByteArrayOutputStream()
@@ -227,24 +235,25 @@ class GoogleDriveProvider @Inject constructor(
             val timestamp = file.modifiedTime?.value ?: System.currentTimeMillis()
 
             SafeLog.d(TAG, "Vault downloaded successfully: vaultId=${SafeLog.redact(vaultId)}")
-            VaultSyncData(
-                vaultId = vaultId,
-                vaultName = "Vault $vaultId",
-                encryptedData = encryptedData,
-                timestamp = timestamp,
-                deviceId = "", // Will be set by SyncManager
-                checksum = "", // Will be computed by SyncManager
-                version = 1
+            CloudResult.success(
+                VaultSyncData(
+                    vaultId = vaultId,
+                    vaultName = "Vault $vaultId",
+                    encryptedData = encryptedData,
+                    timestamp = timestamp,
+                    deviceId = "", // Will be set by SyncManager
+                    checksum = "", // Will be computed by SyncManager
+                    version = 1
+                )
             )
         } catch (e: GoogleJsonResponseException) {
-            handleDriveException(e, "download vault", vaultId)
-            null
+            mapDriveException(e, "download vault", vaultId)
         } catch (e: IOException) {
             SafeLog.e(TAG, "Network error downloading vault: vaultId=${SafeLog.redact(vaultId)}", e)
-            null
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error downloading vault: vaultId=${SafeLog.redact(vaultId)}", e)
-            null
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -281,23 +290,31 @@ class GoogleDriveProvider @Inject constructor(
         }
     }
 
-    override suspend fun deleteVault(vaultId: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun deleteVault(vaultId: String): CloudResult<Unit> = withContext(Dispatchers.IO) {
+        val service = driveService ?: run {
+            return@withContext CloudResult.authExpired(
+                message = "Drive service not initialized. Please re-authenticate."
+            )
+        }
+
         try {
-            val service = driveService ?: return@withContext false
-            val file = findVaultFile(vaultId) ?: return@withContext false
+            val file = findVaultFile(vaultId) ?: run {
+                // If file doesn't exist, consider it successfully deleted
+                SafeLog.w(TAG, "Vault file not found for deletion: vaultId=${SafeLog.redact(vaultId)}")
+                return@withContext CloudResult.success(Unit)
+            }
 
             service.files().delete(file.id).execute()
             SafeLog.d(TAG, "Vault deleted successfully: vaultId=${SafeLog.redact(vaultId)}")
-            true
+            CloudResult.success(Unit)
         } catch (e: GoogleJsonResponseException) {
-            handleDriveException(e, "delete vault", vaultId)
-            false
+            mapDriveException(e, "delete vault", vaultId)
         } catch (e: IOException) {
             SafeLog.e(TAG, "Network error deleting vault: vaultId=${SafeLog.redact(vaultId)}", e)
-            false
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error deleting vault: vaultId=${SafeLog.redact(vaultId)}", e)
-            false
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -385,21 +402,119 @@ class GoogleDriveProvider @Inject constructor(
     }
 
     /**
-     * Handles Google Drive API exceptions and logs them appropriately
+     * Maps Google Drive API exceptions to CloudResult.Error with appropriate error types.
+     *
+     * HTTP Status Code mapping:
+     * - 401: AUTH_EXPIRED - Token expired or revoked
+     * - 403: PERMISSION_DENIED - Insufficient permissions
+     * - 404: NOT_FOUND - File/resource doesn't exist
+     * - 409: CONFLICT - Version conflict (etag mismatch)
+     * - 412: CONFLICT - Precondition failed
+     * - 413: QUOTA_EXCEEDED - Storage quota exceeded
+     * - 429: RATE_LIMITED - Too many requests
+     * - 5xx: GENERIC - Server-side errors
      */
-    private fun handleDriveException(
+    private fun mapDriveException(
         exception: GoogleJsonResponseException,
         operation: String,
         vaultId: String?
-    ) {
+    ): CloudResult.Error {
         val vaultInfo = vaultId?.let { "vaultId=${SafeLog.redact(it)}" } ?: ""
-        when (exception.statusCode) {
-            401 -> SafeLog.e(TAG, "Authentication expired during $operation $vaultInfo", exception)
-            403 -> SafeLog.e(TAG, "Permission denied during $operation $vaultInfo", exception)
-            404 -> SafeLog.w(TAG, "Resource not found during $operation $vaultInfo")
-            413 -> SafeLog.e(TAG, "Quota exceeded during $operation $vaultInfo", exception)
-            429 -> SafeLog.w(TAG, "Rate limit exceeded during $operation $vaultInfo")
-            else -> SafeLog.e(TAG, "Drive API error (${exception.statusCode}) during $operation $vaultInfo", exception)
+        val statusCode = exception.statusCode
+        val apiMessage = exception.details?.message ?: exception.message
+
+        return when (statusCode) {
+            401 -> {
+                SafeLog.e(TAG, "Authentication expired during $operation $vaultInfo", exception)
+                CloudResult.Error(
+                    type = CloudErrorType.AUTH_EXPIRED,
+                    message = "Authentication expired. Please sign in again.",
+                    exception = exception
+                )
+            }
+            403 -> {
+                SafeLog.e(TAG, "Permission denied during $operation $vaultInfo", exception)
+                CloudResult.Error(
+                    type = CloudErrorType.PERMISSION_DENIED,
+                    message = "Permission denied. Please check app permissions in Google account settings.",
+                    exception = exception
+                )
+            }
+            404 -> {
+                SafeLog.w(TAG, "Resource not found during $operation $vaultInfo")
+                CloudResult.Error(
+                    type = CloudErrorType.NOT_FOUND,
+                    message = "Resource not found in cloud storage.",
+                    exception = exception
+                )
+            }
+            409, 412 -> {
+                SafeLog.w(TAG, "Conflict during $operation $vaultInfo", exception)
+                CloudResult.Error(
+                    type = CloudErrorType.CONFLICT,
+                    message = "Version conflict. The cloud version has changed.",
+                    exception = exception
+                )
+            }
+            413 -> {
+                SafeLog.e(TAG, "Quota exceeded during $operation $vaultInfo", exception)
+                CloudResult.Error(
+                    type = CloudErrorType.QUOTA_EXCEEDED,
+                    message = "Google Drive storage quota exceeded. Please free up space.",
+                    exception = exception
+                )
+            }
+            429 -> {
+                // Try to extract retry-after header
+                val retryAfter = exception.headers?.getFirstHeaderStringValue("Retry-After")
+                    ?.toLongOrNull()
+
+                SafeLog.w(TAG, "Rate limit exceeded during $operation $vaultInfo (retry after: $retryAfter)")
+                CloudResult.Error(
+                    type = CloudErrorType.RATE_LIMITED,
+                    message = "Too many requests. Please try again later.",
+                    exception = exception,
+                    retryAfterSeconds = retryAfter
+                )
+            }
+            in 500..599 -> {
+                SafeLog.e(TAG, "Server error ($statusCode) during $operation $vaultInfo", exception)
+                CloudResult.Error(
+                    type = CloudErrorType.GENERIC,
+                    message = "Google Drive server error. Please try again later.",
+                    exception = exception
+                )
+            }
+            else -> {
+                SafeLog.e(TAG, "Drive API error ($statusCode) during $operation $vaultInfo: $apiMessage", exception)
+                CloudResult.Error(
+                    type = CloudErrorType.GENERIC,
+                    message = apiMessage ?: "Unknown Google Drive error (HTTP $statusCode)",
+                    exception = exception
+                )
+            }
         }
+    }
+
+    /**
+     * Maps network/IO exceptions to CloudResult.Error.
+     *
+     * Distinguishes between different types of network failures:
+     * - UnknownHostException: No internet / DNS failure
+     * - SocketTimeoutException: Connection timeout
+     * - Other IOException: General network errors
+     */
+    private fun mapNetworkException(exception: IOException): CloudResult.Error {
+        val message = when (exception) {
+            is UnknownHostException -> "No internet connection. Please check your network."
+            is SocketTimeoutException -> "Connection timed out. Please try again."
+            else -> "Network error: ${exception.message ?: "Unknown"}"
+        }
+
+        return CloudResult.Error(
+            type = CloudErrorType.NETWORK,
+            message = message,
+            exception = exception
+        )
     }
 }

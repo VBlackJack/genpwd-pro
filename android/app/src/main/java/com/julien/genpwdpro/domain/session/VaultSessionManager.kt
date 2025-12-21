@@ -121,6 +121,14 @@ class VaultSessionManager @Inject constructor(
     private val _requiresUnlock = MutableStateFlow<RequiresUnlockState?>(null)
     val requiresUnlock: StateFlow<RequiresUnlockState?> = _requiresUnlock.asStateFlow()
 
+    // Biometric key rotation events (emitted by BiometricMaintenanceWorker)
+    // Uses SharedFlow with replay=0 so events are only received by active collectors
+    private val _biometricRotationEvents = MutableSharedFlow<BiometricRotationEvent>(
+        replay = 0,
+        extraBufferCapacity = 1 // Buffer one event to avoid losing it if no collector is active
+    )
+    val biometricRotationEvents: SharedFlow<BiometricRotationEvent> = _biometricRotationEvents.asSharedFlow()
+
     // Scope pour les coroutines de session
     private var sessionScope = newSessionScope()
 
@@ -1135,6 +1143,74 @@ class VaultSessionManager @Inject constructor(
     fun shouldRotateBiometricKey(): Boolean {
         val session = currentSession ?: return false
         return biometricKeyManager.shouldRotateKey(session.vaultId)
+    }
+
+    /**
+     * Emits a biometric rotation event to notify the UI.
+     *
+     * Called by [BiometricMaintenanceWorker] when key rotation is detected as needed,
+     * or after rotation completes/fails.
+     *
+     * @param event The biometric rotation event to emit
+     */
+    suspend fun emitBiometricRotationEvent(event: BiometricRotationEvent) {
+        SafeLog.d(TAG, "Emitting biometric rotation event: ${event::class.simpleName}")
+        _biometricRotationEvents.emit(event)
+    }
+
+    /**
+     * Performs biometric key rotation for the current vault.
+     *
+     * This should be called after the user confirms their Master Password
+     * in response to a [BiometricRotationEvent.RotationNeeded] event.
+     *
+     * @param masterPassword The user's Master Password for key derivation
+     * @return Result indicating success or failure
+     */
+    suspend fun rotateBiometricKey(masterPassword: String): Result<Int> {
+        val session = currentSession
+            ?: return Result.failure(IllegalStateException("No vault unlocked"))
+
+        return try {
+            SafeLog.i(TAG, "Starting biometric key rotation for vault: ${SafeLog.redact(session.vaultId)}")
+
+            // Verify password matches current session
+            val derivedKey = cryptoManager.deriveKey(masterPassword, session.kdfSalt)
+            if (!derivedKey.encoded.contentEquals(session.vaultKey.encoded)) {
+                return Result.failure(IllegalArgumentException("Incorrect master password"))
+            }
+
+            // Perform the rotation
+            val encryptedData = biometricKeyManager.rotateKey(session.vaultId, masterPassword)
+
+            // Get the new key version
+            val metadata = biometricKeyManager.getKeyMetadata(session.vaultId)
+            val newVersion = metadata?.keyVersion ?: 1
+
+            // Emit success event
+            emitBiometricRotationEvent(
+                BiometricRotationEvent.RotationCompleted(
+                    vaultId = session.vaultId,
+                    newKeyVersion = newVersion
+                )
+            )
+
+            SafeLog.i(TAG, "Biometric key rotation completed: newVersion=$newVersion")
+            Result.success(newVersion)
+        } catch (e: Exception) {
+            SafeLog.e(TAG, "Biometric key rotation failed", e)
+
+            // Emit failure event
+            emitBiometricRotationEvent(
+                BiometricRotationEvent.RotationFailed(
+                    vaultId = session.vaultId,
+                    error = e.message ?: "Unknown error",
+                    exception = e
+                )
+            )
+
+            Result.failure(e)
+        }
     }
 
     /**

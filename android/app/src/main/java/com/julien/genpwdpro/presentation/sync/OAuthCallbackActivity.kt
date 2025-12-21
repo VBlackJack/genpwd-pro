@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.genpwd.corevault.ProviderKind
 import com.genpwd.provider.drive.OAuth2GoogleDriveAuthProvider
+import com.genpwd.provider.graph.OAuth2GraphAuthProvider
 import com.genpwd.storage.CloudAccountRepository
 import com.genpwd.sync.ProviderRegistry
 import com.genpwd.sync.oauth.OAuthStateStorage
@@ -39,6 +40,9 @@ class OAuthCallbackActivity : ComponentActivity() {
 
     @Inject
     lateinit var googleDriveAuthProvider: OAuth2GoogleDriveAuthProvider
+
+    @Inject
+    lateinit var graphAuthProvider: OAuth2GraphAuthProvider
 
     @Inject
     lateinit var oauthStateStorage: OAuthStateStorage
@@ -120,30 +124,45 @@ class OAuthCallbackActivity : ComponentActivity() {
                 }
 
                 SafeLog.d(TAG, "State validated, provider kind: $providerKind")
-
-                // Currently only Google Drive is implemented
-                if (providerKind != ProviderKind.GOOGLE_DRIVE) {
-                    throw IllegalStateException("OAuth not implemented for $providerKind")
-                }
-
                 SafeLog.d(TAG, "Exchanging authorization code for tokens...")
 
-                // Exchange authorization code for tokens using PKCE
-                val tokens = googleDriveAuthProvider.completeAuthentication(state, authCode)
+                // Exchange authorization code for tokens using PKCE based on provider
+                when (providerKind) {
+                    ProviderKind.GOOGLE_DRIVE -> {
+                        val tokens = googleDriveAuthProvider.completeAuthentication(state, authCode)
+                        SafeLog.d(TAG, "Google Drive token exchange successful, saving account...")
 
-                SafeLog.d(TAG, "Token exchange successful, saving account...")
+                        val account = cloudAccountRepository.saveAccount(
+                            kind = providerKind,
+                            displayName = tokens.email ?: "Google Drive Account",
+                            email = tokens.email,
+                            accessToken = tokens.accessToken,
+                            refreshToken = tokens.refreshToken,
+                            expiresIn = tokens.expiresIn
+                        )
+                        SafeLog.d(TAG, "Account saved successfully with ID: ${account.id}")
+                    }
 
-                // Save account to database (tokens are automatically encrypted by CloudAccountRepository)
-                val account = cloudAccountRepository.saveAccount(
-                    kind = providerKind,
-                    displayName = tokens.email ?: "Google Drive Account",
-                    email = tokens.email,
-                    accessToken = tokens.accessToken,
-                    refreshToken = tokens.refreshToken,
-                    expiresIn = tokens.expiresIn
-                )
+                    ProviderKind.ONEDRIVE -> {
+                        val tokens = graphAuthProvider.completeAuthentication(state, authCode)
+                        SafeLog.d(TAG, "OneDrive token exchange successful, saving account...")
 
-                SafeLog.d(TAG, "Account saved successfully with ID: ${account.id}")
+                        val account = cloudAccountRepository.saveAccount(
+                            kind = providerKind,
+                            displayName = tokens.userId ?: "OneDrive Account",
+                            email = null, // OneDrive token response doesn't include email directly
+                            accessToken = tokens.accessToken,
+                            refreshToken = tokens.refreshToken,
+                            expiresIn = tokens.expiresIn
+                        )
+                        SafeLog.d(TAG, "Account saved successfully with ID: ${account.id}")
+                    }
+
+                    else -> {
+                        throw IllegalStateException("OAuth not implemented for $providerKind")
+                    }
+                }
+
                 finishWithSuccess()
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Failed to complete OAuth", e)

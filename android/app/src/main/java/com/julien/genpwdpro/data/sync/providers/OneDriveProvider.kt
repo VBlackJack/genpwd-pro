@@ -2,6 +2,8 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.content.Context
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.JsonObject
@@ -10,6 +12,9 @@ import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -305,13 +310,15 @@ class OneDriveProvider(
     /**
      * Upload un vault chiffré
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? =
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String> =
         withContext(Dispatchers.IO) {
-            try {
-                if (accessToken == null) {
-                    throw IllegalStateException("Not authenticated")
-                }
+            if (accessToken == null) {
+                return@withContext CloudResult.authExpired(
+                    message = "OneDrive not authenticated. Please sign in."
+                )
+            }
 
+            try {
                 val folderId = ensureFolder()
                 val fileName = "vault_$vaultId.enc"
 
@@ -334,41 +341,43 @@ class OneDriveProvider(
                                 .asJsonObject
                             val fileId = fileItem.get("id")?.asString
                             SafeLog.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
-                            fileId
+                            CloudResult.success(fileId ?: "")
                         } else {
-                            val error = response.body?.string() ?: "Unknown error"
-                            SafeLog.e(TAG, "Upload failed: $error")
-                            null
+                            mapHttpError(response.code, response.body?.string())
                         }
                     }
                 } else {
                     // TODO: Implémenter chunked upload pour fichiers > 4MB
-                    SafeLog.w(
-                        TAG,
-                        "File too large for simple upload, chunked upload not yet implemented"
-                    )
-                    null
+                    SafeLog.w(TAG, "File too large for simple upload, chunked upload not yet implemented")
+                    CloudResult.genericError("File too large. Chunked upload not supported yet.")
                 }
+            } catch (e: IOException) {
+                SafeLog.e(TAG, "Network error uploading vault", e)
+                mapNetworkException(e)
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error uploading vault", e)
-                null
+                CloudResult.genericError(e.message, e)
             }
         }
 
     /**
      * Download un vault chiffré
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? =
+    override suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData> =
         withContext(Dispatchers.IO) {
-            try {
-                if (accessToken == null) {
-                    throw IllegalStateException("Not authenticated")
-                }
+            if (accessToken == null) {
+                return@withContext CloudResult.authExpired(
+                    message = "OneDrive not authenticated. Please sign in."
+                )
+            }
 
+            try {
                 // Trouver le fileId depuis vaultId
                 val fileName = "vault_$vaultId.enc"
                 val metadata = listVaults().find { it.fileName == fileName }
-                    ?: return@withContext null
+                    ?: return@withContext CloudResult.notFound(
+                        message = "Vault not found in OneDrive"
+                    )
                 val cloudFileId = metadata.fileId
 
                 // Récupérer les métadonnées
@@ -379,19 +388,17 @@ class OneDriveProvider(
 
                 var downloadUrl: String? = null
                 var timestamp = 0L
-                var size = 0L
 
                 httpClient.newCall(metadataRequest).execute().use { response ->
                     if (!response.isSuccessful) {
                         SafeLog.e(TAG, "Failed to get file metadata: ${response.code}")
-                        return@withContext null
+                        return@withContext mapHttpError(response.code, response.body?.string())
                     }
 
                     val fileItem = JsonParser.parseString(response.body?.string() ?: "{}")
                         .asJsonObject
 
                     downloadUrl = fileItem.get("@microsoft.graph.downloadUrl")?.asString
-                    size = fileItem.get("size")?.asLong ?: 0L
 
                     // Parse timestamp
                     val modifiedTime = fileItem.get("lastModifiedDateTime")?.asString
@@ -401,7 +408,7 @@ class OneDriveProvider(
                 // Download le fichier
                 if (downloadUrl == null) {
                     SafeLog.e(TAG, "No download URL in metadata")
-                    return@withContext null
+                    return@withContext CloudResult.genericError("No download URL available")
                 }
 
                 val downloadRequest = Request.Builder()
@@ -412,24 +419,29 @@ class OneDriveProvider(
                 httpClient.newCall(downloadRequest).execute().use { response ->
                     if (!response.isSuccessful) {
                         SafeLog.e(TAG, "Download failed: ${response.code}")
-                        return@withContext null
+                        return@withContext mapHttpError(response.code, response.body?.string())
                     }
 
                     val encryptedData = response.body?.bytes() ?: byteArrayOf()
 
-                    VaultSyncData(
-                        vaultId = vaultId,
-                        vaultName = "Vault $vaultId",
-                        encryptedData = encryptedData,
-                        timestamp = timestamp,
-                        version = 1,
-                        deviceId = "onedrive",
-                        checksum = "" // Le checksum sera calculé côté client
+                    CloudResult.success(
+                        VaultSyncData(
+                            vaultId = vaultId,
+                            vaultName = "Vault $vaultId",
+                            encryptedData = encryptedData,
+                            timestamp = timestamp,
+                            version = 1,
+                            deviceId = "onedrive",
+                            checksum = "" // Le checksum sera calculé côté client
+                        )
                     )
                 }
+            } catch (e: IOException) {
+                SafeLog.e(TAG, "Network error downloading vault", e)
+                mapNetworkException(e)
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error downloading vault", e)
-                null
+                CloudResult.genericError(e.message, e)
             }
         }
 
@@ -492,12 +504,14 @@ class OneDriveProvider(
     /**
      * Supprime un vault du cloud
      */
-    override suspend fun deleteVault(cloudFileId: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            if (accessToken == null) {
-                throw IllegalStateException("Not authenticated")
-            }
+    override suspend fun deleteVault(cloudFileId: String): CloudResult<Unit> = withContext(Dispatchers.IO) {
+        if (accessToken == null) {
+            return@withContext CloudResult.authExpired(
+                message = "OneDrive not authenticated. Please sign in."
+            )
+        }
 
+        try {
             val request = Request.Builder()
                 .url("$GRAPH_BASE_URL/me/drive/items/$cloudFileId")
                 .delete()
@@ -506,16 +520,17 @@ class OneDriveProvider(
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 204) {
                     SafeLog.d(TAG, "Vault deleted successfully: $cloudFileId")
-                    true
+                    CloudResult.success(Unit)
                 } else {
-                    val error = response.body?.string() ?: "Unknown error"
-                    SafeLog.e(TAG, "Delete failed: $error")
-                    false
+                    mapHttpError(response.code, response.body?.string())
                 }
             }
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error deleting vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error deleting vault", e)
-            false
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -620,5 +635,57 @@ class OneDriveProvider(
             SafeLog.e(TAG, "Error parsing timestamp: $timestamp", e)
             System.currentTimeMillis()
         }
+    }
+
+    /**
+     * Maps HTTP error codes to CloudResult.Error
+     */
+    private fun mapHttpError(statusCode: Int, body: String?): CloudResult.Error {
+        return when (statusCode) {
+            401 -> CloudResult.Error(
+                type = CloudErrorType.AUTH_EXPIRED,
+                message = "OneDrive authentication expired. Please sign in again."
+            )
+            403 -> CloudResult.Error(
+                type = CloudErrorType.PERMISSION_DENIED,
+                message = "Permission denied. Please check OneDrive permissions."
+            )
+            404 -> CloudResult.Error(
+                type = CloudErrorType.NOT_FOUND,
+                message = "Resource not found in OneDrive."
+            )
+            409, 412 -> CloudResult.Error(
+                type = CloudErrorType.CONFLICT,
+                message = "Version conflict in OneDrive."
+            )
+            429 -> CloudResult.Error(
+                type = CloudErrorType.RATE_LIMITED,
+                message = "Too many requests to OneDrive. Please try again later."
+            )
+            507 -> CloudResult.Error(
+                type = CloudErrorType.QUOTA_EXCEEDED,
+                message = "OneDrive storage quota exceeded."
+            )
+            else -> CloudResult.Error(
+                type = CloudErrorType.GENERIC,
+                message = body ?: "OneDrive error (HTTP $statusCode)"
+            )
+        }
+    }
+
+    /**
+     * Maps network exceptions to CloudResult.Error
+     */
+    private fun mapNetworkException(exception: IOException): CloudResult.Error {
+        val message = when (exception) {
+            is UnknownHostException -> "No internet connection."
+            is SocketTimeoutException -> "Connection timed out."
+            else -> "Network error: ${exception.message}"
+        }
+        return CloudResult.Error(
+            type = CloudErrorType.NETWORK,
+            message = message,
+            exception = exception
+        )
     }
 }

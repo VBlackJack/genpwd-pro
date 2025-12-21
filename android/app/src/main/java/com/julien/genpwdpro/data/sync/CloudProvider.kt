@@ -1,6 +1,7 @@
 package com.julien.genpwdpro.data.sync
 
 import android.app.Activity
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
@@ -44,17 +45,17 @@ interface CloudProvider {
      *
      * @param vaultId ID du vault
      * @param syncData Données chiffrées à synchroniser
-     * @return ID du fichier cloud, ou null en cas d'erreur
+     * @return CloudResult with file ID on success, or typed error on failure
      */
-    suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String?
+    suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String>
 
     /**
      * Télécharge un vault depuis le cloud
      *
      * @param vaultId ID du vault
-     * @return Données chiffrées, ou null si le vault n'existe pas
+     * @return CloudResult with vault data on success, or typed error on failure
      */
-    suspend fun downloadVault(vaultId: String): VaultSyncData?
+    suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData>
 
     /**
      * Vérifie si une version plus récente existe sur le cloud
@@ -69,9 +70,9 @@ interface CloudProvider {
      * Supprime un vault du cloud
      *
      * @param vaultId ID du vault
-     * @return true si la suppression a réussi
+     * @return CloudResult.Success on success, or typed error on failure
      */
-    suspend fun deleteVault(vaultId: String): Boolean
+    suspend fun deleteVault(vaultId: String): CloudResult<Unit>
 
     /**
      * Récupère les métadonnées d'un fichier cloud
