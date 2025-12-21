@@ -14,8 +14,8 @@ android {
         applicationId = "com.julien.genpwdpro"
         minSdk = 24
         targetSdk = 34
-        versionCode = 36
-        versionName = "1.2.0-alpha.34"
+        versionCode = 37
+        versionName = "2.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -25,8 +25,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true // Enable resource shrinking
+            // TODO: Re-enable minification after R8 ConcurrentModificationException is resolved
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -81,6 +82,10 @@ android {
             excludes += "/META-INF/NOTICE.txt"
             excludes += "/META-INF/notice.txt"
             excludes += "/META-INF/ASL2.0"
+            // Exclude non-Android native libraries (macOS, Windows, Linux desktop)
+            excludes += "lib/**/darwin/**"
+            excludes += "lib/**/linux-x86_64/**"
+            excludes += "lib/**/win32-x86_64/**"
         }
     }
 
