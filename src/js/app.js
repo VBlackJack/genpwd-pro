@@ -42,10 +42,13 @@ import pwaManager from './utils/pwa-manager.js';
 import { VaultUI } from './vault-ui.js';
 import { VaultBridge } from './ui/vault-bridge.js';
 
+// Phase 4+5: Native integration
+import { initNativeIntegration } from './ui/native-integration.js';
+
 class GenPwdApp {
   constructor() {
     this.initialized = false;
-    this.version = '2.6.0';
+    this.version = '2.7.0';
     this.vaultUI = null;
   }
 
@@ -139,16 +142,17 @@ class GenPwdApp {
 
       this.initialized = true;
       safeLog('Application initialisée avec succès');
-      showToast('GenPwd Pro v2.6.8 chargé avec succès', 'success');
+      showToast(`GenPwd Pro v${this.version} chargé avec succès`, 'success');
 
       // 10. Initialize Vault Bridge (for Generator-Vault communication)
       VaultBridge.init();
       safeLog('VaultBridge initialisé');
 
-      // 11. Clipboard auto-clear listener
-      window.addEventListener('clipboard-cleared', () => {
-        showToast('Presse-papiers vidé', 'info', 2000);
-      });
+      // 11. Initialize Native Integration (Electron only - Phase 4)
+      if (window.electronAPI?.isElectron) {
+        initNativeIntegration();
+        safeLog('Intégration native initialisée (Tray, DeepLink, Clipboard, SecureStorage)');
+      }
 
       // 12. Initialize Vault UI (Electron only)
       this.initializeVault();

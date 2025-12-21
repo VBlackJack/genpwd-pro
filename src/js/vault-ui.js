@@ -5653,42 +5653,39 @@ export class VaultUI {
 
     const username = entry.data?.username || '';
     const password = entry.data?.password || '';
+    const url = entry.data?.url || '';
 
     if (!username && !password) {
       this.#showToast('Aucune donnée à remplir', 'warning');
       return;
     }
 
-    // Check if Electron autotype is available
-    if (window.electronAPI?.autotype) {
+    // Check if Electron auto-type is available (Phase 6 feature)
+    if (window.electronAPI?.performAutoType) {
       try {
         this.#showToast('Auto-remplissage en cours...', 'info');
 
-        // Minimize the app
-        await window.electronAPI.autotype.minimize();
+        // Get default sequence or custom one from entry
+        const sequence = entry.data?.autoTypeSequence ||
+                         await window.electronAPI.getDefaultAutoTypeSequence?.() ||
+                         '{USERNAME}{TAB}{PASSWORD}{ENTER}';
 
-        // Wait for focus to change
-        await new Promise(r => setTimeout(r, 500));
+        // Perform auto-type (minimizes window, types into focused app)
+        const result = await window.electronAPI.performAutoType(sequence, {
+          username,
+          password,
+          url,
+          notes: entry.notes || ''
+        });
 
-        // Type sequence: username, tab, password, enter
-        if (username) {
-          await window.electronAPI.autotype.type(username);
-          await new Promise(r => setTimeout(r, 100));
+        if (result.success) {
+          this.#showToast('Auto-remplissage terminé', 'success');
+        } else {
+          console.error('[VaultUI] Auto-type failed:', result.error);
+          this.#showToast(`Erreur: ${result.error}`, 'error');
         }
-
-        await window.electronAPI.autotype.sendKey('Tab');
-        await new Promise(r => setTimeout(r, 100));
-
-        if (password) {
-          await window.electronAPI.autotype.type(password);
-          await new Promise(r => setTimeout(r, 100));
-        }
-
-        await window.electronAPI.autotype.sendKey('Enter');
-
-        this.#showToast('Auto-remplissage terminé', 'success');
       } catch (error) {
-        console.error('[VaultUI] Autotype error:', error);
+        console.error('[VaultUI] Auto-type error:', error);
         this.#showToast('Erreur auto-remplissage', 'error');
       }
     } else {

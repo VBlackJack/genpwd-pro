@@ -19,10 +19,55 @@
 import { safeLog } from '../utils/logger.js';
 import historyManager from '../utils/history-manager.js';
 import presetManager from '../utils/preset-manager.js';
+import vaultCrypto from '../core/crypto/vault-crypto.js';
+import {
+  CloudResult,
+  CloudErrorType,
+  SyncState,
+  ConflictStrategy,
+  VaultSyncData,
+  VaultSyncMetadata
+} from '../core/sync/models.js';
+
+/**
+ * Sync Service Events
+ * Emitted via window.dispatchEvent for UI reactivity
+ */
+export const SyncEvents = Object.freeze({
+  /** Sync state changed */
+  STATE_CHANGED: 'sync:stateChanged',
+
+  /** Sync completed successfully */
+  SYNC_COMPLETE: 'sync:complete',
+
+  /** Sync failed */
+  SYNC_ERROR: 'sync:error',
+
+  /** Authentication required (token expired) */
+  AUTH_REQUIRED: 'sync:authRequired',
+
+  /** Conflict detected (user decision needed) */
+  CONFLICT_DETECTED: 'sync:conflict',
+
+  /** Provider connected */
+  CONNECTED: 'sync:connected',
+
+  /** Provider disconnected */
+  DISCONNECTED: 'sync:disconnected'
+});
 
 /**
  * Sync Service
  * Provides end-to-end encrypted synchronization with conflict resolution
+ *
+ * CRYPTO ENGINE: Argon2id + AES-256-GCM (Android-compatible)
+ * SYNC ENGINE: CloudResult-based error handling (matches Android)
+ *
+ * v2.7.0: Migrated from PBKDF2 to Argon2id for cross-platform vault compatibility.
+ * Uses vault-crypto.js which mirrors the Android VaultCryptoManager implementation.
+ *
+ * Phase 3: Added CloudResult architecture for robust error handling.
+ * All cloud operations now return CloudResult for consistent error handling.
  */
 class SyncService {
   constructor() {
@@ -33,15 +78,28 @@ class SyncService {
     this.deviceId = this.getOrCreateDeviceId();
     this.syncInterval = 300000; // 5 minutes
     this.syncTimer = null;
+
+    // Sync state tracking
+    this.syncState = SyncState.IDLE;
+    this.lastSyncTime = null;
+    this.lastSyncError = null;
+    this.conflictStrategy = ConflictStrategy.ASK_USER;
+
+    // Event listeners
+    this._eventListeners = new Map();
+
+    // Crypto configuration now delegated to vault-crypto.js
+    // Argon2id: iterations=3, memory=64MB, parallelism=4
+    // AES-256-GCM: ivLength=12, tagLength=128
     this.config = {
-      pbkdf2Iterations: 600000, // OWASP 2023 recommendation
       algorithm: 'AES-GCM',
       keyLength: 256,
-      ivLength: 12, // 96 bits for GCM
-      tagLength: 128 // 128-bit authentication tag
+      ivLength: 12,      // 96 bits for GCM
+      tagLength: 128,    // 128-bit authentication tag
+      saltLength: 32     // 32 bytes (Android-compatible)
     };
 
-    safeLog('SyncService initialized', { deviceId: this.deviceId });
+    safeLog('SyncService initialized with Argon2id crypto engine + CloudResult', { deviceId: this.deviceId });
   }
 
   /**
@@ -56,7 +114,10 @@ class SyncService {
 
   /**
    * Unlock sync service with master password
-   * Derives encryption key from master password
+   * Derives encryption key using Argon2id (Android-compatible)
+   *
+   * IMPORTANT: This operation is CPU-intensive due to Argon2id.
+   * Should be called from Main Process or Worker to avoid UI blocking.
    */
   async unlock(masterPassword) {
     if (!masterPassword || masterPassword.length < 8) {
@@ -64,15 +125,16 @@ class SyncService {
     }
 
     try {
-      // Generate or retrieve salt
+      // Generate or retrieve salt (32 bytes for Android compatibility)
       this.salt = this.getOrCreateSalt();
 
-      // Derive encryption key
-      this.encryptionKey = await this.deriveKey(masterPassword, this.salt);
+      // Derive encryption key using Argon2id (via vault-crypto)
+      // Parameters: iterations=3, memory=64MB, parallelism=4
+      this.encryptionKey = await vaultCrypto.deriveKey(masterPassword, this.salt);
 
       this.isLocked = false;
 
-      safeLog('SyncService unlocked');
+      safeLog('SyncService unlocked with Argon2id');
 
       // Start auto-sync
       this.startAutoSync();
@@ -90,6 +152,10 @@ class SyncService {
    * Clears encryption key from memory
    */
   lock() {
+    // Wipe encryption key if it's a Buffer
+    if (this.encryptionKey && Buffer.isBuffer(this.encryptionKey)) {
+      vaultCrypto.wipeBuffer(this.encryptionKey);
+    }
     this.encryptionKey = null;
     this.isLocked = true;
 
@@ -99,200 +165,448 @@ class SyncService {
   }
 
   /**
-   * Derive encryption key from master password using PBKDF2
+   * @deprecated REMOVED in v2.7.0 - PBKDF2 replaced with Argon2id
+   *
+   * Key derivation is now handled by vault-crypto.js using Argon2id
+   * with parameters matching Android VaultCryptoManager:
+   * - Iterations: 3
+   * - Memory: 64MB
+   * - Parallelism: 4
+   *
+   * This ensures cross-platform vault compatibility with Android.
+   *
+   * @see vault-crypto.js#deriveKey
    */
   async deriveKey(password, salt) {
-    // Import password as key material
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(password),
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-
-    // Derive AES-GCM key
-    const key = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: salt,
-        iterations: this.config.pbkdf2Iterations,
-        hash: 'SHA-256'
-      },
-      keyMaterial,
-      {
-        name: this.config.algorithm,
-        length: this.config.keyLength
-      },
-      false,
-      ['encrypt', 'decrypt']
-    );
-
-    return key;
+    // Delegate to vault-crypto for Argon2id key derivation
+    return await vaultCrypto.deriveKey(password, salt);
   }
 
   /**
-   * Encrypt data with AES-256-GCM
+   * Encrypt data with AES-256-GCM (via vault-crypto)
+   *
+   * Uses the same encryption format as Android VaultCryptoManager.
    */
   async encrypt(data) {
     if (this.isLocked) {
       throw new Error('SyncService is locked. Call unlock() first.');
     }
 
-    // Generate random IV
-    const iv = crypto.getRandomValues(new Uint8Array(this.config.ivLength));
+    // Generate random IV using vault-crypto
+    const iv = vaultCrypto.generateIV();
 
-    // Prepare data
-    const plaintext = new TextEncoder().encode(JSON.stringify(data));
+    // Prepare data as JSON
+    const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
 
-    // Encrypt
-    const encrypted = await crypto.subtle.encrypt(
-      {
-        name: this.config.algorithm,
-        iv: iv,
-        tagLength: this.config.tagLength
-      },
-      this.encryptionKey,
-      plaintext
-    );
+    // Encrypt using vault-crypto (AES-256-GCM)
+    const encrypted = vaultCrypto.encryptAESGCM(plaintext, this.encryptionKey, iv);
 
-    // Package encrypted data
+    // Package encrypted data (compatible with Android format)
     return {
       iv: Array.from(iv),
-      data: Array.from(new Uint8Array(encrypted)),
-      version: '1.0',
+      data: Array.from(encrypted),
+      version: '2.0',  // v2.0 = Argon2id crypto engine
       timestamp: Date.now(),
       deviceId: this.deviceId
     };
   }
 
   /**
-   * Decrypt data with AES-256-GCM
+   * Decrypt data with AES-256-GCM (via vault-crypto)
+   *
+   * Uses the same decryption format as Android VaultCryptoManager.
    */
   async decrypt(encryptedPackage) {
     if (this.isLocked) {
       throw new Error('SyncService is locked. Call unlock() first.');
     }
 
-    // Extract IV and encrypted data
-    const iv = new Uint8Array(encryptedPackage.iv);
-    const encrypted = new Uint8Array(encryptedPackage.data);
+    // Extract IV and encrypted data as Buffers
+    const iv = Buffer.from(encryptedPackage.iv);
+    const encrypted = Buffer.from(encryptedPackage.data);
 
-    // Decrypt
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: this.config.algorithm,
-        iv: iv,
-        tagLength: this.config.tagLength
-      },
-      this.encryptionKey,
-      encrypted
-    );
+    // Decrypt using vault-crypto (AES-256-GCM)
+    const decrypted = vaultCrypto.decryptAESGCM(encrypted, this.encryptionKey, iv);
 
     // Parse JSON
-    const plaintext = new TextDecoder().decode(decrypted);
+    const plaintext = decrypted.toString('utf8');
     return JSON.parse(plaintext);
   }
 
   /**
    * Sync local data with remote
    * Uses Last-Write-Wins conflict resolution
+   *
+   * @param {string} vaultId - Vault ID to sync
+   * @returns {Promise<CloudResult<{action: string, conflicts: number, timestamp: number}>>}
    */
-  async sync() {
+  async sync(vaultId = 'default') {
     if (this.isLocked) {
-      throw new Error('SyncService is locked. Call unlock() first.');
+      return CloudResult.error(
+        CloudErrorType.GENERIC,
+        'SyncService is locked. Call unlock() first.'
+      );
     }
 
     if (!this.provider) {
-      throw new Error('No sync provider configured');
+      return CloudResult.error(
+        CloudErrorType.GENERIC,
+        'No sync provider configured'
+      );
     }
 
-    if (!this.provider.isConnected()) {
-      await this.provider.connect();
-    }
+    // Update state
+    this.setSyncState(SyncState.SYNCING);
 
     try {
       safeLog('Starting sync...');
 
-      // 1. Get local data
+      // 1. Authenticate provider
+      const authResult = await this.provider.authenticate();
+      if (authResult.isError) {
+        return this.handleSyncError(authResult);
+      }
+
+      // 2. Get local data and encrypt
       const localData = await this.getLocalData();
+      const encryptedLocal = await this.encryptToBuffer(localData);
 
-      // 2. Encrypt local data
-      const encryptedLocal = await this.encrypt(localData);
+      // 3. Download remote vault (if exists)
+      this.setSyncState(SyncState.DOWNLOADING);
+      const downloadResult = await this.provider.downloadVault(vaultId);
 
-      // 3. Pull remote data
-      const encryptedRemote = await this.provider.pull();
-
-      if (!encryptedRemote) {
-        // No remote data, push local
-        safeLog('No remote data, pushing local');
-        await this.provider.push(encryptedLocal);
-
-        return {
-          action: 'push',
-          conflicts: 0,
-          timestamp: Date.now()
-        };
+      if (downloadResult.isError) {
+        // Handle NOT_FOUND as "no remote data yet"
+        if (downloadResult.errorType === CloudErrorType.NOT_FOUND) {
+          safeLog('No remote data, uploading local');
+          return await this.uploadAndComplete(vaultId, encryptedLocal, 'push', 0);
+        }
+        return this.handleSyncError(downloadResult);
       }
 
       // 4. Decrypt remote data
-      const remoteData = await this.decrypt(encryptedRemote);
+      const remoteVaultData = downloadResult.data;
+      let remoteData;
 
-      // 5. Resolve conflicts (Last-Write-Wins)
-      const { resolved, conflicts } = this.resolveConflicts(localData, remoteData);
+      try {
+        remoteData = await this.decryptFromBuffer(remoteVaultData.encryptedContent);
+      } catch (decryptError) {
+        return CloudResult.error(
+          CloudErrorType.GENERIC,
+          'Failed to decrypt remote vault. Password may have changed.'
+        );
+      }
+
+      // 5. Resolve conflicts
+      this.setSyncState(SyncState.RESOLVING_CONFLICT);
+      const { resolved, conflicts, strategy } = this.resolveConflicts(localData, remoteData);
+
+      // If conflict requires user decision
+      if (strategy === 'ask_user') {
+        this.emitEvent(SyncEvents.CONFLICT_DETECTED, {
+          local: localData,
+          remote: remoteData,
+          vaultId
+        });
+        return CloudResult.error(
+          CloudErrorType.CONFLICT,
+          'Conflict detected. User decision required.'
+        );
+      }
 
       // 6. Update local data if remote was newer
       if (resolved !== localData) {
         await this.setLocalData(resolved);
       }
 
-      // 7. Encrypt and push resolved data
-      const encryptedResolved = await this.encrypt(resolved);
-      await this.provider.push(encryptedResolved);
-
-      safeLog(`Sync complete: ${conflicts} conflicts resolved`);
-
-      return {
-        action: conflicts > 0 ? 'merge' : 'sync',
-        conflicts: conflicts,
-        timestamp: Date.now()
-      };
+      // 7. Encrypt and upload resolved data
+      const encryptedResolved = await this.encryptToBuffer(resolved);
+      return await this.uploadAndComplete(vaultId, encryptedResolved, conflicts > 0 ? 'merge' : 'sync', conflicts);
 
     } catch (error) {
       safeLog(`Sync failed: ${error.message}`);
-      throw error;
+      return this.handleSyncError(
+        CloudResult.error(CloudErrorType.GENERIC, error.message, error)
+      );
     }
   }
 
   /**
-   * Resolve conflicts using Last-Write-Wins (LWW)
+   * Upload encrypted data and complete sync
+   * @private
+   */
+  async uploadAndComplete(vaultId, encryptedData, action, conflicts) {
+    this.setSyncState(SyncState.UPLOADING);
+
+    const uploadResult = await this.provider.uploadVault(vaultId, encryptedData);
+
+    if (uploadResult.isError) {
+      return this.handleSyncError(uploadResult);
+    }
+
+    // Sync successful
+    this.lastSyncTime = Date.now();
+    this.lastSyncError = null;
+    this.setSyncState(SyncState.IDLE);
+
+    const result = {
+      action,
+      conflicts,
+      timestamp: this.lastSyncTime,
+      fileId: uploadResult.data
+    };
+
+    this.emitEvent(SyncEvents.SYNC_COMPLETE, result);
+    safeLog(`Sync complete: ${conflicts} conflicts resolved`);
+
+    return CloudResult.success(result);
+  }
+
+  /**
+   * Handle sync error and emit appropriate events
+   * @private
+   */
+  handleSyncError(errorResult) {
+    this.lastSyncError = errorResult;
+    this.setSyncState(SyncState.ERROR);
+
+    // Emit specific events based on error type
+    if (errorResult.requiresReauth()) {
+      this.emitEvent(SyncEvents.AUTH_REQUIRED, {
+        provider: this.provider?.name,
+        errorType: errorResult.errorType,
+        message: errorResult.message
+      });
+    } else {
+      this.emitEvent(SyncEvents.SYNC_ERROR, {
+        errorType: errorResult.errorType,
+        message: errorResult.message
+      });
+    }
+
+    return errorResult;
+  }
+
+  /**
+   * Encrypt data to ArrayBuffer for cloud upload
+   */
+  async encryptToBuffer(data) {
+    const encrypted = await this.encrypt(data);
+    // Convert to binary format for cloud storage
+    const jsonStr = JSON.stringify(encrypted);
+    const encoder = new TextEncoder();
+    return encoder.encode(jsonStr).buffer;
+  }
+
+  /**
+   * Decrypt data from ArrayBuffer
+   */
+  async decryptFromBuffer(buffer) {
+    const decoder = new TextDecoder();
+    const jsonStr = decoder.decode(buffer);
+    const encrypted = JSON.parse(jsonStr);
+    return await this.decrypt(encrypted);
+  }
+
+  /**
+   * Set sync state and emit event
+   * @private
+   */
+  setSyncState(state) {
+    const previousState = this.syncState;
+    this.syncState = state;
+
+    if (previousState !== state) {
+      this.emitEvent(SyncEvents.STATE_CHANGED, {
+        previousState,
+        currentState: state
+      });
+    }
+  }
+
+  /**
+   * Emit event to listeners
+   * @private
+   */
+  emitEvent(eventName, data) {
+    // Emit via CustomEvent for UI components
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(eventName, { detail: data }));
+    }
+
+    // Call registered listeners
+    const listeners = this._eventListeners.get(eventName) || [];
+    listeners.forEach(listener => {
+      try {
+        listener(data);
+      } catch (error) {
+        safeLog(`Event listener error: ${error.message}`);
+      }
+    });
+  }
+
+  /**
+   * Register event listener
+   * @param {string} event - Event name from SyncEvents
+   * @param {function} callback - Callback function
+   * @returns {function} - Unsubscribe function
+   */
+  on(event, callback) {
+    if (!this._eventListeners.has(event)) {
+      this._eventListeners.set(event, []);
+    }
+    this._eventListeners.get(event).push(callback);
+
+    // Return unsubscribe function
+    return () => {
+      const listeners = this._eventListeners.get(event);
+      const index = listeners.indexOf(callback);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * Sync vault to cloud (new CloudResult-based API)
+   *
+   * @param {string} vaultId - Vault ID
+   * @param {ArrayBuffer} encryptedVaultData - Pre-encrypted vault data
+   * @returns {Promise<CloudResult<string>>} - File ID on success
+   */
+  async syncVault(vaultId, encryptedVaultData) {
+    if (!this.provider) {
+      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+    }
+
+    // Validate data
+    if (!(encryptedVaultData instanceof ArrayBuffer)) {
+      return CloudResult.error(CloudErrorType.GENERIC, 'Invalid encrypted data format');
+    }
+
+    return await this.provider.uploadVault(vaultId, encryptedVaultData);
+  }
+
+  /**
+   * Download vault from cloud
+   *
+   * @param {string} vaultId - Vault ID
+   * @returns {Promise<CloudResult<VaultSyncData>>}
+   */
+  async downloadVault(vaultId) {
+    if (!this.provider) {
+      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+    }
+
+    return await this.provider.downloadVault(vaultId);
+  }
+
+  /**
+   * List all synced vaults
+   *
+   * @returns {Promise<CloudResult<VaultSyncMetadata[]>>}
+   */
+  async listSyncedVaults() {
+    if (!this.provider) {
+      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+    }
+
+    return await this.provider.listVaults();
+  }
+
+  /**
+   * Resolve conflicts using configured strategy
+   *
+   * @param {Object} local - Local data
+   * @param {Object} remote - Remote data
+   * @returns {{resolved: Object, conflicts: number, strategy: string}}
    */
   resolveConflicts(local, remote) {
     let conflicts = 0;
+    let strategy = 'auto';
 
     // Compare top-level timestamps
     const localTimestamp = local.timestamp || 0;
     const remoteTimestamp = remote.timestamp || 0;
 
+    // Check if there's a meaningful difference (more than 1 second)
+    const timeDiff = Math.abs(localTimestamp - remoteTimestamp);
+    const hasConflict = timeDiff > 1000 && local.deviceId !== remote.deviceId;
+
+    // If configured to ask user for conflicts
+    if (hasConflict && this.conflictStrategy === ConflictStrategy.ASK_USER) {
+      return { resolved: local, conflicts: 1, strategy: 'ask_user' };
+    }
+
+    // Apply configured strategy or default to Last-Write-Wins
+    if (this.conflictStrategy === ConflictStrategy.LOCAL_WINS) {
+      if (localTimestamp !== remoteTimestamp) conflicts = 1;
+      safeLog('Conflict resolution: Local wins (configured)');
+      return { resolved: local, conflicts, strategy: 'local_wins' };
+    }
+
+    if (this.conflictStrategy === ConflictStrategy.REMOTE_WINS) {
+      if (localTimestamp !== remoteTimestamp) conflicts = 1;
+      safeLog('Conflict resolution: Remote wins (configured)');
+      return { resolved: remote, conflicts, strategy: 'remote_wins' };
+    }
+
+    // Default: Last-Write-Wins
     if (localTimestamp > remoteTimestamp) {
       // Local is newer, keep local
-      if (localTimestamp !== remoteTimestamp) conflicts = 1;
-      safeLog('Conflict resolution: Local wins');
-      return { resolved: local, conflicts };
+      if (hasConflict) conflicts = 1;
+      safeLog('Conflict resolution: Local wins (newer timestamp)');
+      return { resolved: local, conflicts, strategy: 'lww_local' };
     } else if (remoteTimestamp > localTimestamp) {
       // Remote is newer, keep remote
-      conflicts = 1;
-      safeLog('Conflict resolution: Remote wins');
-      return { resolved: remote, conflicts };
+      if (hasConflict) conflicts = 1;
+      safeLog('Conflict resolution: Remote wins (newer timestamp)');
+      return { resolved: remote, conflicts, strategy: 'lww_remote' };
     } else {
-      // Same timestamp, compare device ID (deterministic)
+      // Same timestamp, compare device ID (deterministic tie-breaker)
       if (local.deviceId > remote.deviceId) {
-        safeLog('Conflict resolution: Local wins (same timestamp, device ID tie-breaker)');
-        return { resolved: local, conflicts };
+        safeLog('Conflict resolution: Local wins (device ID tie-breaker)');
+        return { resolved: local, conflicts, strategy: 'tie_local' };
       } else {
-        safeLog('Conflict resolution: Remote wins (same timestamp, device ID tie-breaker)');
-        return { resolved: remote, conflicts };
+        safeLog('Conflict resolution: Remote wins (device ID tie-breaker)');
+        return { resolved: remote, conflicts, strategy: 'tie_remote' };
       }
+    }
+  }
+
+  /**
+   * Set conflict resolution strategy
+   * @param {string} strategy - Strategy from ConflictStrategy
+   */
+  setConflictStrategy(strategy) {
+    if (Object.values(ConflictStrategy).includes(strategy)) {
+      this.conflictStrategy = strategy;
+      safeLog(`Conflict strategy set to: ${strategy}`);
+    }
+  }
+
+  /**
+   * Resolve conflict with user decision
+   *
+   * @param {string} vaultId - Vault ID
+   * @param {string} resolution - 'local' or 'remote'
+   * @returns {Promise<CloudResult>}
+   */
+  async resolveConflictManually(vaultId, resolution) {
+    if (resolution === 'local') {
+      // Force push local
+      const localData = await this.getLocalData();
+      const encrypted = await this.encryptToBuffer(localData);
+      return await this.provider.uploadVault(vaultId, encrypted);
+    } else {
+      // Force pull remote
+      const result = await this.provider.downloadVault(vaultId);
+      if (result.isSuccess) {
+        const remoteData = await this.decryptFromBuffer(result.data.encryptedContent);
+        await this.setLocalData(remoteData);
+        return CloudResult.success({ action: 'pulled', timestamp: Date.now() });
+      }
+      return result;
     }
   }
 
@@ -389,33 +703,53 @@ class SyncService {
 
   /**
    * Get or create salt for key derivation
+   *
+   * Uses 32-byte salt for Android VaultCryptoManager compatibility.
+   * (libsodium uses first 16 bytes internally)
    */
   getOrCreateSalt() {
     let saltHex = localStorage.getItem('sync_salt');
 
     if (!saltHex) {
-      // Generate random salt
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+      // Generate 32-byte random salt using vault-crypto
+      const salt = vaultCrypto.generateSalt();
+      saltHex = vaultCrypto.bytesToHex(salt);
       localStorage.setItem('sync_salt', saltHex);
     }
 
-    // Convert hex to Uint8Array
-    const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-    return salt;
+    // Convert hex to Buffer
+    return vaultCrypto.hexToBytes(saltHex);
   }
 
   /**
    * Start auto-sync timer
+   * @param {number} interval - Sync interval in ms (optional, default 5 minutes)
    */
-  startAutoSync() {
+  startAutoSync(interval = null) {
     if (this.syncTimer) return;
 
+    if (interval) {
+      this.syncInterval = interval;
+    }
+
     this.syncTimer = setInterval(async () => {
-      try {
-        await this.sync();
-      } catch (error) {
-        safeLog(`Auto-sync failed: ${error.message}`);
+      // Skip if already syncing
+      if (this.syncState === SyncState.SYNCING) {
+        safeLog('Auto-sync skipped: sync already in progress');
+        return;
+      }
+
+      const result = await this.sync();
+
+      // Handle result
+      if (result.isError) {
+        safeLog(`Auto-sync failed: ${result.message}`);
+
+        // If auth expired, stop auto-sync
+        if (result.requiresReauth()) {
+          this.stopAutoSync();
+          safeLog('Auto-sync stopped: authentication required');
+        }
       }
     }, this.syncInterval);
 
@@ -442,30 +776,96 @@ class SyncService {
 
   /**
    * Get sync status
+   * @returns {Object} Sync status object
    */
   getStatus() {
     return {
       isLocked: this.isLocked,
       provider: this.provider ? this.provider.name : null,
+      providerId: this.provider ? this.provider.id : null,
       providerConnected: this.provider ? this.provider.isConnected() : false,
       deviceId: this.deviceId,
-      autoSyncEnabled: !!this.syncTimer
+      autoSyncEnabled: !!this.syncTimer,
+      syncState: this.syncState,
+      lastSyncTime: this.lastSyncTime,
+      lastSyncError: this.lastSyncError ? {
+        errorType: this.lastSyncError.errorType,
+        message: this.lastSyncError.message
+      } : null,
+      conflictStrategy: this.conflictStrategy
     };
   }
 
   /**
-   * Delete all remote data
+   * Delete all remote data for a vault
+   *
+   * @param {string} vaultId - Vault ID to delete
+   * @returns {Promise<CloudResult<boolean>>}
    */
-  async deleteRemoteData() {
+  async deleteRemoteData(vaultId) {
     if (!this.provider) {
-      throw new Error('No sync provider configured');
+      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
     }
 
-    if (!this.provider.isConnected()) {
-      await this.provider.connect();
+    // Authenticate first
+    const authResult = await this.provider.authenticate();
+    if (authResult.isError) {
+      return authResult;
     }
 
-    return await this.provider.deleteAll();
+    // Find file ID for this vault
+    const listResult = await this.provider.listVaults();
+    if (listResult.isError) {
+      return listResult;
+    }
+
+    const vault = listResult.data.find(v => v.vaultId === vaultId);
+    if (!vault) {
+      return CloudResult.error(CloudErrorType.NOT_FOUND, `Vault ${vaultId} not found in cloud`);
+    }
+
+    return await this.provider.deleteVault(vault.fileId);
+  }
+
+  /**
+   * Disconnect from cloud provider
+   *
+   * @returns {Promise<CloudResult<boolean>>}
+   */
+  async disconnect() {
+    if (!this.provider) {
+      return CloudResult.success(true);
+    }
+
+    this.stopAutoSync();
+    const result = await this.provider.disconnect();
+
+    if (result.isSuccess) {
+      this.emitEvent(SyncEvents.DISCONNECTED, { provider: this.provider.name });
+    }
+
+    return result;
+  }
+
+  /**
+   * Connect to a provider
+   *
+   * @param {CloudProvider} provider - Provider instance
+   * @returns {Promise<CloudResult<boolean>>}
+   */
+  async connect(provider) {
+    this.provider = provider;
+
+    const authResult = await provider.authenticate();
+
+    if (authResult.isSuccess) {
+      this.emitEvent(SyncEvents.CONNECTED, {
+        provider: provider.name,
+        providerId: provider.id
+      });
+    }
+
+    return authResult;
   }
 }
 
@@ -473,4 +873,4 @@ class SyncService {
 const syncService = new SyncService();
 
 export default syncService;
-export { SyncService };
+export { SyncService, SyncEvents };

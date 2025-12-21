@@ -73,6 +73,7 @@
   "dependencies": {
     "dompurify": "^3.2.3",
     "hash-wasm": "^4.12.0",
+    "kdbxweb": "^2.1.1",
     "tink-crypto": "^0.1.1",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
@@ -88,6 +89,7 @@
       "electron-preload.cjs",
       "package.json",
       "node_modules/hash-wasm/**/*",
+      "node_modules/kdbxweb/**/*",
       "node_modules/tweetnacl/**/*",
       "node_modules/tweetnacl-util/**/*"
     ],

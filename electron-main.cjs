@@ -15,12 +15,80 @@
  */
 
 // electron-main.js - Point d'entrée principal Electron pour GenPwd Pro
-const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  shell,
+  ipcMain,
+  dialog,
+  clipboard,
+  safeStorage,
+  Notification,
+  nativeImage
+} = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { execSync, spawn } = require('child_process');
 const { version: APP_VERSION } = require('./package.json');
+
+// ==================== SINGLE INSTANCE LOCK ====================
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log('[GenPwd Pro] Another instance is running. Exiting.');
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+
+      // Check for deep link in command line (Windows)
+      const deepLink = commandLine.find(arg => arg.startsWith('genpwd://'));
+      if (deepLink) {
+        handleDeepLink(deepLink);
+      }
+    }
+  });
+}
+
+// ==================== DEEP LINKING PROTOCOL ====================
+// Register as default handler for genpwd:// URLs
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('genpwd', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('genpwd');
+}
+
+// Handle deep link URLs
+function handleDeepLink(url) {
+  console.log('[GenPwd Pro] Deep link received:', url);
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('deep-link', url);
+  }
+}
+
+// macOS: Handle open-url event
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  handleDeepLink(url);
+});
 
 // Vault module (loaded dynamically as ESM)
 let vaultModule = null;
+
+// System tray
+let tray = null;
+let isQuitting = false;
+
+// Clipboard auto-clear timers
+const clipboardTimers = new Map();
 
 // Configuration de sécurité renforcée
 const SECURITY_CONFIG = {
@@ -82,10 +150,112 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // ==================== MINIMIZE TO TRAY ====================
+  // Intercept close to minimize to tray instead of quitting
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+
+      // Show notification (only once per session)
+      if (!mainWindow._trayNotificationShown && Notification.isSupported()) {
+        new Notification({
+          title: 'GenPwd Pro',
+          body: 'L\'application continue en arrière-plan. Cliquez sur l\'icône pour la rouvrir.',
+          icon: path.join(__dirname, 'assets', 'icon.ico'),
+          silent: true
+        }).show();
+        mainWindow._trayNotificationShown = true;
+      }
+
+      return false;
+    }
+  });
+
   // Cleanup lors de la fermeture
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+}
+
+// ==================== SYSTEM TRAY ====================
+function createTray() {
+  // Create tray icon
+  const iconPath = path.join(__dirname, 'assets', 'icon.ico');
+  let trayIcon;
+
+  try {
+    trayIcon = nativeImage.createFromPath(iconPath);
+    // Resize for tray (16x16 on Windows)
+    trayIcon = trayIcon.resize({ width: 16, height: 16 });
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to load tray icon:', error);
+    // Create a simple fallback icon
+    trayIcon = nativeImage.createEmpty();
+  }
+
+  tray = new Tray(trayIcon);
+  tray.setToolTip('GenPwd Pro - Générateur de mots de passe');
+
+  // Create context menu
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Afficher GenPwd Pro',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Verrouiller le coffre',
+      click: async () => {
+        if (vaultModule) {
+          const session = vaultModule.getSession();
+          if (session && session.isUnlocked()) {
+            await session.lock();
+            if (mainWindow) {
+              mainWindow.webContents.send('vault:locked');
+            }
+          }
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quitter',
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  // Click on tray icon toggles window visibility
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+
+  // Double-click shows window
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  console.log('[GenPwd Pro] System tray created');
 }
 
 // Créer le menu de l'application
@@ -230,6 +400,347 @@ function createApplicationMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+// ==================== SECURE STORAGE IPC HANDLERS ====================
+// Uses Windows DPAPI / macOS Keychain for encryption
+
+// Check if safeStorage is available
+ipcMain.handle('auth:is-available', () => {
+  return safeStorage.isEncryptionAvailable();
+});
+
+// Encrypt secret using OS-level encryption (DPAPI on Windows)
+ipcMain.handle('auth:encrypt-secret', (event, text) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      return { success: false, error: 'Secure storage not available' };
+    }
+
+    const encrypted = safeStorage.encryptString(text);
+    // Return as base64 for easy storage
+    return { success: true, data: encrypted.toString('base64') };
+  } catch (error) {
+    console.error('[GenPwd Pro] auth:encrypt-secret error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// Decrypt secret using OS-level encryption
+ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      return { success: false, error: 'Secure storage not available' };
+    }
+
+    const buffer = Buffer.from(base64Data, 'base64');
+    const decrypted = safeStorage.decryptString(buffer);
+    return { success: true, data: decrypted };
+  } catch (error) {
+    console.error('[GenPwd Pro] auth:decrypt-secret error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// ==================== SMART CLIPBOARD IPC HANDLERS ====================
+// Auto-clear clipboard after timeout (KeePass-style)
+
+// Generate unique clipboard operation ID
+let clipboardOpId = 0;
+
+// Copy to clipboard with auto-clear
+ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
+  try {
+    // Generate operation ID
+    const opId = ++clipboardOpId;
+
+    // Write to clipboard
+    clipboard.writeText(text);
+
+    // Clear any existing timer for this type of content
+    if (clipboardTimers.has('secure')) {
+      clearTimeout(clipboardTimers.get('secure').timer);
+    }
+
+    // Set timer to clear clipboard
+    const timer = setTimeout(() => {
+      // Only clear if clipboard still contains our text
+      const currentContent = clipboard.readText();
+      if (currentContent === text) {
+        clipboard.clear();
+        console.log('[GenPwd Pro] Clipboard auto-cleared after timeout');
+
+        // Notify renderer
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('clipboard:cleared', { opId });
+        }
+      }
+      clipboardTimers.delete('secure');
+    }, ttlMs);
+
+    // Store timer reference
+    clipboardTimers.set('secure', { timer, text, opId });
+
+    return { success: true, opId, ttlMs };
+  } catch (error) {
+    console.error('[GenPwd Pro] clipboard:copy-secure error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// Clear clipboard immediately
+ipcMain.handle('clipboard:clear', () => {
+  try {
+    // Cancel any pending timers
+    for (const [key, { timer }] of clipboardTimers) {
+      clearTimeout(timer);
+    }
+    clipboardTimers.clear();
+
+    clipboard.clear();
+    return { success: true };
+  } catch (error) {
+    console.error('[GenPwd Pro] clipboard:clear error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// Get remaining time for clipboard auto-clear
+ipcMain.handle('clipboard:get-ttl', () => {
+  const entry = clipboardTimers.get('secure');
+  if (!entry) {
+    return { active: false };
+  }
+  return { active: true, opId: entry.opId };
+});
+
+// ==================== WINDOW CONTROL IPC HANDLERS ====================
+
+// Minimize to tray
+ipcMain.handle('window:minimize-to-tray', () => {
+  if (mainWindow) {
+    mainWindow.hide();
+    return { success: true };
+  }
+  return { success: false, error: 'No main window' };
+});
+
+// Show window
+ipcMain.handle('window:show', () => {
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+    return { success: true };
+  }
+  return { success: false, error: 'No main window' };
+});
+
+// Check if window is visible
+ipcMain.handle('window:is-visible', () => {
+  return mainWindow ? mainWindow.isVisible() : false;
+});
+
+// Quit application
+ipcMain.handle('app:quit', () => {
+  isQuitting = true;
+  app.quit();
+  return { success: true };
+});
+
+// ==================== FILE SYSTEM IPC HANDLERS ====================
+
+// Read binary file for KDBX import
+ipcMain.handle('fs:read-binary', async (event, filePath) => {
+  try {
+    // Security: validate path is a real file
+    const stats = await fs.promises.stat(filePath);
+    if (!stats.isFile()) {
+      throw new Error('Path is not a file');
+    }
+
+    // Read file as Buffer and return as ArrayBuffer
+    const buffer = await fs.promises.readFile(filePath);
+    return { success: true, data: buffer };
+  } catch (error) {
+    console.error('[GenPwd Pro] fs:read-binary error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// Show open file dialog for KDBX import
+ipcMain.handle('fs:show-open-dialog', async (event, options) => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: options.title || 'Ouvrir un fichier',
+      filters: options.filters || [{ name: 'Tous les fichiers', extensions: ['*'] }],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: true, canceled: true, filePath: null };
+    }
+
+    return { success: true, canceled: false, filePath: result.filePaths[0] };
+  } catch (error) {
+    console.error('[GenPwd Pro] fs:show-open-dialog error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// ==================== AUTO-TYPE IPC HANDLERS ====================
+// KeePass-style auto-typing into other applications
+// Uses PowerShell SendKeys on Windows (no native modules required)
+
+/**
+ * Parse auto-type sequence and return array of actions
+ * Supports: {USERNAME}, {PASSWORD}, {TAB}, {ENTER}, {DELAY N}
+ */
+function parseAutoTypeSequence(sequence, data) {
+  const result = [];
+  const regex = /\{([^}]+)\}|([^{]+)/g;
+  let match;
+
+  while ((match = regex.exec(sequence)) !== null) {
+    if (match[1]) {
+      // It's a placeholder like {USERNAME}
+      const placeholder = match[1].toUpperCase();
+      if (placeholder === 'USERNAME') {
+        result.push({ type: 'text', value: data.username || '' });
+      } else if (placeholder === 'PASSWORD') {
+        result.push({ type: 'text', value: data.password || '' });
+      } else if (placeholder === 'TAB') {
+        result.push({ type: 'key', value: '{TAB}' });
+      } else if (placeholder === 'ENTER') {
+        result.push({ type: 'key', value: '{ENTER}' });
+      } else if (placeholder.startsWith('DELAY ')) {
+        const delayMs = parseInt(placeholder.substring(6), 10) || 100;
+        result.push({ type: 'delay', value: delayMs });
+      } else if (placeholder === 'URL') {
+        result.push({ type: 'text', value: data.url || '' });
+      } else if (placeholder === 'NOTES') {
+        result.push({ type: 'text', value: data.notes || '' });
+      }
+    } else if (match[2]) {
+      // It's literal text
+      result.push({ type: 'text', value: match[2] });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Escape text for PowerShell SendKeys
+ * Special characters need escaping: +^%~(){}[]
+ */
+function escapeForSendKeys(text) {
+  // Characters that have special meaning in SendKeys
+  const specialChars = /[+^%~(){}[\]]/g;
+  return text.replace(specialChars, '{$&}');
+}
+
+/**
+ * Build PowerShell script for auto-type
+ */
+function buildAutoTypePowerShell(actions) {
+  const lines = [
+    'Add-Type -AssemblyName System.Windows.Forms',
+    'Start-Sleep -Milliseconds 100' // Small initial delay
+  ];
+
+  for (const action of actions) {
+    if (action.type === 'text') {
+      const escaped = escapeForSendKeys(action.value);
+      // Use single quotes and escape them for PowerShell
+      const psString = escaped.replace(/'/g, "''");
+      lines.push(`[System.Windows.Forms.SendKeys]::SendWait('${psString}')`);
+    } else if (action.type === 'key') {
+      // Keys like {TAB}, {ENTER} go directly
+      lines.push(`[System.Windows.Forms.SendKeys]::SendWait('${action.value}')`);
+    } else if (action.type === 'delay') {
+      lines.push(`Start-Sleep -Milliseconds ${action.value}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+// Perform auto-type operation
+ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data }) => {
+  try {
+    // Only supported on Windows currently
+    if (process.platform !== 'win32') {
+      return { success: false, error: 'Auto-type currently only supported on Windows' };
+    }
+
+    // Validate inputs
+    if (!sequence || !data) {
+      return { success: false, error: 'Missing sequence or data' };
+    }
+
+    // Parse the sequence
+    const actions = parseAutoTypeSequence(sequence, data);
+    if (actions.length === 0) {
+      return { success: false, error: 'No valid actions in sequence' };
+    }
+
+    // Minimize our window to focus the previous window
+    if (mainWindow) {
+      mainWindow.minimize();
+    }
+
+    // Wait for window switch
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Build and execute PowerShell script
+    const psScript = buildAutoTypePowerShell(actions);
+
+    return new Promise((resolve) => {
+      const ps = spawn('powershell.exe', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-ExecutionPolicy', 'Bypass',
+        '-Command', psScript
+      ], {
+        windowsHide: true
+      });
+
+      let stderr = '';
+
+      ps.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      ps.on('close', (code) => {
+        if (code === 0) {
+          console.log('[GenPwd Pro] Auto-type completed successfully');
+          resolve({ success: true });
+        } else {
+          console.error('[GenPwd Pro] Auto-type failed:', stderr);
+          resolve({ success: false, error: stderr || `Process exited with code ${code}` });
+        }
+      });
+
+      ps.on('error', (error) => {
+        console.error('[GenPwd Pro] Auto-type spawn error:', error.message);
+        resolve({ success: false, error: error.message });
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        ps.kill();
+        resolve({ success: false, error: 'Auto-type timed out' });
+      }, 30000);
+    });
+  } catch (error) {
+    console.error('[GenPwd Pro] automation:perform-auto-type error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// Get default auto-type sequence
+ipcMain.handle('automation:get-default-sequence', () => {
+  return '{USERNAME}{TAB}{PASSWORD}{ENTER}';
+});
+
 // Gestion du cycle de vie de l'application
 app.whenReady().then(async () => {
   // Load vault module (ESM dynamic import)
@@ -243,10 +754,18 @@ app.whenReady().then(async () => {
 
   createWindow();
   createApplicationMenu();
+  createTray();
 
   // Set main window for vault events
   if (vaultModule && mainWindow) {
     vaultModule.setMainWindow(mainWindow);
+  }
+
+  // Handle deep link from initial launch (Windows)
+  const deepLink = process.argv.find(arg => arg.startsWith('genpwd://'));
+  if (deepLink) {
+    // Delay to ensure window is ready
+    setTimeout(() => handleDeepLink(deepLink), 1000);
   }
 
   app.on('activate', () => {
@@ -256,15 +775,39 @@ app.whenReady().then(async () => {
       if (vaultModule && mainWindow) {
         vaultModule.setMainWindow(mainWindow);
       }
+    } else if (mainWindow) {
+      // Show window on dock icon click (macOS)
+      mainWindow.show();
     }
   });
 });
 
-// Quitter quand toutes les fenêtres sont fermées
+// Don't quit when all windows are closed (minimize to tray behavior)
 app.on('window-all-closed', () => {
-  // Sur macOS, garder l'app active jusqu'à Cmd+Q
-  if (process.platform !== 'darwin') {
-    app.quit();
+  // Only quit if isQuitting flag is set
+  // On macOS, keep app in dock unless explicitly quit
+  if (isQuitting || process.platform !== 'darwin') {
+    // Don't quit - we're running in background
+    // The tray will allow the user to quit
+  }
+});
+
+// Clean up on quit
+app.on('before-quit', () => {
+  isQuitting = true;
+
+  // Clear all clipboard timers
+  for (const [key, { timer }] of clipboardTimers) {
+    clearTimeout(timer);
+  }
+  clipboardTimers.clear();
+});
+
+// Destroy tray on quit
+app.on('will-quit', () => {
+  if (tray) {
+    tray.destroy();
+    tray = null;
   }
 });
 

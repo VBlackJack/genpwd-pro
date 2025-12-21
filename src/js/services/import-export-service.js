@@ -18,6 +18,26 @@
 
 import { safeLog } from '../utils/logger.js';
 
+// kdbxweb is loaded dynamically only when needed (Electron context only)
+// This avoids the "Failed to resolve module specifier" error in browser context
+let kdbxweb = null;
+
+async function loadKdbxweb() {
+  if (kdbxweb) return kdbxweb;
+
+  // Only works in Electron/Node context where node_modules are accessible
+  if (typeof window !== 'undefined' && window.electronAPI?.isElectron) {
+    try {
+      // Dynamic import - will be resolved by Electron's module system
+      kdbxweb = await import('kdbxweb');
+      safeLog('kdbxweb loaded successfully');
+    } catch (error) {
+      safeLog(`kdbxweb not available: ${error.message}`);
+    }
+  }
+  return kdbxweb;
+}
+
 /**
  * Password Entry Generic Format
  * @typedef {Object} PasswordEntry
@@ -45,7 +65,7 @@ import { safeLog } from '../utils/logger.js';
 class ImportExportService {
   constructor() {
     this.supportedFormats = {
-      import: ['keepass-xml', 'keepass-csv', 'bitwarden-json', 'lastpass-csv', '1password-csv', 'generic-json', 'generic-csv'],
+      import: ['kdbx', 'keepass-xml', 'keepass-csv', 'bitwarden-json', 'lastpass-csv', '1password-csv', 'generic-json', 'generic-csv'],
       export: ['keepass-csv', 'bitwarden-json', 'lastpass-csv', '1password-csv', 'generic-json', 'generic-csv']
     };
 
@@ -408,6 +428,172 @@ class ImportExportService {
     return this.toCSV(rows, headers);
   }
 
+  /**
+   * Import from KeePass KDBX binary format (v3/v4)
+   *
+   * Uses kdbxweb library for full KDBX support including:
+   * - Password and/or key file authentication
+   * - AES-256 and ChaCha20 encryption
+   * - Argon2 and AES-KDF key derivation
+   * - All entry fields including custom fields and TOTP
+   *
+   * @param {ArrayBuffer} dbData - KDBX file binary data
+   * @param {string} password - Master password
+   * @param {ArrayBuffer|null} keyFileData - Optional key file binary data
+   * @returns {Promise<Array<PasswordEntry>>} - Array of password entries
+   */
+  async importKDBX(dbData, password, keyFileData = null) {
+    try {
+      safeLog('KDBX: Starting import...');
+
+      // Load kdbxweb dynamically (only available in Electron)
+      const kdbx = await loadKdbxweb();
+      if (!kdbx) {
+        throw new Error('KDBX import requires Electron desktop app');
+      }
+
+      // Create credentials
+      const credentials = new kdbx.Credentials(
+        kdbx.ProtectedValue.fromString(password),
+        keyFileData ? new Uint8Array(keyFileData) : null
+      );
+
+      // Parse KDBX file
+      const db = await kdbx.Kdbx.load(new Uint8Array(dbData).buffer, credentials);
+
+      safeLog(`KDBX: Database loaded - ${db.meta.name || 'Unnamed'}`);
+
+      const entries = [];
+
+      // Recursively process all groups
+      const processGroup = (group, parentPath = '') => {
+        const currentPath = parentPath
+          ? `${parentPath}/${group.name}`
+          : (group.name || 'Root');
+
+        // Process entries in this group
+        if (group.entries) {
+          for (const entry of group.entries) {
+            const parsedEntry = this.parseKDBXEntry(entry, currentPath, kdbx);
+            if (parsedEntry) {
+              entries.push(parsedEntry);
+            }
+          }
+        }
+
+        // Process subgroups
+        if (group.groups) {
+          for (const subGroup of group.groups) {
+            processGroup(subGroup, currentPath);
+          }
+        }
+      };
+
+      // Start from root group
+      if (db.groups && db.groups.length > 0) {
+        processGroup(db.groups[0]);
+      }
+
+      safeLog(`KDBX: Imported ${entries.length} entries`);
+      return entries;
+
+    } catch (error) {
+      const kdbx = await loadKdbxweb();
+      if (kdbx && error.code === kdbx.Consts?.ErrorCodes?.InvalidKey) {
+        throw new Error('Invalid password or key file');
+      }
+      safeLog(`Error importing KDBX: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Parse a single KDBX entry to PasswordEntry format
+   * @param {Object} entry - kdbxweb Entry object
+   * @param {string} folder - Folder path
+   * @param {Object} kdbx - kdbxweb module reference
+   * @returns {PasswordEntry|null} - Parsed entry or null if empty
+   */
+  parseKDBXEntry(entry, folder, kdbx) {
+    // Get field value (handles ProtectedValue)
+    const getField = (name) => {
+      const field = entry.fields.get(name);
+      if (!field) return '';
+      if (kdbx && field instanceof kdbx.ProtectedValue) {
+        return field.getText();
+      }
+      return String(field);
+    };
+
+    const title = this.sanitize(getField('Title'));
+    const username = this.sanitize(getField('UserName'));
+    const password = getField('Password'); // Don't sanitize password
+    const url = this.validateUrl(getField('URL'));
+    const notes = this.sanitize(getField('Notes'));
+
+    // Skip empty entries
+    if (!title && !username && !password && !url) {
+      return null;
+    }
+
+    // Extract TOTP if present (common custom field names)
+    let totp = '';
+    const totpFields = ['TOTP Seed', 'otp', 'OTP', 'TOTP', 'totp'];
+    for (const fieldName of totpFields) {
+      const value = getField(fieldName);
+      if (value) {
+        totp = value;
+        break;
+      }
+    }
+
+    // Collect custom fields (excluding standard ones)
+    const standardFields = new Set([
+      'Title', 'UserName', 'Password', 'URL', 'Notes',
+      'TOTP Seed', 'otp', 'OTP', 'TOTP', 'totp'
+    ]);
+
+    const customFields = {};
+    for (const [key, value] of entry.fields) {
+      if (!standardFields.has(key)) {
+        const fieldValue = (kdbx && value instanceof kdbx.ProtectedValue)
+          ? value.getText()
+          : String(value);
+        if (fieldValue) {
+          customFields[key] = this.sanitize(fieldValue);
+        }
+      }
+    }
+
+    // Extract tags
+    const tags = entry.tags ? entry.tags.map(t => this.sanitize(t)).filter(t => t) : [];
+
+    // Build metadata
+    const metadata = {
+      uuid: entry.uuid ? entry.uuid.toString() : null,
+      icon: entry.icon,
+      customIcon: entry.customIcon ? entry.customIcon.toString() : null,
+      ...customFields
+    };
+
+    if (totp) {
+      metadata.totp = totp;
+    }
+
+    return {
+      title,
+      username,
+      password,
+      url,
+      notes,
+      tags,
+      metadata,
+      folder: folder === 'Root' ? '' : folder.replace(/^Root\//, ''),
+      createdAt: entry.times?.creationTime || null,
+      modifiedAt: entry.times?.lastModTime || null
+    };
+  }
+
   // ========== BITWARDEN ==========
 
   /**
@@ -692,12 +878,21 @@ class ImportExportService {
 
   /**
    * Import passwords from file content
-   * @param {string} content - File content
+   *
+   * NOTE: For KDBX format, use importKDBX() directly as it requires:
+   * - Binary data (ArrayBuffer) instead of string
+   * - Password parameter
+   * - Optional key file parameter
+   * - Async operation
+   *
+   * @param {string} content - File content (text formats only)
    * @param {string} format - Import format
    * @returns {Array<PasswordEntry>} - Array of password entries
    */
   import(content, format) {
     switch (format) {
+      case 'kdbx':
+        throw new Error('KDBX format requires importKDBX(dbData, password, keyFileData) method');
       case 'keepass-xml':
         return this.importKeePassXML(content);
       case 'keepass-csv':
@@ -749,6 +944,7 @@ class ImportExportService {
    */
   getFormatInfo(format) {
     const formats = {
+      'kdbx': { name: 'KeePass KDBX', extension: '.kdbx', type: 'import', binary: true },
       'keepass-xml': { name: 'KeePass XML', extension: '.xml', type: 'import' },
       'keepass-csv': { name: 'KeePass CSV', extension: '.csv', type: 'both' },
       'bitwarden-json': { name: 'Bitwarden JSON', extension: '.json', type: 'both' },
