@@ -95,7 +95,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('automation:perform-auto-type', { sequence, data }),
 
   // Get default auto-type sequence
-  getDefaultAutoTypeSequence: () => ipcRenderer.invoke('automation:get-default-sequence')
+  getDefaultAutoTypeSequence: () => ipcRenderer.invoke('automation:get-default-sequence'),
+
+  // ==================== VISUAL PROTECTION (Blur/Focus) ====================
+  // Listen for window blur event (hide sensitive data)
+  onWindowBlur: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('window:blur', handler);
+    return () => ipcRenderer.removeListener('window:blur', handler);
+  },
+
+  // Listen for window focus event (restore sensitive data)
+  onWindowFocus: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('window:focus', handler);
+    return () => ipcRenderer.removeListener('window:focus', handler);
+  }
 });
 
 // Exposer l'API Vault au renderer process

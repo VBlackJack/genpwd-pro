@@ -6627,3 +6627,74 @@ kbd {
   border-radius: 50%;
   animation: vault-spin 0.8s linear infinite;
 }
+
+/* ==================== VISUAL PROTECTION (BLUR ON UNFOCUS) ==================== */
+/* Applied when window loses focus to hide sensitive data */
+
+.vault-app[data-blurred="true"] {
+  /* Overlay to indicate protection is active */
+  position: relative;
+}
+
+.vault-app[data-blurred="true"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  z-index: 9998;
+  pointer-events: none;
+}
+
+.vault-app[data-blurred="true"]::after {
+  content: 'Contenu masqué - Cliquez pour afficher';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--vault-surface);
+  color: var(--vault-text);
+  padding: 1rem 2rem;
+  border-radius: var(--vault-radius-lg);
+  border: 1px solid var(--vault-border);
+  box-shadow: var(--vault-shadow-lg);
+  z-index: 9999;
+  font-size: 1rem;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* Blur sensitive elements specifically (passwords, notes, etc.) */
+.vault-app[data-blurred="true"] .vault-field-value,
+.vault-app[data-blurred="true"] .vault-entry-subtitle,
+.vault-app[data-blurred="true"] .vault-note-content,
+.vault-app[data-blurred="true"] .vault-password-field,
+.vault-app[data-blurred="true"] .vault-totp-code,
+.vault-app[data-blurred="true"] .vault-custom-field-value {
+  filter: blur(10px);
+  user-select: none;
+}
+
+/* Lock icon indicator */
+.vault-blur-indicator {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: var(--vault-primary);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  z-index: 10000;
+  box-shadow: var(--vault-shadow);
+  animation: vault-pulse 2s ease-in-out infinite;
+}
+
+@keyframes vault-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}

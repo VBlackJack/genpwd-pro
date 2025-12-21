@@ -7,6 +7,11 @@
  * - Center: Entry list with quick actions
  * - Right: Entry detail panel
  *
+ * v2.6.8 - Security Hardening:
+ * - Inactivity manager with global event tracking
+ * - Secure clipboard with content verification before clear
+ * - Visual protection on window blur
+ *
  * v2.6.4 - UX Improvements Phase 4:
  * - Multi-selection with checkboxes (Shift+click for range)
  * - Bulk actions (delete, move, export)
@@ -23,6 +28,9 @@
  * - Entry duplication, Password age indicator
  * - Keyboard shortcuts modal, View toggle, Auto-lock warning
  */
+
+import { getInactivityManager, AUTO_LOCK_OPTIONS } from './utils/inactivity-manager.js';
+import { getSecureClipboard, CLIPBOARD_TIMEOUT_OPTIONS } from './utils/secure-clipboard.js';
 
 // Entry type configuration
 const ENTRY_TYPES = {
@@ -161,13 +169,70 @@ export class VaultUI {
     // Initialize JS-based tooltips (escapes overflow:hidden containers)
     this.#initTooltips();
 
+    // Visual protection on window blur (if enabled)
+    this.#initVisualProtection();
+
     this.#render();
+  }
+
+  /** @type {Function|null} */
+  #unsubscribeBlur = null;
+  /** @type {Function|null} */
+  #unsubscribeFocus = null;
+  /** @type {boolean} */
+  #visualProtectionEnabled = true;
+  /** @type {boolean} */
+  #isWindowBlurred = false;
+
+  /**
+   * Initialize visual protection on window blur/focus
+   * Blurs sensitive data when window loses focus
+   */
+  #initVisualProtection() {
+    // Load setting from localStorage
+    const saved = localStorage.getItem('vault-visual-protection');
+    this.#visualProtectionEnabled = saved !== 'false'; // Default true
+
+    if (window.electronAPI?.onWindowBlur) {
+      this.#unsubscribeBlur = window.electronAPI.onWindowBlur(() => {
+        if (this.#visualProtectionEnabled && this.#currentView === 'main') {
+          this.#isWindowBlurred = true;
+          this.#applyVisualProtection(true);
+        }
+      });
+    }
+
+    if (window.electronAPI?.onWindowFocus) {
+      this.#unsubscribeFocus = window.electronAPI.onWindowFocus(() => {
+        if (this.#isWindowBlurred) {
+          this.#isWindowBlurred = false;
+          this.#applyVisualProtection(false);
+        }
+      });
+    }
+  }
+
+  /**
+   * Apply or remove visual protection (blur effect)
+   * @param {boolean} blur - Whether to blur sensitive content
+   */
+  #applyVisualProtection(blur) {
+    const vaultApp = document.querySelector('.vault-app');
+    if (!vaultApp) return;
+
+    if (blur) {
+      vaultApp.setAttribute('data-blurred', 'true');
+    } else {
+      vaultApp.removeAttribute('data-blurred');
+    }
   }
 
   destroy() {
     if (this.#unsubscribeLocked) this.#unsubscribeLocked();
     if (this.#unsubscribeUnlocked) this.#unsubscribeUnlocked();
     if (this.#unsubscribeChanged) this.#unsubscribeChanged();
+    if (this.#unsubscribeBlur) this.#unsubscribeBlur();
+    if (this.#unsubscribeFocus) this.#unsubscribeFocus();
     this.#stopAutoLockTimer();
   }
 
@@ -8027,16 +8092,35 @@ export class VaultUI {
       this.#autoLockTimeout = parseInt(savedTimeout, 10);
     }
     this.#autoLockSeconds = this.#autoLockTimeout;
+
+    // Initialize the inactivity manager for global event tracking
+    const inactivityManager = getInactivityManager();
+    inactivityManager.setTimeout(this.#autoLockTimeout);
+    inactivityManager.setWarningCallback((secondsRemaining) => {
+      this.#showAutoLockWarning();
+    });
+    inactivityManager.start(() => {
+      // Lock callback - triggered after inactivity
+      this.#lock();
+    });
+
+    // Keep the local countdown timer for UI display
     this.#autoLockTimer = setInterval(() => {
-      this.#autoLockSeconds--;
-      this.#updateLockCountdown();
-      if (this.#autoLockSeconds <= 0) {
-        this.#lock();
+      // Get remaining time from the inactivity manager
+      const remaining = inactivityManager.getTimeRemaining();
+      if (remaining !== Infinity) {
+        this.#autoLockSeconds = remaining;
+      } else {
+        this.#autoLockSeconds--;
       }
+      this.#updateLockCountdown();
     }, 1000);
   }
 
   #stopAutoLockTimer() {
+    // Stop the inactivity manager
+    getInactivityManager().stop();
+
     if (this.#autoLockTimer) {
       clearInterval(this.#autoLockTimer);
       this.#autoLockTimer = null;
@@ -8071,7 +8155,8 @@ export class VaultUI {
   #resetAutoLock() {
     this.#autoLockSeconds = this.#autoLockTimeout;
     this.#autoLockWarningShown = false;
-    window.vault.resetActivity?.();
+    // Reset inactivity manager (this also calls window.vault.resetActivity)
+    getInactivityManager().recordActivity();
   }
 
   #formatTime(seconds) {
@@ -8697,40 +8782,47 @@ export class VaultUI {
     this.#container.addEventListener('click', () => this.#resetAutoLock(), { passive: true });
   }
 
-  /** Clipboard clear timeout in ms (60 seconds default) */
-  #CLIPBOARD_CLEAR_TIMEOUT = 60000;
-
+  /**
+   * Copy text to clipboard with secure auto-clear
+   * Uses SecureClipboard for content verification before clearing
+   * @param {string} text - Text to copy
+   * @param {string} message - Success toast message
+   * @param {boolean} autoClear - Whether to auto-clear (default true)
+   */
   async #copyToClipboard(text, message, autoClear = true) {
     if (!text) return;
+
     try {
-      await navigator.clipboard.writeText(text);
-      this.#showToast(message, 'success');
+      const secureClipboard = getSecureClipboard();
 
-      // Auto-clear clipboard after timeout for sensitive data
-      if (autoClear) {
-        if (this.#clipboardTimeout) {
-          clearTimeout(this.#clipboardTimeout);
-        }
-
-        // Load user preference
-        const savedTimeout = localStorage.getItem('vault-clipboard-timeout');
-        const timeout = savedTimeout ? parseInt(savedTimeout, 10) : this.#CLIPBOARD_CLEAR_TIMEOUT;
-
-        this.#clipboardTimeout = setTimeout(async () => {
-          try {
-            // SECURITY: Overwrite with spaces first to prevent recovery
-            // Some clipboard managers cache data - overwriting helps
-            await navigator.clipboard.writeText(' '.repeat(text.length));
-            await navigator.clipboard.writeText('');
-          } catch {
-            // Silently fail if clipboard can't be cleared
+      // Set up clipboard cleared callback (once)
+      if (!this.#clipboardClearedCallbackSet) {
+        secureClipboard.setOnCleared((reason) => {
+          if (reason === 'manual' || reason === 'timeout') {
+            this.#showToast('Presse-papier effacé', 'info');
           }
-        }, timeout);
+        });
+        this.#clipboardClearedCallbackSet = true;
+      }
+
+      // Copy using secure clipboard (with content verification before clear)
+      const success = await secureClipboard.copy(text, {
+        secure: autoClear,
+        label: message
+      });
+
+      if (success) {
+        this.#showToast(message, 'success');
+      } else {
+        this.#showToast('Erreur de copie', 'error');
       }
     } catch {
       this.#showToast('Erreur de copie', 'error');
     }
   }
+
+  /** @type {boolean} */
+  #clipboardClearedCallbackSet = false;
 
   #showToast(message, type = 'info') {
     const container = document.getElementById('toasts') || document.body;

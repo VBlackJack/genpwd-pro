@@ -176,6 +176,20 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // ==================== VISUAL PROTECTION ON BLUR ====================
+  // Hide sensitive data when window loses focus (configurable)
+  mainWindow.on('blur', () => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('window:blur');
+    }
+  });
+
+  mainWindow.on('focus', () => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('window:focus');
+    }
+  });
 }
 
 // ==================== SYSTEM TRAY ====================
