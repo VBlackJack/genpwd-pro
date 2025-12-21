@@ -103,20 +103,12 @@ function createPasswordCard(item, id, mask) {
     </div>
     <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Cliquer pour copier • Double-clic pour afficher/masquer">
       <div class="value mono">${escapeHtml(value)}</div>
-      <div class="actions">
-        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="Vérifier les fuites" aria-label="Vérifier si ce mot de passe a été compromis">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </button>
-        ${saveToVaultBtn}
-        <button class="action-btn copy-btn" type="button" title="Copier le mot de passe" aria-label="Copier le mot de passe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        </button>
-      </div>
+      <button class="action-btn copy-btn" type="button" title="Copier le mot de passe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
       <div class="breach-status" hidden></div>
     </div>
     <div class="card-sec comp">
