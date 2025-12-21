@@ -159,6 +159,51 @@ contextBridge.exposeInMainWorld('vault', {
     unlock: (vaultId) => ipcRenderer.invoke('vault:hello:unlock', { vaultId })
   },
 
+  // ==================== LOW-LEVEL I/O ====================
+  io: {
+    /**
+     * Save data to file (atomic write with backup)
+     * @param {Object|string|Buffer} data - Data to save
+     * @param {string} filePath - Destination path
+     * @returns {Promise<{success: boolean, filePath?: string, error?: string}>}
+     */
+    save: (data, filePath) => ipcRenderer.invoke('vaultIO:save', { data, filePath }),
+
+    /**
+     * Load data from file
+     * @param {string} filePath - Source path
+     * @returns {Promise<{success: boolean, data?: any, format?: 'json'|'binary', error?: string}>}
+     */
+    load: (filePath) => ipcRenderer.invoke('vaultIO:load', { filePath }),
+
+    /**
+     * Open file dialog to select vault file
+     * @returns {Promise<{success: boolean, canceled?: boolean, filePath?: string, fileName?: string}>}
+     */
+    selectFile: () => ipcRenderer.invoke('vaultIO:selectFile'),
+
+    /**
+     * Save dialog to choose vault save location
+     * @param {string} [defaultName='vault.gpdb'] - Default filename
+     * @returns {Promise<{success: boolean, canceled?: boolean, filePath?: string, fileName?: string}>}
+     */
+    selectSaveLocation: (defaultName) => ipcRenderer.invoke('vaultIO:selectSaveLocation', { defaultName }),
+
+    /**
+     * Check if file exists
+     * @param {string} filePath - Path to check
+     * @returns {Promise<{success: boolean, exists?: boolean}>}
+     */
+    exists: (filePath) => ipcRenderer.invoke('vaultIO:exists', { filePath }),
+
+    /**
+     * Get file info (size, dates)
+     * @param {string} filePath - Path to check
+     * @returns {Promise<{success: boolean, info?: {size: number, createdAt: string, modifiedAt: string}}>}
+     */
+    getFileInfo: (filePath) => ipcRenderer.invoke('vaultIO:getFileInfo', { filePath })
+  },
+
   // ==================== EVENTS ====================
   on: (event, callback) => {
     const channel = `vault:${event}`;

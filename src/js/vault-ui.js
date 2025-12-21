@@ -1256,6 +1256,14 @@ export class VaultUI {
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </button>
+              <div class="vault-toolbar-divider"></div>
+              <button class="vault-icon-btn vault-save-btn" id="btn-save-vault" data-tooltip="Sauvegarder sous..." data-tooltip-pos="bottom" aria-label="Sauvegarder le coffre">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -1512,17 +1520,32 @@ export class VaultUI {
 
       <div class="vault-detail-body">
         ${this.#renderEntryFields(entry)}
+        ${this.#renderCustomFieldsDisplay(entry)}
         ${this.#renderPasswordAge(entry)}
 
         <div class="vault-detail-meta">
-          <div class="vault-meta-item">
-            <span class="vault-meta-label">Créé le</span>
-            <span class="vault-meta-value">${this.#formatDateTime(entry.createdAt)}</span>
+          <div class="vault-meta-row">
+            <div class="vault-meta-item">
+              <span class="vault-meta-label">Créé le</span>
+              <span class="vault-meta-value">${this.#formatDateTime(entry.createdAt || entry.metadata?.createdAt)}</span>
+            </div>
+            <div class="vault-meta-item">
+              <span class="vault-meta-label">Modifié le</span>
+              <span class="vault-meta-value">${this.#formatDateTime(entry.modifiedAt || entry.metadata?.updatedAt)}</span>
+            </div>
           </div>
-          <div class="vault-meta-item">
-            <span class="vault-meta-label">Modifié le</span>
-            <span class="vault-meta-value">${this.#formatDateTime(entry.modifiedAt)}</span>
-          </div>
+          ${entry.metadata?.lastUsedAt ? `
+            <div class="vault-meta-row">
+              <div class="vault-meta-item">
+                <span class="vault-meta-label">Dernière utilisation</span>
+                <span class="vault-meta-value">${this.#formatDateTime(entry.metadata.lastUsedAt)}</span>
+              </div>
+              <div class="vault-meta-item">
+                <span class="vault-meta-label">Utilisations</span>
+                <span class="vault-meta-value">${entry.metadata.usageCount || 0}</span>
+              </div>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -1584,6 +1607,103 @@ export class VaultUI {
       default:
         return '';
     }
+  }
+
+  /**
+   * Render custom fields for display in the detail view
+   * @param {Object} entry - The entry object
+   * @returns {string} HTML string
+   */
+  #renderCustomFieldsDisplay(entry) {
+    const fields = entry.data?.fields || entry.fields || [];
+    if (!fields || fields.length === 0) return '';
+
+    const fieldKindLabels = {
+      text: 'Texte',
+      hidden: 'Masqué',
+      password: 'Mot de passe',
+      url: 'URL',
+      email: 'Email',
+      phone: 'Téléphone',
+      date: 'Date'
+    };
+
+    return `
+      <div class="vault-custom-fields-display">
+        <div class="vault-section-divider">
+          <span class="vault-section-divider-text">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Champs personnalisés
+          </span>
+        </div>
+        ${fields.map(field => {
+          const isMasked = field.isSecured || field.kind === 'hidden' || field.kind === 'password';
+          const isUrl = field.kind === 'url';
+          const isEmail = field.kind === 'email';
+          const isPhone = field.kind === 'phone';
+          const isDate = field.kind === 'date';
+
+          // Format value based on type
+          let displayValue = this.#escapeHtml(field.value || '');
+          if (isUrl && field.value) {
+            displayValue = `<a href="${this.#escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${this.#escapeHtml(field.value)}</a>`;
+          } else if (isEmail && field.value) {
+            displayValue = `<a href="mailto:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
+          } else if (isPhone && field.value) {
+            displayValue = `<a href="tel:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
+          } else if (isDate && field.value) {
+            try {
+              const date = new Date(field.value);
+              displayValue = date.toLocaleDateString('fr-FR');
+            } catch {
+              displayValue = this.#escapeHtml(field.value);
+            }
+          }
+
+          const maskedValue = isMasked ? '•'.repeat(Math.min((field.value || '').length, 24)) : displayValue;
+
+          return `
+            <div class="vault-field vault-custom-field-display" data-field-id="${this.#escapeHtml(field.id || '')}" data-masked="${isMasked}">
+              <div class="vault-field-label-row">
+                <label class="vault-field-label">${this.#escapeHtml(field.label)}</label>
+                ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Sécurisé</span>' : ''}
+                <span class="vault-field-kind-badge">${fieldKindLabels[field.kind] || field.kind}</span>
+              </div>
+              <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${this.#escapeHtml(field.value || '')}">
+                <span class="vault-field-text ${isMasked ? 'masked' : ''}" data-value="${this.#escapeHtml(field.value || '')}">
+                  ${isMasked ? maskedValue : displayValue}
+                </span>
+                <span class="vault-field-revealed">${this.#escapeHtml(field.value || '')}</span>
+                <div class="vault-field-actions">
+                  ${isMasked ? `
+                    <button class="vault-field-btn toggle-visibility" title="Afficher/Masquer" aria-label="Afficher ou masquer la valeur" aria-pressed="false">
+                      <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg class="icon-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" hidden>
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  ` : ''}
+                  <button class="vault-field-btn copy-field" data-value="${this.#escapeHtml(field.value || '')}" title="Copier" aria-label="Copier ${this.#escapeHtml(field.label)}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   #renderField(label, value, key = '', masked = false, copyable = false, isUrl = false) {
@@ -4033,6 +4153,193 @@ export class VaultUI {
     input.click();
   }
 
+  // ==================== SAVE VAULT TO FILE ====================
+
+  /**
+   * Show modal to save vault to file
+   * Prompts for password and file location
+   */
+  #showSaveVaultModal() {
+    // Create modal if not exists
+    let modal = document.getElementById('save-vault-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'save-vault-modal';
+      modal.className = 'vault-modal-overlay';
+      modal.role = 'dialog';
+      modal.setAttribute('aria-modal', 'true');
+      document.body.appendChild(modal);
+    }
+
+    const entryCount = this.#entries?.length || 0;
+    const folderCount = this.#folders?.length || 0;
+
+    modal.innerHTML = `
+      <div class="vault-modal">
+        <div class="vault-modal-header">
+          <h3>Sauvegarder le coffre</h3>
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <form class="vault-modal-body" id="save-vault-form">
+          <div class="vault-save-summary">
+            <div class="vault-save-stat">
+              <span class="vault-save-stat-value">${entryCount}</span>
+              <span class="vault-save-stat-label">entrée(s)</span>
+            </div>
+            <div class="vault-save-stat">
+              <span class="vault-save-stat-value">${folderCount}</span>
+              <span class="vault-save-stat-label">dossier(s)</span>
+            </div>
+          </div>
+          <div class="vault-form-group">
+            <label class="vault-label" for="save-vault-password">
+              Mot de passe du fichier <span class="required">*</span>
+            </label>
+            <p class="vault-form-hint">Ce mot de passe protège le fichier exporté. Il peut être différent du mot de passe du coffre.</p>
+            <div class="vault-input-group">
+              <input type="password" class="vault-input" id="save-vault-password" placeholder="Mot de passe..." required minlength="8">
+              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Afficher">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="vault-form-group">
+            <label class="vault-label" for="save-vault-confirm">
+              Confirmer le mot de passe <span class="required">*</span>
+            </label>
+            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="Confirmer..." required minlength="8">
+          </div>
+          <div class="vault-modal-actions">
+            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
+            <button type="submit" class="vault-btn vault-btn-primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Sauvegarder sous...
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    // Bind events
+    modal.querySelector('[data-close-modal]')?.addEventListener('click', () => {
+      this.#closeModal('save-vault-modal');
+    });
+
+    modal.querySelector('.toggle-pwd-visibility')?.addEventListener('click', (e) => {
+      const input = document.getElementById('save-vault-password');
+      if (input) input.type = input.type === 'password' ? 'text' : 'password';
+    });
+
+    modal.querySelector('#save-vault-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await this.#handleSaveVault();
+    });
+
+    // Open modal
+    this.#openModal('save-vault-modal');
+    document.getElementById('save-vault-password')?.focus();
+  }
+
+  /**
+   * Handle vault save - validate and call file save
+   */
+  async #handleSaveVault() {
+    const password = document.getElementById('save-vault-password')?.value;
+    const confirm = document.getElementById('save-vault-confirm')?.value;
+
+    // Validation
+    if (!password || password.length < 8) {
+      this.#showToast('Le mot de passe doit contenir au moins 8 caractères', 'warning');
+      return;
+    }
+
+    if (password !== confirm) {
+      this.#showToast('Les mots de passe ne correspondent pas', 'warning');
+      return;
+    }
+
+    try {
+      // Check if vaultIO is available
+      if (!window.vault?.io) {
+        this.#showToast('Fonction disponible uniquement dans l\'application desktop', 'error');
+        return;
+      }
+
+      // Get save location
+      const vaultName = this.#vaultMetadata?.name || 'vault';
+      const result = await window.vault.io.selectSaveLocation(`${vaultName}.gpdb`);
+
+      if (!result.success) {
+        this.#showToast(result.error || 'Erreur', 'error');
+        return;
+      }
+
+      if (result.canceled) {
+        return;
+      }
+
+      // Show loading state
+      const submitBtn = document.querySelector('#save-vault-form button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="vault-spinner"></span> Chiffrement...';
+      }
+
+      // Prepare vault data
+      const vaultData = {
+        metadata: this.#vaultMetadata || {},
+        entries: this.#entries || [],
+        groups: this.#folders || [],
+        tags: this.#tags || []
+      };
+
+      // Import io-service dynamically
+      const { exportVaultToJSON } = await import('./vault/io-service.js');
+
+      // Export and encrypt
+      const encryptedJSON = await exportVaultToJSON(vaultData, password);
+
+      // Save to file
+      const saveResult = await window.vault.io.save(encryptedJSON, result.filePath);
+
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Erreur lors de la sauvegarde');
+      }
+
+      this.#closeModal('save-vault-modal');
+      this.#showToast(`Coffre sauvegardé: ${result.fileName}`, 'success');
+    } catch (error) {
+      console.error('[VaultUI] Save vault error:', error);
+      this.#showToast(`Erreur: ${error.message}`, 'error');
+
+      // Reset button state
+      const submitBtn = document.querySelector('#save-vault-form button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Sauvegarder sous...
+        `;
+      }
+    }
+  }
+
   async #importKeePassXML(xmlText) {
     // Parse KeePass 2.x XML format
     const parser = new DOMParser();
@@ -4705,6 +5012,11 @@ export class VaultUI {
     // Import
     document.getElementById('btn-import')?.addEventListener('click', () => {
       this.#triggerImport();
+    });
+
+    // Save vault to file
+    document.getElementById('btn-save-vault')?.addEventListener('click', () => {
+      this.#showSaveVaultModal();
     });
 
     // Move folder modal
@@ -6121,12 +6433,18 @@ export class VaultUI {
         break;
     }
 
+    // Add custom fields section
+    const existingFields = entry.data?.fields || entry.fields || [];
+    fieldsHtml += this.#renderCustomFieldsSection(existingFields);
+
     fieldsContainer.innerHTML = fieldsHtml;
     this.#hasDirtyForm = false;
     this.#openModal('edit-entry-modal');
 
     // Attach edit modal specific events
     setTimeout(() => {
+      // Attach custom fields events
+      this.#attachCustomFieldsEvents();
       // Toggle password visibility
       modal.querySelectorAll('.toggle-pwd-visibility').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -6282,6 +6600,12 @@ export class VaultUI {
       } else if (entry.type === 'login' && entry.data?.passwordHistory) {
         // Preserve existing history
         data.passwordHistory = entry.data.passwordHistory;
+      }
+
+      // Collect custom fields
+      const customFields = this.#collectCustomFields();
+      if (customFields.length > 0) {
+        data.fields = customFields;
       }
 
       try {
@@ -6701,7 +7025,10 @@ export class VaultUI {
       `
     };
 
-    container.innerHTML = fields[type] || '';
+    container.innerHTML = (fields[type] || '') + this.#renderCustomFieldsSection();
+
+    // Attach events for custom fields
+    this.#attachCustomFieldsEvents();
 
     // Attach events for login type
     if (type === 'login') {
@@ -6784,6 +7111,249 @@ export class VaultUI {
     }
   }
 
+  // ==================== CUSTOM FIELDS SECTION ====================
+
+  /**
+   * Render the custom fields section for add/edit entry forms
+   * @param {Array} existingFields - Existing custom fields for edit mode
+   * @returns {string}
+   */
+  #renderCustomFieldsSection(existingFields = []) {
+    const fieldKindOptions = [
+      { value: 'text', label: 'Texte' },
+      { value: 'hidden', label: 'Masqué' },
+      { value: 'password', label: 'Mot de passe' },
+      { value: 'url', label: 'URL' },
+      { value: 'email', label: 'Email' },
+      { value: 'phone', label: 'Téléphone' },
+      { value: 'date', label: 'Date' }
+    ];
+
+    const kindOptionsHtml = fieldKindOptions.map(opt =>
+      `<option value="${opt.value}">${opt.label}</option>`
+    ).join('');
+
+    const existingFieldsHtml = existingFields.map((field, index) => `
+      <div class="vault-custom-field" data-field-index="${index}" data-field-id="${this.#escapeHtml(field.id || '')}">
+        <div class="vault-custom-field-header">
+          <input type="text" class="vault-input vault-custom-field-label" placeholder="Nom du champ" value="${this.#escapeHtml(field.label || '')}" aria-label="Nom du champ">
+          <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
+            ${fieldKindOptions.map(opt =>
+              `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
+            ).join('')}
+          </select>
+          <label class="vault-checkbox-inline vault-custom-field-secured">
+            <input type="checkbox" ${field.isSecured ? 'checked' : ''}>
+            <span>Sécurisé</span>
+          </label>
+          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Supprimer" aria-label="Supprimer ce champ">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="vault-input-group">
+          <input type="${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? 'password' : 'text'}"
+                 class="vault-input vault-custom-field-value"
+                 placeholder="Valeur"
+                 value="${this.#escapeHtml(field.value || '')}"
+                 aria-label="Valeur du champ">
+          ${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? `
+            <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="Afficher/Masquer">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="vault-custom-fields-section">
+        <div class="vault-section-header">
+          <h4 class="vault-section-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Champs personnalisés
+          </h4>
+          <button type="button" class="vault-btn vault-btn-sm vault-btn-ghost" id="btn-add-custom-field">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Ajouter un champ
+          </button>
+        </div>
+        <div id="custom-fields-container">
+          ${existingFieldsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Create a new custom field element
+   * @param {number} index
+   * @returns {string}
+   */
+  #createCustomFieldElement(index) {
+    return `
+      <div class="vault-custom-field" data-field-index="${index}">
+        <div class="vault-custom-field-header">
+          <input type="text" class="vault-input vault-custom-field-label" placeholder="Nom du champ" aria-label="Nom du champ">
+          <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
+            <option value="text">Texte</option>
+            <option value="hidden">Masqué</option>
+            <option value="password">Mot de passe</option>
+            <option value="url">URL</option>
+            <option value="email">Email</option>
+            <option value="phone">Téléphone</option>
+            <option value="date">Date</option>
+          </select>
+          <label class="vault-checkbox-inline vault-custom-field-secured">
+            <input type="checkbox">
+            <span>Sécurisé</span>
+          </label>
+          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Supprimer" aria-label="Supprimer ce champ">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="vault-input-group">
+          <input type="text" class="vault-input vault-custom-field-value" placeholder="Valeur" aria-label="Valeur du champ">
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Attach event listeners for custom fields section
+   */
+  #attachCustomFieldsEvents() {
+    const addBtn = document.getElementById('btn-add-custom-field');
+    const container = document.getElementById('custom-fields-container');
+
+    if (!addBtn || !container) return;
+
+    // Add new field button
+    addBtn.addEventListener('click', () => {
+      const fieldCount = container.querySelectorAll('.vault-custom-field').length;
+      const newField = document.createElement('div');
+      newField.innerHTML = this.#createCustomFieldElement(fieldCount);
+      const fieldEl = newField.firstElementChild;
+      container.appendChild(fieldEl);
+
+      // Attach events to the new field
+      this.#attachSingleFieldEvents(fieldEl);
+
+      // Focus the label input
+      fieldEl.querySelector('.vault-custom-field-label')?.focus();
+    });
+
+    // Attach events to existing fields
+    container.querySelectorAll('.vault-custom-field').forEach(fieldEl => {
+      this.#attachSingleFieldEvents(fieldEl);
+    });
+  }
+
+  /**
+   * Attach events to a single custom field element
+   * @param {HTMLElement} fieldEl
+   */
+  #attachSingleFieldEvents(fieldEl) {
+    // Remove field button
+    fieldEl.querySelector('.vault-remove-field-btn')?.addEventListener('click', () => {
+      fieldEl.remove();
+    });
+
+    // Kind selector - update input type when kind changes
+    const kindSelect = fieldEl.querySelector('.vault-custom-field-kind');
+    const valueInput = fieldEl.querySelector('.vault-custom-field-value');
+    const securedCheckbox = fieldEl.querySelector('.vault-custom-field-secured input');
+
+    const updateInputType = () => {
+      const kind = kindSelect?.value;
+      const isSecured = securedCheckbox?.checked;
+      const shouldMask = kind === 'password' || kind === 'hidden' || isSecured;
+
+      if (valueInput) {
+        valueInput.type = shouldMask ? 'password' : 'text';
+
+        // Add/remove toggle button
+        const inputGroup = valueInput.closest('.vault-input-group');
+        let toggleBtn = inputGroup?.querySelector('.toggle-pwd-visibility');
+
+        if (shouldMask && !toggleBtn) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'vault-input-btn toggle-pwd-visibility';
+          btn.setAttribute('aria-label', 'Afficher/Masquer');
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          `;
+          btn.addEventListener('click', () => {
+            valueInput.type = valueInput.type === 'password' ? 'text' : 'password';
+          });
+          inputGroup.appendChild(btn);
+        } else if (!shouldMask && toggleBtn) {
+          toggleBtn.remove();
+        }
+      }
+    };
+
+    kindSelect?.addEventListener('change', updateInputType);
+    securedCheckbox?.addEventListener('change', updateInputType);
+
+    // Toggle visibility for password fields
+    fieldEl.querySelector('.toggle-pwd-visibility')?.addEventListener('click', () => {
+      if (valueInput) {
+        valueInput.type = valueInput.type === 'password' ? 'text' : 'password';
+      }
+    });
+  }
+
+  /**
+   * Collect custom fields from the form
+   * @returns {Array<{label: string, value: string, kind: string, isSecured: boolean}>}
+   */
+  #collectCustomFields() {
+    const container = document.getElementById('custom-fields-container');
+    if (!container) return [];
+
+    const fields = [];
+    container.querySelectorAll('.vault-custom-field').forEach(fieldEl => {
+      const label = fieldEl.querySelector('.vault-custom-field-label')?.value?.trim();
+      const value = fieldEl.querySelector('.vault-custom-field-value')?.value || '';
+      const kind = fieldEl.querySelector('.vault-custom-field-kind')?.value || 'text';
+      const isSecured = fieldEl.querySelector('.vault-custom-field-secured input')?.checked || false;
+      const existingId = fieldEl.dataset.fieldId;
+
+      // Only include fields that have a label
+      if (label) {
+        fields.push({
+          id: existingId || undefined, // Keep existing ID or let server generate new one
+          label,
+          value,
+          kind,
+          isSecured
+        });
+      }
+    });
+
+    return fields;
+  }
+
   #updateAddPasswordStrength(password) {
     const strength = this.#calculatePasswordStrength(password);
     const el = document.getElementById('entry-password-strength');
@@ -6843,6 +7413,12 @@ export class VaultUI {
 
     const notes = document.getElementById('entry-notes')?.value;
     if (notes) data.notes = notes;
+
+    // Collect custom fields
+    const customFields = this.#collectCustomFields();
+    if (customFields.length > 0) {
+      data.fields = customFields;
+    }
 
     return data;
   }

@@ -585,6 +585,215 @@ ipcMain.handle('fs:show-open-dialog', async (event, options) => {
   }
 });
 
+// ==================== VAULT I/O IPC HANDLERS ====================
+// Low-level file operations for vault persistence
+
+const ALLOWED_EXTENSIONS = ['.gpdb', '.gpd', '.json'];
+
+/**
+ * Validate file extension for vault files
+ * @param {string} filePath - Path to validate
+ * @returns {boolean} True if extension is allowed
+ */
+function validateVaultExtension(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  return ALLOWED_EXTENSIONS.includes(ext);
+}
+
+/**
+ * Save vault data to file (atomic write)
+ * Writes to temp file first, then renames to prevent corruption
+ */
+ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
+  try {
+    // Validate extension
+    if (!validateVaultExtension(filePath)) {
+      return { success: false, error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
+    }
+
+    // Ensure directory exists
+    const dir = path.dirname(filePath);
+    await fs.promises.mkdir(dir, { recursive: true });
+
+    // Atomic write: write to temp file, then rename
+    const tempPath = `${filePath}.tmp.${Date.now()}`;
+
+    // Handle both Buffer and string data
+    if (Buffer.isBuffer(data)) {
+      await fs.promises.writeFile(tempPath, data);
+    } else if (typeof data === 'string') {
+      await fs.promises.writeFile(tempPath, data, 'utf-8');
+    } else if (data instanceof Uint8Array) {
+      await fs.promises.writeFile(tempPath, Buffer.from(data));
+    } else {
+      // Assume JSON object
+      await fs.promises.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+    }
+
+    // Create backup of existing file if it exists
+    try {
+      await fs.promises.access(filePath);
+      const backupPath = `${filePath}.bak`;
+      await fs.promises.copyFile(filePath, backupPath);
+    } catch {
+      // File doesn't exist yet, no backup needed
+    }
+
+    // Atomic rename
+    await fs.promises.rename(tempPath, filePath);
+
+    console.log(`[GenPwd Pro] vaultIO:save - Saved to ${filePath}`);
+    return { success: true, filePath };
+  } catch (error) {
+    console.error('[GenPwd Pro] vaultIO:save error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Load vault data from file
+ * Returns raw buffer or parsed JSON depending on file content
+ */
+ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
+  try {
+    // Validate extension
+    if (!validateVaultExtension(filePath)) {
+      return { success: false, error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
+    }
+
+    // Check file exists
+    const stats = await fs.promises.stat(filePath);
+    if (!stats.isFile()) {
+      return { success: false, error: 'Path is not a file' };
+    }
+
+    // Read file
+    const buffer = await fs.promises.readFile(filePath);
+
+    // Try to parse as JSON, otherwise return raw buffer
+    try {
+      const content = buffer.toString('utf-8');
+      const data = JSON.parse(content);
+      console.log(`[GenPwd Pro] vaultIO:load - Loaded JSON from ${filePath}`);
+      return { success: true, data, format: 'json', size: buffer.length };
+    } catch {
+      // Not JSON, return as buffer (for binary formats)
+      console.log(`[GenPwd Pro] vaultIO:load - Loaded binary from ${filePath}`);
+      return { success: true, data: buffer, format: 'binary', size: buffer.length };
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return { success: false, error: 'File not found' };
+    }
+    console.error('[GenPwd Pro] vaultIO:load error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Open file dialog for selecting vault files
+ */
+ipcMain.handle('vaultIO:selectFile', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Ouvrir un coffre',
+      filters: [
+        { name: 'GenPwd Vault', extensions: ['gpdb', 'gpd'] },
+        { name: 'JSON', extensions: ['json'] },
+        { name: 'Tous les fichiers', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: true, canceled: true, filePath: null };
+    }
+
+    const filePath = result.filePaths[0];
+    const stats = await fs.promises.stat(filePath);
+
+    return {
+      success: true,
+      canceled: false,
+      filePath,
+      fileName: path.basename(filePath),
+      size: stats.size
+    };
+  } catch (error) {
+    console.error('[GenPwd Pro] vaultIO:selectFile error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Save dialog for choosing vault save location
+ */
+ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Sauvegarder le coffre',
+      defaultPath: defaultName || 'vault.gpdb',
+      filters: [
+        { name: 'GenPwd Vault', extensions: ['gpdb'] },
+        { name: 'JSON Export', extensions: ['json'] }
+      ]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: true, canceled: true, filePath: null };
+    }
+
+    // Ensure proper extension
+    let filePath = result.filePath;
+    if (!validateVaultExtension(filePath)) {
+      filePath += '.gpdb';
+    }
+
+    return {
+      success: true,
+      canceled: false,
+      filePath,
+      fileName: path.basename(filePath)
+    };
+  } catch (error) {
+    console.error('[GenPwd Pro] vaultIO:selectSaveLocation error:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Check if a file exists
+ */
+ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
+  try {
+    await fs.promises.access(filePath, fs.constants.F_OK);
+    return { success: true, exists: true };
+  } catch {
+    return { success: true, exists: false };
+  }
+});
+
+/**
+ * Get file info (size, modification date)
+ */
+ipcMain.handle('vaultIO:getFileInfo', async (event, { filePath }) => {
+  try {
+    const stats = await fs.promises.stat(filePath);
+    return {
+      success: true,
+      info: {
+        size: stats.size,
+        createdAt: stats.birthtime.toISOString(),
+        modifiedAt: stats.mtime.toISOString(),
+        isFile: stats.isFile(),
+        isDirectory: stats.isDirectory()
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // ==================== AUTO-TYPE IPC HANDLERS ====================
 // KeePass-style auto-typing into other applications
 // Uses PowerShell SendKeys on Windows (no native modules required)
