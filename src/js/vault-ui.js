@@ -1201,19 +1201,9 @@ export class VaultUI {
                   </svg>
                 </button>
               </div>
-              ${this.#folders.length === 0 ? `
-                <div class="vault-nav-empty">Aucun dossier</div>
-              ` : this.#folders.map(folder => {
-                const folderColor = this.#getFolderColor(folder.id);
-                return `
-                <button class="vault-nav-item ${this.#selectedFolder === folder.id ? 'active' : ''}"
-                        data-folder="${folder.id}"
-                        aria-current="${this.#selectedFolder === folder.id ? 'true' : 'false'}">
-                  <span class="vault-nav-icon vault-folder-color" style="${folderColor ? `color: ${folderColor}` : ''}" aria-hidden="true">📂</span>
-                  <span class="vault-nav-label">${this.#escapeHtml(folder.name)}</span>
-                  <span class="vault-nav-count">${this.#entries.filter(e => e.folderId === folder.id).length}</span>
-                </button>
-              `}).join('')}
+              <div class="vault-folder-tree" role="tree" aria-label="Dossiers">
+                ${this.#renderFolderTree()}
+              </div>
             </div>
 
             <div class="vault-nav-section">
@@ -1398,11 +1388,355 @@ export class VaultUI {
       ${this.#renderMoveFolderModal()}
       ${this.#renderAddTagModal()}
       ${this.#renderEditTagModal()}
+      ${this.#renderImportModal()}
     `;
 
     this.#attachMainViewEvents();
     this.#updateLockCountdown();
     this.#initTheme();
+  }
+
+  // ==================== FOLDER TREE VIEW ====================
+
+  /** @type {Set<string>} Expanded folder IDs */
+  #expandedFolders = new Set();
+
+  /**
+   * Build a hierarchical tree from flat folder list
+   * @returns {Array} Tree structure with children arrays
+   */
+  #buildFolderTree() {
+    const rootFolders = [];
+    const childMap = new Map(); // parentId -> children[]
+
+    // First pass: group by parentId
+    for (const folder of this.#folders) {
+      const parentId = folder.parentId || null;
+      if (!childMap.has(parentId)) {
+        childMap.set(parentId, []);
+      }
+      childMap.get(parentId).push(folder);
+    }
+
+    // Build tree recursively
+    const buildNode = (folder, depth = 0) => {
+      const children = childMap.get(folder.id) || [];
+      const entryCount = this.#entries.filter(e => e.folderId === folder.id).length;
+      const descendantCount = this.#getDescendantEntryCount(folder.id, childMap);
+
+      return {
+        ...folder,
+        depth,
+        entryCount,
+        totalCount: entryCount + descendantCount,
+        children: children.map(child => buildNode(child, depth + 1)),
+        hasChildren: children.length > 0
+      };
+    };
+
+    // Start with root folders (no parent)
+    const roots = childMap.get(null) || [];
+    return roots.map(folder => buildNode(folder, 0));
+  }
+
+  /**
+   * Get total entry count for all descendants of a folder
+   */
+  #getDescendantEntryCount(folderId, childMap) {
+    let count = 0;
+    const children = childMap.get(folderId) || [];
+    for (const child of children) {
+      count += this.#entries.filter(e => e.folderId === child.id).length;
+      count += this.#getDescendantEntryCount(child.id, childMap);
+    }
+    return count;
+  }
+
+  /**
+   * Render the folder tree as HTML
+   */
+  #renderFolderTree() {
+    if (this.#folders.length === 0) {
+      return '<div class="vault-nav-empty">Aucun dossier</div>';
+    }
+
+    const tree = this.#buildFolderTree();
+    return this.#renderFolderNodes(tree);
+  }
+
+  /**
+   * Render folder nodes recursively
+   * @param {Array} nodes
+   * @returns {string} HTML
+   */
+  #renderFolderNodes(nodes) {
+    return nodes.map(node => {
+      const isExpanded = this.#expandedFolders.has(node.id);
+      const isSelected = this.#selectedFolder === node.id;
+      const folderColor = this.#getFolderColor(node.id);
+      const paddingLeft = node.depth * 16;
+
+      const expandIcon = node.hasChildren ? `
+        <button class="vault-folder-toggle ${isExpanded ? 'expanded' : ''}"
+                data-folder-toggle="${node.id}"
+                aria-expanded="${isExpanded}"
+                aria-label="${isExpanded ? 'Réduire' : 'Développer'} ${node.name}">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      ` : '<span class="vault-folder-toggle-spacer"></span>';
+
+      const folderIcon = isExpanded && node.hasChildren ? '📂' : '📁';
+
+      let html = `
+        <div class="vault-folder-node" role="treeitem" aria-selected="${isSelected}" data-folder-depth="${node.depth}">
+          <button class="vault-nav-item vault-folder-item ${isSelected ? 'active' : ''}"
+                  data-folder="${node.id}"
+                  style="padding-left: ${8 + paddingLeft}px"
+                  aria-current="${isSelected ? 'true' : 'false'}"
+                  draggable="true">
+            ${expandIcon}
+            <span class="vault-nav-icon vault-folder-color" style="${folderColor ? `color: ${folderColor}` : ''}" aria-hidden="true">${folderIcon}</span>
+            <span class="vault-nav-label">${this.#escapeHtml(node.name)}</span>
+            <span class="vault-nav-count" title="${node.entryCount} dans ce dossier, ${node.totalCount} au total">${node.totalCount}</span>
+          </button>
+      `;
+
+      // Render children if expanded
+      if (node.hasChildren && isExpanded) {
+        html += `<div class="vault-folder-children" role="group">${this.#renderFolderNodes(node.children)}</div>`;
+      }
+
+      html += '</div>';
+      return html;
+    }).join('');
+  }
+
+  /**
+   * Toggle folder expansion state
+   * @param {string} folderId
+   */
+  #toggleFolderExpand(folderId) {
+    if (this.#expandedFolders.has(folderId)) {
+      this.#expandedFolders.delete(folderId);
+    } else {
+      this.#expandedFolders.add(folderId);
+    }
+    // Re-render just the folder tree section
+    const treeContainer = document.querySelector('.vault-folder-tree');
+    if (treeContainer) {
+      treeContainer.innerHTML = this.#renderFolderTree();
+      this.#attachFolderTreeEvents();
+    }
+  }
+
+  /**
+   * Attach event listeners to folder tree
+   */
+  #attachFolderTreeEvents() {
+    // Toggle expand/collapse
+    document.querySelectorAll('.vault-folder-toggle[data-folder-toggle]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#toggleFolderExpand(btn.dataset.folderToggle);
+      });
+    });
+
+    // Select folder
+    document.querySelectorAll('.vault-folder-item[data-folder]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (e.target.closest('.vault-folder-toggle')) return;
+        this.#selectedFolder = btn.dataset.folder;
+        this.#selectedCategory = 'all';
+        this.#selectedTag = null;
+        this.#render();
+      });
+
+      // Context menu
+      btn.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.#showFolderContextMenu(btn.dataset.folder, e.clientX, e.clientY);
+      });
+
+      // Drag and drop
+      btn.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        btn.classList.add('drag-over');
+      });
+      btn.addEventListener('dragleave', () => {
+        btn.classList.remove('drag-over');
+      });
+      btn.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        btn.classList.remove('drag-over');
+        const folderId = btn.dataset.folder;
+        if (this.#selectedEntries.size > 0) {
+          await this.#moveEntriesToFolder([...this.#selectedEntries], folderId);
+        } else if (this.#draggedEntry) {
+          await this.#moveEntriesToFolder([this.#draggedEntry.id], folderId);
+        }
+      });
+    });
+  }
+
+  /**
+   * Show context menu for folder operations
+   * @param {string} folderId
+   * @param {number} x
+   * @param {number} y
+   */
+  #showFolderContextMenu(folderId, x, y) {
+    const folder = this.#folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    // Remove existing context menu
+    document.querySelector('.vault-folder-context-menu')?.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'vault-folder-context-menu vault-context-menu';
+    menu.innerHTML = `
+      <button class="vault-ctx-item" data-action="rename">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        Renommer
+      </button>
+      <button class="vault-ctx-item" data-action="add-subfolder">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          <line x1="12" y1="11" x2="12" y2="17"></line>
+          <line x1="9" y1="14" x2="15" y2="14"></line>
+        </svg>
+        Nouveau sous-dossier
+      </button>
+      <button class="vault-ctx-item" data-action="color">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="13.5" cy="6.5" r=".5"></circle>
+          <circle cx="17.5" cy="10.5" r=".5"></circle>
+          <circle cx="8.5" cy="7.5" r=".5"></circle>
+          <circle cx="6.5" cy="12.5" r=".5"></circle>
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"></path>
+        </svg>
+        Couleur
+      </button>
+      <div class="vault-ctx-divider"></div>
+      <button class="vault-ctx-item vault-ctx-danger" data-action="delete">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Supprimer
+      </button>
+    `;
+
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    document.body.appendChild(menu);
+
+    // Adjust position if off-screen
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+      menu.style.left = `${x - rect.width}px`;
+    }
+    if (rect.bottom > window.innerHeight) {
+      menu.style.top = `${y - rect.height}px`;
+    }
+
+    // Handle actions
+    menu.querySelectorAll('.vault-ctx-item').forEach(item => {
+      item.addEventListener('click', async () => {
+        const action = item.dataset.action;
+        menu.remove();
+
+        switch (action) {
+          case 'rename':
+            this.#showRenameFolderModal(folderId);
+            break;
+          case 'add-subfolder':
+            this.#showAddSubfolderModal(folderId);
+            break;
+          case 'color':
+            this.#showFolderColorPicker(folderId, x, y);
+            break;
+          case 'delete':
+            await this.#confirmDeleteFolder(folderId);
+            break;
+        }
+      });
+    });
+
+    // Close on outside click
+    const closeMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 10);
+  }
+
+  /**
+   * Show modal to rename a folder
+   */
+  #showRenameFolderModal(folderId) {
+    const folder = this.#folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    const newName = prompt('Nouveau nom du dossier:', folder.name);
+    if (newName && newName.trim() && newName !== folder.name) {
+      window.vault.folders.update(folderId, { name: newName.trim() })
+        .then(() => {
+          this.#showToast('Dossier renommé', 'success');
+          this.#loadData().then(() => this.#render());
+        })
+        .catch(e => this.#showToast('Erreur: ' + e.message, 'error'));
+    }
+  }
+
+  /**
+   * Show modal to add a subfolder
+   */
+  #showAddSubfolderModal(parentId) {
+    const name = prompt('Nom du nouveau sous-dossier:');
+    if (name && name.trim()) {
+      window.vault.folders.add(name.trim(), parentId)
+        .then(() => {
+          // Auto-expand the parent
+          this.#expandedFolders.add(parentId);
+          this.#showToast('Sous-dossier créé', 'success');
+          this.#loadData().then(() => this.#render());
+        })
+        .catch(e => this.#showToast('Erreur: ' + e.message, 'error'));
+    }
+  }
+
+  /**
+   * Confirm and delete a folder
+   */
+  async #confirmDeleteFolder(folderId) {
+    const folder = this.#folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    const entryCount = this.#entries.filter(e => e.folderId === folderId).length;
+    const message = entryCount > 0
+      ? `Supprimer le dossier "${folder.name}" et déplacer ses ${entryCount} entrées à la racine ?`
+      : `Supprimer le dossier "${folder.name}" ?`;
+
+    if (confirm(message)) {
+      try {
+        await window.vault.folders.delete(folderId, false); // Don't delete entries
+        if (this.#selectedFolder === folderId) {
+          this.#selectedFolder = null;
+        }
+        this.#showToast('Dossier supprimé', 'success');
+        await this.#loadData();
+        this.#render();
+      } catch (e) {
+        this.#showToast('Erreur: ' + e.message, 'error');
+      }
+    }
   }
 
   #renderBreadcrumb() {
@@ -2827,6 +3161,237 @@ export class VaultUI {
     `;
   }
 
+  // ==================== IMPORT MODAL ====================
+
+  #renderImportModal() {
+    return `
+      <div class="vault-modal-overlay" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
+        <div class="vault-modal vault-modal-lg">
+          <div class="vault-modal-header">
+            <h3 id="import-title">Importer des entrées</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="vault-modal-body">
+            <div class="vault-import-formats">
+              <h4>Formats supportés</h4>
+              <div class="vault-format-cards">
+                <div class="vault-format-card">
+                  <span class="vault-format-icon">🔐</span>
+                  <span class="vault-format-name">KeePass</span>
+                  <span class="vault-format-ext">.xml</span>
+                </div>
+                <div class="vault-format-card">
+                  <span class="vault-format-icon">🛡️</span>
+                  <span class="vault-format-name">Bitwarden</span>
+                  <span class="vault-format-ext">.json</span>
+                </div>
+                <div class="vault-format-card">
+                  <span class="vault-format-icon">📊</span>
+                  <span class="vault-format-name">CSV Générique</span>
+                  <span class="vault-format-ext">.csv</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="vault-import-dropzone" id="import-dropzone">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <p>Glissez un fichier ici ou <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse">parcourez</button></p>
+              <input type="file" id="import-file-input" accept=".xml,.json,.csv" hidden>
+              <span class="vault-dropzone-hint">Formats: XML, JSON, CSV</span>
+            </div>
+
+            <div class="vault-import-preview" id="import-preview" hidden>
+              <div class="vault-import-summary" id="import-summary">
+                <!-- Filled dynamically -->
+              </div>
+              <div class="vault-import-options">
+                <label class="vault-checkbox-label">
+                  <input type="checkbox" id="import-include-groups" checked>
+                  <span>Importer les dossiers/groupes</span>
+                </label>
+                <label class="vault-checkbox-label">
+                  <input type="checkbox" id="import-merge-duplicates">
+                  <span>Fusionner les doublons (par titre)</span>
+                </label>
+              </div>
+              <div class="vault-import-warnings" id="import-warnings" hidden>
+                <!-- Warnings shown here -->
+              </div>
+            </div>
+          </div>
+          <div class="vault-modal-footer">
+            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
+            <button type="button" class="vault-btn vault-btn-primary" id="btn-import-confirm" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              Importer
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /** @type {Object|null} Pending import data */
+  #pendingImport = null;
+
+  /**
+   * Handle file selection for import
+   */
+  async #handleImportFile(file) {
+    if (!file) return;
+
+    const importPreview = document.getElementById('import-preview');
+    const importSummary = document.getElementById('import-summary');
+    const importWarnings = document.getElementById('import-warnings');
+    const confirmBtn = document.getElementById('btn-import-confirm');
+
+    try {
+      // Show loading
+      importPreview.hidden = false;
+      importSummary.innerHTML = '<div class="vault-loading"><span class="vault-spinner"></span> Analyse du fichier...</div>';
+      importWarnings.hidden = true;
+      confirmBtn.disabled = true;
+
+      // Read file content
+      const content = await file.text();
+
+      // Import dynamically
+      const { importFromFile } = await import('./vault/import-service.js');
+      const result = importFromFile(content, { filename: file.name });
+
+      // Store for later
+      this.#pendingImport = result;
+
+      // Show summary
+      importSummary.innerHTML = `
+        <div class="vault-import-stats">
+          <div class="vault-import-stat">
+            <span class="vault-import-stat-value">${result.stats.importedEntries}</span>
+            <span class="vault-import-stat-label">Entrées</span>
+          </div>
+          <div class="vault-import-stat">
+            <span class="vault-import-stat-value">${result.stats.importedGroups}</span>
+            <span class="vault-import-stat-label">Dossiers</span>
+          </div>
+          <div class="vault-import-stat">
+            <span class="vault-import-stat-value">${result.stats.customFieldsCount}</span>
+            <span class="vault-import-stat-label">Champs</span>
+          </div>
+        </div>
+        <div class="vault-import-file-info">
+          <span class="vault-import-filename">${this.#escapeHtml(file.name)}</span>
+          <span class="vault-import-filesize">${(file.size / 1024).toFixed(1)} Ko</span>
+        </div>
+      `;
+
+      // Show warnings if any
+      if (result.warnings.length > 0 || result.errors.length > 0) {
+        importWarnings.hidden = false;
+        importWarnings.innerHTML = `
+          ${result.errors.map(e => `<div class="vault-import-error">❌ ${this.#escapeHtml(e)}</div>`).join('')}
+          ${result.warnings.map(w => `<div class="vault-import-warning">⚠️ ${this.#escapeHtml(w)}</div>`).join('')}
+        `;
+      }
+
+      // Enable confirm button if we have entries
+      confirmBtn.disabled = result.entries.length === 0;
+
+    } catch (error) {
+      importSummary.innerHTML = `<div class="vault-import-error">❌ Erreur: ${this.#escapeHtml(error.message)}</div>`;
+      confirmBtn.disabled = true;
+    }
+  }
+
+  /**
+   * Confirm and execute the import
+   */
+  async #confirmImport() {
+    if (!this.#pendingImport) return;
+
+    const includeGroups = document.getElementById('import-include-groups')?.checked ?? true;
+    const confirmBtn = document.getElementById('btn-import-confirm');
+
+    try {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="vault-spinner"></span> Importation...';
+
+      const { entries, groups } = this.#pendingImport;
+
+      // Import groups first (if enabled)
+      if (includeGroups && groups.length > 0) {
+        for (const group of groups) {
+          try {
+            await window.vault.folders.add(group.name, group.parentId);
+          } catch (e) {
+            console.warn('[Import] Group creation error:', e.message);
+          }
+        }
+      }
+
+      // Import entries
+      let importedCount = 0;
+      for (const entry of entries) {
+        try {
+          // Convert VaultEntry to the format expected by the vault API
+          const entryData = {
+            username: entry.username || '',
+            password: entry.secret?.[0] || '',
+            url: entry.uri || '',
+            notes: entry.notes || '',
+            ...entry.fields?.reduce((acc, f) => {
+              acc[f.label] = f.value;
+              return acc;
+            }, {})
+          };
+
+          // Handle TOTP if present
+          if (entry.otpConfig) {
+            entryData.totp = entry.otpConfig.secret;
+          }
+
+          await window.vault.entries.add(entry.type || 'login', entry.title, entryData);
+          importedCount++;
+        } catch (e) {
+          console.warn('[Import] Entry creation error:', e.message);
+        }
+      }
+
+      // Refresh data
+      await this.#loadData();
+      this.#render();
+
+      this.#closeModal('import-modal');
+      this.#showToast(`${importedCount} entrées importées avec succès`, 'success');
+      this.#pendingImport = null;
+
+    } catch (error) {
+      this.#showToast('Erreur d\'importation: ' + error.message, 'error');
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        Importer
+      `;
+    }
+  }
+
   async #createTag(name, color) {
     try {
       await window.vault.tags.add({ name: name.trim(), color });
@@ -4157,6 +4722,60 @@ export class VaultUI {
   }
 
   #triggerImport() {
+    // Open the import modal (new unified import UI)
+    this.#openModal('import-modal');
+    this.#pendingImport = null;
+
+    // Reset the preview
+    const preview = document.getElementById('import-preview');
+    if (preview) preview.hidden = true;
+
+    // Attach import modal events
+    this.#attachImportModalEvents();
+  }
+
+  /**
+   * Attach event handlers for the import modal
+   */
+  #attachImportModalEvents() {
+    const dropzone = document.getElementById('import-dropzone');
+    const fileInput = document.getElementById('import-file-input');
+    const browseBtn = document.getElementById('btn-import-browse');
+    const confirmBtn = document.getElementById('btn-import-confirm');
+
+    // Browse button
+    browseBtn?.addEventListener('click', () => fileInput?.click());
+
+    // File input change
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) this.#handleImportFile(file);
+    });
+
+    // Drag and drop
+    dropzone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+    dropzone?.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+    dropzone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) this.#handleImportFile(file);
+    });
+
+    // Confirm button
+    confirmBtn?.addEventListener('click', () => this.#confirmImport());
+  }
+
+  /**
+   * Legacy import method - kept for backwards compatibility
+   * @deprecated Use #triggerImport() which opens the new modal
+   */
+  #triggerImportLegacy() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,.csv,.xml,.kdbx';
@@ -4833,21 +5452,8 @@ export class VaultUI {
       });
     });
 
-    // Folder navigation
-    document.querySelectorAll('.vault-nav-item[data-folder]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.#selectedFolder = btn.dataset.folder;
-        this.#selectedCategory = 'all';
-        this.#selectedEntry = null;
-        this.#render();
-      });
-
-      // Right-click for color picker
-      btn.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        this.#showFolderColorPicker(btn.dataset.folder, e.clientX, e.clientY);
-      });
-    });
+    // Folder tree navigation (with expand/collapse)
+    this.#attachFolderTreeEvents();
 
     // Tag navigation
     document.querySelectorAll('.vault-nav-item[data-tag]').forEach(btn => {

@@ -3252,6 +3252,111 @@ kbd {
   box-shadow: inset 0 0 0 2px var(--vault-primary);
 }
 
+/* ==================== FOLDER TREE VIEW ==================== */
+.vault-folder-tree {
+  display: flex;
+  flex-direction: column;
+}
+
+.vault-folder-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.vault-folder-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--vault-text-muted);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--vault-radius-sm);
+  transition: all var(--vault-transition);
+}
+
+.vault-folder-item:hover {
+  background: var(--vault-surface-hover);
+  color: var(--vault-text);
+}
+
+.vault-folder-item.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--vault-primary);
+}
+
+.vault-folder-item.active .vault-nav-icon {
+  color: var(--vault-primary);
+}
+
+.vault-folder-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vault-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: all var(--vault-transition);
+}
+
+.vault-folder-toggle:hover {
+  background: var(--vault-surface-hover);
+  color: var(--vault-text);
+}
+
+.vault-folder-toggle svg {
+  transition: transform 0.2s ease;
+}
+
+.vault-folder-toggle.expanded svg {
+  transform: rotate(90deg);
+}
+
+.vault-folder-toggle-spacer {
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.vault-folder-children {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--vault-border);
+  margin-left: 17px;
+}
+
+.vault-folder-item .vault-nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-folder-item .vault-nav-count {
+  font-size: 0.75rem;
+  color: var(--vault-text-dim);
+  background: var(--vault-surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Folder context menu */
+.vault-folder-context-menu {
+  position: fixed;
+  z-index: 10000;
+}
+
 /* ==================== MOVE FOLDER MODAL ==================== */
 .vault-folder-list {
   display: flex;
@@ -3287,6 +3392,220 @@ kbd {
 
 .vault-folder-name {
   flex: 1;
+}
+
+/* ==================== IMPORT MODAL ==================== */
+.vault-import-formats {
+  margin-bottom: 1.5rem;
+}
+
+.vault-import-formats h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vault-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.vault-format-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.vault-format-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--vault-surface);
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius);
+  cursor: default;
+  transition: all var(--vault-transition);
+}
+
+.vault-format-card:hover {
+  border-color: var(--vault-primary);
+  background: var(--vault-surface-hover);
+}
+
+.vault-format-icon {
+  font-size: 1.5rem;
+}
+
+.vault-format-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--vault-text);
+}
+
+.vault-format-ext {
+  font-size: 0.75rem;
+  color: var(--vault-text-muted);
+}
+
+/* Dropzone */
+.vault-import-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  border: 2px dashed var(--vault-border);
+  border-radius: var(--vault-radius-lg);
+  background: var(--vault-surface);
+  cursor: pointer;
+  transition: all var(--vault-transition);
+}
+
+.vault-import-dropzone:hover,
+.vault-import-dropzone.drag-over {
+  border-color: var(--vault-primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.vault-import-dropzone.drag-over {
+  background: rgba(59, 130, 246, 0.1);
+  border-style: solid;
+}
+
+.vault-dropzone-icon {
+  font-size: 2.5rem;
+  color: var(--vault-text-muted);
+}
+
+.vault-dropzone-text {
+  font-size: 0.875rem;
+  color: var(--vault-text-muted);
+}
+
+.vault-dropzone-text strong {
+  color: var(--vault-primary);
+  cursor: pointer;
+}
+
+.vault-dropzone-hint {
+  font-size: 0.75rem;
+  color: var(--vault-text-dim);
+}
+
+/* Import Preview */
+.vault-import-preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--vault-surface);
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius);
+}
+
+.vault-import-preview h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--vault-text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vault-import-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.vault-import-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--vault-bg);
+  border-radius: var(--vault-radius-sm);
+}
+
+.vault-import-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--vault-primary);
+}
+
+.vault-import-stat-label {
+  font-size: 0.75rem;
+  color: var(--vault-text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Import Options */
+.vault-import-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.vault-import-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--vault-text);
+}
+
+.vault-import-option input[type="checkbox"] {
+  accent-color: var(--vault-primary);
+}
+
+/* Import Warnings/Errors */
+.vault-import-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.vault-import-error,
+.vault-import-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--vault-radius-sm);
+  font-size: 0.8rem;
+}
+
+.vault-import-error {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: var(--vault-error);
+}
+
+.vault-import-warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: var(--vault-warning);
+}
+
+.vault-import-error-icon,
+.vault-import-warning-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* Import Modal Actions */
+.vault-import-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--vault-border);
 }
 
 /* ==================== ICON BUTTON (in toolbar) ==================== */
