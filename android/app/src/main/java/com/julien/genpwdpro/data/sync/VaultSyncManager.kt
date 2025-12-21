@@ -3,6 +3,7 @@ package com.julien.genpwdpro.data.sync
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
@@ -343,27 +344,39 @@ class VaultSyncManager @Inject constructor(
             // Vérifier s'il y a une version plus récente sur le cloud
             if (provider.hasNewerVersion(vaultId, syncData.timestamp)) {
                 // Télécharger et comparer
-                val remoteData = provider.downloadVault(vaultId)
-                if (remoteData != null && conflictResolver.hasConflict(syncData, remoteData)) {
-                    _syncStatus.value = SyncStatus.CONFLICT
-                    return VaultSyncResult.Conflict(remoteData, syncData)
+                when (val downloadResult = provider.downloadVault(vaultId)) {
+                    is CloudResult.Success -> {
+                        val remoteData = downloadResult.data
+                        if (conflictResolver.hasConflict(syncData, remoteData)) {
+                            _syncStatus.value = SyncStatus.CONFLICT
+                            return VaultSyncResult.Conflict(remoteData, syncData)
+                        }
+                    }
+                    is CloudResult.Error -> {
+                        // Ignore download error during conflict check, proceed with upload
+                        SafeLog.w(TAG, "Failed to check remote version: ${downloadResult.message}")
+                    }
                 }
             }
 
             // Upload vers le cloud
-            val fileId = provider.uploadVault(vaultId, syncData)
-
-            if (fileId != null) {
-                _syncStatus.value = SyncStatus.SYNCED
-                VaultSyncResult.Success
-            } else {
-                _syncStatus.value = SyncStatus.ERROR
-                VaultSyncResult.Error("Échec de l'upload")
+            when (val uploadResult = provider.uploadVault(vaultId, syncData)) {
+                is CloudResult.Success -> {
+                    _syncStatus.value = SyncStatus.SYNCED
+                    VaultSyncResult.Success
+                }
+                is CloudResult.Error -> {
+                    _syncStatus.value = SyncStatus.ERROR
+                    VaultSyncResult.Error(
+                        message = uploadResult.message ?: "Échec de l'upload",
+                        errorType = uploadResult.type
+                    )
+                }
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error syncing vault", e)
             _syncStatus.value = SyncStatus.ERROR
-            VaultSyncResult.Error(e.message ?: "Erreur inconnue", e)
+            VaultSyncResult.Error(e.message ?: "Erreur inconnue")
         }
     }
 
@@ -380,42 +393,47 @@ class VaultSyncManager @Inject constructor(
         _syncStatus.value = SyncStatus.SYNCING
 
         return try {
-            val syncData = provider.downloadVault(vaultId)
-                ?: return false.also {
-                    SafeLog.w(TAG, "No remote vault found for $vaultId")
+            when (val downloadResult = provider.downloadVault(vaultId)) {
+                is CloudResult.Success -> {
+                    val syncData = downloadResult.data
+
+                    if (syncData.vaultId != vaultId) {
+                        SafeLog.w(TAG, "Downloaded vaultId mismatch: expected=$vaultId, received=${syncData.vaultId}")
+                        _syncStatus.value = SyncStatus.ERROR
+                        return false
+                    }
+
+                    val entry = getVaultRegistryEntry(vaultId)
+                        ?: return false.also {
+                            SafeLog.w(TAG, "Vault registry entry not found for $vaultId")
+                            _syncStatus.value = SyncStatus.ERROR
+                        }
+
+                    val tempFile = File(context.cacheDir, "sync_download_${vaultId}_${System.currentTimeMillis()}.gpv")
+                    try {
+                        tempFile.outputStream().use { outputStream ->
+                            outputStream.write(syncData.encryptedData)
+                        }
+
+                        // Validate decryption with provided master password
+                        vaultFileManager.loadVaultFile(
+                            vaultId = vaultId,
+                            masterPassword = masterPassword,
+                            filePath = tempFile.absolutePath
+                        )
+
+                        writeEncryptedVault(entry, syncData.encryptedData, syncData.timestamp)
+                        _syncStatus.value = SyncStatus.SYNCED
+                        true
+                    } finally {
+                        tempFile.delete()
+                    }
+                }
+                is CloudResult.Error -> {
+                    SafeLog.w(TAG, "Download failed: ${downloadResult.message}")
                     _syncStatus.value = SyncStatus.ERROR
+                    false
                 }
-
-            if (syncData.vaultId != vaultId) {
-                SafeLog.w(TAG, "Downloaded vaultId mismatch: expected=$vaultId, received=${syncData.vaultId}")
-                _syncStatus.value = SyncStatus.ERROR
-                return false
-            }
-
-            val entry = getVaultRegistryEntry(vaultId)
-                ?: return false.also {
-                    SafeLog.w(TAG, "Vault registry entry not found for $vaultId")
-                    _syncStatus.value = SyncStatus.ERROR
-                }
-
-            val tempFile = File(context.cacheDir, "sync_download_${vaultId}_${System.currentTimeMillis()}.gpv")
-            try {
-                tempFile.outputStream().use { outputStream ->
-                    outputStream.write(syncData.encryptedData)
-                }
-
-                // Validate decryption with provided master password
-                vaultFileManager.loadVaultFile(
-                    vaultId = vaultId,
-                    masterPassword = masterPassword,
-                    filePath = tempFile.absolutePath
-                )
-
-                writeEncryptedVault(entry, syncData.encryptedData, syncData.timestamp)
-                _syncStatus.value = SyncStatus.SYNCED
-                true
-            } finally {
-                tempFile.delete()
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error downloading vault", e)

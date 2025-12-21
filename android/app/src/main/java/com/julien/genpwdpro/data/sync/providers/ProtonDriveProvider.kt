@@ -3,6 +3,8 @@ package com.julien.genpwdpro.data.sync.providers
 import android.app.Activity
 import android.net.Uri
 import android.util.Base64
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.annotations.SerializedName
@@ -25,6 +27,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import java.io.File
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.UUID
@@ -542,10 +547,16 @@ class ProtonDriveProvider(
     /**
      * Upload un vault chiffré
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? =
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String> =
         withContext(Dispatchers.IO) {
+            val token = accessToken
+            if (token == null) {
+                return@withContext CloudResult.authExpired(
+                    message = "Proton Drive not authenticated. Please sign in."
+                )
+            }
+
             try {
-                val token = accessToken ?: throw IllegalStateException("Not authenticated")
                 val share = ensureShare()
                 val fileName = "vault_$vaultId.enc"
 
@@ -572,33 +583,44 @@ class ProtonDriveProvider(
                     if (response.code == 1000 && response.file != null) {
                         val fileId = response.file.id
                         SafeLog.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
-                        fileId
+                        CloudResult.success(fileId)
                     } else {
                         SafeLog.e(TAG, "Upload failed: code ${response.code}")
-                        null
+                        mapProtonError(response.code)
                     }
                 } finally {
                     tempFile.delete()
                 }
+            } catch (e: IOException) {
+                SafeLog.e(TAG, "Network error uploading vault", e)
+                mapNetworkException(e)
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error uploading vault", e)
-                null
+                CloudResult.genericError(e.message, e)
             }
         }
 
     /**
      * Download un vault chiffré
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? =
+    override suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData> =
         withContext(Dispatchers.IO) {
+            val token = accessToken
+            if (token == null) {
+                return@withContext CloudResult.authExpired(
+                    message = "Proton Drive not authenticated. Please sign in."
+                )
+            }
+
             try {
-                val token = accessToken ?: throw IllegalStateException("Not authenticated")
                 val share = ensureShare()
 
                 // Trouver le fileId depuis vaultId
                 val fileName = "vault_$vaultId.enc"
                 val metadata = listVaults().find { it.fileName == fileName }
-                    ?: return@withContext null
+                    ?: return@withContext CloudResult.notFound(
+                        message = "Vault not found in Proton Drive"
+                    )
                 val cloudFileId = metadata.fileId
 
                 // Récupérer l'URL de download
@@ -606,7 +628,7 @@ class ProtonDriveProvider(
 
                 if (urlResponse.code != 1000 || urlResponse.url == null) {
                     SafeLog.e(TAG, "Failed to get download URL: code ${urlResponse.code}")
-                    return@withContext null
+                    return@withContext mapProtonError(urlResponse.code)
                 }
 
                 // Download le fichier
@@ -618,24 +640,29 @@ class ProtonDriveProvider(
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
                         SafeLog.e(TAG, "Download failed: ${response.code}")
-                        return@withContext null
+                        return@withContext mapHttpError(response.code)
                     }
 
                     val encryptedData = response.body?.bytes() ?: byteArrayOf()
 
-                    VaultSyncData(
-                        vaultId = vaultId,
-                        vaultName = "Vault $vaultId",
-                        encryptedData = encryptedData,
-                        timestamp = System.currentTimeMillis(),
-                        version = 1,
-                        deviceId = "proton",
-                        checksum = ""
+                    CloudResult.success(
+                        VaultSyncData(
+                            vaultId = vaultId,
+                            vaultName = "Vault $vaultId",
+                            encryptedData = encryptedData,
+                            timestamp = System.currentTimeMillis(),
+                            version = 1,
+                            deviceId = "proton",
+                            checksum = ""
+                        )
                     )
                 }
+            } catch (e: IOException) {
+                SafeLog.e(TAG, "Network error downloading vault", e)
+                mapNetworkException(e)
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error downloading vault", e)
-                null
+                CloudResult.genericError(e.message, e)
             }
         }
 
@@ -675,23 +702,32 @@ class ProtonDriveProvider(
     /**
      * Supprime un vault du cloud
      */
-    override suspend fun deleteVault(cloudFileId: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun deleteVault(cloudFileId: String): CloudResult<Unit> = withContext(Dispatchers.IO) {
+        val token = accessToken
+        if (token == null) {
+            return@withContext CloudResult.authExpired(
+                message = "Proton Drive not authenticated. Please sign in."
+            )
+        }
+
         try {
-            val token = accessToken ?: throw IllegalStateException("Not authenticated")
             val share = ensureShare()
 
             val response = api.deleteFile("Bearer $token", share, cloudFileId)
 
             if (response.code == 1000) {
                 SafeLog.d(TAG, "Vault deleted successfully: $cloudFileId")
-                true
+                CloudResult.success(Unit)
             } else {
                 SafeLog.e(TAG, "Delete failed: code ${response.code}, error: ${response.error}")
-                false
+                mapProtonError(response.code, response.error)
             }
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error deleting vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error deleting vault", e)
-            false
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -769,5 +805,85 @@ class ProtonDriveProvider(
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error signing out", e)
         }
+    }
+
+    /**
+     * Maps Proton API error codes to CloudResult.Error
+     *
+     * Proton API codes:
+     * - 1000: Success
+     * - 2000: Invalid credentials
+     * - 8002: Resource not found
+     * - 10002: Session expired
+     * - 12087: Quota exceeded
+     * - 85032: Rate limited
+     */
+    private fun mapProtonError(errorCode: Int, errorMessage: String? = null): CloudResult.Error {
+        return when (errorCode) {
+            2000, 10002 -> CloudResult.Error(
+                type = CloudErrorType.AUTH_EXPIRED,
+                message = "Proton authentication expired. Please sign in again."
+            )
+            8002 -> CloudResult.Error(
+                type = CloudErrorType.NOT_FOUND,
+                message = "Resource not found in Proton Drive."
+            )
+            12087 -> CloudResult.Error(
+                type = CloudErrorType.QUOTA_EXCEEDED,
+                message = "Proton Drive storage quota exceeded."
+            )
+            85032 -> CloudResult.Error(
+                type = CloudErrorType.RATE_LIMITED,
+                message = "Too many requests to Proton Drive. Please try again later."
+            )
+            else -> CloudResult.Error(
+                type = CloudErrorType.GENERIC,
+                message = errorMessage ?: "Proton Drive error (code $errorCode)"
+            )
+        }
+    }
+
+    /**
+     * Maps HTTP error codes to CloudResult.Error
+     */
+    private fun mapHttpError(statusCode: Int): CloudResult.Error {
+        return when (statusCode) {
+            401 -> CloudResult.Error(
+                type = CloudErrorType.AUTH_EXPIRED,
+                message = "Proton authentication expired. Please sign in again."
+            )
+            403 -> CloudResult.Error(
+                type = CloudErrorType.PERMISSION_DENIED,
+                message = "Permission denied. Please check Proton Drive permissions."
+            )
+            404 -> CloudResult.Error(
+                type = CloudErrorType.NOT_FOUND,
+                message = "Resource not found in Proton Drive."
+            )
+            429 -> CloudResult.Error(
+                type = CloudErrorType.RATE_LIMITED,
+                message = "Too many requests to Proton Drive. Please try again later."
+            )
+            else -> CloudResult.Error(
+                type = CloudErrorType.GENERIC,
+                message = "Proton Drive error (HTTP $statusCode)"
+            )
+        }
+    }
+
+    /**
+     * Maps network exceptions to CloudResult.Error
+     */
+    private fun mapNetworkException(exception: IOException): CloudResult.Error {
+        val message = when (exception) {
+            is UnknownHostException -> "No internet connection."
+            is SocketTimeoutException -> "Connection timed out."
+            else -> "Network error: ${exception.message}"
+        }
+        return CloudResult.Error(
+            type = CloudErrorType.NETWORK,
+            message = message,
+            exception = exception
+        )
     }
 }

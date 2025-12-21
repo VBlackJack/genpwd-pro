@@ -1,6 +1,8 @@
 package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -8,6 +10,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
@@ -18,6 +21,8 @@ import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -144,11 +149,17 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Upload un vault chiffré vers Google Drive
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String> = withContext(
         Dispatchers.IO
     ) {
+        val service = driveService
+        if (service == null) {
+            return@withContext CloudResult.authExpired(
+                message = "Google Drive not authenticated. Please sign in."
+            )
+        }
+
         try {
-            val service = driveService ?: return@withContext null
             val fileName = "vault_$vaultId.enc"
 
             // Chercher si le fichier existe déjà
@@ -180,25 +191,37 @@ class GoogleDriveProvider : CloudProvider {
             }
 
             SafeLog.d(TAG, "Vault uploaded: ${file.id}")
-            file.id
+            CloudResult.success(file.id)
+        } catch (e: GoogleJsonResponseException) {
+            SafeLog.e(TAG, "Drive API error uploading vault", e)
+            mapDriveException(e)
         } catch (e: IOException) {
-            SafeLog.e(TAG, "Error uploading vault", e)
-            null
+            SafeLog.e(TAG, "Network error uploading vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error uploading vault", e)
-            null
+            CloudResult.genericError(e.message, e)
         }
     }
 
     /**
      * Télécharge un vault depuis Google Drive
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+    override suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData> = withContext(
         Dispatchers.IO
     ) {
+        val service = driveService
+        if (service == null) {
+            return@withContext CloudResult.authExpired(
+                message = "Google Drive not authenticated. Please sign in."
+            )
+        }
+
         try {
-            val service = driveService ?: return@withContext null
-            val file = findVaultFile(vaultId) ?: return@withContext null
+            val file = findVaultFile(vaultId)
+                ?: return@withContext CloudResult.notFound(
+                    message = "Vault not found in Google Drive"
+                )
 
             val outputStream = ByteArrayOutputStream()
             service.files()
@@ -208,21 +231,26 @@ class GoogleDriveProvider : CloudProvider {
             val encryptedData = outputStream.toByteArray()
 
             // Créer VaultSyncData à partir des métadonnées
-            VaultSyncData(
-                vaultId = vaultId,
-                vaultName = file.name.removeSuffix(".enc").removePrefix("vault_"),
-                encryptedData = encryptedData,
-                timestamp = file.modifiedTime?.value ?: System.currentTimeMillis(),
-                version = 1,
-                deviceId = "", // Pas stocké dans les métadonnées Drive
-                checksum = file.md5Checksum ?: ""
+            CloudResult.success(
+                VaultSyncData(
+                    vaultId = vaultId,
+                    vaultName = file.name.removeSuffix(".enc").removePrefix("vault_"),
+                    encryptedData = encryptedData,
+                    timestamp = file.modifiedTime?.value ?: System.currentTimeMillis(),
+                    version = 1,
+                    deviceId = "", // Pas stocké dans les métadonnées Drive
+                    checksum = file.md5Checksum ?: ""
+                )
             )
+        } catch (e: GoogleJsonResponseException) {
+            SafeLog.e(TAG, "Drive API error downloading vault", e)
+            mapDriveException(e)
         } catch (e: IOException) {
-            SafeLog.e(TAG, "Error downloading vault", e)
-            null
+            SafeLog.e(TAG, "Network error downloading vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error downloading vault", e)
-            null
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -244,20 +272,32 @@ class GoogleDriveProvider : CloudProvider {
     /**
      * Supprime un vault du cloud
      */
-    override suspend fun deleteVault(vaultId: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun deleteVault(vaultId: String): CloudResult<Unit> = withContext(Dispatchers.IO) {
+        val service = driveService
+        if (service == null) {
+            return@withContext CloudResult.authExpired(
+                message = "Google Drive not authenticated. Please sign in."
+            )
+        }
+
         try {
-            val service = driveService ?: return@withContext false
-            val file = findVaultFile(vaultId) ?: return@withContext false
+            val file = findVaultFile(vaultId)
+                ?: return@withContext CloudResult.notFound(
+                    message = "Vault not found in Google Drive"
+                )
 
             service.files().delete(file.id).execute()
             SafeLog.d(TAG, "Vault deleted: $vaultId")
-            true
+            CloudResult.success(Unit)
+        } catch (e: GoogleJsonResponseException) {
+            SafeLog.e(TAG, "Drive API error deleting vault", e)
+            mapDriveException(e)
         } catch (e: IOException) {
-            SafeLog.e(TAG, "Error deleting vault", e)
-            false
+            SafeLog.e(TAG, "Network error deleting vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Unexpected error deleting vault", e)
-            false
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -367,5 +407,50 @@ class GoogleDriveProvider : CloudProvider {
             SafeLog.e(TAG, "Error finding vault file", e)
             null
         }
+    }
+
+    /**
+     * Maps Google Drive API exceptions to CloudResult.Error
+     */
+    private fun mapDriveException(exception: GoogleJsonResponseException): CloudResult.Error {
+        return when (exception.statusCode) {
+            401 -> CloudResult.Error(
+                type = CloudErrorType.AUTH_EXPIRED,
+                message = "Google Drive authentication expired. Please sign in again."
+            )
+            403 -> CloudResult.Error(
+                type = CloudErrorType.PERMISSION_DENIED,
+                message = "Permission denied. Please check Google Drive permissions."
+            )
+            404 -> CloudResult.Error(
+                type = CloudErrorType.NOT_FOUND,
+                message = "Resource not found in Google Drive."
+            )
+            429 -> CloudResult.Error(
+                type = CloudErrorType.RATE_LIMITED,
+                message = "Too many requests to Google Drive. Please try again later."
+            )
+            else -> CloudResult.Error(
+                type = CloudErrorType.GENERIC,
+                message = "Google Drive error (HTTP ${exception.statusCode})",
+                exception = exception
+            )
+        }
+    }
+
+    /**
+     * Maps network exceptions to CloudResult.Error
+     */
+    private fun mapNetworkException(exception: IOException): CloudResult.Error {
+        val message = when (exception) {
+            is UnknownHostException -> "No internet connection."
+            is SocketTimeoutException -> "Connection timed out."
+            else -> "Network error: ${exception.message}"
+        }
+        return CloudResult.Error(
+            type = CloudErrorType.NETWORK,
+            message = message,
+            exception = exception
+        )
     }
 }

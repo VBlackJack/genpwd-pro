@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.genpwd.providers.api.CloudErrorType
 import com.julien.genpwdpro.R
 import com.julien.genpwdpro.data.sync.AutoSyncScheduler
 import com.julien.genpwdpro.data.sync.CloudProviderSyncRepository
@@ -122,6 +123,23 @@ class VaultSyncViewModel @Inject constructor(
             appContext.getString(R.string.sync_error_unknown)
         } else {
             appContext.getString(R.string.sync_error_with_detail, message)
+        }
+    }
+
+    /**
+     * Maps CloudErrorType to user-friendly error messages.
+     * Provides actionable messages for each error type.
+     */
+    private fun mapCloudErrorToMessage(errorType: CloudErrorType?, fallbackMessage: String?): String {
+        return when (errorType) {
+            CloudErrorType.AUTH_EXPIRED -> appContext.getString(R.string.sync_error_auth_expired)
+            CloudErrorType.NETWORK -> appContext.getString(R.string.sync_error_network)
+            CloudErrorType.QUOTA_EXCEEDED -> appContext.getString(R.string.sync_error_quota_exceeded)
+            CloudErrorType.NOT_FOUND -> appContext.getString(R.string.sync_error_not_found)
+            CloudErrorType.RATE_LIMITED -> appContext.getString(R.string.sync_error_rate_limited)
+            CloudErrorType.PERMISSION_DENIED -> appContext.getString(R.string.sync_error_permission_denied)
+            CloudErrorType.CONFLICT -> appContext.getString(R.string.sync_error_conflict)
+            CloudErrorType.GENERIC, null -> formatOperationError(fallbackMessage)
         }
     }
 
@@ -303,7 +321,7 @@ class VaultSyncViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isSyncing = false,
-                                errorMessage = formatOperationError(result.message)
+                                errorMessage = mapCloudErrorToMessage(result.errorType, result.message)
                             )
                         }
                     }

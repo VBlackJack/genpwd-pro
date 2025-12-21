@@ -1,5 +1,8 @@
 package com.julien.genpwdpro.presentation.vault
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -17,10 +20,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import android.net.Uri
 import com.julien.genpwdpro.core.log.SafeLog
+import com.julien.genpwdpro.data.attachments.SecureAttachment
 import com.julien.genpwdpro.data.models.vault.EntryType
 import com.julien.genpwdpro.data.models.CaseMode
 import com.julien.genpwdpro.data.models.GenerationMode
@@ -54,6 +58,8 @@ fun EntryEditScreen(
     val currentEntryType by viewModel.entryType.collectAsState()
     val selectedTags by viewModel.selectedTags.collectAsState()
     val availableTags by viewModel.availableTags.collectAsState()
+    val attachments by viewModel.attachments.collectAsState()
+    val attachmentError by viewModel.attachmentError.collectAsState()
 
     var showPassword by remember { mutableStateOf(false) }
     var showGeneratorDialog by remember { mutableStateOf(false) }
@@ -61,6 +67,13 @@ fun EntryEditScreen(
     var showQrScanner by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
+
+    // File picker pour les pièces jointes
+    val attachmentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.addAttachment(it) }
+    }
 
     // Initialiser le ViewModel
     LaunchedEffect(vaultId, entryId, initialPassword) {
@@ -411,6 +424,21 @@ fun EntryEditScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Pièces jointes (seulement pour les entrées existantes)
+            if (entryId != null) {
+                AttachmentsSection(
+                    attachments = attachments,
+                    attachmentError = attachmentError,
+                    onAddAttachment = {
+                        attachmentLauncher.launch(arrayOf("*/*"))
+                    },
+                    onDeleteAttachment = { attachmentId ->
+                        viewModel.deleteAttachment(attachmentId)
+                    },
+                    onClearError = { viewModel.clearAttachmentError() }
+                )
+            }
+
             // Erreur
             if (uiState is EntryUiState.Error) {
                 Card(
@@ -720,4 +748,183 @@ private fun TotpSetupDialog(
             }
         }
     )
+}
+
+/**
+ * Section des pièces jointes
+ */
+@Composable
+private fun AttachmentsSection(
+    attachments: List<SecureAttachment>,
+    attachmentError: String?,
+    onAddAttachment: () -> Unit,
+    onDeleteAttachment: (String) -> Unit,
+    onClearError: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // En-tête
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.AttachFile,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Pièces jointes",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (attachments.isNotEmpty()) {
+                        Badge {
+                            Text(attachments.size.toString())
+                        }
+                    }
+                }
+
+                FilledTonalButton(onClick = onAddAttachment) {
+                    Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Ajouter")
+                }
+            }
+
+            // Message d'erreur
+            if (attachmentError != null) {
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                attachmentError,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        IconButton(onClick = onClearError) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Fermer",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Liste des pièces jointes
+            if (attachments.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                attachments.forEach { attachment ->
+                    AttachmentItem(
+                        attachment = attachment,
+                        onDelete = { onDeleteAttachment(attachment.id) }
+                    )
+                    if (attachment != attachments.last()) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                }
+            } else if (attachmentError == null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Aucune pièce jointe",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Item d'une pièce jointe
+ */
+@Composable
+private fun AttachmentItem(
+    attachment: SecureAttachment,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icône selon le type MIME
+            Icon(
+                imageVector = when {
+                    attachment.mimeType.startsWith("image/") -> Icons.Default.Image
+                    attachment.mimeType == "application/pdf" -> Icons.Default.PictureAsPdf
+                    attachment.mimeType.startsWith("text/") -> Icons.Default.Description
+                    else -> Icons.Default.InsertDriveFile
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = attachment.fileName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = formatFileSize(attachment.size),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        IconButton(onClick = onDelete) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "Supprimer",
+                tint = MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+/**
+ * Formate la taille du fichier en format lisible
+ */
+private fun formatFileSize(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        else -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+    }
 }

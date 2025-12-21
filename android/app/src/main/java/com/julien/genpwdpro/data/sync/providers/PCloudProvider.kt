@@ -2,6 +2,8 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.net.Uri
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.BuildConfig
 import com.julien.genpwdpro.core.log.SafeLog
 import com.google.gson.annotations.SerializedName
@@ -24,6 +26,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import java.io.File
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -419,12 +424,17 @@ class PCloudProvider(
     /**
      * Upload un vault chiffré
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? =
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String> =
         withContext(Dispatchers.IO) {
-            try {
-                val token = accessToken ?: throw IllegalStateException("Not authenticated")
-                val folderId = ensureFolder()
+            val token = accessToken
+            if (token == null) {
+                return@withContext CloudResult.authExpired(
+                    message = "pCloud not authenticated. Please sign in."
+                )
+            }
 
+            try {
+                val folderId = ensureFolder()
                 val fileName = "vault_$vaultId.enc"
 
                 // Créer un fichier temporaire
@@ -444,43 +454,51 @@ class PCloudProvider(
                     if (response.result == 0 && !response.metadata.isNullOrEmpty()) {
                         val fileId = response.metadata[0].fileId
                         SafeLog.d(TAG, "Vault uploaded successfully: $fileName (ID: $fileId)")
-                        fileId.toString()
+                        CloudResult.success(fileId.toString())
                     } else {
                         SafeLog.e(TAG, "Upload failed: ${response.error}")
-                        null
+                        mapPCloudError(response.result, response.error)
                     }
                 } finally {
                     // Supprimer le fichier temporaire
                     tempFile.delete()
                 }
+            } catch (e: IOException) {
+                SafeLog.e(TAG, "Network error uploading vault", e)
+                mapNetworkException(e)
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error uploading vault", e)
-                null
+                CloudResult.genericError(e.message, e)
             }
         }
 
     /**
      * Download un vault chiffré
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? =
+    override suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData> =
         withContext(Dispatchers.IO) {
-            try {
-                val token = accessToken ?: throw IllegalStateException("Not authenticated")
+            val token = accessToken
+            if (token == null) {
+                return@withContext CloudResult.authExpired(
+                    message = "pCloud not authenticated. Please sign in."
+                )
+            }
 
+            try {
                 // Trouver le fileId depuis vaultId
                 val fileName = "vault_$vaultId.enc"
-                val metadata = listVaults().find { it.fileName == fileName }
-                    ?: return@withContext null
-                val fileId = metadata.fileId.toLongOrNull() ?: throw IllegalArgumentException(
-                    "Invalid file ID"
-                )
+                val fileMetadata = listVaults().find { it.fileName == fileName }
+                    ?: return@withContext CloudResult.notFound(
+                        message = "Vault not found in pCloud"
+                    )
+                val fileId = fileMetadata.fileId.toLongOrNull()
+                    ?: return@withContext CloudResult.genericError("Invalid file ID")
 
                 // Download le fichier
                 val responseBody = api.downloadFile(token, fileId)
                 val encryptedData = responseBody.bytes()
 
-                // Récupérer les métadonnées (déjà trouvé ci-dessus)
-                // val fileName = "vault_${vaultId}.enc"
+                // Récupérer les métadonnées
                 val path = "/$FOLDER_NAME/$fileName"
                 val statResponse = api.getFileStat(token, path)
 
@@ -488,22 +506,27 @@ class PCloudProvider(
                     val metadata = statResponse.metadata
                     val timestamp = parseTimestamp(metadata.modified)
 
-                    VaultSyncData(
-                        vaultId = vaultId,
-                        vaultName = "Vault $vaultId",
-                        encryptedData = encryptedData,
-                        timestamp = timestamp,
-                        version = 1,
-                        deviceId = "pcloud",
-                        checksum = "" // Le checksum sera calculé côté client
+                    CloudResult.success(
+                        VaultSyncData(
+                            vaultId = vaultId,
+                            vaultName = "Vault $vaultId",
+                            encryptedData = encryptedData,
+                            timestamp = timestamp,
+                            version = 1,
+                            deviceId = "pcloud",
+                            checksum = "" // Le checksum sera calculé côté client
+                        )
                     )
                 } else {
                     SafeLog.e(TAG, "Failed to get file metadata: ${statResponse.error}")
-                    null
+                    mapPCloudError(statResponse.result, statResponse.error)
                 }
+            } catch (e: IOException) {
+                SafeLog.e(TAG, "Network error downloading vault", e)
+                mapNetworkException(e)
             } catch (e: Exception) {
                 SafeLog.e(TAG, "Error downloading vault", e)
-                null
+                CloudResult.genericError(e.message, e)
             }
         }
 
@@ -545,25 +568,33 @@ class PCloudProvider(
     /**
      * Supprime un vault du cloud
      */
-    override suspend fun deleteVault(cloudFileId: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val token = accessToken ?: throw IllegalStateException("Not authenticated")
-            val fileId = cloudFileId.toLongOrNull() ?: throw IllegalArgumentException(
-                "Invalid file ID"
+    override suspend fun deleteVault(cloudFileId: String): CloudResult<Unit> = withContext(Dispatchers.IO) {
+        val token = accessToken
+        if (token == null) {
+            return@withContext CloudResult.authExpired(
+                message = "pCloud not authenticated. Please sign in."
             )
+        }
+
+        try {
+            val fileId = cloudFileId.toLongOrNull()
+                ?: return@withContext CloudResult.genericError("Invalid file ID")
 
             val response = api.deleteFile(token, fileId)
 
             if (response.result == 0) {
                 SafeLog.d(TAG, "Vault deleted successfully: $cloudFileId")
-                true
+                CloudResult.success(Unit)
             } else {
                 SafeLog.e(TAG, "Delete failed: ${response.error}")
-                false
+                mapPCloudError(response.result, response.error)
             }
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error deleting vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error deleting vault", e)
-            false
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -650,5 +681,64 @@ class PCloudProvider(
             SafeLog.e(TAG, "Error parsing timestamp: $timestamp", e)
             System.currentTimeMillis()
         }
+    }
+
+    /**
+     * Maps pCloud error codes to CloudResult.Error
+     *
+     * pCloud error codes reference:
+     * - 1000: Log in required
+     * - 2000: Log in failed
+     * - 2001: Invalid file/folder name
+     * - 2002: A component of parent directory does not exist
+     * - 2003: Access denied
+     * - 2005: Directory does not exist
+     * - 2009: File not found
+     * - 2010: Quota exceeded
+     * - 4000: Too many login attempts
+     */
+    private fun mapPCloudError(errorCode: Int, errorMessage: String?): CloudResult.Error {
+        return when (errorCode) {
+            1000, 2000 -> CloudResult.Error(
+                type = CloudErrorType.AUTH_EXPIRED,
+                message = "pCloud authentication expired. Please sign in again."
+            )
+            2003 -> CloudResult.Error(
+                type = CloudErrorType.PERMISSION_DENIED,
+                message = "Permission denied. Please check pCloud permissions."
+            )
+            2005, 2009 -> CloudResult.Error(
+                type = CloudErrorType.NOT_FOUND,
+                message = "Resource not found in pCloud."
+            )
+            2010 -> CloudResult.Error(
+                type = CloudErrorType.QUOTA_EXCEEDED,
+                message = "pCloud storage quota exceeded."
+            )
+            4000 -> CloudResult.Error(
+                type = CloudErrorType.RATE_LIMITED,
+                message = "Too many requests to pCloud. Please try again later."
+            )
+            else -> CloudResult.Error(
+                type = CloudErrorType.GENERIC,
+                message = errorMessage ?: "pCloud error (code $errorCode)"
+            )
+        }
+    }
+
+    /**
+     * Maps network exceptions to CloudResult.Error
+     */
+    private fun mapNetworkException(exception: IOException): CloudResult.Error {
+        val message = when (exception) {
+            is UnknownHostException -> "No internet connection."
+            is SocketTimeoutException -> "Connection timed out."
+            else -> "Network error: ${exception.message}"
+        }
+        return CloudResult.Error(
+            type = CloudErrorType.NETWORK,
+            message = message,
+            exception = exception
+        )
     }
 }

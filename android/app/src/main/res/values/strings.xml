@@ -162,6 +162,13 @@
     <string name="sync_authentication_failed">Echec de l\'authentification</string>
     <string name="sync_error_unknown">Erreur inconnue</string>
     <string name="sync_error_with_detail">Erreur : %1$s</string>
+    <string name="sync_error_auth_expired">Session expirée. Veuillez vous reconnecter.</string>
+    <string name="sync_error_network">Erreur de connexion. Vérifiez votre réseau.</string>
+    <string name="sync_error_quota_exceeded">Espace de stockage insuffisant.</string>
+    <string name="sync_error_not_found">Vault introuvable sur le cloud.</string>
+    <string name="sync_error_rate_limited">Trop de requêtes. Veuillez réessayer plus tard.</string>
+    <string name="sync_error_permission_denied">Accès refusé. Vérifiez les permissions.</string>
+    <string name="sync_error_conflict">Conflit de version détecté.</string>
     <string name="sync_disconnect_error_generic">Erreur lors de la déconnexion</string>
     <string name="sync_disconnect_error_with_detail">Erreur lors de la déconnexion : %1$s</string>
     <string name="sync_manual_success">Synchronisation réussie</string>

@@ -1092,50 +1092,6 @@ class VaultSessionManager @Inject constructor(
     }
 
     /**
-     * Rotates the biometric key for the current vault
-     *
-     * This re-encrypts the master password with a new versioned key
-     * Recommended to call this every 90 days for security
-     *
-     * @param masterPassword Current master password
-     * @return Result indicating success or failure
-     */
-    suspend fun rotateBiometricKey(masterPassword: String): Result<Unit> {
-        val session = currentSession
-            ?: return Result.failure(IllegalStateException("No vault unlocked"))
-
-        return withContext(Dispatchers.IO) {
-            try {
-                SafeLog.i(
-                    TAG,
-                    "Rotating biometric key for vault: vaultId=${SafeLog.redact(session.vaultId)}"
-                )
-
-                // Rotate key using BiometricKeyManager
-                val encryptedData = biometricKeyManager.rotateKey(
-                    session.vaultId,
-                    masterPassword
-                )
-
-                // Update registry with new encrypted data
-                vaultRegistryDao.updateById(session.vaultId) { entry ->
-                    entry.copy(
-                        encryptedMasterPassword = encryptedData.ciphertext,
-                        masterPasswordIv = encryptedData.iv
-                    )
-                }
-
-                SafeLog.i(TAG, "Biometric key rotated successfully")
-                Result.success(Unit)
-
-            } catch (e: Exception) {
-                SafeLog.e(TAG, "Failed to rotate biometric key", e)
-                Result.failure(e)
-            }
-        }
-    }
-
-    /**
      * Checks if biometric key should be auto-rotated
      *
      * @return true if key is older than 90 days

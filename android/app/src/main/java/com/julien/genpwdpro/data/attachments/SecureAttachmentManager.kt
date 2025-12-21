@@ -2,14 +2,12 @@ package com.julien.genpwdpro.data.attachments
 
 import android.content.Context
 import android.net.Uri
-import com.google.crypto.tink.Aead
-import com.julien.genpwdpro.crypto.TinkAesGcmCryptoEngine
+import com.julien.genpwdpro.crypto.CryptoEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
-import java.io.OutputStream
 import java.security.MessageDigest
 import java.util.*
 import javax.inject.Inject
@@ -19,20 +17,21 @@ import javax.inject.Singleton
  * Gestionnaire de pièces jointes sécurisées
  *
  * Fonctionnalités:
- * - Chiffrement AES-256-GCM de tous les fichiers
+ * - Chiffrement AES-256-GCM de tous les fichiers via Tink
  * - Stockage sécurisé dans le répertoire privé de l'app
  * - Gestion de la taille et du quota
  * - Détection de type MIME
  * - Miniatures pour les images
  * - Vérification d'intégrité (SHA-256)
  *
- * TODO: Réactiver Hilt injection une fois que TinkAesGcmCryptoEngine aura un module Hilt
+ * Sécurité:
+ * - Clés gérées par Android Keystore via Tink
+ * - AAD (Associated Data) basé sur l'entryId pour lier l'attachment à son entrée
  */
-// @Singleton
-class SecureAttachmentManager /* @Inject */ constructor(
-    // @ApplicationContext
-    private val context: Context,
-    private val cryptoEngine: TinkAesGcmCryptoEngine
+@Singleton
+class SecureAttachmentManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val cryptoEngine: CryptoEngine
 ) {
     companion object {
         private const val ATTACHMENTS_DIR = "secure_attachments"
@@ -57,11 +56,14 @@ class SecureAttachmentManager /* @Inject */ constructor(
 
     /**
      * Ajoute une pièce jointe chiffrée
+     *
+     * @param entryId ID de l'entrée parent (utilisé comme AAD pour lier l'attachment)
+     * @param uri URI du fichier à ajouter
+     * @return SecureAttachment avec les métadonnées
      */
     suspend fun addAttachment(
         entryId: String,
-        uri: Uri,
-        encryptionKey: ByteArray
+        uri: Uri
     ): SecureAttachment = withContext(Dispatchers.IO) {
         val inputStream = context.contentResolver.openInputStream(uri)
             ?: throw IllegalArgumentException("Impossible d'ouvrir le fichier")
@@ -93,9 +95,9 @@ class SecureAttachmentManager /* @Inject */ constructor(
             // Générer un ID unique pour la pièce jointe
             val attachmentId = UUID.randomUUID().toString()
 
-            // Chiffrer et sauvegarder
+            // Chiffrer et sauvegarder (entryId utilisé comme AAD)
             val encryptedFile = File(attachmentsDir, "$attachmentId.enc")
-            val sha256Hash = encryptAndSave(input, encryptedFile, encryptionKey)
+            val sha256Hash = encryptAndSave(input, encryptedFile, entryId)
 
             SecureAttachment(
                 id = attachmentId,
@@ -112,49 +114,48 @@ class SecureAttachmentManager /* @Inject */ constructor(
 
     /**
      * Chiffre et sauvegarde un fichier
+     *
+     * @param input Stream d'entrée du fichier
+     * @param outputFile Fichier de sortie chiffré
+     * @param entryId ID de l'entrée (utilisé comme AAD)
      */
     private fun encryptAndSave(
         input: InputStream,
         outputFile: File,
-        key: ByteArray
+        entryId: String
     ): String {
         val sha256 = MessageDigest.getInstance("SHA-256")
+        val aad = entryId.toByteArray(Charsets.UTF_8)
 
-        outputFile.outputStream().use { output ->
-            val buffer = ByteArray(CHUNK_SIZE)
-            var bytesRead: Int
+        // Lire tout le fichier en mémoire pour calcul du hash et chiffrement
+        val plaintext = input.readBytes()
+        sha256.update(plaintext)
 
-            // Lire et chiffrer par chunks
-            while (input.read(buffer).also { bytesRead = it } != -1) {
-                // Mettre à jour le hash
-                sha256.update(buffer, 0, bytesRead)
-
-                // Chiffrer le chunk
-                val chunk = buffer.copyOf(bytesRead)
-                val encrypted = cryptoEngine.encrypt(chunk, key)
-                output.write(encrypted)
-            }
-        }
+        // Chiffrer le fichier entier avec entryId comme AAD
+        val encrypted = cryptoEngine.encrypt(plaintext, aad)
+        outputFile.writeBytes(encrypted)
 
         return bytesToHex(sha256.digest())
     }
 
     /**
      * Récupère une pièce jointe déchiffrée
+     *
+     * @param attachment Métadonnées de la pièce jointe
+     * @return Données déchiffrées
      */
-    suspend fun getAttachment(
-        attachment: SecureAttachment,
-        encryptionKey: ByteArray
-    ): ByteArray = withContext(Dispatchers.IO) {
+    suspend fun getAttachment(attachment: SecureAttachment): ByteArray = withContext(Dispatchers.IO) {
         val encryptedFile = File(attachment.encryptedPath)
 
         if (!encryptedFile.exists()) {
             throw AttachmentException("Pièce jointe introuvable")
         }
 
+        val aad = attachment.entryId.toByteArray(Charsets.UTF_8)
+
         // Lire et déchiffrer
         val encrypted = encryptedFile.readBytes()
-        val decrypted = cryptoEngine.decrypt(encrypted, encryptionKey)
+        val decrypted = cryptoEngine.decrypt(encrypted, aad)
 
         // Vérifier l'intégrité
         val sha256 = MessageDigest.getInstance("SHA-256")
@@ -255,13 +256,12 @@ class SecureAttachmentManager /* @Inject */ constructor(
      */
     suspend fun generateThumbnail(
         attachment: SecureAttachment,
-        encryptionKey: ByteArray,
         maxSize: Int = 256
     ): ByteArray? = withContext(Dispatchers.IO) {
         if (!attachment.mimeType.startsWith("image/")) return@withContext null
 
         try {
-            val imageData = getAttachment(attachment, encryptionKey)
+            val imageData = getAttachment(attachment)
 
             // TODO: Implémenter la génération de miniature avec Android Bitmap
             // val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)

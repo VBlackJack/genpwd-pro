@@ -78,33 +78,34 @@ class GoogleDriveProvider @Inject constructor(
 
     override suspend fun authenticate(activity: Activity): Boolean {
         return try {
-            val signInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
-                .build()
+            // Google Sign-In APIs must be called on Main thread
+            withContext(Dispatchers.Main) {
+                val signInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
+                    .build()
 
-            val client = GoogleSignIn.getClient(activity, signInOptions)
+                val client = GoogleSignIn.getClient(activity, signInOptions)
+                val existingAccount = GoogleSignIn.getLastSignedInAccount(activity)
 
-            val existingAccount = GoogleSignIn.getLastSignedInAccount(activity)
-            if (existingAccount != null) {
-                withContext(Dispatchers.IO) {
-                    signedInAccount = existingAccount
-                    initializeDriveService(activity, existingAccount)
-                    // Persist account ID for session restoration
-                    securePrefs.putString(PREF_ACCOUNT_ID, existingAccount.id ?: "")
-                }
-                SafeLog.d(TAG, "Google Drive authenticated with existing account")
-                true
-            } else {
-                // Generate state for CSRF protection
-                val state = UUID.randomUUID().toString()
-                oauthState = state
+                if (existingAccount != null) {
+                    withContext(Dispatchers.IO) {
+                        signedInAccount = existingAccount
+                        initializeDriveService(activity, existingAccount)
+                        // Persist account ID for session restoration
+                        securePrefs.putString(PREF_ACCOUNT_ID, existingAccount.id ?: "")
+                    }
+                    SafeLog.d(TAG, "Google Drive authenticated with existing account")
+                    true
+                } else {
+                    // Generate state for CSRF protection
+                    val state = UUID.randomUUID().toString()
+                    oauthState = state
 
-                withContext(Dispatchers.Main) {
                     activity.startActivityForResult(client.signInIntent, REQUEST_CODE_SIGN_IN)
+                    SafeLog.d(TAG, "Google Drive authentication flow initiated")
+                    false
                 }
-                SafeLog.d(TAG, "Google Drive authentication flow initiated")
-                false
             }
         } catch (e: Exception) {
             SafeLog.e(TAG, "Failed to authenticate with Google Drive", e)
@@ -398,6 +399,28 @@ class GoogleDriveProvider @Inject constructor(
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error finding vault file: vaultId=${SafeLog.redact(vaultId)}", e)
             null
+        }
+    }
+
+    /**
+     * Handles Drive exceptions for methods that don't return CloudResult (logging only).
+     * Used by listVaults and getStorageQuota which return empty/null on error.
+     */
+    private fun handleDriveException(
+        exception: GoogleJsonResponseException,
+        operation: String,
+        vaultId: String?
+    ) {
+        val vaultInfo = vaultId?.let { "vaultId=${SafeLog.redact(it)}" } ?: ""
+        val statusCode = exception.statusCode
+        val apiMessage = exception.details?.message ?: exception.message
+
+        when (statusCode) {
+            401 -> SafeLog.e(TAG, "Authentication expired during $operation $vaultInfo", exception)
+            403 -> SafeLog.e(TAG, "Permission denied during $operation $vaultInfo", exception)
+            404 -> SafeLog.w(TAG, "Resource not found during $operation $vaultInfo")
+            429 -> SafeLog.w(TAG, "Rate limit exceeded during $operation $vaultInfo")
+            else -> SafeLog.e(TAG, "Drive API error ($statusCode) during $operation $vaultInfo: $apiMessage", exception)
         }
     }
 

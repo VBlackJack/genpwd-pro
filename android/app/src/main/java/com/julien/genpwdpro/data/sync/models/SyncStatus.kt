@@ -1,5 +1,7 @@
 package com.julien.genpwdpro.data.sync.models
 
+import com.genpwd.providers.api.CloudErrorType
+
 /**
  * État de synchronisation d'un vault
  */
@@ -148,6 +150,7 @@ sealed class SyncResult {
 
     data class Error(
         val message: String,
+        val errorType: CloudErrorType? = null,
         val exception: Exception? = null
     ) : SyncResult()
 }

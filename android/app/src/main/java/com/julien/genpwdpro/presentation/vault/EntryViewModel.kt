@@ -1,7 +1,11 @@
 package com.julien.genpwdpro.presentation.vault
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.julien.genpwdpro.data.attachments.AttachmentException
+import com.julien.genpwdpro.data.attachments.SecureAttachment
+import com.julien.genpwdpro.data.attachments.SecureAttachmentManager
 import com.julien.genpwdpro.data.crypto.TotpGenerator
 import com.julien.genpwdpro.data.models.vault.*
 import com.julien.genpwdpro.data.models.Settings
@@ -21,7 +25,8 @@ class EntryViewModel @Inject constructor(
     private val fileVaultRepository: FileVaultRepository,
     private val passwordGenerator: PasswordGenerator,
     private val passwordAnalyzer: PasswordAnalyzer,
-    private val totpGenerator: TotpGenerator
+    private val totpGenerator: TotpGenerator,
+    private val attachmentManager: SecureAttachmentManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<EntryUiState>(EntryUiState.Editing)
@@ -72,6 +77,13 @@ class EntryViewModel @Inject constructor(
     private val _passwordEntropy = MutableStateFlow(0.0)
     val passwordEntropy: StateFlow<Double> = _passwordEntropy.asStateFlow()
 
+    // Attachments
+    private val _attachments = MutableStateFlow<List<SecureAttachment>>(emptyList())
+    val attachments: StateFlow<List<SecureAttachment>> = _attachments.asStateFlow()
+
+    private val _attachmentError = MutableStateFlow<String?>(null)
+    val attachmentError: StateFlow<String?> = _attachmentError.asStateFlow()
+
     private var currentVaultId: String? = null
     private var currentEntryId: String? = null
     private var isEditMode = false
@@ -97,6 +109,7 @@ class EntryViewModel @Inject constructor(
         currentEntryId = entryId
         isEditMode = true
         loadAvailableTags()
+        loadAttachments()
 
         viewModelScope.launch {
             try {
@@ -505,6 +518,8 @@ class EntryViewModel @Inject constructor(
         _totpIssuer.value = ""
         _passwordStrength.value = 0
         _passwordEntropy.value = 0.0
+        _attachments.value = emptyList()
+        _attachmentError.value = null
         _uiState.value = EntryUiState.Editing
     }
 
@@ -552,6 +567,94 @@ class EntryViewModel @Inject constructor(
                 // Le tag sera automatiquement ajouté via le flow de loadAvailableTags
             }
         }
+    }
+
+    // ==================== Attachments ====================
+
+    /**
+     * Charge les pièces jointes de l'entrée courante
+     */
+    private fun loadAttachments() {
+        val entryId = currentEntryId ?: return
+        viewModelScope.launch {
+            try {
+                val attachmentList = attachmentManager.getAttachmentsForEntry(entryId)
+                _attachments.value = attachmentList
+            } catch (e: Exception) {
+                _attachmentError.value = "Erreur de chargement des pièces jointes"
+            }
+        }
+    }
+
+    /**
+     * Ajoute une pièce jointe à l'entrée
+     *
+     * @param uri URI du fichier à ajouter
+     */
+    fun addAttachment(uri: Uri) {
+        val entryId = currentEntryId
+        if (entryId == null) {
+            _attachmentError.value = "Veuillez d'abord sauvegarder l'entrée"
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                _attachmentError.value = null
+                val attachment = attachmentManager.addAttachment(entryId, uri)
+                _attachments.value = _attachments.value + attachment
+            } catch (e: AttachmentException) {
+                _attachmentError.value = e.message
+            } catch (e: Exception) {
+                _attachmentError.value = "Erreur lors de l'ajout de la pièce jointe"
+            }
+        }
+    }
+
+    /**
+     * Supprime une pièce jointe
+     *
+     * @param attachmentId ID de la pièce jointe à supprimer
+     */
+    fun deleteAttachment(attachmentId: String) {
+        viewModelScope.launch {
+            try {
+                val attachment = _attachments.value.find { it.id == attachmentId }
+                if (attachment != null) {
+                    attachmentManager.deleteAttachment(attachment)
+                    _attachments.value = _attachments.value.filter { it.id != attachmentId }
+                }
+            } catch (e: Exception) {
+                _attachmentError.value = "Erreur lors de la suppression"
+            }
+        }
+    }
+
+    /**
+     * Récupère les données déchiffrées d'une pièce jointe
+     *
+     * @param attachmentId ID de la pièce jointe
+     * @return Données déchiffrées ou null en cas d'erreur
+     */
+    suspend fun getAttachmentData(attachmentId: String): ByteArray? {
+        return try {
+            val attachment = _attachments.value.find { it.id == attachmentId }
+            if (attachment != null) {
+                attachmentManager.getAttachment(attachment)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            _attachmentError.value = "Erreur lors de la lecture de la pièce jointe"
+            null
+        }
+    }
+
+    /**
+     * Efface l'erreur d'attachment
+     */
+    fun clearAttachmentError() {
+        _attachmentError.value = null
     }
 }
 

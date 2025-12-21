@@ -30,10 +30,12 @@ import java.util.Arrays
 class SecureString(value: String) : Closeable {
 
     @Volatile
-    private var data: CharArray? = value.toCharArray()
+    @PublishedApi
+    internal var data: CharArray? = value.toCharArray()
 
     @Volatile
-    private var closed = false
+    @PublishedApi
+    internal var closed = false
 
     /**
      * Execute a block with access to the underlying character array.
@@ -150,7 +152,8 @@ class SecureString(value: String) : Closeable {
      *
      * @throws IllegalStateException if closed
      */
-    private fun checkNotClosed() {
+    @PublishedApi
+    internal fun checkNotClosed() {
         if (closed) {
             throw IllegalStateException("SecureString has been closed and cannot be accessed")
         }

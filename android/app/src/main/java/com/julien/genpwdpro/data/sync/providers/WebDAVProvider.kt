@@ -2,12 +2,16 @@ package com.julien.genpwdpro.data.sync.providers
 
 import android.app.Activity
 import android.util.Base64
+import com.genpwd.providers.api.CloudErrorType
+import com.genpwd.providers.api.CloudResult
 import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.sync.CloudProvider
 import com.julien.genpwdpro.data.sync.models.CloudFileMetadata
 import com.julien.genpwdpro.data.sync.models.StorageQuota
 import com.julien.genpwdpro.data.sync.models.VaultSyncData
 import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -161,7 +165,7 @@ class WebDAVProvider(
     /**
      * Upload un vault chiffré vers le serveur WebDAV
      */
-    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): String? = withContext(
+    override suspend fun uploadVault(vaultId: String, syncData: VaultSyncData): CloudResult<String> = withContext(
         Dispatchers.IO
     ) {
         try {
@@ -182,22 +186,25 @@ class WebDAVProvider(
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 201 || response.code == 204) {
                     SafeLog.d(TAG, "Successfully uploaded vault $vaultId")
-                    fileName
+                    CloudResult.success(fileName)
                 } else {
                     SafeLog.e(TAG, "Upload failed with code: ${response.code}")
-                    null
+                    mapHttpError(response.code)
                 }
             }
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error uploading vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error uploading vault", e)
-            null
+            CloudResult.genericError(e.message, e)
         }
     }
 
     /**
      * Télécharge un vault depuis le serveur WebDAV
      */
-    override suspend fun downloadVault(vaultId: String): VaultSyncData? = withContext(
+    override suspend fun downloadVault(vaultId: String): CloudResult<VaultSyncData> = withContext(
         Dispatchers.IO
     ) {
         try {
@@ -214,27 +221,33 @@ class WebDAVProvider(
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     SafeLog.e(TAG, "Download failed with code: ${response.code}")
-                    return@withContext null
+                    return@withContext mapHttpError(response.code)
                 }
 
-                val encryptedData = response.body?.bytes() ?: return@withContext null
+                val encryptedData = response.body?.bytes()
+                    ?: return@withContext CloudResult.genericError("Empty response body")
 
                 // Récupérer les métadonnées
                 val metadata = getCloudMetadata(vaultId)
 
-                VaultSyncData(
-                    vaultId = vaultId,
-                    vaultName = fileName.removeSuffix(".enc").removePrefix("vault_"),
-                    encryptedData = encryptedData,
-                    timestamp = metadata?.modifiedTime ?: System.currentTimeMillis(),
-                    version = 1,
-                    deviceId = "",
-                    checksum = metadata?.checksum ?: ""
+                CloudResult.success(
+                    VaultSyncData(
+                        vaultId = vaultId,
+                        vaultName = fileName.removeSuffix(".enc").removePrefix("vault_"),
+                        encryptedData = encryptedData,
+                        timestamp = metadata?.modifiedTime ?: System.currentTimeMillis(),
+                        version = 1,
+                        deviceId = "",
+                        checksum = metadata?.checksum ?: ""
+                    )
                 )
             }
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error downloading vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error downloading vault", e)
-            null
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -256,7 +269,7 @@ class WebDAVProvider(
     /**
      * Supprime un vault du serveur
      */
-    override suspend fun deleteVault(vaultId: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun deleteVault(vaultId: String): CloudResult<Unit> = withContext(Dispatchers.IO) {
         try {
             val fileName = "vault_$vaultId.enc"
             val folderPath = ensureFolderExists()
@@ -271,15 +284,18 @@ class WebDAVProvider(
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 204 || response.code == 404) {
                     SafeLog.d(TAG, "Successfully deleted vault $vaultId")
-                    true
+                    CloudResult.success(Unit)
                 } else {
                     SafeLog.e(TAG, "Delete failed with code: ${response.code}")
-                    false
+                    mapHttpError(response.code)
                 }
             }
+        } catch (e: IOException) {
+            SafeLog.e(TAG, "Network error deleting vault", e)
+            mapNetworkException(e)
         } catch (e: Exception) {
             SafeLog.e(TAG, "Error deleting vault", e)
-            false
+            CloudResult.genericError(e.message, e)
         }
     }
 
@@ -624,5 +640,53 @@ class WebDAVProvider(
         } catch (e: Exception) {
             System.currentTimeMillis()
         }
+    }
+
+    /**
+     * Maps HTTP error codes to CloudResult.Error
+     */
+    private fun mapHttpError(statusCode: Int): CloudResult.Error {
+        return when (statusCode) {
+            401 -> CloudResult.Error(
+                type = CloudErrorType.AUTH_EXPIRED,
+                message = "WebDAV authentication failed. Please check your credentials."
+            )
+            403 -> CloudResult.Error(
+                type = CloudErrorType.PERMISSION_DENIED,
+                message = "Permission denied on WebDAV server."
+            )
+            404 -> CloudResult.Error(
+                type = CloudErrorType.NOT_FOUND,
+                message = "Resource not found on WebDAV server."
+            )
+            409 -> CloudResult.Error(
+                type = CloudErrorType.CONFLICT,
+                message = "Conflict on WebDAV server. The resource may have been modified."
+            )
+            507 -> CloudResult.Error(
+                type = CloudErrorType.QUOTA_EXCEEDED,
+                message = "WebDAV server storage quota exceeded."
+            )
+            else -> CloudResult.Error(
+                type = CloudErrorType.GENERIC,
+                message = "WebDAV error (HTTP $statusCode)"
+            )
+        }
+    }
+
+    /**
+     * Maps network exceptions to CloudResult.Error
+     */
+    private fun mapNetworkException(exception: IOException): CloudResult.Error {
+        val message = when (exception) {
+            is UnknownHostException -> "Cannot reach WebDAV server. Check your connection and server URL."
+            is SocketTimeoutException -> "Connection to WebDAV server timed out."
+            else -> "Network error: ${exception.message}"
+        }
+        return CloudResult.Error(
+            type = CloudErrorType.NETWORK,
+            message = message,
+            exception = exception
+        )
     }
 }
