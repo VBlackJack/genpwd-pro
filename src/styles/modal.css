@@ -292,17 +292,31 @@
    COMPOSITIONS DE MOTS DE PASSE
    ============================================================================ */
 
+/* ============================================================================
+   PASSWORD CARD - ROBUST GRID LAYOUT
+   Password sits on the left, action buttons on the right, always visible.
+   ============================================================================ */
+
 .pwd {
-  position: relative;
+  /* Grid: password takes remaining space, actions take what they need */
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+
+  /* Comfortable sizing */
+  padding: 12px;
+  min-height: 48px;
+
+  /* Visual styling */
   cursor: pointer;
   user-select: all;
   font-size: 18px;
   letter-spacing: 0.25px;
   line-height: 1.4;
-  transition: all 0.2s ease;
-  padding: 8px;
   border-radius: var(--radius-small);
   border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .pwd:hover {
@@ -310,7 +324,12 @@
   border-color: var(--accent-cyan);
 }
 
+/* Password value - MUST have min-width: 0 for truncation in Grid */
 .pwd .value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   filter: none;
   transition: filter 0.2s ease;
 }
@@ -319,20 +338,17 @@
   filter: blur(6px);
 }
 
+/* Actions container - CRITICAL: NO position absolute! */
 .pwd .actions {
-  position: absolute;
-  right: 8px;
-  top: 8px;
+  position: static;  /* Explicitly NOT absolute */
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-muted);
-  opacity: 0.7;
+  gap: 8px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  background: transparent;
+  border: none;
+  padding: 0;
   transition: opacity 0.2s ease;
 }
 
@@ -340,15 +356,92 @@
   opacity: 1;
 }
 
-.pwd .copy-icon {
-  width: 14px;
-  height: 14px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+/* Breach status spans full width below the main row */
+.pwd .breach-status {
+  grid-column: 1 / -1;
+  margin-top: 4px;
 }
 
-.pwd:hover .copy-icon {
-  opacity: 1;
+/* ============================================================================
+   ACTION BUTTONS - Premium, crisp icon-only buttons
+   ============================================================================ */
+
+/* The Action Button - Icon only, no text */
+.pwd .action-btn,
+.item-actions .action-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted, #9ca3af);
+
+  /* Fixed size for icon buttons */
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  flex-shrink: 0;
+
+  /* Perfect centering with grid */
+  display: grid;
+  place-items: center;
+  padding: 0;
+
+  /* Premium smooth transition */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover State - Subtle glow */
+.pwd .action-btn:hover,
+.item-actions .action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #fff);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Active State - Tactile press */
+.pwd .action-btn:active,
+.item-actions .action-btn:active {
+  transform: scale(0.95);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Focus State - Accessibility */
+.pwd .action-btn:focus-visible,
+.item-actions .action-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+}
+
+/* Icon Sizing - Crisp 18px */
+.pwd .action-btn svg,
+.item-actions .action-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Copy button accent hover */
+.pwd .action-btn.copy-btn:hover {
+  background-color: var(--accent-cyan, #00d4ff);
+  border-color: var(--accent-cyan, #00d4ff);
+  color: var(--bg-primary, #0f1219);
+}
+
+/* Vault button accent hover */
+.pwd .action-btn.save-to-vault-btn:hover {
+  background-color: var(--accent-blue, #3b82f6);
+  border-color: var(--accent-blue, #3b82f6);
+  color: #fff;
+}
+
+/* Breach check button accent hover */
+.pwd .action-btn.breach-check-btn:hover {
+  background-color: var(--accent-purple, #8b5cf6);
+  border-color: var(--accent-purple, #8b5cf6);
+  color: #fff;
 }
 
 /* ============================================================================

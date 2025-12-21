@@ -84,8 +84,8 @@ function createPasswordCard(item, id, mask) {
   // Vault save button (only visible in Electron)
   const vaultAvailable = VaultBridge.isAvailable();
   const saveToVaultBtn = vaultAvailable ? `
-    <button class="save-to-vault-btn" data-password="${escapeHtml(value)}" title="Sauvegarder dans le coffre" aria-label="Sauvegarder dans le coffre">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+    <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="Sauvegarder dans le coffre" aria-label="Sauvegarder dans le coffre">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
@@ -104,18 +104,17 @@ function createPasswordCard(item, id, mask) {
     <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Cliquer pour copier • Double-clic pour afficher/masquer">
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
-        <button class="breach-check-btn" data-password="${escapeHtml(value)}" title="Vérifier les fuites" aria-label="Vérifier si ce mot de passe a été compromis">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="Vérifier les fuites" aria-label="Vérifier si ce mot de passe a été compromis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
         ${saveToVaultBtn}
-        <button class="copy-btn" title="Copier" aria-label="Copier le mot de passe">
-          <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="action-btn copy-btn" type="button" title="Copier le mot de passe" aria-label="Copier le mot de passe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
-          <span>Copier</span>
         </button>
       </div>
       <div class="breach-status" hidden></div>

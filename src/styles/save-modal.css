@@ -382,65 +382,28 @@
   color: var(--text-muted, #d1d5db);
 }
 
-/* ==================== SAVE TO VAULT BUTTON (in card) ==================== */
-.save-to-vault-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--text-muted, #d1d5db);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-right: 0.5rem;
-}
-
-.save-to-vault-btn:hover {
+/* ==================== SAVE TO VAULT BUTTON - Hover states ==================== */
+.pwd .actions .save-to-vault-btn:hover {
   background: var(--accent-primary, #3b82f6);
   border-color: var(--accent-primary, #3b82f6);
   color: white;
-  transform: scale(1.05);
 }
 
-.save-to-vault-btn:active {
+.pwd .actions .save-to-vault-btn:active {
   transform: scale(0.95);
 }
 
-/* ==================== COPY BUTTON (in card) ==================== */
-.copy-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--text-muted, #d1d5db);
-  font-size: 0.8rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.copy-btn:hover {
+/* ==================== COPY BUTTON - Hover/Active states ==================== */
+.pwd .actions .copy-btn:hover {
   background: var(--accent-cyan, #00e5ff);
   border-color: var(--accent-cyan, #00e5ff);
   color: var(--bg-primary, #1a1d29);
 }
 
-.copy-btn.copied {
+.pwd .actions .copy-btn.copied {
   background: var(--accent-green, #34d399);
   border-color: var(--accent-green, #34d399);
   color: white;
-}
-
-.copy-btn svg {
-  width: 14px;
-  height: 14px;
 }
 
 /* ==================== QUICK UNLOCK DIALOG ==================== */
