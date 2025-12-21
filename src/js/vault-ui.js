@@ -107,6 +107,8 @@ export class VaultUI {
   #breachCache = new Map(); // Cached breach check results (password hash -> count)
   #lastBreachCheck = null; // Last breach check timestamp
   #pendingExternalPath = null; // Path for external vault creation/opening
+  #lastAuditReport = null; // Last security audit report
+  #auditFilterIds = null; // Set of entry IDs to filter by (from audit)
 
   constructor(container) {
     this.#container = container;
@@ -2416,52 +2418,14 @@ export class VaultUI {
   }
 
   async #generateTOTP(secret, options = {}) {
-    const { period = 30, digits = 6, timestamp = Date.now() } = options;
-
-    // Base32 decode
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    const cleanedInput = secret.toUpperCase().replace(/[^A-Z2-7]/g, '');
-    let bits = '';
-    for (const char of cleanedInput) {
-      const idx = alphabet.indexOf(char);
-      if (idx !== -1) bits += idx.toString(2).padStart(5, '0');
-    }
-    const keyBytes = [];
-    for (let i = 0; i + 8 <= bits.length; i += 8) {
-      keyBytes.push(parseInt(bits.slice(i, i + 8), 2));
-    }
-    const key = new Uint8Array(keyBytes);
-
-    // Counter
-    const timeStep = Math.floor(timestamp / 1000 / period);
-    const counter = new Uint8Array(8);
-    let temp = timeStep;
-    for (let i = 7; i >= 0; i--) {
-      counter[i] = temp & 0xff;
-      temp = Math.floor(temp / 256);
-    }
-
-    // HMAC-SHA1
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
-    );
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, counter);
-    const hmac = new Uint8Array(signature);
-
-    // Dynamic truncation
-    const offset = hmac[hmac.length - 1] & 0x0f;
-    const binary =
-      ((hmac[offset] & 0x7f) << 24) |
-      ((hmac[offset + 1] & 0xff) << 16) |
-      ((hmac[offset + 2] & 0xff) << 8) |
-      (hmac[offset + 3] & 0xff);
-
-    const otp = binary % Math.pow(10, digits);
-    const code = otp.toString().padStart(digits, '0');
-    const elapsed = (timestamp / 1000) % period;
-    const remaining = Math.ceil(period - elapsed);
-
-    return { code, remaining, period };
+    // Use the dedicated TOTP service for RFC 6238 compliance
+    const { generateTOTP } = await import('./vault/totp-service.js');
+    const result = await generateTOTP(secret, options);
+    return {
+      code: result.code,
+      remaining: result.remainingSeconds,
+      period: result.period
+    };
   }
 
   #parseOTPAuthURI(uri) {
@@ -3739,11 +3703,33 @@ export class VaultUI {
    * Open health dashboard modal with fresh stats
    * Re-binds event listeners after re-rendering
    */
-  #openHealthDashboard() {
+  async #openHealthDashboard() {
+    // Run comprehensive audit using the audit service
+    const { auditVault, getRecommendations, getScoreColor, getScoreLabel } = await import('./vault/audit-service.js');
+
+    // Convert entries to the format expected by audit service
+    const auditEntries = this.#entries.map(e => ({
+      id: e.id,
+      title: e.title,
+      type: e.type,
+      secret: e.data?.password ? [e.data.password] : [],
+      otpConfig: e.data?.totp ? { secret: e.data.totp } : null,
+      metadata: {
+        createdAt: e.createdAt || e.metadata?.createdAt,
+        modifiedAt: e.modifiedAt || e.metadata?.updatedAt
+      }
+    }));
+
+    const report = await auditVault(auditEntries);
+    const recommendations = getRecommendations(report);
+
+    // Store report for filtering
+    this.#lastAuditReport = report;
+
     // Re-render to get fresh stats
     const healthModal = document.getElementById('health-modal');
     if (healthModal) {
-      healthModal.outerHTML = this.#renderHealthDashboardModal();
+      healthModal.outerHTML = this.#renderHealthDashboardModal(report, recommendations, getScoreColor, getScoreLabel);
     }
 
     // Open modal
@@ -3762,6 +3748,38 @@ export class VaultUI {
         this.#checkBreaches();
       });
 
+      // Clickable issue cards (filter entries)
+      newModal.querySelectorAll('.vault-health-card[data-filter]').forEach(card => {
+        card.addEventListener('click', async () => {
+          const filter = card.dataset.filter;
+          if (filter && this.#lastAuditReport) {
+            const { filterEntriesByIssue } = await import('./vault/audit-service.js');
+            const entryIds = filterEntriesByIssue(this.#lastAuditReport, filter);
+            this.#closeModal('health-modal');
+            // Filter the list to show only these entries
+            this.#auditFilterIds = new Set(entryIds);
+            this.#selectedCategory = 'all';
+            this.#updateEntryList();
+            this.#showToast(`${entryIds.length} entrée(s) filtrée(s)`, 'info');
+          }
+        });
+      });
+
+      // Clickable recommendation items
+      newModal.querySelectorAll('.vault-recommendation[data-filter]').forEach(item => {
+        item.addEventListener('click', async () => {
+          const filter = item.dataset.filter;
+          if (filter && this.#lastAuditReport) {
+            const { filterEntriesByIssue } = await import('./vault/audit-service.js');
+            const entryIds = filterEntriesByIssue(this.#lastAuditReport, filter);
+            this.#closeModal('health-modal');
+            this.#auditFilterIds = new Set(entryIds);
+            this.#selectedCategory = 'all';
+            this.#updateEntryList();
+          }
+        });
+      });
+
       // Clickable breach items
       newModal.querySelectorAll('.vault-breach-item[data-entry-id]').forEach(item => {
         item.addEventListener('click', () => {
@@ -3776,12 +3794,151 @@ export class VaultUI {
           }
         });
       });
+
+      // Clear filter button
+      newModal.querySelector('#btn-clear-audit-filter')?.addEventListener('click', () => {
+        this.#auditFilterIds = null;
+        this.#closeModal('health-modal');
+        this.#updateEntryList();
+      });
     }
   }
 
-  #renderHealthDashboardModal() {
-    const stats = this.#calculateHealthStats();
+  #renderHealthDashboardModal(report = null, recommendations = [], getScoreColor = null, getScoreLabel = null) {
+    // Fallback to legacy stats if no report provided
+    if (!report) {
+      const stats = this.#calculateHealthStats();
+      return this.#renderLegacyHealthModal(stats);
+    }
 
+    const scoreColor = getScoreColor?.(report.score) || 'var(--vault-primary)';
+    const scoreLabel = getScoreLabel?.(report.score) || 'N/A';
+
+    return `
+      <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
+        <div class="vault-modal vault-modal-health">
+          <div class="vault-modal-header">
+            <h3 id="health-title">Tableau de bord Sécurité</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="vault-modal-body">
+            <!-- Score Gauge -->
+            <div class="vault-health-score">
+              <div class="vault-score-gauge" style="--score-color: ${scoreColor}; --score-percent: ${report.score}%">
+                <svg viewBox="0 0 120 120" class="vault-score-ring">
+                  <circle class="vault-score-bg" cx="60" cy="60" r="54" />
+                  <circle class="vault-score-progress" cx="60" cy="60" r="54"
+                    stroke-dasharray="${2 * Math.PI * 54}"
+                    stroke-dashoffset="${2 * Math.PI * 54 * (1 - report.score / 100)}" />
+                </svg>
+                <div class="vault-score-content">
+                  <span class="vault-score-value">${report.score}</span>
+                  <span class="vault-score-max">/100</span>
+                </div>
+              </div>
+              <div class="vault-health-status" style="color: ${scoreColor}">${scoreLabel}</div>
+              <div class="vault-health-subtitle">Score de sécurité global</div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="vault-health-grid">
+              <div class="vault-health-card vault-health-total">
+                <div class="vault-health-card-icon">📊</div>
+                <div class="vault-health-card-value">${report.totalEntries}</div>
+                <div class="vault-health-card-label">Total entrées</div>
+              </div>
+              <div class="vault-health-card vault-health-strong clickable" data-filter="strong">
+                <div class="vault-health-card-icon">✅</div>
+                <div class="vault-health-card-value">${report.stats.strongPasswords}</div>
+                <div class="vault-health-card-label">Mots de passe forts</div>
+              </div>
+              <div class="vault-health-card vault-health-weak clickable" data-filter="weak">
+                <div class="vault-health-card-icon">⚠️</div>
+                <div class="vault-health-card-value">${report.stats.weakPasswords}</div>
+                <div class="vault-health-card-label">Mots de passe faibles</div>
+              </div>
+              <div class="vault-health-card vault-health-reused clickable" data-filter="reused">
+                <div class="vault-health-card-icon">🔄</div>
+                <div class="vault-health-card-value">${report.stats.reusedPasswords}</div>
+                <div class="vault-health-card-label">Réutilisés</div>
+              </div>
+              <div class="vault-health-card vault-health-old clickable" data-filter="old">
+                <div class="vault-health-card-icon">📅</div>
+                <div class="vault-health-card-value">${report.stats.oldPasswords}</div>
+                <div class="vault-health-card-label">Anciens (&gt;1 an)</div>
+              </div>
+              <div class="vault-health-card vault-health-2fa">
+                <div class="vault-health-card-icon">🛡️</div>
+                <div class="vault-health-card-value">${report.stats.with2FA}</div>
+                <div class="vault-health-card-label">Avec 2FA</div>
+              </div>
+            </div>
+
+            <!-- Recommendations -->
+            ${recommendations.length > 0 ? `
+              <div class="vault-health-recommendations">
+                <h4>Recommandations</h4>
+                <div class="vault-recommendation-list">
+                  ${recommendations.map(rec => `
+                    <div class="vault-recommendation vault-recommendation-${rec.priority} clickable" data-filter="${rec.filter}">
+                      <span class="vault-recommendation-icon">${rec.icon}</span>
+                      <div class="vault-recommendation-content">
+                        <div class="vault-recommendation-title">${rec.message}</div>
+                        <div class="vault-recommendation-action">${rec.action}</div>
+                      </div>
+                      <svg class="vault-recommendation-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : `
+              <div class="vault-health-success">
+                <span class="vault-health-success-icon">🎉</span>
+                <span>Excellent ! Votre coffre est bien sécurisé.</span>
+              </div>
+            `}
+
+            <!-- Actions -->
+            <div class="vault-health-actions">
+              <button class="vault-btn vault-btn-outline" id="btn-check-breaches">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Vérifier les fuites (HIBP)
+              </button>
+              ${this.#auditFilterIds ? `
+                <button class="vault-btn vault-btn-secondary" id="btn-clear-audit-filter">
+                  Effacer le filtre
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- Breach Results -->
+            <div class="vault-health-breaches" id="breach-results" hidden>
+              <h4>Résultats de la vérification</h4>
+              <div class="vault-breach-loading" id="breach-loading">
+                <span class="vault-spinner-small"></span>
+                Vérification en cours...
+              </div>
+              <div class="vault-breach-results" id="breach-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Legacy health modal for backwards compatibility
+   */
+  #renderLegacyHealthModal(stats) {
     return `
       <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
         <div class="vault-modal vault-modal-health">
@@ -3802,74 +3959,11 @@ export class VaultUI {
               </div>
               <div class="vault-health-status">${stats.status}</div>
             </div>
-
             <div class="vault-health-grid">
-              <div class="vault-health-card vault-health-total">
-                <div class="vault-health-card-value">${stats.total}</div>
-                <div class="vault-health-card-label">Total des identifiants</div>
-              </div>
-              <div class="vault-health-card vault-health-strong">
-                <div class="vault-health-card-value">${stats.strong}</div>
-                <div class="vault-health-card-label">Mots de passe forts</div>
-              </div>
-              <div class="vault-health-card vault-health-weak">
-                <div class="vault-health-card-value">${stats.weak}</div>
-                <div class="vault-health-card-label">Mots de passe faibles</div>
-              </div>
-              <div class="vault-health-card vault-health-reused">
-                <div class="vault-health-card-value">${stats.reused}</div>
-                <div class="vault-health-card-label">Mots de passe réutilisés</div>
-              </div>
-              <div class="vault-health-card vault-health-old">
-                <div class="vault-health-card-value">${stats.old}</div>
-                <div class="vault-health-card-label">Anciens (&gt; 6 mois)</div>
-              </div>
-              <div class="vault-health-card vault-health-expiring">
-                <div class="vault-health-card-value">${stats.expiring}</div>
-                <div class="vault-health-card-label">Expirent bientôt</div>
-              </div>
-              <div class="vault-health-card vault-health-expired">
-                <div class="vault-health-card-value">${stats.expired}</div>
-                <div class="vault-health-card-label">Expirés</div>
-              </div>
-            </div>
-
-            ${stats.issues.length > 0 ? `
-              <div class="vault-health-issues">
-                <h4>Problèmes à corriger</h4>
-                <ul class="vault-health-issue-list" role="list">
-                  ${stats.issues.map(issue => `
-                    <li class="vault-health-issue ${issue.severity}" role="listitem">
-                      <span class="vault-health-issue-icon" role="img" aria-label="${issue.iconLabel}"><span aria-hidden="true">${issue.icon}</span></span>
-                      <span class="vault-health-issue-text">${issue.message}</span>
-                      ${issue.count ? `<span class="vault-health-issue-count" aria-label="${issue.count} éléments">${issue.count}</span>` : ''}
-                    </li>
-                  `).join('')}
-                </ul>
-              </div>
-            ` : `
-              <div class="vault-health-success">
-                <span class="vault-health-success-icon" role="img" aria-label="Félicitations"><span aria-hidden="true">🎉</span></span>
-                <span>Excellent ! Tous vos mots de passe sont sécurisés.</span>
-              </div>
-            `}
-
-            <div class="vault-health-actions">
-              <button class="vault-btn vault-btn-outline" id="btn-check-breaches">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                Vérifier les fuites (HIBP)
-              </button>
-            </div>
-
-            <div class="vault-health-breaches" id="breach-results" hidden>
-              <h4>Résultats de la vérification</h4>
-              <div class="vault-breach-loading" id="breach-loading">
-                <span class="vault-spinner-small"></span>
-                Vérification en cours...
-              </div>
-              <div class="vault-breach-results" id="breach-list"></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.total}</div><div class="vault-health-card-label">Total</div></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.strong}</div><div class="vault-health-card-label">Forts</div></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.weak}</div><div class="vault-health-card-label">Faibles</div></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.reused}</div><div class="vault-health-card-label">Réutilisés</div></div>
             </div>
           </div>
         </div>
@@ -8299,6 +8393,11 @@ export class VaultUI {
 
   #getFilteredEntries() {
     let entries = [...this.#entries];
+
+    // Audit filter (from security dashboard)
+    if (this.#auditFilterIds && this.#auditFilterIds.size > 0) {
+      entries = entries.filter(e => this.#auditFilterIds.has(e.id));
+    }
 
     // Search filter
     if (this.#searchQuery) {

@@ -4196,6 +4196,175 @@ kbd {
   color: var(--vault-success) !important;
 }
 
+.vault-health-subtitle {
+  font-size: 0.75rem;
+  color: var(--vault-text-dim);
+  margin-top: 0.25rem;
+}
+
+/* Score Gauge (new circular gauge) */
+.vault-score-gauge {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 0.75rem;
+}
+
+.vault-score-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.vault-score-bg {
+  fill: none;
+  stroke: var(--vault-border);
+  stroke-width: 8;
+}
+
+.vault-score-progress {
+  fill: none;
+  stroke: var(--score-color, var(--vault-success));
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease-out;
+}
+
+.vault-score-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vault-score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--vault-text);
+  line-height: 1;
+}
+
+.vault-score-max {
+  font-size: 0.875rem;
+  color: var(--vault-text-muted);
+}
+
+/* Clickable health cards */
+.vault-health-card.clickable {
+  cursor: pointer;
+  transition: all var(--vault-transition);
+}
+
+.vault-health-card.clickable:hover {
+  border-color: var(--vault-primary);
+  background: var(--vault-surface-hover);
+  transform: translateY(-2px);
+}
+
+.vault-health-card-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.vault-health-2fa .vault-health-card-value {
+  color: var(--vault-success);
+}
+
+/* Recommendations */
+.vault-health-recommendations {
+  margin-bottom: 1.5rem;
+}
+
+.vault-health-recommendations h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--vault-text);
+}
+
+.vault-recommendation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vault-recommendation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--vault-surface);
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius);
+  cursor: pointer;
+  transition: all var(--vault-transition);
+}
+
+.vault-recommendation:hover {
+  background: var(--vault-surface-hover);
+  border-color: var(--vault-border-hover);
+}
+
+.vault-recommendation-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.vault-recommendation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vault-recommendation-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--vault-text);
+}
+
+.vault-recommendation-action {
+  font-size: 0.75rem;
+  color: var(--vault-text-muted);
+  margin-top: 0.125rem;
+}
+
+.vault-recommendation-arrow {
+  flex-shrink: 0;
+  color: var(--vault-text-muted);
+  transition: transform var(--vault-transition);
+}
+
+.vault-recommendation:hover .vault-recommendation-arrow {
+  transform: translateX(3px);
+  color: var(--vault-primary);
+}
+
+/* Recommendation priority colors */
+.vault-recommendation-critical {
+  border-left: 3px solid var(--vault-danger);
+}
+
+.vault-recommendation-warning {
+  border-left: 3px solid var(--vault-warning);
+}
+
+.vault-recommendation-info {
+  border-left: 3px solid var(--vault-primary);
+}
+
+.vault-recommendation-suggestion {
+  border-left: 3px solid var(--vault-text-muted);
+}
+
+/* Health actions */
+.vault-health-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 /* ==================== TIMEOUT SETTINGS ==================== */
 .vault-timer-settings {
   display: flex;
