@@ -128,4 +128,61 @@ object EntropyCalculator {
             else -> 0xFF15BEFF // Bleu cyan
         }
     }
+
+    /**
+     * Calcule l'entropie pour le mode Leet Speak
+     * Utilise une taille de pool estimée (lettres + chiffres + spéciaux)
+     */
+    fun calculateLeetSpeakEntropy(
+        password: String,
+        estimatedPoolSize: Int
+    ): Double {
+        if (password.isEmpty()) return 0.0
+        if (estimatedPoolSize <= 1) return 0.0
+        return password.length * log2(estimatedPoolSize.toDouble())
+    }
+
+    /**
+     * Calcule l'entropie brute-force basée sur les caractères détectés
+     * Analyse automatiquement le type de caractères utilisés
+     */
+    fun calculateBruteForceEntropy(password: String): Double {
+        if (password.isEmpty()) return 0.0
+        val poolSize = estimateCharacterPoolSize(password)
+        if (poolSize <= 1) return 0.0
+        return password.length * log2(poolSize.toDouble())
+    }
+
+    /**
+     * Estime la taille du pool de caractères basée sur le mot de passe
+     *
+     * Utilise une estimation conservatrice:
+     * - Lettres seules: 26 (un seul type) ou 52 (mixed case)
+     * - Alphanumeric: 62 (lettres + chiffres)
+     * - Avec spéciaux: 94 (ASCII imprimable)
+     */
+    fun estimateCharacterPoolSize(password: String): Int {
+        var hasLower = false
+        var hasUpper = false
+        var hasDigit = false
+        var hasSpecial = false
+
+        for (char in password) {
+            when {
+                char.isLowerCase() -> hasLower = true
+                char.isUpperCase() -> hasUpper = true
+                char.isDigit() -> hasDigit = true
+                !char.isLetterOrDigit() -> hasSpecial = true
+            }
+        }
+
+        // Build pool size based on detected character types
+        var pool = 0
+        if (hasLower) pool += 26
+        if (hasUpper) pool += 26
+        if (hasDigit) pool += 10
+        if (hasSpecial) pool += 36 // Approximate special characters
+
+        return if (pool > 0) pool else 1
+    }
 }

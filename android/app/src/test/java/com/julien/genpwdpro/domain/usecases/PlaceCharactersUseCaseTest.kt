@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.domain.usecases
 
-import com.julien.genpwdpro.data.models.CharacterPlacement
+import com.julien.genpwdpro.data.models.Placement
 import com.julien.genpwdpro.data.models.Settings
 import org.junit.Assert.*
 import org.junit.Before
@@ -37,8 +37,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 2,
             specialsCount = 1,
-            digitsPosition = CharacterPlacement.START,
-            specialsPosition = CharacterPlacement.START
+            digitsPlacement = Placement.START,
+            specialsPlacement = Placement.START
         )
 
         val result = useCase(password, settings)
@@ -55,8 +55,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 2,
             specialsCount = 1,
-            digitsPosition = CharacterPlacement.END,
-            specialsPosition = CharacterPlacement.END
+            digitsPlacement = Placement.END,
+            specialsPlacement = Placement.END
         )
 
         val result = useCase(password, settings)
@@ -73,8 +73,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 2,
             specialsCount = 0,
-            digitsPosition = CharacterPlacement.MIDDLE,
-            specialsPosition = CharacterPlacement.MIDDLE
+            digitsPlacement = Placement.MIDDLE,
+            specialsPlacement = Placement.MIDDLE
         )
 
         val result = useCase(password, settings)
@@ -92,8 +92,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 3,
             specialsCount = 2,
-            digitsPosition = CharacterPlacement.RANDOM,
-            specialsPosition = CharacterPlacement.RANDOM
+            digitsPlacement = Placement.RANDOM,
+            specialsPlacement = Placement.RANDOM
         )
 
         val result = useCase(password, settings)
@@ -115,7 +115,7 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 4,
             specialsCount = 0,
-            digitsPosition = CharacterPlacement.END
+            digitsPlacement = Placement.END
         )
 
         val result = useCase(password, settings)
@@ -134,7 +134,7 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 0,
             specialsCount = 3,
-            specialsPosition = CharacterPlacement.END
+            specialsPlacement = Placement.END
         )
 
         val result = useCase(password, settings)
@@ -152,8 +152,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 2,
             specialsCount = 2,
-            digitsPosition = CharacterPlacement.START,
-            specialsPosition = CharacterPlacement.END
+            digitsPlacement = Placement.START,
+            specialsPlacement = Placement.END
         )
 
         val result = useCase(password, settings)
@@ -168,8 +168,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 2,
             specialsCount = 2,
-            digitsPosition = CharacterPlacement.RANDOM,
-            specialsPosition = CharacterPlacement.RANDOM
+            digitsPlacement = Placement.RANDOM,
+            specialsPlacement = Placement.RANDOM
         )
 
         val result = useCase(password, settings)
@@ -186,8 +186,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 10,
             specialsCount = 10,
-            digitsPosition = CharacterPlacement.END,
-            specialsPosition = CharacterPlacement.END
+            digitsPlacement = Placement.END,
+            specialsPlacement = Placement.END
         )
 
         val result = useCase(password, settings)
@@ -201,8 +201,8 @@ class PlaceCharactersUseCaseTest {
         val settings = Settings(
             digitsCount = 3,
             specialsCount = 2,
-            digitsPosition = CharacterPlacement.END,
-            specialsPosition = CharacterPlacement.END
+            digitsPlacement = Placement.END,
+            specialsPlacement = Placement.END
         )
 
         val result = useCase(password, settings)

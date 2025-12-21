@@ -1,7 +1,8 @@
 package com.julien.genpwdpro.domain.session
 
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
-import com.julien.genpwdpro.data.db.entity.VaultEntryEntity
+import com.julien.genpwdpro.data.models.vault.EntryType
+import com.julien.genpwdpro.data.models.vault.VaultEntryEntity
 import com.julien.genpwdpro.data.models.vault.StorageStrategy
 import com.julien.genpwdpro.data.models.vault.VaultData
 import com.julien.genpwdpro.data.models.vault.VaultFileHeader
@@ -9,11 +10,9 @@ import com.julien.genpwdpro.data.models.vault.VaultMetadata
 import com.julien.genpwdpro.data.models.vault.VaultStatistics
 import com.julien.genpwdpro.data.vault.VaultFileManager
 import com.julien.genpwdpro.domain.exceptions.VaultException
+import com.julien.genpwdpro.security.BiometricKeyManager
 import com.julien.genpwdpro.security.KeystoreManager
-import io.mockk.MockKAnnotations
-import io.mockk.clearAllMocks
-import io.mockk.coVerify
-import io.mockk.any
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import javax.crypto.SecretKey
 import kotlin.test.AfterTest
@@ -41,6 +40,12 @@ class VaultSessionManagerMutationTest {
     @MockK(relaxed = true)
     private lateinit var keystoreManager: KeystoreManager
 
+    @MockK(relaxed = true)
+    private lateinit var biometricKeyManager: BiometricKeyManager
+
+    @MockK(relaxed = true)
+    private lateinit var unlockRateLimiter: UnlockRateLimiter
+
     private lateinit var sessionManager: VaultSessionManager
 
     private var activeSessionScope: CoroutineScope? = null
@@ -52,7 +57,9 @@ class VaultSessionManagerMutationTest {
             vaultFileManager = vaultFileManager,
             vaultRegistryDao = vaultRegistryDao,
             cryptoManager = cryptoManager,
-            keystoreManager = keystoreManager
+            keystoreManager = keystoreManager,
+            biometricKeyManager = biometricKeyManager,
+            unlockRateLimiter = unlockRateLimiter
         )
     }
 
@@ -160,10 +167,16 @@ class VaultSessionManagerMutationTest {
         return VaultEntryEntity(
             id = id,
             vaultId = "vault-test",
-            encryptedTitle = "title",
-            titleIv = "iv-title",
-            encryptedPassword = "pwd",
-            passwordIv = "iv-pwd"
+            entryType = EntryType.LOGIN.name,
+            title = "Test Entry",
+            username = "user@example.com",
+            password = "testpassword123",
+            url = "https://example.com",
+            notes = "",
+            passwordStrength = 75,
+            isFavorite = false,
+            createdAt = System.currentTimeMillis(),
+            modifiedAt = System.currentTimeMillis()
         )
     }
 

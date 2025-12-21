@@ -269,6 +269,26 @@ fun UnlockVaultScreen(
                         }
                     )
                 }
+
+                // Bouton Passkey (WebAuthn) - disponible si biométrie activée
+                if (viewModel.isPasskeyAvailable()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val activity = context as? FragmentActivity
+                            if (activity != null) {
+                                viewModel.unlockWithPasskey(activity, currentVault.id)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = uiState !is UnlockVaultUiState.Unlocking
+                    ) {
+                        Icon(Icons.Default.Key, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Passkey")
+                    }
+                }
             }
 
             // 🆕 Bouton pour activer la biométrie si pas encore activée

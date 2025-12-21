@@ -7,6 +7,8 @@ import com.julien.genpwdpro.core.log.SafeLog
 import com.julien.genpwdpro.data.db.dao.VaultRegistryDao
 import com.julien.genpwdpro.data.db.entity.VaultRegistryEntry
 import com.julien.genpwdpro.data.repository.FileVaultRepository
+import com.julien.genpwdpro.data.webauthn.PasskeyAuthenticationResult
+import com.julien.genpwdpro.data.webauthn.PasskeyManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,12 +23,14 @@ import kotlinx.coroutines.launch
  * - Charger les métadonnées du vault depuis vault_registry
  * - Déverrouiller avec mot de passe via FileVaultRepository
  * - Déverrouiller avec biométrie via FileVaultRepository
+ * - Déverrouiller avec passkey (WebAuthn) via PasskeyManager
  * - Gérer l'état UI (loading, error, success)
  */
 @HiltViewModel
 class UnlockVaultViewModel @Inject constructor(
     private val fileVaultRepository: FileVaultRepository,
-    private val vaultRegistryDao: VaultRegistryDao
+    private val vaultRegistryDao: VaultRegistryDao,
+    private val passkeyManager: PasskeyManager
 ) : ViewModel() {
 
     companion object {
@@ -199,6 +203,98 @@ class UnlockVaultViewModel @Inject constructor(
      */
     fun resetToReady() {
         _uiState.value = UnlockVaultUiState.Ready
+    }
+
+    // ==================== Passkey (WebAuthn) ====================
+
+    /**
+     * Déverrouille le vault avec une passkey (WebAuthn)
+     *
+     * Passkey fournit uniquement l'authentification (signature), pas de clé de chiffrement.
+     * Après authentification réussie, on utilise la clé stockée dans Android Keystore
+     * (même mécanisme que biométrie) pour déchiffrer le master password.
+     *
+     * Prérequis: biometricUnlockEnabled doit être true (pour avoir encryptedMasterPassword)
+     */
+    fun unlockWithPasskey(activity: FragmentActivity, vaultId: String) {
+        viewModelScope.launch {
+            try {
+                val registry = _vaultRegistry.value
+                if (registry == null) {
+                    _uiState.value = UnlockVaultUiState.Error("Vault non chargé")
+                    return@launch
+                }
+
+                // Vérifier que le Quick Unlock (keystore-backed) est configuré
+                if (!registry.biometricUnlockEnabled || registry.encryptedMasterPassword == null) {
+                    _uiState.value = UnlockVaultUiState.Error(
+                        "Veuillez d'abord activer le déverrouillage biométrique"
+                    )
+                    return@launch
+                }
+
+                _uiState.value = UnlockVaultUiState.Unlocking
+                SafeLog.d(TAG, "Starting passkey authentication for vault: $vaultId")
+
+                // Authentifier avec passkey
+                val result = passkeyManager.authenticateWithPasskey(
+                    relyingPartyId = "genpwdpro.app"
+                )
+
+                when (result) {
+                    is PasskeyAuthenticationResult.Success -> {
+                        SafeLog.d(TAG, "Passkey authentication successful, unlocking vault...")
+
+                        // Passkey réussie, utiliser la biométrie pour déchiffrer le master password
+                        // (la clé est protégée par Android Keystore qui demande l'auth biométrique)
+                        val unlockResult = fileVaultRepository.unlockVaultWithBiometric(activity, vaultId)
+
+                        unlockResult.fold(
+                            onSuccess = {
+                                SafeLog.i(TAG, "Vault unlocked via passkey: $vaultId")
+                                _uiState.value = UnlockVaultUiState.Unlocked(vaultId)
+                            },
+                            onFailure = { error ->
+                                SafeLog.e(TAG, "Passkey auth succeeded but vault unlock failed", error)
+                                _uiState.value = UnlockVaultUiState.Error(
+                                    error.message ?: "Erreur de déverrouillage"
+                                )
+                            }
+                        )
+                    }
+
+                    is PasskeyAuthenticationResult.Cancelled -> {
+                        SafeLog.d(TAG, "Passkey authentication cancelled")
+                        _uiState.value = UnlockVaultUiState.Ready
+                    }
+
+                    is PasskeyAuthenticationResult.NoCredentials -> {
+                        SafeLog.w(TAG, "No passkey credentials found")
+                        _uiState.value = UnlockVaultUiState.Error(
+                            "Aucune passkey enregistrée pour ce vault"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                SafeLog.e(TAG, "Passkey authentication error", e)
+                _uiState.value = UnlockVaultUiState.Error(
+                    e.message ?: "Erreur d'authentification passkey"
+                )
+            }
+        }
+    }
+
+    /**
+     * Vérifie si le passkey unlock est disponible pour ce vault
+     *
+     * Passkey est disponible si:
+     * 1. Le vault a biometricUnlockEnabled (= encryptedMasterPassword stocké)
+     * 2. L'API Credential Manager est disponible (Android 9+)
+     */
+    fun isPasskeyAvailable(): Boolean {
+        val registry = _vaultRegistry.value ?: return false
+        // Passkey utilise le même encryptedMasterPassword que biométrie
+        return registry.biometricUnlockEnabled && registry.encryptedMasterPassword != null
     }
 }
 

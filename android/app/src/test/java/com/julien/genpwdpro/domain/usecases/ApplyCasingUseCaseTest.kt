@@ -2,12 +2,14 @@ package com.julien.genpwdpro.domain.usecases
 
 import com.julien.genpwdpro.data.models.CaseBlock
 import com.julien.genpwdpro.data.models.CaseMode
+import com.julien.genpwdpro.data.models.Settings
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
 /**
  * Tests unitaires pour le use case d'application de casse
+ * Updated to match new API: invoke(password, settings)
  */
 class ApplyCasingUseCaseTest {
 
@@ -19,114 +21,98 @@ class ApplyCasingUseCaseTest {
     }
 
     @Test
-    fun `LOWERCASE mode should convert all to lowercase`() {
+    fun `LOWER mode should convert all to lowercase`() {
         val input = "HELLO WORLD"
-        val mode = CaseMode.LOWERCASE
+        val settings = Settings(caseMode = CaseMode.LOWER)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
         assertEquals("hello world", result)
     }
 
     @Test
-    fun `UPPERCASE mode should convert all to uppercase`() {
+    fun `UPPER mode should convert all to uppercase`() {
         val input = "hello world"
-        val mode = CaseMode.UPPERCASE
+        val settings = Settings(caseMode = CaseMode.UPPER)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
         assertEquals("HELLO WORLD", result)
     }
 
     @Test
-    fun `CAPITALIZE mode should capitalize first letter`() {
-        val input = "hello world"
-        val mode = CaseMode.CAPITALIZE
+    fun `TITLE mode should capitalize first letter of each word`() {
+        val input = "hello-world-test"
+        val settings = Settings(caseMode = CaseMode.TITLE)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
-        assertEquals("Hello world", result)
+        assertEquals("Hello-World-Test", result)
     }
 
     @Test
-    fun `CAPITALIZE_WORDS mode should capitalize each word`() {
+    fun `TITLE should handle words separated by spaces`() {
         val input = "hello world test"
-        val mode = CaseMode.CAPITALIZE_WORDS
+        val settings = Settings(caseMode = CaseMode.TITLE)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
         assertEquals("Hello World Test", result)
     }
 
     @Test
-    fun `CAPITALIZE_WORDS should handle multiple spaces`() {
-        val input = "hello  world   test"
-        val mode = CaseMode.CAPITALIZE_WORDS
+    fun `TITLE should handle underscores as separators`() {
+        val input = "hello_world_test"
+        val settings = Settings(caseMode = CaseMode.TITLE)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
-        // Les espaces doivent être préservés
-        assertTrue("Should capitalize after spaces", result.contains("Hello"))
-        assertTrue("Should capitalize after spaces", result.contains("World"))
+        assertEquals("Hello_World_Test", result)
     }
 
     @Test
-    fun `TOGGLE mode should alternate case`() {
-        val input = "abcdefgh"
-        val mode = CaseMode.TOGGLE
+    fun `MIXED mode should produce varying case`() {
+        val input = "abcdefghij"
+        val settings = Settings(caseMode = CaseMode.MIXED)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        // Run multiple times to verify randomness
+        val results = (1..10).map { applyCasingUseCase(input, settings) }
+        val uniqueResults = results.toSet()
 
-        // Devrait alterner entre minuscule et majuscule
-        assertTrue("First char should be lowercase", result[0].isLowerCase())
-        assertTrue("Second char should be uppercase", result[1].isUpperCase())
-        assertTrue("Third char should be lowercase", result[2].isLowerCase())
+        // Should have some variation (not all identical)
+        assertTrue("MIXED mode should produce varying results", uniqueResults.size >= 2)
     }
 
     @Test
-    fun `VISUAL_BLOCKS mode should apply custom blocks`() {
-        val input = "abcdefgh" // 8 chars
-        val mode = CaseMode.VISUAL_BLOCKS
-        val blocks = listOf(
-            CaseBlock.UPPERCASE, // 0-2: ABC
-            CaseBlock.LOWERCASE, // 3-5: def
-            CaseBlock.TITLECASE // 6-7: Gh
-        )
+    fun `BLOCKS mode should apply custom blocks with separators`() {
+        val input = "hello-world-test"
+        val blocks = listOf(CaseBlock.U, CaseBlock.L, CaseBlock.T)
+        val settings = Settings(caseMode = CaseMode.BLOCKS, caseBlocks = blocks)
 
-        val result = applyCasingUseCase(input, mode, blocks)
+        val result = applyCasingUseCase(input, settings)
 
-        assertEquals('A', result[0]) // Upper
-        assertEquals('B', result[1]) // Upper
-        assertEquals('C', result[2]) // Upper
-        assertEquals('d', result[3]) // Lower
-        assertEquals('e', result[4]) // Lower
-        assertEquals('f', result[5]) // Lower
-        assertEquals('G', result[6]) // Title (first upper)
-        assertEquals('h', result[7]) // Title (rest lower)
+        // U = HELLO, L = world, T = Test
+        assertEquals("HELLO-world-Test", result)
     }
 
     @Test
-    fun `VISUAL_BLOCKS with TITLECASE should capitalize first char of block`() {
+    fun `BLOCKS with T block should capitalize first char`() {
         val input = "hello"
-        val mode = CaseMode.VISUAL_BLOCKS
-        val blocks = listOf(CaseBlock.TITLECASE)
+        val blocks = listOf(CaseBlock.T)
+        val settings = Settings(caseMode = CaseMode.BLOCKS, caseBlocks = blocks)
 
-        val result = applyCasingUseCase(input, mode, blocks)
+        val result = applyCasingUseCase(input, settings)
 
-        assertEquals('H', result[0])
-        assertEquals('e', result[1])
-        assertEquals('l', result[2])
-        assertEquals('l', result[3])
-        assertEquals('o', result[4])
+        assertEquals("Hello", result)
     }
 
     @Test
-    fun `VISUAL_BLOCKS with empty blocks should keep original case`() {
+    fun `BLOCKS with empty blocks should keep original`() {
         val input = "HelloWorld"
-        val mode = CaseMode.VISUAL_BLOCKS
         val blocks = emptyList<CaseBlock>()
+        val settings = Settings(caseMode = CaseMode.BLOCKS, caseBlocks = blocks)
 
-        val result = applyCasingUseCase(input, mode, blocks)
+        val result = applyCasingUseCase(input, settings)
 
         assertEquals(input, result)
     }
@@ -136,7 +122,8 @@ class ApplyCasingUseCaseTest {
         val input = ""
 
         CaseMode.values().forEach { mode ->
-            val result = applyCasingUseCase(input, mode, emptyList())
+            val settings = Settings(caseMode = mode)
+            val result = applyCasingUseCase(input, settings)
             assertEquals("Failed for mode $mode", "", result)
         }
     }
@@ -145,102 +132,56 @@ class ApplyCasingUseCaseTest {
     fun `should handle single character`() {
         val input = "a"
 
-        val upperResult = applyCasingUseCase(input, CaseMode.UPPERCASE, emptyList())
+        val upperResult = applyCasingUseCase(input, Settings(caseMode = CaseMode.UPPER))
         assertEquals("A", upperResult)
 
-        val lowerResult = applyCasingUseCase(input, CaseMode.LOWERCASE, emptyList())
+        val lowerResult = applyCasingUseCase(input, Settings(caseMode = CaseMode.LOWER))
         assertEquals("a", lowerResult)
     }
 
     @Test
     fun `should preserve non-letter characters`() {
         val input = "hello123!@#world"
-        val mode = CaseMode.UPPERCASE
+        val settings = Settings(caseMode = CaseMode.UPPER)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
         assertEquals("HELLO123!@#WORLD", result)
     }
 
     @Test
-    fun `CAPITALIZE_WORDS should handle words separated by dashes`() {
-        val input = "hello-world-test"
-        val mode = CaseMode.CAPITALIZE_WORDS
+    fun `BLOCKS should divide password into chunks without separators`() {
+        val input = "abcdefghij" // 10 chars
+        val blocks = listOf(CaseBlock.U, CaseBlock.L, CaseBlock.T)
+        val settings = Settings(caseMode = CaseMode.BLOCKS, caseBlocks = blocks)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
-        // Devrait capitaliser après les tirets aussi
-        assertTrue("Should handle dashes", result.contains("Hello"))
-    }
-
-    @Test
-    fun `TOGGLE mode should handle non-letters`() {
-        val input = "a1b2c3"
-        val mode = CaseMode.TOGGLE
-
-        val result = applyCasingUseCase(input, mode, emptyList())
-
-        // Les chiffres ne changent pas, mais les lettres alternent
-        assertTrue("'a' should be lowercase", result[0] == 'a')
-        assertTrue("'1' should remain", result[1] == '1')
-        assertTrue("'b' should be uppercase", result[2] == 'B')
-    }
-
-    @Test
-    fun `VISUAL_BLOCKS should handle blocks larger than password`() {
-        val input = "abc"
-        val mode = CaseMode.VISUAL_BLOCKS
-        val blocks = listOf(
-            CaseBlock.UPPERCASE,
-            CaseBlock.LOWERCASE,
-            CaseBlock.UPPERCASE,
-            CaseBlock.LOWERCASE,
-            CaseBlock.UPPERCASE
-        )
-
-        val result = applyCasingUseCase(input, mode, blocks)
-
-        // Ne devrait pas crasher, utiliser les blocs disponibles
-        assertEquals(3, result.length)
+        // Should be divided into 3 chunks: 4+4+2 or 4+3+3
+        assertEquals(10, result.length)
+        // First chunk should be uppercase
+        assertTrue("First chars should be uppercase", result[0].isUpperCase())
     }
 
     @Test
     fun `should work with unicode characters`() {
         val input = "héllo wörld"
-        val mode = CaseMode.UPPERCASE
+        val settings = Settings(caseMode = CaseMode.UPPER)
 
-        val result = applyCasingUseCase(input, mode, emptyList())
+        val result = applyCasingUseCase(input, settings)
 
         assertEquals("HÉLLO WÖRLD", result)
     }
 
     @Test
-    fun `multiple blocks should divide password evenly`() {
-        val input = "abcdefghij" // 10 chars
-        val mode = CaseMode.VISUAL_BLOCKS
-        val blocks = listOf(
-            CaseBlock.UPPERCASE, // chars 0-3
-            CaseBlock.LOWERCASE, // chars 4-6
-            CaseBlock.TITLECASE // chars 7-9
-        )
-
-        val result = applyCasingUseCase(input, mode, blocks)
-
-        // Vérifier que les blocs sont appliqués correctement
-        val firstPart = result.substring(0, 4)
-        assertTrue(
-            "First part should be uppercase",
-            firstPart == firstPart.uppercase()
-        )
-    }
-
-    @Test
-    fun `case modes should be consistent across multiple calls`() {
+    fun `case modes should be consistent for deterministic modes`() {
         val input = "testpassword"
 
-        CaseMode.values().forEach { mode ->
-            val result1 = applyCasingUseCase(input, mode, emptyList())
-            val result2 = applyCasingUseCase(input, mode, emptyList())
+        // UPPER, LOWER, TITLE are deterministic
+        listOf(CaseMode.UPPER, CaseMode.LOWER, CaseMode.TITLE).forEach { mode ->
+            val settings = Settings(caseMode = mode)
+            val result1 = applyCasingUseCase(input, settings)
+            val result2 = applyCasingUseCase(input, settings)
 
             assertEquals(
                 "Results should be consistent for mode $mode",

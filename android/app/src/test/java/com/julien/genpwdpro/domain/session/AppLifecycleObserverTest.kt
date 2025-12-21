@@ -1,5 +1,6 @@
 package com.julien.genpwdpro.domain.session
 
+import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import io.mockk.MockKAnnotations
 import io.mockk.coVerify
@@ -8,6 +9,9 @@ import org.junit.Before
 import org.junit.Test
 
 class AppLifecycleObserverTest {
+
+    @MockK(relaxed = true)
+    private lateinit var context: Context
 
     @MockK(relaxed = true)
     private lateinit var vaultSessionManager: VaultSessionManager
@@ -20,7 +24,7 @@ class AppLifecycleObserverTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxUnitFun = true)
-        observer = AppLifecycleObserver(vaultSessionManager)
+        observer = AppLifecycleObserver(context, vaultSessionManager)
     }
 
     @Test

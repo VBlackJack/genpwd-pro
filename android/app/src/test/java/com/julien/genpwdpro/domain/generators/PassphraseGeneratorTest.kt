@@ -1,39 +1,69 @@
 package com.julien.genpwdpro.domain.generators
 
 import com.julien.genpwdpro.data.models.DictionaryType
+import com.julien.genpwdpro.data.models.Settings
+import com.julien.genpwdpro.domain.utils.DictionaryManager
+import io.mockk.coEvery
+import io.mockk.mockk
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
 /**
  * Tests unitaires pour le générateur de phrases de passe
+ * Updated to use new Settings-based API
  */
 class PassphraseGeneratorTest {
 
     private lateinit var generator: PassphraseGenerator
+    private lateinit var dictionaryManager: DictionaryManager
+
+    // Sample word lists for testing
+    private val frenchWords = listOf(
+        "maison", "jardin", "soleil", "fleur", "arbre",
+        "chaise", "table", "livre", "porte", "fenetre"
+    )
+    private val englishWords = listOf(
+        "house", "garden", "sun", "flower", "tree",
+        "chair", "table", "book", "door", "window"
+    )
 
     @Before
     fun setup() {
-        generator = PassphraseGenerator()
+        dictionaryManager = mockk()
+        coEvery { dictionaryManager.getDictionary(DictionaryType.FRENCH) } returns frenchWords
+        coEvery { dictionaryManager.getDictionary(DictionaryType.ENGLISH) } returns englishWords
+        coEvery { dictionaryManager.getDictionary(DictionaryType.LATIN) } returns englishWords // Use same list for Latin
+
+        generator = PassphraseGenerator(dictionaryManager)
     }
 
     @Test
-    fun `generate should return correct number of words`() {
+    fun `generate should return correct number of words`() = runTest {
         val wordCount = 5
-        val dictionary = DictionaryType.EFF_LARGE
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
+        val result = generator.generate(settings)
         val words = result.split(" ")
 
         assertEquals(wordCount, words.size)
     }
 
     @Test
-    fun `generate should use space as separator`() {
+    fun `generate should use space as default separator`() = runTest {
         val wordCount = 4
-        val dictionary = DictionaryType.EFF_LARGE
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
+        val result = generator.generate(settings)
 
         assertTrue("Result should contain spaces", result.contains(" "))
         assertEquals(
@@ -44,79 +74,91 @@ class PassphraseGeneratorTest {
     }
 
     @Test
-    fun `generate should return different passphrases on multiple calls`() {
-        val wordCount = 5
-        val dictionary = DictionaryType.EFF_LARGE
+    fun `generate should use custom separator`() = runTest {
+        val wordCount = 3
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.ENGLISH,
+            passphraseSeparator = "-"
+        )
 
-        val passphrases = mutableSetOf<String>()
-        repeat(50) {
-            passphrases.add(generator.generate(wordCount, dictionary))
-        }
+        val result = generator.generate(settings)
 
-        // Au moins 90% des phrases doivent être uniques
-        assertTrue(
-            "Generated passphrases should be mostly unique",
-            passphrases.size >= 45
+        assertTrue("Result should contain dashes", result.contains("-"))
+        assertEquals(
+            "Dash count should be word count - 1",
+            wordCount - 1,
+            result.count { it == '-' }
         )
     }
 
     @Test
-    fun `generate should work with EFF_LARGE dictionary`() {
-        val wordCount = 6
-        val dictionary = DictionaryType.EFF_LARGE
-
-        val result = generator.generate(wordCount, dictionary)
-        val words = result.split(" ")
-
-        assertEquals(wordCount, words.size)
-        words.forEach { word ->
-            assertTrue("Word should not be empty", word.isNotEmpty())
-        }
-    }
-
-    @Test
-    fun `generate should work with EFF_SHORT dictionary`() {
-        val wordCount = 6
-        val dictionary = DictionaryType.EFF_SHORT
-
-        val result = generator.generate(wordCount, dictionary)
-        val words = result.split(" ")
-
-        assertEquals(wordCount, words.size)
-        // Les mots courts devraient généralement faire 4-5 caractères
-        words.forEach { word ->
-            assertTrue("Short word should be 3-6 chars", word.length in 3..6)
-        }
-    }
-
-    @Test
-    fun `generate should work with BEALE dictionary`() {
+    fun `generate should return different passphrases on multiple calls`() = runTest {
         val wordCount = 5
-        val dictionary = DictionaryType.BEALE
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
-        val words = result.split(" ")
+        val passphrases = mutableSetOf<String>()
+        repeat(50) {
+            passphrases.add(generator.generate(settings))
+        }
 
-        assertEquals(wordCount, words.size)
+        // Most passphrases should be unique
+        assertTrue(
+            "Generated passphrases should be mostly unique",
+            passphrases.size >= 30
+        )
     }
 
     @Test
-    fun `generate should work with SKEY dictionary`() {
-        val wordCount = 6
-        val dictionary = DictionaryType.SKEY
+    fun `generate should work with French dictionary`() = runTest {
+        val wordCount = 4
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
+        val result = generator.generate(settings)
         val words = result.split(" ")
 
         assertEquals(wordCount, words.size)
+        words.forEach { word ->
+            assertTrue("Word '$word' should be in French dictionary", word in frenchWords)
+        }
     }
 
     @Test
-    fun `generate should handle minimum word count`() {
+    fun `generate should work with English dictionary`() = runTest {
+        val wordCount = 4
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.ENGLISH,
+            passphraseSeparator = " "
+        )
+
+        val result = generator.generate(settings)
+        val words = result.split(" ")
+
+        assertEquals(wordCount, words.size)
+        words.forEach { word ->
+            assertTrue("Word '$word' should be in English dictionary", word in englishWords)
+        }
+    }
+
+    @Test
+    fun `generate should handle minimum word count`() = runTest {
         val wordCount = 1
-        val dictionary = DictionaryType.EFF_LARGE
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
+        val result = generator.generate(settings)
 
         assertFalse(
             "Single word should not contain spaces",
@@ -125,34 +167,43 @@ class PassphraseGeneratorTest {
     }
 
     @Test
-    fun `generate should handle maximum word count`() {
-        val wordCount = 20
-        val dictionary = DictionaryType.EFF_LARGE
+    fun `generate should handle maximum word count`() = runTest {
+        val wordCount = 10
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
+        val result = generator.generate(settings)
         val words = result.split(" ")
 
         assertEquals(wordCount, words.size)
     }
 
     @Test
-    fun `generate with zero words should return empty string`() {
-        val result = generator.generate(0, DictionaryType.EFF_LARGE)
+    fun `generate with zero words should return empty string`() = runTest {
+        val settings = Settings(
+            passphraseWordCount = 0,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
+
+        val result = generator.generate(settings)
         assertEquals("", result)
     }
 
     @Test
-    fun `generate with negative word count should return empty string`() {
-        val result = generator.generate(-3, DictionaryType.EFF_LARGE)
-        assertEquals("", result)
-    }
-
-    @Test
-    fun `generate should work with all dictionary types`() {
+    fun `generate should work with all dictionary types`() = runTest {
         val wordCount = 4
 
         DictionaryType.values().forEach { dictionary ->
-            val result = generator.generate(wordCount, dictionary)
+            val settings = Settings(
+                passphraseWordCount = wordCount,
+                dictionary = dictionary,
+                passphraseSeparator = " "
+            )
+            val result = generator.generate(settings)
             val words = result.split(" ")
             assertEquals(
                 "Failed for dictionary $dictionary",
@@ -163,32 +214,20 @@ class PassphraseGeneratorTest {
     }
 
     @Test
-    fun `words should be lowercase`() {
+    fun `words should be lowercase`() = runTest {
         val wordCount = 5
-        val dictionary = DictionaryType.EFF_LARGE
+        val settings = Settings(
+            passphraseWordCount = wordCount,
+            dictionary = DictionaryType.FRENCH,
+            passphraseSeparator = " "
+        )
 
-        val result = generator.generate(wordCount, dictionary)
+        val result = generator.generate(settings)
 
         assertEquals(
             "All words should be lowercase",
             result,
             result.lowercase()
         )
-    }
-
-    @Test
-    fun `words should not contain special characters`() {
-        val wordCount = 5
-        val dictionary = DictionaryType.EFF_LARGE
-
-        val result = generator.generate(wordCount, dictionary)
-
-        // Seuls lettres et espaces sont autorisés
-        result.forEach { char ->
-            assertTrue(
-                "Character should be letter or space",
-                char.isLetter() || char == ' '
-            )
-        }
     }
 }

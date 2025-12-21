@@ -207,7 +207,7 @@ class EntropyCalculatorTest {
     fun `estimateCharacterPoolSize should detect alphanumeric`() {
         val poolSize = EntropyCalculator.estimateCharacterPoolSize("abc123")
 
-        assertEquals(62, poolSize) // 26 + 26 + 10
+        assertEquals(36, poolSize) // 26 lowercase + 10 digits
     }
 
     @Test

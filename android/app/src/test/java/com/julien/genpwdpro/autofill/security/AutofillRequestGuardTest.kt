@@ -75,9 +75,13 @@ class AutofillRequestGuardTest {
     @Test
     fun `tracks most recent packages up to configured capacity`() {
         val clock = FakeClock()
+        // Validator returns the input package name as-is (not a static value)
+        val passThroughValidator = object : PackageValidator {
+            override fun validate(packageName: String?): String? = packageName
+        }
         val guard = AutofillRequestGuard(
             keyguardChecker = FakeKeyguardChecker(unlocked = true),
-            packageValidator = FakePackageValidator(validated = "pkg"),
+            packageValidator = passThroughValidator,
             clock = clock,
             throttleWindowMs = 1L,
             maxTrackedPackages = 2
