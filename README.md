@@ -1,8 +1,8 @@
-# GenPwd Pro - Générateur de Mots de Passe Sécurisés
-# GenPwd Pro - Secure Password Generator
+# GenPwd Pro - Gestionnaire de Mots de Passe Sécurisé
+# GenPwd Pro - Secure Password Manager
 
-> **Protection simple de vos comptes en ligne**
-> **Simple protection for your online accounts**
+> **v3.0.0** - Générateur + Coffre-fort chiffré + TOTP
+> **v3.0.0** - Generator + Encrypted Vault + TOTP
 
 [🇫🇷 Version Française](#-version-française) | [🇬🇧 English Version](#-english-version)
 
@@ -48,11 +48,23 @@
 
 ## Qu'est-ce que GenPwd Pro ?
 
-**GenPwd Pro** est un outil gratuit qui crée des mots de passe **très difficiles à deviner** pour protéger vos comptes en ligne (email, réseaux sociaux, banque, etc.).
+**GenPwd Pro v3.0.0** est un **gestionnaire de mots de passe complet** qui combine :
 
-Au lieu d'utiliser des mots de passe simples comme "123456" ou "motdepasse", GenPwd Pro génère automatiquement des combinaisons complexes et uniques pour chaque service que vous utilisez.
+- **Générateur intelligent** : Crée des mots de passe complexes et mémorisables
+- **Coffre-fort chiffré** : Stocke vos identifiants en toute sécurité (AES-256-GCM)
+- **TOTP / 2FA** : Génère des codes d'authentification à deux facteurs
+- **Audit de sécurité** : Détecte les mots de passe faibles, réutilisés ou anciens
 
-**Exemple :** Au lieu de `marie2024`, GenPwd Pro crée `Soleil-Vague-Prairie7!` ou `DuNoKyPe!Ra8Ku`
+**Alternative gratuite et open-source** à KeePass, Bitwarden, 1Password.
+
+### Nouveautés v3.0.0 (Desktop)
+- 🔐 **Coffre-fort local** avec chiffrement AES-256-GCM
+- 📁 **Dossiers et tags** pour organiser vos entrées
+- 🔑 **TOTP intégré** pour la double authentification
+- 📥 **Import** depuis KeePass, Bitwarden, CSV
+- 🖥️ **System Tray** avec génération rapide
+- ⌨️ **Raccourci global** `Ctrl+Shift+P` (Boss Key)
+- 📱 **Mode compact** : widget flottant Always on Top
 
 
 ## Pour qui ?
@@ -88,22 +100,33 @@ GenPwd Pro est fait pour **vous** si :
 
 ## Fonctionnalités principales
 
-### Génération intelligente
-- **3 modes différents** : prononçable, phrase de vrais mots, ou transformation ludique
-- **Sauvegarde de configurations** : enregistrez vos réglages favoris pour les réutiliser
-- **Historique** : retrouvez facilement les mots de passe générés récemment
+### Coffre-fort sécurisé (v3.0.0)
+- **Chiffrement AES-256-GCM** avec dérivation PBKDF2 (100,000 itérations)
+- **Types d'entrées** : Login, Note sécurisée, Carte bancaire, Identité
+- **Organisation** : Dossiers hiérarchiques, tags personnalisés, favoris
+- **TOTP/2FA** : Génération de codes (compatible Google Authenticator)
+- **Audit** : Score de sécurité, détection des faiblesses
 
-### Export et partage
-- **3 formats d'export** : texte simple, fichier structuré, ou tableur Excel
-- **Copie en un clic** : bouton pour copier directement dans le presse-papiers
+### Import / Export
+- **Import** : KeePass 2.x XML, Bitwarden JSON, CSV générique
+- **Export** : JSON natif, CSV, KeePass XML
+- **Copie sécurisée** : Auto-effacement du presse-papiers (30s)
+
+### Génération intelligente
+- **3 modes** : prononçable, phrase de vrais mots, ou transformation Leet
+- **Configurations** : sauvegardez vos réglages favoris
+- **Historique** : retrouvez les mots de passe générés récemment
+
+### Intégration Desktop (Electron)
+- **System Tray** : génération rapide sans ouvrir la fenêtre
+- **Global Hotkey** : `Ctrl+Shift+P` pour montrer/cacher (Boss Key)
+- **Mode Compact** : widget flottant 380x640, Always on Top
+- **Auto-lock** : verrouillage après inactivité
 
 ### Confort visuel
 - **5 thèmes** : sombre, clair, fort contraste, océan, forêt
 - **Interface adaptable** : fonctionne sur ordinateur, tablette et téléphone
-
-### Langues disponibles
-- Français, English, Español (pour l'interface)
-- Dictionnaires de mots : français (2429 mots), anglais, latin
+- **Langues** : Français, English, Español
 
 
 ## Comment l'obtenir ?
@@ -119,16 +142,18 @@ Vous avez **4 moyens simples** d'utiliser GenPwd Pro :
 - Accessible depuis n'importe quel appareil connecté à Internet
 - Toujours à jour avec la dernière version
 
-### 2. Application Windows, Mac ou Linux
-**Pour une utilisation hors ligne**
+### 2. Application Windows (Recommandé pour le coffre-fort)
+**Pour une utilisation complète avec coffre-fort chiffré**
 
 1. Allez sur la [page des téléchargements](https://github.com/VBlackJack/genpwd-pro/releases)
-2. Téléchargez la version pour votre système :
-   - **Windows** : `GenPwd-Pro-x.x.x-win.exe`
-   - **Mac** : `GenPwd-Pro-x.x.x-mac.dmg`
-   - **Linux** : `GenPwd-Pro-x.x.x-linux.AppImage`
-3. Installez l'application comme n'importe quel logiciel
-4. Lancez GenPwd Pro depuis votre menu d'applications
+2. Téléchargez la version Windows :
+   - **Installeur** : `GenPwd Pro-3.0.0-win-x64.exe` (recommandé)
+   - **Portable** : `GenPwd Pro-3.0.0-portable.exe` (pas d'installation)
+   - **ZIP** : `GenPwd Pro-3.0.0-win-x64.zip`
+3. Installez ou lancez directement
+4. Créez votre coffre-fort avec un mot de passe maître
+
+> **Note** : Mac et Linux seront disponibles prochainement
 
 ### 3. Extension Navigateur
 **Pour générer des mots de passe directement sur les sites web**
