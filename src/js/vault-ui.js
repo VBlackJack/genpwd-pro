@@ -96,6 +96,7 @@ export class VaultUI {
   #pendingDelete = null;
   #undoTimeout = null;
   #viewMode = 'comfortable'; // 'comfortable' | 'compact'
+  #isCompactMode = false; // Window compact/overlay mode
   #searchFilters = { type: null, strength: null, age: null };
   #autoLockWarningShown = false;
   #selectedEntries = new Set(); // Multi-selection
@@ -1319,6 +1320,13 @@ export class VaultUI {
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+              </button>
+              <div class="vault-toolbar-divider"></div>
+              <button class="vault-icon-btn vault-compact-btn" id="btn-compact-mode" data-tooltip="Mode compact (widget flottant)" data-tooltip-pos="bottom" aria-label="Basculer en mode compact">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
                 </svg>
               </button>
             </div>
@@ -5118,6 +5126,64 @@ export class VaultUI {
     }
   }
 
+  // ==================== COMPACT/OVERLAY MODE ====================
+
+  /**
+   * Toggle compact mode (floating widget)
+   */
+  async #toggleCompactMode() {
+    if (!window.electronAPI?.toggleCompactMode) {
+      console.warn('[VaultUI] Compact mode not available (not in Electron)');
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.toggleCompactMode();
+      if (result.success) {
+        this.#handleCompactModeChange(result.compact);
+      }
+    } catch (error) {
+      console.error('[VaultUI] Compact mode error:', error);
+    }
+  }
+
+  /**
+   * Handle compact mode state change
+   * @param {boolean} compact - Whether compact mode is active
+   */
+  #handleCompactModeChange(compact) {
+    this.#isCompactMode = compact;
+
+    // Toggle body class
+    document.body.classList.toggle('mode-compact', compact);
+
+    // Update button state
+    const btn = document.getElementById('btn-compact-mode');
+    if (btn) {
+      btn.classList.toggle('active', compact);
+      btn.setAttribute('aria-pressed', String(compact));
+      btn.setAttribute('data-tooltip', compact ? 'Quitter le mode compact' : 'Mode compact (widget flottant)');
+
+      // Change icon
+      btn.innerHTML = compact
+        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+             <line x1="8" y1="21" x2="16" y2="21"></line>
+             <line x1="12" y1="17" x2="12" y2="21"></line>
+           </svg>`
+        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+             <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+             <line x1="12" y1="18" x2="12.01" y2="18"></line>
+           </svg>`;
+    }
+
+    // Show toast
+    this.#showToast(
+      compact ? 'Mode compact activé (Always on Top)' : 'Mode normal',
+      'info'
+    );
+  }
+
   async #importKeePassXML(xmlText) {
     // Parse KeePass 2.x XML format
     const parser = new DOMParser();
@@ -5784,6 +5850,18 @@ export class VaultUI {
       this.#showSaveVaultModal();
     });
 
+    // Compact mode toggle button
+    document.getElementById('btn-compact-mode')?.addEventListener('click', async () => {
+      await this.#toggleCompactMode();
+    });
+
+    // Listen for compact mode changes from main process
+    if (window.electronAPI?.onCompactModeChanged) {
+      window.electronAPI.onCompactModeChanged(({ compact }) => {
+        this.#handleCompactModeChange(compact);
+      });
+    }
+
     // Move folder modal
     document.querySelectorAll('#move-folder-modal .vault-folder-option').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -5813,6 +5891,22 @@ export class VaultUI {
           this.#selectedEntry = entry;
           this.#updateDetailPanel();
           this.#updateEntrySelection();
+        }
+      });
+
+      // Double-click to copy password (or open detail in compact mode)
+      row.addEventListener('dblclick', async (e) => {
+        if (e.target.closest('.vault-quick-btn') || e.target.closest('.vault-fav-toggle')) return;
+        const entry = this.#entries.find(en => en.id === row.dataset.entryId);
+        if (!entry) return;
+
+        // Copy password if available, otherwise copy username
+        if (entry.data?.password) {
+          await this.#copyToClipboard(entry.data.password, 'Mot de passe copié');
+        } else if (entry.data?.username) {
+          await this.#copyToClipboard(entry.data.username, 'Identifiant copié');
+        } else if (entry.data?.content) {
+          await this.#copyToClipboard(entry.data.content, 'Contenu copié');
         }
       });
 

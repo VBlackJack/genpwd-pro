@@ -26,7 +26,8 @@ const {
   clipboard,
   safeStorage,
   Notification,
-  nativeImage
+  nativeImage,
+  globalShortcut
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -87,8 +88,28 @@ let vaultModule = null;
 let tray = null;
 let isQuitting = false;
 
+// Compact mode state
+let isCompactMode = false;
+let normalBounds = null; // Store normal window bounds before compact mode
+
+// Global hotkey configuration (Boss Key)
+const GLOBAL_HOTKEY = 'CommandOrControl+Shift+P';
+
 // Clipboard auto-clear timers
 const clipboardTimers = new Map();
+
+// ==================== QUICK PASSWORD GENERATOR ====================
+// Simple password generator for tray menu (no UI needed)
+function generateQuickPassword(length = 20) {
+  const crypto = require('crypto');
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const bytes = crypto.randomBytes(length);
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += charset[bytes[i] % charset.length];
+  }
+  return password;
+}
 
 // Configuration de sécurité renforcée
 const SECURITY_CONFIG = {
@@ -215,6 +236,7 @@ function createTray() {
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Afficher GenPwd Pro',
+      accelerator: GLOBAL_HOTKEY,
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -223,6 +245,34 @@ function createTray() {
       }
     },
     { type: 'separator' },
+    {
+      label: 'Générer un mot de passe',
+      click: () => {
+        const password = generateQuickPassword(20);
+        clipboard.writeText(password);
+
+        // Auto-clear after 30 seconds
+        const timer = setTimeout(() => {
+          const current = clipboard.readText();
+          if (current === password) {
+            clipboard.clear();
+            console.log('[GenPwd Pro] Tray: Clipboard auto-cleared');
+          }
+        }, 30000);
+
+        // Show notification
+        if (Notification.isSupported()) {
+          new Notification({
+            title: 'Mot de passe généré',
+            body: 'Copié dans le presse-papier (30s)',
+            icon: path.join(__dirname, 'assets', 'icon.ico'),
+            silent: true
+          }).show();
+        }
+
+        console.log('[GenPwd Pro] Tray: Password generated and copied');
+      }
+    },
     {
       label: 'Verrouiller le coffre',
       click: async () => {
@@ -557,6 +607,62 @@ ipcMain.handle('app:quit', () => {
   isQuitting = true;
   app.quit();
   return { success: true };
+});
+
+// ==================== COMPACT/OVERLAY MODE ====================
+const COMPACT_SIZE = { width: 380, height: 640 };
+
+// Toggle compact mode
+ipcMain.handle('window:toggle-compact', () => {
+  if (!mainWindow) {
+    return { success: false, error: 'No main window' };
+  }
+
+  if (!isCompactMode) {
+    // Enter compact mode
+    normalBounds = mainWindow.getBounds();
+
+    mainWindow.setMinimumSize(COMPACT_SIZE.width, COMPACT_SIZE.height);
+    mainWindow.setSize(COMPACT_SIZE.width, COMPACT_SIZE.height);
+    mainWindow.setAlwaysOnTop(true, 'floating');
+    mainWindow.setResizable(false);
+
+    // Position in bottom-right corner of screen
+    const { screen } = require('electron');
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+    mainWindow.setPosition(
+      screenWidth - COMPACT_SIZE.width - 20,
+      screenHeight - COMPACT_SIZE.height - 20
+    );
+
+    isCompactMode = true;
+    mainWindow.webContents.send('window:compact-mode-changed', { compact: true });
+    console.log('[GenPwd Pro] Entered compact mode');
+  } else {
+    // Exit compact mode
+    mainWindow.setAlwaysOnTop(false);
+    mainWindow.setResizable(true);
+    mainWindow.setMinimumSize(1200, 850);
+
+    if (normalBounds) {
+      mainWindow.setBounds(normalBounds);
+    } else {
+      mainWindow.setSize(1200, 1200);
+      mainWindow.center();
+    }
+
+    isCompactMode = false;
+    mainWindow.webContents.send('window:compact-mode-changed', { compact: false });
+    console.log('[GenPwd Pro] Exited compact mode');
+  }
+
+  return { success: true, compact: isCompactMode };
+});
+
+// Get compact mode state
+ipcMain.handle('window:is-compact', () => {
+  return { compact: isCompactMode };
 });
 
 // ==================== FILE SYSTEM IPC HANDLERS ====================
@@ -979,6 +1085,31 @@ app.whenReady().then(async () => {
   createApplicationMenu();
   createTray();
 
+  // ==================== GLOBAL HOTKEY (Boss Key) ====================
+  // Register global shortcut to toggle window visibility
+  try {
+    const registered = globalShortcut.register(GLOBAL_HOTKEY, () => {
+      if (!mainWindow) return;
+
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+        console.log('[GenPwd Pro] Boss Key: Window hidden');
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+        console.log('[GenPwd Pro] Boss Key: Window shown');
+      }
+    });
+
+    if (registered) {
+      console.log(`[GenPwd Pro] Global hotkey registered: ${GLOBAL_HOTKEY}`);
+    } else {
+      console.error(`[GenPwd Pro] Failed to register global hotkey: ${GLOBAL_HOTKEY}`);
+    }
+  } catch (error) {
+    console.error('[GenPwd Pro] Global hotkey registration error:', error.message);
+  }
+
   // Set main window for vault events
   if (vaultModule && mainWindow) {
     vaultModule.setMainWindow(mainWindow);
@@ -1026,8 +1157,12 @@ app.on('before-quit', () => {
   clipboardTimers.clear();
 });
 
-// Destroy tray on quit
+// Destroy tray and unregister shortcuts on quit
 app.on('will-quit', () => {
+  // Unregister all global shortcuts
+  globalShortcut.unregisterAll();
+  console.log('[GenPwd Pro] Global shortcuts unregistered');
+
   if (tray) {
     tray.destroy();
     tray = null;

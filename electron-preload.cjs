@@ -81,6 +81,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Quit application completely
   quitApp: () => ipcRenderer.invoke('app:quit'),
 
+  // ==================== COMPACT/OVERLAY MODE ====================
+  // Toggle compact mode (floating widget)
+  toggleCompactMode: () => ipcRenderer.invoke('window:toggle-compact'),
+
+  // Check if in compact mode
+  isCompactMode: () => ipcRenderer.invoke('window:is-compact'),
+
+  // Listen for compact mode changes
+  onCompactModeChanged: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('window:compact-mode-changed', handler);
+    return () => ipcRenderer.removeListener('window:compact-mode-changed', handler);
+  },
+
   // ==================== DEEP LINKING ====================
   // Listen for deep link events (genpwd:// URLs)
   onDeepLink: (callback) => {
@@ -236,19 +250,20 @@ contextBridge.exposeInMainWorld('vault', {
 console.log('GenPwd Pro - Preload script chargé');
 console.log('Platform:', process.platform);
 console.log('Electron version:', process.versions.electron);
-console.log('APIs enabled: Vault, SecureStorage, Clipboard, DeepLink, Tray, AutoType');
+console.log('APIs enabled: Vault, SecureStorage, Clipboard, DeepLink, Tray, AutoType, CompactMode, GlobalHotkey');
 
 // Note: Vault events are handled via the vault.on() API exposed above.
 // Components should use window.vault.on('unlocked', callback) instead of
 // window.addEventListener('vault:unlocked', callback) due to context isolation.
 
 /**
- * Phase 4-6 Features Summary:
+ * Desktop Integration Features Summary:
  *
  * 1. System Tray & Background Lifecycle
  *    - App minimizes to tray on close (not quit)
- *    - Tray context menu: Show, Lock Vault, Quit
+ *    - Tray context menu: Show, Generate Password, Lock Vault, Quit
  *    - Single instance lock
+ *    - Quick password generation from tray (copied to clipboard with auto-clear)
  *
  * 2. Secure Storage (Quick Unlock)
  *    - window.electronAPI.isSecureStorageAvailable()
@@ -270,9 +285,20 @@ console.log('APIs enabled: Vault, SecureStorage, Clipboard, DeepLink, Tray, Auto
  *    - window.electronAPI.showWindow()
  *    - window.electronAPI.quitApp()
  *
- * 6. Auto-Type (Phase 6 - KeePass Killer Feature)
+ * 6. Auto-Type (KeePass Killer Feature)
  *    - window.electronAPI.performAutoType(sequence, data)
  *    - Sequence supports: {USERNAME}, {PASSWORD}, {TAB}, {ENTER}, {DELAY N}
  *    - Minimizes app and types into focused window
  *    - Uses PowerShell SendKeys on Windows (no native modules)
+ *
+ * 7. Compact/Overlay Mode (Floating Widget)
+ *    - window.electronAPI.toggleCompactMode()
+ *    - window.electronAPI.isCompactMode()
+ *    - window.electronAPI.onCompactModeChanged(callback)
+ *    - 380x640 floating window, always on top
+ *    - Hides sidebar, shows only search + list
+ *
+ * 8. Global Hotkey (Boss Key)
+ *    - Ctrl+Shift+P (or Cmd+Shift+P on macOS)
+ *    - Toggles window visibility from anywhere
  */
