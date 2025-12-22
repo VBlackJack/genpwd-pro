@@ -1,8 +1,8 @@
 {
   "name": "genpwd-pro",
-  "version": "2.7.0",
+  "version": "3.0.0",
   "type": "module",
-  "description": "Générateur de mots de passe sécurisés avec tests intégrés - Architecture modulaire",
+  "description": "Gestionnaire de mots de passe Desktop sécurisé - Coffre-fort chiffré, TOTP, Import KeePass",
   "main": "electron-main.cjs",
   "scripts": {
     "dev": "node tools/dev-server.cjs",
@@ -91,7 +91,12 @@
       "node_modules/hash-wasm/**/*",
       "node_modules/kdbxweb/**/*",
       "node_modules/tweetnacl/**/*",
-      "node_modules/tweetnacl-util/**/*"
+      "node_modules/tweetnacl-util/**/*",
+      "node_modules/dompurify/**/*",
+      "!src/tests/**/*",
+      "!**/*.test.js",
+      "!**/*.spec.js",
+      "!**/test-*.js"
     ],
     "directories": {
       "output": "release"

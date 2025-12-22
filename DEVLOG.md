@@ -2,13 +2,24 @@
 
 ## Branche: `feature/vault-windows`
 
-### Dernière session: 22 décembre 2025 (Session 2)
+### Dernière session: 22 décembre 2025 (Session 3 - Release Prep)
 
 ---
 
 ## Travail accompli
 
-### Phase 4: Desktop Integration (cette session)
+### Phase 5: Release 3.0.0 Preparation (Session 3)
+- **Versioning**: `package.json` → 3.0.0, `electron-preload.cjs` → 3.0.0
+- **CHANGELOG.md**: Entrée majeure v3.0.0 avec documentation complète (~180 lignes)
+- **Build Config**: Exclusion des tests, ajout de DOMPurify aux dépendances packagées
+- **Script de Release** (`tools/prepare-release.js`):
+  - Nettoyage dist/, release/, coverage/
+  - Vérification des fichiers critiques
+  - Vérification des dépendances de production
+  - Contrôle de syntaxe Node.js
+- **Roadmap**: Mise à jour pour v3.1.0+ (Windows Hello, Sync Cloud, Extension)
+
+### Phase 4: Desktop Integration (Session 2)
 - **System Tray amélioré** (`electron-main.cjs`):
   - Menu contextuel avec "Générer un mot de passe" (copie directe + auto-clear 30s)
   - Notification de confirmation

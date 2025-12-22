@@ -5,6 +5,182 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [3.0.0] - 2025-12-22
+
+### 🎉 Version Majeure : Gestionnaire de Mots de Passe Desktop
+
+Cette version transforme GenPwd Pro d'un simple générateur en un **gestionnaire de mots de passe complet**, rivalisant avec KeePass, Bitwarden et 1Password.
+
+### 🔐 Nouveau Core : Coffre-fort Chiffré
+
+#### Architecture de Sécurité
+- **Chiffrement AES-256-GCM** avec dérivation de clé PBKDF2 (100,000 itérations)
+- **Format de fichier `.gpdb`** (GenPwd Database) pour persistence locale
+- **Sauvegarde atomique** avec backup automatique avant écrasement
+- **Session sécurisée** avec verrouillage automatique et timeout configurable
+
+#### Modules de Sécurité (`src/js/vault/`)
+- `crypto-service.js` : Chiffrement/déchiffrement AES-GCM
+- `key-derivation.js` : Dérivation PBKDF2 avec salt aléatoire
+- `session.js` : Gestion de session avec auto-lock
+- `models.js` : VaultEntry, VaultGroup avec champs KeePass-compatibles
+
+### 📁 Organisation Avancée
+
+#### Dossiers et Hiérarchie
+- **Dossiers imbriqués** avec arborescence visuelle (Tree View)
+- **Menu contextuel** : Renommer, couleur, sous-dossiers, supprimer
+- **Compteurs récursifs** d'entrées par dossier
+- **Navigation par breadcrumb**
+
+#### Tags et Métadonnées
+- **Système de tags** avec couleurs personnalisées
+- **Champs personnalisés** dynamiques (clé/valeur)
+- **Historique des mots de passe** par entrée
+- **Métadonnées** : date de création, modification, dernière utilisation, compteur d'usage
+
+#### Types d'Entrées
+- **Login** : Username/Password/URL avec favicon
+- **Note sécurisée** : Texte chiffré avec rendu Markdown
+- **Carte bancaire** : Numéro, expiration, CVV, titulaire
+- **Identité** : Nom, prénom, email, téléphone, adresse
+
+### 🛡️ Sécurité Active
+
+#### Protection en Temps Réel
+- **Auto-Lock** : Verrouillage après inactivité (1-60 min configurable)
+- **Secure Clipboard** : Copie avec nettoyage automatique (30s par défaut)
+- **Visual Protection** : Floutage des données sensibles quand fenêtre perd le focus
+- **Password History** : Conservation des anciens mots de passe par entrée
+
+#### Audit de Sécurité (`src/js/vault/audit-service.js`)
+- **Calcul d'entropie** avec pénalités (patterns, mots communs)
+- **Détection des réutilisations** via hash SHA-256
+- **Détection des mots de passe faibles** (< 60 bits d'entropie)
+- **Détection des anciens mots de passe** (> 1 an sans changement)
+- **Score global 0-100** avec recommandations prioritaires
+
+#### TOTP / 2FA (`src/js/vault/totp-service.js`)
+- **Générateur TOTP** conforme RFC 6238
+- **Support SHA1/SHA256/SHA512**
+- **Auto-refresh** avec compte à rebours visuel
+- **Parsing/génération d'URI** `otpauth://`
+- **QR Code** pour configuration
+
+### 🖥️ Expérience Desktop (Electron)
+
+#### System Tray & Background
+- **Icône dans la zone de notification** (près de l'horloge)
+- **Menu contextuel** : Afficher, Générer mot de passe, Verrouiller, Quitter
+- **Génération rapide** depuis le tray (copie directe + auto-clear 30s)
+- **Minimize to Tray** : Fermer la fenêtre ne quitte pas l'application
+- **Single Instance** : Relancer l'exe réactive la fenêtre existante
+
+#### Global Hotkey (Boss Key)
+- **Raccourci système** : `Ctrl+Shift+P` (Windows/Linux) ou `Cmd+Shift+P` (macOS)
+- **Toggle visibilité** depuis n'importe quelle application
+- **Accès instantané** au gestionnaire de mots de passe
+
+#### Mode Compact / Overlay
+- **Fenêtre flottante** 380x640 pixels
+- **Always on Top** pour remplissage facile
+- **UI simplifiée** : Recherche + liste uniquement
+- **Position automatique** en bas à droite de l'écran
+
+#### Auto-Type (KeePass Killer Feature)
+- **Séquence configurable** : `{USERNAME}{TAB}{PASSWORD}{ENTER}`
+- **Support des placeholders** : `{DELAY N}`, `{URL}`, `{NOTES}`
+- **Minimisation automatique** avant saisie
+- **PowerShell SendKeys** sur Windows (pas de dépendances natives)
+
+### 📥 Migration & Import
+
+#### Import KeePass 2.x XML
+- **Hiérarchie de groupes** préservée comme dossiers
+- **Champs personnalisés** importés
+- **Notes et métadonnées** conservées
+- **Détection automatique** du format
+
+#### Import Bitwarden JSON
+- **Collections** converties en dossiers
+- **Tous types d'entrées** supportés
+- **URIs multiples** préservées
+
+#### Import CSV Générique
+- **Détection intelligente** des colonnes (username, password, url, notes)
+- **Preview avant import**
+- **Mapping personnalisable**
+
+### 🎨 Interface Utilisateur
+
+#### Security Dashboard
+- **Jauge SVG circulaire** avec score coloré
+- **Cartes cliquables** filtrant les entrées par problème
+- **Recommandations** avec priorités (critique/warning/info)
+- **Statistiques** : entrées totales, faibles, réutilisées, anciennes
+
+#### Tree View Sidebar
+- **Arborescence de dossiers** avec expand/collapse
+- **Drag & Drop** pour réorganisation
+- **Filtres rapides** : Tous, Favoris, Récents, par Type
+
+#### Entry List
+- **Double-clic** copie le mot de passe
+- **Actions rapides** au survol : copier username/password, ouvrir URL
+- **Multi-sélection** avec actions groupées
+- **Recherche avancée** : opérateurs `tag:`, `type:`, `folder:`, `has:`, `-exclude`
+
+#### Modals & Forms
+- **Add Entry Modal** avec types dynamiques
+- **Edit Entry Modal** avec historique
+- **Import Modal** avec drag-and-drop et preview
+- **Keyboard shortcuts** : `Ctrl+N`, `Ctrl+E`, `Delete`, etc.
+
+### 📦 Nouveaux Fichiers
+
+#### Backend Electron
+- `electron-main.cjs` : +globalShortcut, compact mode, tray amélioré
+- `electron-preload.cjs` : APIs compact mode, clipboard sécurisé, auto-type
+- `src/desktop/vault/` : Module complet de gestion du coffre
+
+#### Services Vault (`src/js/vault/`)
+- `audit-service.js` (~300 lignes) : Analyse de sécurité
+- `totp-service.js` (~280 lignes) : Générateur 2FA RFC 6238
+- `import-service.js` (~700 lignes) : Import KeePass/Bitwarden/CSV
+- `in-memory-repository.js` : Repository avec recherche avancée
+- `interfaces.js` : Interfaces abstraites
+- `models.js` : VaultEntry, VaultGroup
+
+#### UI
+- `src/js/vault-ui.js` (~9800 lignes) : Interface complète du coffre
+- `src/styles/vault.css` (~7400 lignes) : Styles du coffre
+
+### 🔧 Configuration de Build
+
+#### Electron Builder
+- **Targets Windows** : NSIS (x64, ia32), Portable (x64), ZIP (x64)
+- **Artifact naming** : `${productName}-${version}-${os}-${arch}.${ext}`
+- **Compression maximum** avec ASAR
+- **Icônes** configurées pour installer/uninstaller
+
+### 📊 Statistiques
+
+- **+15,000 lignes** de code ajoutées
+- **12 nouveaux modules** JavaScript
+- **2 fichiers CSS** (vault.css ~7400 lignes)
+- **8 catégories** de fonctionnalités desktop
+- **100%** des features KeePass essentielles
+
+### 🚀 Prochaines Étapes (v3.1.0)
+
+- [ ] Windows Hello / Touch ID pour déverrouillage biométrique
+- [ ] Synchronisation cloud optionnelle (OneDrive, Google Drive)
+- [ ] Extension navigateur pour auto-fill
+- [ ] Export chiffré vers fichier externe
+- [ ] Tests unitaires pour TOTP et Audit services
+
+---
+
 ## [2.6.0] - 2025-11-06
 
 ### 🎉 Fonctionnalités Majeures
@@ -473,24 +649,31 @@ Cette version marque une refonte complète de l'architecture avec passage à ES6
 
 ---
 
-## Roadmap future (v3.0.0)
+## Roadmap future (v3.1.0+)
 
-### Planifié
-- 🔄 **Web Workers** pour génération en arrière-plan
+### v3.0.0 - ✅ Livré (Décembre 2025)
+- ✅ **Gestionnaire de mots de passe** complet (coffre-fort chiffré AES-GCM)
+- ✅ **2FA Generator** intégré (TOTP RFC 6238)
+- ✅ **Audit de sécurité** avec scoring et recommandations
+- ✅ **Import KeePass/Bitwarden/CSV**
+- ✅ **Expérience Desktop** complète (Tray, Hotkey, Compact Mode)
+
+### v3.1.0 - Planifié
+- 🔒 **Windows Hello / Touch ID** pour déverrouillage biométrique
+- ☁️ **Sync Cloud optionnel** (OneDrive, Google Drive, Dropbox)
+- 🌐 **Extension navigateur** pour auto-fill dans Chrome/Firefox
+- 📤 **Export chiffré** vers fichier externe partageable
+
+### v3.2.0 - Planifié
+- 📱 **Application mobile** React Native (iOS/Android)
+- 🔄 **Web Workers** pour opérations cryptographiques en arrière-plan
 - 🌐 **PWA** (Progressive Web App) avec mode offline
-- 🔑 **Gestionnaire de mots de passe** intégré (stockage chiffré)
-- 📱 **Application mobile** React Native
-- 🤖 **API REST** pour intégration dans d'autres services
-- 🧠 **Machine Learning** pour détecter les patterns faibles
-- 🎯 **Profils personnalisés** selon les exigences des sites
-- 🔐 **2FA Generator** intégré
-- 📊 **Analytics** de force des mots de passe
-- 🌍 **10+ langues** supportées
+- 🤖 **API REST** pour intégration entreprise
 
 ### Améliorations techniques prévues
-- Migration vers TypeScript
+- Migration partielle vers TypeScript
 - Tests E2E avec Playwright
-- CI/CD avec GitHub Actions
+- CI/CD renforcé avec GitHub Actions
 - Documentation API avec OpenAPI
 - Benchmarks de performance automatisés
 
