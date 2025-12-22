@@ -4840,10 +4840,23 @@ export class VaultUI {
    * Attach event handlers for the import modal
    */
   #attachImportModalEvents() {
+    const modal = document.getElementById('import-modal');
     const dropzone = document.getElementById('import-dropzone');
     const fileInput = document.getElementById('import-file-input');
     const browseBtn = document.getElementById('btn-import-browse');
     const confirmBtn = document.getElementById('btn-import-confirm');
+
+    // Close buttons (X and Cancel)
+    modal?.querySelectorAll('[data-close-modal]').forEach(btn => {
+      btn.addEventListener('click', () => this.#closeModal('import-modal'));
+    });
+
+    // Click on backdrop to close
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.#closeModal('import-modal');
+      }
+    });
 
     // Browse button
     browseBtn?.addEventListener('click', () => fileInput?.click());
