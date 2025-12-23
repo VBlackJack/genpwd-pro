@@ -111,6 +111,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Get default auto-type sequence
   getDefaultAutoTypeSequence: () => ipcRenderer.invoke('automation:get-default-sequence'),
 
+  // Listen for global auto-type trigger
+  onGlobalAutoType: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('automation:global-autotype', handler);
+    return () => ipcRenderer.removeListener('automation:global-autotype', handler);
+  },
+
   // ==================== VISUAL PROTECTION (Blur/Focus) ====================
   // Listen for window blur event (hide sensitive data)
   onWindowBlur: (callback) => {
@@ -141,11 +148,30 @@ contextBridge.exposeInMainWorld('vault', {
     ipcRenderer.invoke('vault:changePassword', { vaultId, currentPassword, newPassword }),
   delete: (vaultId) => ipcRenderer.invoke('vault:delete', { vaultId }),
 
+  // ==================== PANIC / NUKE ====================
+  nuke: () => ipcRenderer.invoke('vault:nuke'),
+
   // ==================== EXTERNAL VAULTS ====================
   showSaveDialog: (defaultName) => ipcRenderer.invoke('vault:showSaveDialog', { defaultName }),
   showOpenDialog: () => ipcRenderer.invoke('vault:showOpenDialog'),
   openFromPath: (filePath, password) => ipcRenderer.invoke('vault:openFromPath', { filePath, password }),
   unregister: (vaultId) => ipcRenderer.invoke('vault:unregister', { vaultId }),
+
+  // ==================== CLOUD SYNC ====================
+  cloud: {
+    saveConfig: (config) => ipcRenderer.invoke('vault:saveCloudConfig', config),
+    getConfig: () => ipcRenderer.invoke('vault:getCloudConfig')
+  },
+
+  // ==================== DURESS MODE ====================
+  duress: {
+    setup: (options) => ipcRenderer.invoke('vault:duress:setup', options)
+  },
+
+  // ==================== SECURE SHARING ====================
+  share: {
+    create: (secretData, options) => ipcRenderer.invoke('vault:share:create', { secretData, options })
+  },
 
   // ==================== ENTRIES ====================
   entries: {
@@ -153,7 +179,7 @@ contextBridge.exposeInMainWorld('vault', {
     get: (id) => ipcRenderer.invoke('vault:entries:get', { id }),
     getByFolder: (folderId) => ipcRenderer.invoke('vault:entries:getByFolder', { folderId }),
     search: (query) => ipcRenderer.invoke('vault:entries:search', { query }),
-    add: (type, title, data) => ipcRenderer.invoke('vault:entries:add', { type, title, data }),
+    add: (type, title, data, options = {}) => ipcRenderer.invoke('vault:entries:add', { type, title, data, options }),
     update: (id, updates) => ipcRenderer.invoke('vault:entries:update', { id, updates }),
     delete: (id) => ipcRenderer.invoke('vault:entries:delete', { id })
   },
@@ -170,6 +196,7 @@ contextBridge.exposeInMainWorld('vault', {
   tags: {
     getAll: () => ipcRenderer.invoke('vault:tags:getAll'),
     add: (name, color) => ipcRenderer.invoke('vault:tags:add', { name, color }),
+    update: (id, updates) => ipcRenderer.invoke('vault:tags:update', { id, updates }),
     delete: (id) => ipcRenderer.invoke('vault:tags:delete', { id })
   },
 
@@ -231,6 +258,20 @@ contextBridge.exposeInMainWorld('vault', {
      * @returns {Promise<{success: boolean, info?: {size: number, createdAt: string, modifiedAt: string}}>}
      */
     getFileInfo: (filePath) => ipcRenderer.invoke('vaultIO:getFileInfo', { filePath })
+  },
+
+  // ==================== MENU EVENTS ====================
+  menu: {
+    onCreate: (callback) => {
+      const handler = () => callback();
+      ipcRenderer.on('vault:menu:create', handler);
+      return () => ipcRenderer.removeListener('vault:menu:create', handler);
+    },
+    onOpen: (callback) => {
+      const handler = () => callback();
+      ipcRenderer.on('vault:menu:open', handler);
+      return () => ipcRenderer.removeListener('vault:menu:open', handler);
+    }
   },
 
   // ==================== EVENTS ====================

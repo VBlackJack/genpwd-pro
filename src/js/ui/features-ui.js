@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// src/js/ui/features-ui.js - UI components for v2.6.0 features
+// src/js/ui/features-ui.js - UI components for advanced features
 
 import { i18n } from '../utils/i18n.js';
 import presetManager from '../utils/preset-manager.js';
@@ -552,7 +552,7 @@ function bindPresetEvents() {
 
   // Quick save button - update selected preset with current config
   if (btnQuickSave) {
-    btnQuickSave.addEventListener('click', () => {
+    btnQuickSave.addEventListener('click', async () => {
       const presetId = presetSelect?.value;
       if (!presetId) return;
 
@@ -561,14 +561,13 @@ function bindPresetEvents() {
 
       if (confirm(`Mettre à jour "${preset.name}" avec la configuration actuelle ?`)) {
         const currentConfig = getCurrentGeneratorConfig();
-        presetManager.updatePreset(presetId, { config: currentConfig }).then(success => {
-          if (success) {
-            showToast(`Preset "${preset.name}" mis à jour !`, 'success');
-            safeLog(`[QuickSave] Updated preset: ${presetId}`);
-          } else {
-            showToast('Échec de la mise à jour (coffre verrouillé ?)', 'error');
-          }
-        });
+        const success = await presetManager.updatePreset(presetId, { config: currentConfig });
+        if (success) {
+          showToast(`Preset "${preset.name}" mis à jour !`, 'success');
+          safeLog(`[QuickSave] Updated preset: ${presetId}`);
+        } else {
+          showToast('Échec de la mise à jour (coffre verrouillé ?)', 'error');
+        }
       }
     });
   }
@@ -1028,7 +1027,7 @@ function bindPresetModalEvents(modal) {
 
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', (_e) => {
+    btn.addEventListener('click', async (_e) => {
       const action = btn.dataset.action;
       const presetId = btn.dataset.presetId;
 
@@ -1066,16 +1065,15 @@ function bindPresetModalEvents(modal) {
         case 'duplicate':
           const presetToDuplicate = presetManager.getPreset(presetId);
           if (presetToDuplicate) {
-            presetManager.duplicatePreset(presetId).then(duplicatedPreset => {
-              if (duplicatedPreset) {
-                updatePresetDropdown();
-                modal.remove();
-                showManagePresetsModal();
-                showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
-              } else {
-                showToast('Coffre verrouillé - déverrouillez pour dupliquer', 'error');
-              }
-            });
+            const duplicatedPreset = await presetManager.duplicatePreset(presetId);
+            if (duplicatedPreset) {
+              updatePresetDropdown();
+              modal.remove();
+              showManagePresetsModal();
+              showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
+            } else {
+              showToast('Coffre verrouillé - déverrouillez pour dupliquer', 'error');
+            }
           }
           break;
 
@@ -1092,31 +1090,29 @@ function bindPresetModalEvents(modal) {
           if (presetToUpdate) {
             if (confirm(`Remplacer la configuration de "${presetToUpdate.name}" par les paramètres actuels ?`)) {
               const currentConfig = getCurrentGeneratorConfig();
-              presetManager.updatePreset(presetId, { config: currentConfig }).then(success => {
-                if (success) {
-                  updatePresetDropdown();
-                  modal.remove();
-                  showManagePresetsModal(); // Refresh the modal
-                  showToast(`Configuration de "${presetToUpdate.name}" mise à jour !`, 'success');
-                } else {
-                  showToast('Coffre verrouillé - déverrouillez pour mettre à jour', 'error');
-                }
-              });
+              const success = await presetManager.updatePreset(presetId, { config: currentConfig });
+              if (success) {
+                updatePresetDropdown();
+                modal.remove();
+                showManagePresetsModal(); // Refresh the modal
+                showToast(`Configuration de "${presetToUpdate.name}" mise à jour !`, 'success');
+              } else {
+                showToast('Coffre verrouillé - déverrouillez pour mettre à jour', 'error');
+              }
             }
           }
           break;
 
         case 'delete':
           if (confirm('Supprimer ce preset ?')) {
-            presetManager.deletePreset(presetId).then(success => {
-              if (success) {
-                updatePresetDropdown();
-                modal.remove();
-                showToast('Preset supprimé', 'success');
-              } else {
-                showToast('Échec de la suppression', 'error');
-              }
-            });
+            const success = await presetManager.deletePreset(presetId);
+            if (success) {
+              updatePresetDropdown();
+              modal.remove();
+              showToast('Preset supprimé', 'success');
+            } else {
+              showToast('Échec de la suppression', 'error');
+            }
           }
           break;
       }

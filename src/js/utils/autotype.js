@@ -85,7 +85,7 @@ export async function executeAutotype(entry, options = {}) {
   safeLog(`[Autotype] Executing ${steps.length} steps`);
 
   // Check if running in Electron with autotype support
-  if (window.electronAPI?.autotype) {
+  if (window.electronAPI?.performAutoType) {
     return executeElectronAutotype(entry, steps, { typeDelay, onProgress });
   }
 
@@ -95,47 +95,46 @@ export async function executeAutotype(entry, options = {}) {
 
 /**
  * Execute auto-type using Electron IPC
+ * Uses the unified performAutoType API which handles minimize, typing, and keys
  */
 async function executeElectronAutotype(entry, steps, options) {
-  const { typeDelay, onProgress } = options;
+  const { onProgress } = options;
 
   try {
-    // Minimize app window first
-    await window.electronAPI.autotype.minimize();
-
-    // Small delay for window focus change
-    await delay(300);
-
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      onProgress?.(i + 1, steps.length, step.type);
-
+    // Build sequence string from steps
+    const sequenceParts = steps.map(step => {
       switch (step.type) {
-        case 'username':
-          await window.electronAPI.autotype.type(entry.data?.username || '');
-          break;
-        case 'password':
-          await window.electronAPI.autotype.type(entry.data?.password || '');
-          break;
-        case 'totp':
-          // Would need to generate TOTP here
-          break;
-        case 'text':
-          await window.electronAPI.autotype.type(step.value);
-          break;
+        case 'username': return '{USERNAME}';
+        case 'password': return '{PASSWORD}';
+        case 'totp': return '{TOTP}';
         case 'key':
-          await window.electronAPI.autotype.sendKey(step.value);
-          break;
-        case 'delay':
-          await delay(step.value);
-          break;
+          if (step.value === 'Tab') return '{TAB}';
+          if (step.value === 'Enter') return '{ENTER}';
+          return '';
+        case 'delay': return `{DELAY ${step.value}}`;
+        case 'text': return step.value;
+        default: return '';
       }
+    });
 
-      await delay(typeDelay);
+    const sequence = sequenceParts.join('');
+    onProgress?.(1, 2, 'executing');
+
+    // Use the unified performAutoType API
+    const result = await window.electronAPI.performAutoType(sequence, {
+      username: entry.data?.username || '',
+      password: entry.data?.password || ''
+    });
+
+    onProgress?.(2, 2, 'done');
+
+    if (result.success) {
+      safeLog('[Autotype] Sequence completed');
+      return true;
+    } else {
+      safeLog(`[Autotype] Failed: ${result.error}`);
+      return false;
     }
-
-    safeLog('[Autotype] Sequence completed');
-    return true;
   } catch (error) {
     safeLog(`[Autotype] Error: ${error.message}`);
     return false;
@@ -151,7 +150,8 @@ async function executeBrowserAutotype(entry, steps, options) {
 
   // Browser mode: Just prepare the data and show instructions
   const username = entry.data?.username || '';
-  const password = entry.data?.password || '';
+  // Password not needed for simple clipboard instructions
+  // const password = entry.data?.password || '';
 
   onProgress?.(1, 2, 'preparing');
 
@@ -184,7 +184,7 @@ async function executeBrowserAutotype(entry, steps, options) {
  * @returns {Object} Availability info
  */
 export function getAutotypeCapabilities() {
-  const hasElectron = !!window.electronAPI?.autotype;
+  const hasElectron = !!window.electronAPI?.performAutoType;
   const hasClipboard = !!navigator.clipboard;
 
   return {
@@ -255,7 +255,8 @@ export class AutotypeSequenceBuilder {
   }
 }
 
-function delay(ms) {
+// Helper for future browser-based autotype with delays
+function _delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 

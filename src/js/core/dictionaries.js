@@ -33,6 +33,7 @@ async function loadDictionarySource(config) {
   const { url } = config;
 
   const isBrowserContext = typeof window !== 'undefined' && typeof window.fetch === 'function';
+  console.log(`[DictDebug] isBrowserContext: ${isBrowserContext}, window: ${typeof window}, fetch: ${typeof window?.fetch}`);
   const shouldUseHttpFetch = isBrowserContext || REMOTE_PROTOCOL_REGEX.test(url);
 
   if (shouldUseHttpFetch) {
@@ -42,8 +43,8 @@ async function loadDictionarySource(config) {
         const urlObj = new URL(url);
         // Only allow HTTPS for remote dictionaries (except localhost for dev)
         if (urlObj.protocol !== 'https:' &&
-            !urlObj.hostname.includes('localhost') &&
-            !urlObj.hostname.includes('127.0.0.1')) {
+          !urlObj.hostname.includes('localhost') &&
+          !urlObj.hostname.includes('127.0.0.1')) {
           throw new Error('Remote dictionaries must use HTTPS');
         }
       } catch (error) {
@@ -181,74 +182,74 @@ export async function loadDictionary(dictKey) {
     try {
       safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
 
-    const data = await loadDictionarySource(config);
+      const data = await loadDictionarySource(config);
 
-    // Integrity validation (if hash is configured)
-    if (typeof data === 'string' || data instanceof ArrayBuffer) {
-      const integrityResult = await validateDictionary(dictKey, data);
-      if (!integrityResult.valid) {
-        // Determine if we're in production (HTTPS + non-localhost)
-        const isProd = typeof location !== 'undefined' &&
-                       location.protocol === 'https:' &&
-                       !location.hostname.includes('localhost') &&
-                       !location.hostname.includes('127.0.0.1');
+      // Integrity validation (if hash is configured)
+      if (typeof data === 'string' || data instanceof ArrayBuffer) {
+        const integrityResult = await validateDictionary(dictKey, data);
+        if (!integrityResult.valid) {
+          // Determine if we're in production (HTTPS + non-localhost)
+          const isProd = typeof location !== 'undefined' &&
+            location.protocol === 'https:' &&
+            !location.hostname.includes('localhost') &&
+            !location.hostname.includes('127.0.0.1');
 
-        if (isProd) {
-          // In production, fail hard on integrity violations
-          throw new Error(`Dictionary integrity check FAILED: ${integrityResult.message}`);
-        } else {
-          // In development, log warning but continue
-          safeLog(`⚠️ DEV MODE: ${integrityResult.message}`);
+          if (isProd) {
+            // In production, fail hard on integrity violations
+            throw new Error(`Dictionary integrity check FAILED: ${integrityResult.message}`);
+          } else {
+            // In development, log warning but continue
+            safeLog(`⚠️ DEV MODE: ${integrityResult.message}`);
+          }
+        } else if (!integrityResult.skipped) {
+          safeLog(`✓ ${integrityResult.message}`);
         }
-      } else if (!integrityResult.skipped) {
-        safeLog(`✓ ${integrityResult.message}`);
       }
-    }
 
-    // Validation du format
-    if (!data || !Array.isArray(data.words)) {
-      throw new Error('Invalid dictionary format: missing "words" property');
-    }
+      // Validation du format
+      if (!data || !Array.isArray(data.words)) {
+        throw new Error('Invalid dictionary format: missing "words" property');
+      }
 
-    // Security check: prevent excessive memory allocation
-    if (data.words.length > MAX_DICTIONARY_WORDS) {
-      throw new Error(`Dictionary too large: ${data.words.length} words > ${MAX_DICTIONARY_WORDS} maximum`);
-    }
+      // Security check: prevent excessive memory allocation
+      if (data.words.length > MAX_DICTIONARY_WORDS) {
+        throw new Error(`Dictionary too large: ${data.words.length} words > ${MAX_DICTIONARY_WORDS} maximum`);
+      }
 
-    // Filter and validate words
-    const words = data.words.filter(word => {
-      // Must be string
-      if (typeof word !== 'string') return false;
+      // Filter and validate words
+      const words = data.words.filter(word => {
+        // Must be string
+        if (typeof word !== 'string') return false;
 
-      // Length constraints (3-12 chars for optimal passphrase entropy/usability)
-      // SECURITY: Pre-check length to prevent ReDoS attack
-      if (word.length < 3 || word.length > 12) return false;
+        // Length constraints (3-12 chars for optimal passphrase entropy/usability)
+        // SECURITY: Pre-check length to prevent ReDoS attack
+        if (word.length < 3 || word.length > 12) return false;
 
-      // Only letters (including accented characters)
-      // NOTE: Length is already validated above, preventing ReDoS
-      if (!/^[a-zA-ZàâäéèêëïîôöùûüÿñçæœÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÑÇÆŒ]+$/.test(word)) return false;
+        // Only letters (including accented characters)
+        // NOTE: Length is already validated above, preventing ReDoS
+        if (!/^[a-zA-ZàâäéèêëïîôöùûüÿñçæœÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÑÇÆŒ]+$/.test(word)) return false;
 
-      return true;
-    });
+        return true;
+      });
 
-    // Ensure minimum dictionary size for security
-    if (words.length < MIN_DICTIONARY_WORDS) {
-      throw new Error(`Dictionary too small: ${words.length} valid words < ${MIN_DICTIONARY_WORDS} minimum required`);
-    }
+      // Ensure minimum dictionary size for security
+      if (words.length < MIN_DICTIONARY_WORDS) {
+        throw new Error(`Dictionary too small: ${words.length} valid words < ${MIN_DICTIONARY_WORDS} minimum required`);
+      }
 
-    // Store in cache (with additional validation)
-    dictionaries.cache.set(dictKey, Object.freeze([...words])); // Freeze for immutability
-    updateDictionaryStatus(dictKey, 'loaded', words.length);
+      // Store in cache (with additional validation)
+      dictionaries.cache.set(dictKey, Object.freeze([...words])); // Freeze for immutability
+      updateDictionaryStatus(dictKey, 'loaded', words.length);
 
-    const filteredCount = data.words.length - words.length;
-    if (filteredCount > 0) {
-      safeLog(`Dictionary ${dictKey}: filtered out ${filteredCount} invalid words`);
-    }
+      const filteredCount = data.words.length - words.length;
+      if (filteredCount > 0) {
+        safeLog(`Dictionary ${dictKey}: filtered out ${filteredCount} invalid words`);
+      }
 
-    safeLog(`Dictionary ${dictKey} loaded successfully: ${words.length} validated words`);
+      safeLog(`Dictionary ${dictKey} loaded successfully: ${words.length} validated words`);
 
-    // Update UI info
-    updateDictionaryInfo(dictKey, words.length, data.metadata);
+      // Update UI info
+      updateDictionaryInfo(dictKey, words.length, data.metadata);
 
       return words;
 
@@ -280,7 +281,7 @@ export async function loadDictionary(dictKey) {
 
 export async function getCurrentDictionary(dictKey = null) {
   const targetDict = dictKey || dictionaries.current;
-  
+
   try {
     return await loadDictionary(targetDict);
   } catch (error) {
@@ -347,7 +348,7 @@ function updateDictionaryStatus(dictKey, status, count = null) {
   dictionaries.status.set(dictKey, { status, count, timestamp: Date.now() });
 
   statusEl.className = `dict-status ${status}`;
-  
+
   switch (status) {
     case 'loading':
       statusEl.textContent = '⏳';
@@ -390,8 +391,8 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
 export function initializeDictionaries() {
   // Initialiser le fallback français
   updateDictionaryStatus('french', 'fallback');
-  updateDictionaryInfo('french', FALLBACK_DICTIONARY.length, 
+  updateDictionaryInfo('french', FALLBACK_DICTIONARY.length,
     { version: 'v1.0', source: 'intégré' });
-  
+
   safeLog('Système de dictionnaires initialisé');
 }

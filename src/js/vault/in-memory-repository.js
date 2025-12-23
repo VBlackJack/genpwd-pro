@@ -49,7 +49,7 @@ function cloneGroup(group) {
 function parseSearchQuery(query) {
   const operators = new Map();
   const excludes = [];
-  const textParts = [];
+
 
   // Match operators: key:value or key:"value with spaces"
   const operatorRegex = /(\w+):(?:"([^"]+)"|(\S+))/g;
@@ -374,8 +374,6 @@ export class InMemoryVaultRepository extends VaultRepository {
    */
   async getGroupTree() {
     const groups = Array.from(this.groups.values());
-    const rootGroups = groups.filter(g => !g.parentId);
-    const groupMap = new Map(groups.map(g => [g.id, g]));
 
     function buildTree(parentId) {
       return groups

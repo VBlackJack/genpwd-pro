@@ -5,7 +5,7 @@
  * @version 2.6.8
  */
 
-import { VaultBridge, VaultState } from './vault-bridge.js';
+import { VaultBridge } from './vault-bridge.js';
 import { showToast } from '../utils/toast.js';
 import { QuickUnlockDialog } from './quick-unlock-dialog.js';
 

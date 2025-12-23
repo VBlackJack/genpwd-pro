@@ -20,8 +20,7 @@ import { safeLog } from './logger.js';
 
 const STORAGE_KEY = 'security-clipboard-timeout';
 const DEFAULT_TIMEOUT_MS = 60 * 1000; // 60 seconds
-const MIN_TIMEOUT_MS = 10 * 1000; // 10 seconds minimum
-const MAX_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes max
+
 
 /**
  * Available timeout options (in seconds)
@@ -342,7 +341,11 @@ class SecureClipboard {
     if (this.#timeoutMs <= 0) return;
 
     this.#timerId = window.setTimeout(async () => {
-      await this.clear();
+      try {
+        await this.clear();
+      } catch (err) {
+        safeLog('[SecureClipboard] Auto-clear failed:', err);
+      }
     }, this.#timeoutMs);
 
     safeLog(`[SecureClipboard] Auto-clear scheduled in ${this.#timeoutMs}ms`);

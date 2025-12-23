@@ -9,20 +9,34 @@ export class InMemorySessionManager extends SessionManager {
     super();
     this.defaultTtlMs = defaultTtlMs;
     this.masterKey = null;
+    this.duressKey = null; // Key for the decoy vault
+    this.isDuressMode = false; // Flag to indicate if we are in duress mode
     this.expiresAt = 0;
     this.biometricGate = null;
   }
 
-  async storeKey(key, ttlMs = this.defaultTtlMs) {
+  async storeKey(key, ttlMs = this.defaultTtlMs, isDuress = false) {
     if (!(key instanceof Uint8Array)) {
       throw new TypeError('Master key must be a Uint8Array');
     }
-    this.masterKey = cloneKey(key);
+
+    if (isDuress) {
+      this.duressKey = cloneKey(key);
+      this.isDuressMode = true;
+      this.masterKey = null; // Ensure real master key is not stored
+    } else {
+      this.masterKey = cloneKey(key);
+      this.isDuressMode = false;
+      this.duressKey = null;
+    }
+
     this.expiresAt = Date.now() + ttlMs;
   }
 
   async getKey() {
-    if (!this.masterKey || this.isExpired()) {
+    const activeKey = this.isDuressMode ? this.duressKey : this.masterKey;
+
+    if (!activeKey || this.isExpired()) {
       return null;
     }
     if (this.biometricGate) {
@@ -35,30 +49,35 @@ export class InMemorySessionManager extends SessionManager {
         return null;
       }
     }
-    return cloneKey(this.masterKey);
+    return cloneKey(activeKey);
   }
 
   async clear() {
     if (this.masterKey) {
       this.masterKey.fill(0);
     }
+    if (this.duressKey) {
+      this.duressKey.fill(0);
+    }
     this.masterKey = null;
+    this.duressKey = null;
+    this.isDuressMode = false;
     this.expiresAt = 0;
   }
 
   async extend(ttlMs = this.defaultTtlMs) {
-    if (!this.masterKey) {
+    if (!this.masterKey && !this.duressKey) {
       throw new Error('Session is not unlocked');
     }
     this.expiresAt = Date.now() + ttlMs;
   }
 
   isUnlocked() {
-    return Boolean(this.masterKey) && !this.isExpired();
+    return (Boolean(this.masterKey) || Boolean(this.duressKey)) && !this.isExpired();
   }
 
   isExpired() {
-    if (!this.masterKey) {
+    if (!this.masterKey && !this.duressKey) {
       return true;
     }
     return Date.now() > this.expiresAt;

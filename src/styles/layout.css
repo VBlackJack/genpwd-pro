@@ -126,6 +126,43 @@ header::before {
   gap: 12px;
 }
 
+/* Header Tabs (Generator / Vault) */
+.header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+}
+
+.header-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.header-tab.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-primary);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
 /* Vault Status Indicator */
 .vault-status-indicator {
   display: flex;
@@ -411,7 +448,7 @@ header::before {
   box-shadow: var(--shadow);
   overflow: hidden;
   z-index: 50;
-  display: none;
+  /* Visibility controlled via .hidden class, not display:none */
 }
 
 .debug-header {
@@ -439,51 +476,8 @@ header::before {
 }
 
 /* ============================================================================
-   TOASTS
+   TOASTS - Consolidated in utilities.css (use #toasts container)
    ============================================================================ */
-
-.toasts {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 350px;
-}
-
-.toast {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  max-width: 320px;
-  opacity: 1;
-  transform: translateX(0);
-  transition: all 0.3s ease;
-  pointer-events: auto;
-}
-
-.toast-error {
-  border-left: 4px solid var(--accent-red);
-}
-
-.toast-success {
-  border-left: 4px solid var(--accent-green);
-}
-
-.toast-info {
-  border-left: 4px solid var(--accent-blue);
-}
-
-.toast-hiding {
-  opacity: 0 !important;
-  transform: translateX(20px) !important;
-}
 
 /* ============================================================================
    RESPONSIVE DESIGN

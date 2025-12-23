@@ -14,7 +14,7 @@
 import { VaultFileManager } from '../storage/vault-file-manager.js';
 import { CryptoEngine } from '../crypto/crypto-engine.js';
 import { createEntry, createFolder, createTag } from '../models/vault-types.js';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 const DEFAULT_AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -53,6 +53,9 @@ export class VaultSessionManager extends EventEmitter {
 
   /** @type {boolean} */
   #isDirty;
+
+  /** @type {number} */
+  #activeSlot = 0; // 0 = Real, 1 = Decoy
 
   constructor() {
     super();
@@ -107,9 +110,10 @@ export class VaultSessionManager extends EventEmitter {
    * @param {string} vaultId - Vault ID
    * @param {Object} vaultData - Decrypted vault data
    * @param {Uint8Array} key - Encryption key
+   * @param {number} [activeSlot=0] - Active slot index
    * @returns {Promise<void>}
    */
-  async initWithVault(vaultId, vaultData, key) {
+  async initWithVault(vaultId, vaultData, key, activeSlot = 0) {
     // Lock current vault if any
     if (this.isUnlocked()) {
       await this.lock();
@@ -118,6 +122,7 @@ export class VaultSessionManager extends EventEmitter {
     this.#vaultData = vaultData;
     this.#key = key;
     this.#vaultId = vaultId;
+    this.#activeSlot = activeSlot;
     this.#isDirty = false;
 
     // Set auto-lock timer
@@ -128,7 +133,7 @@ export class VaultSessionManager extends EventEmitter {
       this.#autoLockMs = vaultData.metadata.settings.autoLockMinutes * 60 * 1000;
     }
 
-    this.emit('unlocked', { vaultId, name: vaultData.metadata.name });
+    this.emit('unlocked', { vaultId, name: vaultData.metadata.name, isDecoy: activeSlot === 1 });
   }
 
   /**
@@ -144,11 +149,12 @@ export class VaultSessionManager extends EventEmitter {
     }
 
     try {
-      const { vaultData, key } = await this.#fileManager.openVault(vaultId, password);
+      const { vaultData, key, activeSlot } = await this.#fileManager.openVault(vaultId, password);
 
       this.#vaultData = vaultData;
       this.#key = key;
       this.#vaultId = vaultId;
+      this.#activeSlot = activeSlot || 0;
       this.#isDirty = false;
 
       // Set auto-lock timer
@@ -159,46 +165,59 @@ export class VaultSessionManager extends EventEmitter {
         this.#autoLockMs = vaultData.metadata.settings.autoLockMinutes * 60 * 1000;
       }
 
-      this.emit('unlocked', { vaultId, name: vaultData.metadata.name });
+      this.emit('unlocked', { vaultId, name: vaultData.metadata.name, isDecoy: activeSlot === 1 });
     } catch (error) {
-      this.emit('error', { type: 'unlock', message: error.message });
+      this.emit('error', { action: 'unlock', error: error.message });
       throw error;
     }
   }
 
   /**
-   * Lock vault (save if dirty and clear memory)
+   * Lock vault and clear memory
    * @returns {Promise<void>}
    */
   async lock() {
     if (!this.isUnlocked()) return;
 
-    // Save pending changes
-    if (this.#isDirty) {
-      await this.#save();
-    }
+    // Clear data from memory
+    this.#vaultData = null;
+    this.#vaultId = null;
+    this.#activeSlot = 0;
 
-    // Clear auto-lock timer
-    if (this.#autoLockTimer) {
-      clearTimeout(this.#autoLockTimer);
-      this.#autoLockTimer = null;
-    }
-
-    // Wipe key from memory
     if (this.#key) {
       this.#crypto.wipeKey(this.#key);
       this.#key = null;
     }
 
-    // Clear vault data
-    const vaultId = this.#vaultId;
-    this.#vaultData = null;
-    this.#vaultId = null;
-    this.#isDirty = false;
-
-    this.emit('locked', { vaultId });
+    this.#stopAutoLockTimer();
+    this.emit('locked', {});
   }
 
+  /**
+   * Save current vault state
+   * @returns {Promise<void>}
+   */
+  async save() {
+    if (!this.isUnlocked()) {
+      throw new Error('Vault is locked');
+    }
+
+    try {
+      if (this.#key && this.#vaultData) {
+        await this.#fileManager.saveVault(
+          this.#vaultId,
+          this.#vaultData,
+          this.#key,
+          this.#activeSlot
+        );
+        this.#isDirty = false;
+        this.emit('changed', {});
+      }
+    } catch (error) {
+      this.emit('error', { action: 'save', error: error.message });
+      throw error;
+    }
+  }
   /**
    * Reset auto-lock timer (call on user activity)
    */
@@ -445,6 +464,30 @@ export class VaultSessionManager extends EventEmitter {
     return true;
   }
 
+  /**
+   * Update tag
+   * @param {string} id - Tag ID
+   * @param {Object} updates - Updates to apply (name, color)
+   * @returns {Object|null}
+   */
+  updateTag(id, updates) {
+    this.#requireUnlocked();
+    const index = this.#vaultData.tags.findIndex(t => t.id === id);
+    if (index === -1) return null;
+
+    const tag = this.#vaultData.tags[index];
+    const updated = {
+      ...tag,
+      ...updates,
+      id: tag.id, // Preserve ID
+      createdAt: tag.createdAt // Preserve creation date
+    };
+
+    this.#vaultData.tags[index] = updated;
+    this.#markDirty();
+    return updated;
+  }
+
   // ==================== PRIVATE ====================
 
   /**
@@ -590,6 +633,58 @@ export class VaultSessionManager extends EventEmitter {
       this.emit('error', { type: 'unlock', message: error.message });
       throw error;
     }
+  }
+
+  /**
+   * Migrate to Duress Mode (V3)
+   * @param {string} masterPassword 
+   * @param {string} duressPassword 
+   * @param {boolean} populateDecoy 
+   */
+  async enableDuressMode(masterPassword, duressPassword, populateDecoy) {
+    if (!this.isUnlocked()) throw new Error('Vault locked');
+
+    // Verify master password matches current key (sanity check)
+    // Actually we are already unlocked, we trust the intent.
+
+    await this.#fileManager.migrateToV3(
+      this.#vaultId,
+      this.#vaultData,
+      masterPassword,
+      duressPassword,
+      populateDecoy
+    );
+
+    // Relock to force re-auth
+    await this.lock();
+  }
+
+  /**
+   * Stop auto-lock timer
+   * @private
+   */
+  #stopAutoLockTimer() {
+    if (this.#autoLockTimer) {
+      clearTimeout(this.#autoLockTimer);
+      this.#autoLockTimer = null;
+    }
+  }
+  /**
+   * Panic Nuking: Destroy the vault immediately
+   * @param {string} confirmPassword - Confirmation (optional in extreme duress?)
+   */
+  async nuke() {
+    if (!this.#vaultId) return;
+
+    const vaultId = this.#vaultId;
+
+    // 1. Lock immediately to clear memory
+    await this.lock();
+
+    // 2. Securely delete the file
+    await this.#fileManager.deleteVault(vaultId);
+
+    this.emit('nuked', { vaultId });
   }
 }
 

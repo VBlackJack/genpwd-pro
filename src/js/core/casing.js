@@ -119,14 +119,16 @@ export function applyCasePattern(str, tokens, opts = {}) {
  * @param {number} param - Mode-specific parameter (length for syllables, word count for passphrase)
  * @returns {number} Number of blocks to generate (1-50)
  * @example
- * calculateBlocksCount('syllables', 20) // → 6
- * calculateBlocksCount('passphrase', 5) // → 5
+ * calculateBlocksCount('syllables', 20) // → 7 (ceil(20/3))
+ * calculateBlocksCount('passphrase', 5) // → 5 (1 bloc par mot)
  */
 export function calculateBlocksCount(mode, param = 20) {
   if (mode === 'syllables') {
-    return Math.max(1, Math.min(10, Math.floor(param / 3)));
+    // 1 bloc = 3 caractères
+    return Math.max(1, Math.min(10, Math.ceil(param / 3)));
   } else if (mode === 'passphrase') {
-    return Math.max(2, Math.min(8, parseInt(param) || 5));
+    // 1 bloc par mot
+    return Math.max(1, Math.min(10, parseInt(param) || 5));
   } else if (mode === 'leet') {
     const length = typeof param === 'number' ? param : parseInt(param, 10);
     return Math.max(1, Math.min(50, Number.isFinite(length) ? length : 0));

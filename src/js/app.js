@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 // src/js/app.js - Point d'entrée principal de l'application
-import { CHAR_SETS, validateCharSets } from './config/constants.js';
+import { validateCharSets } from './config/constants.js';
 import { initializeDictionaries } from './core/dictionaries.js';
 import { initializeDOM } from './ui/dom.js';
 import { bindEventHandlers } from './ui/events.js';
@@ -29,7 +29,7 @@ import { initThemeSystem } from './utils/theme-manager.js';
 import { isDevelopment } from './utils/environment.js';
 import { initKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
 
-// New v2.6.0 imports
+// Feature imports (v3.0.0)
 import { i18n } from './utils/i18n.js';
 import { initSentry, captureException } from './config/sentry-config.js';
 import analytics from './utils/analytics.js';
@@ -179,7 +179,7 @@ class GenPwdApp {
   }
 
   /**
-   * Initialize new v2.6.0 features UI components
+   * Initialize features UI components
    */
   initializeNewFeatures() {
     // Check if managers are initialized
@@ -218,25 +218,25 @@ class GenPwdApp {
   validateEnvironment() {
     // Vérifier APIs de window
     const windowAPIs = ['fetch', 'Promise', 'Map', 'Set', 'JSON'];
-    
+
     for (const api of windowAPIs) {
       if (typeof window[api] === 'undefined') {
         safeLog(`API window manquante: ${api}`);
         return false;
       }
     }
-    
+
     // Vérifier APIs spécifiques
     if (typeof Object.assign === 'undefined') {
       safeLog('API manquante: Object.assign');
       return false;
     }
-    
+
     if (typeof document.querySelector === 'undefined') {
       safeLog('API manquante: document.querySelector');
       return false;
     }
-    
+
     if (typeof window.addEventListener === 'undefined') {
       safeLog('API manquante: window.addEventListener');
       return false;
@@ -319,15 +319,9 @@ class GenPwdApp {
       });
     });
 
-    // Listen for menu events from main process
-    if (window.electronAPI?.onGeneratePassword) {
-      // Already handled elsewhere
-    }
-
-    // Listen for vault menu events
-    const { ipcRenderer } = window.require?.('electron') || {};
-    if (typeof ipcRenderer !== 'undefined') {
-      ipcRenderer.on('vault:menu:create', () => {
+    // Listen for menu events from main process (uses secure preload API)
+    if (window.vault?.menu) {
+      window.vault.menu.onCreate(() => {
         // Switch to vault tab and trigger create
         document.querySelector('.header-tab[data-tab="vault"]')?.click();
         setTimeout(() => {
@@ -335,7 +329,7 @@ class GenPwdApp {
         }, 100);
       });
 
-      ipcRenderer.on('vault:menu:open', () => {
+      window.vault.menu.onOpen(() => {
         // Switch to vault tab
         document.querySelector('.header-tab[data-tab="vault"]')?.click();
       });
@@ -345,7 +339,7 @@ class GenPwdApp {
   async generateInitial() {
     try {
       safeLog('Lancement génération automatique...');
-      
+
       // Simuler clic sur le bouton générer
       const generateBtn = document.getElementById('btn-generate');
       if (generateBtn) {
@@ -353,7 +347,7 @@ class GenPwdApp {
       } else {
         safeLog('Bouton générer non trouvé pour génération initiale');
       }
-      
+
     } catch (error) {
       safeLog(`Erreur génération initiale: ${error.message}`);
     }
@@ -361,9 +355,9 @@ class GenPwdApp {
 }
 
 // Initialisation automatique
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   window.genPwdApp = new GenPwdApp();
-  window.genPwdApp.init();
+  await window.genPwdApp.init();
 });
 
 // MEMORY LEAK FIX: Cleanup timers and resources before page unload

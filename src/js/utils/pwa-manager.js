@@ -29,8 +29,20 @@ class PWAManager {
     this.updateAvailable = false;
     this.deferredPrompt = null;
     this.isOnline = navigator.onLine;
+    this._abortController = null;
 
     safeLog('PWAManager initialized');
+  }
+
+  /**
+   * Cleanup all event listeners
+   */
+  cleanup() {
+    if (this._abortController) {
+      this._abortController.abort();
+      this._abortController = null;
+    }
+    safeLog('PWAManager cleaned up');
   }
 
   /**
@@ -38,11 +50,22 @@ class PWAManager {
    * Register Service Worker and set up event listeners
    */
   async init() {
+    // Skip in Electron (file:// protocol doesn't support Service Workers)
+    if (window.electronAPI?.isElectron) {
+      safeLog('PWA features disabled in Electron');
+      return;
+    }
+
     // Check for Service Worker support
     if (!('serviceWorker' in navigator)) {
       safeLog('Service Worker not supported');
       return;
     }
+
+    // Initialize AbortController for cleanup
+    this.cleanup();
+    this._abortController = new AbortController();
+    const signal = this._abortController.signal;
 
     try {
       // Register Service Worker
@@ -60,7 +83,7 @@ class PWAManager {
       // Handle controller change (new SW activated)
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         this.onControllerChange();
-      });
+      }, { signal });
 
       // Check if already controlled by SW
       if (navigator.serviceWorker.controller) {
@@ -70,13 +93,13 @@ class PWAManager {
       // Listen for messages from SW
       navigator.serviceWorker.addEventListener('message', (event) => {
         this.onMessage(event);
-      });
+      }, { signal });
 
       // Set up install prompt listener
-      this.setupInstallPrompt();
+      this.setupInstallPrompt(signal);
 
       // Set up online/offline listeners
-      this.setupOnlineListeners();
+      this.setupOnlineListeners(signal);
 
       // Notify user if offline on load
       if (!this.isOnline) {
@@ -181,7 +204,7 @@ class PWAManager {
   /**
    * Set up beforeinstallprompt event listener
    */
-  setupInstallPrompt() {
+  setupInstallPrompt(signal) {
     window.addEventListener('beforeinstallprompt', (event) => {
       // Prevent default prompt
       event.preventDefault();
@@ -193,14 +216,14 @@ class PWAManager {
 
       // Show custom install UI
       this.showInstallUI();
-    });
+    }, { signal });
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
       safeLog('PWA installed successfully');
       showToast('GenPwd Pro installed successfully!', 'success');
       this.deferredPrompt = null;
-    });
+    }, { signal });
   }
 
   /**
@@ -287,7 +310,7 @@ class PWAManager {
   /**
    * Set up online/offline event listeners
    */
-  setupOnlineListeners() {
+  setupOnlineListeners(signal) {
     window.addEventListener('online', () => {
       this.isOnline = true;
       safeLog('Back online');
@@ -295,13 +318,13 @@ class PWAManager {
 
       // Sync when back online
       this.syncWhenOnline();
-    });
+    }, { signal });
 
     window.addEventListener('offline', () => {
       this.isOnline = false;
       safeLog('Gone offline');
       showToast('⚠️ Offline mode - Using cached data', 'warning');
-    });
+    }, { signal });
   }
 
   /**

@@ -5,7 +5,7 @@ import { KdfParams, VAULT_DOMAIN_CONSTANTS } from './models.js';
 
 const scrypt = promisify(scryptCallback);
 const DEFAULT_SALT_LENGTH = 16;
-const DEFAULT_ITERATIONS = 16384; // Must be power of two for scrypt N parameter.
+const DEFAULT_ITERATIONS = 65536; // Must be power of two for scrypt N parameter.
 const DEFAULT_PARALLELISM = 1;
 const DEFAULT_MEMORY_KB = 65536; // 64 MB effective target.
 

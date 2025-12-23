@@ -246,7 +246,7 @@ export async function auditVault(entries) {
   }
 
   // Detect reused passwords
-  for (const [hash, ids] of passwordHashes) {
+  for (const [_hash, ids] of passwordHashes) {
     if (ids.length > 1) {
       const reusedEntries = ids.map(id => {
         const audit = report.entriesAudit.find(a => a.id === id);

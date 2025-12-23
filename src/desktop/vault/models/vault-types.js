@@ -215,27 +215,42 @@ export function createTag(name, color = '#6366f1') {
   };
 }
 
+/** Valid entry types */
+const VALID_ENTRY_TYPES = ['login', 'note', 'card', 'identity', 'ssh', 'preset'];
+
 /**
  * Create new entry
  * @param {EntryType} type - Entry type
  * @param {string} title - Entry title
  * @param {Object} data - Type-specific data
  * @returns {VaultEntry}
+ * @throws {Error} If type or title is invalid
  */
 export function createEntry(type, title, data = {}) {
+  // Validate type
+  if (!type || !VALID_ENTRY_TYPES.includes(type)) {
+    throw new Error(`Invalid entry type: ${type}. Must be one of: ${VALID_ENTRY_TYPES.join(', ')}`);
+  }
+
+  // Validate title
+  if (typeof title !== 'string' || title.trim().length === 0) {
+    throw new Error('Entry title must be a non-empty string');
+  }
+
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
     type,
-    title,
+    title: title.trim(),
     icon: getDefaultIcon(type),
-    folderId: null,
-    tagIds: [],
-    favorite: false,
+    folderId: data.folderId || null,
+    tagIds: Array.isArray(data.tagIds) ? data.tagIds : [],
+    favorite: data.favorite === true,
     createdAt: now,
     modifiedAt: now,
-    notes: '',
-    customFields: [],
+    notes: typeof data.notes === 'string' ? data.notes : '',
+    customFields: Array.isArray(data.customFields) ? data.customFields : [],
+    attachments: [],
     data
   };
 }
@@ -271,4 +286,20 @@ export function createEmptyVault(name) {
   };
 }
 
-export const VAULT_FORMAT_VERSION = '1.0.0';
+/**
+ * @typedef {Object} VaultSlot
+ * @property {string} salt - Base64 salt for KDF
+ * @property {string} iv - Base64 IV for Key Decryption
+ * @property {number} iterations - KDF iterations
+ * @property {string} encryptedKey - Base64 Encrypted Master Key
+ */
+
+/**
+ * @typedef {Object} VaultFileV3
+ * @property {string} version - '3.0.0'
+ * @property {VaultSlot[]} slots - Array of 2 slots (Real & Decoy)
+ * @property {string[]} payloads - Array of 2 base64 blobs (Encrypted Data)
+ */
+
+export const VAULT_FORMAT_VERSION = '3.0.0';
+export const LEGACY_FORMAT_VERSION = '1.0.0';

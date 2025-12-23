@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// src/js/utils/plugin-manager.js - Plugin System for GenPwd Pro v2.6.0
+// src/js/utils/plugin-manager.js - Plugin System for GenPwd Pro
 
 import { safeLog } from './logger.js';
 import { showToast } from './toast.js';
@@ -461,8 +461,8 @@ class PluginManager {
 
       // For production, only allow HTTPS (except localhost)
       if (window.location.hostname !== 'localhost' &&
-          url.protocol !== 'https:' &&
-          url.protocol !== 'file:') {
+        url.protocol !== 'https:' &&
+        url.protocol !== 'file:') {
         safeLog(`Plugin from ${source}: HTTPS required in production`);
         showToast('Plugin must be loaded over HTTPS', 'error');
         return false;
@@ -503,7 +503,7 @@ class PluginManager {
    * @param {string} source - Source identifier
    * @returns {boolean} - Always returns false
    */
-  loadPluginFromCode(code, source = 'unknown') {
+  loadPluginFromCode(code, _source = 'unknown') {
     safeLog(`SECURITY: loadPluginFromCode() is deprecated and disabled. Use loadPluginFromModule() instead.`);
     showToast('Direct code loading disabled for security. Use ES6 modules.', 'error');
     return false;

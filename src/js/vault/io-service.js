@@ -22,10 +22,27 @@
  *   }
  * }
  *
+ * NAMING CONVENTIONS (Technical Debt):
+ * -----------------------------------
+ * The codebase has naming inconsistencies between frontend models and backend types:
+ *
+ * 1. groupId vs folderId:
+ *    - Frontend (models.js, in-memory-repository.js): Uses `groupId`
+ *    - Backend (vault-session.js, vault-ipc-handlers.js): Uses `folderId`
+ *    - This service handles conversion with fallback: entry.groupId || entry.folderId
+ *
+ * 2. modifiedAt vs updatedAt:
+ *    - Backend & file format: Uses `modifiedAt` (ISO string)
+ *    - Frontend metadata: Uses `updatedAt` (milliseconds timestamp)
+ *    - This service handles conversion in serialize/deserialize functions
+ *
+ * These inconsistencies are handled by fallback logic throughout the codebase.
+ * A full refactor is deferred to avoid breaking changes.
+ *
  * @license Apache-2.0
  */
 
-import { VaultEntry, VaultGroup, ENTRY_TYPES, FIELD_KINDS } from './models.js';
+import { VaultEntry, ENTRY_TYPES, FIELD_KINDS, generateUUID } from './models.js';
 
 // ============================================================================
 // CONSTANTS
@@ -98,16 +115,7 @@ function bytesToText(bytes) {
   return new TextDecoder().decode(bytes);
 }
 
-/**
- * Securely wipe bytes from memory
- * @param {Uint8Array} bytes
- */
-function wipeBytes(bytes) {
-  if (bytes && bytes.fill) {
-    crypto.getRandomValues(bytes);
-    bytes.fill(0);
-  }
-}
+
 
 // ============================================================================
 // KDF (Key Derivation)
@@ -149,37 +157,7 @@ async function deriveKey(password, salt, kdfParams) {
   return key;
 }
 
-/**
- * Derive raw key bytes for verification
- * @param {string} password
- * @param {Uint8Array} salt
- * @param {Object} kdfParams
- * @returns {Promise<Uint8Array>}
- */
-async function deriveKeyBytes(password, salt, kdfParams) {
-  const passwordBytes = textToBytes(password);
 
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    passwordBytes,
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  );
-
-  const keyBits = await crypto.subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      salt,
-      iterations: kdfParams.iterations || DEFAULT_KDF_PARAMS.iterations,
-      hash: kdfParams.hash || DEFAULT_KDF_PARAMS.hash
-    },
-    keyMaterial,
-    256
-  );
-
-  return new Uint8Array(keyBits);
-}
 
 // ============================================================================
 // ENCRYPTION / DECRYPTION
@@ -501,21 +479,129 @@ export async function importVaultFromBuffer(fileData, password) {
 
 /**
  * Import legacy V1 vault format
- * @param {Object} parsed
- * @param {string} password
+ *
+ * V1 Format Structure (deprecated):
+ * {
+ *   "format": "gpdb",
+ *   "version": 1,
+ *   "header": { "keyData": {...} },
+ *   "encryptedData": "base64..."
+ * }
+ *
+ * V1 used a simpler KDF (PBKDF2 with fewer iterations) and different
+ * encryption structure. This migration converts to V2 format.
+ *
+ * @param {Object} parsed - Parsed V1 file
+ * @param {string} password - User password
  * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
  */
 async function importV1Vault(parsed, password) {
-  // V1 format used different structure
-  // This is a placeholder for backward compatibility
+  // Validate V1 structure
   if (!parsed.header?.keyData || !parsed.encryptedData) {
-    return { success: false, error: 'Invalid V1 vault format.' };
+    return { success: false, error: 'Format V1 invalide : structure header/encryptedData manquante.' };
   }
 
-  return {
-    success: false,
-    error: 'V1 vault format requires migration. Use the desktop app to upgrade.'
-  };
+  try {
+    // V1 used PBKDF2 with SHA-256, 100000 iterations
+    const v1KdfParams = {
+      algorithm: 'PBKDF2',
+      iterations: 100000,
+      hash: 'SHA-256',
+      saltLength: 16
+    };
+
+    // Extract salt from header (V1 stored it differently)
+    const salt = parsed.header.keyData.salt
+      ? base64ToBytes(parsed.header.keyData.salt)
+      : new Uint8Array(16); // Default salt for very old V1
+
+    // Derive key using V1 parameters
+    const key = await deriveKey(password, salt, v1KdfParams);
+
+    // V1 used simple AES-GCM with nonce prepended to ciphertext
+    const encryptedBytes = base64ToBytes(parsed.encryptedData);
+    const nonce = encryptedBytes.slice(0, 12);
+    const ciphertext = encryptedBytes.slice(12);
+
+    // Decrypt using Web Crypto
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', key, { name: 'AES-GCM' }, false, ['decrypt']
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: nonce },
+      cryptoKey,
+      ciphertext
+    );
+
+    const decryptedText = new TextDecoder().decode(decrypted);
+    const v1Data = JSON.parse(decryptedText);
+
+    // Convert V1 data structure to V2
+    const migratedData = migrateV1ToV2(v1Data);
+
+    return {
+      success: true,
+      data: migratedData,
+      metadata: {
+        format: 'gpdb',
+        version: 2,
+        migratedFrom: 1,
+        createdAt: parsed.createdAt || new Date().toISOString(),
+        modifiedAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('[io-service] V1 migration error:', error);
+    return {
+      success: false,
+      error: `Échec de migration V1 : ${error.message}. Vérifiez le mot de passe.`
+    };
+  }
+}
+
+/**
+ * Migrate V1 data structure to V2 format
+ * @param {Object} v1Data - Decrypted V1 vault data
+ * @returns {Object} V2-compatible vault data
+ */
+function migrateV1ToV2(v1Data) {
+  // V1 had a simpler structure: { entries: [...], groups: [...] }
+  // V2 uses: { entries: [...], folders: [...], tags: [] }
+
+  const entries = (v1Data.entries || []).map(entry => ({
+    id: entry.id || generateUUID(),
+    type: entry.type || 'login',
+    title: entry.title || 'Imported Entry',
+    // V1 stored data differently
+    username: entry.username || entry.data?.username || '',
+    secret: entry.password ? [entry.password] : (entry.data?.password ? [entry.data.password] : []),
+    notes: entry.notes || entry.data?.notes || '',
+    uri: entry.url || entry.data?.url || '',
+    tags: [],
+    otpConfig: entry.totp || null,
+    groupId: entry.groupId || entry.folderId || null,
+    fields: entry.customFields || [],
+    metadata: {
+      createdAt: entry.createdAt ? new Date(entry.createdAt).getTime() : Date.now(),
+      updatedAt: entry.modifiedAt ? new Date(entry.modifiedAt).getTime() : Date.now(),
+      lastUsedAt: null,
+      expiresAt: null,
+      usageCount: 0
+    },
+    color: entry.color || null,
+    icon: entry.icon || null
+  }));
+
+  const folders = (v1Data.groups || v1Data.folders || []).map(group => ({
+    id: group.id || generateUUID(),
+    name: group.name || 'Imported Folder',
+    parentId: group.parentId || null,
+    icon: group.icon || null,
+    color: group.color || null
+  }));
+
+  return { entries, folders, tags: [] };
 }
 
 // ============================================================================

@@ -29,8 +29,17 @@
  * - Keyboard shortcuts modal, View toggle, Auto-lock warning
  */
 
-import { getInactivityManager, AUTO_LOCK_OPTIONS } from './utils/inactivity-manager.js';
-import { getSecureClipboard, CLIPBOARD_TIMEOUT_OPTIONS } from './utils/secure-clipboard.js';
+import { getInactivityManager } from './utils/inactivity-manager.js';
+import { getSecureClipboard } from './utils/secure-clipboard.js';
+import { showToast } from './utils/toast.js';
+import { safeLog } from './utils/logger.js';
+import { SyncSettingsModal } from './ui/modals/sync-settings-modal.js';
+import { AliasService } from './services/alias-service.js';
+import { AliasSettingsModal } from './ui/modals/alias-settings-modal.js';
+import { SettingsModal } from './ui/modals/settings-modal.js';
+import { SecurityDashboard } from './ui/views/security-dashboard.js';
+import { ShareModal } from './ui/modals/share-modal.js';
+import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 
 // Entry type configuration
 const ENTRY_TYPES = {
@@ -67,6 +76,10 @@ const SORT_OPTIONS = [
  */
 export class VaultUI {
   #container;
+  #filterEntries;
+  #syncSettingsModal;
+  #aliasService;
+  #aliasSettingsModal;
   #currentView = 'lock';
   #selectedEntry = null;
   #selectedCategory = 'all';
@@ -111,8 +124,24 @@ export class VaultUI {
   #lastAuditReport = null; // Last security audit report
   #auditFilterIds = null; // Set of entry IDs to filter by (from audit)
 
+  /** @type {Object} */
+  #duressSetupModal;
+  /** @type {Object} */
+  #settingsModal;
+  /** @type {SecurityDashboard} */
+  #securityDashboard;
+  /** @type {Object} */
+  #shareModal;
+
   constructor(container) {
     this.#container = container;
+    this.#syncSettingsModal = new SyncSettingsModal();
+    this.#aliasService = new AliasService();
+    this.#aliasSettingsModal = new AliasSettingsModal();
+    this.#duressSetupModal = new DuressSetupModal();
+    this.#settingsModal = new SettingsModal();
+    this.#securityDashboard = new SecurityDashboard(container);
+    this.#shareModal = new ShareModal();
   }
 
   async init() {
@@ -163,7 +192,7 @@ export class VaultUI {
         this.#startAutoLockTimer();
       }
     } catch (error) {
-      console.error('[VaultUI] Init error:', error);
+      safeLog('[VaultUI] Init error:', error);
     }
 
     // Keyboard shortcuts
@@ -175,7 +204,90 @@ export class VaultUI {
     // Visual protection on window blur (if enabled)
     this.#initVisualProtection();
 
+    // Initialize Global Auto-Type (KeePass Killer)
+    this.#initGlobalAutoType();
+
+    // Initialize Cloud Sync Status
+    this.#initSyncStatus();
+
     this.#render();
+  }
+
+  /**
+   * Initialize Global Auto-Type handler
+   * Listens for Ctrl+Alt+A from main process
+   */
+  #initGlobalAutoType() {
+    if (window.electronAPI?.onGlobalAutoType) {
+      window.electronAPI.onGlobalAutoType(async ({ title }) => {
+        if (!title || this.#currentView !== 'main') {
+          await window.electronAPI.showWindow();
+          return;
+        }
+
+        console.log('[VaultUI] Global Auto-Type triggered for:', title);
+
+        // Smart Matching Heuristic
+        const lowerTitle = title.toLowerCase();
+
+        const matches = this.#entries.filter(e => {
+          if (e.trash) return false;
+
+          const eTitle = (e.title || '').toLowerCase();
+          const eUrl = (e.url || '').toLowerCase();
+
+          // 1. Strict containment (Entry Title inside Window Title)
+          // e.g. Entry "Facebook" inside "Facebook - Login"
+          if (eTitle && lowerTitle.includes(eTitle) && eTitle.length > 2) return true;
+
+          // 2. URL Domain Check
+          // e.g. Window "Login to GitHub" matches url "github.com"
+          if (eUrl) {
+            try {
+              const hostname = new URL(eUrl).hostname.replace('www.', '').split('.')[0];
+              if (hostname && lowerTitle.includes(hostname) && hostname.length > 3) return true;
+            } catch { }
+          }
+          return false;
+        });
+
+        if (matches.length === 1) {
+          // SINGLE MATCH -> Auto-Type immediately
+          const entry = matches[0];
+          const fullEntry = await window.vault.entries.get(entry.id); // Ensure full data (pwd)
+
+          showToast(`Auto-Type: ${entry.title}`, 'info');
+
+          const sequence = '{USERNAME}{TAB}{PASSWORD}{ENTER}';
+          await window.electronAPI.performAutoType(sequence, {
+            username: fullEntry.username,
+            password: fullEntry.password
+          });
+        } else {
+          // MULTIPLE OR NO MATCH -> Show Window & Filter
+          await window.electronAPI.showWindow();
+
+          // Clean up title for search (remove browser suffix if possible)
+          // But raw title search is okay for now
+          const cleanQuery = title.split(' - ')[0] || title;
+
+          this.#searchQuery = cleanQuery;
+          const searchInput = document.getElementById('vault-search');
+          if (searchInput) {
+            searchInput.value = cleanQuery;
+            searchInput.focus();
+            searchInput.select();
+          }
+          this.#filterEntries();
+
+          if (matches.length > 1) {
+            showToast(`${matches.length} correspondances trouvées`, 'info');
+          } else {
+            showToast('Aucune correspondance automatique', 'warning');
+          }
+        }
+      });
+    }
   }
 
   /** @type {Function|null} */
@@ -255,7 +367,7 @@ export class VaultUI {
       // Preload favicons in background
       this.#preloadFavicons();
     } catch (error) {
-      console.error('[VaultUI] Load error:', error);
+      safeLog('[VaultUI] Load error:', error);
     }
   }
 
@@ -1126,6 +1238,17 @@ export class VaultUI {
                 <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
               </svg>
             </button>
+            </button>
+            <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="Synchronisation Cloud" data-tooltip-pos="bottom" aria-label="Configurer la synchronisation">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+              </svg>
+            </button>
+            <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="Mode Contrainte" data-tooltip-pos="bottom" aria-label="Configurer le Mode Contrainte">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </button>
           </div>
 
           <div class="vault-sidebar-search">
@@ -1224,6 +1347,10 @@ export class VaultUI {
           </nav>
 
           <div class="vault-sidebar-footer">
+            <div class="vault-sync-status" id="vault-sync-status" hidden>
+               <span class="vault-sync-icon" id="vault-sync-icon"></span>
+               <span class="vault-sync-text" id="vault-sync-text">Pret</span>
+            </div>
             <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyser la santé des mots de passe">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
@@ -1378,9 +1505,9 @@ export class VaultUI {
 
           <div class="vault-list-content ${this.#viewMode}" id="vault-entries" role="listbox" aria-label="Liste des entrées">
             ${filteredEntries.length === 0
-              ? this.#renderEmptyState()
-              : filteredEntries.map((entry, idx) => this.#renderEntryRow(entry, idx)).join('')
-            }
+        ? this.#renderEmptyState()
+        : filteredEntries.map((entry, idx) => this.#renderEntryRow(entry, idx)).join('')
+      }
           </div>
         </main>
 
@@ -1416,7 +1543,7 @@ export class VaultUI {
    * @returns {Array} Tree structure with children arrays
    */
   #buildFolderTree() {
-    const rootFolders = [];
+    // const rootFolders = [];
     const childMap = new Map(); // parentId -> children[]
 
     // First pass: group by parentId
@@ -1832,7 +1959,7 @@ export class VaultUI {
             <button class="vault-quick-btn copy-user" data-action="copy-username"
                     title="Copier l'identifiant" aria-label="Copier l'identifiant">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </button>
@@ -2050,32 +2177,32 @@ export class VaultUI {
           </span>
         </div>
         ${fields.map(field => {
-          const isMasked = field.isSecured || field.kind === 'hidden' || field.kind === 'password';
-          const isUrl = field.kind === 'url';
-          const isEmail = field.kind === 'email';
-          const isPhone = field.kind === 'phone';
-          const isDate = field.kind === 'date';
+      const isMasked = field.isSecured || field.kind === 'hidden' || field.kind === 'password';
+      const isUrl = field.kind === 'url';
+      const isEmail = field.kind === 'email';
+      const isPhone = field.kind === 'phone';
+      const isDate = field.kind === 'date';
 
-          // Format value based on type
-          let displayValue = this.#escapeHtml(field.value || '');
-          if (isUrl && field.value) {
-            displayValue = `<a href="${this.#escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${this.#escapeHtml(field.value)}</a>`;
-          } else if (isEmail && field.value) {
-            displayValue = `<a href="mailto:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
-          } else if (isPhone && field.value) {
-            displayValue = `<a href="tel:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
-          } else if (isDate && field.value) {
-            try {
-              const date = new Date(field.value);
-              displayValue = date.toLocaleDateString('fr-FR');
-            } catch {
-              displayValue = this.#escapeHtml(field.value);
-            }
-          }
+      // Format value based on type
+      let displayValue = this.#escapeHtml(field.value || '');
+      if (isUrl && field.value) {
+        displayValue = `<a href="${this.#escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${this.#escapeHtml(field.value)}</a>`;
+      } else if (isEmail && field.value) {
+        displayValue = `<a href="mailto:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
+      } else if (isPhone && field.value) {
+        displayValue = `<a href="tel:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
+      } else if (isDate && field.value) {
+        try {
+          const date = new Date(field.value);
+          displayValue = date.toLocaleDateString('fr-FR');
+        } catch {
+          displayValue = this.#escapeHtml(field.value);
+        }
+      }
 
-          const maskedValue = isMasked ? '•'.repeat(Math.min((field.value || '').length, 24)) : displayValue;
+      const maskedValue = isMasked ? '•'.repeat(Math.min((field.value || '').length, 24)) : displayValue;
 
-          return `
+      return `
             <div class="vault-field vault-custom-field-display" data-field-id="${this.#escapeHtml(field.id || '')}" data-masked="${isMasked}">
               <div class="vault-field-label-row">
                 <label class="vault-field-label">${this.#escapeHtml(field.label)}</label>
@@ -2110,7 +2237,7 @@ export class VaultUI {
               </div>
             </div>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }
@@ -2633,7 +2760,7 @@ export class VaultUI {
     }
 
     return `
-      <div class="vault-empty-state">
+      <div class="vault-empty-state vault-welcome-screen">
         <div class="vault-empty-illustration" aria-hidden="true">
           <svg viewBox="0 0 120 100" width="120" height="100" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="25" y="30" width="70" height="50" rx="4" stroke-dasharray="4 2" opacity="0.3"/>
@@ -2643,18 +2770,18 @@ export class VaultUI {
             <path d="M45 70 L60 60 L75 70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
           </svg>
         </div>
-        <h3 class="vault-empty-title">Votre coffre est vide</h3>
-        <p class="vault-empty-text">Commencez à sécuriser vos mots de passe dès maintenant</p>
-        <div class="vault-empty-actions">
-          <button class="vault-btn vault-btn-primary" id="btn-add-first-entry">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <h3 class="vault-empty-title">Bienvenue dans votre coffre</h3>
+        <p class="vault-empty-text">Votre coffre est prêt. Importez vos mots de passe ou créez votre première entrée.</p>
+        <div class="vault-empty-actions" style="flex-direction: column; gap: 1rem; width: 100%; max-width: 300px;">
+          <button class="vault-btn vault-btn-primary" id="btn-welcome-create" style="width: 100%; justify-content: center; padding: 12px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            Ajouter une entrée
+            Créer ma première entrée
           </button>
-          <button class="vault-btn vault-btn-secondary" id="btn-import-first">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="vault-btn vault-btn-outline" id="btn-welcome-import" style="width: 100%; justify-content: center; padding: 12px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
@@ -2664,6 +2791,7 @@ export class VaultUI {
         </div>
         <div class="vault-empty-tips">
           <span class="vault-empty-tip">Utilisez <kbd>Ctrl</kbd>+<kbd>N</kbd> pour ajouter rapidement</span>
+          <span class="vault-empty-tip">Astuce : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> remplit automatiquement vos formulaires</span>
         </div>
       </div>
     `;
@@ -2981,7 +3109,7 @@ export class VaultUI {
       <div class="vault-tag-picker">
         <div class="vault-tag-picker-list">
           ${this.#tags.length === 0 ? '<div class="vault-tag-empty">Aucun tag disponible</div>' :
-            this.#tags.map(tag => `
+        this.#tags.map(tag => `
               <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
                 <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
                 <span class="vault-tag-chip" style="--tag-color: ${tag.color || '#6b7280'}">
@@ -2989,7 +3117,7 @@ export class VaultUI {
                 </span>
               </label>
             `).join('')
-          }
+      }
         </div>
         <div class="vault-tag-picker-add">
           <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="Nouveau tag...">
@@ -3030,17 +3158,19 @@ export class VaultUI {
   }
 
   #renderTagsInDetail(entry) {
-    if (!entry.tags || entry.tags.length === 0) {
-      return '<span class="vault-no-tags">Aucun tag</span>';
-    }
-
+    if (!entry.tags || entry.tags.length === 0) return '';
     const entryTags = this.#tags.filter(t => entry.tags.includes(t.id));
+    if (entryTags.length === 0) return '';
+
     return entryTags.map(tag => `
       <span class="vault-detail-tag" style="--tag-color: ${tag.color || '#6b7280'}">
         ${this.#escapeHtml(tag.name)}
       </span>
     `).join('');
   }
+
+  // Helper for attachments in detail view
+  // See #renderAttachmentsUI definition below
 
   #renderAddTagModal() {
     const tagColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
@@ -3999,11 +4129,11 @@ export class VaultUI {
     }
 
     // Count by strength
-    let strong = 0, medium = 0, weak = 0;
+    let strong = 0, weak = 0; // medium = 0
     logins.forEach(entry => {
       const strength = this.#getPasswordStrength(entry.data.password);
       if (strength === 'strong') strong++;
-      else if (strength === 'medium') medium++;
+      else if (strength === 'medium') { /* medium++ */ }
       else weak++;
     });
 
@@ -4360,7 +4490,7 @@ export class VaultUI {
     const size = 200;
     const margin = 4;
     const totalSize = modules + margin * 2;
-    const scale = size / totalSize;
+    // const scale = size / totalSize;
 
     // Generate pattern from data
     let binary = '';
@@ -4377,8 +4507,8 @@ export class VaultUI {
     // Finder patterns
     const drawFinder = (x, y) => {
       svg += `<rect x="${x}" y="${y}" width="7" height="7" fill="#000"/>`;
-      svg += `<rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/>`;
-      svg += `<rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#000"/>`;
+      svg += `<rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/>`;
+      svg += `<rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#000"/>`;
     };
 
     drawFinder(margin, margin);
@@ -4414,6 +4544,11 @@ export class VaultUI {
 
     svg += '</svg>';
     return svg;
+  }
+
+  #openEntryList() {
+    this.#currentView = 'main';
+    this.#render();
   }
 
   #renderMoveFolderModal() {
@@ -4650,6 +4785,8 @@ export class VaultUI {
    * Export entries to KeePass 2.x XML format
    * Compatible with KeePass 2.x import
    */
+
+
   #exportToKeePassXML(entries) {
     const escapeXML = (str) => {
       if (!str) return '';
@@ -4661,10 +4798,7 @@ export class VaultUI {
         .replace(/'/g, '&apos;');
     };
 
-    const formatDate = (dateStr) => {
-      if (!dateStr) return new Date().toISOString();
-      return new Date(dateStr).toISOString();
-    };
+
 
     // Generate UUID v4-like
     const generateUUID = () => {
@@ -4673,6 +4807,12 @@ export class VaultUI {
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       }).toUpperCase();
+    };
+
+    // Format date for KeePass XML (ISO format)
+    const formatDate = (dateStr) => {
+      if (!dateStr) return new Date().toISOString();
+      return new Date(dateStr).toISOString();
     };
 
     // Group entries by folder
@@ -5036,7 +5176,7 @@ export class VaultUI {
       this.#closeModal('save-vault-modal');
     });
 
-    modal.querySelector('.toggle-pwd-visibility')?.addEventListener('click', (e) => {
+    modal.querySelector('.toggle-pwd-visibility')?.addEventListener('click', (_e) => {
       const input = document.getElementById('save-vault-password');
       if (input) input.type = input.type === 'password' ? 'text' : 'password';
     });
@@ -5323,7 +5463,7 @@ export class VaultUI {
         try {
           const url = new URL(otpMatch[0]);
           entry.totp = url.searchParams.get('secret') || '';
-        } catch {}
+        } catch { }
       }
     }
 
@@ -5382,7 +5522,7 @@ export class VaultUI {
     // KeePass format: Group,Title,Username,Password,URL,Notes,TOTP,Icon,Last Modified,Created
     // or: "Group","Title","Username","Password","URL","Notes"
     if (headerStr.includes('group') && headerStr.includes('title') &&
-        (headerStr.includes('username') || headerStr.includes('user name'))) {
+      (headerStr.includes('username') || headerStr.includes('user name'))) {
       return 'keepass';
     }
 
@@ -5451,7 +5591,7 @@ export class VaultUI {
           try {
             const url = new URL(otpSecret1);
             otpSecret1 = url.searchParams.get('secret') || '';
-          } catch {}
+          } catch { }
         }
         return {
           title: row['title'] || row['url'] || 'Import 1Password',
@@ -5534,6 +5674,15 @@ export class VaultUI {
   }
 
   #attachMainViewEvents() {
+    // Welcome Screen Actions
+    document.getElementById('btn-welcome-create')?.addEventListener('click', () => {
+      this.#openModal('add-entry-modal');
+    });
+
+    document.getElementById('btn-welcome-import')?.addEventListener('click', () => {
+      this.#openModal('import-modal');
+    });
+
     // Lock button
     document.getElementById('btn-lock')?.addEventListener('click', () => this.#lock());
 
@@ -5546,6 +5695,16 @@ export class VaultUI {
     // Theme toggle button
     document.getElementById('theme-toggle')?.addEventListener('click', () => {
       this.#toggleTheme();
+    });
+
+    // Cloud Sync button
+    document.getElementById('btn-cloud-sync')?.addEventListener('click', () => {
+      this.#syncSettingsModal.show();
+    });
+
+    // Duress Setup button
+    document.getElementById('btn-duress-setup')?.addEventListener('click', () => {
+      this.#duressSetupModal.show();
     });
 
     // Vault switcher dropdown
@@ -5779,6 +5938,20 @@ export class VaultUI {
       this.#openHealthDashboard();
     });
 
+    // Handle edit request from dashboard
+    this.#container.addEventListener('edit-entry', (e) => {
+      const entryId = e.detail.id;
+      const entry = this.#entries.find(en => en.id === entryId);
+      if (entry) {
+        // Return to main view if needed
+        this.#openEntryList();
+        this.#selectedEntry = entry;
+        this.#updateDetailPanel(); // Re-render logic needed?
+        // Actually, just open edit modal directly
+        this.#openEditModal(entry);
+      }
+    });
+
     // Health dashboard button (toolbar)
     document.getElementById('health-dashboard')?.addEventListener('click', () => {
       this.#openHealthDashboard();
@@ -5866,6 +6039,11 @@ export class VaultUI {
     // Compact mode toggle button
     document.getElementById('btn-compact-mode')?.addEventListener('click', async () => {
       await this.#toggleCompactMode();
+    });
+
+    // Settings button
+    document.getElementById('btn-settings')?.addEventListener('click', () => {
+      this.#settingsModal.show();
     });
 
     // Listen for compact mode changes from main process
@@ -6547,6 +6725,13 @@ export class VaultUI {
   }
 
   #attachDetailPanelEvents() {
+    // Share button
+    document.getElementById('btn-share-entry')?.addEventListener('click', () => {
+      if (this.#selectedEntry) {
+        this.#shareModal.open(this.#selectedEntry);
+      }
+    });
+
     // Toggle visibility
     document.querySelectorAll('.toggle-visibility').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6598,6 +6783,26 @@ export class VaultUI {
       });
     });
 
+    // Click-to-copy on the TOTP code digits
+    document.querySelectorAll('.vault-totp-code').forEach(el => {
+      el.addEventListener('click', async () => {
+        const code = el.querySelector('.totp-digits')?.textContent?.replace(/\s/g, '');
+        if (code && code !== '------') {
+          await this.#copyToClipboard(code, 'Code 2FA copié');
+          // Visual feedback
+          el.animate([
+            { transform: 'scale(1)' },
+            { transform: 'scale(1.1)' },
+            { transform: 'scale(1)' }
+          ], { duration: 200 });
+          el.style.color = 'var(--vault-primary)';
+          setTimeout(() => el.style.color = '', 500);
+        }
+      });
+      el.style.cursor = 'pointer';
+      el.title = 'Cliquer pour copier';
+    });
+
     // Show TOTP QR Code
     document.querySelectorAll('.show-totp-qr').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6639,7 +6844,7 @@ export class VaultUI {
 
     // Reveal history password on click
     document.querySelectorAll('.vault-history-password').forEach(el => {
-      el.addEventListener('click', function() {
+      el.addEventListener('click', function () {
         const item = this.closest('.vault-history-item');
         const btn = item?.querySelector('.copy-history-pwd');
         const realPwd = btn?.dataset.password;
@@ -6851,8 +7056,8 @@ export class VaultUI {
 
         // Get default sequence or custom one from entry
         const sequence = entry.data?.autoTypeSequence ||
-                         await window.electronAPI.getDefaultAutoTypeSequence?.() ||
-                         '{USERNAME}{TAB}{PASSWORD}{ENTER}';
+          await window.electronAPI.getDefaultAutoTypeSequence?.() ||
+          '{USERNAME}{TAB}{PASSWORD}{ENTER}';
 
         // Perform auto-type (minimizes window, types into focused app)
         const result = await window.electronAPI.performAutoType(sequence, {
@@ -7170,11 +7375,16 @@ export class VaultUI {
   }
 
   #openEditModal(entry) {
+    // Clone entry data for editing session
+    this.#editingData = { ...entry, data: { ...entry.data }, attachments: [...(entry.attachments || [])] };
+    this.#renderEditModalContent(entry);
+    this.#openModal('edit-entry-modal');
+  }
+
+  #renderEditModalContent(entry = this.#selectedEntry) {
     const modal = document.getElementById('edit-entry-modal');
     const fieldsContainer = document.getElementById('edit-entry-fields');
     if (!modal || !fieldsContainer) return;
-
-    const type = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
 
     let fieldsHtml = `
       <div class="vault-form-group">
@@ -7311,58 +7521,218 @@ export class VaultUI {
 
     fieldsContainer.innerHTML = fieldsHtml;
     this.#hasDirtyForm = false;
-    this.#openModal('edit-entry-modal');
 
     // Attach edit modal specific events
     setTimeout(() => {
-      // Attach custom fields events
-      this.#attachCustomFieldsEvents();
-      // Toggle password visibility
-      modal.querySelectorAll('.toggle-pwd-visibility').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const input = document.getElementById(btn.dataset.target);
-          if (input) input.type = input.type === 'password' ? 'text' : 'password';
-        });
-      });
+      this.#attachEditModalDynamicEvents(entry, modal);
+    }, 50);
+  }
 
-      // Generate password with popover
-      document.getElementById('edit-generate-password')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.#showPasswordGenerator('edit-password', (pwd) => this.#updateEditPasswordStrength(pwd));
+  #attachEditModalDynamicEvents(entry, modal) {
+    // Attach custom fields events
+    this.#attachCustomFieldsEvents();
+    // Toggle password visibility
+    modal.querySelectorAll('.toggle-pwd-visibility').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        if (input) input.type = input.type === 'password' ? 'text' : 'password';
       });
+    });
 
-      // Password strength
-      document.getElementById('edit-password')?.addEventListener('input', (e) => {
-        this.#updateEditPasswordStrength(e.target.value);
+    // Generate password with popover
+    document.getElementById('edit-generate-password')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.#showPasswordGenerator('edit-password', (pwd) => this.#updateEditPasswordStrength(pwd));
+    });
+
+    // Password strength
+    document.getElementById('edit-password')?.addEventListener('input', (e) => {
+      this.#updateEditPasswordStrength(e.target.value);
+    });
+
+    // Initial password strength
+    if (entry.type === 'login' && entry.data?.password) {
+      this.#updateEditPasswordStrength(entry.data.password);
+    }
+
+    // Expiry preset dropdown for edit form
+    const editExpiresPreset = document.getElementById('edit-expires-preset');
+    const editExpiresInput = document.getElementById('edit-expires');
+    editExpiresPreset?.addEventListener('change', (e) => {
+      const value = e.target.value;
+      if (value === 'custom') {
+        editExpiresInput.hidden = false;
+        editExpiresInput.focus();
+      } else if (value) {
+        editExpiresInput.hidden = true;
+        // Calculate date from preset (days)
+        const date = new Date();
+        date.setDate(date.getDate() + parseInt(value));
+        editExpiresInput.value = date.toISOString().split('T')[0];
+      } else {
+        editExpiresInput.hidden = true;
+        editExpiresInput.value = '';
+      }
+    });
+
+    document.getElementById('edit-title')?.focus();
+  }
+
+  #renderAttachmentsUI(entry) {
+    const attachments = entry.attachments || [];
+
+    return `
+      <div class="vault-detail-section">
+        <div class="vault-detail-header">
+           <h3 class="vault-detail-subtitle">Pièces Jointes (${attachments.length})</h3>
+           ${this.#isEditing ? `
+             <div class="vault-file-drop-zone" id="file-drop-zone">
+               <span class="drop-icon">📎</span>
+               <span class="drop-text">Glissez vos fichiers ici ou <button type="button" class="link-btn" id="btn-browse-files">parcourir</button></span>
+               <input type="file" id="file-input" multiple style="display: none">
+             </div>
+           ` : ''}
+        </div>
+        
+        <div class="vault-attachments-list">
+          ${attachments.length === 0 ? '<div class="empty-text">Aucune pièce jointe</div>' : ''}
+          ${attachments.map((file, index) => `
+            <div class="vault-attachment-item">
+              <div class="attachment-icon">${this.#getFileIcon(file.type)}</div>
+              <div class="attachment-info">
+                <div class="attachment-name" title="${this.#escapeHtml(file.name)}">${this.#escapeHtml(file.name)}</div>
+                <div class="attachment-meta">${this.#formatFileSize(file.size)}</div>
+              </div>
+              <div class="attachment-actions">
+                ${this.#isEditing ? `
+                  <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="Supprimer">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                ` : `
+                  <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="Télécharger">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  </button>
+                `}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  #getFileIcon(mimeType) {
+    if (mimeType.startsWith('image/')) return '🖼️';
+    if (mimeType.includes('pdf')) return '📄';
+    if (mimeType.includes('text')) return '📝';
+    return '📎';
+  }
+
+  #formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  #initAttachmentsEvents() {
+    const dropZone = document.getElementById('file-drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const browseBtn = document.getElementById('btn-browse-files');
+
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
       });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        this.#handleFiles(e.dataTransfer.files);
+      });
+    }
 
-      // Initial password strength
-      if (entry.type === 'login' && entry.data?.password) {
-        this.#updateEditPasswordStrength(entry.data.password);
+    if (browseBtn && fileInput) {
+      browseBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => this.#handleFiles(fileInput.files));
+    }
+
+    // Delete handling
+    this.#container.querySelectorAll('[data-delete-attachment]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.deleteAttachment);
+        this.#editingData.attachments.splice(index, 1);
+        this.#renderEditModalContent(); // Re-render to update list
+      });
+    });
+
+    // Download handling
+    this.#container.querySelectorAll('[data-download-attachment]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.downloadAttachment);
+        this.#downloadAttachment(index);
+      });
+    });
+  }
+
+  async #handleFiles(fileList) {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB limit for JSON perf
+
+    for (const file of fileList) {
+      if (file.size > MAX_SIZE) {
+        this.#showToast(`Fichier trop volumineux: ${file.name} (> 5MB)`, 'error');
+        continue;
       }
 
-      // Expiry preset dropdown for edit form
-      const editExpiresPreset = document.getElementById('edit-expires-preset');
-      const editExpiresInput = document.getElementById('edit-expires');
-      editExpiresPreset?.addEventListener('change', (e) => {
-        const value = e.target.value;
-        if (value === 'custom') {
-          editExpiresInput.hidden = false;
-          editExpiresInput.focus();
-        } else if (value) {
-          editExpiresInput.hidden = true;
-          // Calculate date from preset (days)
-          const date = new Date();
-          date.setDate(date.getDate() + parseInt(value));
-          editExpiresInput.value = date.toISOString().split('T')[0];
-        } else {
-          editExpiresInput.hidden = true;
-          editExpiresInput.value = '';
-        }
-      });
+      try {
+        const base64 = await this.#readFileAsBase64(file);
+        if (!this.#editingData.attachments) this.#editingData.attachments = [];
 
-      document.getElementById('edit-title')?.focus();
-    }, 50);
+        this.#editingData.attachments.push({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: base64,
+          id: crypto.randomUUID()
+        });
+
+        this.#showToast(`Pièce jointe ajoutée: ${file.name}`, 'success');
+      } catch (err) {
+        console.error('File read error:', err);
+        this.#showToast('Erreur de lecture du fichier', 'error');
+      }
+    }
+    this.#renderEditModalContent();
+  }
+
+  #readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result); // Returns data:mime;base64,...
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  #downloadAttachment(index) {
+    const entry = this.#selectedEntry;
+    if (!entry || !entry.attachments) return;
+
+    const file = entry.attachments[index];
+    if (!file) return;
+
+    try {
+      const link = document.createElement('a');
+      link.href = file.data;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      this.#showToast('Erreur lors du téléchargement', 'error');
+    }
   }
 
   #updateEditPasswordStrength(password) {
@@ -7803,7 +8173,12 @@ export class VaultUI {
       login: `
         <div class="vault-form-group">
           <label class="vault-label" for="entry-username">Identifiant / Email</label>
-          <input type="text" class="vault-input" id="entry-username" placeholder="utilisateur@example.com" autocomplete="username">
+          <div class="input-with-action">
+            <input type="text" class="vault-input" id="entry-username" placeholder="utilisateur@example.com" autocomplete="username">
+            <button type="button" class="vault-btn-icon" id="btn-create-alias" title="Générer Alias Email (Hide-My-Email)">
+              <span class="icon">🕵️</span>
+            </button>
+          </div>
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-password">Mot de passe</label>
@@ -7904,6 +8279,41 @@ export class VaultUI {
 
     // Attach events for login type
     if (type === 'login') {
+      // Alias Generator
+      document.getElementById('btn-create-alias')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const btn = e.currentTarget;
+        const input = document.getElementById('entry-username');
+
+        if (!this.#aliasService.isConfigured) {
+          this.#aliasSettingsModal.show(() => {
+            if (this.#aliasService.isConfigured) btn.click();
+          });
+          return;
+        }
+
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="vault-spinner-small" style="width:16px;height:16px;border-width:2px"></span>';
+        btn.disabled = true;
+
+        try {
+          const alias = await this.#aliasService.generateAlias(document.getElementById('entry-title').value || 'GenPwd Entry');
+          input.value = alias;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+
+          btn.innerHTML = '<span class="icon">✅</span>';
+          setTimeout(() => btn.innerHTML = originalHtml, 2000);
+          this.#showToast('Alias généré avec succès', 'success');
+        } catch (err) {
+          console.error(err);
+          btn.innerHTML = '<span class="icon">❌</span>';
+          setTimeout(() => btn.innerHTML = originalHtml, 2000);
+          this.#showToast(err.message || 'Erreur génération alias', 'error');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
       // Toggle password visibility
       container.querySelectorAll('.toggle-pwd-visibility').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -8001,9 +8411,9 @@ export class VaultUI {
       { value: 'date', label: 'Date' }
     ];
 
-    const kindOptionsHtml = fieldKindOptions.map(opt =>
-      `<option value="${opt.value}">${opt.label}</option>`
-    ).join('');
+    // const kindOptionsHtml = fieldKindOptions.map(opt =>
+    //   `<option value="${opt.value}">${opt.label}</option>`
+    // ).join('');
 
     const existingFieldsHtml = existingFields.map((field, index) => `
       <div class="vault-custom-field" data-field-index="${index}" data-field-id="${this.#escapeHtml(field.id || '')}">
@@ -8011,8 +8421,8 @@ export class VaultUI {
           <input type="text" class="vault-input vault-custom-field-label" placeholder="Nom du champ" value="${this.#escapeHtml(field.label || '')}" aria-label="Nom du champ">
           <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
             ${fieldKindOptions.map(opt =>
-              `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
-            ).join('')}
+      `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
+    ).join('')}
           </select>
           <label class="vault-checkbox-inline vault-custom-field-secured">
             <input type="checkbox" ${field.isSecured ? 'checked' : ''}>
@@ -8908,7 +9318,7 @@ export class VaultUI {
     // Initialize the inactivity manager for global event tracking
     const inactivityManager = getInactivityManager();
     inactivityManager.setTimeout(this.#autoLockTimeout);
-    inactivityManager.setWarningCallback((secondsRemaining) => {
+    inactivityManager.setWarningCallback((_secondsRemaining) => {
       this.#showAutoLockWarning();
     });
     inactivityManager.start(() => {
@@ -9309,9 +9719,9 @@ export class VaultUI {
         <div class="vault-hello-body">
           <p class="vault-hello-description">
             ${isEnabled
-              ? 'Windows Hello est activé pour ce coffre. Vous pouvez déverrouiller avec votre empreinte ou votre visage.'
-              : 'Activez Windows Hello pour déverrouiller ce coffre avec votre empreinte digitale ou votre visage.'
-            }
+          ? 'Windows Hello est activé pour ce coffre. Vous pouvez déverrouiller avec votre empreinte ou votre visage.'
+          : 'Activez Windows Hello pour déverrouiller ce coffre avec votre empreinte digitale ou votre visage.'
+        }
           </p>
           ${isEnabled ? `
             <button class="vault-btn vault-btn-sm vault-btn-danger" id="hello-disable">
@@ -9338,7 +9748,7 @@ export class VaultUI {
 
       // Position popover
       const btnRect = helloBtn.getBoundingClientRect();
-      const popoverRect = popover.getBoundingClientRect();
+      // const popoverRect = popover.getBoundingClientRect();
       popover.style.top = `${btnRect.bottom + 8}px`;
       popover.style.right = `${window.innerWidth - btnRect.right}px`;
 
@@ -9756,10 +10166,14 @@ export class VaultUI {
 
     // Auto-confirm after duration
     setTimeout(async () => {
-      if (!undone && toast.parentNode) {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-        if (onConfirm) await onConfirm();
+      try {
+        if (!undone && toast.parentNode) {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+          if (onConfirm) await onConfirm();
+        }
+      } catch (err) {
+        console.error('Undo toast callback failed:', err);
       }
     }, duration);
   }
@@ -10046,6 +10460,53 @@ export class VaultUI {
       this.#tooltipElement.setAttribute('aria-hidden', 'true');
       this.#tooltipTimeout = null;
     }, 50);
+  }
+
+  #initSyncStatus() {
+    if (!window.vault) return;
+
+    window.vault.on('sync:status', (data) => {
+      this.#updateSyncStatus(data);
+    });
+  }
+
+  #updateSyncStatus(data) {
+    const el = document.getElementById('vault-sync-status');
+    const icon = document.getElementById('vault-sync-icon');
+    const text = document.getElementById('vault-sync-text');
+
+    if (!el || !data) return;
+
+    el.hidden = false;
+    el.className = 'vault-sync-status'; // reset
+
+    // Clear timeout if exists
+    if (this._syncStatusTimeout) {
+      clearTimeout(this._syncStatusTimeout);
+      this._syncStatusTimeout = null;
+    }
+
+    if (data.status === 'syncing') {
+      el.classList.add('syncing');
+      icon.className = 'vault-sync-icon vault-sync-spinner';
+      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+      text.textContent = data.message || 'Synchronisation...';
+    } else if (data.status === 'synced') {
+      el.classList.add('synced');
+      icon.className = 'vault-sync-icon';
+      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+      text.textContent = data.message || 'À jour';
+
+      // Hide after 5 seconds
+      this._syncStatusTimeout = setTimeout(() => {
+        el.hidden = true;
+      }, 5000);
+    } else if (data.status === 'error') {
+      el.classList.add('error');
+      icon.className = 'vault-sync-icon';
+      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+      text.textContent = data.message || 'Erreur Sync';
+    }
   }
 
   #renderNoVaultAPI() {

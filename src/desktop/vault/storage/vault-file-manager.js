@@ -15,11 +15,14 @@
  * Note: This module runs in Electron's main process
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
+import { EventEmitter } from 'node:events';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { app } from 'electron';
 import { CryptoEngine } from '../crypto/crypto-engine.js';
-import { createEmptyVault, VAULT_FORMAT_VERSION } from '../models/vault-types.js';
+import { DuressManager } from '../crypto/duress-manager.js';
+import { CloudSyncManager } from '../sync/cloud-sync-manager.js';
+import { createEmptyVault, VAULT_FORMAT_VERSION, LEGACY_FORMAT_VERSION } from '../models/vault-types.js';
 
 const VAULT_EXTENSION = '.gpd';
 const BACKUP_EXTENSION = '.gpd.bak';
@@ -28,9 +31,12 @@ const REGISTRY_FILE = 'vault-registry.json';
 /**
  * Vault File Manager - handles all file operations
  */
-export class VaultFileManager {
+export class VaultFileManager extends EventEmitter {
   /** @type {CryptoEngine} */
   #crypto;
+
+  /** @type {CloudSyncManager} */
+  #cloudSync;
 
   /** @type {string} */
   #vaultsDir;
@@ -42,10 +48,32 @@ export class VaultFileManager {
   #vaultRegistry = new Map();
 
   constructor() {
+    super();
     this.#crypto = new CryptoEngine();
+    this.#cloudSync = new CloudSyncManager();
     this.#vaultsDir = this.#getVaultsDirectory();
     this.#registryPath = path.join(app.getPath('userData'), REGISTRY_FILE);
     this.#loadRegistry();
+
+    this.#cloudSync.on('status', (data) => {
+      this.emit('sync:status', data);
+    });
+  }
+
+  /**
+   * Get the cloud sync manager
+   * @returns {CloudSyncManager}
+   */
+  getCloudManager() {
+    return this.#cloudSync;
+  }
+
+  /**
+   * Configure Cloud Sync
+   * @param {Object} config 
+   */
+  setCloudConfig(config) {
+    this.#cloudSync.setConfig(config);
   }
 
   /**
@@ -151,8 +179,15 @@ export class VaultFileManager {
    * @param {string} [customPath] - Custom file path (for external vaults)
    * @returns {Promise<{vaultId: string, vaultPath: string}>}
    */
+  /**
+   * Create a new vault (V3 Dual-Slot Format)
+   * @param {string} name - Vault name
+   * @param {string} password - Master password
+   * @param {string} [customPath] - Custom file path (for external vaults)
+   * @returns {Promise<{vaultId: string, vaultPath: string}>}
+   */
   async createVault(name, password, customPath = null) {
-    // Create vault data
+    // Create real vault data (Slot A)
     const vaultData = createEmptyVault(name);
     const vaultId = vaultData.metadata.id;
 
@@ -166,28 +201,56 @@ export class VaultFileManager {
         ? customPath
         : `${customPath}${VAULT_EXTENSION}`;
       isExternal = true;
-      // Ensure parent directory exists
       await fs.mkdir(path.dirname(vaultPath), { recursive: true });
     } else {
-      // Default location
       await this.ensureDirectory();
       vaultPath = this.getVaultPath(vaultId);
     }
 
-    // Create encryption key
-    const { key, keyData } = await this.#crypto.createVaultKey(password);
+    // --- SLOT A: REAL VAULT ---
+    const slotA = await this.#crypto.createVaultKey(password);
+    const encryptedPayloadA = this.#crypto.encrypt(vaultData, slotA.key);
 
-    // Encrypt vault data
-    const encryptedData = this.#crypto.encrypt(vaultData, key);
+    // --- SLOT B: DECOY VAULT (CHAFF) ---
+    // Generate a random high-entropy key for the decoy slot initially
+    // The user hasn't set a duress password yet, so this slot is inaccessible but cryptographically valid
+    const randomDuressPassword = crypto.randomUUID() + crypto.randomUUID();
+    const slotB = await this.#crypto.createVaultKey(randomDuressPassword);
 
-    // Create file structure
+    // Generate Chaff that matches the size of true data to mask existence
+    const chaffSize = Buffer.from(encryptedPayloadA.ciphertext, 'base64').length;
+    // Add some random variance to size (+/- 10%) so they aren't identical byte-sized
+    const variance = Math.floor(chaffSize * 0.1 * (Math.random() - 0.5));
+    const chaffData = DuressManager.generateChaff(chaffSize + variance);
+
+    // We treat the chaff as "encrypted data" structure
+    const encryptedPayloadB = {
+      nonce: DuressManager.generateChaff(12).toString('base64'), // Fake nonce
+      ciphertext: chaffData.toString('base64'),
+      algorithm: 'AES-GCM'
+    };
+
+    // Create V3 File Structure
     const vaultFile = {
-      header: {
-        version: VAULT_FORMAT_VERSION,
-        vaultId,
-        keyData
-      },
-      encryptedData
+      version: '3.0.0', // V3
+      slots: [
+        {
+          salt: slotA.keyData.salt,
+          iv: slotA.keyData.iv, // Using IV field for clarity, though typically KDF uses salt. Adjust if keyData has different structure.
+          iterations: slotA.keyData.kdfParams ? slotA.keyData.kdfParams.iterations : 600000,
+          encryptedKey: slotA.keyData.encryptedKey || '', // If using wrapped keys (Tink)
+          // Store full keyData blob for flexibility
+          keyData: slotA.keyData
+        },
+        {
+          // Store keyData for Slot B
+          keyData: slotB.keyData
+        }
+      ],
+      payloads: [
+        JSON.stringify(encryptedPayloadA),
+        JSON.stringify(encryptedPayloadB)
+      ]
     };
 
     // Write to file
@@ -196,8 +259,9 @@ export class VaultFileManager {
     // Register in vault registry
     await this.registerVault(vaultId, vaultPath, name, isExternal);
 
-    // Wipe key from memory
-    this.#crypto.wipeKey(key);
+    // Wipe keys from memory
+    this.#crypto.wipeKey(slotA.key);
+    this.#crypto.wipeKey(slotB.key);
 
     return { vaultId, vaultPath };
   }
@@ -300,8 +364,68 @@ export class VaultFileManager {
 
     // Parse vault file
     const vaultFile = JSON.parse(fileContent);
+    const version = vaultFile.version || vaultFile.header?.version || LEGACY_FORMAT_VERSION;
 
-    // Verify password and get key
+    // --- V3 IMPLEMENTATION (DUAL SLOT) ---
+    if (version === VAULT_FORMAT_VERSION) {
+      let activeSlot = -1;
+      let derivedKey = null;
+
+      // Try unlocking Slot 0 (Real)
+      try {
+        const { valid, key } = await this.#crypto.verifyPassword(password, vaultFile.slots[0].keyData);
+        if (valid) {
+          // Check if payload decrypts (integrity check)
+          try {
+            const payloadA = JSON.parse(vaultFile.payloads[0]);
+            this.#crypto.decrypt(payloadA, key); // Check only
+            activeSlot = 0;
+            derivedKey = key;
+          } catch (e) {
+            // Password correct for KDF, but payload fail? Unlikely unless corrupted.
+            // Or maybe we unlocked Slot 1 by accident if salts are reused (bad).
+            console.warn('[VaultFileManager] Slot 0 payload decryption failed:', e.message);
+          }
+        }
+      } catch (e) {
+        console.warn('[VaultFileManager] Slot 0 KDF verification failed:', e.message);
+      }
+
+      // If Slot 0 failed, try Slot 1 (Decoy)
+      if (activeSlot === -1) {
+        try {
+          const { valid, key } = await this.#crypto.verifyPassword(password, vaultFile.slots[1].keyData);
+          if (valid) {
+            try {
+              const payloadB = JSON.parse(vaultFile.payloads[1]);
+              // If this slot is Chaff, decrypt will fail randomness check (Tink/AES-GCM auth tag).
+              // BUT, if user set a duress password, we overwrote Chaff with valid vault.
+              this.#crypto.decrypt(payloadB, key);
+              activeSlot = 1;
+              derivedKey = key;
+            } catch (e) {
+              // Decrypt failed. If this is Chaff, this is EXPECTED.
+              // It means password matched KDF but Auth Tag rejected the random noise.
+              console.debug('[VaultFileManager] Slot 1 payload decryption failed (expected for chaff):', e.message);
+            }
+          }
+        } catch (e) {
+          console.warn('[VaultFileManager] Slot 1 KDF verification failed:', e.message);
+        }
+      }
+
+      if (activeSlot === -1 || !derivedKey) {
+        throw new Error('Invalid password');
+      }
+
+      // Decrypt data from Active Slot
+      const encryptedPayload = JSON.parse(vaultFile.payloads[activeSlot]);
+      const vaultData = this.#crypto.decrypt(encryptedPayload, derivedKey);
+
+      return { vaultData, key: derivedKey, activeSlot };
+    }
+
+    // --- LEGACY V1 IMPLEMENTATION ---
     const { valid, key } = await this.#crypto.verifyPassword(
       password,
       vaultFile.header.keyData
@@ -314,7 +438,7 @@ export class VaultFileManager {
     // Decrypt vault data
     const vaultData = this.#crypto.decrypt(vaultFile.encryptedData, key);
 
-    return { vaultData, key };
+    return { vaultData, key, activeSlot: 0 }; // Legacy is always Slot 0
   }
 
   /**
@@ -322,23 +446,23 @@ export class VaultFileManager {
    * @param {string} vaultId - Vault ID
    * @param {Object} vaultData - Vault data to save
    * @param {Uint8Array} key - Encryption key
+   * @param {number} [activeSlot=0] - Active slot index (0=Real, 1=Decoy)
    * @returns {Promise<void>}
    */
-  async saveVault(vaultId, vaultData, key) {
+  async saveVault(vaultId, vaultData, key, activeSlot = 0) {
     // Use registered path (supports external vaults)
     const vaultPath = this.getRegisteredVaultPath(vaultId);
     const backupPath = `${vaultPath}.bak`;
 
-    // Read existing file for header
+    // Read existing file to preserve other slots
     const existingContent = await fs.readFile(vaultPath, 'utf-8');
     const existingFile = JSON.parse(existingContent);
+    const version = existingFile.version || existingFile.header?.version || LEGACY_FORMAT_VERSION;
 
     // Create backup before saving
     try {
       await fs.copyFile(vaultPath, backupPath);
-    } catch {
-      // Ignore backup errors
-    }
+    } catch { /* Ignore */ }
 
     // Update metadata
     vaultData.metadata.modifiedAt = new Date().toISOString();
@@ -347,20 +471,39 @@ export class VaultFileManager {
     // Encrypt new data
     const encryptedData = this.#crypto.encrypt(vaultData, key);
 
-    // Create updated file
-    const updatedFile = {
-      header: existingFile.header,
-      encryptedData
-    };
+    let updatedFile;
 
-    // Atomic write (write to temp, then rename)
+    // --- V3 IMPLEMENTATION ---
+    if (version === VAULT_FORMAT_VERSION) {
+      // Preserve existing structure
+      updatedFile = { ...existingFile };
+
+      // Update ONLY the active payload/slot
+      updatedFile.payloads[activeSlot] = JSON.stringify(encryptedData);
+    }
+    // --- LEGACY IMPLEMENTATION ---
+    else {
+      updatedFile = {
+        header: existingFile.header,
+        encryptedData
+      };
+    }
+
+    // Atomic write
     const tempPath = `${vaultPath}.tmp`;
     await fs.writeFile(tempPath, JSON.stringify(updatedFile, null, 2), 'utf-8');
     await fs.rename(tempPath, vaultPath);
+
+    // Trigger Auto-Sync
+    // We don't await this to avoid blocking UI response
+    this.#cloudSync.uploadVault(vaultPath, vaultId).catch(err => {
+      console.error('[VaultFileManager] Auto-sync failed:', err);
+    });
   }
 
   /**
-   * Delete vault
+   * Securely delete vault (Panic Mode)
+   * Overwrites file content before deletion
    * @param {string} vaultId - Vault ID
    * @returns {Promise<void>}
    */
@@ -368,17 +511,37 @@ export class VaultFileManager {
     const vaultPath = this.getVaultPath(vaultId);
     const backupPath = this.getBackupPath(vaultId);
 
-    try {
-      await fs.unlink(vaultPath);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
+    // Helper to securely wipe a file
+    const secureWipe = async (filePath) => {
+      try {
+        const stats = await fs.stat(filePath);
+        const size = stats.size;
 
-    try {
-      await fs.unlink(backupPath);
-    } catch {
-      // Ignore missing backup
-    }
+        // Pass 1: Random data
+        const buffer = Buffer.alloc(size);
+        crypto.randomFillSync(buffer);
+        await fs.writeFile(filePath, buffer);
+
+        // Pass 2: Zeros
+        buffer.fill(0);
+        await fs.writeFile(filePath, buffer);
+
+        // Pass 3: Ones
+        buffer.fill(255);
+        await fs.writeFile(filePath, buffer);
+
+        // Finally delete
+        await fs.unlink(filePath);
+      } catch (error) {
+        if (error.code !== 'ENOENT') console.error(`Failed to securely wipe ${filePath}:`, error);
+      }
+    };
+
+    await secureWipe(vaultPath);
+    await secureWipe(backupPath);
+
+    // Also remove from registry
+    await this.unregisterVault(vaultId);
   }
 
   /**
@@ -513,6 +676,64 @@ export class VaultFileManager {
     // Wipe keys
     this.#crypto.wipeKey(oldKey);
     this.#crypto.wipeKey(newKey);
+  }
+
+  /**
+   * Migrate vault to V3 with Plausible Deniability
+   * @param {string} vaultId 
+   * @param {Object} currentVaultData 
+   * @param {string} masterPassword 
+   * @param {string} duressPassword 
+   * @param {boolean} populateDecoy 
+   */
+  async migrateToV3(vaultId, currentVaultData, masterPassword, duressPassword, populateDecoy) {
+    const vaultPath = this.getRegisteredVaultPath(vaultId);
+    const backupPath = `${vaultPath}.migration.bak`;
+
+    // 1. Backup!
+    try { await fs.copyFile(vaultPath, backupPath); } catch { }
+
+    // 2. Prepare Slot A (Real Vault)
+    const slotA = await this.#crypto.createVaultKey(masterPassword);
+    const payloadA = this.#crypto.encrypt(currentVaultData, slotA.key);
+
+    // 3. Prepare Slot B (Decoy Vault)
+    const slotB = await this.#crypto.createVaultKey(duressPassword);
+    let decoyData;
+    if (populateDecoy) {
+      decoyData = DuressManager.generateDecoyVault();
+    } else {
+      decoyData = createEmptyVault('My Vault');
+    }
+    const payloadB = this.#crypto.encrypt(decoyData, slotB.key);
+
+    // 4. Create V3 File
+    const vaultFile = {
+      version: VAULT_FORMAT_VERSION,
+      slots: [
+        {
+          salt: slotA.keyData.salt,
+          iv: slotA.keyData.iv,
+          iterations: slotA.keyData.kdfParams ? slotA.keyData.kdfParams.iterations : 600000,
+          encryptedKey: slotA.keyData.encryptedKey || '',
+          keyData: slotA.keyData
+        },
+        {
+          keyData: slotB.keyData
+        }
+      ],
+      payloads: [
+        JSON.stringify(payloadA),
+        JSON.stringify(payloadB)
+      ]
+    };
+
+    // 5. Write
+    await fs.writeFile(vaultPath, JSON.stringify(vaultFile, null, 2), 'utf-8');
+
+    // Wipe
+    this.#crypto.wipeKey(slotA.key);
+    this.#crypto.wipeKey(slotB.key);
   }
 
   /**

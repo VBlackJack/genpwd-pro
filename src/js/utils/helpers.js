@@ -565,7 +565,7 @@ export function throttle(func, wait = 250, options = {}) {
  * const rafUpdate = rafThrottle(() => updateVisualElement());
  * window.addEventListener('scroll', rafUpdate);
  */
-export function rafThrottle(func) {
+export function _rafThrottle(func) {
   let rafId = null;
   let lastArgs = null;
   let lastContext = null;

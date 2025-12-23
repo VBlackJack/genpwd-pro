@@ -10,16 +10,22 @@
  *   registerVaultIPC(ipcMain);
  */
 
-import { dialog } from 'electron';
+import { app, dialog, safeStorage } from 'electron';
+import fs from 'node:fs';
+import path from 'node:path';
 import { VaultSessionManager } from '../session/vault-session.js';
 import { VaultFileManager } from '../storage/vault-file-manager.js';
 import { WindowsHelloAuth } from '../auth/windows-hello.js';
+import { ShareService } from '../services/share-service.js';
 
 /** @type {VaultSessionManager} */
 let session;
 
 /** @type {VaultFileManager} */
 let fileManager;
+
+/** @type {ShareService} */
+let shareService;
 
 // ==================== RATE LIMITING ====================
 
@@ -100,6 +106,28 @@ const unlockRateLimiter = {
 export function registerVaultIPC(ipcMain) {
   session = new VaultSessionManager();
   fileManager = new VaultFileManager();
+  shareService = new ShareService(fileManager);
+
+  // Forward sync events to renderer
+  fileManager.on('sync:status', (data) => {
+    sendToRenderer('vault:sync:status', data);
+  });
+
+  // Initialize Cloud Config
+  if (safeStorage.isEncryptionAvailable()) {
+    (async () => {
+      try {
+        const configPath = path.join(app.getPath('userData'), 'cloud-config.enc');
+        const encrypted = await fs.promises.readFile(configPath);
+        const decrypted = safeStorage.decryptString(encrypted);
+        const config = JSON.parse(decrypted);
+        fileManager.setCloudConfig(config);
+        console.log('[Vault] Cloud config loaded on startup');
+      } catch (e) {
+        // Ignore if file doesn't exist
+      }
+    })();
+  }
 
   // Forward session events to renderer
   session.on('locked', (data) => {
@@ -123,14 +151,16 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Get current session state
    */
-  ipcMain.handle('vault:getState', async () => {
+  ipcMain.handle('vault:getState', async (event) => {
+    validateOrigin(event);
     return session.getState();
   });
 
   /**
    * List available vaults
    */
-  ipcMain.handle('vault:list', async () => {
+  ipcMain.handle('vault:list', async (event) => {
+    validateOrigin(event);
     return fileManager.listVaults();
   });
 
@@ -144,6 +174,18 @@ export function registerVaultIPC(ipcMain) {
 
     const vaultId = await session.create(name, password, customPath || null);
     return { vaultId, success: true };
+  });
+
+  // ==================== SECURE SHARING (GenPwd Send) ====================
+
+  /**
+   * Create a secure share
+   */
+  ipcMain.handle('vault:share:create', async (event, { secretData, options }) => {
+    validateOrigin(event);
+    validateString(secretData, 'secretData');
+
+    return shareService.createShare(secretData, options);
   });
 
   // ==================== EXTERNAL VAULT MANAGEMENT ====================
@@ -252,7 +294,8 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Lock vault
    */
-  ipcMain.handle('vault:lock', async () => {
+  ipcMain.handle('vault:lock', async (event) => {
+    validateOrigin(event);
     await session.lock();
     return { success: true };
   });
@@ -260,14 +303,16 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Get vault metadata
    */
-  ipcMain.handle('vault:getMetadata', async () => {
+  ipcMain.handle('vault:getMetadata', async (event) => {
+    validateOrigin(event);
     return session.getMetadata();
   });
 
   /**
    * Reset activity timer (call on user interaction)
    */
-  ipcMain.handle('vault:resetActivity', async () => {
+  ipcMain.handle('vault:resetActivity', async (event) => {
+    validateOrigin(event);
     session.resetActivity();
     return { success: true };
   });
@@ -277,7 +322,8 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Get all entries
    */
-  ipcMain.handle('vault:entries:getAll', async () => {
+  ipcMain.handle('vault:entries:getAll', async (event) => {
+    validateOrigin(event);
     return session.getEntries();
   });
 
@@ -285,6 +331,7 @@ export function registerVaultIPC(ipcMain) {
    * Get entry by ID
    */
   ipcMain.handle('vault:entries:get', async (event, { id }) => {
+    validateOrigin(event);
     validateString(id, 'id');
     return session.getEntry(id);
   });
@@ -293,6 +340,7 @@ export function registerVaultIPC(ipcMain) {
    * Get entries by folder
    */
   ipcMain.handle('vault:entries:getByFolder', async (event, { folderId }) => {
+    validateOrigin(event);
     return session.getEntriesByFolder(folderId);
   });
 
@@ -300,23 +348,38 @@ export function registerVaultIPC(ipcMain) {
    * Search entries
    */
   ipcMain.handle('vault:entries:search', async (event, { query }) => {
+    validateOrigin(event);
     validateString(query, 'query');
     return session.searchEntries(query);
   });
 
   /**
    * Add entry
+   * @param {Object} params - Entry parameters
+   * @param {string} params.type - Entry type (login, card, note, etc.)
+   * @param {string} params.title - Entry title
+   * @param {Object} params.data - Entry data (username, password, etc.)
+   * @param {Object} [params.options] - Additional options (folderId, favorite, tags)
    */
-  ipcMain.handle('vault:entries:add', async (event, { type, title, data }) => {
+  ipcMain.handle('vault:entries:add', async (event, { type, title, data, options = {} }) => {
+    validateOrigin(event);
     validateString(type, 'type');
     validateString(title, 'title');
-    return session.addEntry(type, title, data || {});
+    // Merge options into data for backward compatibility
+    const entryData = {
+      ...(data || {}),
+      folderId: options.folderId || data?.folderId || null,
+      favorite: options.favorite ?? data?.favorite ?? false,
+      tagIds: options.tagIds || data?.tagIds || []
+    };
+    return session.addEntry(type, title, entryData);
   });
 
   /**
    * Update entry
    */
   ipcMain.handle('vault:entries:update', async (event, { id, updates }) => {
+    validateOrigin(event);
     validateString(id, 'id');
     validateObject(updates, 'updates');
     return session.updateEntry(id, updates);
@@ -326,6 +389,7 @@ export function registerVaultIPC(ipcMain) {
    * Delete entry
    */
   ipcMain.handle('vault:entries:delete', async (event, { id }) => {
+    validateOrigin(event);
     validateString(id, 'id');
     return session.deleteEntry(id);
   });
@@ -335,7 +399,8 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Get all folders
    */
-  ipcMain.handle('vault:folders:getAll', async () => {
+  ipcMain.handle('vault:folders:getAll', async (event) => {
+    validateOrigin(event);
     return session.getFolders();
   });
 
@@ -343,6 +408,7 @@ export function registerVaultIPC(ipcMain) {
    * Add folder
    */
   ipcMain.handle('vault:folders:add', async (event, { name, parentId }) => {
+    validateOrigin(event);
     validateString(name, 'name');
     return session.addFolder(name, parentId || null);
   });
@@ -351,6 +417,7 @@ export function registerVaultIPC(ipcMain) {
    * Update folder
    */
   ipcMain.handle('vault:folders:update', async (event, { id, updates }) => {
+    validateOrigin(event);
     validateString(id, 'id');
     validateObject(updates, 'updates');
     return session.updateFolder(id, updates);
@@ -360,6 +427,7 @@ export function registerVaultIPC(ipcMain) {
    * Delete folder
    */
   ipcMain.handle('vault:folders:delete', async (event, { id, deleteEntries }) => {
+    validateOrigin(event);
     validateString(id, 'id');
     return session.deleteFolder(id, deleteEntries === true);
   });
@@ -369,7 +437,8 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Get all tags
    */
-  ipcMain.handle('vault:tags:getAll', async () => {
+  ipcMain.handle('vault:tags:getAll', async (event) => {
+    validateOrigin(event);
     return session.getTags();
   });
 
@@ -377,14 +446,26 @@ export function registerVaultIPC(ipcMain) {
    * Add tag
    */
   ipcMain.handle('vault:tags:add', async (event, { name, color }) => {
+    validateOrigin(event);
     validateString(name, 'name');
     return session.addTag(name, color || '#6366f1');
+  });
+
+  /**
+   * Update tag
+   */
+  ipcMain.handle('vault:tags:update', async (event, { id, updates }) => {
+    validateOrigin(event);
+    validateString(id, 'id');
+    validateObject(updates, 'updates');
+    return session.updateTag(id, updates);
   });
 
   /**
    * Delete tag
    */
   ipcMain.handle('vault:tags:delete', async (event, { id }) => {
+    validateOrigin(event);
     validateString(id, 'id');
     return session.deleteTag(id);
   });
@@ -445,12 +526,22 @@ export function registerVaultIPC(ipcMain) {
     return { success: true };
   });
 
+  /**
+   * Panic / Nuke Vault
+   */
+  ipcMain.handle('vault:nuke', async (event) => {
+    validateOrigin(event);
+    await session.nuke();
+    return { success: true };
+  });
+
   // ==================== WINDOWS HELLO ====================
 
   /**
    * Check if Windows Hello is available
    */
-  ipcMain.handle('vault:hello:isAvailable', async () => {
+  ipcMain.handle('vault:hello:isAvailable', async (event) => {
+    validateOrigin(event);
     return WindowsHelloAuth.isAvailable();
   });
 
@@ -458,6 +549,7 @@ export function registerVaultIPC(ipcMain) {
    * Check if Windows Hello is enabled for a vault
    */
   ipcMain.handle('vault:hello:isEnabled', async (event, { vaultId }) => {
+    validateOrigin(event);
     validateString(vaultId, 'vaultId');
     return WindowsHelloAuth.isEnabledForVault(vaultId);
   });
@@ -565,6 +657,82 @@ export function registerVaultIPC(ipcMain) {
     await session.unlockWithKey(vaultId, vaultKey);
 
     console.log(`[WindowsHello] Vault unlocked: ${vaultId}`);
+    return { success: true };
+  });
+
+  // ==================== CLOUD SYNC CONFIGURATION ====================
+
+  /**
+   * Save cloud configuration securely
+   */
+  ipcMain.handle('vault:saveCloudConfig', async (event, config) => {
+    validateOrigin(event);
+    validateObject(config, 'config');
+
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Le chiffrement système n\'est pas disponible');
+    }
+
+    try {
+      const jsonStr = JSON.stringify(config);
+      const encrypted = safeStorage.encryptString(jsonStr);
+      const configPath = path.join(app.getPath('userData'), 'cloud-config.enc');
+
+      await fs.promises.writeFile(configPath, encrypted);
+
+      // Update active file manager config
+      fileManager.setCloudConfig(config);
+
+      return { success: true };
+    } catch (error) {
+      console.error('[Vault] Error saving cloud config:', error);
+      throw new Error('Erreur lors de la sauvegarde de la configuration');
+    }
+  });
+
+  /**
+   * Get cloud configuration securely
+   */
+  ipcMain.handle('vault:getCloudConfig', async (event) => {
+    validateOrigin(event);
+
+    if (!safeStorage.isEncryptionAvailable()) {
+      return { provider: 'none' };
+    }
+
+    try {
+      const configPath = path.join(app.getPath('userData'), 'cloud-config.enc');
+      const encrypted = await fs.promises.readFile(configPath);
+      const decrypted = safeStorage.decryptString(encrypted);
+      return JSON.parse(decrypted);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('[Vault] Error loading cloud config:', error);
+      }
+      return { provider: 'none' };
+    }
+  });
+
+  // ==================== DURESS MODE ====================
+
+  /**
+   * Setup Duress Mode (Enable Plausible Deniability migration)
+   */
+  ipcMain.handle('vault:duress:setup', async (event, { masterPassword, duressPassword, populateDecoy }) => {
+    validateOrigin(event);
+    validateString(masterPassword, 'masterPassword');
+    validateString(duressPassword, 'duressPassword');
+
+    // Ensure session is unlocked
+    const state = session.getState();
+    if (!state.vaultId || state.status !== 'unlocked') {
+      throw new Error('Vault must be unlocked to enable Duress Mode');
+    }
+
+    // Must pass a new method in FileManager or Session to perform the migration
+    // We'll call session.enableDuressMode which will orchestrate with File Manager
+    await session.enableDuressMode(masterPassword, duressPassword, populateDecoy);
+
     return { success: true };
   });
 

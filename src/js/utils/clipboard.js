@@ -30,14 +30,16 @@ let autoClearTimer = null;
 
 /**
  * Default auto-clear timeout options (in seconds)
+ * Aligned with secure-clipboard.js
  */
-export const CLIPBOARD_TIMEOUT_OPTIONS = [
-  { value: 0, label: 'Désactivé' },
-  { value: 15, label: '15 secondes' },
-  { value: 30, label: '30 secondes' },
-  { value: 60, label: '1 minute' },
-  { value: 120, label: '2 minutes' }
-];
+export const CLIPBOARD_TIMEOUT_OPTIONS = Object.freeze([
+  { value: 0, label: 'Désactivé', ms: 0 },
+  { value: 10, label: '10 secondes', ms: 10 * 1000 },
+  { value: 30, label: '30 secondes', ms: 30 * 1000 },
+  { value: 60, label: '1 minute', ms: 60 * 1000 },
+  { value: 120, label: '2 minutes', ms: 2 * 60 * 1000 },
+  { value: 300, label: '5 minutes', ms: 5 * 60 * 1000 }
+]);
 
 /**
  * Get clipboard auto-clear timeout from settings
@@ -91,14 +93,18 @@ function scheduleAutoClear(timeout) {
   if (seconds <= 0) return; // Auto-clear disabled
 
   autoClearTimer = setTimeout(async () => {
-    await clearClipboard();
-    autoClearTimer = null;
+    try {
+      await clearClipboard();
+      autoClearTimer = null;
 
-    // Dispatch event for UI feedback
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('clipboard-cleared', {
-        detail: { auto: true }
-      }));
+      // Dispatch event for UI feedback
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('clipboard-cleared', {
+          detail: { auto: true }
+        }));
+      }
+    } catch (err) {
+      safeLog('Auto-clear clipboard failed:', err);
     }
   }, seconds * 1000);
 

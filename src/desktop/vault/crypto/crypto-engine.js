@@ -2,6 +2,17 @@
  * @fileoverview High-level Cryptographic Engine for Vault
  * Combines Argon2id KDF with XSalsa20-Poly1305 encryption
  *
+ * ARCHITECTURE NOTE:
+ * This module uses XSalsa20-Poly1305 (via TweetNaCl) for local vault storage.
+ * The import/export module (src/js/core/crypto/vault-crypto.js) uses AES-256-GCM
+ * for cross-platform compatibility with Android.
+ *
+ * These are intentionally different:
+ *   - crypto-engine.js (XSalsa20): For local vault storage in Electron
+ *   - vault-crypto.js (AES-GCM): For import/export and cross-platform sync
+ *
+ * Data encrypted with one engine CANNOT be decrypted by the other.
+ *
  * Usage:
  *   const engine = new CryptoEngine();
  *   const { salt, verifier } = await engine.createVaultKey(password);

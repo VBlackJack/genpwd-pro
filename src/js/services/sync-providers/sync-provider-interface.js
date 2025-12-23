@@ -44,7 +44,7 @@ export class SyncProvider {
    * @param {Object} config - Provider configuration
    * @returns {Promise<void>}
    */
-  async init(config) {
+  async init(_config) {
     throw new Error('SyncProvider.init() must be implemented');
   }
 
@@ -77,7 +77,7 @@ export class SyncProvider {
    * @param {Object} data - Encrypted data package
    * @returns {Promise<{success: boolean, timestamp: number, error?: string}>}
    */
-  async push(data) {
+  async push(_data) {
     throw new Error('SyncProvider.push() must be implemented');
   }
 
@@ -94,7 +94,7 @@ export class SyncProvider {
    * @param {Object} localData - Local encrypted data
    * @returns {Promise<{action: string, data: Object, conflicts: number}>}
    */
-  async sync(localData) {
+  async sync(_localData) {
     throw new Error('SyncProvider.sync() must be implemented');
   }
 

@@ -17,7 +17,7 @@
 // src/js/utils/preset-manager.js - Configuration preset management
 
 import { safeLog } from './logger.js';
-import { safeSetItem, safeGetItem } from './storage-helper.js';
+// import { safeSetItem, safeGetItem } from './storage-helper.js';
 
 /**
  * @typedef {Object} Preset
@@ -30,7 +30,7 @@ import { safeSetItem, safeGetItem } from './storage-helper.js';
  * @property {boolean} isDefault - Whether this is the default preset
  */
 
-const STORAGE_KEY = 'genpwd_presets';
+// const STORAGE_KEY = 'genpwd_presets';
 const DEFAULT_PRESET_ID = 'default';
 
 class PresetManager {

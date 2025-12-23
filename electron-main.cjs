@@ -110,6 +110,57 @@ function generateQuickPassword(length = 20) {
   }
   return password;
 }
+// Helper to get active window title
+function getActiveWindowTitle() {
+  return new Promise((resolve) => {
+    if (process.platform !== 'win32') {
+      resolve('');
+      return;
+    }
+
+    const script = `
+      $code = @'
+          [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+          [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+      '@
+      $win32 = Add-Type -MemberDefinition $code -Name "Win32" -Namespace Win32 -PassThru
+      $handle = $win32::GetForegroundWindow()
+      $title = New-Object System.Text.StringBuilder 256
+      $win32::GetWindowText($handle, $title, 256) | Out-Null
+      $title.ToString()
+    `;
+
+    const ps = spawn('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script
+    ], { windowsHide: true });
+
+    let stdout = '';
+    ps.stdout.on('data', d => stdout += d.toString());
+    ps.on('close', () => resolve(stdout.trim()));
+    ps.on('error', () => resolve(''));
+    // Timeout
+    setTimeout(() => {
+      try { ps.kill(); } catch { }
+      resolve('');
+    }, 2000);
+  });
+}
+
+// ==================== IPC SECURITY ====================
+/**
+ * Validate IPC event origin for security
+ * Ensures requests come from legitimate renderer process
+ */
+function validateOrigin(event) {
+  const webContents = event.sender;
+  const url = webContents.getURL();
+
+  // Allow file:// protocol (our app) and devtools
+  if (!url.startsWith('file://') && !url.startsWith('devtools://')) {
+    console.error(`[GenPwd Pro] Blocked IPC from unauthorized origin: ${url}`);
+    throw new Error('Unauthorized IPC origin');
+  }
+}
 
 // Configuration de sécurité renforcée
 const SECURITY_CONFIG = {
@@ -431,11 +482,11 @@ function createApplicationMenu() {
               title: 'À propos de GenPwd Pro',
               message: `GenPwd Pro v${APP_VERSION}`,
               detail: 'Générateur de mots de passe sécurisé\n\n' +
-                      'Copyright © 2025 Julien Bombled\n' +
-                      'Licence Apache 2.0\n\n' +
-                      'Electron: ' + process.versions.electron + '\n' +
-                      'Chrome: ' + process.versions.chrome + '\n' +
-                      'Node.js: ' + process.versions.node,
+                'Copyright © 2025 Julien Bombled\n' +
+                'Licence Apache 2.0\n\n' +
+                'Electron: ' + process.versions.electron + '\n' +
+                'Chrome: ' + process.versions.chrome + '\n' +
+                'Node.js: ' + process.versions.node,
               buttons: ['OK']
             });
           }
@@ -468,12 +519,14 @@ function createApplicationMenu() {
 // Uses Windows DPAPI / macOS Keychain for encryption
 
 // Check if safeStorage is available
-ipcMain.handle('auth:is-available', () => {
+ipcMain.handle('auth:is-available', (event) => {
+  validateOrigin(event);
   return safeStorage.isEncryptionAvailable();
 });
 
 // Encrypt secret using OS-level encryption (DPAPI on Windows)
 ipcMain.handle('auth:encrypt-secret', (event, text) => {
+  validateOrigin(event);
   try {
     if (!safeStorage.isEncryptionAvailable()) {
       return { success: false, error: 'Secure storage not available' };
@@ -490,6 +543,7 @@ ipcMain.handle('auth:encrypt-secret', (event, text) => {
 
 // Decrypt secret using OS-level encryption
 ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
+  validateOrigin(event);
   try {
     if (!safeStorage.isEncryptionAvailable()) {
       return { success: false, error: 'Secure storage not available' };
@@ -512,6 +566,7 @@ let clipboardOpId = 0;
 
 // Copy to clipboard with auto-clear
 ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
+  validateOrigin(event);
   try {
     // Generate operation ID
     const opId = ++clipboardOpId;
@@ -551,7 +606,8 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
 });
 
 // Clear clipboard immediately
-ipcMain.handle('clipboard:clear', () => {
+ipcMain.handle('clipboard:clear', (event) => {
+  validateOrigin(event);
   try {
     // Cancel any pending timers
     for (const [key, { timer }] of clipboardTimers) {
@@ -568,7 +624,8 @@ ipcMain.handle('clipboard:clear', () => {
 });
 
 // Get remaining time for clipboard auto-clear
-ipcMain.handle('clipboard:get-ttl', () => {
+ipcMain.handle('clipboard:get-ttl', (event) => {
+  validateOrigin(event);
   const entry = clipboardTimers.get('secure');
   if (!entry) {
     return { active: false };
@@ -579,7 +636,8 @@ ipcMain.handle('clipboard:get-ttl', () => {
 // ==================== WINDOW CONTROL IPC HANDLERS ====================
 
 // Minimize to tray
-ipcMain.handle('window:minimize-to-tray', () => {
+ipcMain.handle('window:minimize-to-tray', (event) => {
+  validateOrigin(event);
   if (mainWindow) {
     mainWindow.hide();
     return { success: true };
@@ -588,7 +646,8 @@ ipcMain.handle('window:minimize-to-tray', () => {
 });
 
 // Show window
-ipcMain.handle('window:show', () => {
+ipcMain.handle('window:show', (event) => {
+  validateOrigin(event);
   if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
@@ -598,12 +657,14 @@ ipcMain.handle('window:show', () => {
 });
 
 // Check if window is visible
-ipcMain.handle('window:is-visible', () => {
+ipcMain.handle('window:is-visible', (event) => {
+  validateOrigin(event);
   return mainWindow ? mainWindow.isVisible() : false;
 });
 
 // Quit application
-ipcMain.handle('app:quit', () => {
+ipcMain.handle('app:quit', (event) => {
+  validateOrigin(event);
   isQuitting = true;
   app.quit();
   return { success: true };
@@ -613,7 +674,8 @@ ipcMain.handle('app:quit', () => {
 const COMPACT_SIZE = { width: 380, height: 640 };
 
 // Toggle compact mode
-ipcMain.handle('window:toggle-compact', () => {
+ipcMain.handle('window:toggle-compact', (event) => {
+  validateOrigin(event);
   if (!mainWindow) {
     return { success: false, error: 'No main window' };
   }
@@ -661,7 +723,8 @@ ipcMain.handle('window:toggle-compact', () => {
 });
 
 // Get compact mode state
-ipcMain.handle('window:is-compact', () => {
+ipcMain.handle('window:is-compact', (event) => {
+  validateOrigin(event);
   return { compact: isCompactMode };
 });
 
@@ -669,6 +732,7 @@ ipcMain.handle('window:is-compact', () => {
 
 // Read binary file for KDBX import
 ipcMain.handle('fs:read-binary', async (event, filePath) => {
+  validateOrigin(event);
   try {
     // Security: validate path is a real file
     const stats = await fs.promises.stat(filePath);
@@ -687,6 +751,7 @@ ipcMain.handle('fs:read-binary', async (event, filePath) => {
 
 // Show open file dialog for KDBX import
 ipcMain.handle('fs:show-open-dialog', async (event, options) => {
+  validateOrigin(event);
   try {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: options.title || 'Ouvrir un fichier',
@@ -725,6 +790,7 @@ function validateVaultExtension(filePath) {
  * Writes to temp file first, then renames to prevent corruption
  */
 ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
+  validateOrigin(event);
   try {
     // Validate extension
     if (!validateVaultExtension(filePath)) {
@@ -775,6 +841,7 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
  * Returns raw buffer or parsed JSON depending on file content
  */
 ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
+  validateOrigin(event);
   try {
     // Validate extension
     if (!validateVaultExtension(filePath)) {
@@ -813,7 +880,8 @@ ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
 /**
  * Open file dialog for selecting vault files
  */
-ipcMain.handle('vaultIO:selectFile', async () => {
+ipcMain.handle('vaultIO:selectFile', async (event) => {
+  validateOrigin(event);
   try {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: 'Ouvrir un coffre',
@@ -849,6 +917,7 @@ ipcMain.handle('vaultIO:selectFile', async () => {
  * Save dialog for choosing vault save location
  */
 ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
+  validateOrigin(event);
   try {
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Sauvegarder le coffre',
@@ -885,6 +954,7 @@ ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
  * Check if a file exists
  */
 ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
+  validateOrigin(event);
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
     return { success: true, exists: true };
@@ -897,6 +967,7 @@ ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
  * Get file info (size, modification date)
  */
 ipcMain.handle('vaultIO:getFileInfo', async (event, { filePath }) => {
+  validateOrigin(event);
   try {
     const stats = await fs.promises.stat(filePath);
     return {
@@ -994,6 +1065,7 @@ function buildAutoTypePowerShell(actions) {
 
 // Perform auto-type operation
 ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data }) => {
+  validateOrigin(event);
   try {
     // Only supported on Windows currently
     if (process.platform !== 'win32') {
@@ -1066,7 +1138,8 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data })
 });
 
 // Get default auto-type sequence
-ipcMain.handle('automation:get-default-sequence', () => {
+ipcMain.handle('automation:get-default-sequence', (event) => {
+  validateOrigin(event);
   return '{USERNAME}{TAB}{PASSWORD}{ENTER}';
 });
 
@@ -1108,6 +1181,29 @@ app.whenReady().then(async () => {
     }
   } catch (error) {
     console.error('[GenPwd Pro] Global hotkey registration error:', error.message);
+  }
+
+  // ==================== GLOBAL AUTO-TYPE (KeePass Killer) ====================
+  const GLOBAL_AUTOTYPE = 'CommandOrControl+Alt+A';
+
+  try {
+    globalShortcut.register(GLOBAL_AUTOTYPE, async () => {
+      console.log('[GenPwd Pro] Global Auto-Type triggered');
+
+      // Get Active Window Title
+      const title = await getActiveWindowTitle();
+      console.log(`[GenPwd Pro] Active Window: "${title}"`);
+
+      if (title && mainWindow) {
+        // Bring our window to invalid state (hidden) but notify renderer
+        // Actually we want to stay hidden usually, unless match fails.
+        // We send event to renderer to find match
+        mainWindow.webContents.send('automation:global-autotype', { title });
+      }
+    });
+    console.log(`[GenPwd Pro] Global Auto-Type registered: ${GLOBAL_AUTOTYPE}`);
+  } catch (error) {
+    console.error('[GenPwd Pro] Auto-Type registration error:', error);
   }
 
   // Set main window for vault events

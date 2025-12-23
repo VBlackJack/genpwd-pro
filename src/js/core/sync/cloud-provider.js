@@ -17,7 +17,7 @@
 // src/js/core/sync/cloud-provider.js - Abstract Cloud Provider Interface
 // Mirrors Android CloudSyncProvider interface for cross-platform consistency
 
-import { CloudResult, CloudErrorType, VaultSyncMetadata, VaultSyncData } from './models.js';
+import { CloudResult, CloudErrorType } from './models.js';
 import { safeLog } from '../../utils/logger.js';
 
 /**
@@ -82,7 +82,7 @@ export class CloudProvider {
    * @returns {Promise<CloudResult<string>>} - File ID on success
    * @abstract
    */
-  async uploadVault(vaultId, encryptedData, options = {}) {
+  async uploadVault(_vaultId, _encryptedData, _options = {}) {
     throw new Error('uploadVault() must be implemented by subclass');
   }
 
@@ -94,7 +94,7 @@ export class CloudProvider {
    * @returns {Promise<CloudResult<VaultSyncData>>} - Encrypted vault data and metadata
    * @abstract
    */
-  async downloadVault(vaultId, fileId = null) {
+  async downloadVault(_vaultId, _fileId = null) {
     throw new Error('downloadVault() must be implemented by subclass');
   }
 
@@ -115,7 +115,7 @@ export class CloudProvider {
    * @returns {Promise<CloudResult<boolean>>} - True on success
    * @abstract
    */
-  async deleteVault(fileId) {
+  async deleteVault(_fileId) {
     throw new Error('deleteVault() must be implemented by subclass');
   }
 

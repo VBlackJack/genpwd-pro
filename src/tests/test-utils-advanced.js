@@ -81,30 +81,30 @@ if (typeof global.document === 'undefined') {
     className: '',
     style: {},
     dataset: {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    setAttribute: () => {},
+    addEventListener: () => { },
+    removeEventListener: () => { },
+    setAttribute: () => { },
     getAttribute: () => null,
-    appendChild: () => {},
-    removeChild: () => {},
+    appendChild: () => { },
+    removeChild: () => { },
     querySelector: () => null,
     querySelectorAll: () => [],
-    focus: () => {},
-    click: () => {},
-    remove: () => {}
+    focus: () => { },
+    click: () => { },
+    remove: () => { }
   });
 
   global.document = {
     documentElement: {
       style: {},
-      setAttribute: () => {},
+      setAttribute: () => { },
       getAttribute: () => null
     },
     body: {
-      appendChild: () => {},
-      removeChild: () => {},
+      appendChild: () => { },
+      removeChild: () => { },
       style: {},
-      setAttribute: () => {},
+      setAttribute: () => { },
       getAttribute: () => null
     },
     getElementById: () => null,
@@ -116,6 +116,32 @@ if (typeof global.document === 'undefined') {
     querySelector: () => null,
     querySelectorAll: () => []
   };
+}
+
+// Mock window.vault for PresetManager tests
+if (typeof global.window === 'undefined') {
+  global.window = global;
+}
+
+if (!global.window.vault) {
+  global.window.vault = {
+    getState: async () => ({ status: 'unlocked' }),
+    on: (event, callback) => { return () => { }; },
+    entries: {
+      add: async (type, title, data) => ({ id: 'mock-entry-id-' + Date.now(), type, title, data }),
+      update: async (id, data) => ({ id, ...data }),
+      delete: async (id) => true,
+      getAll: async () => []
+    }
+  };
+}
+
+if (!global.window.dispatchEvent) {
+  global.window.dispatchEvent = () => true;
+}
+
+if (!global.CustomEvent) {
+  global.CustomEvent = class CustomEvent { constructor(type) { this.type = type; } };
 }
 
 /**
@@ -431,7 +457,7 @@ function setupPresetTests(runner) {
       specials: 2
     };
 
-    const preset = presetManager.createPreset('My Custom', config, '');
+    const preset = await presetManager.createPreset('My Custom', config, '');
     assert.ok(preset, 'Should create custom preset');
     assert.ok(preset.id, 'Preset should have an ID');
 
@@ -445,12 +471,12 @@ function setupPresetTests(runner) {
 
     const config = { mode: 'syllables' };
 
-    const preset = presetManager.createPreset('To Remove', config, '');
+    const preset = await presetManager.createPreset('To Remove', config, '');
     const presetId = preset.id;
     const presets = presetManager.getAllPresets();
     assert.ok(presets.find(p => p.id === presetId), 'Preset should exist');
 
-    const result = presetManager.deletePreset(presetId);
+    const result = await presetManager.deletePreset(presetId);
     assert.strictEqual(result, true, 'Should delete preset');
 
     const updatedPresets = presetManager.getAllPresets();

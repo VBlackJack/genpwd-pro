@@ -32,7 +32,7 @@ import { sanitizeHTML } from '../utils/dom-sanitizer.js';
  * @param {string} [options.size] - Modal size: 'small', 'medium', 'large', 'full' (default: 'medium')
  * @param {Function} [options.onClose] - Callback when modal is closed
  * @param {Function} [options.onOpen] - Callback when modal is opened
- * @returns {HTMLElement} Modal element
+ * @returns {{element: HTMLElement, close: Function}} Modal interface object
  */
 export function createModal(options) {
   const {
@@ -59,18 +59,20 @@ export function createModal(options) {
     existing.remove();
   }
 
-  // Create modal structure
-  const modal = document.createElement('div');
-  modal.id = id;
-  modal.className = `modal modal-${size}`;
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-labelledby', `${id}-title`);
+  // Create modal overlay (parent container matching CSS structure)
+  const overlay = document.createElement('div');
+  overlay.id = id;
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', `${id}-title`);
 
-  // Modal HTML structure
-  modal.innerHTML = sanitizeHTML(`
-    <div class="modal-overlay" data-modal-overlay></div>
-    <div class="modal-container">
+  // Size class for the modal
+  const sizeClass = size !== 'medium' ? `modal-${size}` : '';
+
+  // Modal HTML structure (matching CSS expectations)
+  overlay.innerHTML = sanitizeHTML(`
+    <div class="modal ${sizeClass}">
       <div class="modal-header">
         <h2 id="${id}-title" class="modal-title">${escapeHtml(title)}</h2>
         <button
@@ -103,46 +105,48 @@ export function createModal(options) {
   `);
 
   // Add to DOM
-  document.body.appendChild(modal);
+  document.body.appendChild(overlay);
 
-  // Bind events
-  const closeModal = () => closeModalInstance(modal, onClose);
+  // Close function
+  const closeModalFn = () => closeModalInstance(overlay, onClose);
 
   // Close button
-  const closeBtn = modal.querySelector('[data-modal-close]');
+  const closeBtn = overlay.querySelector('[data-modal-close]');
   if (closeBtn) {
-    closeBtn.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeModalFn);
   }
 
-  // Backdrop click
+  // Backdrop click (click on overlay but not on modal content)
   if (closeOnBackdrop) {
-    const overlay = modal.querySelector('[data-modal-overlay]');
-    if (overlay) {
-      overlay.addEventListener('click', closeModal);
-    }
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModalFn();
+      }
+    });
   }
 
   // Escape key
   if (closeOnEscape) {
     const escapeHandler = (e) => {
       if (e.key === 'Escape') {
-        closeModal();
+        closeModalFn();
         document.removeEventListener('keydown', escapeHandler);
       }
     };
     document.addEventListener('keydown', escapeHandler);
     // Store handler for cleanup
-    modal._escapeHandler = escapeHandler;
+    overlay._escapeHandler = escapeHandler;
   }
 
   // Action buttons
   actions.forEach((action) => {
-    if (action.id && action.onClick) {
-      const btn = modal.querySelector(`[data-action="${action.id}"]`);
+    if (action.onClick) {
+      const actionId = action.id || '';
+      const btn = overlay.querySelector(`[data-action="${actionId}"]`);
       if (btn && typeof action.onClick === 'function') {
         btn.addEventListener('click', (e) => {
           try {
-            action.onClick(e, modal);
+            action.onClick(e, overlay);
           } catch (error) {
             safeLog(`Modal action error: ${error.message}`);
           }
@@ -152,11 +156,11 @@ export function createModal(options) {
   });
 
   // Focus management
-  const firstFocusable = modal.querySelector('input, button, textarea, select');
+  const firstFocusable = overlay.querySelector('input, button, textarea, select');
 
   // Show modal with animation
   setTimeout(() => {
-    modal.classList.add('show');
+    overlay.classList.add('show');
 
     // Focus first input
     if (firstFocusable) {
@@ -166,14 +170,18 @@ export function createModal(options) {
     // Call onOpen callback
     if (typeof onOpen === 'function') {
       try {
-        onOpen(modal);
+        onOpen(overlay);
       } catch (error) {
         safeLog(`Modal onOpen error: ${error.message}`);
       }
     }
   }, ANIMATION_DURATION.MODAL_FADE_IN);
 
-  return modal;
+  // Return interface object for easier usage
+  return {
+    element: overlay,
+    close: closeModalFn
+  };
 }
 
 /**
@@ -260,7 +268,7 @@ function escapeHtml(str) {
  * @param {string} [options.confirmLabel] - Confirm button label (default: "Confirmer")
  * @param {string} [options.cancelLabel] - Cancel button label (default: "Annuler")
  * @param {string} [options.confirmClass] - Confirm button class (default: "btn-danger")
- * @returns {HTMLElement} Modal element
+ * @returns {{element: HTMLElement, close: Function}} Modal interface object
  */
 export function createConfirmDialog(options) {
   const {

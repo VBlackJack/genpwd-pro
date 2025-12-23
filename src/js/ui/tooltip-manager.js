@@ -18,8 +18,19 @@
 // Singleton tooltip - Premium look, bypasses overflow:hidden
 
 let tooltipEl = null;
+let tooltipController = null;
 
+/**
+ * Initialize tooltip system with proper cleanup support
+ */
 export function initTooltips() {
+  // Clean up any previous listeners
+  cleanupTooltips();
+
+  // Create AbortController for cleanup
+  tooltipController = new AbortController();
+  const signal = tooltipController.signal;
+
   // Create the singleton element if it doesn't exist
   if (!document.getElementById('app-tooltip')) {
     tooltipEl = document.createElement('div');
@@ -43,7 +54,7 @@ export function initTooltips() {
 
       showTooltip(target, text);
     }
-  });
+  }, { signal });
 
   // Event delegation for mouseout
   document.addEventListener('mouseout', (e) => {
@@ -55,7 +66,20 @@ export function initTooltips() {
 
       hideTooltip();
     }
-  });
+  }, { signal });
+}
+
+/**
+ * Cleanup tooltip event listeners
+ */
+export function cleanupTooltips() {
+  if (tooltipController) {
+    tooltipController.abort();
+    tooltipController = null;
+  }
+  if (tooltipEl) {
+    hideTooltip();
+  }
 }
 
 function showTooltip(element, text) {

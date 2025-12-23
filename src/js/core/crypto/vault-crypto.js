@@ -20,8 +20,17 @@
  * Mirrors the Android VaultCryptoManager implementation for cross-platform compatibility.
  *
  * Uses:
- * - Argon2id (via native argon2 package) for key derivation
+ * - Argon2id (via hash-wasm) for key derivation
  * - AES-256-GCM (via Node crypto) for encryption
+ *
+ * ARCHITECTURE NOTE:
+ * This module uses AES-256-GCM for cross-platform compatibility with the Android app.
+ * The desktop vault (src/desktop/vault/crypto/) uses XSalsa20-Poly1305 via TweetNaCl.
+ * These are intentionally different:
+ *   - vault-crypto.js (AES-GCM): For import/export and cross-platform sync
+ *   - crypto-engine.js (XSalsa20): For local vault storage in Electron
+ *
+ * Data encrypted with one engine CANNOT be decrypted by the other.
  *
  * IMPORTANT: This module must run in the Electron Main Process or Preload context
  * to avoid blocking the UI during Argon2 hashing.
@@ -29,7 +38,7 @@
  * @module vault-crypto
  */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 // Use hash-wasm for Argon2id (pure WASM - no native compilation required)
 let argon2id = null;
@@ -615,7 +624,7 @@ class VaultCryptoManager {
    * @param {string} str - String to "wipe" (returns empty string)
    * @returns {string} Empty string
    */
-  wipeString(str) {
+  wipeString(_str) {
     // Cannot modify string in place in JS
     // Return empty string and let GC handle original
     return '';

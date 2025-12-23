@@ -239,7 +239,7 @@ export class GoogleDriveProvider extends CloudProvider {
    *
    * @param {string} vaultId - Local vault identifier
    * @param {ArrayBuffer} encryptedData - Encrypted vault content
-   * @param {Object} options - Upload options
+   * @param {Object} options - Upload options (unused)
    * @returns {Promise<CloudResult<string>>} - File ID on success
    */
   async uploadVault(vaultId, encryptedData, options = {}) {
@@ -354,7 +354,7 @@ export class GoogleDriveProvider extends CloudProvider {
    * @param {string} fileId - Cloud file ID (optional)
    * @returns {Promise<CloudResult<VaultSyncData>>}
    */
-  async downloadVault(vaultId, fileId = null) {
+  async downloadVault(vaultId, fileId = null, options = {}) {
     safeLog(`GoogleDrive: Downloading vault ${vaultId}...`);
 
     // Ensure authenticated
@@ -365,7 +365,7 @@ export class GoogleDriveProvider extends CloudProvider {
 
     // Find file if ID not provided
     if (!fileId) {
-      const findResult = await this.findVaultFile(vaultId);
+      const findResult = await this.findVaultFile(vaultId, options);
       if (findResult.isError) {
         return findResult;
       }
@@ -617,31 +617,83 @@ export class GoogleDriveProvider extends CloudProvider {
    * @param {Object} tokens
    */
   async storeTokens(tokens) {
-    // Store in localStorage for now (TODO: use secure credential manager)
+    // Attempt to use secure storage if available
+    if (window.electronAPI && await window.electronAPI.isSecureStorageAvailable()) {
+      try {
+        const encryptedAccess = await window.electronAPI.encryptSecret(tokens.accessToken);
+        // Refresh token is critical, ensure it is encrypted
+        const encryptedRefresh = tokens.refreshToken
+          ? await window.electronAPI.encryptSecret(tokens.refreshToken)
+          : null;
+
+        const secureData = {
+          accessToken: encryptedAccess.data,
+          refreshToken: encryptedRefresh ? encryptedRefresh.data : null,
+          expiresAt: tokens.expiresAt,
+          isEncrypted: true
+        };
+
+        localStorage.setItem('genpwd_gdrive_tokens', JSON.stringify(secureData));
+        safeLog('GoogleDrive: Tokens stored using secure storage');
+        return;
+      } catch (error) {
+        safeLog(`GoogleDrive: Secure storage failed, falling back to localStorage: ${error.message}`);
+      }
+    }
+
+    // Fallback or if secure storage unavailable
     localStorage.setItem('genpwd_gdrive_tokens', JSON.stringify(tokens));
+    safeLog('GoogleDrive: Tokens stored in localStorage (insecure)');
   }
 
   /**
    * Load stored tokens
-   * @returns {Object|null}
+   * @returns {Promise<Object|null>}
    */
-  loadStoredTokens() {
+  async loadStoredTokens() {
     const stored = localStorage.getItem('genpwd_gdrive_tokens');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return null;
+    if (!stored) return null;
+
+    try {
+      const data = JSON.parse(stored);
+
+      // Handle encrypted data
+      if (data.isEncrypted && window.electronAPI) {
+        try {
+          // Decrypt access token
+          const accessResult = await window.electronAPI.decryptSecret(data.accessToken);
+          if (!accessResult.success) throw new Error(accessResult.error);
+
+          let refreshToken = null;
+          if (data.refreshToken) {
+            const refreshResult = await window.electronAPI.decryptSecret(data.refreshToken);
+            if (!refreshResult.success) throw new Error(refreshResult.error);
+            refreshToken = refreshResult.data;
+          }
+
+          return {
+            accessToken: accessResult.data,
+            refreshToken,
+            expiresAt: data.expiresAt
+          };
+        } catch (error) {
+          console.error('Failed to decrypt tokens:', error);
+          return null;
+        }
       }
+
+      // Legacy/Plain data
+      return data;
+    } catch {
+      return null;
     }
-    return null;
   }
 
   /**
    * Initialize provider with stored tokens
    */
   async init() {
-    const tokens = this.loadStoredTokens();
+    const tokens = await this.loadStoredTokens();
     if (tokens) {
       this.setTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresAt);
       safeLog('GoogleDrive: Loaded stored tokens');

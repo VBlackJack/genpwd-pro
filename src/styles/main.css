@@ -1,247 +1,162 @@
-/* src/styles/main.css - Variables CSS et styles de base */
+/* src/styles/main.css - Premium Glassmorphism Design System */
 
 :root {
-  /* Couleurs principales */
-  --bg-primary: #1a1d29;
-  --bg-secondary: #232740;
-  --bg-tertiary: #2a2f4a;
-  --bg-quaternary: #1f2336;
+  /* --- HSL Color System for Rich Gradients --- */
+  /* Primary Hues */
+  --hue-bg: 225;
+  --hue-primary: 250; /* Deep Purple/Blue */
+  --hue-accent: 330; /* Pink/Magenta */
+  --hue-success: 150;
+  --hue-warning: 35;
+  --hue-danger: 350;
 
-  /* Couleurs d'accent - WCAG AAA compliant (7:1 ratio) */
-  --accent-cyan: #00e5ff;
-  --accent-purple: #a78bfa;
-  --accent-green: #34d399;
-  --accent-yellow: #fbbf24;
-  --accent-red: #f87171;
-  --accent-blue: #60a5fa;
-  --accent-primary: #3b82f6;
+  /* Backgrounds */
+  --bg-deep: hsl(var(--hue-bg), 40%, 8%);
+  --bg-surface: hsl(var(--hue-bg), 30%, 12%);
+  --bg-primary: hsl(var(--hue-bg), 35%, 10%);
+  --bg-secondary: hsl(var(--hue-bg), 30%, 14%);
+  --bg-tertiary: hsl(var(--hue-bg), 25%, 18%);
+  --bg-quaternary: hsl(var(--hue-bg), 20%, 22%);
+  --bg-hover: rgba(255, 255, 255, 0.05);
 
-  /* Couleurs de texte - WCAG AAA compliant (7:1+ ratio on dark backgrounds) */
-  --text-primary: #f5f7fa;        /* Contrast ratio ~13:1 */
-  --text-secondary: #e5e7eb;      /* Contrast ratio ~11:1 */
-  --text-muted: #d1d5db;          /* Contrast ratio ~8:1 */
-  --text-hint: #c4cad6;           /* Contrast ratio ~7:1 */
+  /* Glassmorphism Tokens */
+  --glass-str: 0.15;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --glass-blur: blur(12px);
 
-  /* Bordures */
-  --border: #373c59;
-  --border-hover: #4f5578;
-  
-  /* Effets */
-  --shadow: 0 6px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03);
-  --radius: 12px;
-  --radius-small: 8px;
-  --radius-large: 16px;
+  /* Text Colors */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --text-hint: rgba(255, 255, 255, 0.35);
+
+  /* Accent Colors - Semantic */
+  --color-primary: hsl(var(--hue-primary), 100%, 70%);
+  --color-accent: hsl(var(--hue-accent), 100%, 65%);
+  --color-success: hsl(var(--hue-success), 80%, 60%);
+  --color-warning: hsl(var(--hue-warning), 100%, 65%);
+  --color-danger: hsl(var(--hue-danger), 90%, 65%);
+
+  /* Accent Colors - Named */
+  --accent-primary: hsl(var(--hue-primary), 100%, 70%);
+  --accent-cyan: hsl(185, 80%, 55%);
+  --accent-blue: hsl(220, 90%, 65%);
+  --accent-green: hsl(150, 70%, 50%);
+  --accent-red: hsl(350, 85%, 60%);
+  --accent-purple: hsl(270, 80%, 65%);
+  --accent-orange: hsl(30, 90%, 55%);
+  --accent-yellow: hsl(45, 95%, 55%);
+
+  /* Code background (centralized) */
+  --bg-code: rgba(0, 0, 0, 0.3);
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+
+  /* Shadows */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* Typography */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  /* Aliases for compatibility */
+  --radius: var(--radius-sm);
+  --radius-small: var(--radius-sm);
+  --radius-large: var(--radius-lg);
 }
 
-/* Reset et base */
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  /* Deep, Rich Gradient Background */
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(93, 58, 240, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(240, 58, 140, 0.1) 0%, transparent 40%),
+    var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* App-like feel */
+}
+
+/* Glass Panel Utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Scrollbars - Minimal & Integrated */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Modern Reset */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+/* Typography Helpers */
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-body {
-  background: linear-gradient(135deg, #141725, var(--bg-primary));
-  color: var(--text-primary);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
-}
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-enter { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-/* Typographie */
-h1, h2, h3, h4, h5, h6 {
-  margin: 0 0 1rem 0;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-p {
-  margin: 0 0 1rem 0;
-}
-
-code, .mono {
-  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
-}
-
-/* Scrollbars personnalisées */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--accent-cyan);
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-blue);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent-cyan) var(--bg-secondary);
-}
-
-/* Utilitaires de base */
-.grow {
-  flex: 1;
-}
-
-.spacer {
-  flex: 1;
-}
-
-.small {
-  font-size: 0.875rem;
-}
-
-.hint {
-  font-size: 0.75rem;
-  color: var(--text-hint);
-}
-
-.divider {
-  height: 1px;
-  background: var(--border);
-  margin: 1rem 0;
-  opacity: 0.7;
-}
-
-/* Animations de base */
-@keyframes pulse {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.02); }
-}
-
-@keyframes glow {
-  0%, 100% { 
-    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.4),
-                0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  }
-  50% { 
-    box-shadow: 0 12px 40px rgba(0, 212, 255, 0.6),
-                0 0 0 1px rgba(255, 255, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  }
-}
-
+/* Aurora gradient animation for header backgrounds */
 @keyframes aurora {
-  0%, 100% { opacity: 0.5; transform: scale(1) rotate(0deg); }
-  50% { opacity: 0.8; transform: scale(1.1) rotate(1deg); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-@keyframes copyPulse {
-  0% { background: rgba(0,212,255,0.1); }
-  50% { background: rgba(0,212,255,0.3); }
-  100% { background: rgba(0,212,255,0.1); }
-}
-
-/* États spéciaux */
-.copying {
-  animation: copyPulse 0.6s ease;
-}
-
-/* App container */
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* Vault mode: fixed height for proper scrolling */
-.app.vault-mode {
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* ==================== CLIPBOARD SETTINGS POPOVER ==================== */
-
-.clipboard-settings-popover {
-  min-width: 220px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  animation: popoverFadeIn 0.15s ease;
-}
-
-@keyframes popoverFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
+/* Glow pulsing animation for logo badge and emphasis */
+@keyframes glow {
+  0%, 100% {
+    box-shadow:
+      0 8px 32px rgba(0, 212, 255, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  50% {
+    box-shadow:
+      0 8px 40px rgba(0, 212, 255, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 
-.clipboard-settings-header {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--text);
-}
-
-.clipboard-settings-body {
-  padding: 0.75rem 1rem;
-}
-
-.clipboard-settings-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin: 0 0 0.75rem;
-  line-height: 1.4;
-}
-
-.clipboard-settings-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.clipboard-option {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.8125rem;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.clipboard-option:hover {
-  background: var(--surface-hover);
-  border-color: var(--primary);
-}
-
-.clipboard-option.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-}
-
-/* Icon button style */
-.btn.icon-btn {
-  padding: 0.5rem 0.625rem;
-  min-width: auto;
+/* Generic pulse animation for status indicators */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
 }

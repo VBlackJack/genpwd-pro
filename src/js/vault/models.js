@@ -8,7 +8,7 @@
 // ============================================================================
 
 /**
- * @typedef {'login' | 'credit_card' | 'identity' | 'secure_note'} EntryType
+ * @typedef {'login' | 'card' | 'identity' | 'note' | 'ssh' | 'preset'} EntryType
  */
 
 /**
@@ -47,12 +47,21 @@
 
 /**
  * Valid entry types
+ * Note: Values aligned with vault-types.js and vault-ui.js
+ * - 'card' (not 'credit_card')
+ * - 'note' (not 'secure_note')
  */
 export const ENTRY_TYPES = Object.freeze({
+  // Primary types (canonical names)
   LOGIN: 'login',
-  CREDIT_CARD: 'credit_card',
+  CARD: 'card',
   IDENTITY: 'identity',
-  SECURE_NOTE: 'secure_note'
+  NOTE: 'note',
+  SSH: 'ssh',
+  PRESET: 'preset',
+  // Legacy aliases for backwards compatibility
+  CREDIT_CARD: 'card',
+  SECURE_NOTE: 'note'
 });
 
 /**
@@ -76,7 +85,7 @@ export const FIELD_KINDS = Object.freeze({
  * Generate a UUID v4
  * @returns {string}
  */
-function generateUUID() {
+export function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
@@ -441,8 +450,7 @@ export class VaultEntry {
       metadata: newMetadata,
       color: this.color,
       icon: this.icon,
-      ...updates,
-      metadata: newMetadata // Ensure our updatedAt is always applied
+      ...updates
     });
   }
 

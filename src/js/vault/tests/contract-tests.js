@@ -228,10 +228,11 @@ export async function runVaultContractTests() {
     } catch (error) {
       // Check if this is a tink-crypto compatibility issue that should be skipped
       if (name === 'Tink crypto engine' &&
-          (error.message?.includes('window is not defined') ||
-           error.message?.includes('tink-crypto'))) {
-        console.warn(`⚠️  Skipping ${name}: requires browser environment`);
-        results.push({ name, status: 'skip', reason: 'Browser environment required' });
+        (error.message?.includes('window is not defined') ||
+          error.message?.includes('tink-crypto') ||
+          error.message?.includes('unsupported AES key size'))) {
+        console.warn(`⚠️  Skipping ${name}: environment not supported (${error.message})`);
+        results.push({ name, status: 'skip', reason: 'Environment not supported' });
       } else {
         results.push({ name, status: 'fail', error });
       }

@@ -1,6 +1,6 @@
 /*
  * Copyright 2025 Julien Bombled
- * Styles for v2.6.0 features (language selector, presets, history)
+ * Styles for features (language selector, presets, history)
  */
 
 /* Utility classes for CSP compliance */
@@ -8,9 +8,7 @@
   width: 100%;
 }
 
-.hidden {
-  display: none;
-}
+/* Note: .hidden is defined in layout.css with !important */
 
 /* Language Selector */
 .language-selector {
@@ -55,7 +53,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 99999;
+  z-index: 10001;
   min-width: 150px;
   overflow: hidden;
 }
@@ -67,7 +65,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 999999;
+  z-index: 10002;
   min-width: 150px;
   overflow: hidden;
 }
@@ -250,51 +248,7 @@
   justify-content: flex-end;
 }
 
-/* Button mini styles */
-.btn-mini {
-  padding: 6px 12px;
-  font-size: 12px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-mini:hover {
-  background: var(--bg-hover);
-  transform: translateY(-1px);
-}
-
-.btn-mini.danger {
-  border-color: var(--accent-red);
-  color: var(--accent-red);
-}
-
-.btn-mini.danger:hover {
-  background: var(--accent-red);
-  color: white;
-}
-
-/* Empty state */
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-/* Modal improvements for features */
-.modal {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-body {
-  max-height: 60vh;
-  overflow-y: auto;
-}
+/* Note: .btn-mini, .empty-state, .modal-body defined in components.css/modal.css */
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -329,14 +283,7 @@
   }
 }
 
-/* Dark mode variables (already defined in main.css, but ensuring consistency) */
-:root {
-  --bg-code: rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="light"] {
-  --bg-code: rgba(0, 0, 0, 0.05);
-}
+/* Note: --bg-code now defined in main.css */
 
 /* HIBP (Have I Been Pwned) Styles */
 .hibp-summary {
@@ -359,11 +306,11 @@
 }
 
 .summary-stat.safe {
-  border-color: #4CAF50;
+  border-color: var(--accent-green);
 }
 
 .summary-stat.danger {
-  border-color: #F44336;
+  border-color: var(--accent-red);
 }
 
 .hibp-results-list {
@@ -386,32 +333,32 @@
 }
 
 .hibp-result-item.safe {
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid var(--accent-green);
 }
 
 .hibp-result-item.low {
-  border-left: 4px solid #FFC107;
+  border-left: 4px solid var(--accent-yellow);
 }
 
 .hibp-result-item.medium {
-  border-left: 4px solid #FF9800;
+  border-left: 4px solid var(--accent-orange, #FF9800);
 }
 
 .hibp-result-item.high {
-  border-left: 4px solid #F44336;
+  border-left: 4px solid var(--accent-red);
 }
 
 .hibp-result-item.critical {
-  border-left: 4px solid #B71C1C;
+  border-left: 4px solid var(--accent-red-dark, #B71C1C);
   animation: pulse-danger 2s infinite;
 }
 
 @keyframes pulse-danger {
   0%, 100% {
-    border-left-color: #B71C1C;
+    border-left-color: var(--accent-red-dark, #B71C1C);
   }
   50% {
-    border-left-color: #F44336;
+    border-left-color: var(--accent-red);
   }
 }
 
@@ -491,9 +438,9 @@
 }
 
 .error-box {
-  background: #FFEBEE;
-  border: 1px solid #F44336;
-  color: #B71C1C;
+  background: var(--bg-error, #FFEBEE);
+  border: 1px solid var(--accent-red);
+  color: var(--accent-red-dark, #B71C1C);
   padding: 15px 20px;
   border-radius: 8px;
 }

@@ -26,6 +26,9 @@ import { showToast } from '../utils/toast.js';
  */
 const SETTINGS_KEY = 'genpwd_native_settings';
 
+// AbortController for cleanup
+let nativeIntegrationController = null;
+
 const DEFAULT_SETTINGS = {
   minimizeToTray: true,
   quickUnlockEnabled: false,
@@ -181,7 +184,7 @@ function handleGenerateRequest(params) {
 /**
  * Handle open settings request
  */
-function handleOpenSettings(section) {
+function handleOpenSettings(_section) {
   // Show settings modal if exists
   const settingsBtn = document.querySelector('[data-modal="settings"]');
   if (settingsBtn) {
@@ -192,30 +195,33 @@ function handleOpenSettings(section) {
 /**
  * Initialize Clipboard Auto-Clear Integration
  */
-function initClipboardIntegration() {
+function initClipboardIntegration(signal) {
   if (!window.electronAPI?.onClipboardCleared) {
     return;
   }
 
   // Listen for clipboard cleared events
-  window.electronAPI.onClipboardCleared((data) => {
+  window.electronAPI.onClipboardCleared((_data) => {
     showToast('Presse-papiers vidé automatiquement', 'info', 2000);
     safeLog('Clipboard auto-cleared');
   });
 
   // Override default copy behavior for password fields
-  overrideCopyBehavior();
+  overrideCopyBehavior(signal);
 
   safeLog('Clipboard integration initialized');
 }
 
 /**
  * Override copy behavior for secure password copying
+ *
+ * NOTE: This listens for 'password:copy' custom events. To use this feature,
+ * dispatch the event when copying passwords:
+ *   window.dispatchEvent(new CustomEvent('password:copy', { detail: { password } }));
  */
-function overrideCopyBehavior() {
+function overrideCopyBehavior(signal) {
   const settings = getSettings();
 
-  // Listen for copy events from password UI
   window.addEventListener('password:copy', async (event) => {
     const password = event.detail?.password;
     if (!password) return;
@@ -232,7 +238,7 @@ function overrideCopyBehavior() {
       await navigator.clipboard.writeText(password);
       showToast('Copié dans le presse-papiers', 'success', 2000);
     }
-  });
+  }, { signal });
 }
 
 /**
@@ -297,14 +303,14 @@ async function initQuickUnlockIntegration() {
 /**
  * Initialize Tray Restore Behavior
  */
-function initTrayRestoreBehavior() {
+function initTrayRestoreBehavior(signal) {
   // When window is restored from tray, refresh UI state
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       // Dispatch event for components to refresh
       window.dispatchEvent(new CustomEvent('app:restored'));
     }
-  });
+  }, { signal });
 
   // Listen for vault lock events from tray menu
   if (window.vault?.on) {
@@ -416,6 +422,17 @@ export function bindNativeSettingsEvents() {
 }
 
 /**
+ * Cleanup native integration listeners
+ */
+export function cleanupNativeIntegration() {
+  if (nativeIntegrationController) {
+    nativeIntegrationController.abort();
+    nativeIntegrationController = null;
+    safeLog('Native integration cleaned up');
+  }
+}
+
+/**
  * Initialize all native integrations
  */
 export function initNativeIntegration() {
@@ -426,11 +443,16 @@ export function initNativeIntegration() {
 
   safeLog('Initializing native integration...');
 
+  // Initialize AbortController for cleanup
+  cleanupNativeIntegration();
+  nativeIntegrationController = new AbortController();
+  const signal = nativeIntegrationController.signal;
+
   // Initialize all handlers
   initDeepLinkHandler();
-  initClipboardIntegration();
+  initClipboardIntegration(signal);
   initQuickUnlockIntegration();
-  initTrayRestoreBehavior();
+  initTrayRestoreBehavior(signal);
 
   // Expose settings functions for settings UI
   window.nativeSettings = {

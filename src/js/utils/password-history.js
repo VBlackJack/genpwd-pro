@@ -113,7 +113,7 @@ export function restoreFromHistory(entry, historyIndex) {
 export function clearHistory(entry) {
   if (!entry?.data) return entry;
 
-  const { passwordHistory, ...restData } = entry.data;
+  const { passwordHistory: _passwordHistory, ...restData } = entry.data;
 
   safeLog(`[PasswordHistory] Cleared history for entry ${entry.id}`);
 

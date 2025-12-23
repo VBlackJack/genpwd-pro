@@ -6,6 +6,7 @@
 
   <!-- Content Security Policy for Enhanced Security -->
   <!-- Updated for Phase 3: Cloud Sync (Google Drive API) -->
+  <!-- Note: Add https://*.ingest.sentry.io to connect-src when Sentry is enabled -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
 
   <title>GenPwd Pro – Secure Password Generator</title>
@@ -25,7 +26,6 @@
   <link rel="prefetch" href="dictionaries/french.json" as="fetch" crossorigin>
   <link rel="preload" href="styles/main.css" as="style">
   <link rel="preload" href="styles/components.css" as="style">
-  <link rel="preload" href="js/app.js" as="script">
 
   <!-- CSS Modulaire -->
   <link rel="stylesheet" href="styles/main.css">
@@ -60,18 +60,18 @@
         </div>
         <!-- App Tabs (Electron only) -->
         <div class="header-tabs" id="app-tabs" style="display: none;">
-          <button class="header-tab active" data-tab="generator">🔒 Générateur</button>
-          <button class="header-tab" data-tab="vault">🗄️ Coffre</button>
+          <button type="button" class="header-tab active" data-tab="generator">🔒 Générateur</button>
+          <button type="button" class="header-tab" data-tab="vault">🗄️ Coffre</button>
         </div>
 
         <div class="header-right">
           <!-- Vault Status Indicator (Electron only) -->
-          <button class="vault-status-indicator" id="vault-status-indicator" hidden aria-label="Status du coffre" title="Cliquez pour accéder au coffre">
+          <button type="button" class="vault-status-indicator" id="vault-status-indicator" hidden aria-label="Status du coffre" title="Cliquez pour accéder au coffre">
             <span class="vault-status-icon">🔒</span>
             <span class="vault-status-text">Verrouillé</span>
           </button>
           <div class="version-badge" aria-label="Version 3.0.0">v3.0.0</div>
-          <button class="about-btn" id="btn-about" aria-label="Afficher les informations à propos de GenPwd Pro">
+          <button type="button" class="about-btn" id="btn-about" aria-label="Afficher les informations à propos de GenPwd Pro">
             <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -93,7 +93,7 @@
             </svg>
             GenPwd Pro
           </div>
-          <button class="modal-close" id="modal-close" aria-label="Fermer">
+          <button type="button" class="modal-close" id="modal-close" aria-label="Fermer" aria-controls="about-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -163,7 +163,7 @@
       <div class="modal test-modal">
         <div class="modal-header">
           <div class="modal-title" id="test-results-title">📊 Résultats des Tests - GenPwd Pro v3.0.0</div>
-          <button type="button" class="modal-close" id="close-test-results" aria-label="Fermer les résultats des tests">
+          <button type="button" class="modal-close" id="close-test-results" aria-label="Fermer les résultats des tests" aria-controls="test-results-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -177,10 +177,10 @@
           </div>
           
           <div class="test-tabs">
-            <button id="tab-results" class="tab-button active">
+            <button type="button" id="tab-results" class="tab-button active">
               Résultats
             </button>
-            <button id="tab-console" class="tab-button">
+            <button type="button" id="tab-console" class="tab-button">
               Console
             </button>
           </div>
@@ -212,12 +212,12 @@
 
           <!-- Mode de génération -->
           <section class="section" aria-labelledby="section-mode">
-            <div class="section-header chevron">
+            <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-mode-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-mode">Mode de génération</strong>
               <span class="badge" aria-label="3 modes disponibles">3 modes</span>
             </div>
-            <div class="section-content">
+            <div class="section-content" id="section-mode-content">
               <div class="row">
                 <label for="mode-select">Mode</label>
                 <select id="mode-select" class="grow" aria-label="Sélectionner le mode de génération">
@@ -258,7 +258,7 @@
                 </div>
                 <div class="row">
                   <label for="pp-sep">Séparateur</label>
-                  <select id="pp-sep" class="grow">
+                  <select id="pp-sep" class="grow" aria-label="Séparateur entre les mots">
                     <option value="-">- (tiret)</option>
                     <option value="_">_ (souligné)</option>
                     <option value=".">. (point)</option>
@@ -268,7 +268,7 @@
                 <div class="row">
                   <label for="dict-select">Dictionnaire</label>
                   <div class="dict-selector grow">
-                    <select id="dict-select" class="grow">
+                    <select id="dict-select" class="grow" aria-label="Sélection du dictionnaire">
                       <option value="french">🇫🇷 Français</option>
                       <option value="english">🇬🇧 English</option>
                       <option value="latin">🏛️ Latin</option>
@@ -292,16 +292,16 @@
           </section>
 
           <!-- Paramètres communs -->
-          <section class="section">
-            <div class="section-header chevron">
-              <span class="chev">▼</span>
-              <strong>Paramètres communs</strong>
+          <section class="section" aria-labelledby="section-params">
+            <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-params-content">
+              <span class="chev" aria-hidden="true">▼</span>
+              <strong id="section-params">Paramètres communs</strong>
             </div>
-            <div class="section-content">
+            <div class="section-content" id="section-params-content">
               <div class="row">
                 <label for="qty">Nombre (1–20)</label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="qty" min="1" max="20" value="5">
+                  <input type="range" class="slider" id="qty" min="1" max="20" value="5" aria-label="Nombre de mots de passe">
                   <span class="badge" id="qty-val">5</span>
                 </div>
               </div>
@@ -315,14 +315,14 @@
               <div class="row">
                 <label for="digits-count">Chiffres (0–6)</label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2">
+                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2" aria-label="Nombre de chiffres">
                   <span class="badge" id="digits-count-val">2</span>
                 </div>
               </div>
               <div class="row">
                 <label for="specials-count">Spéciaux (0–6)</label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2">
+                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2" aria-label="Nombre de caractères spéciaux">
                   <span class="badge" id="specials-count-val">2</span>
                 </div>
               </div>
@@ -332,8 +332,8 @@
               </div>
 
               <div class="row">
-                <label>Placement chiffres</label>
-                <select id="place-digits" class="grow">
+                <label for="place-digits">Placement chiffres</label>
+                <select id="place-digits" class="grow" aria-label="Placement des chiffres dans le mot de passe">
                   <option value="debut">Début</option>
                   <option value="fin">Fin</option>
                   <option value="milieu">Milieu</option>
@@ -342,8 +342,8 @@
                 </select>
               </div>
               <div class="row">
-                <label>Placement spéciaux</label>
-                <select id="place-specials" class="grow">
+                <label for="place-specials">Placement spéciaux</label>
+                <select id="place-specials" class="grow" aria-label="Placement des caractères spéciaux">
                   <option value="debut">Début</option>
                   <option value="fin">Fin</option>
                   <option value="milieu">Milieu</option>
@@ -363,9 +363,9 @@
                     </div>
                   </div>
                   <div class="placement-controls">
-                    <button class="btn-mini" id="btn-placement-reset">↻ Reset</button>
-                    <button class="btn-mini" id="btn-placement-auto">🎲 Auto</button>
-                    <button class="btn-mini" id="btn-placement-toggle">🎯 → 📊</button>
+                    <button type="button" class="btn-mini" id="btn-placement-reset">↻ Reset</button>
+                    <button type="button" class="btn-mini" id="btn-placement-auto">🎲 Auto</button>
+                    <button type="button" class="btn-mini" id="btn-placement-toggle">🎯 → 📊</button>
                     <span class="placement-mode" id="placement-mode">Auto</span>
                   </div>
                 </div>
@@ -375,7 +375,7 @@
 
               <div class="row">
                 <label for="case-mode-select">Gestion de la casse</label>
-                <select id="case-mode-select" class="grow">
+                <select id="case-mode-select" class="grow" aria-label="Mode de gestion des majuscules et minuscules">
                   <option value="mixte">Mixte (aléatoire)</option>
                   <option value="upper">MAJUSCULES</option>
                   <option value="lower">minuscules</option>
@@ -388,15 +388,15 @@
                 <div class="grow blocks-wrap">
                   <div class="block-controls">
                     <div class="block-controls-left">
-                      <button class="btn-mini" id="btn-all-title">Tout Title</button>
-                      <button class="btn-mini" id="btn-all-upper">Tout UPPER</button>
-                      <button class="btn-mini" id="btn-all-lower">Tout lower</button>
+                      <button type="button" class="btn-mini" id="btn-all-title">Tout Title</button>
+                      <button type="button" class="btn-mini" id="btn-all-upper">Tout UPPER</button>
+                      <button type="button" class="btn-mini" id="btn-all-lower">Tout lower</button>
                     </div>
                     <div class="block-controls-right">
-                      <button class="btn-mini" id="btn-block-dec">−</button>
+                      <button type="button" class="btn-mini" id="btn-block-dec">−</button>
                       <span class="hint" id="block-size-label">Blocs: 2</span>
-                      <button class="btn-mini" id="btn-block-inc">+</button>
-                      <button class="btn-mini random" id="btn-block-random">🎲 Aléatoire</button>
+                      <button type="button" class="btn-mini" id="btn-block-inc">+</button>
+                      <button type="button" class="btn-mini random" id="btn-block-random">🎲 Aléatoire</button>
                     </div>
                   </div>
                   <div class="block-sync-toggle">
@@ -417,12 +417,12 @@
           </section>
 
           <!-- Informations -->
-			<section class="section">
-			  <div class="section-header chevron">
-				<span class="chev">▼</span>
-				<strong>Aide & Notes</strong>
+			<section class="section" aria-labelledby="section-help">
+			  <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-help-content">
+				<span class="chev" aria-hidden="true">▼</span>
+				<strong id="section-help">Aide & Notes</strong>
 			  </div>
-			  <div class="section-content">
+			  <div class="section-content" id="section-help-content">
 				<p class="small">
 				  <strong>💡 Astuce :</strong> Cliquez directement sur un mot de passe pour le copier !<br><br>
 				  
@@ -444,15 +444,15 @@
       <!-- Results Panel -->
       <section class="results" id="results-panel" role="main" aria-label="Panneau de résultats">
         <div class="actions" role="toolbar" aria-label="Actions principales">
-          <button class="btn primary" id="btn-generate" aria-label="Générer de nouveaux mots de passe (Raccourci: Alt+G)">🔒 Générer</button>
-          <button class="btn" id="btn-copy-all" aria-label="Copier tous les mots de passe générés (Raccourci: Alt+C)">📋 Tout Copier</button>
-          <button class="btn icon-btn" id="btn-clipboard-settings" title="Paramètres presse-papiers" aria-label="Configurer l'effacement automatique du presse-papiers">⏱️</button>
-          <button class="btn" id="btn-export" aria-label="Exporter les résultats">📤 Export</button>
-          <button class="btn danger" id="btn-clear" aria-label="Effacer tous les résultats">🗑️ Effacer</button>
+          <button type="button" class="btn primary" id="btn-generate" aria-label="Générer de nouveaux mots de passe (Raccourci: Alt+G)">🔒 Générer</button>
+          <button type="button" class="btn" id="btn-copy-all" aria-label="Copier tous les mots de passe générés (Raccourci: Alt+C)">📋 Tout Copier</button>
+          <button type="button" class="btn icon-btn" id="btn-clipboard-settings" title="Paramètres presse-papiers" aria-label="Configurer l'effacement automatique du presse-papiers">⏱️</button>
+          <button type="button" class="btn" id="btn-export" aria-label="Exporter les résultats">📤 Export</button>
+          <button type="button" class="btn danger" id="btn-clear" aria-label="Effacer tous les résultats">🗑️ Effacer</button>
           <span class="spacer" aria-hidden="true"></span>
-          <button class="btn ghost" id="btn-run-tests" aria-label="Exécuter les tests de validation (Raccourci: Alt+R)">🧪 Tests</button>
+          <button type="button" class="btn ghost" id="btn-run-tests" aria-label="Exécuter les tests de validation (Raccourci: Alt+R)">🧪 Tests</button>
           <span id="test-status" role="status" aria-live="polite"></span>
-          <button class="btn ghost" id="btn-toggle-debug" aria-label="Basculer le panneau de débogage">🔬 Debug</button>
+          <button type="button" class="btn ghost" id="btn-toggle-debug" aria-label="Basculer le panneau de débogage">🔬 Debug</button>
         </div>
         <div class="results-list" id="results-list" role="region" aria-label="Liste des mots de passe générés" aria-live="polite">
           <div class="empty-state">
@@ -464,10 +464,10 @@
     </div>
 
     <!-- Debug Panel -->
-    <aside class="debug" id="debug-panel" role="complementary" aria-label="Panneau de débogage">
+    <aside class="debug hidden" id="debug-panel" role="complementary" aria-label="Panneau de débogage">
       <div class="debug-header">
         <strong>Debug</strong>
-        <button class="btn ghost small" id="btn-clear-logs" aria-label="Effacer les logs de débogage">Effacer logs</button>
+        <button type="button" class="btn ghost small" id="btn-clear-logs" aria-label="Effacer les logs de débogage">Effacer logs</button>
       </div>
       <div class="debug-body">
         <div id="tests"></div>
@@ -479,13 +479,11 @@
     <div class="toasts" id="toasts" role="alert" aria-live="assertive" aria-atomic="true"></div>
   </div>
 
-  <!-- Suite de tests -->
-  <script src="./tests/test-suite.js"></script>
-
   <!-- JavaScript modulaire ES6 -->
   <script type="module" src="js/app.js"></script>
 
-  <!-- Intégration UI des tests -->
+  <!-- Test Suite (13 tests) -->
+  <script src="tests/test-suite.js"></script>
   <script type="module" src="js/test-integration.js"></script>
 </body>
 </html>

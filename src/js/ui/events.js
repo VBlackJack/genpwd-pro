@@ -34,6 +34,9 @@ let previewTimeout = null;
 let blockSyncTimeout = null;
 const BLOCK_SYNC_DELAY = 200;
 
+// AbortController for document-level event listeners
+let eventsController = null;
+
 // Rate limiting configuration for password generation
 const GENERATION_CONFIG = RATE_LIMITING;
 
@@ -55,6 +58,11 @@ export function cleanupEventHandlers() {
   if (blockSyncTimeout) {
     clearTimeout(blockSyncTimeout);
     blockSyncTimeout = null;
+  }
+  // Abort all document-level event listeners
+  if (eventsController) {
+    eventsController.abort();
+    eventsController = null;
   }
   safeLog('Event handlers cleaned up');
 }
@@ -95,8 +103,7 @@ function bindMainActions() {
   // Clipboard settings
   addEventListener(getElement('#btn-clipboard-settings'), 'click', showClipboardSettings);
 
-  // Actions debug
-  addEventListener(getElement('#btn-run-tests'), 'click', runTests);
+  // Actions debug (btn-run-tests géré par test-integration.js)
   addEventListener(getElement('#btn-toggle-debug'), 'click', () => {
     const isVisible = toggleDebugPanel();
     setUIState('debugVisible', isVisible);
@@ -173,27 +180,26 @@ function bindSliders() {
       if (['syll-len', 'digits-count', 'specials-count', 'pp-count'].includes(target.id)) {
         debouncedUpdatePreview();
 
-        // Réajuster les blocs si mode blocks et pas modifié manuellement
-        const programmatic = e?.isTrusted === false;
-        if (getElement('#case-mode-select')?.value === 'blocks'
-          && (programmatic || !getUIState().blockDirty)) {
-          if (programmatic) {
+        // Toujours réajuster les blocs si mode blocks (1 bloc = 3 caractères)
+        if (getElement('#case-mode-select')?.value === 'blocks') {
+          if (target.id === 'syll-len' || target.id === 'pp-count') {
             setUIState('blockDirty', false);
+            resetBlocksForCurrentMode();
           }
-          resetBlocksForCurrentMode();
-        }
-
-        if (target.id === 'syll-len') {
-          scheduleBlockSync('syllables', parseInt(target.value, 10));
-        } else if (target.id === 'pp-count') {
-          scheduleBlockSync('passphrase', parseInt(target.value, 10));
         }
       }
     }
   }
 
-  document.addEventListener('input', handleSliderChange, { passive: true });
-  document.addEventListener('change', handleSliderChange, { passive: true });
+  // Initialize AbortController for document-level listeners
+  if (eventsController) {
+    eventsController.abort();
+  }
+  eventsController = new AbortController();
+  const signal = eventsController.signal;
+
+  document.addEventListener('input', handleSliderChange, { passive: true, signal });
+  document.addEventListener('change', handleSliderChange, { passive: true, signal });
 
   // Changements qui triggent la préview
   addEventListener(getElement('#pp-sep'), 'change', debouncedUpdatePreview);
@@ -618,7 +624,7 @@ async function exportPasswords() {
       case 'json':
         content = JSON.stringify({
           exported: new Date().toISOString(),
-          generator: 'GenPwd Pro v2.6.0', // Synchronized with package.json
+          generator: 'GenPwd Pro v3.0.0', // Synchronized with package.json
           count: results.length,
           passwords: results.map(r => ({
             value: r.value,
@@ -734,20 +740,6 @@ function clearResults() {
   renderEmptyState();
   showToast('Résultats effacés', 'info');
 }
-
-function runTests() {
-  const testsEl = getElement('#tests');
-  if (!testsEl) return;
-  
-  let output = 'Tests système:\n';
-  output += '✅ Modules chargés\n';
-  output += '✅ DOM initialisé\n';
-  output += '✅ Événements bindés\n';
-  
-  testsEl.textContent = output;
-  showToast('Tests exécutés', 'success');
-}
-
 // Helpers
 function ensurePolicySelection(select) {
   if (!select || !select.options) {
@@ -870,10 +862,12 @@ function syncBlocksWithLength(mode, value) {
 
   switch (mode) {
     case 'syllables':
-      targetBlocks = Math.max(2, Math.min(6, Math.ceil(value / 4)));
+      // 1 bloc = 3 caractères (cohérent avec calculateBlocksCount)
+      targetBlocks = Math.max(1, Math.min(10, Math.ceil(value / 3)));
       break;
     case 'passphrase':
-      targetBlocks = Math.max(1, Math.min(6, value));
+      // 1 bloc par mot
+      targetBlocks = Math.max(1, Math.min(10, value));
       break;
     default:
       return;

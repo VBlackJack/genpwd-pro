@@ -164,3 +164,45 @@
 .theme-selector-select:hover {
   border-color: var(--accent-primary);
 }
+
+/* ============================================================================
+   MISSING UTILITY CLASSES (used in HTML/JS but were undefined)
+   ============================================================================ */
+
+/* Divider line between sections */
+.divider {
+  height: 1px;
+  background: var(--border, rgba(255, 255, 255, 0.1));
+  margin: 12px 0;
+}
+
+/* Flex grow utility */
+.grow {
+  flex: 1 1 auto;
+}
+
+/* Monospace font utility */
+.mono {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Consolas', monospace);
+}
+
+/* Hint text styling */
+.hint {
+  font-size: 0.85rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.6));
+}
+
+/* Spacer for flex layouts */
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* Icon-only button variant */
+.icon-btn {
+  padding: 8px;
+  min-width: auto;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

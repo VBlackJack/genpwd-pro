@@ -11,7 +11,7 @@
  * @license Apache-2.0
  */
 
-import { VaultEntry, VaultGroup, ENTRY_TYPES, FIELD_KINDS } from './models.js';
+import { VaultEntry, VaultGroup, ENTRY_TYPES, FIELD_KINDS, generateUUID } from './models.js';
 import { safeLog } from '../utils/logger.js';
 
 // ============================================================================
@@ -91,20 +91,7 @@ const KEEPASS_ICONS = Object.freeze({
 // UTILITY FUNCTIONS
 // ============================================================================
 
-/**
- * Generate a UUID v4
- * @returns {string}
- */
-function generateUUID() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
+// generateUUID imported from models.js
 
 /**
  * Parse ISO date string or KeePass date format to timestamp
@@ -761,7 +748,7 @@ export function parseBitwardenJSON(jsonContent) {
 
           const login = item.login || {};
           const card = item.card || {};
-          const identity = item.identity || {};
+          // const identity = item.identity || {};
 
           // Get group ID
           const groupId = item.folderId ? folderMap.get(item.folderId) || null : null;

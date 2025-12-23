@@ -9,40 +9,7 @@
  */
 
 // QR Code constants
-const ERROR_CORRECTION = {
-  L: 0, // 7% recovery
-  M: 1, // 15% recovery
-  Q: 2, // 25% recovery
-  H: 3  // 30% recovery
-};
 
-// Alphanumeric character set
-const ALPHANUMERIC = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
-
-/**
- * Generate QR Code data matrix
- * @param {string} data - Data to encode
- * @param {Object} options
- * @param {number} [options.errorCorrection=1] - Error correction level (0-3)
- * @returns {boolean[][]} 2D matrix of modules
- */
-function generateQRMatrix(data, options = {}) {
-  // For simplicity, we'll use a SVG-based approach with external library fallback
-  // This is a placeholder that returns module coordinates for rendering
-  const { errorCorrection = ERROR_CORRECTION.M } = options;
-
-  // Calculate version based on data length
-  const version = Math.min(10, Math.max(1, Math.ceil(data.length / 20)));
-  const size = 17 + version * 4;
-
-  // Initialize matrix
-  const matrix = Array(size).fill(null).map(() => Array(size).fill(false));
-
-  // Simple encoding simulation (actual QR requires complex Reed-Solomon encoding)
-  // For production, use a proper library like qrcode-generator
-
-  return matrix;
-}
 
 /**
  * Generate QR Code as SVG string
@@ -78,7 +45,7 @@ export function generateQRCodeSVG(data, options = {}) {
 
   const modules = 17 + version * 4;
   const totalSize = modules + margin * 2;
-  const moduleSize = size / totalSize;
+  // const moduleSize = size / totalSize;
 
   // Generate QR pattern using a deterministic algorithm
   const matrix = generatePattern(data, modules);

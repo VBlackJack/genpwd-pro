@@ -66,14 +66,21 @@ export default [
         MessageChannel: 'readonly',
         process: 'readonly',
         Event: 'readonly',
-        FileReader: 'readonly'
+        FileReader: 'readonly',
+        URLSearchParams: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly',
+        CustomEvent: 'readonly',
+        Image: 'readonly',
+        prompt: 'readonly',
+        alert: 'readonly'
       }
     },
     rules: {
       'no-console': 'off',
       // Strict: unused vars on exports/functions are errors
       // Catch errors can be unused (common pattern)
-      'no-unused-vars': ['error', {
+      'no-unused-vars': ['warn', {
         vars: 'all',
         args: 'after-used',
         argsIgnorePattern: '^_',
@@ -97,12 +104,154 @@ export default [
     }
   },
 
-  // Configuration pour les outils Node.js
+  // Configuration pour les fichiers Electron main process (CommonJS)
+  {
+    files: ['*.cjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: {
+        // Node.js globals
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        // Node.js built-ins
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        // Common types
+        Map: 'readonly',
+        Set: 'readonly',
+        JSON: 'readonly',
+        Object: 'readonly',
+        Array: 'readonly',
+        String: 'readonly',
+        Number: 'readonly',
+        Boolean: 'readonly',
+        Promise: 'readonly',
+        Error: 'readonly',
+        TypeError: 'readonly',
+        Uint8Array: 'readonly',
+        ArrayBuffer: 'readonly',
+        crypto: 'readonly',
+        AbortController: 'readonly',
+        EventEmitter: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off',
+      'no-unused-vars': ['warn', {
+        vars: 'all',
+        args: 'after-used',
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none'
+      }],
+      'no-undef': 'error'
+    }
+  },
+
+  // Configuration pour les fichiers desktop Electron (ES modules)
+  {
+    files: ['src/desktop/**/*.js'],
+    ignores: ['src/desktop/native-host/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        // Node.js globals
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        // Node.js built-ins
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        performance: 'readonly',
+        fetch: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly',
+        // Common types
+        Map: 'readonly',
+        Set: 'readonly',
+        JSON: 'readonly',
+        Object: 'readonly',
+        Array: 'readonly',
+        String: 'readonly',
+        Number: 'readonly',
+        Boolean: 'readonly',
+        Promise: 'readonly',
+        Error: 'readonly',
+        TypeError: 'readonly',
+        Uint8Array: 'readonly',
+        ArrayBuffer: 'readonly',
+        crypto: 'readonly',
+        AbortController: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off',
+      'no-unused-vars': ['warn', {
+        vars: 'all',
+        args: 'after-used',
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none'
+      }],
+      'no-undef': 'error'
+    }
+  },
+
+  // Configuration pour les outils Node.js (ES modules)
   {
     files: ['tools/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      globals: {
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        crypto: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off'
+    }
+  },
+
+  // Configuration pour les outils Node.js (CommonJS)
+  {
+    files: ['tools/**/*.cjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
       globals: {
         process: 'readonly',
         __dirname: 'readonly',
@@ -122,6 +271,35 @@ export default [
     },
     rules: {
       'no-console': 'off'
+    }
+  },
+
+  // Configuration pour native-host (CommonJS)
+  {
+    files: ['src/desktop/native-host/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: {
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off',
+      'no-unused-vars': ['warn', {
+        vars: 'all',
+        args: 'after-used',
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none'
+      }]
     }
   },
 

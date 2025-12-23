@@ -221,7 +221,6 @@ export async function generateHealthReport(entries, options = {}) {
   }
 
   // Analyze each entry
-  let totalScore = 0;
   for (const entry of loginEntries) {
     const pwd = entry.data.password;
     const strengthResult = analyzePasswordStrength(pwd);
@@ -240,8 +239,6 @@ export async function generateHealthReport(entries, options = {}) {
       strength: strengthResult,
       age: ageResult
     });
-
-    totalScore += strengthResult.score;
   }
 
   // Find duplicates

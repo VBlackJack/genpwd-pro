@@ -35,6 +35,7 @@ export {
 
 // Concrete Providers
 export { GoogleDriveProvider, getGoogleDriveProvider } from './providers/google-drive-provider.js';
+export { WebDAVProvider } from './providers/webdav-provider.js';
 
 /**
  * Zero-Trust Sync Engine

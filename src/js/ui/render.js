@@ -66,6 +66,14 @@ export function renderResults(results, mask) {
 }
 
 function createPasswordCard(item, id, mask) {
+  // Null guard for invalid items
+  if (!item?.value || typeof item.value !== 'string') {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'card card-error';
+    placeholder.textContent = 'Invalid password data';
+    return placeholder;
+  }
+
   const { value, entropy, mode, dictionary } = item;
   const counts = compositionCounts(value);
   const total = value.length || 1;
@@ -178,23 +186,27 @@ function bindPasswordClickEvents() {
 
       // Simple clic : programmer la copie
       const timer = setTimeout(async () => {
-        clickTimers.delete(el);
+        try {
+          clickTimers.delete(el);
 
-        const password = el.getAttribute('data-password');
-        if (password) {
-          el.classList.add('copying');
+          const password = el.getAttribute('data-password');
+          if (password) {
+            el.classList.add('copying');
 
-          const success = await copyToClipboard(password);
-          if (success) {
-            showToast('Mot de passe copié !', 'success');
-            safeLog(`Copié: ${password.substring(0, 8)}...`);
-          } else {
-            showToast('Erreur lors de la copie', 'error');
+            const success = await copyToClipboard(password);
+            if (success) {
+              showToast('Mot de passe copié !', 'success');
+              safeLog(`Copié: ${password.substring(0, 8)}...`);
+            } else {
+              showToast('Erreur lors de la copie', 'error');
+            }
+
+            setTimeout(() => {
+              el.classList.remove('copying');
+            }, 600);
           }
-
-          setTimeout(() => {
-            el.classList.remove('copying');
-          }, 600);
+        } catch (err) {
+          safeLog('Copy to clipboard failed:', err);
         }
       }, 250);
 
@@ -388,25 +400,31 @@ function showContextMenu(e, password) {
     });
   });
 
+  // Cleanup function to remove all menu listeners
+  const cleanupMenu = () => {
+    menu.remove();
+    document.removeEventListener('click', closeMenu);
+    document.removeEventListener('keydown', escHandler);
+  };
+
   // Close on click outside
   const closeMenu = (ev) => {
     if (!menu.contains(ev.target)) {
-      menu.remove();
-      document.removeEventListener('click', closeMenu);
+      cleanupMenu();
     }
   };
-  setTimeout(() => {
-    document.addEventListener('click', closeMenu);
-  }, 0);
 
   // Close on escape
   const escHandler = (ev) => {
     if (ev.key === 'Escape') {
-      menu.remove();
-      document.removeEventListener('keydown', escHandler);
+      cleanupMenu();
     }
   };
-  document.addEventListener('keydown', escHandler);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', escHandler);
+  }, 0);
 }
 
 /**

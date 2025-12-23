@@ -161,7 +161,7 @@ select {
   font-size: 12px;
   background: #1e2440;
   color: #d5ddff;
-  border: 1px solid #334;
+  border: 1px solid #333344;
   cursor: pointer;
   transition: all 0.2s ease;
 }

@@ -24,9 +24,7 @@ import {
   CloudResult,
   CloudErrorType,
   SyncState,
-  ConflictStrategy,
-  VaultSyncData,
-  VaultSyncMetadata
+  ConflictStrategy
 } from '../core/sync/models.js';
 
 /**
@@ -523,7 +521,6 @@ class SyncService {
    */
   resolveConflicts(local, remote) {
     let conflicts = 0;
-    let strategy = 'auto';
 
     // Compare top-level timestamps
     const localTimestamp = local.timestamp || 0;
@@ -873,4 +870,4 @@ class SyncService {
 const syncService = new SyncService();
 
 export default syncService;
-export { SyncService, SyncEvents };
+export { SyncService };

@@ -26,6 +26,12 @@ async function ensureDOMPurify() {
     return null;
   }
 
+  // Allow injection via window (for tests)
+  if (window.DOMPurify) {
+    DOMPurify = window.DOMPurify;
+    return DOMPurify;
+  }
+
   try {
     const module = await import('dompurify');
     DOMPurify = module.default || module;
@@ -115,9 +121,9 @@ function fallbackSanitizeWithDOM(html, allowedTags = ['b', 'i', 'em', 'strong', 
         const name = attr.name.toLowerCase();
         // Remove event handlers and dangerous attributes
         if (name.startsWith('on') ||
-            name === 'style' ||
-            name === 'srcset' ||
-            (name === 'href' && attr.value.toLowerCase().includes('javascript:'))) {
+          name === 'style' ||
+          name === 'srcset' ||
+          (name === 'href' && attr.value.toLowerCase().includes('javascript:'))) {
           el.removeAttribute(attr.name);
         } else if (!safeAttrs.includes(name) && !name.startsWith('data-') && !name.startsWith('aria-')) {
           el.removeAttribute(attr.name);

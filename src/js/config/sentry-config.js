@@ -25,6 +25,8 @@
  * 3. Get your DSN (Data Source Name)
  * 4. Set SENTRY_DSN environment variable or update the DSN below
  * 5. Install Sentry SDK: npm install @sentry/browser
+ * 6. Update CSP in src/index.html to include Sentry domains:
+ *    connect-src 'self' ... https://*.ingest.sentry.io;
  */
 
 export const SENTRY_CONFIG = {
@@ -38,7 +40,7 @@ export const SENTRY_CONFIG = {
   environment: (typeof process !== 'undefined' && process.env?.NODE_ENV) || 'development',
 
   // Release version (synchronized with package.json)
-  release: 'genpwd-pro@2.6.0',
+  release: 'genpwd-pro@3.0.0',
 
   // Sample rate for performance monitoring (0.0 to 1.0)
   tracesSampleRate: 0.1,
