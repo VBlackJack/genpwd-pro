@@ -41,7 +41,7 @@ export function initializeLanguageSelector() {
   const langSelector = document.createElement('div');
   langSelector.className = 'language-selector';
   langSelector.innerHTML = sanitizeHTML(`
-    <button class="lang-btn" id="lang-btn" aria-label="Changer la langue" title="Langue">
+    <button class="lang-btn" id="lang-btn" aria-label="Change language" title="Language">
       <span class="lang-flag" id="lang-flag">${escapeHtml(i18n.getLocaleFlag(i18n.getLocale()))}</span>
       <span class="lang-code" id="lang-code">${escapeHtml(i18n.getLocale().toUpperCase())}</span>
     </button>
@@ -226,6 +226,11 @@ function updateInterfaceLanguage() {
 
     // Update select options
     updateSelectOptions();
+
+    // Update vault UI if it exists
+    if (window.genPwdApp?.vaultUI?.refreshLanguage) {
+      window.genPwdApp.vaultUI.refreshLanguage();
+    }
 
     safeLog('Interface language updated');
   } catch (error) {
@@ -442,28 +447,25 @@ export function initializePresetsUI() {
       <span class="badge">${presetManager.getAllPresets().length}</span>
     </div>
     <div class="section-content">
-      <div class="row">
-        <button class="btn full-width" id="btn-save-preset">
+      <div class="row" style="gap: 8px; align-items: center;">
+        <select id="preset-select" class="grow" style="flex: 1;">
+          <option value="">${i18n.t('presets.select') || 'Select a preset...'}</option>
+        </select>
+        <button class="btn-icon" id="btn-clear-preset" title="Clear selection" style="padding: 4px 8px; display: none;">✕</button>
+      </div>
+      <div class="row" style="gap: 8px;">
+        <button class="btn" id="btn-save-preset" style="flex: 1;">
           💾 ${i18n.t('presets.save')}
         </button>
+        <button class="btn" id="btn-new-preset" title="Create new preset" style="padding: 8px 12px;">➕</button>
       </div>
       <div class="row">
         <button class="btn full-width" id="btn-manage-presets">
           🗂️ ${i18n.t('presets.manage')}
         </button>
       </div>
-      <div class="row" style="gap: 8px;">
-        <label for="preset-select">${i18n.t('presets.load')}</label>
-        <select id="preset-select" class="grow">
-          <option value="">${i18n.t('presets.select')}</option>
-        </select>
-        <button class="btn-icon" id="btn-quick-save-preset" title="Mettre à jour le preset avec la config actuelle" disabled style="padding: 4px 8px; font-size: 1em;">
-          💾
-        </button>
-        <button class="btn-icon" id="btn-refresh-presets" title="Charger les presets depuis le coffre" style="padding: 4px 8px; font-size: 1em; display: none;">
-          🔄
-        </button>
-      </div>
+      <button class="btn-icon" id="btn-quick-save-preset" style="display: none;">💾</button>
+      <button class="btn-icon" id="btn-refresh-presets" style="display: none;">🔄</button>
     </div>
   `);
 
@@ -522,6 +524,28 @@ function updatePresetBadge() {
   }
 }
 
+// Track the currently loaded preset
+let currentLoadedPresetId = null;
+
+/**
+ * Update save button text based on loaded preset
+ */
+function updateSaveButtonState() {
+  const btnSavePreset = document.getElementById('btn-save-preset');
+  if (!btnSavePreset) return;
+
+  if (currentLoadedPresetId) {
+    const preset = presetManager.getPreset(currentLoadedPresetId);
+    if (preset) {
+      btnSavePreset.innerHTML = `🔄 ${i18n.t('presets.update') || 'Update'} "${preset.name}"`;
+      btnSavePreset.title = `Update preset "${preset.name}" with current settings`;
+      return;
+    }
+  }
+  btnSavePreset.innerHTML = `💾 ${i18n.t('presets.save') || 'Save'}`;
+  btnSavePreset.title = 'Save current settings as new preset';
+}
+
 /**
  * Bind preset events
  */
@@ -533,7 +557,24 @@ function bindPresetEvents() {
   const btnRefreshPresets = document.getElementById('btn-refresh-presets');
 
   if (btnSavePreset) {
-    btnSavePreset.addEventListener('click', showSavePresetDialog);
+    btnSavePreset.addEventListener('click', async () => {
+      // If a preset is loaded, update it directly
+      if (currentLoadedPresetId) {
+        const preset = presetManager.getPreset(currentLoadedPresetId);
+        if (preset) {
+          const currentConfig = getCurrentGeneratorConfig();
+          const success = await presetManager.updatePreset(currentLoadedPresetId, { config: currentConfig });
+          if (success) {
+            showToast(`"${preset.name}" ${i18n.t('presets.updated') || 'updated'}!`, 'success');
+          } else {
+            showToast(i18n.t('presets.updateFailed') || 'Update failed (vault locked?)', 'error');
+          }
+          return;
+        }
+      }
+      // Otherwise show save dialog for new preset
+      showSavePresetDialog();
+    });
   }
 
   if (btnManagePresets) {
@@ -543,33 +584,39 @@ function bindPresetEvents() {
   if (presetSelect) {
     presetSelect.addEventListener('change', (event) => {
       loadPreset(event);
-      // Enable/disable quick save button
-      if (btnQuickSave) {
-        btnQuickSave.disabled = !event.target.value;
+      // Track the loaded preset
+      currentLoadedPresetId = event.target.value || null;
+      updateSaveButtonState();
+      // Show/hide clear button
+      const btnClear = document.getElementById('btn-clear-preset');
+      if (btnClear) {
+        btnClear.style.display = currentLoadedPresetId ? 'inline-flex' : 'none';
       }
     });
   }
 
-  // Quick save button - update selected preset with current config
-  if (btnQuickSave) {
-    btnQuickSave.addEventListener('click', async () => {
-      const presetId = presetSelect?.value;
-      if (!presetId) return;
+  // New preset button - always creates a new preset
+  const btnNewPreset = document.getElementById('btn-new-preset');
+  if (btnNewPreset) {
+    btnNewPreset.addEventListener('click', showSavePresetDialog);
+  }
 
-      const preset = presetManager.getPreset(presetId);
-      if (!preset) return;
-
-      if (confirm(`Mettre à jour "${preset.name}" avec la configuration actuelle ?`)) {
-        const currentConfig = getCurrentGeneratorConfig();
-        const success = await presetManager.updatePreset(presetId, { config: currentConfig });
-        if (success) {
-          showToast(`Preset "${preset.name}" mis à jour !`, 'success');
-          safeLog(`[QuickSave] Updated preset: ${presetId}`);
-        } else {
-          showToast('Échec de la mise à jour (coffre verrouillé ?)', 'error');
-        }
+  // Clear preset button - deselect current preset
+  const btnClearPreset = document.getElementById('btn-clear-preset');
+  if (btnClearPreset) {
+    btnClearPreset.addEventListener('click', () => {
+      if (presetSelect) {
+        presetSelect.value = '';
       }
+      currentLoadedPresetId = null;
+      updateSaveButtonState();
+      btnClearPreset.style.display = 'none';
     });
+  }
+
+  // Quick save button - kept for compatibility but hidden
+  if (btnQuickSave) {
+    btnQuickSave.style.display = 'none';
   }
 
   // Refresh presets button - load from vault (Electron only)
@@ -583,7 +630,7 @@ function bindPresetEvents() {
       try {
         const isReady = await presetManager.isVaultReady();
         if (!isReady) {
-          showToast('Coffre verrouillé - déverrouillez-le d\'abord', 'warning');
+          showToast('Vault locked - unlock it first', 'warning');
           return;
         }
 
@@ -592,13 +639,13 @@ function bindPresetEvents() {
         updatePresetBadge();
 
         if (loaded > 0) {
-          showToast(`${loaded} preset(s) chargé(s) depuis le coffre`, 'success');
+          showToast(`${loaded} preset(s) loaded from vault`, 'success');
         } else {
-          showToast('Aucun preset trouvé dans le coffre', 'info');
+          showToast('No presets found in vault', 'info');
         }
         safeLog(`[RefreshPresets] Loaded ${loaded} presets from vault`);
       } catch (error) {
-        showToast('Erreur lors du chargement des presets', 'error');
+        showToast('Error loading presets', 'error');
         safeLog(`[RefreshPresets] Error: ${error.message}`);
       } finally {
         btnRefreshPresets.disabled = false;
@@ -651,8 +698,8 @@ function showSavePresetDialog() {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">💾 Sauvegarder le Preset</div>
-        <button class="modal-close" id="close-save-modal" aria-label="Fermer">
+        <div class="modal-title">💾 Save Preset</div>
+        <button class="modal-close" id="close-save-modal" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -661,35 +708,35 @@ function showSavePresetDialog() {
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="preset-name">Nom du preset <span style="color: red;">*</span></label>
-          <input type="text" id="preset-name" class="input-field" placeholder="Ex: Mon preset sécurisé" required maxlength="50">
+          <label for="preset-name">Preset name <span style="color: red;">*</span></label>
+          <input type="text" id="preset-name" class="input-field" placeholder="E.g.: My secure preset" required maxlength="50">
           <span class="error-message" id="name-error" style="display:none; color: red; font-size: 0.85em;"></span>
         </div>
 
         <div class="form-group">
           <label for="preset-description">Description</label>
-          <textarea id="preset-description" class="input-field" rows="2" placeholder="Description optionnelle..."></textarea>
+          <textarea id="preset-description" class="input-field" rows="2" placeholder="Optional description..."></textarea>
         </div>
 
         <div class="config-preview">
-          <strong>Configuration à sauvegarder :</strong>
+          <strong>Configuration to save:</strong>
           <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
-            <li>Mode: ${config.mode || 'Non défini'}</li>
-            <li>Longueur: ${config.length || 'N/A'} caractères</li>
-            <li>Politique: ${config.policy || 'Standard'}</li>
-            <li>Chiffres: ${config.digits || 0}</li>
-            <li>Caractères spéciaux: ${config.specials || 0}</li>
-            ${config.customSpecials ? `<li>Spéciaux personnalisés: ${config.customSpecials}</li>` : ''}
-            <li>Placement chiffres: ${config.placeDigits || 'Aléatoire'}</li>
-            <li>Placement spéciaux: ${config.placeSpecials || 'Aléatoire'}</li>
-            <li>Casse: ${config.caseMode || 'Mixte'}</li>
-            <li>Quantité: ${config.quantity || 1}</li>
+            <li>Mode: ${config.mode || 'Undefined'}</li>
+            <li>Length: ${config.length || 'N/A'} characters</li>
+            <li>Policy: ${config.policy || 'Standard'}</li>
+            <li>Digits: ${config.digits || 0}</li>
+            <li>Special characters: ${config.specials || 0}</li>
+            ${config.customSpecials ? `<li>Custom specials: ${config.customSpecials}</li>` : ''}
+            <li>Digits placement: ${config.placeDigits || 'Random'}</li>
+            <li>Specials placement: ${config.placeSpecials || 'Random'}</li>
+            <li>Case: ${config.caseMode || 'Mixed'}</li>
+            <li>Quantity: ${config.quantity || 1}</li>
           </ul>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-save-preset-confirm">💾 Sauvegarder</button>
-        <button class="btn" id="btn-cancel-save">Annuler</button>
+        <button class="btn" id="btn-save-preset-confirm">💾 Save</button>
+        <button class="btn" id="btn-cancel-save">Cancel</button>
       </div>
     </div>
   `);
@@ -709,12 +756,12 @@ function showSavePresetDialog() {
   function validateName() {
     const name = nameInput.value.trim();
     if (!name) {
-      nameError.textContent = 'Le nom est requis';
+      nameError.textContent = 'Name is required';
       nameError.style.display = 'block';
       return false;
     }
     if (name.length > 50) {
-      nameError.textContent = 'Le nom ne peut pas dépasser 50 caractères';
+      nameError.textContent = 'Name cannot exceed 50 characters';
       nameError.style.display = 'block';
       return false;
     }
@@ -736,13 +783,13 @@ function showSavePresetDialog() {
       if (preset) {
         updatePresetDropdown();
         modal.remove();
-        showToast(`Preset "${name}" sauvegardé !`, 'success');
+        showToast(`Preset "${name}" saved!`, 'success');
         safeLog(`Preset created: ${preset.id}`);
       } else {
-        showToast('Coffre verrouillé - déverrouillez le coffre pour sauvegarder', 'error');
+        showToast('Vault locked - unlock vault to save', 'error');
       }
     } catch (error) {
-      showToast('Échec de la sauvegarde du preset', 'error');
+      showToast('Failed to save preset', 'error');
       safeLog(`Error saving preset: ${error.message}`);
     }
   });
@@ -882,7 +929,7 @@ function loadPreset(event) {
     }
   }
 
-  showToast(`Preset "${preset.name}" chargé !`, 'success');
+  showToast(`Preset "${preset.name}" loaded!`, 'success');
   safeLog(`Preset loaded: ${preset.id}`);
 }
 
@@ -904,9 +951,9 @@ function showManagePresetsModal() {
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title" id="presets-modal-title">
-          🗂️ Gérer les Presets
+          🗂️ Manage Presets
         </div>
-        <button class="modal-close" id="close-presets-modal" aria-label="Fermer">
+        <button class="modal-close" id="close-presets-modal" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -919,64 +966,36 @@ function showManagePresetsModal() {
             type="text"
             id="preset-search"
             class="input-field"
-            placeholder="🔍 Rechercher un preset..."
-            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+            placeholder="🔍 Search preset..."
+            style="width: 100%; padding: 10px; border: 1px solid var(--vault-border, #ddd); border-radius: 8px; background: var(--vault-bg, #fff);"
           >
         </div>
         <div class="presets-list">
-          ${presets.map(preset => `)
-            <div class="preset-item" data-preset-id="${preset.id}">
-              <div class="preset-info">
-                <div class="preset-name" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span>${escapeHtml(preset.name)} ${preset.isDefault ? '⭐' : ''}</span>
-                  <button class="btn-mini" data-action="toggle-details" data-preset-id="${preset.id}" style="font-size: 0.8em;">
-                    <span class="details-toggle-icon">▼</span> Détails
-                  </button>
+          ${presets.map(preset => `
+            <div class="preset-item" data-preset-id="${preset.id}" style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px; background: var(--vault-surface, #f8f9fa); border-radius: 8px; border: 1px solid var(--vault-border, #e0e0e0);">
+              <div class="preset-info" style="flex: 1; min-width: 0;">
+                <div class="preset-name" style="font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                  ${escapeHtml(preset.name)} ${preset.isDefault ? '<span style="color: #f59e0b;">⭐</span>' : ''}
                 </div>
-                <div class="preset-desc">${escapeHtml(preset.description || 'Aucune description')}</div>
-
-                <!-- Section expandable des détails -->
-                <div class="preset-details" id="details-${preset.id}" style="display: none; background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 0.9em;">
-                  <strong style="color: #333;">Configuration :</strong>
-                  <ul style="margin: 8px 0; padding-left: 20px;">
-                    <li><strong>Mode :</strong> ${preset.config.mode || 'Non défini'}</li>
-                    <li><strong>Longueur :</strong> ${preset.config.length || 'N/A'} caractères</li>
-                    <li><strong>Politique :</strong> ${preset.config.policy || 'Standard'}</li>
-                    <li><strong>Chiffres :</strong> ${preset.config.digits || 0}</li>
-                    <li><strong>Caractères spéciaux :</strong> ${preset.config.specials || 0}</li>
-                    ${preset.config.customSpecials ? `<li><strong>Spéciaux personnalisés :</strong> ${preset.config.customSpecials}</li>` : ''}
-                    <li><strong>Placement chiffres :</strong> ${preset.config.placeDigits || 'Aléatoire'}</li>
-                    <li><strong>Placement spéciaux :</strong> ${preset.config.placeSpecials || 'Aléatoire'}</li>
-                    <li><strong>Casse :</strong> ${preset.config.caseMode || 'Mixte'}</li>
-                    <li><strong>Quantité :</strong> ${preset.config.quantity || 1}</li>
-                  </ul>
-                  <div style="font-size: 0.85em; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
-                    <div>📅 Créé : ${new Date(preset.createdAt).toLocaleDateString()} ${new Date(preset.createdAt).toLocaleTimeString()}</div>
-                    <div>🔄 Modifié : ${new Date(preset.updatedAt).toLocaleDateString()} ${new Date(preset.updatedAt).toLocaleTimeString()}</div>
-                  </div>
-                </div>
-
-                <div class="preset-meta" style="margin-top: 6px;">
-                  Créé: ${new Date(preset.createdAt).toLocaleDateString()}
+                <div class="preset-summary" style="font-size: 0.8rem; color: var(--vault-text-muted, #666); margin-top: 4px;">
+                  ${preset.config.mode || 'standard'} • ${preset.config.length || 20} chars • ${preset.config.digits || 0} digits • ${preset.config.specials || 0} specials
                 </div>
               </div>
-              <div class="preset-actions">
-                <button class="btn-mini" data-action="load" data-preset-id="${preset.id}">Charger</button>
-                <button class="btn-mini" data-action="update-config" data-preset-id="${preset.id}" title="Remplacer la config par les paramètres actuels">🔄 Màj Config</button>
-                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}">✏️ Éditer</button>
-                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}">📋 Dupliquer</button>
-                <button class="btn-mini" data-action="export" data-preset-id="${preset.id}">Export</button>
-                ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}">Supprimer</button>` : ''}
+              <div class="preset-actions" style="display: flex; gap: 4px; flex-shrink: 0;">
+                <button class="btn-mini" data-action="load" data-preset-id="${preset.id}" title="Load this preset" style="padding: 6px 12px;">▶️</button>
+                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}" title="Edit" style="padding: 6px 10px;">✏️</button>
+                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}" title="Duplicate" style="padding: 6px 10px;">📋</button>
+                ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}" title="Delete" style="padding: 6px 10px;">🗑️</button>` : ''}
               </div>
             </div>
           `).join('')}
         </div>
       </div>
       <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
-        <button class="btn" id="btn-import-preset">📥 Importer</button>
-        <button class="btn" id="btn-export-all-presets">📤 Tout Exporter</button>
-        <button class="btn" id="btn-vault-sync-presets" style="display: ${window.vault ? 'inline-flex' : 'none'};">🗄️ Coffre</button>
-        <button class="btn danger" id="close-presets-modal-footer">Fermer</button>
+        <button class="btn" id="btn-import-preset">📥 Import</button>
+        <button class="btn" id="btn-export-all-presets">📤 Export All</button>
+        <button class="btn" id="btn-vault-sync-presets" style="display: ${window.vault ? 'inline-flex' : 'none'};">🗄️ Vault</button>
+        <button class="btn danger" id="close-presets-modal-footer">Close</button>
       </div>
     </div>
   `);
@@ -1070,9 +1089,9 @@ function bindPresetModalEvents(modal) {
               updatePresetDropdown();
               modal.remove();
               showManagePresetsModal();
-              showToast(`Preset "${duplicatedPreset.name}" dupliqué !`, 'success');
+              showToast(`Preset "${duplicatedPreset.name}" duplicated!`, 'success');
             } else {
-              showToast('Coffre verrouillé - déverrouillez pour dupliquer', 'error');
+              showToast('Vault locked - unlock to duplicate', 'error');
             }
           }
           break;
@@ -1088,30 +1107,30 @@ function bindPresetModalEvents(modal) {
         case 'update-config':
           const presetToUpdate = presetManager.getPreset(presetId);
           if (presetToUpdate) {
-            if (confirm(`Remplacer la configuration de "${presetToUpdate.name}" par les paramètres actuels ?`)) {
+            if (confirm(`Replace "${presetToUpdate.name}" configuration with current settings?`)) {
               const currentConfig = getCurrentGeneratorConfig();
               const success = await presetManager.updatePreset(presetId, { config: currentConfig });
               if (success) {
                 updatePresetDropdown();
                 modal.remove();
                 showManagePresetsModal(); // Refresh the modal
-                showToast(`Configuration de "${presetToUpdate.name}" mise à jour !`, 'success');
+                showToast(`"${presetToUpdate.name}" configuration updated!`, 'success');
               } else {
-                showToast('Coffre verrouillé - déverrouillez pour mettre à jour', 'error');
+                showToast('Vault locked - unlock to update', 'error');
               }
             }
           }
           break;
 
         case 'delete':
-          if (confirm('Supprimer ce preset ?')) {
+          if (confirm('Delete this preset?')) {
             const success = await presetManager.deletePreset(presetId);
             if (success) {
               updatePresetDropdown();
               modal.remove();
-              showToast('Preset supprimé', 'success');
+              showToast('Preset deleted', 'success');
             } else {
-              showToast('Échec de la suppression', 'error');
+              showToast('Deletion failed', 'error');
             }
           }
           break;
@@ -1135,12 +1154,12 @@ function bindPresetModalEvents(modal) {
           if (preset) {
             updatePresetDropdown();
             modal.remove();
-            showToast(`Preset "${preset.name}" importé !`, 'success');
+            showToast(`Preset "${preset.name}" imported!`, 'success');
           } else {
-            showToast('Coffre verrouillé - déverrouillez pour importer', 'error');
+            showToast('Vault locked - unlock to import', 'error');
           }
         } catch (error) {
-          showToast('Échec de l\'import du preset', 'error');
+          showToast('Failed to import preset', 'error');
         }
       };
       reader.readAsText(file);
@@ -1167,13 +1186,13 @@ function bindPresetModalEvents(modal) {
  */
 function formatCaseModeLabel(caseMode, blocks) {
   const labels = {
-    'mixte': 'Mixte (aléatoire)',
-    'upper': 'MAJUSCULES',
-    'lower': 'minuscules',
+    'mixte': 'Mixed (random)',
+    'upper': 'UPPERCASE',
+    'lower': 'lowercase',
     'title': 'Title Case',
-    'blocks': blocks ? `Blocs (${blocks.join('-')})` : 'Blocs'
+    'blocks': blocks ? `Blocks (${blocks.join('-')})` : 'Blocks'
   };
-  return labels[caseMode] || caseMode || 'Mixte';
+  return labels[caseMode] || caseMode || 'Mixed';
 }
 
 /**
@@ -1181,12 +1200,12 @@ function formatCaseModeLabel(caseMode, blocks) {
  */
 function formatPlacementLabel(placement) {
   const labels = {
-    'aleatoire': 'Aléatoire',
-    'debut': 'Au début',
-    'fin': 'À la fin',
-    'milieu': 'Au milieu'
+    'aleatoire': 'Random',
+    'debut': 'At start',
+    'fin': 'At end',
+    'milieu': 'In middle'
   };
-  return labels[placement] || placement || 'Aléatoire';
+  return labels[placement] || placement || 'Random';
 }
 
 /**
@@ -1195,7 +1214,7 @@ function formatPlacementLabel(placement) {
 function showEditPresetModal(presetId) {
   const preset = presetManager.getPreset(presetId);
   if (!preset) {
-    showToast('Preset introuvable', 'error');
+    showToast('Preset not found', 'error');
     return;
   }
 
@@ -1211,8 +1230,8 @@ function showEditPresetModal(presetId) {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal" style="max-width: 500px;">
       <div class="modal-header">
-        <div class="modal-title">✏️ Modifier "${escapeHtml(preset.name)}"</div>
-        <button class="modal-close" id="close-edit-modal" aria-label="Fermer">
+        <div class="modal-title">✏️ Edit "${escapeHtml(preset.name)}"</div>
+        <button class="modal-close" id="close-edit-modal" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1222,22 +1241,22 @@ function showEditPresetModal(presetId) {
       <div class="modal-body">
         <!-- Info section -->
         <div class="form-group">
-          <label for="edit-preset-name">Nom <span style="color: #ef4444;">*</span></label>
+          <label for="edit-preset-name">Name <span style="color: #ef4444;">*</span></label>
           <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb;">
           <span class="error-message" id="edit-name-error" style="display:none; color: #ef4444; font-size: 0.85em; margin-top: 4px;"></span>
         </div>
 
         <div class="form-group" style="margin-top: 12px;">
           <label for="edit-preset-description">Description</label>
-          <textarea id="edit-preset-description" class="input-field" rows="2" placeholder="Description optionnelle..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; resize: vertical;">${escapeHtml(preset.description || '')}</textarea>
+          <textarea id="edit-preset-description" class="input-field" rows="2" placeholder="Optional description..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; resize: vertical;">${escapeHtml(preset.description || '')}</textarea>
         </div>
 
         <!-- Config section -->
         <div style="margin-top: 16px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <strong style="color: #60a5fa;">⚙️ Configuration</strong>
-            <button class="btn-mini" id="btn-update-config-inline" title="Remplacer par les paramètres actuels" style="font-size: 0.8em;">
-              🔄 Màj config
+            <button class="btn-mini" id="btn-update-config-inline" title="Replace with current settings" style="font-size: 0.8em;">
+              🔄 Update
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
@@ -1245,39 +1264,39 @@ function showEditPresetModal(presetId) {
               <span style="color: #94a3b8;">Mode:</span> <span style="color: #e5e7eb;">${escapeHtml(config.mode || 'syllables')}</span>
             </div>
             <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Longueur:</span> <span style="color: #e5e7eb;">${config.length || 20}</span>
+              <span style="color: #94a3b8;">Length:</span> <span style="color: #e5e7eb;">${config.length || 20}</span>
             </div>
             <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Chiffres:</span> <span style="color: #e5e7eb;">${config.digits || 0}</span>
+              <span style="color: #94a3b8;">Digits:</span> <span style="color: #e5e7eb;">${config.digits || 0}</span>
             </div>
             <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Spéciaux:</span> <span style="color: #e5e7eb;">${config.specials || 0}</span>
+              <span style="color: #94a3b8;">Specials:</span> <span style="color: #e5e7eb;">${config.specials || 0}</span>
             </div>
             <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; grid-column: span 2;">
-              <span style="color: #94a3b8;">Casse:</span> <span style="color: #e5e7eb;">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
+              <span style="color: #94a3b8;">Case:</span> <span style="color: #e5e7eb;">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
             </div>
             <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Place chiffres:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeDigits)}</span>
+              <span style="color: #94a3b8;">Digits place:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeDigits)}</span>
             </div>
             <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Place spéciaux:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeSpecials)}</span>
+              <span style="color: #94a3b8;">Specials place:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeSpecials)}</span>
             </div>
           </div>
         </div>
 
         ${preset.isDefault ? `
           <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.9em; color: #fbbf24;">
-            ⭐ Preset par défaut
+            ⭐ Default preset
           </div>
         ` : ''}
 
         <div style="font-size: 0.8em; color: #6b7280; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
-          📅 Créé: ${new Date(preset.createdAt).toLocaleDateString('fr-FR')} • Modifié: ${new Date(preset.updatedAt).toLocaleDateString('fr-FR')}
+          📅 Created: ${new Date(preset.createdAt).toLocaleDateString()} • Modified: ${new Date(preset.updatedAt).toLocaleDateString()}
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-edit-preset-confirm" style="background: #3b82f6;">💾 Sauvegarder</button>
-        <button class="btn" id="btn-cancel-edit">Annuler</button>
+        <button class="btn" id="btn-edit-preset-confirm" style="background: #3b82f6;">💾 Save</button>
+        <button class="btn" id="btn-cancel-edit">Cancel</button>
       </div>
     </div>
   `);
@@ -1297,12 +1316,12 @@ function showEditPresetModal(presetId) {
   function validateName() {
     const name = nameInput.value.trim();
     if (!name) {
-      nameError.textContent = 'Le nom est requis';
+      nameError.textContent = 'Name is required';
       nameError.style.display = 'block';
       return false;
     }
     if (name.length > 50) {
-      nameError.textContent = 'Le nom ne peut pas dépasser 50 caractères';
+      nameError.textContent = 'Name cannot exceed 50 characters';
       nameError.style.display = 'block';
       return false;
     }
@@ -1327,10 +1346,10 @@ function showEditPresetModal(presetId) {
     if (success) {
       updatePresetDropdown();
       modal.remove();
-      showToast(`Preset "${name}" modifié avec succès !`, 'success');
+      showToast(`Preset "${name}" updated successfully!`, 'success');
       safeLog(`Preset updated: ${presetId}`);
     } else {
-      showToast('Coffre verrouillé - déverrouillez pour modifier', 'error');
+      showToast('Vault locked - unlock to edit', 'error');
     }
   });
 
@@ -1339,15 +1358,15 @@ function showEditPresetModal(presetId) {
     const preset = presetManager.getPreset(presetId);
     if (!preset) return;
 
-    if (confirm(`Remplacer la configuration de "${preset.name}" par les paramètres actuels du générateur ?`)) {
+    if (confirm(`Replace "${preset.name}" configuration with current generator settings?`)) {
       const currentConfig = getCurrentGeneratorConfig();
       const success = await presetManager.updatePreset(presetId, { config: currentConfig });
       if (success) {
         modal.remove();
         showEditPresetModal(presetId); // Refresh modal with new config
-        showToast('Configuration mise à jour !', 'success');
+        showToast('Configuration updated!', 'success');
       } else {
-        showToast('Coffre verrouillé - déverrouillez pour modifier', 'error');
+        showToast('Vault locked - unlock to edit', 'error');
       }
     }
   });
@@ -1384,7 +1403,7 @@ function showEditPresetModal(presetId) {
 async function showVaultPresetSyncModal() {
   // Check if vault is available
   if (!window.vault) {
-    showToast('Coffre non disponible', 'error');
+    showToast('Vault not available', 'error');
     return;
   }
 
@@ -1402,8 +1421,8 @@ async function showVaultPresetSyncModal() {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal" style="max-width: 450px;">
       <div class="modal-header">
-        <div class="modal-title">🗄️ Presets & Coffre</div>
-        <button class="modal-close" id="close-vault-sync-modal" aria-label="Fermer">
+        <div class="modal-title">🗄️ Presets & Vault</div>
+        <button class="modal-close" id="close-vault-sync-modal" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1414,19 +1433,19 @@ async function showVaultPresetSyncModal() {
         ${!isVaultReady ? `
           <div style="text-align: center; padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 16px;">
             <div style="font-size: 2em; margin-bottom: 8px;">🔒</div>
-            <p style="margin: 0; color: #f87171;">Le coffre est verrouillé</p>
-            <p style="margin: 8px 0 0; font-size: 0.9em; color: #94a3b8;">Déverrouillez-le pour synchroniser vos presets</p>
-            <button class="btn" id="btn-go-to-vault" style="margin-top: 12px;">Aller au coffre</button>
+            <p style="margin: 0; color: #f87171;">Vault is locked</p>
+            <p style="margin: 8px 0 0; font-size: 0.9em; color: #94a3b8;">Unlock it to sync your presets</p>
+            <button class="btn" id="btn-go-to-vault" style="margin-top: 12px;">Go to vault</button>
           </div>
         ` : `
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
             <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.1); border-radius: 8px;">
               <div style="font-size: 1.5em; font-weight: bold; color: #3b82f6;">${localPresetCount}</div>
-              <div style="font-size: 0.85em; color: #94a3b8;">Presets locaux</div>
+              <div style="font-size: 0.85em; color: #94a3b8;">Local presets</div>
             </div>
             <div style="text-align: center; padding: 16px; background: rgba(139, 92, 246, 0.1); border-radius: 8px;">
               <div style="font-size: 1.5em; font-weight: bold; color: #8b5cf6;">${vaultPresetCount}</div>
-              <div style="font-size: 0.85em; color: #94a3b8;">Presets dans coffre</div>
+              <div style="font-size: 0.85em; color: #94a3b8;">Vault presets</div>
             </div>
           </div>
 
@@ -1437,7 +1456,7 @@ async function showVaultPresetSyncModal() {
                 <polyline points="17 8 12 3 7 8"/>
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
-              Exporter tous vers le coffre
+              Export all to vault
             </button>
             <button class="btn full-width" id="btn-import-from-vault" style="display: flex; align-items: center; justify-content: center; gap: 8px;" ${vaultPresetCount === 0 ? 'disabled' : ''}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -1445,29 +1464,29 @@ async function showVaultPresetSyncModal() {
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Importer tous depuis le coffre
+              Import all from vault
             </button>
           </div>
 
           <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em;">
               <input type="checkbox" id="vault-sync-overwrite" style="width: 16px; height: 16px;">
-              Écraser les presets existants lors de l'import
+              Overwrite existing presets on import
             </label>
           </div>
 
           ${vaultPresetCount > 0 ? `
           <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #e2e8f0;">📦 Presets dans le coffre</h4>
+            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #e2e8f0;">📦 Presets in vault</h4>
             <div id="vault-presets-list" style="max-height: 200px; overflow-y: auto;">
-              <div style="text-align: center; padding: 20px; color: #94a3b8;">Chargement...</div>
+              <div style="text-align: center; padding: 20px; color: #94a3b8;">Loading...</div>
             </div>
           </div>
           ` : ''}
         `}
       </div>
       <div class="modal-footer">
-        <button class="btn" id="close-vault-sync-footer">Fermer</button>
+        <button class="btn" id="close-vault-sync-footer">Close</button>
       </div>
     </div>
   `);
@@ -1490,14 +1509,14 @@ async function showVaultPresetSyncModal() {
   modal.querySelector('#btn-export-to-vault')?.addEventListener('click', async () => {
     const btn = modal.querySelector('#btn-export-to-vault');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Export en cours...';
+    btn.innerHTML = '<span class="spinner"></span> Exporting...';
 
     const result = await presetManager.exportAllToVault();
 
     if (result.success > 0) {
-      showToast(`${result.success} preset(s) exporté(s) vers le coffre`, 'success');
+      showToast(`${result.success} preset(s) exported to vault`, 'success');
     } else {
-      showToast('Aucun preset exporté', 'warning');
+      showToast('No presets exported', 'warning');
     }
 
     modal.remove();
@@ -1515,11 +1534,11 @@ async function showVaultPresetSyncModal() {
 
     if (result.imported > 0) {
       updatePresetDropdown();
-      showToast(`${result.imported} preset(s) importé(s) depuis le coffre`, 'success');
+      showToast(`${result.imported} preset(s) imported from vault`, 'success');
     } else if (result.skipped > 0) {
-      showToast(`${result.skipped} preset(s) ignoré(s) (déjà existants)`, 'info');
+      showToast(`${result.skipped} preset(s) skipped (already exist)`, 'info');
     } else {
-      showToast('Aucun preset à importer', 'warning');
+      showToast('No presets to import', 'warning');
     }
 
     modal.remove();
@@ -1545,7 +1564,7 @@ async function loadVaultPresetsList(modal) {
     const vaultPresets = await presetManager.getVaultPresets();
 
     if (vaultPresets.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">Aucun preset dans le coffre</div>';
+      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No presets in vault</div>';
       return;
     }
 
@@ -1554,12 +1573,12 @@ async function loadVaultPresetsList(modal) {
         <div style="flex: 1; min-width: 0;">
           <div style="font-weight: 500; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(entry.title)}</div>
           <div style="font-size: 0.8em; color: #94a3b8;">
-            ${entry.data?.config?.mode || 'Mode inconnu'} • ${entry.data?.config?.length || '?'} car.
+            ${entry.data?.config?.mode || 'Unknown mode'} • ${entry.data?.config?.length || '?'} chars
           </div>
         </div>
         <div style="display: flex; gap: 6px; flex-shrink: 0;">
-          <button class="btn-mini" data-action="load-vault-preset" data-entry-id="${entry.id}" title="Charger ce preset">📥</button>
-          <button class="btn-mini danger" data-action="delete-vault-preset" data-entry-id="${entry.id}" title="Supprimer du coffre">🗑️</button>
+          <button class="btn-mini" data-action="load-vault-preset" data-entry-id="${entry.id}" title="Load this preset">📥</button>
+          <button class="btn-mini danger" data-action="delete-vault-preset" data-entry-id="${entry.id}" title="Delete from vault">🗑️</button>
         </div>
       </div>
     `).join('');
@@ -1577,7 +1596,7 @@ async function loadVaultPresetsList(modal) {
             preset = await presetManager.createPreset(
               entry.title,
               entry.data.config,
-              entry.data.description || `Importé du coffre`
+              entry.data.description || `Imported from vault`
             );
           }
           if (preset) {
@@ -1588,10 +1607,10 @@ async function loadVaultPresetsList(modal) {
               presetSelect.value = preset.id;
               presetSelect.dispatchEvent(new Event('change'));
             }
-            showToast(`Preset "${entry.title}" chargé !`, 'success');
+            showToast(`Preset "${entry.title}" loaded!`, 'success');
             modal.remove();
           } else {
-            showToast('Échec du chargement du preset', 'error');
+            showToast('Failed to load preset', 'error');
           }
         }
       });
@@ -1601,12 +1620,12 @@ async function loadVaultPresetsList(modal) {
       btn.addEventListener('click', async () => {
         const entryId = btn.dataset.entryId;
         const entry = vaultPresets.find(e => e.id === entryId);
-        if (entry && confirm(`Supprimer "${entry.title}" du coffre ?`)) {
+        if (entry && confirm(`Delete "${entry.title}" from vault?`)) {
           try {
             await window.vault.entries.delete(entryId);
             // Remove from UI
             btn.closest('.vault-preset-item')?.remove();
-            showToast('Preset supprimé du coffre', 'success');
+            showToast('Preset deleted from vault', 'success');
             // Update count display
             const countEl = modal.querySelector('[style*="rgba(139, 92, 246"]');
             if (countEl) {
@@ -1615,14 +1634,14 @@ async function loadVaultPresetsList(modal) {
               countEl.querySelector('div').textContent = newCount;
             }
           } catch (error) {
-            showToast('Erreur lors de la suppression', 'error');
+            showToast('Error deleting preset', 'error');
           }
         }
       });
     });
 
   } catch (error) {
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f87171;">Erreur de chargement</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f87171;">Loading error</div>';
     safeLog(`[VaultPresets] Error loading: ${error.message}`);
   }
 }
@@ -1661,7 +1680,7 @@ function showHistoryModal() {
   const settings = historyManager.getSettings();
 
   if (!settings.enabled) {
-    if (confirm('Historique désactivé. Activer maintenant ?')) {
+    if (confirm('History is disabled. Enable now?')) {
       historyManager.updateSettings({ enabled: true });
       showToast('History enabled!', 'success');
     }
@@ -1683,9 +1702,9 @@ function showHistoryModal() {
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">
-          📜 Historique des Mots de Passe
+          📜 Password History
         </div>
-        <button class="modal-close" id="close-history-modal" aria-label="Fermer">
+        <button class="modal-close" id="close-history-modal" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1709,11 +1728,11 @@ function showHistoryModal() {
         </div>
 
         <div class="history-search">
-          <input type="text" id="history-search-input" placeholder="Rechercher..." class="input" />
+          <input type="text" id="history-search-input" placeholder="Search..." class="input" />
         </div>
 
         <div class="history-list">
-          ${history.length === 0 ? '<p class="empty-state">Aucun mot de passe dans l\'historique</p>' :
+          ${history.length === 0 ? '<p class="empty-state">No passwords in history</p>' :
             history.map(entry => `)
               <div class="history-item" data-entry-id="${entry.id}">
                 <div class="history-password">
@@ -1738,9 +1757,9 @@ function showHistoryModal() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-export-history">📤 Exporter</button>
-        <button class="btn danger" id="btn-clear-history">🗑️ Tout Effacer</button>
-        <button class="btn" id="close-history-modal-footer">Fermer</button>
+        <button class="btn" id="btn-export-history">📤 Export</button>
+        <button class="btn danger" id="btn-clear-history">🗑️ Clear All</button>
+        <button class="btn" id="close-history-modal-footer">Close</button>
       </div>
     </div>
   `);
@@ -1788,7 +1807,7 @@ function bindHistoryModalEvents(modal) {
           break;
 
         case 'delete':
-          if (confirm('Supprimer cette entrée ?')) {
+          if (confirm('Delete this entry?')) {
             historyManager.deleteEntry(entryId);
             modal.remove();
             showHistoryModal(); // Refresh
@@ -1822,7 +1841,7 @@ function bindHistoryModalEvents(modal) {
 
   // Clear all button
   modal.querySelector('#btn-clear-history')?.addEventListener('click', () => {
-    if (confirm('Effacer tout l\'historique ? Cette action est irréversible !')) {
+    if (confirm('Clear all history? This action is irreversible!')) {
       historyManager.clearHistory();
       modal.remove();
       showToast('History cleared', 'success');

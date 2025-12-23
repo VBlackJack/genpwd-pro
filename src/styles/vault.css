@@ -21,8 +21,9 @@
 /* ==================== LAYOUT: 3-PANE GLASS ==================== */
 .vault-app {
   display: grid;
-  grid-template-columns: 280px minmax(300px, 1fr) minmax(400px, 1.2fr);
+  grid-template-columns: 280px minmax(300px, 400px) 1fr;
   height: 100%;
+  width: 100%;
   min-height: 0; /* Important for grid children to respect height */
   /* Removed opaque background, handled by main keyframes/body */
   gap: 0;
@@ -614,6 +615,53 @@
 }
 
 .vault-list-item.selected .vault-list-check {
+  opacity: 1;
+}
+
+/* Forget vault button */
+.vault-list-forget {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vault-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-list-item {
+  position: relative;
+}
+
+.vault-list-item:hover .vault-list-forget {
+  opacity: 1;
+}
+
+.vault-list-forget:hover {
+  color: var(--vault-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Missing vault styling */
+.vault-list-item.vault-missing {
+  opacity: 0.6;
+}
+
+.vault-list-item.vault-missing .vault-list-icon {
+  color: var(--vault-warning);
+}
+
+.vault-list-item.vault-missing .vault-list-forget {
   opacity: 1;
 }
 
@@ -1629,12 +1677,12 @@ kbd {
   width: 100%;
   max-width: 420px;
   max-height: 90vh;
-  background: var(--vault-surface);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1a1d2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius-lg);
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
   overflow: hidden;
   transform: scale(0.9) translateY(20px);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -3541,10 +3589,10 @@ kbd {
   right: 0;
   margin-top: 0.5rem;
   padding: 1rem;
-  background: var(--vault-surface);
-  border: 1px solid var(--vault-border);
+  background: #252a3d;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius);
-  box-shadow: var(--vault-shadow-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 100;
   animation: vault-slide-down 0.2s ease;
 }
@@ -3701,12 +3749,13 @@ kbd {
   position: fixed;
   min-width: 200px;
   padding: 0.5rem 0;
-  background: var(--vault-surface);
-  border: 1px solid var(--vault-border);
+  background: #1e2235;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius);
-  box-shadow: var(--vault-shadow-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   z-index: 9999;
   animation: vault-ctx-appear 0.15s ease;
+  backdrop-filter: none;
 }
 
 @keyframes vault-ctx-appear {

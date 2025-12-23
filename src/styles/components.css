@@ -665,18 +665,19 @@ select {
   bottom: 34px;
   left: 50%;
   transform: translateX(-50%) scale(0.95);
-  background: rgba(8, 12, 28, 0.88);
-  color: #d6dcff;
-  padding: 5px 8px;
+  background: rgba(8, 12, 28, 0.98);
+  color: #fff;
+  padding: 6px 10px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.03em;
   opacity: 0;
   pointer-events: none;
   white-space: nowrap;
   transition: opacity 0.18s ease, transform 0.18s ease;
-  box-shadow: 0 12px 24px rgba(10, 12, 24, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .cursor[data-tooltip]:hover::after,

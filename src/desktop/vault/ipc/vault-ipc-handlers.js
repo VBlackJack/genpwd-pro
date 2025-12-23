@@ -197,8 +197,8 @@ export function registerVaultIPC(ipcMain) {
     validateOrigin(event);
 
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'Créer un coffre à...',
-      defaultPath: defaultName || 'MonCoffre.gpd',
+      title: 'Create vault at...',
+      defaultPath: defaultName || 'MyVault.gpd',
       filters: [
         { name: 'GenPwd Vault', extensions: ['gpd'] }
       ],
@@ -219,7 +219,7 @@ export function registerVaultIPC(ipcMain) {
     validateOrigin(event);
 
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Ouvrir un coffre...',
+      title: 'Open vault...',
       filters: [
         { name: 'GenPwd Vault', extensions: ['gpd'] }
       ],
@@ -242,10 +242,10 @@ export function registerVaultIPC(ipcMain) {
     validateString(password, 'password');
 
     // Use fileManager to open from path
-    const { vaultData, key, vaultId } = await fileManager.openVaultFromPath(filePath, password);
+    const { vaultData, key, vaultId, activeSlot } = await fileManager.openVaultFromPath(filePath, password);
 
     // Initialize session with the vault
-    await session.initWithVault(vaultId, vaultData, key);
+    await session.initWithVault(vaultId, vaultData, key, activeSlot);
 
     return { vaultId, success: true };
   });
@@ -273,7 +273,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Trop de tentatives. Réessayez dans ${minutes} minute(s).`);
+      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
     }
 
     try {
@@ -547,11 +547,28 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * Check if Windows Hello is enabled for a vault
+   * Checks BOTH Windows Credential Manager AND vault file
    */
   ipcMain.handle('vault:hello:isEnabled', async (event, { vaultId }) => {
     validateOrigin(event);
     validateString(vaultId, 'vaultId');
-    return WindowsHelloAuth.isEnabledForVault(vaultId);
+
+    // Check if credential exists in Windows Credential Manager
+    const hasCredential = await WindowsHelloAuth.isEnabledForVault(vaultId);
+    if (!hasCredential) {
+      return false;
+    }
+
+    // Also check if encrypted key exists in vault file
+    const encryptedKey = await fileManager.getVaultHelloKey(vaultId);
+    if (!encryptedKey) {
+      // Credential exists but vault doesn't have the key - cleanup orphan credential
+      console.warn(`[WindowsHello] Orphan credential found for vault ${vaultId}, cleaning up...`);
+      await WindowsHelloAuth.deleteCredential(vaultId);
+      return false;
+    }
+
+    return true;
   });
 
   /**
@@ -566,7 +583,7 @@ export function registerVaultIPC(ipcMain) {
     // Check Windows Hello availability
     const isAvailable = await WindowsHelloAuth.isAvailable();
     if (!isAvailable) {
-      throw new Error('Windows Hello n\'est pas disponible sur ce système');
+      throw new Error('Windows Hello is not available on this system');
     }
 
     // Request Windows Hello verification
@@ -574,13 +591,13 @@ export function registerVaultIPC(ipcMain) {
       'GenPwd Pro - Activer Windows Hello'
     );
     if (!verified) {
-      throw new Error('Vérification Windows Hello échouée');
+      throw new Error('Windows Hello verification failed');
     }
 
     // Unlock vault temporarily to get the encryption key
     const vaultKey = await session.getDerivedKey(vaultId, password);
     if (!vaultKey) {
-      throw new Error('Mot de passe incorrect');
+      throw new Error('Incorrect password');
     }
 
     // Generate wrapper key and encrypt vault key
@@ -624,10 +641,18 @@ export function registerVaultIPC(ipcMain) {
     validateOrigin(event);
     validateString(vaultId, 'vaultId');
 
-    // Check if Windows Hello is enabled for this vault
-    const isEnabled = await WindowsHelloAuth.isEnabledForVault(vaultId);
-    if (!isEnabled) {
-      throw new Error('Windows Hello n\'est pas activé pour ce coffre');
+    // Get encrypted vault key from vault file FIRST
+    const encryptedKey = await fileManager.getVaultHelloKey(vaultId);
+    if (!encryptedKey) {
+      // Cleanup orphan credential if exists
+      await WindowsHelloAuth.deleteCredential(vaultId);
+      throw new Error('Windows Hello non configuré pour ce coffre. Veuillez le réactiver avec votre mot de passe maître.');
+    }
+
+    // Check if credential exists in Windows Credential Manager
+    const wrapperKey = await WindowsHelloAuth.retrieveCredential(vaultId);
+    if (!wrapperKey) {
+      throw new Error('Credential Windows Hello introuvable. Veuillez réactiver Windows Hello.');
     }
 
     // Request Windows Hello verification
@@ -635,23 +660,17 @@ export function registerVaultIPC(ipcMain) {
       'GenPwd Pro - Déverrouiller le coffre'
     );
     if (!verified) {
-      throw new Error('Vérification Windows Hello échouée');
-    }
-
-    // Retrieve wrapper key from Credential Manager
-    const wrapperKey = await WindowsHelloAuth.retrieveCredential(vaultId);
-    if (!wrapperKey) {
-      throw new Error('Credential Windows Hello introuvable');
-    }
-
-    // Get encrypted vault key from metadata
-    const encryptedKey = await fileManager.getVaultHelloKey(vaultId);
-    if (!encryptedKey) {
-      throw new Error('Clé chiffrée introuvable');
+      throw new Error('Vérification Windows Hello annulée');
     }
 
     // Decrypt vault key
-    const vaultKey = WindowsHelloAuth.decryptVaultKey(encryptedKey, wrapperKey);
+    let vaultKey;
+    try {
+      vaultKey = WindowsHelloAuth.decryptVaultKey(encryptedKey, wrapperKey);
+    } catch (decryptError) {
+      console.error('[WindowsHello] Key decryption failed:', decryptError.message);
+      throw new Error('Erreur de déchiffrement. Veuillez réactiver Windows Hello.');
+    }
 
     // Unlock vault with decrypted key
     await session.unlockWithKey(vaultId, vaultKey);
@@ -670,7 +689,7 @@ export function registerVaultIPC(ipcMain) {
     validateObject(config, 'config');
 
     if (!safeStorage.isEncryptionAvailable()) {
-      throw new Error('Le chiffrement système n\'est pas disponible');
+      throw new Error('System encryption is not available');
     }
 
     try {
@@ -768,7 +787,7 @@ function validateOrigin(event) {
 
   if (!isTrusted) {
     console.error(`[Vault] Untrusted IPC origin: ${url}`);
-    throw new Error('Accès non autorisé');
+    throw new Error('Unauthorized access');
   }
 }
 

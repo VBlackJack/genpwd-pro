@@ -33,6 +33,7 @@ import { getInactivityManager } from './utils/inactivity-manager.js';
 import { getSecureClipboard } from './utils/secure-clipboard.js';
 import { showToast } from './utils/toast.js';
 import { safeLog } from './utils/logger.js';
+import { t } from './utils/i18n.js';
 import { SyncSettingsModal } from './ui/modals/sync-settings-modal.js';
 import { AliasService } from './services/alias-service.js';
 import { AliasSettingsModal } from './ui/modals/alias-settings-modal.js';
@@ -41,34 +42,37 @@ import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 
-// Entry type configuration
-const ENTRY_TYPES = {
-  login: { icon: '🔑', label: 'Identifiant', color: '#60a5fa' },
-  note: { icon: '📝', label: 'Note sécurisée', color: '#fbbf24' },
-  card: { icon: '💳', label: 'Carte bancaire', color: '#f472b6' },
-  identity: { icon: '👤', label: 'Identité', color: '#a78bfa' },
-  ssh: { icon: '🔐', label: 'Clé SSH', color: '#34d399' },
-  preset: { icon: '⚙️', label: 'Preset', color: '#94a3b8' }
-};
+// Entry type configuration - function to get translated labels
+const getEntryTypes = () => ({
+  login: { icon: '🔑', label: t('vault.detail.login'), color: '#60a5fa' },
+  note: { icon: '📝', label: t('vault.detail.secureNote'), color: '#fbbf24' },
+  card: { icon: '💳', label: t('vault.detail.creditCard'), color: '#f472b6' },
+  identity: { icon: '👤', label: t('vault.detail.identity'), color: '#a78bfa' },
+  ssh: { icon: '🔐', label: t('vault.detail.sshKey'), color: '#34d399' },
+  preset: { icon: '⚙️', label: t('vault.detail.preset'), color: '#94a3b8' }
+});
 
-// Category filters
-const CATEGORIES = [
-  { id: 'all', icon: '📁', label: 'Tous' },
-  { id: 'favorites', icon: '⭐', label: 'Favoris' },
-  { id: 'recent', icon: '🕐', label: 'Récents' },
-  { id: 'login', icon: '🔑', label: 'Identifiants' },
-  { id: 'note', icon: '📝', label: 'Notes' },
-  { id: 'card', icon: '💳', label: 'Cartes' },
-  { id: 'identity', icon: '👤', label: 'Identités' }
+// Alias for backward compatibility
+const ENTRY_TYPES = getEntryTypes();
+
+// Category filters - function to get translated labels
+const getCategories = () => [
+  { id: 'all', icon: '📁', label: t('vault.sidebar.all') },
+  { id: 'favorites', icon: '⭐', label: t('vault.sidebar.favorites') },
+  { id: 'recent', icon: '🕐', label: t('vault.sidebar.recent') },
+  { id: 'login', icon: '🔑', label: t('vault.sidebar.logins') },
+  { id: 'note', icon: '📝', label: t('vault.sidebar.notes') },
+  { id: 'card', icon: '💳', label: t('vault.sidebar.cards') },
+  { id: 'identity', icon: '👤', label: t('vault.sidebar.identities') }
 ];
 
-// Sort options
-const SORT_OPTIONS = [
-  { id: 'title-asc', label: 'Titre A-Z', icon: '↑' },
-  { id: 'title-desc', label: 'Titre Z-A', icon: '↓' },
-  { id: 'modified-desc', label: 'Modifié récemment', icon: '🕐' },
-  { id: 'modified-asc', label: 'Plus ancien', icon: '📅' },
-  { id: 'type', label: 'Par type', icon: '📂' }
+// Sort options - function to get translated labels
+const getSortOptions = () => [
+  { id: 'title-asc', label: t('vault.sort.titleAZ') || 'Title A-Z', icon: '↑' },
+  { id: 'title-desc', label: t('vault.sort.titleZA') || 'Title Z-A', icon: '↓' },
+  { id: 'modified-desc', label: t('vault.detail.recentlyModified'), icon: '🕐' },
+  { id: 'modified-asc', label: t('vault.sort.oldestFirst') || 'Oldest first', icon: '📅' },
+  { id: 'type', label: t('vault.sort.byType') || 'By type', icon: '📂' }
 ];
 
 /**
@@ -281,9 +285,9 @@ export class VaultUI {
           this.#filterEntries();
 
           if (matches.length > 1) {
-            showToast(`${matches.length} correspondances trouvées`, 'info');
+            showToast(`${matches.length} matches found`, 'info');
           } else {
-            showToast('Aucune correspondance automatique', 'warning');
+            showToast(t('vault.messages.noAutoMatchFound'), 'warning');
           }
         }
       });
@@ -379,6 +383,13 @@ export class VaultUI {
     }
   }
 
+  /**
+   * Public method to refresh UI when language changes
+   */
+  refreshLanguage() {
+    this.#render();
+  }
+
   // ==================== LOCK SCREEN ====================
 
   #renderLockScreen() {
@@ -392,20 +403,20 @@ export class VaultUI {
               <circle cx="12" cy="16" r="1"></circle>
             </svg>
           </div>
-          <h2>Coffre-fort</h2>
-          <p class="vault-lock-subtitle">Sélectionnez un coffre et entrez votre mot de passe</p>
+          <h2>${t('vault.lockScreen.title')}</h2>
+          <p class="vault-lock-subtitle">${t('vault.lockScreen.subtitle')}</p>
 
-          <div class="vault-selector" id="vault-selector" role="listbox" aria-label="Sélection du coffre">
+          <div class="vault-selector" id="vault-selector" role="listbox" aria-label="Vault selection">
             <div class="vault-loading"><div class="vault-spinner"></div></div>
           </div>
 
           <form class="vault-unlock-form" id="unlock-form">
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="vault-password"
-                     placeholder="Mot de passe principal" autocomplete="current-password"
-                     aria-label="Mot de passe principal">
+                     placeholder="${t('vault.lockScreen.masterPassword')}" autocomplete="current-password"
+                     aria-label="${t('vault.lockScreen.masterPassword')}">
               <button type="button" class="vault-input-btn" id="toggle-password"
-                      title="Afficher/Masquer" aria-label="Afficher le mot de passe" aria-pressed="false">
+                      title="${t('vault.lockScreen.showHide')}" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -417,18 +428,18 @@ export class VaultUI {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
               </svg>
-              <span class="btn-text">Déverrouiller</span>
+              <span class="btn-text">${t('vault.lockScreen.unlock')}</span>
             </button>
             <div class="vault-unlock-progress" id="unlock-progress" hidden>
               <div class="vault-progress-bar"><div class="vault-progress-fill"></div></div>
-              <span class="vault-progress-text">Dérivation de la clé...</span>
+              <span class="vault-progress-text">${t('vault.lockScreen.derivingKey')}</span>
             </div>
           </form>
 
           <!-- Windows Hello Button (shown when available) -->
           <div class="vault-hello-section" id="hello-section" hidden>
             <div class="vault-hello-divider">
-              <span>ou</span>
+              <span>${t('vault.lockScreen.or')}</span>
             </div>
             <button type="button" class="vault-btn vault-btn-hello" id="btn-hello-unlock">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -448,14 +459,14 @@ export class VaultUI {
                 <line x1="12" y1="8" x2="12" y2="16"></line>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
               </svg>
-              Nouveau coffre
+              ${t('vault.lockScreen.newVault')}
             </button>
             <span class="vault-action-divider">|</span>
             <button type="button" class="vault-link-btn" id="btn-open-external">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
               </svg>
-              Ouvrir un fichier...
+              ${t('vault.lockScreen.openFile')}
             </button>
           </div>
         </div>
@@ -478,7 +489,7 @@ export class VaultUI {
       if (vaults.length === 0) {
         container.innerHTML = `
           <div class="vault-empty-small">
-            <p>Aucun coffre trouvé. Créez-en un pour commencer.</p>
+            <p>No vault found. Create one to get started.</p>
           </div>
         `;
         return;
@@ -487,7 +498,7 @@ export class VaultUI {
       container.innerHTML = `
         <div class="vault-list" role="listbox">
           ${vaults.map((v, i) => `
-            <div class="vault-list-item ${i === 0 ? 'selected' : ''}"
+            <div class="vault-list-item ${i === 0 ? 'selected' : ''} ${v.isMissing ? 'vault-missing' : ''}"
                  data-vault-id="${v.id}"
                  role="option"
                  aria-selected="${i === 0}"
@@ -500,8 +511,14 @@ export class VaultUI {
               </div>
               <div class="vault-list-info">
                 <div class="vault-list-name">${this.#escapeHtml(v.name || v.id.substring(0, 8))}</div>
-                <div class="vault-list-meta">${this.#formatDate(v.modifiedAt)}</div>
+                <div class="vault-list-meta">${v.isMissing ? '⚠️ Fichier introuvable' : this.#formatDate(v.modifiedAt)}</div>
               </div>
+              <button type="button" class="vault-list-forget" data-vault-id="${v.id}" title="Oublier ce coffre" aria-label="Oublier ce coffre">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
               <div class="vault-list-check" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3">
                   <polyline points="20 6 9 17 4 12"></polyline>
@@ -514,7 +531,11 @@ export class VaultUI {
 
       // Click & keyboard events
       container.querySelectorAll('.vault-list-item').forEach(item => {
-        item.addEventListener('click', () => this.#selectVaultItem(item, container));
+        item.addEventListener('click', (e) => {
+          // Don't select if clicking on forget button
+          if (e.target.closest('.vault-list-forget')) return;
+          this.#selectVaultItem(item, container);
+        });
         item.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -532,12 +553,31 @@ export class VaultUI {
         });
       });
 
+      // Forget button events
+      container.querySelectorAll('.vault-list-forget').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const vaultId = btn.dataset.vaultId;
+          const vaultName = btn.closest('.vault-list-item')?.querySelector('.vault-list-name')?.textContent || vaultId;
+
+          if (confirm(`Oublier le coffre "${vaultName}" ?\n\nLe fichier ne sera pas supprimé, mais le coffre sera retiré de la liste.`)) {
+            try {
+              await window.vault.unregister(vaultId);
+              this.#showToast('Coffre retiré de la liste', 'success');
+              this.#loadVaultList();
+            } catch (error) {
+              this.#showToast(error.message || 'Erreur', 'error');
+            }
+          }
+        });
+      });
+
       // Check Windows Hello for first vault
       if (vaults.length > 0) {
         this.#updateHelloSection(vaults[0].id);
       }
     } catch (error) {
-      container.innerHTML = `<div class="vault-error">Erreur de chargement des coffres</div>`;
+      container.innerHTML = `<div class="vault-error">Error loading vaults</div>`;
     }
   }
 
@@ -597,7 +637,7 @@ export class VaultUI {
       if (input && btn) {
         const isPassword = input.type === 'password';
         input.type = isPassword ? 'text' : 'password';
-        btn.setAttribute('aria-label', isPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
         btn.setAttribute('aria-pressed', String(isPassword));
       }
     });
@@ -609,11 +649,11 @@ export class VaultUI {
       const password = document.getElementById('vault-password')?.value;
 
       if (!selected) {
-        this.#showToast('Sélectionnez un coffre', 'warning');
+        this.#showToast(t('vault.messages.selectVault'), 'warning');
         return;
       }
       if (!password) {
-        this.#showToast('Entrez votre mot de passe', 'warning');
+        this.#showToast(t('vault.messages.enterPassword'), 'warning');
         document.getElementById('vault-password')?.focus();
         return;
       }
@@ -622,7 +662,7 @@ export class VaultUI {
       const progress = document.getElementById('unlock-progress');
 
       btn.disabled = true;
-      btn.querySelector('.btn-text').textContent = 'Déverrouillage...';
+      btn.querySelector('.btn-text').textContent = 'Unlocking...';
       if (progress) {
         progress.hidden = false;
         // Animate progress bar
@@ -635,11 +675,11 @@ export class VaultUI {
         await window.vault.unlock(selected.dataset.vaultId, password);
       } catch (error) {
         this.#showDetailedError(
-          error.message || 'Mot de passe incorrect',
-          'Vérifiez votre saisie et réessayez'
+          error.message || 'Incorrect password',
+          'Check your input and try again'
         );
         btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'Déverrouiller';
+        btn.querySelector('.btn-text').textContent = 'Unlock';
         if (progress) progress.hidden = true;
         document.getElementById('vault-password')?.select();
       }
@@ -655,20 +695,20 @@ export class VaultUI {
     document.getElementById('btn-hello-unlock')?.addEventListener('click', async () => {
       const selected = document.querySelector('.vault-list-item.selected');
       if (!selected) {
-        this.#showToast('Sélectionnez un coffre', 'warning');
+        this.#showToast(t('vault.messages.selectVault'), 'warning');
         return;
       }
 
       const btn = document.getElementById('btn-hello-unlock');
       const originalContent = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner"></span> Vérification...';
+      btn.innerHTML = '<span class="vault-spinner"></span> Verifying...';
 
       try {
         await window.vault.hello.unlock(selected.dataset.vaultId);
         // Success - vault:unlocked event will handle view switch
       } catch (error) {
-        this.#showToast(error.message || 'Échec Windows Hello', 'error');
+        this.#showToast(error.message || 'Windows Hello failed', 'error');
         btn.disabled = false;
         btn.innerHTML = originalContent;
       }
@@ -692,7 +732,7 @@ export class VaultUI {
 
         document.getElementById('external-vault-password')?.focus();
       } catch (error) {
-        this.#showToast(error.message || 'Erreur lors de la sélection du fichier', 'error');
+        this.#showToast(error.message || 'Error selecting file', 'error');
       }
     });
 
@@ -719,8 +759,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="create-vault-modal" role="dialog" aria-modal="true" aria-labelledby="create-vault-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="create-vault-title">Nouveau coffre</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="create-vault-title">New Vault</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -729,14 +769,14 @@ export class VaultUI {
           </div>
           <form class="vault-modal-body" id="create-vault-form">
             <div class="vault-form-group">
-              <label class="vault-label" for="new-vault-name">Nom du coffre <span class="required" aria-label="obligatoire">*</span></label>
-              <input type="text" class="vault-input" id="new-vault-name" placeholder="Mon coffre" required aria-describedby="vault-name-message">
+              <label class="vault-label" for="new-vault-name">Vault name <span class="required" aria-label="required">*</span></label>
+              <input type="text" class="vault-input" id="new-vault-name" placeholder="My Vault" required aria-describedby="vault-name-message">
               <div class="vault-field-message" id="vault-name-message" role="alert" aria-live="polite"></div>
             </div>
 
             <!-- Location selector -->
             <div class="vault-form-group">
-              <label class="vault-label">Emplacement</label>
+              <label class="vault-label">Location</label>
               <div class="vault-location-options">
                 <label class="vault-radio-option">
                   <input type="radio" name="vault-location-type" value="default" checked>
@@ -745,7 +785,7 @@ export class VaultUI {
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                       <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
-                    Dossier par défaut
+                    Default folder
                   </span>
                 </label>
                 <label class="vault-radio-option">
@@ -754,7 +794,7 @@ export class VaultUI {
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    Choisir un emplacement...
+                    Choose location...
                   </span>
                 </label>
               </div>
@@ -763,18 +803,18 @@ export class VaultUI {
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                   </svg>
-                  Parcourir...
+                  Browse...
                 </button>
                 <div class="vault-location-path" id="create-vault-location" hidden></div>
               </div>
             </div>
 
             <div class="vault-form-group">
-              <label class="vault-label" for="new-vault-password">Mot de passe principal <span class="required" aria-label="obligatoire">*</span></label>
+              <label class="vault-label" for="new-vault-password">Master password <span class="required" aria-label="required">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="new-vault-password"
-                       placeholder="Minimum 12 caractères" required minlength="12" aria-describedby="vault-password-message">
-                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="Afficher le mot de passe" aria-pressed="false">
+                       placeholder="Minimum 12 characters" required minlength="12" aria-describedby="vault-password-message">
+                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="Show password" aria-pressed="false">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -785,8 +825,8 @@ export class VaultUI {
               <div class="vault-field-message" id="vault-password-message" role="alert" aria-live="polite"></div>
             </div>
             <div class="vault-form-group">
-              <label class="vault-label" for="new-vault-confirm">Confirmer le mot de passe <span class="required" aria-label="obligatoire">*</span></label>
-              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="Retapez le mot de passe" required aria-describedby="vault-confirm-message">
+              <label class="vault-label" for="new-vault-confirm">Confirm password <span class="required" aria-label="required">*</span></label>
+              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="Re-enter password" required aria-describedby="vault-confirm-message">
               <div class="vault-field-message" id="vault-confirm-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -801,15 +841,15 @@ export class VaultUI {
                     <circle cx="15.5" cy="10" r="1.5"/>
                     <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
                   </svg>
-                  Activer Windows Hello
+                  Enable Windows Hello
                 </span>
-                <span class="vault-checkbox-hint">Déverrouillez avec votre visage ou empreinte</span>
+                <span class="vault-checkbox-hint">Unlock with your face or fingerprint</span>
               </label>
             </div>
 
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Créer le coffre</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+              <button type="submit" class="vault-btn vault-btn-primary">Create Vault</button>
             </div>
           </form>
         </div>
@@ -852,7 +892,7 @@ export class VaultUI {
     // Browse button for custom location
     document.getElementById('btn-choose-location')?.addEventListener('click', async () => {
       const nameInput = document.getElementById('new-vault-name');
-      const defaultName = nameInput?.value?.trim() || 'Mon coffre';
+      const defaultName = nameInput?.value?.trim() || 'My Vault';
 
       try {
         const result = await window.vault.showSaveDialog(defaultName);
@@ -865,7 +905,7 @@ export class VaultUI {
           }
         }
       } catch (error) {
-        this.#showToast('Erreur lors de la sélection', 'error');
+        this.#showToast(t('vault.messages.selectionError'), 'error');
       }
     });
 
@@ -881,7 +921,7 @@ export class VaultUI {
           const isPassword = input.type === 'password';
           input.type = isPassword ? 'text' : 'password';
           btn.setAttribute('aria-pressed', String(isPassword));
-          btn.setAttribute('aria-label', isPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+          btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
         }
       });
     });
@@ -894,14 +934,14 @@ export class VaultUI {
         required: true,
         minLength: 1,
         maxLength: 50,
-        requiredMessage: 'Le nom du coffre est obligatoire',
-        maxLengthMessage: 'Maximum 50 caractères'
+        requiredMessage: 'Vault name is required',
+        maxLengthMessage: 'Maximum 50 characters'
       });
     });
     vaultNameInput?.addEventListener('blur', () => {
       this.#validateField(vaultNameInput, vaultNameMessage, {
         required: true,
-        requiredMessage: 'Le nom du coffre est obligatoire'
+        requiredMessage: 'Vault name is required'
       });
     });
 
@@ -924,8 +964,8 @@ export class VaultUI {
       this.#validateField(vaultPasswordInput, vaultPasswordMessage, {
         required: true,
         minLength: 12,
-        requiredMessage: 'Le mot de passe est obligatoire',
-        minLengthMessage: 'Minimum 12 caractères requis'
+        requiredMessage: 'Password is required',
+        minLengthMessage: 'Minimum 12 characters required'
       });
       // Re-validate confirm if has value
       const confirmInput = document.getElementById('new-vault-confirm');
@@ -954,17 +994,17 @@ export class VaultUI {
       const enableHello = document.getElementById('new-vault-hello')?.checked;
 
       if (password !== confirm) {
-        this.#showToast('Les mots de passe ne correspondent pas', 'error');
+        this.#showToast(t('vault.messages.passwordsNoMatch'), 'error');
         return;
       }
       if (password.length < 12) {
-        this.#showToast('Minimum 12 caractères requis', 'error');
+        this.#showToast(t('vault.messages.minCharactersRequired', { count: 12 }), 'error');
         return;
       }
 
       const btn = e.target.querySelector('button[type="submit"]');
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner-small"></span> Création...';
+      btn.innerHTML = '<span class="vault-spinner-small"></span> Creating...';
 
       try {
         // Use custom path if set (external vault)
@@ -975,22 +1015,22 @@ export class VaultUI {
         if (enableHello && result.vaultId) {
           try {
             await window.vault.hello.enable(result.vaultId, password);
-            this.#showToast('Coffre créé avec Windows Hello activé', 'success');
+            this.#showToast(t('vault.messages.vaultCreatedWithHello'), 'success');
           } catch (helloError) {
             console.error('Windows Hello enable failed:', helloError);
-            this.#showToast('Coffre créé (Windows Hello non activé)', 'warning');
+            this.#showToast(t('vault.messages.vaultCreatedWithoutHello'), 'warning');
           }
         } else {
-          this.#showToast(customPath ? `Coffre créé à ${customPath}` : 'Coffre créé avec succès', 'success');
+          this.#showToast(customPath ? `Vault created at ${customPath}` : 'Vault created successfully', 'success');
         }
 
         this.#closeModal('create-vault-modal');
         this.#pendingExternalPath = null; // Reset
         this.#loadVaultList();
       } catch (error) {
-        this.#showToast(error.message || 'Erreur de création', 'error');
+        this.#showToast(error.message || 'Creation error', 'error');
         btn.disabled = false;
-        btn.textContent = 'Créer le coffre';
+        btn.textContent = 'Create Vault';
       }
     });
 
@@ -1034,8 +1074,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="open-external-modal" role="dialog" aria-modal="true" aria-labelledby="open-external-title">
         <div class="vault-modal vault-modal-sm">
           <div class="vault-modal-header">
-            <h3 id="open-external-title">Ouvrir un coffre</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="open-external-title">Open Vault</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1044,15 +1084,15 @@ export class VaultUI {
           </div>
           <form class="vault-modal-body" id="open-external-form">
             <div class="vault-form-group">
-              <label class="vault-label">Fichier</label>
+              <label class="vault-label">File</label>
               <div class="vault-location-path" id="external-vault-path"></div>
             </div>
             <div class="vault-form-group">
-              <label class="vault-label" for="external-vault-password">Mot de passe principal <span class="required">*</span></label>
+              <label class="vault-label" for="external-vault-password">Master password <span class="required">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="external-vault-password"
-                       placeholder="Mot de passe du coffre" required autocomplete="current-password">
-                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="external-vault-password" aria-label="Afficher le mot de passe">
+                       placeholder="Vault password" required autocomplete="current-password">
+                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="external-vault-password" aria-label="Show password">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -1061,8 +1101,8 @@ export class VaultUI {
               </div>
             </div>
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Ouvrir</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+              <button type="submit" class="vault-btn vault-btn-primary">Open</button>
             </div>
           </form>
         </div>
@@ -1101,12 +1141,12 @@ export class VaultUI {
       const password = document.getElementById('external-vault-password')?.value;
 
       if (!password) {
-        this.#showToast('Entrez le mot de passe', 'warning');
+        this.#showToast(t('vault.messages.enterPassword'), 'warning');
         return;
       }
 
       if (!this.#pendingExternalPath) {
-        this.#showToast('Aucun fichier sélectionné', 'error');
+        this.#showToast(t('vault.messages.noFileSelected'), 'error');
         return;
       }
 
@@ -1118,11 +1158,11 @@ export class VaultUI {
         await window.vault.openFromPath(this.#pendingExternalPath, password);
         this.#closeModal('open-external-modal');
         this.#pendingExternalPath = null;
-        this.#showToast('Coffre ouvert avec succès', 'success');
+        this.#showToast(t('vault.messages.vaultOpenedSuccess'), 'success');
       } catch (error) {
-        this.#showToast(error.message || 'Mot de passe incorrect ou fichier invalide', 'error');
+        this.#showToast(error.message || 'Incorrect password or invalid file', 'error');
         btn.disabled = false;
-        btn.textContent = 'Ouvrir';
+        btn.textContent = 'Open';
         document.getElementById('external-vault-password')?.select();
       }
     });
@@ -1134,9 +1174,9 @@ export class VaultUI {
     const filteredEntries = this.#getFilteredEntries();
 
     this.#container.innerHTML = `
-      <div class="vault-app" role="application" aria-label="Gestionnaire de mots de passe">
+      <div class="vault-app" role="application" aria-label="Password Manager">
         <!-- Sidebar -->
-        <aside class="vault-sidebar" role="navigation" aria-label="Navigation du coffre">
+        <aside class="vault-sidebar" role="navigation" aria-label="Vault navigation">
           <!-- Vault Selector -->
           <div class="vault-selector-header">
             <button class="vault-current" id="vault-switcher" aria-haspopup="true" aria-expanded="false">
@@ -1147,8 +1187,8 @@ export class VaultUI {
                 </svg>
               </div>
               <div class="vault-current-info">
-                <span class="vault-current-name">${this.#escapeHtml(this.#vaultMetadata?.name || 'Coffre')}</span>
-                <span class="vault-current-meta">${this.#entries.length} entrée(s)</span>
+                <span class="vault-current-name">${this.#escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
+                <span class="vault-current-meta">${this.#entries.length} entry(ies)</span>
               </div>
               <svg class="vault-current-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6 9 12 15 18 9"></polyline>
@@ -1156,7 +1196,7 @@ export class VaultUI {
             </button>
             <div class="vault-switcher-dropdown" id="vault-switcher-dropdown" hidden>
               <div class="vault-switcher-section">
-                <div class="vault-switcher-label">Coffre actuel</div>
+                <div class="vault-switcher-label">Current vault</div>
                 <div class="vault-switcher-item current">
                   <div class="vault-switcher-icon" style="background: ${this.#getVaultColor()}">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -1164,7 +1204,7 @@ export class VaultUI {
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                   </div>
-                  <span class="vault-switcher-name">${this.#escapeHtml(this.#vaultMetadata?.name || 'Coffre')}</span>
+                  <span class="vault-switcher-name">${this.#escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
                   <svg class="vault-switcher-check" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
@@ -1180,7 +1220,7 @@ export class VaultUI {
                     <line x1="15" y1="15" x2="21" y2="21"></line>
                     <line x1="4" y1="4" x2="9" y2="9"></line>
                   </svg>
-                  <span>Changer de coffre</span>
+                  <span>${t('vault.sidebar.switchVault')}</span>
                 </button>
                 <button class="vault-switcher-action" id="btn-create-new-vault">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -1188,7 +1228,7 @@ export class VaultUI {
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
                   </svg>
-                  <span>Nouveau coffre</span>
+                  <span>${t('vault.sidebar.newVault')}</span>
                 </button>
               </div>
             </div>
@@ -1201,20 +1241,20 @@ export class VaultUI {
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <span id="lock-countdown">${this.#formatTime(this.#autoLockTimeout)}</span>
-              <button class="vault-timer-settings" id="timer-settings" title="Configurer le délai" aria-label="Configurer le délai de verrouillage">
+              <button class="vault-timer-settings" id="timer-settings" title="Configure delay" aria-label="Configure lock delay">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
               </button>
             </div>
-            <button class="vault-icon-btn" id="btn-lock" data-tooltip="Verrouiller (Ctrl+L)" data-tooltip-pos="bottom" aria-label="Verrouiller le coffre">
+            <button class="vault-icon-btn" id="btn-lock" data-tooltip="Lock (Ctrl+L)" data-tooltip-pos="bottom" aria-label="Lock vault">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </button>
-            <button class="vault-icon-btn vault-theme-toggle" id="theme-toggle" data-tooltip="Changer de thème" data-tooltip-pos="bottom" aria-label="Basculer thème clair/sombre" aria-pressed="${this.#theme === 'light'}">
+            <button class="vault-icon-btn vault-theme-toggle" id="theme-toggle" data-tooltip="Switch theme" data-tooltip-pos="bottom" aria-label="Toggle light/dark theme" aria-pressed="${this.#theme === 'light'}">
               <svg class="theme-icon-dark" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
               </svg>
@@ -1230,7 +1270,7 @@ export class VaultUI {
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
               </svg>
             </button>
-            <button class="vault-icon-btn vault-hello-settings" id="hello-settings" data-tooltip="Windows Hello" data-tooltip-pos="bottom" aria-label="Configurer Windows Hello" hidden>
+            <button class="vault-icon-btn vault-hello-settings" id="hello-settings" data-tooltip="Windows Hello" data-tooltip-pos="bottom" aria-label="Configure Windows Hello" hidden>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                 <circle cx="8.5" cy="10" r="1.5"/>
@@ -1239,12 +1279,12 @@ export class VaultUI {
               </svg>
             </button>
             </button>
-            <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="Synchronisation Cloud" data-tooltip-pos="bottom" aria-label="Configurer la synchronisation">
+            <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="Cloud Sync" data-tooltip-pos="bottom" aria-label="Configure cloud sync">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
               </svg>
             </button>
-            <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="Mode Contrainte" data-tooltip-pos="bottom" aria-label="Configurer le Mode Contrainte">
+            <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="Duress Mode" data-tooltip-pos="bottom" aria-label="Configure duress mode">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
@@ -1257,10 +1297,10 @@ export class VaultUI {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input type="search" class="vault-search-input" id="vault-search"
-                   placeholder="Rechercher... (Ctrl+F)" value="${this.#escapeHtml(this.#searchQuery)}"
-                   aria-label="Rechercher dans le coffre">
+                   placeholder="Search... (Ctrl+F)" value="${this.#escapeHtml(this.#searchQuery)}"
+                   aria-label="Search vault">
             <button class="vault-filter-btn ${this.#hasActiveFilters() ? 'active' : ''}" id="filter-btn"
-                    title="Filtres avancés" aria-haspopup="true" aria-expanded="false">
+                    title="Advanced filters" aria-haspopup="true" aria-expanded="false">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
@@ -1280,54 +1320,54 @@ export class VaultUI {
               </div>
             </div>
             <div class="vault-filter-section">
-              <label class="vault-filter-label">Force du mot de passe</label>
+              <label class="vault-filter-label">Password strength</label>
               <div class="vault-filter-chips" id="filter-strength">
-                <button class="vault-chip ${!this.#searchFilters.strength ? 'active' : ''}" data-filter-strength="">Tous</button>
-                <button class="vault-chip ${this.#searchFilters.strength === 'weak' ? 'active' : ''}" data-filter-strength="weak" aria-label="Force faible"><span aria-hidden="true">🔴</span> Faible</button>
-                <button class="vault-chip ${this.#searchFilters.strength === 'medium' ? 'active' : ''}" data-filter-strength="medium" aria-label="Force moyenne"><span aria-hidden="true">🟡</span> Moyen</button>
-                <button class="vault-chip ${this.#searchFilters.strength === 'strong' ? 'active' : ''}" data-filter-strength="strong" aria-label="Force élevée"><span aria-hidden="true">🟢</span> Fort</button>
+                <button class="vault-chip ${!this.#searchFilters.strength ? 'active' : ''}" data-filter-strength="">All</button>
+                <button class="vault-chip ${this.#searchFilters.strength === 'weak' ? 'active' : ''}" data-filter-strength="weak" aria-label="Low strength"><span aria-hidden="true">🔴</span> Weak</button>
+                <button class="vault-chip ${this.#searchFilters.strength === 'medium' ? 'active' : ''}" data-filter-strength="medium" aria-label="Medium strength"><span aria-hidden="true">🟡</span> Medium</button>
+                <button class="vault-chip ${this.#searchFilters.strength === 'strong' ? 'active' : ''}" data-filter-strength="strong" aria-label="High strength"><span aria-hidden="true">🟢</span> Strong</button>
               </div>
             </div>
             <div class="vault-filter-section">
-              <label class="vault-filter-label">Âge du mot de passe</label>
+              <label class="vault-filter-label">${t('vault.detail.passwordAge')}</label>
               <div class="vault-filter-chips" id="filter-age">
-                <button class="vault-chip ${!this.#searchFilters.age ? 'active' : ''}" data-filter-age="">Tous</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'recent' ? 'active' : ''}" data-filter-age="recent">Récent (&lt;30j)</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'old' ? 'active' : ''}" data-filter-age="old">Ancien (&gt;180j)</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'expiring' ? 'active' : ''}" data-filter-age="expiring" aria-label="Expire bientôt"><span aria-hidden="true">⏰</span> Expire bientôt</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'expired' ? 'active' : ''}" data-filter-age="expired" aria-label="Expiré"><span aria-hidden="true">⚠️</span> Expiré</button>
+                <button class="vault-chip ${!this.#searchFilters.age ? 'active' : ''}" data-filter-age="">All</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'recent' ? 'active' : ''}" data-filter-age="recent">Recent (&lt;30d)</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'old' ? 'active' : ''}" data-filter-age="old">Old (&gt;180d)</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'expiring' ? 'active' : ''}" data-filter-age="expiring" aria-label="Expiring soon"><span aria-hidden="true">⏰</span> Expiring</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'expired' ? 'active' : ''}" data-filter-age="expired" aria-label="Expired"><span aria-hidden="true">⚠️</span> Expired</button>
               </div>
             </div>
             <div class="vault-filter-actions">
-              <button class="vault-btn vault-btn-sm vault-btn-secondary" id="clear-filters">Réinitialiser</button>
+              <button class="vault-btn vault-btn-sm vault-btn-secondary" id="clear-filters">Reset</button>
             </div>
           </div>
 
-          <nav class="vault-nav" aria-label="Catégories">
+          <nav class="vault-nav" aria-label="Categories">
             <div class="vault-nav-section">
-              <div class="vault-nav-title">Catégories</div>
-              ${CATEGORIES.map(cat => `
+              <div class="vault-nav-title">Categories</div>
+              ${getCategories().map(cat => `
                 <button class="vault-nav-item ${this.#selectedCategory === cat.id ? 'active' : ''}"
                         data-category="${cat.id}"
                         aria-current="${this.#selectedCategory === cat.id ? 'true' : 'false'}">
                   <span class="vault-nav-icon" aria-hidden="true">${cat.icon}</span>
                   <span class="vault-nav-label">${cat.label}</span>
-                  <span class="vault-nav-count" aria-label="${this.#getCategoryCount(cat.id)} entrées">${this.#getCategoryCount(cat.id)}</span>
+                  <span class="vault-nav-count" aria-label="${this.#getCategoryCount(cat.id)} entries">${this.#getCategoryCount(cat.id)}</span>
                 </button>
               `).join('')}
             </div>
 
             <div class="vault-nav-section">
               <div class="vault-nav-title vault-nav-title-with-action">
-                <span>Dossiers</span>
-                <button class="vault-nav-add-btn" id="btn-add-folder" title="Nouveau dossier" aria-label="Créer un dossier">
+                <span>Folders</span>
+                <button class="vault-nav-add-btn" id="btn-add-folder" title="New folder" aria-label="Create folder">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
                 </button>
               </div>
-              <div class="vault-folder-tree" role="tree" aria-label="Dossiers">
+              <div class="vault-folder-tree" role="tree" aria-label="Folders">
                 ${this.#renderFolderTree()}
               </div>
             </div>
@@ -1335,7 +1375,7 @@ export class VaultUI {
             <div class="vault-nav-section">
               <div class="vault-nav-title vault-nav-title-with-action">
                 <span>Tags</span>
-                <button class="vault-nav-add-btn" id="btn-add-tag" title="Nouveau tag" aria-label="Créer un tag">
+                <button class="vault-nav-add-btn" id="btn-add-tag" title="New tag" aria-label="Create tag">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1349,20 +1389,20 @@ export class VaultUI {
           <div class="vault-sidebar-footer">
             <div class="vault-sync-status" id="vault-sync-status" hidden>
                <span class="vault-sync-icon" id="vault-sync-icon"></span>
-               <span class="vault-sync-text" id="vault-sync-text">Pret</span>
+               <span class="vault-sync-text" id="vault-sync-text">Ready</span>
             </div>
-            <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyser la santé des mots de passe">
+            <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyze password health">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
-              Santé des mots de passe
+              ${t('vault.sidebar.passwordHealth')}
             </button>
             <button class="vault-btn vault-btn-primary vault-btn-full" id="btn-add-entry">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              Nouvelle entrée
+              ${t('vault.sidebar.newEntry')}
             </button>
           </div>
         </aside>
@@ -1372,7 +1412,7 @@ export class VaultUI {
           <div class="vault-list-header">
             <div class="vault-list-header-top">
               ${this.#renderBreadcrumb()}
-              <span class="vault-list-count">${filteredEntries.length} entrée(s)</span>
+              <span class="vault-list-count">${filteredEntries.length} entry(ies)</span>
             </div>
             <div class="vault-list-toolbar">
               <div class="vault-sort-dropdown">
@@ -1382,10 +1422,10 @@ export class VaultUI {
                     <line x1="4" y1="12" x2="16" y2="12"></line>
                     <line x1="4" y1="18" x2="12" y2="18"></line>
                   </svg>
-                  <span>${SORT_OPTIONS.find(s => s.id === this.#sortBy)?.label || 'Trier'}</span>
+                  <span>${getSortOptions().find(s => s.id === this.#sortBy)?.label || 'Sort'}</span>
                 </button>
                 <div class="vault-sort-menu" id="sort-menu" role="listbox" hidden>
-                  ${SORT_OPTIONS.map(opt => `
+                  ${getSortOptions().map(opt => `
                     <button class="vault-sort-option ${this.#sortBy === opt.id ? 'active' : ''}"
                             data-sort="${opt.id}" role="option" aria-selected="${this.#sortBy === opt.id}">
                       <span class="sort-icon">${opt.icon}</span>
@@ -1395,8 +1435,8 @@ export class VaultUI {
                 </div>
               </div>
               <button class="vault-view-toggle ${this.#viewMode === 'compact' ? 'compact' : ''}" id="view-toggle"
-                      title="${this.#viewMode === 'compact' ? 'Vue confortable' : 'Vue compacte'}"
-                      aria-label="Basculer la densité d'affichage"
+                      title="${this.#viewMode === 'compact' ? 'Comfortable view' : 'Compact view'}"
+                      aria-label="Toggle display density"
                       aria-pressed="${this.#viewMode === 'compact'}">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   ${this.#viewMode === 'compact' ? `
@@ -1414,27 +1454,27 @@ export class VaultUI {
                   `}
                 </svg>
               </button>
-              <button class="vault-help-btn" id="shortcuts-help" title="Raccourcis clavier (?)" aria-label="Afficher les raccourcis clavier">
+              <button class="vault-help-btn" id="shortcuts-help" title="Keyboard shortcuts (?)" aria-label="Show keyboard shortcuts">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                   <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
               </button>
-              <button class="vault-icon-btn vault-health-btn" id="health-dashboard" data-tooltip="Santé des mots de passe" data-tooltip-pos="bottom" aria-label="Tableau de bord santé">
+              <button class="vault-icon-btn vault-health-btn" id="health-dashboard" data-tooltip="Password Health" data-tooltip-pos="bottom" aria-label="Health dashboard">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
-              <button class="vault-icon-btn" id="btn-export" data-tooltip="Exporter" data-tooltip-pos="bottom" aria-label="Exporter les entrées">
+              <button class="vault-icon-btn" id="btn-export" data-tooltip="Export" data-tooltip-pos="bottom" aria-label="Export entries">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
               </button>
-              <button class="vault-icon-btn" id="btn-import" data-tooltip="Importer" data-tooltip-pos="bottom" aria-label="Importer des entrées">
+              <button class="vault-icon-btn" id="btn-import" data-tooltip="Import" data-tooltip-pos="bottom" aria-label="Import entries">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
@@ -1442,7 +1482,7 @@ export class VaultUI {
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
-              <button class="vault-icon-btn vault-save-btn" id="btn-save-vault" data-tooltip="Sauvegarder sous..." data-tooltip-pos="bottom" aria-label="Sauvegarder le coffre">
+              <button class="vault-icon-btn vault-save-btn" id="btn-save-vault" data-tooltip="Save as..." data-tooltip-pos="bottom" aria-label="Save vault">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -1464,46 +1504,46 @@ export class VaultUI {
             <label class="vault-checkbox-wrapper select-all">
               <input type="checkbox" class="vault-checkbox" id="select-all"
                      ${this.#selectedEntries.size === filteredEntries.length && filteredEntries.length > 0 ? 'checked' : ''}
-                     aria-label="Tout sélectionner">
+                     aria-label="Select all">
               <span class="vault-checkbox-mark"></span>
             </label>
-            <span class="vault-bulk-count">${this.#selectedEntries.size} sélectionné(s)</span>
+            <span class="vault-bulk-count">${this.#selectedEntries.size} selected</span>
             <div class="vault-bulk-buttons">
-              <button class="vault-bulk-btn" id="bulk-move" title="Déplacer vers un dossier">
+              <button class="vault-bulk-btn" id="bulk-move" title="Move to folder">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
-                Déplacer
+                Move
               </button>
-              <button class="vault-bulk-btn" id="bulk-export" title="Exporter la sélection">
+              <button class="vault-bulk-btn" id="bulk-export" title="Export selection">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Exporter
+                Export
               </button>
-              <button class="vault-bulk-btn" id="bulk-tag" title="Gérer les tags">
+              <button class="vault-bulk-btn" id="bulk-tag" title="Manage tags">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                   <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
                 Tags
               </button>
-              <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="Supprimer la sélection">
+              <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="Delete selection">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                Supprimer
+                Delete
               </button>
-              <button class="vault-bulk-btn" id="bulk-cancel" title="Annuler la sélection">
-                Annuler
+              <button class="vault-bulk-btn" id="bulk-cancel" title="Cancel selection">
+                Cancel
               </button>
             </div>
           </div>
 
-          <div class="vault-list-content ${this.#viewMode}" id="vault-entries" role="listbox" aria-label="Liste des entrées">
+          <div class="vault-list-content ${this.#viewMode}" id="vault-entries" role="listbox" aria-label="Entry list">
             ${filteredEntries.length === 0
         ? this.#renderEmptyState()
         : filteredEntries.map((entry, idx) => this.#renderEntryRow(entry, idx)).join('')
@@ -1513,7 +1553,7 @@ export class VaultUI {
 
         <!-- Detail Panel -->
         <aside class="vault-detail-panel ${this.#selectedEntry ? '' : 'empty'}" id="detail-panel"
-               role="complementary" aria-label="Détails de l'entrée">
+               role="complementary" aria-label="Entry details">
           ${this.#selectedEntry ? this.#renderEntryDetail() : this.#renderNoSelection()}
         </aside>
       </div>
@@ -1594,7 +1634,7 @@ export class VaultUI {
    */
   #renderFolderTree() {
     if (this.#folders.length === 0) {
-      return '<div class="vault-nav-empty">Aucun dossier</div>';
+      return '<div class="vault-nav-empty">No folders</div>';
     }
 
     const tree = this.#buildFolderTree();
@@ -1617,7 +1657,7 @@ export class VaultUI {
         <button class="vault-folder-toggle ${isExpanded ? 'expanded' : ''}"
                 data-folder-toggle="${node.id}"
                 aria-expanded="${isExpanded}"
-                aria-label="${isExpanded ? 'Réduire' : 'Développer'} ${node.name}">
+                aria-label="${isExpanded ? 'Collapse' : 'Expand'} ${node.name}">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
@@ -1636,7 +1676,7 @@ export class VaultUI {
             ${expandIcon}
             <span class="vault-nav-icon vault-folder-color" style="${folderColor ? `color: ${folderColor}` : ''}" aria-hidden="true">${folderIcon}</span>
             <span class="vault-nav-label">${this.#escapeHtml(node.name)}</span>
-            <span class="vault-nav-count" title="${node.entryCount} dans ce dossier, ${node.totalCount} au total">${node.totalCount}</span>
+            <span class="vault-nav-count" title="${node.entryCount} in this folder, ${node.totalCount} total">${node.totalCount}</span>
           </button>
       `;
 
@@ -1746,7 +1786,7 @@ export class VaultUI {
           <line x1="12" y1="11" x2="12" y2="17"></line>
           <line x1="9" y1="14" x2="15" y2="14"></line>
         </svg>
-        Nouveau sous-dossier
+        New subfolder
       </button>
       <button class="vault-ctx-item" data-action="color">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -1764,7 +1804,7 @@ export class VaultUI {
           <polyline points="3 6 5 6 21 6"></polyline>
           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
         </svg>
-        Supprimer
+        Delete
       </button>
     `;
 
@@ -1821,14 +1861,14 @@ export class VaultUI {
     const folder = this.#folders.find(f => f.id === folderId);
     if (!folder) return;
 
-    const newName = prompt('Nouveau nom du dossier:', folder.name);
+    const newName = prompt('New folder name:', folder.name);
     if (newName && newName.trim() && newName !== folder.name) {
       window.vault.folders.update(folderId, { name: newName.trim() })
         .then(() => {
-          this.#showToast('Dossier renommé', 'success');
+          this.#showToast(t('vault.messages.folderRenamed'), 'success');
           this.#loadData().then(() => this.#render());
         })
-        .catch(e => this.#showToast('Erreur: ' + e.message, 'error'));
+        .catch(e => this.#showToast('Error: ' + e.message, 'error'));
     }
   }
 
@@ -1836,16 +1876,16 @@ export class VaultUI {
    * Show modal to add a subfolder
    */
   #showAddSubfolderModal(parentId) {
-    const name = prompt('Nom du nouveau sous-dossier:');
+    const name = prompt('New subfolder name:');
     if (name && name.trim()) {
       window.vault.folders.add(name.trim(), parentId)
         .then(() => {
           // Auto-expand the parent
           this.#expandedFolders.add(parentId);
-          this.#showToast('Sous-dossier créé', 'success');
+          this.#showToast(t('vault.messages.subfolderCreated'), 'success');
           this.#loadData().then(() => this.#render());
         })
-        .catch(e => this.#showToast('Erreur: ' + e.message, 'error'));
+        .catch(e => this.#showToast('Error: ' + e.message, 'error'));
     }
   }
 
@@ -1858,8 +1898,8 @@ export class VaultUI {
 
     const entryCount = this.#entries.filter(e => e.folderId === folderId).length;
     const message = entryCount > 0
-      ? `Supprimer le dossier "${folder.name}" et déplacer ses ${entryCount} entrées à la racine ?`
-      : `Supprimer le dossier "${folder.name}" ?`;
+      ? `Delete folder "${folder.name}" and move its ${entryCount} entries to root?`
+      : `Delete folder "${folder.name}"?`;
 
     if (confirm(message)) {
       try {
@@ -1867,38 +1907,38 @@ export class VaultUI {
         if (this.#selectedFolder === folderId) {
           this.#selectedFolder = null;
         }
-        this.#showToast('Dossier supprimé', 'success');
+        this.#showToast(t('vault.messages.folderDeleted'), 'success');
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast('Erreur: ' + e.message, 'error');
+        this.#showToast('Error: ' + e.message, 'error');
       }
     }
   }
 
   #renderBreadcrumb() {
-    let label = 'Tous les éléments';
+    let label = t('vault.sidebar.allItems');
 
     if (this.#selectedTag) {
       const tag = this.#tags.find(t => t.id === this.#selectedTag);
       label = tag ? `🏷️ ${tag.name}` : 'Tag';
     } else if (this.#selectedFolder) {
       const folder = this.#folders.find(f => f.id === this.#selectedFolder);
-      label = folder ? folder.name : 'Dossier';
+      label = folder ? folder.name : 'Folder';
     } else if (this.#selectedCategory !== 'all') {
-      const cat = CATEGORIES.find(c => c.id === this.#selectedCategory);
-      label = cat?.label || 'Catégorie';
+      const cat = getCategories().find(c => c.id === this.#selectedCategory);
+      label = cat?.label || 'Category';
     }
 
     return `
-      <nav class="vault-breadcrumb" aria-label="Fil d'Ariane">
+      <nav class="vault-breadcrumb" aria-label="Breadcrumb">
         <span class="vault-breadcrumb-item">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          Coffre
-        </span>
+          Vault
+</span>
         <span class="vault-breadcrumb-separator" aria-hidden="true">›</span>
         <span class="vault-breadcrumb-item current">${this.#escapeHtml(label)}</span>
       </nav>
@@ -1906,7 +1946,7 @@ export class VaultUI {
   }
 
   #renderEntryRow(entry, index) {
-    const type = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
+    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
     const subtitle = entry.data?.username || entry.data?.url || type.label;
     const isSelected = this.#selectedEntry?.id === entry.id;
     const isMultiSelected = this.#selectedEntries.has(entry.id);
@@ -1928,15 +1968,15 @@ export class VaultUI {
            aria-selected="${isSelected || isMultiSelected}"
            tabindex="${isSelected ? 0 : -1}"
            draggable="true">
-        <label class="vault-checkbox-wrapper" title="Sélectionner">
+        <label class="vault-checkbox-wrapper" title="Select">
           <input type="checkbox" class="vault-checkbox" data-action="multi-select"
-                 ${isMultiSelected ? 'checked' : ''} aria-label="Sélectionner ${this.#escapeHtml(entry.title)}">
+                 ${isMultiSelected ? 'checked' : ''} aria-label="Select ${this.#escapeHtml(entry.title)}">
           <span class="vault-checkbox-mark"></span>
         </label>
         <button class="vault-fav-toggle ${isFavorite ? 'active' : ''}"
                 data-action="toggle-favorite"
-                title="${isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
-                aria-label="${isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+                title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
+                aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
                 aria-pressed="${isFavorite}">
           ${isFavorite ? '★' : '☆'}
         </button>
@@ -1945,19 +1985,19 @@ export class VaultUI {
         </div>
         <div class="vault-entry-content">
           <div class="vault-entry-title">
-            ${isPinned ? '<span class="vault-pin-badge" role="img" aria-label="Épinglé"><span aria-hidden="true">📌</span></span>' : ''}
+            ${isPinned ? '<span class="vault-pin-badge" role="img" aria-label="Pinned"><span aria-hidden="true">📌</span></span>' : ''}
             ${this.#escapeHtml(entry.title)}
-            ${strength ? `<span class="vault-strength-dot ${strength}" role="img" aria-label="Force du mot de passe: ${strength === 'strong' ? 'Fort' : strength === 'medium' ? 'Moyen' : 'Faible'}" title="Force: ${strength === 'strong' ? 'Fort' : strength === 'medium' ? 'Moyen' : 'Faible'}"></span>` : ''}
-            ${isDuplicate ? '<span class="vault-duplicate-badge" role="img" aria-label="Mot de passe réutilisé" title="Mot de passe réutilisé"><span aria-hidden="true">🔁</span></span>' : ''}
+            ${strength ? `<span class="vault-strength-dot ${strength}" role="img" aria-label="Password strength: ${strength === 'strong' ? 'Strong' : strength === 'medium' ? 'Medium' : 'Weak'}" title="Strength: ${strength === 'strong' ? 'Strong' : strength === 'medium' ? 'Medium' : 'Weak'}"></span>` : ''}
+            ${isDuplicate ? '<span class="vault-duplicate-badge" role="img" aria-label="Reused password" title="Reused password"><span aria-hidden="true">🔁</span></span>' : ''}
             ${expiryStatus.badge}
           </div>
           <div class="vault-entry-subtitle">${this.#escapeHtml(subtitle)}</div>
           ${this.#renderTagsInRow(entry)}
         </div>
-        <div class="vault-entry-actions" role="group" aria-label="Actions rapides">
+        <div class="vault-entry-actions" role="group" aria-label="Quick actions">
           ${entry.type === 'login' && entry.data?.username ? `
             <button class="vault-quick-btn copy-user" data-action="copy-username"
-                    title="Copier l'identifiant" aria-label="Copier l'identifiant">
+                    title="${t('vault.actions.copyUsername')}" aria-label="${t('vault.actions.copyUsername')}">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
@@ -1966,7 +2006,7 @@ export class VaultUI {
           ` : ''}
           ${entry.type === 'login' && entry.data?.password ? `
             <button class="vault-quick-btn copy-pass" data-action="copy-password"
-                    title="Copier le mot de passe" aria-label="Copier le mot de passe">
+                    title="${t('vault.actions.copyPassword')}" aria-label="${t('vault.actions.copyPassword')}">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -1975,7 +2015,7 @@ export class VaultUI {
           ` : ''}
           ${entry.data?.url ? `
             <button class="vault-quick-btn open-url" data-action="open-url"
-                    title="Ouvrir le site" aria-label="Ouvrir le site dans un nouvel onglet">
+                    title="Open website" aria-label="Open website in new tab">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
@@ -1992,7 +2032,7 @@ export class VaultUI {
     const entry = this.#selectedEntry;
     if (!entry) return '';
 
-    const type = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
+    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
 
     return `
       <div class="vault-detail-header">
@@ -2004,29 +2044,29 @@ export class VaultUI {
           <span class="vault-detail-type">${type.label}</span>
           <div class="vault-detail-tags">${this.#renderTagsInDetail(entry)}</div>
         </div>
-        <div class="vault-detail-actions" role="group" aria-label="Actions sur l'entrée">
+        <div class="vault-detail-actions" role="group" aria-label="Entry actions">
           <button class="vault-icon-btn ${entry.favorite ? 'active' : ''}" id="btn-toggle-favorite"
-                  data-tooltip="${entry.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
-                  aria-label="${entry.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+                  data-tooltip="${entry.favorite ? 'Remove from favorites' : 'Add to favorites'}"
+                  aria-label="${entry.favorite ? 'Remove from favorites' : 'Add to favorites'}"
                   aria-pressed="${entry.favorite}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="${entry.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
           </button>
-          <button class="vault-icon-btn" id="btn-edit-entry" data-tooltip="Modifier (E)" aria-label="Modifier l'entrée">
+          <button class="vault-icon-btn" id="btn-edit-entry" data-tooltip="Edit (E)" aria-label="Edit entry">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
-          <button class="vault-icon-btn" id="btn-duplicate-entry" data-tooltip="Dupliquer" aria-label="Dupliquer l'entrée">
+          <button class="vault-icon-btn" id="btn-duplicate-entry" data-tooltip="Duplicate" aria-label="Duplicate entry">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
           ${entry.type === 'login' ? `
-          <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="Auto-remplir (Ctrl+Shift+U)" aria-label="Auto-remplir le formulaire">
+          <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="Auto-fill (Ctrl+Shift+U)" aria-label="Auto-fill form">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
               <line x1="6" y1="8" x2="6" y2="8"></line>
@@ -2036,7 +2076,7 @@ export class VaultUI {
             </svg>
           </button>
           ` : ''}
-          <button class="vault-icon-btn share" id="btn-share-entry" data-tooltip="Partager" aria-label="Partager de manière sécurisée">
+          <button class="vault-icon-btn share" id="btn-share-entry" data-tooltip="Share" aria-label="Share securely">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="18" cy="5" r="3"></circle>
               <circle cx="6" cy="12" r="3"></circle>
@@ -2045,7 +2085,7 @@ export class VaultUI {
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
             </svg>
           </button>
-          <button class="vault-icon-btn danger" id="btn-delete-entry" data-tooltip="Supprimer" data-tooltip-pos="left" aria-label="Supprimer l'entrée">
+          <button class="vault-icon-btn danger" id="btn-delete-entry" data-tooltip="Delete" data-tooltip-pos="left" aria-label="Delete entry">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -2062,22 +2102,22 @@ export class VaultUI {
         <div class="vault-detail-meta">
           <div class="vault-meta-row">
             <div class="vault-meta-item">
-              <span class="vault-meta-label">Créé le</span>
+              <span class="vault-meta-label">${t('vault.detail.created')}</span>
               <span class="vault-meta-value">${this.#formatDateTime(entry.createdAt || entry.metadata?.createdAt)}</span>
             </div>
             <div class="vault-meta-item">
-              <span class="vault-meta-label">Modifié le</span>
+              <span class="vault-meta-label">${t('vault.detail.modified')}</span>
               <span class="vault-meta-value">${this.#formatDateTime(entry.modifiedAt || entry.metadata?.updatedAt)}</span>
             </div>
           </div>
           ${entry.metadata?.lastUsedAt ? `
             <div class="vault-meta-row">
               <div class="vault-meta-item">
-                <span class="vault-meta-label">Dernière utilisation</span>
+                <span class="vault-meta-label">Last used</span>
                 <span class="vault-meta-value">${this.#formatDateTime(entry.metadata.lastUsedAt)}</span>
               </div>
               <div class="vault-meta-item">
-                <span class="vault-meta-label">Utilisations</span>
+                <span class="vault-meta-label">Uses</span>
                 <span class="vault-meta-value">${entry.metadata.usageCount || 0}</span>
               </div>
             </div>
@@ -2091,8 +2131,8 @@ export class VaultUI {
     switch (entry.type) {
       case 'login':
         return `
-          ${this.#renderField('Identifiant', entry.data?.username, 'username', false, true)}
-          ${this.#renderField('Mot de passe', entry.data?.password, 'password', true, true)}
+          ${this.#renderField('Username', entry.data?.username, 'username', false, true)}
+          ${this.#renderField('Password', entry.data?.password, 'password', true, true)}
           ${this.#renderPasswordHistory(entry)}
           ${entry.data?.totp ? this.#renderTOTPField(entry) : ''}
           ${this.#renderField('URL', entry.data?.url, 'url', false, true, true)}
@@ -2105,7 +2145,7 @@ export class VaultUI {
             <div class="vault-field-label-row">
               <label class="vault-field-label">Contenu</label>
               <div class="vault-notes-toggle">
-                <button type="button" class="vault-notes-mode active" data-mode="preview" title="Aperçu">
+                <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -2129,16 +2169,16 @@ export class VaultUI {
         `;
       case 'card':
         return `
-          ${this.#renderField('Titulaire', entry.data?.holder)}
-          ${this.#renderField('Numéro', entry.data?.number, 'number', true, true)}
+          ${this.#renderField('Cardholder', entry.data?.holder)}
+          ${this.#renderField('Number', entry.data?.number, 'number', true, true)}
           ${this.#renderField('Expiration', entry.data?.expiry)}
           ${this.#renderField('CVV', entry.data?.cvv, 'cvv', true, true)}
         `;
       case 'identity':
         return `
-          ${this.#renderField('Nom complet', entry.data?.fullName)}
+          ${this.#renderField('Full name', entry.data?.fullName)}
           ${this.#renderField('Email', entry.data?.email, 'email', false, true)}
-          ${this.#renderField('Téléphone', entry.data?.phone, 'phone', false, true)}
+          ${this.#renderField('Phone', entry.data?.phone, 'phone', false, true)}
         `;
       default:
         return '';
@@ -2155,12 +2195,12 @@ export class VaultUI {
     if (!fields || fields.length === 0) return '';
 
     const fieldKindLabels = {
-      text: 'Texte',
-      hidden: 'Masqué',
-      password: 'Mot de passe',
+      text: 'Text',
+      hidden: 'Hidden',
+      password: 'Password',
       url: 'URL',
       email: 'Email',
-      phone: 'Téléphone',
+      phone: 'Phone',
       date: 'Date'
     };
 
@@ -2173,7 +2213,7 @@ export class VaultUI {
               <line x1="12" y1="8" x2="12" y2="16"></line>
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
-            Champs personnalisés
+            Custom fields
           </span>
         </div>
         ${fields.map(field => {
@@ -2194,7 +2234,7 @@ export class VaultUI {
       } else if (isDate && field.value) {
         try {
           const date = new Date(field.value);
-          displayValue = date.toLocaleDateString('fr-FR');
+          displayValue = date.toLocaleDateString('en-US');
         } catch {
           displayValue = this.#escapeHtml(field.value);
         }
@@ -2206,7 +2246,7 @@ export class VaultUI {
             <div class="vault-field vault-custom-field-display" data-field-id="${this.#escapeHtml(field.id || '')}" data-masked="${isMasked}">
               <div class="vault-field-label-row">
                 <label class="vault-field-label">${this.#escapeHtml(field.label)}</label>
-                ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Sécurisé</span>' : ''}
+                ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Secured</span>' : ''}
                 <span class="vault-field-kind-badge">${fieldKindLabels[field.kind] || field.kind}</span>
               </div>
               <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${this.#escapeHtml(field.value || '')}">
@@ -2254,7 +2294,7 @@ export class VaultUI {
       <div class="vault-field" data-key="${key}" data-masked="${masked}">
         <div class="vault-field-label-row">
           <label class="vault-field-label">${label}</label>
-          ${masked ? '<span class="vault-field-hint">(survoler pour révéler)</span>' : ''}
+          ${masked ? `<span class="vault-field-hint">${t('vault.detail.hoverToReveal')}</span>` : ''}
           ${breachHtml}
         </div>
         <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}" data-real-value="${this.#escapeHtml(value)}">
@@ -2297,7 +2337,7 @@ export class VaultUI {
 
     const status = this.#getExpiryStatus(entry);
     const expiresDate = new Date(entry.data.expiresAt);
-    const formattedDate = expiresDate.toLocaleDateString('fr-FR', {
+    const formattedDate = expiresDate.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -2331,7 +2371,7 @@ export class VaultUI {
     return `
       <div class="vault-field vault-expiry-field ${statusClass}">
         <div class="vault-field-label-row">
-          <label class="vault-field-label">Expiration du mot de passe</label>
+          <label class="vault-field-label">Password expiration</label>
         </div>
         <div class="vault-expiry-display ${statusClass}">
           <span class="vault-expiry-icon">${statusIcon}</span>
@@ -2352,9 +2392,9 @@ export class VaultUI {
     return `
       <div class="vault-field vault-notes-field">
         <div class="vault-field-label-row">
-          <label class="vault-field-label">Notes</label>
+          <label class="vault-field-label">${t('vault.labels.notes')}</label>
           <div class="vault-notes-toggle">
-            <button type="button" class="vault-notes-mode active" data-mode="preview" title="Aperçu">
+            <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -2612,7 +2652,7 @@ export class VaultUI {
       return `
         <div class="vault-history-item" data-index="${idx}">
           <div class="vault-history-info">
-            <span class="vault-history-password" title="Cliquer pour révéler">${maskedPwd}</span>
+            <span class="vault-history-password" title="Click to reveal">${maskedPwd}</span>
             <span class="vault-history-date">${relativeTime}</span>
             ${h.reason ? `<span class="vault-history-reason">${this.#escapeHtml(h.reason)}</span>` : ''}
           </div>
@@ -2662,12 +2702,12 @@ export class VaultUI {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return "À l'instant";
-    if (minutes < 60) return `Il y a ${minutes} min`;
-    if (hours < 24) return `Il y a ${hours}h`;
-    if (days < 7) return `Il y a ${days}j`;
-    if (days < 30) return `Il y a ${Math.floor(days / 7)} sem.`;
-    return `Il y a ${Math.floor(days / 30)} mois`;
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    if (days < 30) return `${Math.floor(days / 7)} wk ago`;
+    return `${Math.floor(days / 30)} mo ago`;
   }
 
   #renderPasswordAge(entry) {
@@ -2679,25 +2719,25 @@ export class VaultUI {
     const daysSinceModified = Math.floor((now - modifiedAt) / (1000 * 60 * 60 * 24));
 
     let ageClass = 'good';
-    let ageLabel = 'Récent';
+    let ageLabel = 'Recent';
     let ageIcon = 'check';
 
     if (daysSinceModified > 365) {
       ageClass = 'critical';
-      ageLabel = `${Math.floor(daysSinceModified / 365)} an(s) - Renouvellement conseillé`;
+      ageLabel = `${Math.floor(daysSinceModified / 365)} year(s) - Renewal recommended`;
       ageIcon = 'alert';
     } else if (daysSinceModified > 180) {
       ageClass = 'warning';
-      ageLabel = `${Math.floor(daysSinceModified / 30)} mois`;
+      ageLabel = `${Math.floor(daysSinceModified / 30)} month(s)`;
       ageIcon = 'clock';
     } else if (daysSinceModified > 90) {
       ageClass = 'fair';
-      ageLabel = `${Math.floor(daysSinceModified / 30)} mois`;
+      ageLabel = `${Math.floor(daysSinceModified / 30)} month(s)`;
       ageIcon = 'clock';
     } else if (daysSinceModified > 30) {
-      ageLabel = `${Math.floor(daysSinceModified / 30)} mois`;
+      ageLabel = `${Math.floor(daysSinceModified / 30)} month(s)`;
     } else {
-      ageLabel = daysSinceModified === 0 ? "Aujourd'hui" : `${daysSinceModified} jour(s)`;
+      ageLabel = daysSinceModified === 0 ? "Today" : `${daysSinceModified} day(s)`;
     }
 
     return `
@@ -2722,7 +2762,7 @@ export class VaultUI {
           `}
         </div>
         <div class="vault-age-info">
-          <span class="vault-age-label">Âge du mot de passe</span>
+          <span class="vault-age-label">Password age</span>
           <span class="vault-age-value">${ageLabel}</span>
         </div>
       </div>
@@ -2741,19 +2781,19 @@ export class VaultUI {
               <path d="M45 42 L50 48 L58 38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
             </svg>
           </div>
-          <h3 class="vault-empty-title">Aucun résultat</h3>
-          <p class="vault-empty-text">Aucune entrée ne correspond à "<strong>${this.#escapeHtml(this.#searchQuery)}</strong>"</p>
+          <h3 class="vault-empty-title">No results</h3>
+          <p class="vault-empty-text">No entry matches "<strong>${this.#escapeHtml(this.#searchQuery)}</strong>"</p>
           <div class="vault-empty-actions">
             <button class="vault-btn vault-btn-secondary" id="btn-clear-search">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-              Effacer la recherche
+              Clear search
             </button>
           </div>
           <div class="vault-empty-tips">
-            <span class="vault-empty-tip">Essayez des termes plus courts ou vérifiez l'orthographe</span>
+            <span class="vault-empty-tip">Try shorter terms or check spelling</span>
           </div>
         </div>
       `;
@@ -2770,15 +2810,15 @@ export class VaultUI {
             <path d="M45 70 L60 60 L75 70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
           </svg>
         </div>
-        <h3 class="vault-empty-title">Bienvenue dans votre coffre</h3>
-        <p class="vault-empty-text">Votre coffre est prêt. Importez vos mots de passe ou créez votre première entrée.</p>
+        <h3 class="vault-empty-title">Welcome to your vault</h3>
+        <p class="vault-empty-text">Your vault is ready. Import your passwords or create your first entry.</p>
         <div class="vault-empty-actions" style="flex-direction: column; gap: 1rem; width: 100%; max-width: 300px;">
           <button class="vault-btn vault-btn-primary" id="btn-welcome-create" style="width: 100%; justify-content: center; padding: 12px;">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            Créer ma première entrée
+            Create my first entry
           </button>
           <button class="vault-btn vault-btn-outline" id="btn-welcome-import" style="width: 100%; justify-content: center; padding: 12px;">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -2786,12 +2826,12 @@ export class VaultUI {
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            Importer depuis un fichier
+            Import from file
           </button>
         </div>
         <div class="vault-empty-tips">
-          <span class="vault-empty-tip">Utilisez <kbd>Ctrl</kbd>+<kbd>N</kbd> pour ajouter rapidement</span>
-          <span class="vault-empty-tip">Astuce : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> remplit automatiquement vos formulaires</span>
+          <span class="vault-empty-tip">Use <kbd>Ctrl</kbd>+<kbd>N</kbd> to quickly add</span>
+          <span class="vault-empty-tip">Tip: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> auto-fills your forms</span>
         </div>
       </div>
     `;
@@ -2806,13 +2846,13 @@ export class VaultUI {
             <polyline points="14 2 14 8 20 8"></polyline>
           </svg>
         </div>
-        <p>Sélectionnez une entrée pour voir les détails</p>
+        <p>Select an entry to see details</p>
         <div class="vault-shortcut-hints">
           <div class="vault-shortcut-hint">
-            <kbd>↑</kbd><kbd>↓</kbd> Naviguer
+            <kbd>↑</kbd><kbd>↓</kbd> Navigate
           </div>
           <div class="vault-shortcut-hint">
-            <kbd>Ctrl</kbd>+<kbd>N</kbd> Nouvelle entrée
+            <kbd>Ctrl</kbd>+<kbd>N</kbd> New entry
           </div>
         </div>
       </div>
@@ -2825,7 +2865,7 @@ export class VaultUI {
    */
   #renderEntrySkeleton(count = 5) {
     return `
-      <div class="vault-skeleton-list" aria-hidden="true" role="status" aria-label="Chargement des entrées">
+      <div class="vault-skeleton-list" aria-hidden="true" role="status" aria-label="Loading entries">
         ${Array(count).fill('').map(() => `
           <div class="vault-skeleton-entry">
             <div class="vault-skeleton vault-skeleton-icon"></div>
@@ -2844,7 +2884,7 @@ export class VaultUI {
    */
   #renderDetailSkeleton() {
     return `
-      <div class="vault-skeleton-detail" aria-hidden="true" role="status" aria-label="Chargement des détails">
+      <div class="vault-skeleton-detail" aria-hidden="true" role="status" aria-label="Loading details">
         <div class="vault-skeleton-detail-header">
           <div class="vault-skeleton vault-skeleton-icon-lg"></div>
           <div class="vault-skeleton-info">
@@ -2875,8 +2915,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="add-entry-modal" role="dialog" aria-modal="true" aria-labelledby="add-entry-title">
         <div class="vault-modal vault-modal-lg">
           <div class="vault-modal-header">
-            <h3 id="add-entry-title">Nouvelle entrée</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="add-entry-title">${t('vault.dialogs.newEntry')}</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2899,14 +2939,14 @@ export class VaultUI {
                 </svg>
               </button>
               <div class="vault-template-picker" id="template-picker" hidden>
-                <input type="text" class="vault-input vault-template-search" id="template-search" placeholder="Rechercher un template...">
+                <input type="text" class="vault-input vault-template-search" id="template-search" placeholder="Search template...">
                 <div class="vault-template-grid" id="template-grid">
                   ${this.#renderTemplateGrid()}
                 </div>
               </div>
             </div>
 
-            <div class="vault-type-selector" role="radiogroup" aria-label="Type d'entrée">
+            <div class="vault-type-selector" role="radiogroup" aria-label="Entry type">
               ${Object.entries(ENTRY_TYPES).filter(([k]) => k !== 'preset' && k !== 'ssh').map(([key, type]) => `
                 <label class="vault-type-option">
                   <input type="radio" name="entry-type" value="${key}" ${key === 'login' ? 'checked' : ''}>
@@ -2925,9 +2965,9 @@ export class VaultUI {
             </div>
 
             <div class="vault-form-group">
-              <label class="vault-label" for="entry-folder">Dossier</label>
+              <label class="vault-label" for="entry-folder">${t('vault.labels.folder')}</label>
               <select class="vault-input vault-select" id="entry-folder">
-                <option value="">Aucun dossier</option>
+                <option value="">No folder</option>
                 ${this.#folders.map(f => `<option value="${f.id}">${this.#escapeHtml(f.name)}</option>`).join('')}
               </select>
             </div>
@@ -2940,8 +2980,8 @@ export class VaultUI {
             <div id="entry-type-fields"></div>
 
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Ajouter</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+              <button type="submit" class="vault-btn vault-btn-primary">${t('vault.common.add')}</button>
             </div>
           </form>
         </div>
@@ -2951,7 +2991,7 @@ export class VaultUI {
 
   #renderTemplateGrid() {
     const categories = [
-      { id: 'social', name: 'Réseaux sociaux', icon: '👥' },
+      { id: 'social', name: 'Social networks', icon: '👥' },
       { id: 'email', name: 'Email', icon: '📧' },
       { id: 'shopping', name: 'Shopping', icon: '🛒' },
       { id: 'finance', name: 'Finance', icon: '💰' },
@@ -3019,8 +3059,8 @@ export class VaultUI {
       { id: 'slack', name: 'Slack', icon: '💬', category: 'dev', type: 'login', url: 'https://slack.com', suggestTotp: true },
       // Other
       { id: 'wifi', name: 'WiFi', icon: '📶', category: 'other', type: 'login', url: '', suggestTotp: false },
-      { id: 'identity', name: 'Identité', icon: '🪪', category: 'other', type: 'identity', url: '', suggestTotp: false },
-      { id: 'custom', name: 'Personnalisé', icon: '✏️', category: 'other', type: 'login', url: '', suggestTotp: false }
+      { id: 'identity', name: 'Identity', icon: '🪪', category: 'other', type: 'identity', url: '', suggestTotp: false },
+      { id: 'custom', name: 'Custom', icon: '✏️', category: 'other', type: 'login', url: '', suggestTotp: false }
     ];
   }
 
@@ -3037,7 +3077,7 @@ export class VaultUI {
 
     // Set title
     const titleInput = document.getElementById('entry-title');
-    if (titleInput && template.name !== 'Personnalisé') {
+    if (titleInput && template.name !== 'Custom') {
       titleInput.value = template.name;
     }
 
@@ -3052,7 +3092,7 @@ export class VaultUI {
       if (template.suggestTotp) {
         const totpField = document.getElementById('entry-totp');
         if (totpField) {
-          totpField.placeholder = 'Recommandé pour ce service';
+          totpField.placeholder = 'Recommended for this service';
         }
       }
     }, 50);
@@ -3071,14 +3111,14 @@ export class VaultUI {
     const selectedItem = document.querySelector(`.vault-template-item[data-template-id="${templateId}"]`);
     if (selectedItem) selectedItem.classList.add('selected');
 
-    this.#showToast(`Template "${template.name}" appliqué`, 'success');
+    this.#showToast(`Template "${template.name}" applied`, 'success');
   }
 
   // ==================== TAGS SYSTEM ====================
 
   #renderTagsList() {
     if (this.#tags.length === 0) {
-      return '<div class="vault-nav-empty">Aucun tag</div>';
+      return `<div class="vault-nav-empty">${t('vault.sidebar.noTags')}</div>`;
     }
 
     return this.#tags.map(tag => {
@@ -3091,7 +3131,7 @@ export class VaultUI {
           <span class="vault-tag-dot" style="background: ${tagColor}" aria-hidden="true"></span>
           <span class="vault-nav-label">${this.#escapeHtml(tag.name)}</span>
           <span class="vault-nav-count">${count}</span>
-          <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Modifier le tag" aria-label="Modifier ${this.#escapeHtml(tag.name)}">
+          <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${this.#escapeHtml(tag.name)}">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -3108,7 +3148,7 @@ export class VaultUI {
     return `
       <div class="vault-tag-picker">
         <div class="vault-tag-picker-list">
-          ${this.#tags.length === 0 ? '<div class="vault-tag-empty">Aucun tag disponible</div>' :
+          ${this.#tags.length === 0 ? '<div class="vault-tag-empty">No tags available</div>' :
         this.#tags.map(tag => `
               <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
                 <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
@@ -3120,12 +3160,12 @@ export class VaultUI {
       }
         </div>
         <div class="vault-tag-picker-add">
-          <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="Nouveau tag...">
+          <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="New tag...">
           <div class="vault-tag-color-picker" id="tag-color-picker">
             ${tagColors.map((color, i) => `
               <button type="button" class="vault-color-btn ${i === 0 ? 'selected' : ''}"
                       data-color="${color}" style="background: ${color}"
-                      title="Couleur ${i + 1}" aria-label="Couleur ${color}"></button>
+                      title="Color ${i + 1}" aria-label="Color ${color}"></button>
             `).join('')}
           </div>
           <button type="button" class="vault-btn vault-btn-sm vault-btn-primary" id="btn-create-tag">
@@ -3179,8 +3219,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="add-tag-modal" role="dialog" aria-modal="true" aria-labelledby="add-tag-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="add-tag-title">Nouveau tag</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="add-tag-title">New tag</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3189,11 +3229,11 @@ export class VaultUI {
           </div>
           <form class="vault-modal-body" id="add-tag-form">
             <div class="vault-form-group">
-              <label class="vault-label" for="tag-name">Nom du tag <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="tag-name" placeholder="Ex: Important, À vérifier..." required maxlength="30">
+              <label class="vault-label" for="tag-name">Tag name <span class="required">*</span></label>
+              <input type="text" class="vault-input" id="tag-name" placeholder="E.g., Important, To check..." required maxlength="30">
             </div>
             <div class="vault-form-group">
-              <label class="vault-label">Couleur</label>
+              <label class="vault-label">Color</label>
               <div class="vault-color-grid" id="add-tag-colors">
                 ${tagColors.map((color, i) => `
                   <button type="button" class="vault-color-option ${i === 0 ? 'selected' : ''}"
@@ -3205,8 +3245,8 @@ export class VaultUI {
               <input type="hidden" id="tag-color" value="${tagColors[0]}">
             </div>
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Créer</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+              <button type="submit" class="vault-btn vault-btn-primary">Create</button>
             </div>
           </form>
         </div>
@@ -3221,8 +3261,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="edit-tag-modal" role="dialog" aria-modal="true" aria-labelledby="edit-tag-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="edit-tag-title">Modifier le tag</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="edit-tag-title">${t('vault.dialogs.newTag')}</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3232,11 +3272,11 @@ export class VaultUI {
           <form class="vault-modal-body" id="edit-tag-form">
             <input type="hidden" id="edit-tag-id">
             <div class="vault-form-group">
-              <label class="vault-label" for="edit-tag-name">Nom du tag <span class="required">*</span></label>
+              <label class="vault-label" for="edit-tag-name">Tag name <span class="required">*</span></label>
               <input type="text" class="vault-input" id="edit-tag-name" required maxlength="30">
             </div>
             <div class="vault-form-group">
-              <label class="vault-label">Couleur</label>
+              <label class="vault-label">Color</label>
               <div class="vault-color-grid" id="edit-tag-colors">
                 ${tagColors.map(color => `
                   <button type="button" class="vault-color-option" data-color="${color}" style="background: ${color}"></button>
@@ -3250,11 +3290,11 @@ export class VaultUI {
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                Supprimer
+                Delete
               </button>
               <div class="vault-modal-actions-right">
-                <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-                <button type="submit" class="vault-btn vault-btn-primary">Enregistrer</button>
+                <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+                <button type="submit" class="vault-btn vault-btn-primary">${t('vault.common.save')}</button>
               </div>
             </div>
           </form>
@@ -3270,8 +3310,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
         <div class="vault-modal vault-modal-lg">
           <div class="vault-modal-header">
-            <h3 id="import-title">Importer des entrées</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="import-title">${t('vault.common.import')}</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3280,7 +3320,7 @@ export class VaultUI {
           </div>
           <div class="vault-modal-body">
             <div class="vault-import-formats">
-              <h4>Formats supportés</h4>
+              <h4>Supported formats</h4>
               <div class="vault-format-cards">
                 <div class="vault-format-card">
                   <span class="vault-format-icon">🔐</span>
@@ -3294,7 +3334,7 @@ export class VaultUI {
                 </div>
                 <div class="vault-format-card">
                   <span class="vault-format-icon">📊</span>
-                  <span class="vault-format-name">CSV Générique</span>
+                  <span class="vault-format-name">Generic CSV</span>
                   <span class="vault-format-ext">.csv</span>
                 </div>
               </div>
@@ -3306,7 +3346,7 @@ export class VaultUI {
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
-              <p>Glissez un fichier ici ou <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse">parcourez</button></p>
+              <p>Drag a file here or <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse">browse</button></p>
               <input type="file" id="import-file-input" accept=".xml,.json,.csv" hidden>
               <span class="vault-dropzone-hint">Formats: XML, JSON, CSV</span>
             </div>
@@ -3318,11 +3358,11 @@ export class VaultUI {
               <div class="vault-import-options">
                 <label class="vault-checkbox-label">
                   <input type="checkbox" id="import-include-groups" checked>
-                  <span>Importer les dossiers/groupes</span>
+                  <span>Import folders/groups</span>
                 </label>
                 <label class="vault-checkbox-label">
                   <input type="checkbox" id="import-merge-duplicates">
-                  <span>Fusionner les doublons (par titre)</span>
+                  <span>Merge duplicates (by title)</span>
                 </label>
               </div>
               <div class="vault-import-warnings" id="import-warnings" hidden>
@@ -3331,14 +3371,14 @@ export class VaultUI {
             </div>
           </div>
           <div class="vault-modal-footer">
-            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
+            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
             <button type="button" class="vault-btn vault-btn-primary" id="btn-import-confirm" disabled>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
-              Importer
+              Import
             </button>
           </div>
         </div>
@@ -3382,15 +3422,15 @@ export class VaultUI {
         <div class="vault-import-stats">
           <div class="vault-import-stat">
             <span class="vault-import-stat-value">${result.stats.importedEntries}</span>
-            <span class="vault-import-stat-label">Entrées</span>
+            <span class="vault-import-stat-label">Entries</span>
           </div>
           <div class="vault-import-stat">
             <span class="vault-import-stat-value">${result.stats.importedGroups}</span>
-            <span class="vault-import-stat-label">Dossiers</span>
+            <span class="vault-import-stat-label">Folders</span>
           </div>
           <div class="vault-import-stat">
             <span class="vault-import-stat-value">${result.stats.customFieldsCount}</span>
-            <span class="vault-import-stat-label">Champs</span>
+            <span class="vault-import-stat-label">Fields</span>
           </div>
         </div>
         <div class="vault-import-file-info">
@@ -3476,11 +3516,11 @@ export class VaultUI {
       this.#render();
 
       this.#closeModal('import-modal');
-      this.#showToast(`${importedCount} entrées importées avec succès`, 'success');
+      this.#showToast(`${importedCount} entries imported successfully`, 'success');
       this.#pendingImport = null;
 
     } catch (error) {
-      this.#showToast('Erreur d\'importation: ' + error.message, 'error');
+      this.#showToast(t('vault.messages.importError', { message: error.message }), 'error');
     } finally {
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `
@@ -3498,10 +3538,10 @@ export class VaultUI {
     try {
       await window.vault.tags.add({ name: name.trim(), color });
       await this.#loadData();
-      this.#showToast(`Tag "${name}" créé`, 'success');
+      this.#showToast(`Tag "${name}" created`, 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || 'Erreur de création', 'error');
+      this.#showToast(error.message || 'Creation error', 'error');
       return false;
     }
   }
@@ -3510,10 +3550,10 @@ export class VaultUI {
     try {
       await window.vault.tags.update(tagId, { name: name.trim(), color });
       await this.#loadData();
-      this.#showToast('Tag modifié', 'success');
+      this.#showToast(t('vault.messages.tagModified'), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || 'Erreur de modification', 'error');
+      this.#showToast(error.message || 'Modification error', 'error');
       return false;
     }
   }
@@ -3532,10 +3572,10 @@ export class VaultUI {
         this.#selectedTag = null;
       }
       await this.#loadData();
-      this.#showToast('Tag supprimé', 'success');
+      this.#showToast(t('vault.messages.tagDeleted'), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || 'Erreur de suppression', 'error');
+      this.#showToast(error.message || 'Deletion error', 'error');
       return false;
     }
   }
@@ -3599,8 +3639,8 @@ export class VaultUI {
     modal.innerHTML = `
       <div class="vault-modal">
         <div class="vault-modal-header">
-          <h3>Gérer les tags (${count} entrée${count > 1 ? 's' : ''})</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+          <h3>Manage tags (${count} entr${count > 1 ? 'ies' : 'y'})</h3>
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3609,9 +3649,9 @@ export class VaultUI {
         </div>
         <div class="vault-modal-body">
           ${this.#tags.length === 0 ? `
-            <p class="vault-modal-empty">Aucun tag disponible. Créez un tag depuis la barre latérale.</p>
+            <p class="vault-modal-empty">No tags available. Create a tag from the sidebar.</p>
           ` : `
-            <p class="vault-modal-hint">Cochez pour ajouter, décochez pour retirer</p>
+            <p class="vault-modal-hint">Check to add, uncheck to remove</p>
             <div class="vault-bulk-tag-list">
               ${tagStates.map(tag => `
                 <label class="vault-bulk-tag-item">
@@ -3628,7 +3668,7 @@ export class VaultUI {
             </div>
           `}
           <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
+            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
             <button type="button" class="vault-btn vault-btn-primary" id="bulk-tag-apply" ${this.#tags.length === 0 ? 'disabled' : ''}>Appliquer</button>
           </div>
         </div>
@@ -3703,7 +3743,7 @@ export class VaultUI {
     this.#render();
 
     if (updated > 0) {
-      this.#showToast(`Tags mis à jour sur ${updated} entrée${updated > 1 ? 's' : ''}`, 'success');
+      this.#showToast(`Tags updated on ${updated} entr${updated > 1 ? 'ies' : 'y'}`, 'success');
     }
   }
 
@@ -3712,8 +3752,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="add-folder-modal" role="dialog" aria-modal="true" aria-labelledby="add-folder-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="add-folder-title">Nouveau dossier</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="add-folder-title">New folder</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3722,12 +3762,12 @@ export class VaultUI {
           </div>
           <form class="vault-modal-body" id="add-folder-form">
             <div class="vault-form-group">
-              <label class="vault-label" for="folder-name">Nom du dossier <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="folder-name" placeholder="Ex: Travail, Personnel..." required>
+              <label class="vault-label" for="folder-name">Folder name <span class="required">*</span></label>
+              <input type="text" class="vault-input" id="folder-name" placeholder="E.g., Work, Personal..." required>
             </div>
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Créer</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+              <button type="submit" class="vault-btn vault-btn-primary">Create</button>
             </div>
           </form>
         </div>
@@ -3740,8 +3780,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="edit-entry-modal" role="dialog" aria-modal="true" aria-labelledby="edit-entry-title">
         <div class="vault-modal vault-modal-lg">
           <div class="vault-modal-header">
-            <h3 id="edit-entry-title">Modifier l'entrée</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="edit-entry-title">${t('vault.dialogs.editEntry')}</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3751,8 +3791,8 @@ export class VaultUI {
           <form class="vault-modal-body" id="edit-entry-form">
             <div id="edit-entry-fields"></div>
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Enregistrer</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
+              <button type="submit" class="vault-btn vault-btn-primary">${t('vault.common.save')}</button>
             </div>
           </form>
         </div>
@@ -3766,7 +3806,7 @@ export class VaultUI {
         <div class="vault-modal vault-modal-shortcuts">
           <div class="vault-modal-header">
             <h3 id="shortcuts-title">Raccourcis clavier</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3778,57 +3818,57 @@ export class VaultUI {
               <h4>Navigation</h4>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>↑</kbd> <kbd>↓</kbd></span>
-                <span class="vault-shortcut-desc">Naviguer dans la liste</span>
+                <span class="vault-shortcut-desc">Navigate list</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Enter</kbd></span>
-                <span class="vault-shortcut-desc">Sélectionner l'entrée</span>
+                <span class="vault-shortcut-desc">Select entry</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>F</kbd></span>
-                <span class="vault-shortcut-desc">Rechercher</span>
+                <span class="vault-shortcut-desc">Search</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Esc</kbd></span>
-                <span class="vault-shortcut-desc">Fermer la modale / Désélectionner</span>
+                <span class="vault-shortcut-desc">Close modal / Deselect</span>
               </div>
             </div>
             <div class="vault-shortcuts-section">
               <h4>Actions</h4>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>N</kbd></span>
-                <span class="vault-shortcut-desc">Nouvelle entrée</span>
+                <span class="vault-shortcut-desc">New entry</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>E</kbd></span>
-                <span class="vault-shortcut-desc">Modifier l'entrée</span>
+                <span class="vault-shortcut-desc">Edit entry</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>D</kbd></span>
-                <span class="vault-shortcut-desc">Dupliquer l'entrée</span>
+                <span class="vault-shortcut-desc">Duplicate entry</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Delete</kbd></span>
-                <span class="vault-shortcut-desc">Supprimer l'entrée</span>
+                <span class="vault-shortcut-desc">Delete entry</span>
               </div>
             </div>
             <div class="vault-shortcuts-section">
-              <h4>Copie rapide</h4>
+              <h4>Quick copy</h4>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>U</kbd></span>
-                <span class="vault-shortcut-desc">Copier l'identifiant</span>
+                <span class="vault-shortcut-desc">Copy username</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>P</kbd></span>
-                <span class="vault-shortcut-desc">Copier le mot de passe</span>
+                <span class="vault-shortcut-desc">Copy password</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>L</kbd></span>
-                <span class="vault-shortcut-desc">Verrouiller le coffre</span>
+                <span class="vault-shortcut-desc">Lock vault</span>
               </div>
               <div class="vault-shortcut-row">
                 <span class="vault-shortcut-keys"><kbd>?</kbd></span>
-                <span class="vault-shortcut-desc">Afficher cette aide</span>
+                <span class="vault-shortcut-desc">Show this help</span>
               </div>
             </div>
           </div>
@@ -3898,7 +3938,7 @@ export class VaultUI {
             this.#auditFilterIds = new Set(entryIds);
             this.#selectedCategory = 'all';
             this.#updateEntryList();
-            this.#showToast(`${entryIds.length} entrée(s) filtrée(s)`, 'info');
+            this.#showToast(`${entryIds.length} entry(ies) filtered`, 'info');
           }
         });
       });
@@ -3956,8 +3996,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
         <div class="vault-modal vault-modal-health">
           <div class="vault-modal-header">
-            <h3 id="health-title">Tableau de bord Sécurité</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="health-title">Security Dashboard</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3980,7 +4020,7 @@ export class VaultUI {
                 </div>
               </div>
               <div class="vault-health-status" style="color: ${scoreColor}">${scoreLabel}</div>
-              <div class="vault-health-subtitle">Score de sécurité global</div>
+              <div class="vault-health-subtitle">Overall security score</div>
             </div>
 
             <!-- Stats Cards -->
@@ -3988,7 +4028,7 @@ export class VaultUI {
               <div class="vault-health-card vault-health-total">
                 <div class="vault-health-card-icon">📊</div>
                 <div class="vault-health-card-value">${report.totalEntries}</div>
-                <div class="vault-health-card-label">Total entrées</div>
+                <div class="vault-health-card-label">Total entries</div>
               </div>
               <div class="vault-health-card vault-health-strong clickable" data-filter="strong">
                 <div class="vault-health-card-icon">✅</div>
@@ -4003,7 +4043,7 @@ export class VaultUI {
               <div class="vault-health-card vault-health-reused clickable" data-filter="reused">
                 <div class="vault-health-card-icon">🔄</div>
                 <div class="vault-health-card-value">${report.stats.reusedPasswords}</div>
-                <div class="vault-health-card-label">Réutilisés</div>
+                <div class="vault-health-card-label">Reused</div>
               </div>
               <div class="vault-health-card vault-health-old clickable" data-filter="old">
                 <div class="vault-health-card-icon">📅</div>
@@ -4039,7 +4079,7 @@ export class VaultUI {
             ` : `
               <div class="vault-health-success">
                 <span class="vault-health-success-icon">🎉</span>
-                <span>Excellent ! Votre coffre est bien sécurisé.</span>
+                <span>Excellent! Your vault is well secured.</span>
               </div>
             `}
 
@@ -4049,21 +4089,21 @@ export class VaultUI {
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
-                Vérifier les fuites (HIBP)
+                Check for breaches (HIBP)
               </button>
               ${this.#auditFilterIds ? `
                 <button class="vault-btn vault-btn-secondary" id="btn-clear-audit-filter">
-                  Effacer le filtre
+                  Clear filter
                 </button>
               ` : ''}
             </div>
 
             <!-- Breach Results -->
             <div class="vault-health-breaches" id="breach-results" hidden>
-              <h4>Résultats de la vérification</h4>
+              <h4>Check results</h4>
               <div class="vault-breach-loading" id="breach-loading">
                 <span class="vault-spinner-small"></span>
-                Vérification en cours...
+                Checking...
               </div>
               <div class="vault-breach-results" id="breach-list"></div>
             </div>
@@ -4081,8 +4121,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
         <div class="vault-modal vault-modal-health">
           <div class="vault-modal-header">
-            <h3 id="health-title">Santé des mots de passe</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="health-title">Password health</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -4099,9 +4139,9 @@ export class VaultUI {
             </div>
             <div class="vault-health-grid">
               <div class="vault-health-card"><div class="vault-health-card-value">${stats.total}</div><div class="vault-health-card-label">Total</div></div>
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.strong}</div><div class="vault-health-card-label">Forts</div></div>
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.weak}</div><div class="vault-health-card-label">Faibles</div></div>
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.reused}</div><div class="vault-health-card-label">Réutilisés</div></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.strong}</div><div class="vault-health-card-label">Strong</div></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.weak}</div><div class="vault-health-card-label">Weak</div></div>
+              <div class="vault-health-card"><div class="vault-health-card-value">${stats.reused}</div><div class="vault-health-card-label">Reused</div></div>
             </div>
           </div>
         </div>
@@ -4117,7 +4157,7 @@ export class VaultUI {
       return {
         score: 100,
         scoreClass: 'excellent',
-        status: 'Aucun identifiant',
+        status: 'No username',
         total: 0,
         strong: 0,
         weak: 0,
@@ -4178,13 +4218,13 @@ export class VaultUI {
       status = 'Excellent';
       scoreClass = 'excellent';
     } else if (score >= 70) {
-      status = 'Bon';
+      status = 'Good';
       scoreClass = 'good';
     } else if (score >= 50) {
-      status = 'À améliorer';
+      status = 'Needs improvement';
       scoreClass = 'medium';
     } else {
-      status = 'Critique';
+      status = 'Critical';
       scoreClass = 'poor';
     }
 
@@ -4194,8 +4234,8 @@ export class VaultUI {
       issues.push({
         severity: 'high',
         icon: '⚠️',
-        iconLabel: 'Attention',
-        message: `${weak} mot(s) de passe faible(s) à renforcer`,
+        iconLabel: 'Warning',
+        message: `${weak} weak password(s) to strengthen`,
         count: weak
       });
     }
@@ -4203,8 +4243,8 @@ export class VaultUI {
       issues.push({
         severity: 'high',
         icon: '🔁',
-        iconLabel: 'Réutilisé',
-        message: `${reused} mot(s) de passe réutilisé(s)`,
+        iconLabel: 'Reused',
+        message: `${reused} reused password(s)`,
         count: reused
       });
     }
@@ -4212,8 +4252,8 @@ export class VaultUI {
       issues.push({
         severity: 'high',
         icon: '⚠️',
-        iconLabel: 'Expiré',
-        message: `${expired} mot(s) de passe expiré(s)`,
+        iconLabel: 'Expired',
+        message: `${expired} expired password(s)`,
         count: expired
       });
     }
@@ -4221,8 +4261,8 @@ export class VaultUI {
       issues.push({
         severity: 'medium',
         icon: '⏰',
-        iconLabel: 'Expire bientôt',
-        message: `${expiring} mot(s) de passe bientôt expiré(s)`,
+        iconLabel: 'Expiring soon',
+        message: `${expiring} password(s) expiring soon`,
         count: expiring
       });
     }
@@ -4230,8 +4270,8 @@ export class VaultUI {
       issues.push({
         severity: 'low',
         icon: '📅',
-        iconLabel: 'Ancien',
-        message: `${old} mot(s) de passe ancien(s) (> 6 mois)`,
+        iconLabel: 'Old',
+        message: `${old} old password(s) (> 6 months)`,
         count: old
       });
     }
@@ -4250,7 +4290,7 @@ export class VaultUI {
     // Show loading (non-silent mode only)
     if (!silent) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner-small"></span> Vérification...';
+      btn.innerHTML = '<span class="vault-spinner-small"></span> Checking...';
       resultsDiv.hidden = false;
       loadingDiv.hidden = false;
       listDiv.innerHTML = '';
@@ -4313,7 +4353,7 @@ export class VaultUI {
       checked++;
 
       if (!silent && loadingDiv) {
-        loadingDiv.innerHTML = `<span class="vault-spinner-small"></span> Vérification ${checked}/${logins.length}...`;
+        loadingDiv.innerHTML = `<span class="vault-spinner-small"></span> Checking ${checked}/${logins.length}...`;
       }
 
       // Small delay to avoid rate limiting (only for new checks)
@@ -4328,7 +4368,7 @@ export class VaultUI {
     // Silent mode: just update entry list to show badges
     if (silent) {
       if (compromised.length > 0) {
-        this.#showToast(`⚠️ ${compromised.length} mot(s) de passe compromis détecté(s)`, 'warning', 5000);
+        this.#showToast(`⚠️ ${compromised.length} compromised password(s) detected`, 'warning', 5000);
         this.#updateEntryList(); // Refresh to show badges
       }
       return compromised.length;
@@ -4341,21 +4381,21 @@ export class VaultUI {
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
       </svg>
-      Vérifier les fuites (HIBP)
+      Check for breaches (HIBP)
     `;
 
     if (compromised.length === 0) {
       listDiv.innerHTML = `
         <div class="vault-breach-safe">
           <span class="vault-breach-icon">✅</span>
-          <span>Aucun mot de passe compromis trouvé sur ${logins.length} vérifié(s)</span>
+          <span>No compromised passwords found in ${logins.length} checked</span>
         </div>
       `;
     } else {
       listDiv.innerHTML = `
         <div class="vault-breach-warning">
           <span class="vault-breach-icon">🚨</span>
-          <span>${compromised.length} mot(s) de passe compromis sur ${logins.length}</span>
+          <span>${compromised.length} compromised password(s) out of ${logins.length}</span>
         </div>
         <ul class="vault-breach-list">
           ${compromised.map(({ entry, count }) => `
@@ -4445,7 +4485,7 @@ export class VaultUI {
       <div class="vault-modal vault-modal-sm">
         <div class="vault-modal-header">
           <h3>QR Code TOTP</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -4556,8 +4596,8 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="move-folder-modal" role="dialog" aria-modal="true" aria-labelledby="move-folder-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="move-folder-title">Déplacer vers un dossier</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+            <h3 id="move-folder-title">Move to folder</h3>
+            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -4567,7 +4607,7 @@ export class VaultUI {
           <div class="vault-modal-body vault-folder-list">
             <button class="vault-folder-option" data-folder-id="">
               <span class="vault-folder-icon">📁</span>
-              <span class="vault-folder-name">Aucun dossier (racine)</span>
+              <span class="vault-folder-name">No folder (root)</span>
             </button>
             ${this.#folders.map(f => `
               <button class="vault-folder-option" data-folder-id="${f.id}">
@@ -4583,7 +4623,7 @@ export class VaultUI {
 
   #exportEntries(entries) {
     if (entries.length === 0) {
-      this.#showToast('Aucune entrée à exporter', 'warning');
+      this.#showToast(t('vault.messages.noEntriesToExport'), 'warning');
       return;
     }
 
@@ -4608,8 +4648,8 @@ export class VaultUI {
     modal.innerHTML = `
       <div class="vault-modal">
         <div class="vault-modal-header">
-          <h3>Exporter ${count} entrée(s)</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+          <h3>Export ${count} entry(ies)</h3>
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -4622,7 +4662,7 @@ export class VaultUI {
             <button class="vault-export-format-btn" data-format="json">
               <span class="vault-export-format-icon">📦</span>
               <span class="vault-export-format-name">JSON (GenPwd)</span>
-              <span class="vault-export-format-desc">Format natif avec toutes les données</span>
+              <span class="vault-export-format-desc">Native format with all data</span>
             </button>
             <button class="vault-export-format-btn" data-format="bitwarden">
               <span class="vault-export-format-icon">🔐</span>
@@ -4726,7 +4766,7 @@ export class VaultUI {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    this.#showToast(`${entries.length} entrée(s) exportée(s) (${format.toUpperCase()})`, 'success');
+    this.#showToast(`${entries.length} entry/entries exported (${format.toUpperCase()})`, 'success');
     this.#pendingExportEntries = null;
   }
 
@@ -4836,17 +4876,17 @@ export class VaultUI {
       // Build notes with extra info
       let notes = entry.notes || '';
       if (entry.type === 'card') {
-        notes = `Type: Carte bancaire\n` +
-          `Titulaire: ${entry.data?.holder || ''}\n` +
-          `Numéro: ${entry.data?.number || ''}\n` +
-          `Expiration: ${entry.data?.expiry || ''}\n` +
+        notes = `Type: Bank card\n` +
+          `Holder: ${entry.data?.holder || ''}\n` +
+          `Number: ${entry.data?.number || ''}\n` +
+          `Expiry: ${entry.data?.expiry || ''}\n` +
           `CVV: ${entry.data?.cvv || ''}\n` +
           (notes ? `\n${notes}` : '');
       } else if (entry.type === 'identity') {
-        notes = `Type: Identité\n` +
-          `Nom: ${entry.data?.fullName || ''}\n` +
+        notes = `Type: Identity\n` +
+          `Name: ${entry.data?.fullName || ''}\n` +
           `Email: ${entry.data?.email || ''}\n` +
-          `Téléphone: ${entry.data?.phone || ''}\n` +
+          `Phone: ${entry.data?.phone || ''}\n` +
           (notes ? `\n${notes}` : '');
       } else if (entry.type === 'note') {
         notes = entry.data?.content || notes;
@@ -4929,7 +4969,7 @@ export class VaultUI {
     for (const [folderId, folderEntries] of entriesByFolder) {
       if (folderId === '') continue; // Skip root, handled separately
       const folder = this.#folders.find(f => f.id === folderId);
-      const folderName = folder?.name || 'Dossier';
+      const folderName = folder?.name || 'Folder';
       groupsXML += buildGroup(folderName, folderEntries);
     }
 
@@ -5053,10 +5093,10 @@ export class VaultUI {
           imported = await this.#importKeePassXML(text);
           await this.#loadData();
           this.#render();
-          this.#showToast(`KeePass XML: ${imported} entrée(s) importée(s)`, 'success', 4000);
+          this.#showToast(`KeePass XML: ${imported} entry/entries imported`, 'success', 4000);
           return;
         } else if (file.name.endsWith('.kdbx')) {
-          this.#showToast('Les fichiers .kdbx ne sont pas supportés. Exportez en XML depuis KeePass.', 'warning', 5000);
+          this.#showToast(t('vault.messages.kdbxNotSupported'), 'warning', 5000);
           return;
         } else {
           // JSON import
@@ -5080,12 +5120,12 @@ export class VaultUI {
 
         await this.#loadData();
         this.#render();
-        this.#showToast(`${imported} entrée(s) importée(s)`, 'success');
+        this.#showToast(`${imported} entry/entries imported`, 'success');
       } catch (error) {
         console.error('[VaultUI] Import error:', error);
         this.#showDetailedError(
-          'Erreur d\'import: ' + (error.message || 'format invalide'),
-          'Vérifiez le format du fichier (CSV ou JSON requis)'
+          'Import error: ' + (error.message || 'invalid format'),
+          'Check the file format (CSV or JSON required)'
         );
       }
     });
@@ -5116,8 +5156,8 @@ export class VaultUI {
     modal.innerHTML = `
       <div class="vault-modal">
         <div class="vault-modal-header">
-          <h3>Sauvegarder le coffre</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+          <h3>${t('vault.dialogs.saveVault')}</h3>
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -5128,21 +5168,21 @@ export class VaultUI {
           <div class="vault-save-summary">
             <div class="vault-save-stat">
               <span class="vault-save-stat-value">${entryCount}</span>
-              <span class="vault-save-stat-label">entrée(s)</span>
+              <span class="vault-save-stat-label">entry(ies)</span>
             </div>
             <div class="vault-save-stat">
               <span class="vault-save-stat-value">${folderCount}</span>
-              <span class="vault-save-stat-label">dossier(s)</span>
+              <span class="vault-save-stat-label">folder(s)</span>
             </div>
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="save-vault-password">
-              Mot de passe du fichier <span class="required">*</span>
+              File password <span class="required">*</span>
             </label>
-            <p class="vault-form-hint">Ce mot de passe protège le fichier exporté. Il peut être différent du mot de passe du coffre.</p>
+            <p class="vault-form-hint">This password protects the exported file. It can be different from the vault password.</p>
             <div class="vault-input-group">
-              <input type="password" class="vault-input" id="save-vault-password" placeholder="Mot de passe..." required minlength="8">
-              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Afficher">
+              <input type="password" class="vault-input" id="save-vault-password" placeholder="Password..." required minlength="8">
+              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Show">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -5152,12 +5192,12 @@ export class VaultUI {
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="save-vault-confirm">
-              Confirmer le mot de passe <span class="required">*</span>
+              Confirm password <span class="required">*</span>
             </label>
-            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="Confirmer..." required minlength="8">
+            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="Confirm..." required minlength="8">
           </div>
           <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
+            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
             <button type="submit" class="vault-btn vault-btn-primary">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -5200,19 +5240,19 @@ export class VaultUI {
 
     // Validation
     if (!password || password.length < 8) {
-      this.#showToast('Le mot de passe doit contenir au moins 8 caractères', 'warning');
+      this.#showToast(t('vault.form.passwordMinLength'), 'warning');
       return;
     }
 
     if (password !== confirm) {
-      this.#showToast('Les mots de passe ne correspondent pas', 'warning');
+      this.#showToast(t('vault.messages.passwordsNoMatch'), 'warning');
       return;
     }
 
     try {
       // Check if vaultIO is available
       if (!window.vault?.io) {
-        this.#showToast('Fonction disponible uniquement dans l\'application desktop', 'error');
+        this.#showToast(t('vault.messages.desktopOnlyFeature'), 'error');
         return;
       }
 
@@ -5254,14 +5294,14 @@ export class VaultUI {
       const saveResult = await window.vault.io.save(encryptedJSON, result.filePath);
 
       if (!saveResult.success) {
-        throw new Error(saveResult.error || 'Erreur lors de la sauvegarde');
+        throw new Error(saveResult.error || 'Error saving vault');
       }
 
       this.#closeModal('save-vault-modal');
-      this.#showToast(`Coffre sauvegardé: ${result.fileName}`, 'success');
+      this.#showToast(`Vault saved: ${result.fileName}`, 'success');
     } catch (error) {
       console.error('[VaultUI] Save vault error:', error);
-      this.#showToast(`Erreur: ${error.message}`, 'error');
+      this.#showToast(`Error: ${error.message}`, 'error');
 
       // Reset button state
       const submitBtn = document.querySelector('#save-vault-form button[type="submit"]');
@@ -5332,7 +5372,7 @@ export class VaultUI {
 
     // Show toast
     this.#showToast(
-      compact ? 'Mode compact activé (Always on Top)' : 'Mode normal',
+      compact ? 'Compact mode enabled (Always on Top)' : 'Normal mode',
       'info'
     );
   }
@@ -5485,7 +5525,7 @@ export class VaultUI {
       '1password': '1Password',
       chrome: 'Chrome/Edge',
       firefox: 'Firefox',
-      generic: 'Format générique'
+      generic: 'Generic format'
     };
 
     let imported = 0;
@@ -5510,8 +5550,8 @@ export class VaultUI {
     }
 
     // Show format info in toast
-    const totpInfo = withTotp > 0 ? ` (${withTotp} avec 2FA)` : '';
-    this.#showToast(`${formatNames[format]}: ${imported} entrées importées${totpInfo}`, 'success', 4000);
+    const totpInfo = withTotp > 0 ? ` (${withTotp} with 2FA)` : '';
+    this.#showToast(`${formatNames[format]}: ${imported} entries imported${totpInfo}`, 'success', 4000);
 
     return imported;
   }
@@ -5988,12 +6028,12 @@ export class VaultUI {
 
       // Delete with toast
       this.#showToastWithUndo(
-        `${count} entrée(s) supprimée(s)`,
+        `${count} entry(ies) deleted`,
         async () => {
           // Undo: reload data
           await this.#loadData();
           this.#updateEntryList();
-          this.#showToast('Restauré', 'success');
+          this.#showToast(t('vault.messages.restored'), 'success');
         },
         async () => {
           // Confirm: delete for real
@@ -6093,11 +6133,11 @@ export class VaultUI {
 
         // Copy password if available, otherwise copy username
         if (entry.data?.password) {
-          await this.#copyToClipboard(entry.data.password, 'Mot de passe copié');
+          await this.#copyToClipboard(entry.data.password, 'Password copied');
         } else if (entry.data?.username) {
-          await this.#copyToClipboard(entry.data.username, 'Identifiant copié');
+          await this.#copyToClipboard(entry.data.username, 'Username copied');
         } else if (entry.data?.content) {
-          await this.#copyToClipboard(entry.data.content, 'Contenu copié');
+          await this.#copyToClipboard(entry.data.content, 'Content copied');
         }
       });
 
@@ -6129,9 +6169,9 @@ export class VaultUI {
 
         const action = btn.dataset.action;
         if (action === 'copy-username') {
-          await this.#copyToClipboard(entry.data?.username, 'Identifiant copié');
+          await this.#copyToClipboard(entry.data?.username, 'Username copied');
         } else if (action === 'copy-password') {
-          await this.#copyToClipboard(entry.data?.password, 'Mot de passe copié');
+          await this.#copyToClipboard(entry.data?.password, 'Password copied');
         } else if (action === 'open-url' && entry.data?.url) {
           window.open(entry.data.url, '_blank', 'noopener,noreferrer');
         }
@@ -6154,10 +6194,10 @@ export class VaultUI {
           // Update UI immediately
           btn.classList.toggle('active', newFavorite);
           btn.textContent = newFavorite ? '★' : '☆';
-          btn.title = newFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris';
+          btn.title = newFavorite ? 'Remove from favorites' : 'Add to favorites';
           btn.setAttribute('aria-pressed', newFavorite);
 
-          this.#showToast(newFavorite ? 'Ajouté aux favoris' : 'Retiré des favoris', 'success');
+          this.#showToast(newFavorite ? 'Added to favorites' : 'Removed from favorites', 'success');
 
           // Update category counts
           const favCount = document.querySelector('[data-category="favorites"] .vault-nav-count');
@@ -6165,7 +6205,7 @@ export class VaultUI {
             favCount.textContent = this.#entries.filter(e => e.favorite).length;
           }
         } catch (error) {
-          this.#showToast('Erreur de mise à jour', 'error');
+          this.#showToast(t('vault.messages.updateError'), 'error');
         }
       });
     });
@@ -6286,7 +6326,7 @@ export class VaultUI {
     // Remove existing context menu
     document.querySelector('.vault-context-menu')?.remove();
 
-    const type = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
+    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
     const menu = document.createElement('div');
     menu.className = 'vault-context-menu';
     menu.innerHTML = `
@@ -6298,46 +6338,46 @@ export class VaultUI {
       ${entry.type === 'login' && entry.data?.username ? `
         <button class="vault-ctx-item" data-action="copy-username">
           <span class="vault-ctx-item-icon">👤</span>
-          Copier l'identifiant
+          Copy username
         </button>
       ` : ''}
       ${entry.type === 'login' && entry.data?.password ? `
         <button class="vault-ctx-item" data-action="copy-password">
           <span class="vault-ctx-item-icon">🔑</span>
-          Copier le mot de passe
+          Copy password
         </button>
       ` : ''}
       ${entry.data?.url ? `
         <button class="vault-ctx-item" data-action="open-url">
           <span class="vault-ctx-item-icon">🔗</span>
-          Ouvrir le site
+          Open website
         </button>
       ` : ''}
       <div class="vault-ctx-divider"></div>
       <button class="vault-ctx-item" data-action="edit">
         <span class="vault-ctx-item-icon">✏️</span>
-        Modifier
+        Edit
       </button>
       <button class="vault-ctx-item" data-action="duplicate">
         <span class="vault-ctx-item-icon">📋</span>
-        Dupliquer
+        Duplicate
       </button>
       <button class="vault-ctx-item" data-action="move">
         <span class="vault-ctx-item-icon">📁</span>
-        Déplacer vers...
+        Move to...
       </button>
       <button class="vault-ctx-item" data-action="toggle-favorite">
         <span class="vault-ctx-item-icon">${entry.favorite ? '☆' : '★'}</span>
-        ${entry.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+        ${entry.favorite ? 'Remove from favorites' : 'Add to favorites'}
       </button>
       <button class="vault-ctx-item" data-action="toggle-pin">
         <span class="vault-ctx-item-icon">${entry.pinned ? '📍' : '📌'}</span>
-        ${entry.pinned ? 'Désépingler' : 'Épingler en haut'}
+        ${entry.pinned ? 'Unpin' : 'Pin to top'}
       </button>
       <div class="vault-ctx-divider"></div>
       <button class="vault-ctx-item vault-ctx-danger" data-action="delete">
         <span class="vault-ctx-item-icon">🗑️</span>
-        Supprimer
+        Delete
       </button>
     `;
 
@@ -6366,10 +6406,10 @@ export class VaultUI {
 
         switch (action) {
           case 'copy-username':
-            await this.#copyToClipboard(entry.data?.username, 'Identifiant copié');
+            await this.#copyToClipboard(entry.data?.username, 'Username copied');
             break;
           case 'copy-password':
-            await this.#copyToClipboard(entry.data?.password, 'Mot de passe copié');
+            await this.#copyToClipboard(entry.data?.password, 'Password copied');
             break;
           case 'open-url':
             if (entry.data?.url) window.open(entry.data.url, '_blank', 'noopener,noreferrer');
@@ -6427,13 +6467,13 @@ export class VaultUI {
       const newFavorite = !entry.favorite;
       await window.vault.entries.update(entry.id, { favorite: newFavorite });
       entry.favorite = newFavorite;
-      this.#showToast(newFavorite ? 'Ajouté aux favoris' : 'Retiré des favoris', 'success');
+      this.#showToast(newFavorite ? 'Added to favorites' : 'Removed from favorites', 'success');
       this.#render();
       if (this.#selectedEntry?.id === entry.id) {
         this.#updateDetailPanel();
       }
     } catch (error) {
-      this.#showToast('Erreur de mise à jour', 'error');
+      this.#showToast(t('vault.messages.updateError'), 'error');
     }
   }
 
@@ -6442,20 +6482,20 @@ export class VaultUI {
       const newPinned = !entry.pinned;
       await window.vault.entries.update(entry.id, { pinned: newPinned });
       entry.pinned = newPinned;
-      this.#showToast(newPinned ? 'Épinglé en haut' : 'Désépinglé', 'success');
+      this.#showToast(newPinned ? 'Pinned to top' : 'Unpinned', 'success');
       this.#render();
       if (this.#selectedEntry?.id === entry.id) {
         this.#updateDetailPanel();
       }
     } catch (error) {
-      this.#showToast('Erreur de mise à jour', 'error');
+      this.#showToast(t('vault.messages.updateError'), 'error');
     }
   }
 
   #showEntryPreview(entry, x, y) {
     this.#hideEntryPreview();
 
-    const type = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
+    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
     const preview = document.createElement('div');
     preview.className = 'vault-entry-preview';
 
@@ -6465,7 +6505,7 @@ export class VaultUI {
       if (entry.data?.username) {
         fieldsHtml += `
           <div class="vault-preview-field">
-            <span class="vault-preview-label">Identifiant</span>
+            <span class="vault-preview-label">${t('vault.labels.username')}</span>
             <span class="vault-preview-value">${this.#escapeHtml(entry.data.username)}</span>
           </div>
         `;
@@ -6473,7 +6513,7 @@ export class VaultUI {
       if (entry.data?.password) {
         fieldsHtml += `
           <div class="vault-preview-field">
-            <span class="vault-preview-label">Mot de passe</span>
+            <span class="vault-preview-label">${t('vault.labels.password')}</span>
             <span class="vault-preview-value vault-preview-password">••••••••••••</span>
           </div>
         `;
@@ -6481,7 +6521,7 @@ export class VaultUI {
       if (entry.data?.url) {
         fieldsHtml += `
           <div class="vault-preview-field">
-            <span class="vault-preview-label">URL</span>
+            <span class="vault-preview-label">${t('vault.labels.url')}</span>
             <span class="vault-preview-value">${this.#escapeHtml(entry.data.url)}</span>
           </div>
         `;
@@ -6491,7 +6531,7 @@ export class VaultUI {
         const masked = '**** **** **** ' + (entry.data.cardNumber.slice(-4) || '****');
         fieldsHtml += `
           <div class="vault-preview-field">
-            <span class="vault-preview-label">Numéro de carte</span>
+            <span class="vault-preview-label">Card number</span>
             <span class="vault-preview-value">${masked}</span>
           </div>
         `;
@@ -6537,12 +6577,12 @@ export class VaultUI {
 
     // Add modified date
     if (entry.modifiedAt) {
-      const modified = new Date(entry.modifiedAt).toLocaleDateString('fr-FR', {
+      const modified = new Date(entry.modifiedAt).toLocaleDateString('en-US', {
         day: 'numeric', month: 'short', year: 'numeric'
       });
       fieldsHtml += `
         <div class="vault-preview-field">
-          <span class="vault-preview-label">Modifié</span>
+          <span class="vault-preview-label">Modified</span>
           <span class="vault-preview-value">${modified}</span>
         </div>
       `;
@@ -6595,7 +6635,7 @@ export class VaultUI {
       bulkBar.classList.toggle('visible', this.#selectedEntries.size > 0);
     }
     if (countEl) {
-      countEl.textContent = `${this.#selectedEntries.size} sélectionné(s)`;
+      countEl.textContent = `${this.#selectedEntries.size} selected`;
     }
     if (selectAllCheckbox) {
       selectAllCheckbox.checked = this.#selectedEntries.size === filteredEntries.length && filteredEntries.length > 0;
@@ -6619,10 +6659,10 @@ export class VaultUI {
         if (entry) entry.folderId = folderId || null;
       }
       this.#selectedEntries.clear();
-      this.#showToast(`${entryIds.length} entrée(s) déplacée(s)`, 'success');
+      this.#showToast(`${entryIds.length} entry/entries moved`, 'success');
       this.#render();
     } catch (error) {
-      this.#showToast('Erreur de déplacement', 'error');
+      this.#showToast(t('vault.messages.moveError'), 'error');
     }
   }
 
@@ -6636,11 +6676,11 @@ export class VaultUI {
     const filteredEntries = this.#getFilteredEntries();
 
     if (countEl) {
-      countEl.textContent = `${filteredEntries.length} entrée(s)`;
+      countEl.textContent = `${filteredEntries.length} entry/entries`;
     }
 
     if (sortBtnText) {
-      sortBtnText.textContent = SORT_OPTIONS.find(s => s.id === this.#sortBy)?.label || 'Trier';
+      sortBtnText.textContent = getSortOptions().find(s => s.id === this.#sortBy)?.label || 'Sort';
     }
 
     container.innerHTML = filteredEntries.length === 0
@@ -6708,16 +6748,16 @@ export class VaultUI {
     const breachCount = await this.#getBreachCount(entry);
     if (breachCount > 0) {
       indicator.innerHTML = `
-        <span class="vault-breach-badge" title="Ce mot de passe a été exposé dans ${this.#formatBreachCount(breachCount)} fuites de données">
-          🚨 Compromis
+        <span class="vault-breach-badge" title="This password has been exposed in ${this.#formatBreachCount(breachCount)} data breaches">
+          🚨 Compromised
         </span>
       `;
       indicator.classList.add('visible');
     } else if (this.#lastBreachCheck) {
       // Only show "safe" if we've done a check
       indicator.innerHTML = `
-        <span class="vault-safe-badge" title="Ce mot de passe n'a pas été trouvé dans les fuites connues">
-          ✅ Sûr
+        <span class="vault-safe-badge" title="This password has not been found in known breaches">
+          ✅ Safe
         </span>
       `;
       indicator.classList.add('visible');
@@ -6763,8 +6803,8 @@ export class VaultUI {
     // Copy field
     document.querySelectorAll('.copy-field').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const label = btn.closest('.vault-field')?.querySelector('.vault-field-label')?.textContent || 'Valeur';
-        await this.#copyToClipboard(btn.dataset.value, `${label} copié`);
+        const label = btn.closest('.vault-field')?.querySelector('.vault-field-label')?.textContent || 'Value';
+        await this.#copyToClipboard(btn.dataset.value, `${label} copied`);
       });
     });
 
@@ -6778,7 +6818,7 @@ export class VaultUI {
         const codeEl = totpField?.querySelector('.totp-digits');
         const code = codeEl?.textContent?.replace(/\s/g, '');
         if (code && code !== '------') {
-          await this.#copyToClipboard(code, 'Code 2FA copié');
+          await this.#copyToClipboard(code, '2FA code copied');
         }
       });
     });
@@ -6788,7 +6828,7 @@ export class VaultUI {
       el.addEventListener('click', async () => {
         const code = el.querySelector('.totp-digits')?.textContent?.replace(/\s/g, '');
         if (code && code !== '------') {
-          await this.#copyToClipboard(code, 'Code 2FA copié');
+          await this.#copyToClipboard(code, '2FA code copied');
           // Visual feedback
           el.animate([
             { transform: 'scale(1)' },
@@ -6829,7 +6869,7 @@ export class VaultUI {
     // Copy history password
     document.querySelectorAll('.copy-history-pwd').forEach(btn => {
       btn.addEventListener('click', async () => {
-        await this.#copyToClipboard(btn.dataset.password, 'Ancien mot de passe copié');
+        await this.#copyToClipboard(btn.dataset.password, 'Old password copied');
       });
     });
 
@@ -6863,9 +6903,9 @@ export class VaultUI {
         await window.vault.entries.update(this.#selectedEntry.id, {
           favorite: !this.#selectedEntry.favorite
         });
-        this.#showToast(this.#selectedEntry.favorite ? 'Retiré des favoris' : 'Ajouté aux favoris', 'success');
+        this.#showToast(this.#selectedEntry.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
       } catch (error) {
-        this.#showToast('Erreur', 'error');
+        this.#showToast(t('vault.common.error'), 'error');
       }
     });
 
@@ -6939,14 +6979,14 @@ export class VaultUI {
 
     // Show toast with undo
     this.#showToastWithUndo(
-      `"${entryTitle}" supprimé`,
+      `"${entryTitle}" deleted`,
       async () => {
         // Undo: restore entry
         if (this.#pendingDelete) {
           this.#entries.push(this.#pendingDelete);
           this.#pendingDelete = null;
           this.#updateEntryList();
-          this.#showToast('Restauré', 'success');
+          this.#showToast(t('vault.messages.restored'), 'success');
         }
       },
       async () => {
@@ -6961,7 +7001,7 @@ export class VaultUI {
             this.#pendingDelete = null;
             this.#updateEntryList();
           }
-          this.#showToast('Erreur de suppression', 'error');
+          this.#showToast(t('vault.messages.deleteError'), 'error');
         }
       }
     );
@@ -6972,13 +7012,13 @@ export class VaultUI {
       const newData = { ...entry.data };
       const newEntry = await window.vault.entries.add(
         entry.type,
-        `${entry.title} (copie)`,
+        `${entry.title} (copy)`,
         { ...newData, folderId: entry.folderId, notes: entry.notes, tags: entry.tags || [] }
       );
       this.#selectedEntry = newEntry;
-      this.#showToast('Entrée dupliquée', 'success');
+      this.#showToast(t('vault.messages.entryDuplicated'), 'success');
     } catch (error) {
-      this.#showToast('Erreur de duplication', 'error');
+      this.#showToast(t('vault.messages.duplicationError'), 'error');
     }
   }
 
@@ -6989,7 +7029,7 @@ export class VaultUI {
     const history = entry.data?.passwordHistory || [];
 
     if (historyIndex < 0 || historyIndex >= history.length) {
-      this.#showToast('Index invalide', 'error');
+      this.#showToast(t('vault.messages.invalidIndex'), 'error');
       return;
     }
 
@@ -7014,9 +7054,9 @@ export class VaultUI {
           passwordHistory: newHistory
         }
       });
-      this.#showToast('Mot de passe restauré', 'success');
+      this.#showToast(t('vault.messages.passwordRestored'), 'success');
     } catch (error) {
-      this.#showToast('Erreur de restauration', 'error');
+      this.#showToast(t('vault.messages.restoreError'), 'error');
     }
   }
 
@@ -7045,14 +7085,14 @@ export class VaultUI {
     const url = entry.data?.url || '';
 
     if (!username && !password) {
-      this.#showToast('Aucune donnée à remplir', 'warning');
+      this.#showToast(t('vault.messages.noDataToFill'), 'warning');
       return;
     }
 
     // Check if Electron auto-type is available (Phase 6 feature)
     if (window.electronAPI?.performAutoType) {
       try {
-        this.#showToast('Auto-remplissage en cours...', 'info');
+        this.#showToast(t('vault.messages.autoFillProgress'), 'info');
 
         // Get default sequence or custom one from entry
         const sequence = entry.data?.autoTypeSequence ||
@@ -7068,14 +7108,14 @@ export class VaultUI {
         });
 
         if (result.success) {
-          this.#showToast('Auto-remplissage terminé', 'success');
+          this.#showToast(t('vault.messages.autoFillComplete'), 'success');
         } else {
           console.error('[VaultUI] Auto-type failed:', result.error);
           this.#showToast(`Erreur: ${result.error}`, 'error');
         }
       } catch (error) {
         console.error('[VaultUI] Auto-type error:', error);
-        this.#showToast('Erreur auto-remplissage', 'error');
+        this.#showToast(t('vault.messages.autoFillError'), 'error');
       }
     } else {
       // Fallback: Copy to clipboard with instructions
@@ -7094,7 +7134,7 @@ export class VaultUI {
       <div class="vault-modal vault-modal-sm">
         <div class="vault-modal-header">
           <h3>Auto-remplissage manuel</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -7102,19 +7142,19 @@ export class VaultUI {
           </button>
         </div>
         <div class="vault-modal-body">
-          <p class="vault-modal-hint">L'auto-remplissage automatique nécessite l'application Electron.</p>
-          <p class="vault-modal-hint">Copiez les valeurs ci-dessous :</p>
+          <p class="vault-modal-hint">Automatic auto-fill requires the Electron application.</p>
+          <p class="vault-modal-hint">Copy the values below:</p>
           <div class="vault-autotype-steps">
             <div class="vault-autotype-step">
-              <span class="vault-autotype-label">1. Identifiant</span>
+              <span class="vault-autotype-label">1. Username</span>
               <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-user">
-                Copier "${username.substring(0, 10)}${username.length > 10 ? '...' : ''}"
+                Copy "${username.substring(0, 10)}${username.length > 10 ? '...' : ''}"
               </button>
             </div>
             <div class="vault-autotype-step">
-              <span class="vault-autotype-label">2. Mot de passe</span>
+              <span class="vault-autotype-label">2. Password</span>
               <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-pass">
-                Copier ••••••••
+                Copy ••••••••
               </button>
             </div>
           </div>
@@ -7131,11 +7171,11 @@ export class VaultUI {
     });
 
     modal.querySelector('#copy-autotype-user').addEventListener('click', async () => {
-      await this.#copyToClipboard(username, 'Identifiant copié');
+      await this.#copyToClipboard(username, 'Username copied');
     });
 
     modal.querySelector('#copy-autotype-pass').addEventListener('click', async () => {
-      await this.#copyToClipboard(password, 'Mot de passe copié');
+      await this.#copyToClipboard(password, 'Password copied');
     });
 
     // Auto-focus modal
@@ -7153,7 +7193,7 @@ export class VaultUI {
       <div class="vault-modal">
         <div class="vault-modal-header">
           <h3>Partager "${this.#escapeHtml(entry.title)}"</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="Fermer">
+          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -7167,14 +7207,14 @@ export class VaultUI {
               <line x1="12" y1="9" x2="12" y2="13"></line>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            Les données seront chiffrées avec la phrase de passe ci-dessous.
+            Data will be encrypted with the passphrase below.
           </p>
 
           <div class="vault-form-group">
-            <label class="vault-label">Phrase de passe</label>
+            <label class="vault-label">Passphrase</label>
             <div class="vault-share-passphrase">
               <input type="text" class="vault-input" id="share-passphrase" value="${passphrase}" readonly>
-              <button type="button" class="vault-btn vault-btn-secondary" id="regenerate-passphrase" title="Régénérer">
+              <button type="button" class="vault-btn vault-btn-secondary" id="regenerate-passphrase" title="Regenerate">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="1 4 1 10 7 10"></polyline>
                   <polyline points="23 20 23 14 17 14"></polyline>
@@ -7188,7 +7228,7 @@ export class VaultUI {
                 </svg>
               </button>
             </div>
-            <p class="vault-share-hint">Partagez cette phrase séparément (ex: par téléphone)</p>
+            <p class="vault-share-hint">Share this phrase separately (e.g., by phone)</p>
           </div>
 
           <div class="vault-form-group">
@@ -7196,8 +7236,8 @@ export class VaultUI {
             <select class="vault-input vault-select" id="share-expiry">
               <option value="3600000">1 heure</option>
               <option value="86400000" selected>24 heures</option>
-              <option value="604800000">7 jours</option>
-              <option value="2592000000">30 jours</option>
+              <option value="604800000">7 days</option>
+              <option value="2592000000">30 days</option>
             </select>
           </div>
 
@@ -7209,25 +7249,25 @@ export class VaultUI {
           </div>
 
           <div class="vault-share-result" id="share-result" hidden>
-            <label class="vault-label">Texte chiffré à partager</label>
+            <label class="vault-label">Encrypted text to share</label>
             <textarea class="vault-input vault-textarea" id="share-output" rows="4" readonly></textarea>
             <button type="button" class="vault-btn vault-btn-primary" id="copy-share">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
-              Copier le texte chiffré
+              Copy encrypted text
             </button>
           </div>
 
           <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Annuler</button>
+            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
             <button type="button" class="vault-btn vault-btn-primary" id="generate-share">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
-              Générer le partage
+              Generate share
             </button>
           </div>
         </div>
@@ -7254,7 +7294,7 @@ export class VaultUI {
     // Copy passphrase
     modal.querySelector('#copy-passphrase').addEventListener('click', async () => {
       const passphrase = modal.querySelector('#share-passphrase').value;
-      await this.#copyToClipboard(passphrase, 'Phrase de passe copiée');
+      await this.#copyToClipboard(passphrase, 'Passphrase copied');
     });
 
     // Generate share
@@ -7267,16 +7307,16 @@ export class VaultUI {
         const shareText = await this.#createSecureShare(entry, passphrase, { expiresIn: expiry, includeNotes });
         modal.querySelector('#share-output').value = shareText;
         modal.querySelector('#share-result').hidden = false;
-        this.#showToast('Partage généré', 'success');
+        this.#showToast(t('vault.messages.shareGenerated'), 'success');
       } catch (error) {
-        this.#showToast('Erreur de génération', 'error');
+        this.#showToast(t('vault.messages.generationError'), 'error');
       }
     });
 
     // Copy share
     modal.querySelector('#copy-share').addEventListener('click', async () => {
       const shareText = modal.querySelector('#share-output').value;
-      await this.#copyToClipboard(shareText, 'Texte chiffré copié');
+      await this.#copyToClipboard(shareText, 'Encrypted text copied');
     });
   }
 
@@ -7392,9 +7432,9 @@ export class VaultUI {
         <input type="text" class="vault-input" id="edit-title" value="${this.#escapeHtml(entry.title)}" required>
       </div>
       <div class="vault-form-group">
-        <label class="vault-label" for="edit-folder">Dossier</label>
+        <label class="vault-label" for="edit-folder">${t('vault.labels.folder')}</label>
         <select class="vault-input vault-select" id="edit-folder">
-          <option value="">Aucun dossier</option>
+          <option value="">No folder</option>
           ${this.#folders.map(f => `<option value="${f.id}" ${entry.folderId === f.id ? 'selected' : ''}>${this.#escapeHtml(f.name)}</option>`).join('')}
         </select>
       </div>
@@ -7404,20 +7444,20 @@ export class VaultUI {
       case 'login':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-username">Identifiant / Email</label>
+            <label class="vault-label" for="edit-username">Username / Email</label>
             <input type="text" class="vault-input" id="edit-username" value="${this.#escapeHtml(entry.data?.username || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-password">Mot de passe</label>
+            <label class="vault-label" for="edit-password">${t('vault.labels.password')}</label>
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="edit-password" value="${this.#escapeHtml(entry.data?.password || '')}">
-              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="edit-password" aria-label="Afficher">
+              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="edit-password" aria-label="Show">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
               </button>
-              <button type="button" class="vault-input-btn" id="edit-generate-password" data-tooltip="Générer" aria-label="Générer un mot de passe">
+              <button type="button" class="vault-input-btn" id="edit-generate-password" data-tooltip="Generate" aria-label="Generate password">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
                 </svg>
@@ -7426,11 +7466,11 @@ export class VaultUI {
             <div class="vault-password-strength" id="edit-password-strength"></div>
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-url">URL</label>
+            <label class="vault-label" for="edit-url">${t('vault.labels.url')}</label>
             <input type="url" class="vault-input" id="edit-url" value="${this.#escapeHtml(entry.data?.url || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-totp">Clé TOTP (2FA)</label>
+            <label class="vault-label" for="edit-totp">TOTP Key (2FA)</label>
             <div class="vault-input-group">
               <input type="text" class="vault-input mono" id="edit-totp" value="${this.#escapeHtml(entry.data?.totp || '')}"
                      placeholder="JBSWY3DPEHPK3PXP..." autocomplete="off" spellcheck="false">
@@ -7446,23 +7486,23 @@ export class VaultUI {
             <span class="vault-field-hint">Secret Base32 ou URI otpauth://</span>
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-expires">Expiration du mot de passe</label>
+            <label class="vault-label" for="edit-expires">Password expiration</label>
             <div class="vault-expiry-picker">
               <select class="vault-input vault-select" id="edit-expires-preset">
                 <option value="">Jamais</option>
-                <option value="30">30 jours</option>
-                <option value="60">60 jours</option>
-                <option value="90">90 jours</option>
-                <option value="180">6 mois</option>
+                <option value="30">30 days</option>
+                <option value="60">60 days</option>
+                <option value="90">90 days</option>
+                <option value="180">6 months</option>
                 <option value="365">1 an</option>
-                <option value="custom" ${entry.data?.expiresAt ? 'selected' : ''}>Date personnalisée...</option>
+                <option value="custom" ${entry.data?.expiresAt ? 'selected' : ''}>Custom date...</option>
               </select>
               <input type="date" class="vault-input" id="edit-expires"
                      value="${entry.data?.expiresAt || ''}" ${entry.data?.expiresAt ? '' : 'hidden'}>
             </div>
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-notes">Notes</label>
+            <label class="vault-label" for="edit-notes">${t('vault.labels.notes')}</label>
             <textarea class="vault-input vault-textarea" id="edit-notes" rows="3">${this.#escapeHtml(entry.notes || '')}</textarea>
           </div>
         `;
@@ -7478,11 +7518,11 @@ export class VaultUI {
       case 'card':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-holder">Titulaire</label>
+            <label class="vault-label" for="edit-holder">Holder</label>
             <input type="text" class="vault-input" id="edit-holder" value="${this.#escapeHtml(entry.data?.holder || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-cardnumber">Numéro de carte</label>
+            <label class="vault-label" for="edit-cardnumber">Card number</label>
             <input type="text" class="vault-input" id="edit-cardnumber" value="${this.#escapeHtml(entry.data?.number || '')}">
           </div>
           <div class="vault-form-row">
@@ -7500,7 +7540,7 @@ export class VaultUI {
       case 'identity':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-fullname">Nom complet</label>
+            <label class="vault-label" for="edit-fullname">Full name</label>
             <input type="text" class="vault-input" id="edit-fullname" value="${this.#escapeHtml(entry.data?.fullName || '')}">
           </div>
           <div class="vault-form-group">
@@ -7508,7 +7548,7 @@ export class VaultUI {
             <input type="email" class="vault-input" id="edit-email" value="${this.#escapeHtml(entry.data?.email || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-phone">Téléphone</label>
+            <label class="vault-label" for="edit-phone">Phone</label>
             <input type="tel" class="vault-input" id="edit-phone" value="${this.#escapeHtml(entry.data?.phone || '')}">
           </div>
         `;
@@ -7584,18 +7624,18 @@ export class VaultUI {
     return `
       <div class="vault-detail-section">
         <div class="vault-detail-header">
-           <h3 class="vault-detail-subtitle">Pièces Jointes (${attachments.length})</h3>
+           <h3 class="vault-detail-subtitle">Attachments (${attachments.length})</h3>
            ${this.#isEditing ? `
              <div class="vault-file-drop-zone" id="file-drop-zone">
                <span class="drop-icon">📎</span>
-               <span class="drop-text">Glissez vos fichiers ici ou <button type="button" class="link-btn" id="btn-browse-files">parcourir</button></span>
+               <span class="drop-text">Drop your files here or <button type="button" class="link-btn" id="btn-browse-files">browse</button></span>
                <input type="file" id="file-input" multiple style="display: none">
              </div>
            ` : ''}
         </div>
         
         <div class="vault-attachments-list">
-          ${attachments.length === 0 ? '<div class="empty-text">Aucune pièce jointe</div>' : ''}
+          ${attachments.length === 0 ? '<div class="empty-text">No attachments</div>' : ''}
           ${attachments.map((file, index) => `
             <div class="vault-attachment-item">
               <div class="attachment-icon">${this.#getFileIcon(file.type)}</div>
@@ -7605,11 +7645,11 @@ export class VaultUI {
               </div>
               <div class="attachment-actions">
                 ${this.#isEditing ? `
-                  <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="Supprimer">
+                  <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="Delete">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   </button>
                 ` : `
-                  <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="Télécharger">
+                  <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="Download">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                   </button>
                 `}
@@ -7698,10 +7738,10 @@ export class VaultUI {
           id: crypto.randomUUID()
         });
 
-        this.#showToast(`Pièce jointe ajoutée: ${file.name}`, 'success');
+        this.#showToast(`Attachment added: ${file.name}`, 'success');
       } catch (err) {
         console.error('File read error:', err);
-        this.#showToast('Erreur de lecture du fichier', 'error');
+        this.#showToast(t('vault.messages.fileReadError'), 'error');
       }
     }
     this.#renderEditModalContent();
@@ -7731,7 +7771,7 @@ export class VaultUI {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      this.#showToast('Erreur lors du téléchargement', 'error');
+      this.#showToast(t('vault.messages.downloadError'), 'error');
     }
   }
 
@@ -7768,9 +7808,9 @@ export class VaultUI {
       btn.addEventListener('click', async () => {
         if (this.#hasDirtyForm) {
           const confirmed = await this.#showConfirmDialog(
-            'Modifications non enregistrées',
-            'Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer sans sauvegarder ?',
-            { confirmText: 'Fermer sans sauvegarder', confirmClass: 'vault-btn-danger' }
+            'Unsaved changes',
+            'You have unsaved changes. Do you really want to close without saving?',
+            { confirmText: 'Close without saving', confirmClass: 'vault-btn-danger' }
           );
           if (!confirmed) return;
         }
@@ -7787,7 +7827,7 @@ export class VaultUI {
       const folderId = document.getElementById('edit-folder')?.value || null;
 
       if (!title) {
-        this.#showToast('Le titre est requis', 'warning');
+        this.#showToast(t('vault.messages.titleRequired'), 'warning');
         return;
       }
 
@@ -7854,9 +7894,9 @@ export class VaultUI {
         await window.vault.entries.update(entry.id, { title, folderId, data, notes });
         this.#hasDirtyForm = false;
         this.#closeModal('edit-entry-modal');
-        this.#showToast('Entrée modifiée', 'success');
+        this.#showToast(t('vault.messages.entryModified'), 'success');
       } catch (error) {
-        this.#showToast(error.message || 'Erreur', 'error');
+        this.#showToast(error.message || 'Error', 'error');
       }
     });
   }
@@ -7874,8 +7914,8 @@ export class VaultUI {
     if (isDirty && !indicator) {
       indicator = document.createElement('span');
       indicator.className = 'dirty-indicator';
-      indicator.setAttribute('aria-label', 'Modifications non enregistrées');
-      indicator.title = 'Modifications non enregistrées';
+      indicator.setAttribute('aria-label', 'Unsaved changes');
+      indicator.title = 'Unsaved changes';
       indicator.textContent = ' •';
       title.appendChild(indicator);
     } else if (!isDirty && indicator) {
@@ -7936,16 +7976,16 @@ export class VaultUI {
         required: true,
         minLength: 1,
         maxLength: 100,
-        requiredMessage: 'Le titre est obligatoire',
-        minLengthMessage: 'Le titre est trop court',
-        maxLengthMessage: 'Le titre est trop long (max 100 caractères)'
+        requiredMessage: 'Title is required',
+        minLengthMessage: 'Title is too short',
+        maxLengthMessage: 'Title is too long (max 100 characters)'
       });
     });
     titleInput?.addEventListener('blur', () => {
       this.#validateField(titleInput, titleMessage, {
         required: true,
         minLength: 1,
-        requiredMessage: 'Le titre est obligatoire'
+        requiredMessage: 'Title is required'
       });
     });
 
@@ -7957,7 +7997,7 @@ export class VaultUI {
       const folderId = document.getElementById('entry-folder')?.value || null;
 
       if (!type || !title) {
-        this.#showToast('Remplissez tous les champs obligatoires', 'warning');
+        this.#showToast(t('vault.messages.fillRequiredFields'), 'warning');
         return;
       }
 
@@ -7967,7 +8007,7 @@ export class VaultUI {
       if (type === 'login') {
         const url = document.getElementById('entry-url')?.value;
         if (url && !this.#isValidUrl(url)) {
-          this.#showToast('URL invalide', 'warning');
+          this.#showToast(t('vault.form.invalidUrl'), 'warning');
           return;
         }
       }
@@ -7975,7 +8015,7 @@ export class VaultUI {
       if (type === 'identity') {
         const email = document.getElementById('entry-email')?.value;
         if (email && !this.#isValidEmail(email)) {
-          this.#showToast('Email invalide', 'warning');
+          this.#showToast(t('vault.form.invalidEmail'), 'warning');
           return;
         }
       }
@@ -7992,13 +8032,13 @@ export class VaultUI {
         const newEntry = await window.vault.entries.add(type, title, { ...data, folderId, tags: selectedTags });
         this.#closeModal('add-entry-modal');
         this.#selectedEntry = newEntry;
-        this.#showToast('Entrée ajoutée', 'success');
+        this.#showToast(t('vault.messages.entryAdded'), 'success');
         // Reset form
         document.getElementById('add-entry-form')?.reset();
       } catch (error) {
-        this.#showToast(error.message || 'Erreur', 'error');
+        this.#showToast(error.message || 'Error', 'error');
         btn.disabled = false;
-        btn.textContent = 'Ajouter';
+        btn.textContent = 'Add';
       }
     });
   }
@@ -8016,17 +8056,17 @@ export class VaultUI {
       const name = document.getElementById('folder-name')?.value;
 
       if (!name) {
-        this.#showToast('Le nom est requis', 'warning');
+        this.#showToast(t('vault.messages.nameRequired'), 'warning');
         return;
       }
 
       try {
         await window.vault.folders.add(name);
         this.#closeModal('add-folder-modal');
-        this.#showToast('Dossier créé', 'success');
+        this.#showToast(t('vault.messages.folderCreated'), 'success');
         document.getElementById('add-folder-form')?.reset();
       } catch (error) {
-        this.#showToast(error.message || 'Erreur', 'error');
+        this.#showToast(error.message || 'Error', 'error');
       }
     });
   }
@@ -8058,7 +8098,7 @@ export class VaultUI {
         const color = document.getElementById('tag-color')?.value;
 
         if (!name) {
-          this.#showToast('Le nom est requis', 'warning');
+          this.#showToast(t('vault.messages.nameRequired'), 'warning');
           return;
         }
 
@@ -8099,9 +8139,9 @@ export class VaultUI {
 
         const tag = this.#tags.find(t => t.id === tagId);
         const confirmed = await this.#showConfirmDialog(
-          'Supprimer le tag',
-          `Êtes-vous sûr de vouloir supprimer le tag "${tag?.name}" ? Il sera retiré de toutes les entrées.`,
-          { confirmText: 'Supprimer', confirmClass: 'vault-btn-danger' }
+          'Delete tag',
+          `Are you sure you want to delete the tag "${tag?.name}"? It will be removed from all entries.`,
+          { confirmText: 'Delete', confirmClass: 'vault-btn-danger' }
         );
         if (confirmed && await this.#deleteTag(tagId)) {
           this.#closeModal('edit-tag-modal');
@@ -8115,7 +8155,7 @@ export class VaultUI {
         const color = document.getElementById('edit-tag-color')?.value;
 
         if (!name) {
-          this.#showToast('Le nom est requis', 'warning');
+          this.#showToast(t('vault.messages.nameRequired'), 'warning');
           return;
         }
 
@@ -8172,25 +8212,25 @@ export class VaultUI {
     const fields = {
       login: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-username">Identifiant / Email</label>
+          <label class="vault-label" for="entry-username">Username / Email</label>
           <div class="input-with-action">
-            <input type="text" class="vault-input" id="entry-username" placeholder="utilisateur@example.com" autocomplete="username">
-            <button type="button" class="vault-btn-icon" id="btn-create-alias" title="Générer Alias Email (Hide-My-Email)">
+            <input type="text" class="vault-input" id="entry-username" placeholder="user@example.com" autocomplete="username">
+            <button type="button" class="vault-btn-icon" id="btn-create-alias" title="Generate Email Alias (Hide-My-Email)">
               <span class="icon">🕵️</span>
             </button>
           </div>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-password">Mot de passe</label>
+          <label class="vault-label" for="entry-password">${t('vault.labels.password')}</label>
           <div class="vault-input-group">
             <input type="password" class="vault-input" id="entry-password" placeholder="••••••••" autocomplete="new-password">
-            <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="entry-password" aria-label="Afficher">
+            <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="entry-password" aria-label="Show">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </button>
-            <button type="button" class="vault-input-btn" id="generate-password" data-tooltip="Générer" aria-label="Générer un mot de passe">
+            <button type="button" class="vault-input-btn" id="generate-password" data-tooltip="Generate" aria-label="Generate password">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
               </svg>
@@ -8199,49 +8239,49 @@ export class VaultUI {
           <div class="vault-password-strength" id="entry-password-strength"></div>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-url">URL</label>
+          <label class="vault-label" for="entry-url">${t('vault.labels.url')}</label>
           <input type="url" class="vault-input" id="entry-url" placeholder="https://example.com" aria-describedby="entry-url-message">
           <div class="vault-field-message" id="entry-url-message" role="alert" aria-live="polite"></div>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-totp">Clé TOTP (2FA)</label>
+          <label class="vault-label" for="entry-totp">TOTP Key (2FA)</label>
           <input type="text" class="vault-input mono" id="entry-totp" placeholder="JBSWY3DPEHPK3PXP ou otpauth://..." autocomplete="off" spellcheck="false">
           <span class="vault-field-hint">Optionnel - Secret Base32 ou URI otpauth://</span>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-expires">Expiration du mot de passe</label>
+          <label class="vault-label" for="entry-expires">Password expiration</label>
           <div class="vault-expiry-picker">
             <select class="vault-input vault-select" id="entry-expires-preset">
               <option value="">Jamais</option>
-              <option value="30">30 jours</option>
-              <option value="60">60 jours</option>
-              <option value="90">90 jours</option>
-              <option value="180">6 mois</option>
+              <option value="30">30 days</option>
+              <option value="60">60 days</option>
+              <option value="90">90 days</option>
+              <option value="180">6 months</option>
               <option value="365">1 an</option>
-              <option value="custom">Date personnalisée...</option>
+              <option value="custom">Custom date...</option>
             </select>
             <input type="date" class="vault-input" id="entry-expires" hidden>
           </div>
-          <span class="vault-field-hint">Rappel visuel pour renouveler le mot de passe</span>
+          <span class="vault-field-hint">Visual reminder to renew the password</span>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-notes">Notes</label>
-          <textarea class="vault-input vault-textarea" id="entry-notes" rows="2" placeholder="Notes optionnelles..."></textarea>
+          <label class="vault-label" for="entry-notes">${t('vault.labels.notes')}</label>
+          <textarea class="vault-input vault-textarea" id="entry-notes" rows="2" placeholder="Optional notes..."></textarea>
         </div>
       `,
       note: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-content">Contenu <span class="required">*</span></label>
-          <textarea class="vault-input vault-textarea" id="entry-content" rows="8" placeholder="Votre note sécurisée..." required></textarea>
+          <label class="vault-label" for="entry-content">Content <span class="required">*</span></label>
+          <textarea class="vault-input vault-textarea" id="entry-content" rows="8" placeholder="Your secure note..." required></textarea>
         </div>
       `,
       card: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-holder">Titulaire</label>
+          <label class="vault-label" for="entry-holder">Holder</label>
           <input type="text" class="vault-input" id="entry-holder" placeholder="JEAN DUPONT" autocomplete="cc-name">
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-cardnumber">Numéro de carte</label>
+          <label class="vault-label" for="entry-cardnumber">Card number</label>
           <input type="text" class="vault-input" id="entry-cardnumber" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
         </div>
         <div class="vault-form-row">
@@ -8257,7 +8297,7 @@ export class VaultUI {
       `,
       identity: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-fullname">Nom complet</label>
+          <label class="vault-label" for="entry-fullname">Full name</label>
           <input type="text" class="vault-input" id="entry-fullname" placeholder="Jean Dupont" autocomplete="name">
         </div>
         <div class="vault-form-group">
@@ -8266,7 +8306,7 @@ export class VaultUI {
           <div class="vault-field-message" id="entry-email-message" role="alert" aria-live="polite"></div>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-phone">Téléphone</label>
+          <label class="vault-label" for="entry-phone">Phone</label>
           <input type="tel" class="vault-input" id="entry-phone" placeholder="+33 6 12 34 56 78" autocomplete="tel">
         </div>
       `
@@ -8303,12 +8343,12 @@ export class VaultUI {
 
           btn.innerHTML = '<span class="icon">✅</span>';
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
-          this.#showToast('Alias généré avec succès', 'success');
+          this.#showToast(t('vault.messages.aliasGenerated'), 'success');
         } catch (err) {
           console.error(err);
           btn.innerHTML = '<span class="icon">❌</span>';
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
-          this.#showToast(err.message || 'Erreur génération alias', 'error');
+          this.#showToast(err.message || 'Alias generation error', 'error');
         } finally {
           btn.disabled = false;
         }
@@ -8339,9 +8379,9 @@ export class VaultUI {
       urlInput?.addEventListener('input', () => {
         this.#validateField(urlInput, urlMessage, {
           url: true,
-          urlMessage: 'Entrez une URL valide (https://...)',
+          urlMessage: 'Enter a valid URL (https://...)',
           showSuccess: true,
-          successMessage: 'URL valide'
+          successMessage: 'Valid URL'
         });
       });
       urlInput?.addEventListener('blur', () => {
@@ -8379,9 +8419,9 @@ export class VaultUI {
       emailInput?.addEventListener('input', () => {
         this.#validateField(emailInput, emailMessage, {
           email: true,
-          emailMessage: 'Entrez une adresse email valide',
+          emailMessage: 'Enter a valid email address',
           showSuccess: true,
-          successMessage: 'Email valide'
+          successMessage: 'Valid email'
         });
       });
       emailInput?.addEventListener('blur', () => {
@@ -8403,11 +8443,11 @@ export class VaultUI {
   #renderCustomFieldsSection(existingFields = []) {
     const fieldKindOptions = [
       { value: 'text', label: 'Texte' },
-      { value: 'hidden', label: 'Masqué' },
-      { value: 'password', label: 'Mot de passe' },
+      { value: 'hidden', label: 'Hidden' },
+      { value: 'password', label: 'Password' },
       { value: 'url', label: 'URL' },
       { value: 'email', label: 'Email' },
-      { value: 'phone', label: 'Téléphone' },
+      { value: 'phone', label: 'Phone' },
       { value: 'date', label: 'Date' }
     ];
 
@@ -8426,9 +8466,9 @@ export class VaultUI {
           </select>
           <label class="vault-checkbox-inline vault-custom-field-secured">
             <input type="checkbox" ${field.isSecured ? 'checked' : ''}>
-            <span>Sécurisé</span>
+            <span>Secure</span>
           </label>
-          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Supprimer" aria-label="Supprimer ce champ">
+          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Delete" aria-label="Delete this field">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -8438,9 +8478,9 @@ export class VaultUI {
         <div class="vault-input-group">
           <input type="${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? 'password' : 'text'}"
                  class="vault-input vault-custom-field-value"
-                 placeholder="Valeur"
+                 placeholder="Value"
                  value="${this.#escapeHtml(field.value || '')}"
-                 aria-label="Valeur du champ">
+                 aria-label="Field value">
           ${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? `
             <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="Afficher/Masquer">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -8462,14 +8502,14 @@ export class VaultUI {
               <line x1="12" y1="8" x2="12" y2="16"></line>
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
-            Champs personnalisés
+            Custom fields
           </h4>
           <button type="button" class="vault-btn vault-btn-sm vault-btn-ghost" id="btn-add-custom-field">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            Ajouter un champ
+            Add field
           </button>
         </div>
         <div id="custom-fields-container">
@@ -8491,18 +8531,18 @@ export class VaultUI {
           <input type="text" class="vault-input vault-custom-field-label" placeholder="Nom du champ" aria-label="Nom du champ">
           <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
             <option value="text">Texte</option>
-            <option value="hidden">Masqué</option>
-            <option value="password">Mot de passe</option>
+            <option value="hidden">Hidden</option>
+            <option value="password">Password</option>
             <option value="url">URL</option>
             <option value="email">Email</option>
-            <option value="phone">Téléphone</option>
+            <option value="phone">Phone</option>
             <option value="date">Date</option>
           </select>
           <label class="vault-checkbox-inline vault-custom-field-secured">
             <input type="checkbox">
-            <span>Sécurisé</span>
+            <span>Secure</span>
           </label>
-          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Supprimer" aria-label="Supprimer ce champ">
+          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Delete" aria-label="Delete this field">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -8510,7 +8550,7 @@ export class VaultUI {
           </button>
         </div>
         <div class="vault-input-group">
-          <input type="text" class="vault-input vault-custom-field-value" placeholder="Valeur" aria-label="Valeur du champ">
+          <input type="text" class="vault-input vault-custom-field-value" placeholder="Value" aria-label="Field value">
         </div>
       </div>
     `;
@@ -8810,8 +8850,8 @@ export class VaultUI {
 
   async #showConfirmDialog(title, message, options = {}) {
     const {
-      confirmText = 'Confirmer',
-      cancelText = 'Annuler',
+      confirmText = 'Confirm',
+      cancelText = 'Cancel',
       confirmClass = 'vault-btn-danger'
     } = options;
 
@@ -9040,14 +9080,14 @@ export class VaultUI {
     if (/[^a-zA-Z0-9]/.test(password)) score++;
 
     const levels = [
-      { level: 'weak', label: 'Faible', percent: 25 },
-      { level: 'weak', label: 'Faible', percent: 25 },
-      { level: 'fair', label: 'Moyen', percent: 50 },
-      { level: 'fair', label: 'Moyen', percent: 50 },
-      { level: 'good', label: 'Bon', percent: 75 },
-      { level: 'good', label: 'Bon', percent: 75 },
-      { level: 'strong', label: 'Fort', percent: 100 },
-      { level: 'strong', label: 'Excellent', percent: 100 }
+      { level: 'weak', label: t('vault.detail.weak'), percent: 25 },
+      { level: 'weak', label: t('vault.detail.weak'), percent: 25 },
+      { level: 'fair', label: t('vault.detail.fair'), percent: 50 },
+      { level: 'fair', label: t('vault.detail.fair'), percent: 50 },
+      { level: 'good', label: t('vault.detail.good'), percent: 75 },
+      { level: 'good', label: t('vault.detail.good'), percent: 75 },
+      { level: 'strong', label: t('vault.detail.good'), percent: 100 },
+      { level: 'strong', label: t('vault.detail.excellent'), percent: 100 }
     ];
 
     return levels[score] || levels[0];
@@ -9086,13 +9126,13 @@ export class VaultUI {
     popover.className = 'vault-password-generator';
     popover.innerHTML = `
       <div class="vault-gen-header">
-        <span>Générateur de mot de passe</span>
-        <button class="vault-gen-close" aria-label="Fermer">&times;</button>
+        <span>Password generator</span>
+        <button class="vault-gen-close" aria-label="${t('vault.common.close')}">&times;</button>
       </div>
       <div class="vault-gen-preview">
         <input type="text" class="vault-gen-output" id="gen-output" readonly>
         <button class="vault-gen-copy" title="Copier">📋</button>
-        <button class="vault-gen-refresh" title="Régénérer">🔄</button>
+        <button class="vault-gen-refresh" title="Regenerate">🔄</button>
       </div>
       <div class="vault-gen-options">
         <div class="vault-gen-length">
@@ -9107,7 +9147,7 @@ export class VaultUI {
         </div>
       </div>
       <button class="vault-btn vault-btn-primary vault-btn-sm vault-btn-full" id="gen-use">
-        Utiliser ce mot de passe
+        Use this password
       </button>
     `;
 
@@ -9142,7 +9182,7 @@ export class VaultUI {
     document.getElementById('gen-copy').addEventListener('click', () => {
       const pwd = document.getElementById('gen-output').value;
       navigator.clipboard.writeText(pwd);
-      this.#showToast('Copié!', 'success');
+      this.#showToast(t('vault.common.copied'), 'success');
     });
 
     document.getElementById('gen-use').addEventListener('click', () => {
@@ -9201,12 +9241,12 @@ export class VaultUI {
     // Min length check
     else if (rules.minLength && value.length < rules.minLength) {
       isValid = false;
-      message = rules.minLengthMessage || `Minimum ${rules.minLength} caractères`;
+      message = rules.minLengthMessage || `Minimum ${rules.minLength} characters`;
     }
     // Max length check
     else if (rules.maxLength && value.length > rules.maxLength) {
       isValid = false;
-      message = rules.maxLengthMessage || `Maximum ${rules.maxLength} caractères`;
+      message = rules.maxLengthMessage || `Maximum ${rules.maxLength} characters`;
     }
     // Pattern check
     else if (rules.pattern && !rules.pattern.test(value)) {
@@ -9301,9 +9341,9 @@ export class VaultUI {
   async #lock() {
     try {
       await window.vault.lock();
-      this.#showToast('Coffre verrouillé', 'success');
+      this.#showToast(t('vault.messages.vaultLocked'), 'success');
     } catch (error) {
-      this.#showToast('Erreur', 'error');
+      this.#showToast(t('vault.common.error'), 'error');
     }
   }
 
@@ -9397,7 +9437,7 @@ export class VaultUI {
     this.#theme = this.#theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('vault-theme', this.#theme);
     this.#applyTheme();
-    this.#showToast(`Thème ${this.#theme === 'dark' ? 'sombre' : 'clair'} activé`, 'success');
+    this.#showToast(`${this.#theme === 'dark' ? 'Dark' : 'Light'} theme enabled`, 'success');
   }
 
   #applyTheme() {
@@ -9448,33 +9488,33 @@ export class VaultUI {
       const daysAgo = Math.abs(daysLeft);
       return {
         status: 'expired',
-        badge: `<span class="vault-expiry-badge expired" title="Expiré depuis ${daysAgo} jour${daysAgo > 1 ? 's' : ''}" role="img" aria-label="Expiré depuis ${daysAgo} jour${daysAgo > 1 ? 's' : ''}"><span aria-hidden="true">⚠️</span></span>`,
+        badge: `<span class="vault-expiry-badge expired" title="Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago" role="img" aria-label="Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago"><span aria-hidden="true">⚠️</span></span>`,
         daysLeft,
-        label: `Expiré depuis ${daysAgo} jour${daysAgo > 1 ? 's' : ''}`
+        label: `Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`
       };
     } else if (daysLeft === 0) {
       // Expires today
       return {
         status: 'today',
-        badge: '<span class="vault-expiry-badge today" title="Expire aujourd\'hui" role="img" aria-label="Expire aujourd\'hui"><span aria-hidden="true">⏰</span></span>',
+        badge: '<span class="vault-expiry-badge today" title="Expires today" role="img" aria-label="Expires today"><span aria-hidden="true">⏰</span></span>',
         daysLeft: 0,
-        label: "Expire aujourd'hui"
+        label: "Expires today"
       };
     } else if (daysLeft <= 7) {
       // Expires within a week
       return {
         status: 'soon',
-        badge: `<span class="vault-expiry-badge soon" title="Expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}" role="img" aria-label="Expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}"><span aria-hidden="true">🕐</span></span>`,
+        badge: `<span class="vault-expiry-badge soon" title="Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}" role="img" aria-label="Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}"><span aria-hidden="true">🕐</span></span>`,
         daysLeft,
-        label: `Expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`
+        label: `Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`
       };
     } else if (daysLeft <= 30) {
       // Expires within a month
       return {
         status: 'warning',
-        badge: `<span class="vault-expiry-badge warning" title="Expire dans ${daysLeft} jours" role="img" aria-label="Expire dans ${daysLeft} jours"><span aria-hidden="true">📅</span></span>`,
+        badge: `<span class="vault-expiry-badge warning" title="Expires in ${daysLeft} days" role="img" aria-label="Expires in ${daysLeft} days"><span aria-hidden="true">📅</span></span>`,
         daysLeft,
-        label: `Expire dans ${daysLeft} jours`
+        label: `Expires in ${daysLeft} days`
       };
     }
 
@@ -9483,7 +9523,7 @@ export class VaultUI {
       status: 'valid',
       badge: '',
       daysLeft,
-      label: `Expire le ${expiresAt.toLocaleDateString('fr-FR')}`
+      label: `Expires on ${expiresAt.toLocaleDateString('en-US')}`
     };
   }
 
@@ -9506,15 +9546,15 @@ export class VaultUI {
     document.querySelector('.vault-color-picker')?.remove();
 
     const folderColors = [
-      { color: null, label: 'Par défaut' },
-      { color: '#ef4444', label: 'Rouge' },
+      { color: null, label: 'Default' },
+      { color: '#ef4444', label: 'Red' },
       { color: '#f97316', label: 'Orange' },
-      { color: '#eab308', label: 'Jaune' },
-      { color: '#22c55e', label: 'Vert' },
+      { color: '#eab308', label: 'Yellow' },
+      { color: '#22c55e', label: 'Green' },
       { color: '#06b6d4', label: 'Cyan' },
-      { color: '#3b82f6', label: 'Bleu' },
-      { color: '#8b5cf6', label: 'Violet' },
-      { color: '#ec4899', label: 'Rose' }
+      { color: '#3b82f6', label: 'Blue' },
+      { color: '#8b5cf6', label: 'Purple' },
+      { color: '#ec4899', label: 'Pink' }
     ];
 
     const currentColor = this.#getFolderColor(folderId);
@@ -9522,7 +9562,7 @@ export class VaultUI {
     const picker = document.createElement('div');
     picker.className = 'vault-color-picker';
     picker.innerHTML = `
-      <div class="vault-color-picker-header">Couleur du dossier</div>
+      <div class="vault-color-picker-header">Folder color</div>
       <div class="vault-color-picker-grid">
         ${folderColors.map(c => `
           <button class="vault-color-option ${c.color === currentColor || (!c.color && !currentColor) ? 'active' : ''}"
@@ -9553,7 +9593,7 @@ export class VaultUI {
         this.#setFolderColor(folderId, color);
         picker.remove();
         this.#render();
-        this.#showToast('Couleur mise à jour', 'success');
+        this.#showToast(t('vault.messages.colorUpdated'), 'success');
       });
     });
 
@@ -9589,7 +9629,7 @@ export class VaultUI {
     popover.className = 'vault-timeout-settings';
     popover.innerHTML = `
       <div class="vault-timeout-header">
-        <span>Délai de verrouillage</span>
+        <span>Lock timeout</span>
       </div>
       <div class="vault-timeout-options">
         ${timeoutOptions.map(opt => `
@@ -9615,7 +9655,7 @@ export class VaultUI {
         popover.querySelectorAll('.vault-timeout-option').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        this.#showToast(`Délai: ${btn.textContent.trim()}`, 'success');
+        this.#showToast(`Timeout: ${btn.textContent.trim()}`, 'success');
         popover.remove();
       });
     });
@@ -9682,7 +9722,7 @@ export class VaultUI {
 
       const isEnabled = await window.vault.hello.isEnabled(state.vaultId);
       helloBtn.classList.toggle('hello-enabled', isEnabled);
-      helloBtn.title = isEnabled ? 'Windows Hello (activé)' : 'Windows Hello (désactivé)';
+      helloBtn.title = isEnabled ? 'Windows Hello (enabled)' : 'Windows Hello (disabled)';
     } catch (error) {
       console.error('[VaultUI] Hello state check error:', error);
     }
@@ -9719,8 +9759,8 @@ export class VaultUI {
         <div class="vault-hello-body">
           <p class="vault-hello-description">
             ${isEnabled
-          ? 'Windows Hello est activé pour ce coffre. Vous pouvez déverrouiller avec votre empreinte ou votre visage.'
-          : 'Activez Windows Hello pour déverrouiller ce coffre avec votre empreinte digitale ou votre visage.'
+          ? 'Windows Hello is enabled for this vault. You can unlock with your fingerprint or face.'
+          : 'Enable Windows Hello to unlock this vault with your fingerprint or face.'
         }
           </p>
           ${isEnabled ? `
@@ -9730,7 +9770,7 @@ export class VaultUI {
                 <line x1="15" y1="9" x2="9" y2="15"></line>
                 <line x1="9" y1="9" x2="15" y2="15"></line>
               </svg>
-              Désactiver
+              Disable
             </button>
           ` : `
             <button class="vault-btn vault-btn-sm vault-btn-primary" id="hello-enable">
@@ -9744,40 +9784,79 @@ export class VaultUI {
         </div>
       `;
 
-      helloBtn.parentElement.appendChild(popover);
+      // Attach to body for proper z-index stacking
+      document.body.appendChild(popover);
 
-      // Position popover
+      // Position popover with forced pointer-events
       const btnRect = helloBtn.getBoundingClientRect();
-      // const popoverRect = popover.getBoundingClientRect();
-      popover.style.top = `${btnRect.bottom + 8}px`;
-      popover.style.right = `${window.innerWidth - btnRect.right}px`;
+      Object.assign(popover.style, {
+        position: 'fixed',
+        top: `${btnRect.bottom + 8}px`,
+        right: `${window.innerWidth - btnRect.right}px`,
+        zIndex: '99999',
+        pointerEvents: 'auto'
+      });
 
-      // Event handlers
-      if (isEnabled) {
-        popover.querySelector('#hello-disable')?.addEventListener('click', async () => {
-          await this.#disableWindowsHello(state.vaultId);
-          popover.remove();
-        });
-      } else {
-        popover.querySelector('#hello-enable')?.addEventListener('click', async () => {
-          popover.remove();
-          await this.#enableWindowsHello(state.vaultId);
-        });
+      // Force pointer-events on the button too
+      const actionBtn = popover.querySelector('button');
+      if (actionBtn) {
+        actionBtn.style.pointerEvents = 'auto';
+        actionBtn.style.cursor = 'pointer';
       }
 
+      // Debug: log the button element
+      const btn = popover.querySelector('#hello-enable, #hello-disable');
+      console.log('[VaultUI] Button in popover:', btn?.id, btn?.outerHTML?.substring(0, 100));
+
+      // Event delegation on popover - capture phase
+      popover.addEventListener('click', (e) => {
+        console.log('[VaultUI] Popover click event, target:', e.target.tagName, e.target.id || e.target.className);
+        const target = e.target.closest('button');
+        if (!target) {
+          console.log('[VaultUI] No button found in click path');
+          return;
+        }
+
+        console.log('[VaultUI] Button clicked:', target.id);
+
+        if (target.id === 'hello-enable') {
+          console.log('[VaultUI] Enable button clicked');
+          e.stopPropagation();
+          popover.remove();
+          this.#enableWindowsHello(state.vaultId);
+        } else if (target.id === 'hello-disable') {
+          console.log('[VaultUI] Disable button clicked');
+          e.stopPropagation();
+          popover.remove();
+          this.#disableWindowsHello(state.vaultId);
+        }
+      }, true); // Use capture phase
+
+      console.log('[VaultUI] Popover created, isEnabled:', isEnabled);
+      console.log('[VaultUI] Popover in DOM:', document.body.contains(popover));
+
+      // Debug: temporary global click listener to see what's catching clicks
+      const debugClick = (e) => {
+        console.log('[VaultUI] Global click:', e.target.tagName, e.target.id || e.target.className);
+        if (e.target.id === 'hello-enable' || e.target.closest('#hello-enable')) {
+          console.log('[VaultUI] Click was on enable button!');
+        }
+      };
+      document.addEventListener('click', debugClick, true);
+      setTimeout(() => document.removeEventListener('click', debugClick, true), 10000);
+
       // Close on click outside
-      setTimeout(() => {
-        const handler = (e) => {
-          if (!popover.contains(e.target) && e.target.id !== 'hello-settings') {
-            popover.remove();
-            document.removeEventListener('click', handler);
-          }
-        };
-        document.addEventListener('click', handler);
-      }, 0);
+      const closeHandler = (e) => {
+        if (!popover.contains(e.target) && !e.target.closest('#hello-settings')) {
+          popover.remove();
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      // Delay to avoid immediate close
+      setTimeout(() => document.addEventListener('click', closeHandler), 200);
     } catch (error) {
       console.error('[VaultUI] Hello settings error:', error);
-      this.#showToast('Erreur Windows Hello', 'error');
+      this.#showToast(t('vault.windowsHello.error'), 'error');
     }
   }
 
@@ -9786,18 +9865,23 @@ export class VaultUI {
    * @param {string} vaultId - Vault ID
    */
   async #enableWindowsHello(vaultId) {
+    console.log('[VaultUI] #enableWindowsHello called for vault:', vaultId);
+
     // Need master password to enable Windows Hello
-    const password = await this.#promptPassword('Entrez votre mot de passe pour activer Windows Hello');
+    const password = await this.#promptPassword('Enter your password to enable Windows Hello');
+    console.log('[VaultUI] Password prompt result:', password ? 'provided' : 'cancelled');
     if (!password) return;
 
     try {
-      this.#showToast('Activation Windows Hello...', 'info');
+      this.#showToast(t('vault.windowsHello.enabling') || 'Enabling Windows Hello...', 'info');
+      console.log('[VaultUI] Calling vault.hello.enable...');
       await window.vault.hello.enable(vaultId, password);
-      this.#showToast('Windows Hello activé', 'success');
+      console.log('[VaultUI] Hello enable SUCCESS');
+      this.#showToast(t('vault.windowsHello.enableSuccess') || 'Windows Hello enabled!', 'success');
       await this.#updateHelloButtonState();
     } catch (error) {
       console.error('[VaultUI] Hello enable error:', error);
-      this.#showToast(error.message || 'Échec activation Windows Hello', 'error');
+      this.#showToast(error.message || 'Windows Hello activation failed', 'error');
     }
   }
 
@@ -9808,11 +9892,11 @@ export class VaultUI {
   async #disableWindowsHello(vaultId) {
     try {
       await window.vault.hello.disable(vaultId);
-      this.#showToast('Windows Hello désactivé', 'success');
+      this.#showToast(t('vault.windowsHello.disableSuccess'), 'success');
       await this.#updateHelloButtonState();
     } catch (error) {
       console.error('[VaultUI] Hello disable error:', error);
-      this.#showToast(error.message || 'Échec désactivation', 'error');
+      this.#showToast(error.message || 'Deactivation failed', 'error');
     }
   }
 
@@ -9833,8 +9917,8 @@ export class VaultUI {
       modal.innerHTML = `
         <div class="vault-modal vault-modal-sm">
           <div class="vault-modal-header">
-            <h3>Vérification requise</h3>
-            <button type="button" class="vault-modal-close" data-close aria-label="Fermer">
+            <h3>Verification required</h3>
+            <button type="button" class="vault-modal-close" data-close aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -9846,7 +9930,7 @@ export class VaultUI {
             <div class="vault-form-group">
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="pwd-prompt-input"
-                       placeholder="Mot de passe" autocomplete="current-password" required autofocus>
+                       placeholder="Password" autocomplete="current-password" required autofocus>
                 <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="pwd-prompt-input">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -9856,7 +9940,7 @@ export class VaultUI {
               </div>
             </div>
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close>Annuler</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-close>Cancel</button>
               <button type="submit" class="vault-btn vault-btn-primary">Confirmer</button>
             </div>
           </form>
@@ -9954,13 +10038,13 @@ export class VaultUI {
       // Ctrl+U - Copy username
       if (e.ctrlKey && e.key === 'u' && this.#selectedEntry?.data?.username) {
         e.preventDefault();
-        this.#copyToClipboard(this.#selectedEntry.data.username, 'Identifiant copié');
+        this.#copyToClipboard(this.#selectedEntry.data.username, 'Username copied');
       }
 
       // Ctrl+P - Copy password (custom handler, prevent print)
       if (e.ctrlKey && e.key === 'p' && this.#selectedEntry?.data?.password) {
         e.preventDefault();
-        this.#copyToClipboard(this.#selectedEntry.data.password, 'Mot de passe copié');
+        this.#copyToClipboard(this.#selectedEntry.data.password, 'Password copied');
       }
 
       // Ctrl+Shift+U - Auto-type
@@ -10021,7 +10105,7 @@ export class VaultUI {
       if (!this.#clipboardClearedCallbackSet) {
         secureClipboard.setOnCleared((reason) => {
           if (reason === 'manual' || reason === 'timeout') {
-            this.#showToast('Presse-papier effacé', 'info');
+            this.#showToast(t('vault.messages.clipboardCleared'), 'info');
           }
         });
         this.#clipboardClearedCallbackSet = true;
@@ -10036,10 +10120,10 @@ export class VaultUI {
       if (success) {
         this.#showToast(message, 'success');
       } else {
-        this.#showToast('Erreur de copie', 'error');
+        this.#showToast(t('vault.common.error'), 'error');
       }
     } catch {
-      this.#showToast('Erreur de copie', 'error');
+      this.#showToast(t('vault.common.error'), 'error');
     }
   }
 
@@ -10064,7 +10148,7 @@ export class VaultUI {
     toast.innerHTML = `
       ${icon}
       <span class="toast-message">${this.#escapeHtml(message)}</span>
-      <button class="toast-close" aria-label="Fermer">&times;</button>
+      <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
     `;
 
     container.appendChild(toast);
@@ -10105,7 +10189,7 @@ export class VaultUI {
         <span class="toast-title">${this.#escapeHtml(title)}</span>
         <span class="toast-suggestion">${this.#escapeHtml(suggestion)}</span>
       </div>
-      <button class="toast-close" aria-label="Fermer">&times;</button>
+      <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
     `;
 
     container.appendChild(toast);
@@ -10130,8 +10214,8 @@ export class VaultUI {
     toast.setAttribute('role', 'alert');
     toast.innerHTML = `
       <span class="toast-message">${this.#escapeHtml(message)}</span>
-      <button class="toast-undo-btn" aria-label="Annuler">Annuler</button>
-      <button class="toast-close" aria-label="Fermer">&times;</button>
+      <button class="toast-undo-btn" aria-label="Undo">Undo</button>
+      <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
       <div class="toast-progress"><div class="toast-progress-bar"></div></div>
     `;
 
@@ -10191,8 +10275,8 @@ export class VaultUI {
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      <span class="toast-message">Verrouillage automatique dans 30 secondes</span>
-      <button class="toast-action-btn" aria-label="Rester connecté">Rester connecté</button>
+      <span class="toast-message">Auto-lock in 30 seconds</span>
+      <button class="toast-action-btn" aria-label="Stay connected">Stay connected</button>
     `;
 
     container.appendChild(toast);
@@ -10255,7 +10339,7 @@ export class VaultUI {
 
   #formatDate(dateStr) {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('fr-FR');
+    return new Date(dateStr).toLocaleDateString('en-US');
   }
 
   #formatDateTime(dateStr) {
@@ -10495,7 +10579,7 @@ export class VaultUI {
       el.classList.add('synced');
       icon.className = 'vault-sync-icon';
       icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
-      text.textContent = data.message || 'À jour';
+      text.textContent = data.message || 'Up to date';
 
       // Hide after 5 seconds
       this._syncStatusTimeout = setTimeout(() => {
@@ -10513,9 +10597,9 @@ export class VaultUI {
     this.#container.innerHTML = `
       <div class="vault-empty">
         <div class="vault-empty-icon">⚠️</div>
-        <h3>Coffre non disponible</h3>
-        <p>L'API du coffre n'est pas disponible dans ce contexte.</p>
-        <p class="vault-help-text">Le coffre-fort nécessite l'application Electron pour fonctionner.</p>
+        <h3>Vault not available</h3>
+        <p>The vault API is not available in this context.</p>
+        <p class="vault-help-text">The vault requires the Electron application to work.</p>
       </div>
     `;
   }
