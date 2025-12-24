@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/placement.js - Gestion du placement visuel des chiffres et spéciaux
+// src/js/ui/placement.js - Visual placement management for digits and specials
 import { getElement, addEventListener } from './dom.js';
 import {
   setDigitPositions,
@@ -25,10 +25,10 @@ import {
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 
-// Stocke les pourcentages logiques utilisés par l'API de génération.
-// Le rendu visuel compense les marges/insets de la barre, il est donc
-// préférable de travailler sur l'intervalle [0, 100] afin de refléter
-// fidèlement les placements "Début/Milieu/Fin" choisis par l'utilisateur.
+// Stores logical percentages used by the generation API.
+// The visual rendering compensates for bar margins/insets, so it is
+// preferable to work on the [0, 100] interval to accurately reflect
+// the "Start/Middle/End" placements chosen by the user.
 const DEFAULT_RANGE = Object.freeze({ start: 0, end: 100 });
 const KEY_STEP = 1;
 const FINE_STEP = 0.2;
@@ -83,7 +83,7 @@ const clampPercent = (value) => {
   return Math.max(0, Math.min(100, value));
 };
 
-// Conserve uniquement des pourcentages entiers pour faciliter l'alignement sur un chiffre précis.
+// Keep only integer percentages to facilitate alignment on a precise digit.
 const roundPercent = (value) => Math.round(clampPercent(value));
 
 const parsePxValue = (value) => {
@@ -140,7 +140,7 @@ function initVisualPlacement() {
   try {
     state.container = getElement('#placement-visual-container', false);
     if (!state.container) {
-      safeLog('placement.js: conteneur visuel introuvable');
+      safeLog('placement.js: visual container not found');
       return null;
     }
 
@@ -178,11 +178,11 @@ function initVisualPlacement() {
     scheduleBroadcast(true);
 
     state.initialized = true;
-    safeLog('placement.js: module placement visuel initialisé');
+    safeLog('placement.js: visual placement module initialized');
 
     return createAPI();
   } catch (error) {
-    safeLog(`placement.js: erreur d'initialisation - ${error.message}`);
+    safeLog(`placement.js: initialization error - ${error.message}`);
     return null;
   }
 }
@@ -419,9 +419,9 @@ function updateCursorElement(element, type, index) {
   }
 
   const readablePercent = formatPercent(item.percent);
-  element.setAttribute('aria-valuetext', `${type === 'digits' ? 'Chiffre' : 'Spécial'} ${readablePercent}`);
-  element.setAttribute('aria-label', `${type === 'digits' ? 'Position chiffre' : 'Position spécial'} ${readablePercent}`);
-  element.setAttribute('data-tooltip', `${type === 'digits' ? 'Chiffre' : 'Spécial'} • ${readablePercent}`);
+  element.setAttribute('aria-valuetext', `${type === 'digits' ? 'Digit' : 'Special'} ${readablePercent}`);
+  element.setAttribute('aria-label', `${type === 'digits' ? 'Digit position' : 'Special position'} ${readablePercent}`);
+  element.setAttribute('data-tooltip', `${type === 'digits' ? 'Digit' : 'Special'} • ${readablePercent}`);
 }
 
 function formatPercent(value) {
@@ -890,7 +890,7 @@ function flash(kind) {
   if (!state.container) return;
   const className = kind === 'auto' ? 'flash-auto' : 'flash-reset';
   state.container.classList.remove(className);
-  void state.container.offsetWidth; // reflow pour redémarrer l'animation
+  void state.container.offsetWidth; // reflow to restart animation
   state.container.classList.add(className);
   setTimeout(() => state.container?.classList.remove(className), 500);
 }
@@ -933,8 +933,8 @@ function updateSummary() {
     : '--';
 
   state.summaryEl.innerHTML = sanitizeHTML(`
-    <span>Chiffres : <strong>${digitsText}</strong></span>
-    <span>Spéciaux : <strong>${specialsText}</strong></span>
+    <span>Digits: <strong>${digitsText}</strong></span>
+    <span>Specials: <strong>${specialsText}</strong></span>
   `);
 }
 

@@ -89,12 +89,13 @@ export function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback for environments without crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  // Fallback using crypto.getRandomValues (CSPRNG)
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant
+  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
 
 /**
@@ -180,7 +181,7 @@ export class VaultEntry {
    * @param {string} [props.uri] - Associated URL
    * @param {Array<string>} [props.tags] - Tags for categorization
    * @param {OtpConfig|null} [props.otpConfig] - TOTP configuration
-   * @param {string|null} [props.groupId] - Parent group ID
+   * @param {string|null} [props.folderId] - Parent folder ID
    * @param {Array<CustomField>} [props.fields] - Custom fields
    * @param {EntryMetadata} [props.metadata] - Entry metadata
    * @param {string|null} [props.color] - Visual color code
@@ -196,7 +197,7 @@ export class VaultEntry {
     uri = '',
     tags = [],
     otpConfig = null,
-    groupId = null,
+    folderId = null,
     fields = [],
     metadata = null,
     color = null,
@@ -331,7 +332,7 @@ export class VaultEntry {
     this.uri = String(uri);
     this.tags = Array.isArray(tags) ? Array.from(tags) : [];
     this.otpConfig = otpConfig ? { ...otpConfig } : null;
-    this.groupId = groupId;
+    this.folderId = folderId;
     this.fields = validatedFields;
     this.metadata = validatedMetadata;
     this.color = color;
@@ -413,7 +414,7 @@ export class VaultEntry {
       uri: this.uri,
       tags: Array.from(this.tags),
       otpConfig: this.otpConfig ? deepClone(this.otpConfig) : null,
-      groupId: this.groupId,
+      folderId: this.folderId,
       fields: deepClone(this.fields),
       metadata: deepClone(this.metadata),
       color: this.color,
@@ -445,7 +446,7 @@ export class VaultEntry {
       uri: this.uri,
       tags: Array.from(this.tags),
       otpConfig: this.otpConfig ? deepClone(this.otpConfig) : null,
-      groupId: this.groupId,
+      folderId: this.folderId,
       fields: deepClone(this.fields),
       metadata: newMetadata,
       color: this.color,
@@ -547,7 +548,7 @@ export class VaultEntry {
       uri: this.uri,
       tags: Array.from(this.tags),
       otpConfig: this.otpConfig ? { ...this.otpConfig } : null,
-      groupId: this.groupId,
+      folderId: this.folderId,
       fields: deepClone(this.fields),
       metadata: deepClone(this.metadata),
       color: this.color,

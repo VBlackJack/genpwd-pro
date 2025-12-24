@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/utils/logger.js - Système de logs sécurisé avec niveaux
+// src/js/utils/logger.js - Secure logging system with levels
 
 const MAX_LOG_LINES = 100;
 const LOG_TRIM_SIZE = 50;
@@ -100,14 +100,6 @@ export function getLogLevel() {
 }
 
 /**
- * Get current environment
- * @returns {'development'|'production'}
- */
-export function getEnvironment() {
-  return ENVIRONMENT;
-}
-
-/**
  * Format current time
  * @returns {string}
  */
@@ -145,7 +137,7 @@ function logWithLevel(msg, level = LOG_LEVEL.INFO) {
       if (!el) return;
 
       try {
-        if (el.textContent.trim() === '[--:--:--] En attente d\'initialisation...') {
+        if (el.textContent.trim() === '[--:--:--] Awaiting initialization...') {
           el.textContent = '';
         }
 
@@ -155,12 +147,12 @@ function logWithLevel(msg, level = LOG_LEVEL.INFO) {
         const lines = el.textContent.split('\n');
         if (lines.length > MAX_LOG_LINES) {
           el.textContent = lines.slice(-LOG_TRIM_SIZE).join('\n');
-          el.textContent = `[${nowTime()}] ...logs précédents tronqués...\n` + el.textContent;
+          el.textContent = `[${nowTime()}] ...previous logs truncated...\n` + el.textContent;
         }
 
         el.scrollTop = el.scrollHeight;
       } catch (e) {
-        console.error('Erreur dans logWithLevel:', e);
+        console.error('Error in logWithLevel:', e);
       }
     });
   }
@@ -214,7 +206,7 @@ export function clearLogs() {
   const logsEl = document.getElementById('logs');
   if (logsEl) {
     logsEl.textContent = '';
-    safeLog('Logs effacés', LOG_LEVEL.INFO);
+    safeLog('Logs cleared', LOG_LEVEL.INFO);
   }
 }
 

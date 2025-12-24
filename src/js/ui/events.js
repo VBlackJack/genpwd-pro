@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/events.js - Gestion centralisée des événements
+// src/js/ui/events.js - Centralized event management
 import { getElement, getAllElements, addEventListener, updateBadgeForInput,
          updateVisibilityByMode, ensureBlockVisible, toggleDebugPanel,
          renderChips, updateBlockSizeLabel } from './dom.js';
@@ -25,6 +25,7 @@ import { RATE_LIMITING } from '../config/crypto-constants.js';
 import { copyToClipboard, getClipboardTimeout, setClipboardTimeout, CLIPBOARD_TIMEOUT_OPTIONS } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
+import { t } from '../utils/i18n.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { renderResults, updateMaskDisplay, renderEmptyState } from './render.js';
 import { initVisualPlacement, getVisualPlacement } from './placement.js';
@@ -69,6 +70,12 @@ export function cleanupEventHandlers() {
 
 export function bindEventHandlers() {
   try {
+    // Initialize AbortController for document-level listeners
+    if (eventsController) {
+      eventsController.abort();
+    }
+    eventsController = new AbortController();
+
     bindMainActions();
     bindModeAndSettings();
     bindSliders();
@@ -82,20 +89,20 @@ export function bindEventHandlers() {
       placementApi.onUpdate(() => debouncedUpdatePreview());
     }
 
-    // Register cleanup handler for page unload
-    window.addEventListener('beforeunload', cleanupEventHandlers);
+    // Register cleanup handler for page unload (with signal for proper cleanup)
+    window.addEventListener('beforeunload', cleanupEventHandlers, { signal: eventsController.signal });
 
-    safeLog('Événements bindés avec succès');
+    safeLog('Event handlers bound successfully');
   } catch (error) {
-    throw new Error(`Erreur binding événements: ${error.message}`);
+    throw new Error(`Error binding event handlers: ${error.message}`);
   }
 }
 
 function bindMainActions() {
-  // Action principale : générer
+  // Main action: generate
   addEventListener(getElement('#btn-generate'), 'click', generatePasswords);
-  
-  // Actions secondaires
+
+  // Secondary actions
   addEventListener(getElement('#btn-copy-all'), 'click', copyAllPasswords);
   addEventListener(getElement('#btn-export'), 'click', exportPasswords);
   addEventListener(getElement('#btn-clear'), 'click', clearResults);
@@ -103,7 +110,7 @@ function bindMainActions() {
   // Clipboard settings
   addEventListener(getElement('#btn-clipboard-settings'), 'click', showClipboardSettings);
 
-  // Actions debug (btn-run-tests géré par test-integration.js)
+  // Debug actions (btn-run-tests handled by test-integration.js)
   addEventListener(getElement('#btn-toggle-debug'), 'click', () => {
     const isVisible = toggleDebugPanel();
     setUIState('debugVisible', isVisible);
@@ -143,20 +150,20 @@ function bindModeAndSettings() {
   addEventListener(getElement('#mask-toggle'), 'change', () => {
     const masked = getElement('#mask-toggle').checked;
     updateMaskDisplay(masked);
-    safeLog('Masquage ' + (masked ? 'activé' : 'désactivé'));
+    safeLog('Masking ' + (masked ? 'enabled' : 'disabled'));
   });
   
   // Dictionnaire
   addEventListener(getElement('#dict-select'), 'change', async (e) => {
     const newDict = e.target.value;
     setCurrentDictionary(newDict);
-    safeLog(`Changement dictionnaire vers: ${newDict}`);
+    safeLog(`Dictionary changed to: ${newDict}`);
 
     try {
-      // Le chargement est géré par le système de dictionnaires
-      showToast(`Dictionnaire ${newDict} sélectionné !`, 'success');
+      // Loading is handled by the dictionary system
+      showToast(`Dictionary ${newDict} selected`, 'success');
     } catch (error) {
-      showToast(`Erreur dictionnaire ${newDict}`, 'error');
+      showToast(`Dictionary error: ${newDict}`, 'error');
     }
   });
 
@@ -169,7 +176,7 @@ function bindModeAndSettings() {
 }
 
 function bindSliders() {
-  // Mise à jour des badges pour tous les sliders
+  // Update badges for all sliders
   getAllElements('input[type="range"]').forEach(updateBadgeForInput);
 
   function handleSliderChange(e) {
@@ -180,7 +187,7 @@ function bindSliders() {
       if (['syll-len', 'digits-count', 'specials-count', 'pp-count'].includes(target.id)) {
         debouncedUpdatePreview();
 
-        // Toujours réajuster les blocs si mode blocks (1 bloc = 3 caractères)
+        // Always readjust blocks if blocks mode (1 block = 3 characters)
         if (getElement('#case-mode-select')?.value === 'blocks') {
           if (target.id === 'syll-len' || target.id === 'pp-count') {
             setUIState('blockDirty', false);
@@ -191,17 +198,13 @@ function bindSliders() {
     }
   }
 
-  // Initialize AbortController for document-level listeners
-  if (eventsController) {
-    eventsController.abort();
-  }
-  eventsController = new AbortController();
-  const signal = eventsController.signal;
+  // Use existing AbortController signal for document-level listeners
+  const signal = eventsController?.signal;
 
   document.addEventListener('input', handleSliderChange, { passive: true, signal });
   document.addEventListener('change', handleSliderChange, { passive: true, signal });
 
-  // Changements qui triggent la préview
+  // Changes that trigger preview
   addEventListener(getElement('#pp-sep'), 'change', debouncedUpdatePreview);
 }
 
@@ -239,7 +242,7 @@ function bindCaseAndBlocks() {
     });
   }
 
-  // Contrôles des blocs
+  // Block controls
   addEventListener(getElement('#btn-all-title'), 'click', () => {
     const blocks = getBlocks().map(() => 'T');
     setBlocks(blocks);
@@ -303,12 +306,12 @@ function bindCaseAndBlocks() {
     setUIState('blockDirty', true);
     renderBlocksUI();
     debouncedUpdatePreview();
-    showToast('Blocs randomisés !', 'success');
+    showToast(t('toast.blocksRandomized'), 'success');
   });
 }
 
 function bindDebugActions() {
-  // Modal à propos
+  // About modal
   addEventListener(getElement('#btn-about'), 'click', () => {
     const modal = getElement('#about-modal');
     if (modal) modal.classList.add('show');
@@ -348,11 +351,11 @@ function logVisualPlacement() {
   if (placementState?.mode === 'visual') {
     const digitsInfo = placementState.digits.length > 0
       ? placementState.digits.join(', ')
-      : 'aucun';
+      : 'none';
     const specialsInfo = placementState.specials.length > 0
       ? placementState.specials.join(', ')
-      : 'aucun';
-    safeLog(`Placement visuel actif → chiffres: [${digitsInfo}] • spéciaux: [${specialsInfo}]`);
+      : 'none';
+    safeLog(`Visual placement active → digits: [${digitsInfo}] • specials: [${specialsInfo}]`);
   }
 }
 
@@ -416,7 +419,7 @@ async function generateSinglePassword(mode, commonConfig, settings) {
  */
 function handleGenerationResults(results, settings) {
   if (results.length === 0) {
-    showToast('Erreur lors de la génération', 'error');
+    showToast(t('toast.generationError'), 'error');
     return;
   }
 
@@ -429,7 +432,7 @@ function handleGenerationResults(results, settings) {
   const plural = results.length > 1 ? 's' : '';
 
   showToast(
-    `Généré ${results.length} mot${plural} de passe${dictText} !`,
+    `Generated ${results.length} password${plural}${dictText}!`,
     'success'
   );
 }
@@ -453,7 +456,7 @@ async function generatePasswords() {
   if (generationState.burstCount >= GENERATION_CONFIG.MAX_BURST) {
     if (timeSinceLastGen < GENERATION_CONFIG.COOLDOWN_MS) {
       const waitTime = Math.ceil((GENERATION_CONFIG.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
-      showToast(`Génération trop rapide. Veuillez patienter ${waitTime}s`, 'warning');
+      showToast(`Generation too fast. Please wait ${waitTime}s`, 'warning');
       safeLog(`Rate limit: ${waitTime}s remaining`);
       return;
     }
@@ -471,7 +474,7 @@ async function generatePasswords() {
     // Log visual placement if active
     logVisualPlacement();
 
-    safeLog(`Génération: mode=${settings.mode}, qty=${settings.qty}`);
+    safeLog(`Generation: mode=${settings.mode}, qty=${settings.qty}`);
 
     // PARALLEL generation instead of sequential for better performance
     const promises = Array.from(
@@ -489,15 +492,15 @@ async function generatePasswords() {
     handleGenerationResults(results, settings);
 
   } catch (error) {
-    safeLog(`Erreur génération: ${error.message}`);
-    showToast('Erreur lors de la génération', 'error');
+    safeLog(`Generation error: ${error.message}`);
+    showToast(t('toast.generationError'), 'error');
   }
 }
 
 async function copyAllPasswords() {
   const results = getResults();
   if (!results?.length) {
-    showToast('Aucun mot de passe à copier', 'warning');
+    showToast(t('toast.noPasswordsToCopy'), 'warning');
     return;
   }
 
@@ -507,7 +510,7 @@ async function copyAllPasswords() {
     .join('\n');
 
   if (!passwords) {
-    showToast('Aucun mot de passe valide trouvé', 'warning');
+    showToast(t('toast.noValidPasswords'), 'warning');
     return;
   }
 
@@ -516,13 +519,13 @@ async function copyAllPasswords() {
 
   showToast(
     success
-      ? `${count} mot${count > 1 ? 's' : ''} de passe copiés !`
-      : 'Impossible de copier les mots de passe',
+      ? `${count} password${count > 1 ? 's' : ''} copied!`
+      : 'Could not copy passwords',
     success ? 'success' : 'error'
   );
 
   if (success) {
-    safeLog(`Copie groupée: ${count} entrées`);
+    safeLog(`Bulk copy: ${count} entries`);
   }
 }
 
@@ -542,11 +545,11 @@ function showClipboardSettings() {
   popover.className = 'clipboard-settings-popover';
   popover.innerHTML = `
     <div class="clipboard-settings-header">
-      <span>⏱️ Auto-effacement</span>
+      <span>⏱️ Auto-clear</span>
     </div>
     <div class="clipboard-settings-body">
       <p class="clipboard-settings-desc">
-        Effacer le presse-papiers automatiquement après copie
+        Clear clipboard automatically after copy
       </p>
       <div class="clipboard-settings-options">
         ${CLIPBOARD_TIMEOUT_OPTIONS.map(opt => `
@@ -578,7 +581,7 @@ function showClipboardSettings() {
       popover.querySelectorAll('.clipboard-option').forEach(b => b.classList.remove('active'));
       optBtn.classList.add('active');
 
-      showToast(timeout > 0 ? `Auto-effacement: ${optBtn.textContent.trim()}` : 'Auto-effacement désactivé', 'success');
+      showToast(timeout > 0 ? `Auto-clear: ${optBtn.textContent.trim()}` : 'Auto-clear disabled', 'success');
       setTimeout(() => popover.remove(), 300);
     });
   });
@@ -596,17 +599,17 @@ function showClipboardSettings() {
 }
 
 /**
- * Exporte les mots de passe générés vers un fichier
- * Supporte les formats: TXT, JSON, CSV
+ * Exports generated passwords to a file
+ * Supports formats: TXT, JSON, CSV
  */
 async function exportPasswords() {
   const results = getResults();
   if (!results?.length) {
-    showToast('Aucun mot de passe à exporter', 'warning');
+    showToast(t('toast.noPasswordsToExport'), 'warning');
     return;
   }
 
-  // Demander le format d'export
+  // Ask for export format
   const format = await promptExportFormat();
   if (!format) return;
 
@@ -657,11 +660,11 @@ async function exportPasswords() {
       }
 
       default:
-        showToast('Format non supporté', 'error');
+        showToast(t('toast.unsupportedFormat'), 'error');
         return;
     }
 
-    // Créer et télécharger le fichier
+    // Create and download file
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -672,42 +675,42 @@ async function exportPasswords() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast(`Export ${format.toUpperCase()} réussi (${results.length} mots de passe)`, 'success');
-    safeLog(`Export réussi: ${filename} (${results.length} entrées)`);
+    showToast(`${format.toUpperCase()} export successful (${results.length} passwords)`, 'success');
+    safeLog(`Export successful: ${filename} (${results.length} entries)`);
 
   } catch (error) {
-    safeLog(`Erreur export: ${error.message}`);
-    showToast('Erreur lors de l\'export', 'error');
+    safeLog(`Export error: ${error.message}`);
+    showToast(t('toast.exportError'), 'error');
   }
 }
 
 /**
- * Affiche une boîte de dialogue pour choisir le format d'export
- * @returns {Promise<string|null>} Format choisi ('txt', 'json', 'csv') ou null si annulé
+ * Displays a dialog to choose export format
+ * @returns {Promise<string|null>} Chosen format ('txt', 'json', 'csv') or null if cancelled
  */
 function promptExportFormat() {
   return new Promise((resolve) => {
     const content = `
       <div class="export-modal-buttons">
         <button id="export-txt" class="btn export-modal-button">
-          📄 Texte (.txt) - Simple liste
+          📄 Text (.txt) - Simple list
         </button>
         <button id="export-json" class="btn export-modal-button">
-          📊 JSON (.json) - Données complètes
+          📊 JSON (.json) - Complete data
         </button>
         <button id="export-csv" class="btn export-modal-button">
-          📈 CSV (.csv) - Excel/Tableur
+          📈 CSV (.csv) - Excel/Spreadsheet
         </button>
       </div>
     `;
 
     const modal = createModal({
       id: 'export-format-modal',
-      title: 'Choisir le format d\'export',
+      title: 'Choose export format',
       content,
       actions: [
         {
-          label: 'Annuler',
+          label: 'Cancel',
           className: 'btn btn-secondary',
           onClick: () => {
             modal.close();
@@ -719,7 +722,7 @@ function promptExportFormat() {
       onClose: () => resolve(null)
     });
 
-    // Ajouter les handlers pour les boutons de format
+    // Add handlers for format buttons
     modal.element.querySelector('#export-txt')?.addEventListener('click', () => {
       modal.close();
       resolve('txt');
@@ -738,7 +741,7 @@ function promptExportFormat() {
 function clearResults() {
   setResults([]);
   renderEmptyState();
-  showToast('Résultats effacés', 'info');
+  showToast(t('toast.resultsCleared'), 'info');
 }
 // Helpers
 function ensurePolicySelection(select) {
@@ -862,11 +865,11 @@ function syncBlocksWithLength(mode, value) {
 
   switch (mode) {
     case 'syllables':
-      // 1 bloc = 3 caractères (cohérent avec calculateBlocksCount)
+      // 1 block = 3 characters (consistent with calculateBlocksCount)
       targetBlocks = Math.max(1, Math.min(10, Math.ceil(value / 3)));
       break;
     case 'passphrase':
-      // 1 bloc par mot
+      // 1 block per word
       targetBlocks = Math.max(1, Math.min(10, value));
       break;
     default:
@@ -885,7 +888,7 @@ function syncBlocksWithLength(mode, value) {
   setBlocks(newBlocks);
   renderBlocksUI();
   setUIState('blockDirty', false);
-  safeLog(`Blocs synchronisés: ${newBlocks.join('-')} (${targetBlocks} blocs)`);
+  safeLog(`Blocks synced: ${newBlocks.join('-')} (${targetBlocks} blocks)`);
 }
 
 function debouncedUpdatePreview() {
@@ -896,12 +899,12 @@ function debouncedUpdatePreview() {
 }
 
 function updatePreview() {
-  // Implementation simplifiée de la prévisualisation
+  // Simplified preview implementation
   const settings = readSettings();
   if (settings.caseMode !== 'blocks') return;
-  
+
   const blocks = getBlocks();
-  const preview = `${blocks.join('-')} • Pattern de casse`;
+  const preview = `${blocks.join('-')} • Case pattern`;
   
   const previewEl = getElement('#case-preview');
   if (previewEl) {

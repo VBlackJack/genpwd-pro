@@ -131,7 +131,7 @@ function parseBitwarden(rows, headers) {
 
     entries.push({
       type: 'login',
-      title: row[nameIdx] || 'Sans titre',
+      title: row[nameIdx] || 'Untitled',
       folder: row[folderIdx] || null,
       data: {
         username: row[usernameIdx] || '',
@@ -210,12 +210,12 @@ function parse1Password(rows, headers) {
       try {
         const url = new URL(totp);
         totp = url.searchParams.get('secret') || '';
-      } catch { }
+      } catch { /* Invalid otpauth URL - use raw value */ }
     }
 
     entries.push({
       type: 'login',
-      title: row[titleIdx] || 'Sans titre',
+      title: row[titleIdx] || 'Untitled',
       folder: null,
       data: {
         username: row[usernameIdx] || '',
@@ -251,7 +251,7 @@ function parseChrome(rows, headers) {
   for (const row of rows) {
     entries.push({
       type: 'login',
-      title: row[nameIdx] || new URL(row[urlIdx] || 'https://unknown').hostname || 'Sans titre',
+      title: row[nameIdx] || new URL(row[urlIdx] || 'https://unknown').hostname || 'Untitled',
       folder: null,
       data: {
         username: row[usernameIdx] || '',
@@ -282,10 +282,10 @@ function parseFirefox(rows, headers) {
   const passwordIdx = idx('password');
 
   for (const row of rows) {
-    let title = 'Sans titre';
+    let title = 'Untitled';
     try {
       title = new URL(row[urlIdx] || '').hostname;
-    } catch { }
+    } catch { /* Invalid URL - use default title */ }
 
     entries.push({
       type: 'login',
@@ -343,7 +343,7 @@ function parseGeneric(rows, headers) {
 
     entries.push({
       type: 'login',
-      title: title || 'Sans titre',
+      title: title || 'Untitled',
       folder: null,
       data: {
         username: usernameIdx !== -1 ? row[usernameIdx] || '' : '',
@@ -389,7 +389,7 @@ export function importCSV(csvContent) {
   try {
     const rows = parseCSV(csvContent);
     if (rows.length < 2) {
-      return { success: false, entries: [], format: 'unknown', total: 0, skipped: 0, error: 'Fichier CSV vide ou invalide' };
+      return { success: false, entries: [], format: 'unknown', total: 0, skipped: 0, error: 'Empty or invalid CSV file' };
     }
 
     const headers = rows[0];
@@ -397,7 +397,7 @@ export function importCSV(csvContent) {
     const format = detectFormat(headers);
 
     if (!format) {
-      return { success: false, entries: [], format: 'unknown', total: 0, skipped: 0, error: 'Format CSV non reconnu' };
+      return { success: false, entries: [], format: 'unknown', total: 0, skipped: 0, error: 'Unrecognized CSV format' };
     }
 
     let entries = [];
@@ -453,7 +453,7 @@ export function getFormatDisplayName(format) {
     '1password': '1Password',
     chrome: 'Chrome / Edge',
     firefox: 'Firefox',
-    generic: 'Format générique'
+    generic: 'Generic Format'
   };
   return names[format] || format;
 }
@@ -465,15 +465,15 @@ export function getFormatDisplayName(format) {
  */
 export async function validateCSVFile(file) {
   if (!file) {
-    return { valid: false, error: 'Aucun fichier sélectionné' };
+    return { valid: false, error: 'No file selected' };
   }
 
   if (!file.name.endsWith('.csv')) {
-    return { valid: false, error: 'Le fichier doit être au format CSV' };
+    return { valid: false, error: 'File must be in CSV format' };
   }
 
   if (file.size > 10 * 1024 * 1024) { // 10MB limit
-    return { valid: false, error: 'Le fichier est trop volumineux (max 10 Mo)' };
+    return { valid: false, error: 'File is too large (max 10 MB)' };
   }
 
   return { valid: true };

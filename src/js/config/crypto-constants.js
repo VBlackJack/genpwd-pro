@@ -81,8 +81,8 @@ export const KDF = Object.freeze({
     // Number of iterations (3 passes)
     ITERATIONS: 3,
 
-    // Degree of parallelism (1 thread)
-    PARALLELISM: 1,
+    // Degree of parallelism (4 threads - matches vault-crypto.js and argon2-kdf.js)
+    PARALLELISM: 4,
 
     // Output key length in bytes (256-bit key)
     KEY_LENGTH: 32
@@ -111,6 +111,52 @@ export const RATE_LIMITING = Object.freeze({
 
   // Time window for burst counter reset (2 seconds)
   BURST_WINDOW_MS: 2000
+});
+
+/**
+ * PBKDF2 configuration for browsers without Argon2 support
+ * Used in io-service.js, secure-share.js for WebCrypto API
+ * OWASP 2023 recommends 600,000 iterations for PBKDF2-SHA256
+ */
+export const PBKDF2 = Object.freeze({
+  // Algorithm name for WebCrypto API
+  ALGORITHM: 'PBKDF2',
+
+  // Hash algorithm for HMAC
+  HASH: 'SHA-256',
+
+  // Iteration count (OWASP 2023 recommendation)
+  ITERATIONS: 600000,
+
+  // Legacy iteration count (for backwards compatibility with V1 vaults)
+  LEGACY_ITERATIONS: 100000,
+
+  // Salt length in bytes (256 bits)
+  SALT_LENGTH: 32,
+
+  // Output key length in bytes (256-bit AES key)
+  KEY_LENGTH: 32
+});
+
+// NOTE: CACHE constants moved to ui-constants.js for unification
+// Import { CACHE } from './ui-constants.js' instead
+
+/**
+ * Windows Hello authentication timeouts
+ * Used in desktop/vault/auth/windows-hello.js
+ */
+export const WINDOWS_HELLO = Object.freeze({
+  // Timeout for availability check (ms)
+  AVAILABILITY_TIMEOUT: 15000,
+
+  // Timeout for fallback WinBio service check (ms)
+  FALLBACK_CHECK_TIMEOUT: 5000,
+
+  // Timeout for user verification prompt (ms) - longer to allow biometric
+  VERIFICATION_TIMEOUT: 60000,
+
+  // Timeout for credential storage operations (ms)
+  CREDENTIAL_TIMEOUT: 10000
 });
 
 /**

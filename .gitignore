@@ -177,3 +177,9 @@ sbom.xml
 sbom-*.json
 release/
 android/*/build/
+
+# Test and lint output files
+*_output.txt
+test_output*.txt
+lint_output*.txt
+full_test_output*.txt

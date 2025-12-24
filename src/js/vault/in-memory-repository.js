@@ -1,5 +1,6 @@
 import { VaultRepository } from './interfaces.js';
 import { VaultEntry, VaultGroup } from './models.js';
+import { safeLog } from '../utils/logger.js';
 
 /**
  * Deep clone a VaultEntry with all its properties
@@ -17,7 +18,7 @@ function cloneEntry(entry) {
     uri: entry.uri,
     tags: Array.from(entry.tags || []),
     otpConfig: entry.otpConfig ? { ...entry.otpConfig } : null,
-    groupId: entry.groupId ?? null,
+    folderId: entry.folderId ?? null,
     fields: entry.fields ? entry.fields.map(f => ({ ...f })) : [],
     metadata: entry.metadata ? { ...entry.metadata } : null,
     color: entry.color ?? null,
@@ -115,8 +116,8 @@ export class InMemoryVaultRepository extends VaultRepository {
 
   async deleteGroup(groupId) {
     for (const [entryId, entry] of this.entries.entries()) {
-      if (entry.groupId === groupId) {
-        const updated = cloneEntry({ ...entry, groupId: null });
+      if (entry.folderId === groupId) {
+        const updated = cloneEntry({ ...entry, folderId: null });
         this.entries.set(entryId, updated);
       }
     }
@@ -161,7 +162,7 @@ export class InMemoryVaultRepository extends VaultRepository {
 
   async listEntriesByGroup(groupId) {
     return Array.from(this.entries.values())
-      .filter((entry) => entry.groupId === groupId)
+      .filter((entry) => entry.folderId === groupId)
       .map((entry) => entry.clone());
   }
 
@@ -235,9 +236,9 @@ export class InMemoryVaultRepository extends VaultRepository {
 
         // ========== FOLDER FILTER ==========
         if (folderFilters.size > 0) {
-          const entryGroup = (entry.groupId || '').toLowerCase();
+          const entryGroup = (entry.folderId || '').toLowerCase();
           // Also check group name
-          const group = this.groups.get(entry.groupId);
+          const group = this.groups.get(entry.folderId);
           const groupName = (group?.name || '').toLowerCase();
 
           let folderMatch = false;
@@ -407,7 +408,7 @@ export class InMemoryVaultRepository extends VaultRepository {
           groupsImported++;
         }
       } catch (e) {
-        console.warn(`[Repository] Failed to import group: ${e.message}`);
+        safeLog(`[Repository] Failed to import group: ${e.message}`);
       }
     }
 
@@ -420,7 +421,7 @@ export class InMemoryVaultRepository extends VaultRepository {
           entriesImported++;
         }
       } catch (e) {
-        console.warn(`[Repository] Failed to import entry: ${e.message}`);
+        safeLog(`[Repository] Failed to import entry: ${e.message}`);
       }
     }
 

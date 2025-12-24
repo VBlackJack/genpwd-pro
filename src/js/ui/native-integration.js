@@ -19,6 +19,8 @@
 
 import { safeLog } from '../utils/logger.js';
 import { showToast } from '../utils/toast.js';
+import { SECURITY_TIMEOUTS } from '../config/ui-constants.js';
+import { isValidMode } from '../config/constants.js';
 
 /**
  * Native Integration Settings
@@ -33,7 +35,7 @@ const DEFAULT_SETTINGS = {
   minimizeToTray: true,
   quickUnlockEnabled: false,
   clipboardAutoClear: true,
-  clipboardTTL: 30000 // 30 seconds
+  clipboardTTL: SECURITY_TIMEOUTS.CLIPBOARD_TTL_MS
 };
 
 /**
@@ -128,9 +130,9 @@ function handleOAuthCallback(params) {
       }
     }));
 
-    showToast('Authentification réussie', 'success');
+    showToast('Authentication successful', 'success');
   } else if (params.error) {
-    showToast(`Erreur d'authentification: ${params.error}`, 'error');
+    showToast(`Authentication error: ${params.error}`, 'error');
   }
 }
 
@@ -166,7 +168,7 @@ function handleGenerateRequest(params) {
   // Apply settings if provided
   if (params.mode) {
     const modeSelect = document.getElementById('mode-select');
-    if (modeSelect && ['syllables', 'passphrase', 'leet'].includes(params.mode)) {
+    if (modeSelect && isValidMode(params.mode)) {
       modeSelect.value = params.mode;
       modeSelect.dispatchEvent(new Event('change'));
     }
@@ -202,7 +204,7 @@ function initClipboardIntegration(signal) {
 
   // Listen for clipboard cleared events
   window.electronAPI.onClipboardCleared((_data) => {
-    showToast('Presse-papiers vidé automatiquement', 'info', 2000);
+    showToast('Clipboard auto-cleared', 'info', 2000);
     safeLog('Clipboard auto-cleared');
   });
 
@@ -226,17 +228,24 @@ function overrideCopyBehavior(signal) {
     const password = event.detail?.password;
     if (!password) return;
 
-    if (settings.clipboardAutoClear && window.electronAPI?.copyToClipboardSecure) {
-      // Use secure clipboard with auto-clear
-      const result = await window.electronAPI.copyToClipboardSecure(password, settings.clipboardTTL);
-      if (result.success) {
-        const seconds = Math.round(settings.clipboardTTL / 1000);
-        showToast(`Copié (effacement auto dans ${seconds}s)`, 'success', 2000);
+    try {
+      if (settings.clipboardAutoClear && window.electronAPI?.copyToClipboardSecure) {
+        // Use secure clipboard with auto-clear
+        const result = await window.electronAPI.copyToClipboardSecure(password, settings.clipboardTTL);
+        if (result.success) {
+          const seconds = Math.round(settings.clipboardTTL / 1000);
+          showToast(`Copied (auto-clear in ${seconds}s)`, 'success', 2000);
+        } else {
+          throw new Error(result.error || 'Secure copy failed');
+        }
+      } else {
+        // Fallback to standard clipboard
+        await navigator.clipboard.writeText(password);
+        showToast('Copied to clipboard', 'success', 2000);
       }
-    } else {
-      // Fallback to standard clipboard
-      await navigator.clipboard.writeText(password);
-      showToast('Copié dans le presse-papiers', 'success', 2000);
+    } catch (error) {
+      safeLog(`Clipboard copy failed: ${error.message}`);
+      showToast('Copy failed', 'error', 2000);
     }
   }, { signal });
 }
@@ -315,7 +324,7 @@ function initTrayRestoreBehavior(signal) {
   // Listen for vault lock events from tray menu
   if (window.vault?.on) {
     window.vault.on('locked', () => {
-      showToast('Coffre verrouillé', 'info');
+      showToast('Vault locked', 'info');
     });
   }
 }
@@ -329,28 +338,28 @@ export function createNativeSettingsUI() {
 
   return `
     <div class="settings-section native-settings">
-      <h3>Intégration Système</h3>
+      <h3>System Integration</h3>
 
       <div class="setting-item">
         <label class="toggle-label">
           <input type="checkbox" id="setting-minimize-tray"
                  ${settings.minimizeToTray ? 'checked' : ''}>
-          <span>Minimiser dans la zone de notification</span>
+          <span>Minimize to system tray</span>
         </label>
-        <p class="setting-description">L'application reste active en arrière-plan</p>
+        <p class="setting-description">Application stays active in background</p>
       </div>
 
       <div class="setting-item">
         <label class="toggle-label">
           <input type="checkbox" id="setting-clipboard-autoclear"
                  ${settings.clipboardAutoClear ? 'checked' : ''}>
-          <span>Effacement automatique du presse-papiers</span>
+          <span>Automatic clipboard clearing</span>
         </label>
         <div class="setting-sub">
-          <label>Délai:
+          <label>Delay:
             <select id="setting-clipboard-ttl">
-              <option value="15000" ${settings.clipboardTTL === 15000 ? 'selected' : ''}>15 secondes</option>
-              <option value="30000" ${settings.clipboardTTL === 30000 ? 'selected' : ''}>30 secondes</option>
+              <option value="15000" ${settings.clipboardTTL === 15000 ? 'selected' : ''}>15 seconds</option>
+              <option value="30000" ${settings.clipboardTTL === 30000 ? 'selected' : ''}>30 seconds</option>
               <option value="60000" ${settings.clipboardTTL === 60000 ? 'selected' : ''}>1 minute</option>
               <option value="120000" ${settings.clipboardTTL === 120000 ? 'selected' : ''}>2 minutes</option>
             </select>
@@ -362,9 +371,9 @@ export function createNativeSettingsUI() {
         <label class="toggle-label">
           <input type="checkbox" id="setting-quick-unlock"
                  ${settings.quickUnlockEnabled ? 'checked' : ''}>
-          <span>Déverrouillage rapide (Windows Hello)</span>
+          <span>Quick unlock (Windows Hello)</span>
         </label>
-        <p class="setting-description">Utilise la biométrie pour déverrouiller le coffre</p>
+        <p class="setting-description">Uses biometrics to unlock vault</p>
       </div>
     </div>
   `;
@@ -451,7 +460,10 @@ export function initNativeIntegration() {
   // Initialize all handlers
   initDeepLinkHandler();
   initClipboardIntegration(signal);
-  initQuickUnlockIntegration();
+  // Fire-and-forget with error handling - quick unlock init is optional
+  initQuickUnlockIntegration().catch(error => {
+    safeLog(`Quick unlock init failed: ${error.message}`);
+  });
   initTrayRestoreBehavior(signal);
 
   // Expose settings functions for settings UI

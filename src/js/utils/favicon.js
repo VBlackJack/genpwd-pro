@@ -210,7 +210,8 @@ export function createFaviconElement(url, options = {}) {
       if (faviconUrl !== DEFAULT_ICON) {
         img.src = faviconUrl;
       }
-    }).catch(() => {
+    }).catch((error) => {
+      safeLog(`[Favicon] Failed to fetch for ${url}: ${error.message}`);
       // Keep default icon
     });
   }

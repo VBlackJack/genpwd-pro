@@ -13,20 +13,22 @@
  */
 
 import { safeLog } from './logger.js';
+import { SECURITY_TIMEOUTS } from '../config/ui-constants.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 const STORAGE_KEY = 'security-auto-lock-timeout';
-const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+// Use centralized constant for default (5 minutes)
+const DEFAULT_TIMEOUT_MS = SECURITY_TIMEOUTS.AUTO_LOCK_DEFAULT_MS;
 const THROTTLE_MS = 1000; // Throttle activity events to 1/second
 
 /**
  * Available timeout options (in seconds)
  */
 export const AUTO_LOCK_OPTIONS = Object.freeze([
-  { value: 0, label: 'Désactivé', ms: 0 },
+  { value: 0, label: 'Disabled', ms: 0 },
   { value: 60, label: '1 minute', ms: 60 * 1000 },
   { value: 120, label: '2 minutes', ms: 2 * 60 * 1000 },
   { value: 300, label: '5 minutes', ms: 5 * 60 * 1000 },
@@ -382,7 +384,7 @@ class InactivityManager {
       try {
         this.#onLockCallback();
       } catch (error) {
-        console.error('[InactivityManager] Lock callback error:', error);
+        safeLog('[InactivityManager] Lock callback error:', error);
       }
     }
   }

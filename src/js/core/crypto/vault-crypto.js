@@ -284,9 +284,18 @@ class VaultCryptoManager {
 
       // Legacy format: $genpwd$v1$t=T$m=M$p=P$SALT_HEX$HASH_HEX
       if (parts.length >= 8 && parts[1] === 'genpwd' && parts[2] === 'v1') {
-        const iterations = parseInt(parts[3].split('=')[1], 10);
-        const memory = parseInt(parts[4].split('=')[1], 10);
-        const parallelism = parseInt(parts[5].split('=')[1], 10);
+        // Safe parsing with bounds checking
+        const iterParts = parts[3]?.split('=') || [];
+        const memParts = parts[4]?.split('=') || [];
+        const parParts = parts[5]?.split('=') || [];
+
+        if (iterParts.length < 2 || memParts.length < 2 || parParts.length < 2) {
+          return false; // Invalid format
+        }
+
+        const iterations = parseInt(iterParts[1], 10);
+        const memory = parseInt(memParts[1], 10);
+        const parallelism = parseInt(parParts[1], 10);
         const salt = Buffer.from(parts[6], 'hex');
         const expectedHash = parts[7];
 

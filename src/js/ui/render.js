@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/render.js - Rendu des résultats et cartes
+// src/js/ui/render.js - Results and cards rendering
 import { getElement } from './dom.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { showToast } from '../utils/toast.js';
+import { t } from '../utils/i18n.js';
 import { compositionCounts, escapeHtml } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
@@ -39,7 +40,7 @@ export function renderResults(results, mask) {
       wrap.innerHTML = sanitizeHTML(`
         <div class="empty-state">
           <div class="empty-icon">🔐</div>
-          <p>Cliquez sur "Générer" pour créer vos mots de passe</p>
+          <p>Click "Generate" to create your passwords</p>
         </div>`);
       return;
     }
@@ -61,7 +62,7 @@ export function renderResults(results, mask) {
 
     bindPasswordClickEvents();
   } catch (e) {
-    safeLog(`Erreur renderResults: ${e.message}`);
+    safeLog(`renderResults error: ${e.message}`);
   }
 }
 
@@ -78,13 +79,13 @@ function createPasswordCard(item, id, mask) {
   const counts = compositionCounts(value);
   const total = value.length || 1;
 
-  // Calcul des segments pour la barre de composition
+  // Calculate segments for the composition bar
   const segU = Math.round(counts.U / total * 1000) / 10;
   const segL = Math.round(counts.L / total * 1000) / 10;
   const segD = Math.round(counts.D / total * 1000) / 10;
   const segS = Math.round(counts.S / total * 1000) / 10;
 
-  // Information sur le dictionnaire
+  // Dictionary information
   const dictInfo = mode === 'passphrase' && dictionary ?
     `${dictionary.charAt(0).toUpperCase() + dictionary.slice(1)}` :
     mode || 'unknown';
@@ -92,7 +93,7 @@ function createPasswordCard(item, id, mask) {
   // Vault save button (only visible in Electron)
   const vaultAvailable = VaultBridge.isAvailable();
   const saveToVaultBtn = vaultAvailable ? `
-    <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="Sauvegarder" aria-label="Sauvegarder dans le coffre">
+    <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="Save" aria-label="Save to vault">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -111,16 +112,16 @@ function createPasswordCard(item, id, mask) {
       <div class="stat"><span class="dot"></span><strong>${(entropy || 0).toFixed(1)}</strong>&nbsp;bits</div>
       <div class="len">${total} chars</div>
     </div>
-    <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Cliquer pour copier • Double-clic pour afficher/masquer">
+    <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Click to copy • Double-click to show/hide">
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
-        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="Vérifier les fuites">
+        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="Check for breaches">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
         ${saveToVaultBtn}
-        <button class="action-btn copy-btn" type="button" title="Copier">
+        <button class="action-btn copy-btn" type="button" title="Copy">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -137,10 +138,10 @@ function createPasswordCard(item, id, mask) {
         ${segS > 0 ? `<div class="seg s" data-width="${segS}"></div>` : ''}
       </div>
       <div class="comp-legend">
-        <span class="legend-item"><span class="legend-dot u"></span>${counts.U} MAJ</span>
-        <span class="legend-item"><span class="legend-dot l"></span>${counts.L} min</span>
-        <span class="legend-item"><span class="legend-dot d"></span>${counts.D} chiffres</span>
-        <span class="legend-item"><span class="legend-dot s"></span>${counts.S} spé</span>
+        <span class="legend-item"><span class="legend-dot u"></span>${counts.U} upper</span>
+        <span class="legend-item"><span class="legend-dot l"></span>${counts.L} lower</span>
+        <span class="legend-item"><span class="legend-dot d"></span>${counts.D} digits</span>
+        <span class="legend-item"><span class="legend-dot s"></span>${counts.S} special</span>
       </div>
     </div>
     <div class="card-sec info"><div>Mode: ${dictInfo}</div><div>CLI-Safe: ✓</div></div>
@@ -179,12 +180,12 @@ function bindPasswordClickEvents() {
         clearTimeout(existingTimer);
         clickTimers.delete(el);
 
-        // Double-clic : basculer masquage
+        // Double-click: toggle mask
         el.classList.toggle('masked');
         return;
       }
 
-      // Simple clic : programmer la copie
+      // Single click: schedule copy
       const timer = setTimeout(async () => {
         try {
           clickTimers.delete(el);
@@ -195,10 +196,10 @@ function bindPasswordClickEvents() {
 
             const success = await copyToClipboard(password);
             if (success) {
-              showToast('Mot de passe copié !', 'success');
-              safeLog(`Copié: ${password.substring(0, 8)}...`);
+              showToast(t('toast.passwordCopied'), 'success');
+              safeLog(`Copied: ${password.substring(0, 8)}...`);
             } else {
-              showToast('Erreur lors de la copie', 'error');
+              showToast(t('toast.copyFailed'), 'error');
             }
 
             setTimeout(() => {
@@ -273,11 +274,11 @@ function bindCopyButtons() {
 
         const success = await copyToClipboard(password);
         if (success) {
-          showToast('Mot de passe copié !', 'success');
+          showToast(t('toast.passwordCopied'), 'success');
           btn.classList.add('copied');
           setTimeout(() => btn.classList.remove('copied'), 1000);
         } else {
-          showToast('Erreur lors de la copie', 'error');
+          showToast(t('toast.copyFailed'), 'error');
         }
 
         setTimeout(() => {
@@ -312,28 +313,28 @@ function bindBreachCheckButtons() {
       btn.disabled = true;
       statusEl.hidden = false;
       statusEl.className = 'breach-status loading';
-      statusEl.innerHTML = '<span class="breach-spinner"></span> Vérification...';
+      statusEl.innerHTML = '<span class="breach-spinner"></span> Checking...';
 
       try {
         const result = await checkPasswordBreach(password);
 
         if (result.error) {
           statusEl.className = 'breach-status error';
-          statusEl.innerHTML = `<span class="breach-icon">⚠️</span> Erreur: ${result.error}`;
+          statusEl.innerHTML = `<span class="breach-icon">⚠️</span> Error: ${result.error}`;
         } else if (result.breached) {
           const severity = getBreachSeverity(result.count);
           const countText = formatBreachCount(result.count);
           statusEl.className = `breach-status ${severity}`;
           statusEl.innerHTML = `<span class="breach-icon">🚨</span> ${countText}`;
-          showToast(`Mot de passe compromis ! (${countText})`, 'error', 5000);
+          showToast(`Password compromised! (${countText})`, 'error', 5000);
         } else {
           statusEl.className = 'breach-status safe';
-          statusEl.innerHTML = '<span class="breach-icon">✅</span> Non compromis';
-          showToast('Mot de passe non trouvé dans les fuites connues', 'success');
+          statusEl.innerHTML = '<span class="breach-icon">✅</span> Not compromised';
+          showToast('Password not found in known breaches', 'success');
         }
       } catch (err) {
         statusEl.className = 'breach-status error';
-        statusEl.innerHTML = '<span class="breach-icon">⚠️</span> Erreur de connexion';
+        statusEl.innerHTML = '<span class="breach-icon">⚠️</span> Connection error';
         safeLog(`Breach check error: ${err.message}`);
       } finally {
         btn.classList.remove('checking');
@@ -361,7 +362,7 @@ function showContextMenu(e, password) {
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
       </svg>
-      Copier
+      Copy
     </button>
     ${vaultAvailable ? `
       <button class="pwd-ctx-item" data-action="save-vault">
@@ -369,7 +370,7 @@ function showContextMenu(e, password) {
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        Sauvegarder dans le coffre
+        Save to vault
       </button>
     ` : ''}
   `;
@@ -388,15 +389,15 @@ function showContextMenu(e, password) {
       if (action === 'copy') {
         const success = await copyToClipboard(password);
         if (success) {
-          showToast('Mot de passe copié !', 'success');
+          showToast(t('toast.passwordCopied'), 'success');
         } else {
-          showToast('Erreur lors de la copie', 'error');
+          showToast(t('toast.copyFailed'), 'error');
         }
       } else if (action === 'save-vault') {
         await SaveToVaultModal.open(password);
       }
 
-      menu.remove();
+      cleanupMenu();
     });
   });
 
@@ -463,7 +464,7 @@ export function renderEmptyState() {
     wrap.innerHTML = sanitizeHTML(`
       <div class="empty-state">
         <div class="empty-icon">🔐</div>
-        <p>Cliquez sur "Générer" pour créer vos mots de passe</p>
+        <p>Click "Generate" to create your passwords</p>
       </div>`);
   }
 }

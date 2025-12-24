@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/app.js - Point d'entrée principal de l'application
+// src/js/app.js - Main application entry point
 import { validateCharSets } from './config/constants.js';
 import { initializeDictionaries } from './core/dictionaries.js';
 import { initializeDOM } from './ui/dom.js';
@@ -57,89 +57,89 @@ class GenPwdApp {
 
   async init() {
     try {
-      safeLog(`Démarrage GenPwd Pro v${this.version} - Architecture modulaire`);
+      safeLog(`Starting GenPwd Pro v${this.version} - Modular architecture`);
 
-      // 0. Initialiser le système de thèmes (en premier pour l'UI)
+      // 0. Initialize theme system (first for UI)
       initThemeSystem();
-      safeLog('Système de thèmes initialisé');
+      safeLog('Theme system initialized');
 
-      // 1. Initialiser le monitoring d'erreurs
+      // 1. Initialize error monitoring
       initErrorMonitoring();
-      safeLog('Monitoring d\'erreurs initialisé');
+      safeLog('Error monitoring initialized');
 
-      // 1.1 NEW: Initialiser Sentry (optionnel, configuré via SENTRY_DSN)
+      // 1.1 NEW: Initialize Sentry (optional, configured via SENTRY_DSN)
       try {
         await initSentry();
-        safeLog('Sentry initialisé');
+        safeLog('Sentry initialized');
       } catch (error) {
-        safeLog('Sentry non configuré ou désactivé');
+        safeLog('Sentry not configured or disabled');
       }
 
-      // 1.2 NEW: Initialiser Analytics (optionnel, configuré via provider)
+      // 1.2 NEW: Initialize Analytics (optional, configured via provider)
       if (analytics.config.provider !== 'none') {
         analytics.init();
-        safeLog(`Analytics initialisé: ${analytics.config.provider}`);
+        safeLog(`Analytics initialized: ${analytics.config.provider}`);
       }
 
-      // 1.3 NEW: Initialiser i18n et charger locale
+      // 1.3 NEW: Initialize i18n and load locale
       try {
         const detectedLocale = i18n.detectLocale();
         await i18n.loadLocale(detectedLocale);
         await i18n.setLocale(detectedLocale);
-        safeLog(`i18n initialisé: ${detectedLocale}`);
+        safeLog(`i18n initialized: ${detectedLocale}`);
       } catch (i18nError) {
-        safeLog(`i18n non disponible: ${i18nError.message} - continuant sans i18n`);
+        safeLog(`i18n not available: ${i18nError.message} - continuing without i18n`);
       }
 
-      // 2. Validation de l'environnement
+      // 2. Environment validation
       if (!this.validateEnvironment()) {
-        throw new Error('Environnement non compatible');
+        throw new Error('Incompatible environment');
       }
 
-      // 3. Validation des données critiques
+      // 3. Critical data validation
       if (!validateCharSets()) {
-        throw new Error('Données CHAR_SETS corrompues');
+        throw new Error('CHAR_SETS data corrupted');
       }
 
-      // 4. Initialisation DOM
+      // 4. DOM initialization
       await initializeDOM();
-      safeLog('DOM initialisé');
+      safeLog('DOM initialized');
 
-      // 4.1 NEW: Initialiser les nouveaux composants UI
+      // 4.1 NEW: Initialize new UI components
       this.initializeNewFeatures();
-      safeLog('Nouvelles fonctionnalités UI initialisées');
+      safeLog('New UI features initialized');
 
-      // 4.2 NEW: Initialiser UI des features (language, presets, history)
+      // 4.2 NEW: Initialize feature UIs (language, presets, history)
       initializeAllFeatures();
-      safeLog('Feature UIs initialisées (language, presets, history)');
+      safeLog('Feature UIs initialized (language, presets, history)');
 
-      // 5. Initialisation dictionnaires
+      // 5. Dictionary initialization
       initializeDictionaries();
-      safeLog('Système dictionnaires initialisé');
+      safeLog('Dictionary system initialized');
 
-      // 6. Configuration initiale des blocs
+      // 6. Initial block configuration
       const initialBlocks = defaultBlocksForMode('syllables');
       setBlocks(initialBlocks);
-      safeLog(`Blocs initialisés: ${initialBlocks.join('-')}`);
+      safeLog(`Blocks initialized: ${initialBlocks.join('-')}`);
 
-      // 7. Binding des événements
+      // 7. Event binding
       bindEventHandlers();
       bindModalEvents();
-      safeLog('Événements bindés');
+      safeLog('Events bound');
 
-      // 7.1 NEW: Binding des nouveaux événements
+      // 7.1 NEW: Bind new feature events
       this.bindNewFeatureEvents();
-      safeLog('Nouveaux événements bindés');
+      safeLog('New feature events bound');
 
       // 7.2 NEW: Initialize keyboard shortcuts (accessibility)
       initKeyboardShortcuts();
-      safeLog('Raccourcis clavier initialisés (Alt+G/C/R/S, Escape)');
+      safeLog('Keyboard shortcuts initialized (Alt+G/C/R/S, Escape)');
 
       // 7.3 Initialize singleton tooltips (premium UI)
       initTooltips();
-      safeLog('Singleton tooltips initialisés');
+      safeLog('Singleton tooltips initialized');
 
-      // 8. Génération initiale après un délai
+      // 8. Initial generation after delay
       setTimeout(() => this.generateInitial(), ANIMATION_DURATION.INITIAL_GENERATION_DELAY);
 
       // 9. NEW: Track page view
@@ -148,25 +148,25 @@ class GenPwdApp {
       }
 
       this.initialized = true;
-      safeLog('Application initialisée avec succès');
-      showToast(`GenPwd Pro v${this.version} chargé avec succès`, 'success');
+      safeLog('Application initialized successfully');
+      showToast(`GenPwd Pro v${this.version} loaded successfully`, 'success');
 
       // 10. Initialize Vault Bridge (for Generator-Vault communication)
       VaultBridge.init();
-      safeLog('VaultBridge initialisé');
+      safeLog('VaultBridge initialized');
 
       // 11. Initialize Native Integration (Electron only - Phase 4)
       if (window.electronAPI?.isElectron) {
         initNativeIntegration();
-        safeLog('Intégration native initialisée (Tray, DeepLink, Clipboard, SecureStorage)');
+        safeLog('Native integration initialized (Tray, DeepLink, Clipboard, SecureStorage)');
       }
 
       // 12. Initialize Vault UI (Electron only)
       this.initializeVault();
 
     } catch (error) {
-      console.error('Erreur critique initialisation:', error);
-      safeLog(`Erreur critique: ${error.message}`);
+      console.error('Critical initialization error:', error);
+      safeLog(`Critical error: ${error.message}`);
       reportError(error, { phase: 'initialization' });
 
       // NEW: Report to Sentry
@@ -174,7 +174,7 @@ class GenPwdApp {
         captureException(error, { phase: 'initialization' });
       }
 
-      showToast('Erreur critique au démarrage', 'error');
+      showToast('Critical startup error', 'error');
     }
   }
 
@@ -216,41 +216,41 @@ class GenPwdApp {
   }
 
   validateEnvironment() {
-    // Vérifier APIs de window
+    // Check window APIs
     const windowAPIs = ['fetch', 'Promise', 'Map', 'Set', 'JSON'];
 
     for (const api of windowAPIs) {
       if (typeof window[api] === 'undefined') {
-        safeLog(`API window manquante: ${api}`);
+        safeLog(`Missing window API: ${api}`);
         return false;
       }
     }
 
-    // Vérifier APIs spécifiques
+    // Check specific APIs
     if (typeof Object.assign === 'undefined') {
-      safeLog('API manquante: Object.assign');
+      safeLog('Missing API: Object.assign');
       return false;
     }
 
     if (typeof document.querySelector === 'undefined') {
-      safeLog('API manquante: document.querySelector');
+      safeLog('Missing API: document.querySelector');
       return false;
     }
 
     if (typeof window.addEventListener === 'undefined') {
-      safeLog('API manquante: window.addEventListener');
+      safeLog('Missing API: window.addEventListener');
       return false;
     }
 
-    // Vérifier support CSS Grid
+    // Check CSS Grid support
     const testEl = document.createElement('div');
     testEl.style.setProperty('display', 'grid');
     if (testEl.style.display !== 'grid') {
-      safeLog('CSS Grid non supporté');
+      safeLog('CSS Grid not supported');
       return false;
     }
 
-    safeLog('Environnement validé avec succès');
+    safeLog('Environment validated successfully');
     return true;
   }
 
@@ -260,11 +260,11 @@ class GenPwdApp {
   initializeVault() {
     // Check if running in Electron (vault API available)
     if (!window.vault) {
-      safeLog('Vault API non disponible (mode navigateur)');
+      safeLog('Vault API not available (browser mode)');
       return;
     }
 
-    safeLog('Initialisation du système de coffre...');
+    safeLog('Initializing vault system...');
 
     // Show header tabs
     const tabsEl = document.getElementById('app-tabs');
@@ -282,7 +282,7 @@ class GenPwdApp {
     // Bind tab events
     this.bindVaultTabEvents();
 
-    safeLog('Système de coffre initialisé');
+    safeLog('Vault system initialized');
   }
 
   /**
@@ -338,18 +338,18 @@ class GenPwdApp {
 
   async generateInitial() {
     try {
-      safeLog('Lancement génération automatique...');
+      safeLog('Launching automatic generation...');
 
-      // Simuler clic sur le bouton générer
+      // Simulate click on generate button
       const generateBtn = document.getElementById('btn-generate');
       if (generateBtn) {
         generateBtn.click();
       } else {
-        safeLog('Bouton générer non trouvé pour génération initiale');
+        safeLog('Generate button not found for initial generation');
       }
 
     } catch (error) {
-      safeLog(`Erreur génération initiale: ${error.message}`);
+      safeLog(`Initial generation error: ${error.message}`);
     }
   }
 }
@@ -374,7 +374,7 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
-// Note: La gestion des erreurs globales est maintenant gérée par error-monitoring.js
-// qui est initialisé dans init() via initErrorMonitoring()
+// Note: Global error handling is now managed by error-monitoring.js
+// which is initialized in init() via initErrorMonitoring()
 
 export { GenPwdApp };

@@ -748,7 +748,6 @@ export function parseBitwardenJSON(jsonContent) {
 
           const login = item.login || {};
           const card = item.card || {};
-          // const identity = item.identity || {};
 
           // Get group ID
           const groupId = item.folderId ? folderMap.get(item.folderId) || null : null;

@@ -14,7 +14,7 @@ import { checkPasswordBreach } from './breach-check.js';
  * @returns {{score: number, level: string, issues: string[]}}
  */
 export function analyzePasswordStrength(password) {
-  if (!password) return { score: 0, level: 'none', issues: ['Pas de mot de passe'] };
+  if (!password) return { score: 0, level: 'none', issues: ['No password'] };
 
   const issues = [];
   let score = 0;
@@ -26,8 +26,8 @@ export function analyzePasswordStrength(password) {
   else if (len >= 8) score += 15;
   else if (len >= 6) score += 5;
 
-  if (len < 8) issues.push('Trop court (< 8 caractères)');
-  if (len < 12) issues.push('Longueur recommandée: 12+ caractères');
+  if (len < 8) issues.push('Too short (< 8 characters)');
+  if (len < 12) issues.push('Recommended length: 12+ characters');
 
   // Character variety (max 40 points)
   const hasLower = /[a-z]/.test(password);
@@ -40,33 +40,33 @@ export function analyzePasswordStrength(password) {
   if (hasDigit) score += 10;
   if (hasSpecial) score += 10;
 
-  if (!hasLower || !hasUpper) issues.push('Mélangez majuscules et minuscules');
-  if (!hasDigit) issues.push('Ajoutez des chiffres');
-  if (!hasSpecial) issues.push('Ajoutez des caractères spéciaux');
+  if (!hasLower || !hasUpper) issues.push('Mix uppercase and lowercase');
+  if (!hasDigit) issues.push('Add digits');
+  if (!hasSpecial) issues.push('Add special characters');
 
   // Entropy bonus (max 20 points)
   const uniqueChars = new Set(password).size;
   const uniqueRatio = uniqueChars / len;
   score += Math.min(20, Math.round(uniqueRatio * 25));
 
-  if (uniqueRatio < 0.5) issues.push('Trop de caractères répétés');
+  if (uniqueRatio < 0.5) issues.push('Too many repeated characters');
 
   // Pattern penalties
   if (/^[a-z]+$/i.test(password)) {
     score -= 10;
-    issues.push('Que des lettres');
+    issues.push('Only letters');
   }
   if (/^[0-9]+$/.test(password)) {
     score -= 20;
-    issues.push('Que des chiffres');
+    issues.push('Only digits');
   }
   if (/(.)\1{2,}/.test(password)) {
     score -= 5;
-    issues.push('Séquences répétitives');
+    issues.push('Repetitive sequences');
   }
   if (/^(123|abc|qwerty|azerty|password|motdepasse)/i.test(password)) {
     score -= 30;
-    issues.push('Pattern commun détecté');
+    issues.push('Common pattern detected');
   }
 
   // Clamp score
@@ -142,19 +142,19 @@ export function analyzePasswordAge(modifiedAt) {
   let level, label;
   if (days > 365) {
     level = 'critical';
-    label = `${Math.floor(days / 365)} an(s) - Renouvellement urgent`;
+    label = `${Math.floor(days / 365)} year(s) - Urgent renewal needed`;
   } else if (days > 180) {
     level = 'warning';
-    label = `${Math.floor(days / 30)} mois - Renouvellement conseillé`;
+    label = `${Math.floor(days / 30)} months - Renewal recommended`;
   } else if (days > 90) {
     level = 'fair';
-    label = `${Math.floor(days / 30)} mois`;
+    label = `${Math.floor(days / 30)} months`;
   } else if (days > 30) {
     level = 'good';
-    label = `${days} jours`;
+    label = `${days} days`;
   } else {
     level = 'recent';
-    label = 'Récent';
+    label = 'Recent';
   }
 
   return { days, level, label };
@@ -216,7 +216,7 @@ export async function generateHealthReport(entries, options = {}) {
   };
 
   if (loginEntries.length === 0) {
-    report.issues.push({ type: 'info', message: 'Aucune entrée avec mot de passe' });
+    report.issues.push({ type: 'info', message: 'No entries with password' });
     return report;
   }
 
@@ -289,35 +289,35 @@ export async function generateHealthReport(entries, options = {}) {
   if (report.strength.critical.length > 0) {
     report.issues.push({
       type: 'critical',
-      message: `${report.strength.critical.length} mot(s) de passe critique(s)`,
+      message: `${report.strength.critical.length} critical password(s)`,
       count: report.strength.critical.length
     });
   }
   if (report.strength.weak.length > 0) {
     report.issues.push({
       type: 'warning',
-      message: `${report.strength.weak.length} mot(s) de passe faible(s)`,
+      message: `${report.strength.weak.length} weak password(s)`,
       count: report.strength.weak.length
     });
   }
   if (report.duplicates.count > 0) {
     report.issues.push({
       type: 'warning',
-      message: `${report.duplicates.affectedEntries.length} entrées partagent ${report.duplicates.count} mot(s) de passe`,
+      message: `${report.duplicates.affectedEntries.length} entries share ${report.duplicates.count} password(s)`,
       count: report.duplicates.count
     });
   }
   if (report.age.critical.length > 0) {
     report.issues.push({
       type: 'critical',
-      message: `${report.age.critical.length} mot(s) de passe de plus d'un an`,
+      message: `${report.age.critical.length} password(s) over one year old`,
       count: report.age.critical.length
     });
   }
   if (report.breached.compromised.length > 0) {
     report.issues.push({
       type: 'critical',
-      message: `${report.breached.compromised.length} mot(s) de passe compromis(s)`,
+      message: `${report.breached.compromised.length} compromised password(s)`,
       count: report.breached.compromised.length
     });
   }

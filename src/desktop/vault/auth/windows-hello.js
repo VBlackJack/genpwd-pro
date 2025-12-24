@@ -8,14 +8,54 @@
  * @version 2.6.8
  */
 
-import { exec, execSync } from 'child_process';
+import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
+import { WINDOWS_HELLO } from '../../../js/config/crypto-constants.js';
 
 const execAsync = promisify(exec);
 
 // Credential target prefix for GenPwd vaults
 const CREDENTIAL_PREFIX = 'GenPwdPro_Vault_';
+
+// UUID v4 regex for vaultId validation
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Base64 regex for encryptedKey validation (standard Base64 with optional padding)
+const BASE64_REGEX = /^[A-Za-z0-9+/]+=*$/;
+
+/**
+ * Validate vaultId is a valid UUID to prevent command injection
+ * @param {string} vaultId - Vault ID to validate
+ * @throws {Error} If vaultId is not a valid UUID
+ */
+function validateVaultId(vaultId) {
+  if (!vaultId || typeof vaultId !== 'string') {
+    throw new Error('Invalid vaultId: must be a non-empty string');
+  }
+  if (!UUID_REGEX.test(vaultId)) {
+    throw new Error('Invalid vaultId: must be a valid UUID');
+  }
+}
+
+/**
+ * Validate encryptedKey is valid Base64 to prevent command injection
+ * @param {string} encryptedKey - Encrypted key to validate
+ * @throws {Error} If encryptedKey is not valid Base64
+ */
+function validateEncryptedKey(encryptedKey) {
+  if (!encryptedKey || typeof encryptedKey !== 'string') {
+    throw new Error('Invalid encryptedKey: must be a non-empty string');
+  }
+  // Check reasonable length (32-byte key + 16-byte IV + 16-byte auth tag = 64 bytes minimum)
+  // Max 1KB to prevent abuse
+  if (encryptedKey.length < 20 || encryptedKey.length > 1400) {
+    throw new Error('Invalid encryptedKey: invalid length');
+  }
+  if (!BASE64_REGEX.test(encryptedKey)) {
+    throw new Error('Invalid encryptedKey: must be valid Base64');
+  }
+}
 
 /**
  * Windows Hello Authentication Manager
@@ -72,7 +112,7 @@ export class WindowsHelloAuth {
 
       const { stdout } = await execAsync(
         `powershell -NoProfile -EncodedCommand ${Buffer.from(psScript, 'utf16le').toString('base64')}`,
-        { timeout: 15000 }
+        { timeout: WINDOWS_HELLO.AVAILABILITY_TIMEOUT }
       );
 
       const result = stdout.trim().toLowerCase() === 'true';
@@ -84,7 +124,7 @@ export class WindowsHelloAuth {
       try {
         const { stdout: fallback } = await execAsync(
           'powershell -NoProfile -Command "if (Get-Service WbioSrvc -ErrorAction SilentlyContinue) { \'true\' } else { \'false\' }"',
-          { timeout: 5000 }
+          { timeout: WINDOWS_HELLO.FALLBACK_CHECK_TIMEOUT }
         );
         return fallback.trim() === 'true';
       } catch {
@@ -105,11 +145,20 @@ export class WindowsHelloAuth {
     }
 
     try {
-      // Escape reason for PowerShell string
-      const escapedReason = reason.replace(/'/g, "''");
+      // Sanitize reason: remove any characters that could cause issues
+      // Use a safe default message to prevent any injection attacks
+      const safeReason = reason
+        .replace(/[`$"'\\\r\n]/g, '') // Remove dangerous chars
+        .substring(0, 100) || 'GenPwd Pro - Verification'; // Limit length
+
+      // Pass reason as Base64-encoded parameter to avoid injection
+      const reasonBase64 = Buffer.from(safeReason, 'utf8').toString('base64');
 
       const psScript = `
         try {
+          $reasonBase64 = '${reasonBase64}'
+          $reason = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($reasonBase64))
+
           [void][Windows.Foundation.IAsyncOperation\`1, Windows.Foundation, ContentType=WindowsRuntime]
           Add-Type -AssemblyName System.Runtime.WindowsRuntime
 
@@ -129,7 +178,7 @@ export class WindowsHelloAuth {
           [void][Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime]
           [void][Windows.Security.Credentials.UI.UserConsentVerificationResult,Windows.Security.Credentials.UI,ContentType=WindowsRuntime]
 
-          $asyncOp = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('${escapedReason}')
+          $asyncOp = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync($reason)
           $verification = Await $asyncOp ([Windows.Security.Credentials.UI.UserConsentVerificationResult])
 
           if ($verification -eq 'Verified') { 'verified' } else { 'failed' }
@@ -140,7 +189,7 @@ export class WindowsHelloAuth {
 
       const { stdout } = await execAsync(
         `powershell -NoProfile -EncodedCommand ${Buffer.from(psScript, 'utf16le').toString('base64')}`,
-        { timeout: 60000 }
+        { timeout: WINDOWS_HELLO.VERIFICATION_TIMEOUT }
       );
 
       return stdout.trim() === 'verified';
@@ -165,14 +214,32 @@ export class WindowsHelloAuth {
       throw new Error('Credential Manager is only available on Windows');
     }
 
+    // SECURITY: Validate vaultId is a UUID to prevent command injection
+    validateVaultId(vaultId);
+
+    // SECURITY: Validate encryptedKey is Base64 to prevent command injection
+    validateEncryptedKey(encryptedKey);
+
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
     try {
-      // Use cmdkey to store credential (simpler and more reliable)
-      // cmdkey stores in Windows Credential Manager
+      // Use PowerShell with proper escaping to store credential safely
+      // This avoids shell metacharacter injection via encryptedKey
+      const psScript = `
+        $target = '${target}'
+        $keyBytes = [System.Convert]::FromBase64String('${encryptedKey}')
+        $keyString = [System.Text.Encoding]::UTF8.GetString($keyBytes)
+
+        # Re-encode to ensure clean Base64 for storage
+        $cleanKey = [System.Convert]::ToBase64String($keyBytes)
+
+        # Use .NET CredentialManager for safe storage
+        cmdkey /generic:$target /user:GenPwdPro /pass:$cleanKey
+      `;
+
       await execAsync(
-        `cmdkey /generic:"${target}" /user:GenPwdPro /pass:"${encryptedKey}"`,
-        { timeout: 10000 }
+        `powershell -NoProfile -EncodedCommand ${Buffer.from(psScript, 'utf16le').toString('base64')}`,
+        { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
       console.log(`[WindowsHello] Credential stored for vault: ${vaultId}`);
@@ -192,6 +259,9 @@ export class WindowsHelloAuth {
     if (!this.isWindows()) {
       throw new Error('Credential Manager is only available on Windows');
     }
+
+    // SECURITY: Validate vaultId is a UUID to prevent command injection
+    validateVaultId(vaultId);
 
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
@@ -248,7 +318,7 @@ export class WindowsHelloAuth {
 
       const { stdout } = await execAsync(
         `powershell -NoProfile -EncodedCommand ${Buffer.from(psScript, 'utf16le').toString('base64')}`,
-        { timeout: 10000 }
+        { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
       const credential = stdout.trim();
@@ -273,13 +343,16 @@ export class WindowsHelloAuth {
       throw new Error('Credential Manager is only available on Windows');
     }
 
+    // SECURITY: Validate vaultId is a UUID to prevent command injection
+    validateVaultId(vaultId);
+
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
     try {
       // Use cmdkey to delete credential (simpler and more reliable)
       await execAsync(
         `cmdkey /delete:"${target}"`,
-        { timeout: 10000 }
+        { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
       console.log(`[WindowsHello] Credential deleted for vault: ${vaultId}`);
@@ -334,7 +407,16 @@ export class WindowsHelloAuth {
 
     // Format: iv (16) + authTag (16) + encrypted data
     const result = Buffer.concat([iv, authTag, encrypted]);
-    return result.toString('base64');
+    const resultB64 = result.toString('base64');
+
+    // Wipe sensitive buffers from memory
+    wrapper.fill(0);
+    iv.fill(0);
+    encrypted.fill(0);
+    authTag.fill(0);
+    result.fill(0);
+
+    return resultB64;
   }
 
   /**
@@ -354,10 +436,17 @@ export class WindowsHelloAuth {
     const decipher = crypto.createDecipheriv('aes-256-gcm', wrapper, iv);
     decipher.setAuthTag(authTag);
 
-    return Buffer.concat([
+    const decrypted = Buffer.concat([
       decipher.update(encrypted),
       decipher.final()
     ]);
+
+    // Wipe sensitive buffers from memory
+    // Note: decrypted key is returned to caller who must wipe it after use
+    wrapper.fill(0);
+    data.fill(0);
+
+    return decrypted;
   }
 }
 

@@ -13,22 +13,24 @@
  */
 
 import { safeLog } from './logger.js';
+import { SECURITY_TIMEOUTS } from '../config/ui-constants.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 const STORAGE_KEY = 'security-clipboard-timeout';
-const DEFAULT_TIMEOUT_MS = 60 * 1000; // 60 seconds
+// Use centralized constant for default (30 seconds, but can be configured higher)
+const DEFAULT_TIMEOUT_MS = SECURITY_TIMEOUTS.CLIPBOARD_TTL_MS;
 
 
 /**
  * Available timeout options (in seconds)
  */
 export const CLIPBOARD_TIMEOUT_OPTIONS = Object.freeze([
-  { value: 0, label: 'Désactivé', ms: 0 },
-  { value: 10, label: '10 secondes', ms: 10 * 1000 },
-  { value: 30, label: '30 secondes', ms: 30 * 1000 },
+  { value: 0, label: 'Disabled', ms: 0 },
+  { value: 10, label: '10 seconds', ms: 10 * 1000 },
+  { value: 30, label: '30 seconds', ms: 30 * 1000 },
   { value: 60, label: '1 minute', ms: 60 * 1000 },
   { value: 120, label: '2 minutes', ms: 2 * 60 * 1000 },
   { value: 300, label: '5 minutes', ms: 5 * 60 * 1000 }
@@ -172,7 +174,7 @@ class SecureClipboard {
    * @returns {Promise<boolean>} - Success
    */
   async copy(text, options = {}) {
-    const { secure = true, label = 'Texte' } = options;
+    const { secure = true, label = 'Text' } = options;
 
     if (!text) {
       safeLog('[SecureClipboard] Empty text, ignoring copy');
@@ -212,7 +214,7 @@ class SecureClipboard {
 
       return true;
     } catch (error) {
-      console.error('[SecureClipboard] Copy failed:', error);
+      safeLog('[SecureClipboard] Copy failed:', error.message);
       return false;
     }
   }
@@ -248,7 +250,7 @@ class SecureClipboard {
       this.#handleCleared('manual');
       return true;
     } catch (error) {
-      console.error('[SecureClipboard] Clear failed:', error);
+      safeLog('[SecureClipboard] Clear failed:', error.message);
       return false;
     } finally {
       this.#isClearing = false;
@@ -392,7 +394,7 @@ class SecureClipboard {
 
       safeLog('[SecureClipboard] Cleared via browser API (3-pass overwrite)');
     } catch (error) {
-      console.error('[SecureClipboard] Secure clear error:', error);
+      safeLog('[SecureClipboard] Secure clear error:', error.message);
       // Last resort: try simple clear
       try {
         await navigator.clipboard.writeText('');
@@ -415,7 +417,7 @@ class SecureClipboard {
       try {
         this.#onClearedCallback(reason);
       } catch (error) {
-        console.error('[SecureClipboard] Cleared callback error:', error);
+        safeLog('[SecureClipboard] Cleared callback error:', error.message);
       }
     }
 

@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/config/constants.js - Toutes les constantes du projet
+// src/js/config/constants.js - All project constants
 export const APP_VERSION = '3.0.0';
 export const APP_NAME = 'GenPwd Pro';
+
+// Safe special characters for CLI and cross-platform usage
+// Excludes: $ (shell variable), ^ (escape), & (background), * (glob), ' (quote), ` (command sub)
+export const SPECIALS_SAFE = '_+-=.@#%';
 
 export const CHAR_SETS = Object.freeze({
   standard: Object.freeze({
@@ -132,31 +136,76 @@ export const LIMITS = Object.freeze({
   MAX_SPECIALS: 6
 });
 
-// Validation automatique des constantes
+/**
+ * Valid generation modes
+ * @type {readonly ['syllables', 'passphrase', 'leet']}
+ */
+export const VALID_MODES = Object.freeze(['syllables', 'passphrase', 'leet']);
+
+/**
+ * Valid placement modes for digits/specials
+ * @type {readonly ['debut', 'fin', 'milieu', 'aleatoire', 'positions']}
+ */
+export const PLACEMENT_MODES = Object.freeze(['debut', 'fin', 'milieu', 'aleatoire', 'positions']);
+
+/**
+ * Valid case modes
+ * @type {readonly ['mixte', 'upper', 'lower', 'title', 'blocks']}
+ */
+export const CASE_MODES = Object.freeze(['mixte', 'upper', 'lower', 'title', 'blocks']);
+
+/**
+ * Valid case block types for 'blocks' mode
+ * U = Uppercase, l = lowercase, T = Title case
+ * @type {readonly ['U', 'l', 'T']}
+ */
+export const CASE_BLOCK_TYPES = Object.freeze(['U', 'l', 'T']);
+
+/**
+ * Default case blocks pattern
+ * @type {readonly ['T', 'l']}
+ */
+export const DEFAULT_CASE_BLOCKS = Object.freeze(['T', 'l']);
+
+/**
+ * Default generation mode
+ */
+export const DEFAULT_MODE = 'syllables';
+
+/**
+ * Check if a mode is valid
+ * @param {string} mode - Mode to validate
+ * @returns {boolean}
+ */
+export function isValidMode(mode) {
+  return VALID_MODES.includes(mode);
+}
+
+// Automatic constants validation
 export function validateCharSets() {
   for (const [key, policy] of Object.entries(CHAR_SETS)) {
     if (!Array.isArray(policy.consonants) || policy.consonants.length === 0) {
-      console.error(`CHAR_SETS.${key}.consonants invalide`);
+      console.error(`CHAR_SETS.${key}.consonants invalid`);
       return false;
     }
     if (!Array.isArray(policy.vowels) || policy.vowels.length === 0) {
-      console.error(`CHAR_SETS.${key}.vowels invalide`);
+      console.error(`CHAR_SETS.${key}.vowels invalid`);
       return false;
     }
   }
-  
-  // Vérification Cross-Layout
+
+  // Cross-Layout verification
   const standardLayout = CHAR_SETS['standard-layout'];
   if (standardLayout.vowels.includes('a')) {
-    console.error('"a" présent dans standard-layout - devrait être exclu');
+    console.error('"a" present in standard-layout - should be excluded');
     return false;
   }
-  
-  console.log('CHAR_SETS validé avec CLI-Safe + Cross-Layout');
+
+  console.log('CHAR_SETS validated with CLI-Safe + Cross-Layout');
   return true;
 }
 
-// Validation au chargement du module
+// Validation on module load
 if (!validateCharSets()) {
-  throw new Error('Données CHAR_SETS corrompues');
+  throw new Error('Corrupted CHAR_SETS data');
 }

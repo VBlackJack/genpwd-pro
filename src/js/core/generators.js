@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/core/generators.js - Logique principale de génération
-import { CHAR_SETS, DIGITS, LEET_SUBSTITUTIONS } from '../config/constants.js';
+// src/js/core/generators.js - Main generation logic
+import { CHAR_SETS, DIGITS, LEET_SUBSTITUTIONS, CASE_BLOCK_TYPES } from '../config/constants.js';
 import { pick, insertWithPlacement } from '../utils/helpers.js';
 import { getCurrentDictionary } from './dictionaries.js';
 import { applyCasePattern, applyCase } from './casing.js';
@@ -49,26 +49,26 @@ function enforceCliSafety(value, context) {
 
   for (const dangerous of DANGEROUS_CHARS) {
     if (value.includes(dangerous)) {
-      throw new Error(`SECURITE: Caractère ${dangerous} détecté dans ${context}`);
+      throw new Error(`SECURITY: Character ${dangerous} detected in ${context}`);
     }
   }
 }
 
 /**
- * Génère un mot de passe basé sur des syllabes (alternance consonnes/voyelles)
- * @param {Object} config - Configuration de génération
- * @param {number} config.length - Longueur du mot de passe (lettres uniquement, avant ajout chiffres/spéciaux)
- * @param {string} config.policy - Politique de caractères ('standard', 'standard-layout', 'alphanumerique', 'alphanumerique-layout')
- * @param {number} config.digits - Nombre de chiffres à ajouter (0-6)
- * @param {number} config.specials - Nombre de caractères spéciaux à ajouter (0-6)
- * @param {string|Array} config.customSpecials - Caractères spéciaux personnalisés (optionnel)
- * @param {string} config.placeDigits - Position des chiffres ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
- * @param {string} config.placeSpecials - Position des spéciaux ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
- * @param {string} config.caseMode - Mode de casse ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
- * @param {boolean} config.useBlocks - Utiliser le système de blocs de casse
- * @param {Array<string>} config.blockTokens - Tokens de blocs ['U', 'l', 'T'] (si useBlocks=true)
- * @returns {Object} Résultat contenant { value: string, entropy: number, mode: string, policy: string }
- * @throws {Error} Si la politique n'existe pas ou si les paramètres sont invalides
+ * Generates a syllable-based password (alternating consonants/vowels)
+ * @param {Object} config - Generation configuration
+ * @param {number} config.length - Password length (letters only, before adding digits/specials)
+ * @param {string} config.policy - Character policy ('standard', 'standard-layout', 'alphanumerique', 'alphanumerique-layout')
+ * @param {number} config.digits - Number of digits to add (0-6)
+ * @param {number} config.specials - Number of special characters to add (0-6)
+ * @param {string|Array} config.customSpecials - Custom special characters (optional)
+ * @param {string} config.placeDigits - Digit position ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.placeSpecials - Special chars position ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.caseMode - Case mode ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
+ * @param {boolean} config.useBlocks - Use case block system
+ * @param {Array<string>} config.blockTokens - Block tokens ['U', 'l', 'T'] (if useBlocks=true)
+ * @returns {Object} Result containing { value: string, entropy: number, mode: string, policy: string }
+ * @throws {Error} If policy doesn't exist or parameters are invalid
  * @example
  * const result = generateSyllables({
  *   length: 20,
@@ -88,7 +88,7 @@ export function generateSyllables(config) {
 
     const policyData = CHAR_SETS[policy];
     if (!policyData) {
-      throw new Error(`Politique "${policy}" non trouvée`);
+      throw new Error(`Policy "${policy}" not found`);
     }
 
     const { consonants, vowels } = policyData;
@@ -96,7 +96,7 @@ export function generateSyllables(config) {
     const letters = [];
     let nextIsConsonant = true;
 
-    // Génération alternée consonnes/voyelles
+    // Alternating consonants/vowels generation
     for (let i = 0; i < requestedLetters; i++) {
       const pool = nextIsConsonant ? consonants : vowels;
       letters.push(pick(pool));
@@ -110,7 +110,7 @@ export function generateSyllables(config) {
       ? applyCasePattern(core, blockTokens, { syllableMode: true })
       : applyCase(core, caseMode);
 
-    // Ajout des chiffres et caractères spéciaux
+    // Add digits and special characters
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
     const specialPool = resolveSpecialPool(customSpecials, policy);
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
@@ -138,7 +138,7 @@ export function generateSyllables(config) {
     };
 
   } catch (error) {
-    safeLog(`Erreur generateSyllables: ${error.message}`);
+    safeLog(`generateSyllables error: ${error.message}`);
     return {
       value: `error-syllables-${Date.now()}`,
       entropy: 10,
@@ -148,22 +148,22 @@ export function generateSyllables(config) {
 }
 
 /**
- * Génère une passphrase basée sur des mots de dictionnaire
- * @param {Object} config - Configuration de génération
- * @param {number} config.wordCount - Nombre de mots dans la passphrase (2-8)
- * @param {string} config.separator - Séparateur entre les mots (ex: '-', ' ', '')
- * @param {number} config.digits - Nombre de chiffres à ajouter (0-6)
- * @param {number} config.specials - Nombre de caractères spéciaux à ajouter (0-6)
- * @param {string|Array} config.customSpecials - Caractères spéciaux personnalisés (optionnel)
- * @param {string} config.placeDigits - Position des chiffres ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
- * @param {string} config.placeSpecials - Position des spéciaux ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
- * @param {string} config.caseMode - Mode de casse ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
- * @param {boolean} config.useBlocks - Utiliser le système de blocs de casse
- * @param {Array<string>} config.blockTokens - Tokens de blocs ['U', 'l', 'T'] (si useBlocks=true)
- * @param {string} config.dictionary - Langue du dictionnaire ('french', 'english', 'latin')
- * @param {Array<string>} [config.wordListOverride] - Liste de mots personnalisée (optionnel)
- * @returns {Promise<Object>} Résultat contenant { value: string, entropy: number, mode: string, dictionary: string, words: Array<string> }
- * @throws {Error} Si le dictionnaire ne peut pas être chargé
+ * Generates a dictionary-based passphrase
+ * @param {Object} config - Generation configuration
+ * @param {number} config.wordCount - Number of words in the passphrase (2-8)
+ * @param {string} config.separator - Separator between words (e.g., '-', ' ', '')
+ * @param {number} config.digits - Number of digits to add (0-6)
+ * @param {number} config.specials - Number of special characters to add (0-6)
+ * @param {string|Array} config.customSpecials - Custom special characters (optional)
+ * @param {string} config.placeDigits - Digit position ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.placeSpecials - Special chars position ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.caseMode - Case mode ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
+ * @param {boolean} config.useBlocks - Use case block system
+ * @param {Array<string>} config.blockTokens - Block tokens ['U', 'l', 'T'] (if useBlocks=true)
+ * @param {string} config.dictionary - Dictionary language ('french', 'english', 'latin')
+ * @param {Array<string>} [config.wordListOverride] - Custom word list (optional)
+ * @returns {Promise<Object>} Result containing { value: string, entropy: number, mode: string, dictionary: string, words: Array<string> }
+ * @throws {Error} If dictionary cannot be loaded
  * @example
  * const result = await generatePassphrase({
  *   wordCount: 5,
@@ -195,7 +195,7 @@ export async function generatePassphrase(config) {
       : Array.from({ length: wordCount }, () => pick(dictionaryWords));
 
     const validBlocks = Array.isArray(blockTokens)
-      ? blockTokens.filter(token => ['U', 'l', 'T'].includes(token))
+      ? blockTokens.filter(token => CASE_BLOCK_TYPES.includes(token))
       : [];
 
     const shouldUseBlocks = useBlocks && validBlocks.length > 0;
@@ -223,7 +223,7 @@ export async function generatePassphrase(config) {
         : selectedWords.slice();
     }
 
-    // Ajout des chiffres et caractères spéciaux
+    // Add digits and special characters
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
     const specialPool = resolveSpecialPool(customSpecials, config.policy || 'standard');
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
@@ -260,7 +260,7 @@ export async function generatePassphrase(config) {
     };
 
   } catch (error) {
-    safeLog(`Erreur generatePassphrase: ${error.message}`);
+    safeLog(`generatePassphrase error: ${error.message}`);
     return {
       value: `error-passphrase-${Date.now()}`,
       entropy: 15,
@@ -270,18 +270,18 @@ export async function generatePassphrase(config) {
 }
 
 /**
- * Génère un mot de passe en leet speak (substitution de lettres par des symboles/chiffres)
- * @param {Object} config - Configuration de génération
- * @param {string} config.baseWord - Mot de base à transformer en leet speak
- * @param {number} config.digits - Nombre de chiffres à ajouter (0-6)
- * @param {number} config.specials - Nombre de caractères spéciaux à ajouter (0-6)
- * @param {string|Array} config.customSpecials - Caractères spéciaux personnalisés (optionnel)
- * @param {string} config.placeDigits - Position des chiffres ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
- * @param {string} config.placeSpecials - Position des spéciaux ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
- * @param {string} config.caseMode - Mode de casse ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
- * @param {boolean} config.useBlocks - Utiliser le système de blocs de casse
- * @param {Array<string>} config.blockTokens - Tokens de blocs ['U', 'l', 'T'] (si useBlocks=true)
- * @returns {Object} Résultat contenant { value: string, entropy: number, mode: string, baseWord: string }
+ * Generates a leet speak password (letter substitution with symbols/digits)
+ * @param {Object} config - Generation configuration
+ * @param {string} config.baseWord - Base word to transform into leet speak
+ * @param {number} config.digits - Number of digits to add (0-6)
+ * @param {number} config.specials - Number of special characters to add (0-6)
+ * @param {string|Array} config.customSpecials - Custom special characters (optional)
+ * @param {string} config.placeDigits - Digit position ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.placeSpecials - Special chars position ('debut', 'fin', 'milieu', 'aleatoire', 'positions')
+ * @param {string} config.caseMode - Case mode ('mixte', 'minuscule', 'majuscule', 'title', 'blocks')
+ * @param {boolean} config.useBlocks - Use case block system
+ * @param {Array<string>} config.blockTokens - Block tokens ['U', 'l', 'T'] (if useBlocks=true)
+ * @returns {Object} Result containing { value: string, entropy: number, mode: string, baseWord: string }
  * @example
  * const result = generateLeet({
  *   baseWord: 'password',
@@ -305,7 +305,7 @@ export function generateLeet(config) {
       ? applyCasePattern(core, blockTokens, { perWord: false })
       : applyCase(core, caseMode);
 
-    // Ajout des chiffres et caractères spéciaux
+    // Add digits and special characters
     const digitChars = Array.from({ length: digits }, () => pick(DIGITS));
     const specialPool = resolveSpecialPool(customSpecials, config.policy || 'standard');
     const specialChars = Array.from({ length: specials }, () => pick(specialPool));
@@ -333,7 +333,7 @@ export function generateLeet(config) {
     };
 
   } catch (error) {
-    safeLog(`Erreur generateLeet: ${error.message}`);
+    safeLog(`generateLeet error: ${error.message}`);
     return {
       value: `error-leet-${Date.now()}`,
       entropy: 8,

@@ -70,6 +70,42 @@ if (process.defaultApp) {
 // Handle deep link URLs
 function handleDeepLink(url) {
   console.log('[GenPwd Pro] Deep link received:', url);
+
+  // Validate deep link URL
+  if (!url || typeof url !== 'string') {
+    console.warn('[GenPwd Pro] Invalid deep link: not a string');
+    return;
+  }
+
+  // Must start with our protocol
+  if (!url.startsWith('genpwd://')) {
+    console.warn('[GenPwd Pro] Invalid deep link: wrong protocol');
+    return;
+  }
+
+  // Parse and validate the URL
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch (e) {
+    console.warn('[GenPwd Pro] Invalid deep link: malformed URL');
+    return;
+  }
+
+  // Allowed actions (whitelist)
+  const allowedHosts = ['unlock', 'open', 'generate', 'settings'];
+  if (!allowedHosts.includes(parsedUrl.host)) {
+    console.warn(`[GenPwd Pro] Invalid deep link: unknown action '${parsedUrl.host}'`);
+    return;
+  }
+
+  // Sanitize: only allow alphanumeric, dash, underscore in path segments
+  const safePathRegex = /^[a-zA-Z0-9\-_\/]*$/;
+  if (!safePathRegex.test(parsedUrl.pathname)) {
+    console.warn('[GenPwd Pro] Invalid deep link: unsafe characters in path');
+    return;
+  }
+
   if (mainWindow && mainWindow.webContents) {
     mainWindow.webContents.send('deep-link', url);
   }
@@ -148,6 +184,15 @@ function getActiveWindowTitle() {
 
 // ==================== IPC SECURITY ====================
 /**
+ * IPC Channel Naming Convention:
+ * - namespace:action or namespace:resource:action
+ * - Single-word actions are lowercase: vault:lock, vault:list
+ * - Multi-word actions use kebab-case or camelCase per namespace:
+ *   - Low-level APIs (auth, clipboard, window, fs): kebab-case (e.g., is-available, copy-secure)
+ *   - High-level APIs (vault, vaultIO): camelCase (e.g., getState, selectFile)
+ */
+
+/**
  * Validate IPC event origin for security
  * Ensures requests come from legitimate renderer process
  */
@@ -155,8 +200,9 @@ function validateOrigin(event) {
   const webContents = event.sender;
   const url = webContents.getURL();
 
-  // Allow file:// protocol (our app) and devtools
-  if (!url.startsWith('file://') && !url.startsWith('devtools://')) {
+  // Allow only file:// protocol (our app)
+  // devtools:// removed for security - prevents IPC access from DevTools console
+  if (!url.startsWith('file://')) {
     console.error(`[GenPwd Pro] Blocked IPC from unauthorized origin: ${url}`);
     throw new Error('Unauthorized IPC origin');
   }
@@ -517,6 +563,11 @@ function createApplicationMenu() {
 
 // ==================== SECURE STORAGE IPC HANDLERS ====================
 // Uses Windows DPAPI / macOS Keychain for encryption
+//
+// NOTE: These handlers return { success: boolean, data?, error? } objects
+// for explicit error handling at the low-level API layer.
+// This differs from vault handlers which throw errors for cleaner async/await usage.
+// This is an intentional design choice for different abstraction levels.
 
 // Check if safeStorage is available
 ipcMain.handle('auth:is-available', (event) => {
@@ -734,6 +785,12 @@ ipcMain.handle('window:is-compact', (event) => {
 ipcMain.handle('fs:read-binary', async (event, filePath) => {
   validateOrigin(event);
   try {
+    // SECURITY: Validate path for directory traversal attacks
+    const pathValidation = validateVaultPath(filePath);
+    if (!pathValidation.valid) {
+      return { success: false, error: pathValidation.error };
+    }
+
     // Security: validate path is a real file
     const stats = await fs.promises.stat(filePath);
     if (!stats.isFile()) {
@@ -775,6 +832,13 @@ ipcMain.handle('fs:show-open-dialog', async (event, options) => {
 
 const ALLOWED_EXTENSIONS = ['.gpdb', '.gpd', '.json'];
 
+// Allowed directories for vault operations
+const ALLOWED_VAULT_DIRS = [
+  app.getPath('userData'),
+  app.getPath('documents'),
+  app.getPath('home')
+];
+
 /**
  * Validate file extension for vault files
  * @param {string} filePath - Path to validate
@@ -786,18 +850,65 @@ function validateVaultExtension(filePath) {
 }
 
 /**
+ * Validate file path for security (prevent directory traversal)
+ * @param {string} filePath - Path to validate
+ * @returns {{valid: boolean, error?: string}}
+ */
+function validateVaultPath(filePath) {
+  if (!filePath || typeof filePath !== 'string') {
+    return { valid: false, error: 'Invalid file path' };
+  }
+
+  // Normalize the path to resolve any .. or .
+  const normalizedPath = path.normalize(filePath);
+
+  // Check for null bytes (path injection attack)
+  if (normalizedPath.includes('\0')) {
+    return { valid: false, error: 'Invalid path: contains null bytes' };
+  }
+
+  // Check for path traversal attempts (after normalization, .. shouldn't appear)
+  if (normalizedPath.includes('..')) {
+    return { valid: false, error: 'Invalid path: directory traversal not allowed' };
+  }
+
+  // Must be an absolute path
+  if (!path.isAbsolute(normalizedPath)) {
+    return { valid: false, error: 'Invalid path: must be absolute' };
+  }
+
+  // Check if path is within allowed directories
+  const isAllowed = ALLOWED_VAULT_DIRS.some(allowedDir => {
+    const normalizedAllowed = path.normalize(allowedDir);
+    return normalizedPath.startsWith(normalizedAllowed + path.sep) || normalizedPath === normalizedAllowed;
+  });
+
+  if (!isAllowed) {
+    return { valid: false, error: 'Invalid path: not in allowed directory' };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Save vault data to file (atomic write)
  * Writes to temp file first, then renames to prevent corruption
  */
 ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
   validateOrigin(event);
   try {
+    // Validate path for security (directory traversal protection)
+    const pathValidation = validateVaultPath(filePath);
+    if (!pathValidation.valid) {
+      return { success: false, error: pathValidation.error };
+    }
+
     // Validate extension
     if (!validateVaultExtension(filePath)) {
       return { success: false, error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
     }
 
-    // Ensure directory exists
+    // Ensure directory exists (path is already validated as safe)
     const dir = path.dirname(filePath);
     await fs.promises.mkdir(dir, { recursive: true });
 
@@ -843,6 +954,12 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
 ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
   validateOrigin(event);
   try {
+    // Validate path for security (directory traversal protection)
+    const pathValidation = validateVaultPath(filePath);
+    if (!pathValidation.valid) {
+      return { success: false, error: pathValidation.error };
+    }
+
     // Validate extension
     if (!validateVaultExtension(filePath)) {
       return { success: false, error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
@@ -956,6 +1073,12 @@ ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
 ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
   validateOrigin(event);
   try {
+    // Validate path for security (directory traversal protection)
+    const pathValidation = validateVaultPath(filePath);
+    if (!pathValidation.valid) {
+      return { success: false, error: pathValidation.error };
+    }
+
     await fs.promises.access(filePath, fs.constants.F_OK);
     return { success: true, exists: true };
   } catch {
@@ -969,6 +1092,12 @@ ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
 ipcMain.handle('vaultIO:getFileInfo', async (event, { filePath }) => {
   validateOrigin(event);
   try {
+    // Validate path for security (directory traversal protection)
+    const pathValidation = validateVaultPath(filePath);
+    if (!pathValidation.valid) {
+      return { success: false, error: pathValidation.error };
+    }
+
     const stats = await fs.promises.stat(filePath);
     return {
       success: true,
@@ -1011,7 +1140,8 @@ function parseAutoTypeSequence(sequence, data) {
       } else if (placeholder === 'ENTER') {
         result.push({ type: 'key', value: '{ENTER}' });
       } else if (placeholder.startsWith('DELAY ')) {
-        const delayMs = parseInt(placeholder.substring(6), 10) || 100;
+        // Bounds check: min 10ms, max 30000ms (30 seconds)
+        const delayMs = Math.max(10, Math.min(30000, parseInt(placeholder.substring(6), 10) || 100));
         result.push({ type: 'delay', value: delayMs });
       } else if (placeholder === 'URL') {
         result.push({ type: 'text', value: data.url || '' });
@@ -1032,9 +1162,13 @@ function parseAutoTypeSequence(sequence, data) {
  * Special characters need escaping: +^%~(){}[]
  */
 function escapeForSendKeys(text) {
+  // Security: Limit text length to prevent memory issues (max 10KB)
+  const MAX_TEXT_LENGTH = 10240;
+  const safeText = typeof text === 'string' ? text.slice(0, MAX_TEXT_LENGTH) : '';
+
   // Characters that have special meaning in SendKeys
   const specialChars = /[+^%~(){}[\]]/g;
-  return text.replace(specialChars, '{$&}');
+  return safeText.replace(specialChars, '{$&}');
 }
 
 /**
@@ -1091,15 +1225,17 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data })
     // Wait for window switch
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Build and execute PowerShell script
+    // Build and execute PowerShell script using Base64 encoding for security
+    // This prevents command injection attacks by encoding the entire script
     const psScript = buildAutoTypePowerShell(actions);
+    const encodedScript = Buffer.from(psScript, 'utf16le').toString('base64');
 
     return new Promise((resolve) => {
       const ps = spawn('powershell.exe', [
         '-NoProfile',
         '-NonInteractive',
         '-ExecutionPolicy', 'Bypass',
-        '-Command', psScript
+        '-EncodedCommand', encodedScript
       ], {
         windowsHide: true
       });

@@ -641,9 +641,16 @@ export class GoogleDriveProvider extends CloudProvider {
       }
     }
 
-    // Fallback or if secure storage unavailable
-    localStorage.setItem('genpwd_gdrive_tokens', JSON.stringify(tokens));
-    safeLog('GoogleDrive: Tokens stored in localStorage (insecure)');
+    // SECURITY: Refuse to store tokens insecurely - require Electron secure storage
+    if (!window.electronAPI) {
+      safeLog('GoogleDrive: Cannot store tokens - secure storage not available (web mode)');
+      // Store only in memory for this session - user will need to re-authenticate
+      this.tokens = tokens;
+      return;
+    }
+
+    // If we get here in Electron, secure storage failed - don't fall back to insecure
+    throw new Error('Secure storage required but failed - cannot store OAuth tokens');
   }
 
   /**
@@ -677,7 +684,7 @@ export class GoogleDriveProvider extends CloudProvider {
             expiresAt: data.expiresAt
           };
         } catch (error) {
-          console.error('Failed to decrypt tokens:', error);
+          safeLog('[GoogleDrive] Failed to decrypt tokens:', error.message);
           return null;
         }
       }

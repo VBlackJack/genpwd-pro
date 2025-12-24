@@ -6,6 +6,7 @@
  */
 
 import { showToast } from '../utils/toast.js';
+import { safeLog } from '../utils/logger.js';
 
 /**
  * Vault state enum
@@ -96,7 +97,7 @@ export class VaultBridge {
       const state = await window.vault.getState();
       return state?.status === 'unlocked';
     } catch (error) {
-      console.error('[VaultBridge] Error checking unlock state:', error);
+      safeLog(`[VaultBridge] Error checking unlock state: ${error.message}`);
       return false;
     }
   }
@@ -149,7 +150,7 @@ export class VaultBridge {
       try {
         callback(this.#currentState);
       } catch (error) {
-        console.error('[VaultBridge] Listener error:', error);
+        safeLog(`[VaultBridge] Listener error: ${error.message}`);
       }
     });
   }
@@ -165,7 +166,7 @@ export class VaultBridge {
       const folders = await window.vault.folders.getAll();
       return folders || [];
     } catch (error) {
-      console.error('[VaultBridge] Error fetching folders:', error);
+      safeLog(`[VaultBridge] Error fetching folders: ${error.message}`);
       return [];
     }
   }
@@ -183,18 +184,18 @@ export class VaultBridge {
    */
   static async savePassword(password, metadata) {
     if (!this.isAvailable()) {
-      return { success: false, error: 'Vault non disponible' };
+      return { success: false, error: 'Vault not available' };
     }
 
     // Check if unlocked
     const isUnlocked = await this.isUnlocked();
     if (!isUnlocked) {
-      return { success: false, error: 'Coffre verrouillé' };
+      return { success: false, error: 'Vault locked' };
     }
 
     // Validate required fields
     if (!metadata?.title?.trim()) {
-      return { success: false, error: 'Titre requis' };
+      return { success: false, error: 'Title required' };
     }
 
     try {
@@ -217,14 +218,14 @@ export class VaultBridge {
       );
 
       if (result?.id) {
-        showToast(`Sauvegardé dans le coffre: ${metadata.title}`, 'success');
+        showToast(`Saved to vault: ${metadata.title}`, 'success');
         return { success: true, entryId: result.id };
       } else {
-        return { success: false, error: 'Erreur lors de la sauvegarde' };
+        return { success: false, error: 'Save failed' };
       }
     } catch (error) {
-      console.error('[VaultBridge] Save error:', error);
-      return { success: false, error: error.message || 'Erreur inconnue' };
+      safeLog(`[VaultBridge] Save error: ${error.message}`);
+      return { success: false, error: error.message || 'Unknown error' };
     }
   }
 
@@ -252,7 +253,7 @@ export class VaultBridge {
    * Prompt user to unlock vault (switches to vault tab)
    */
   static promptUnlock() {
-    showToast('Veuillez déverrouiller le coffre', 'warning');
+    showToast('Please unlock the vault', 'warning');
     this.switchToVaultTab();
   }
 
@@ -276,11 +277,11 @@ export class VaultBridge {
     if (this.#currentState === VaultState.UNLOCKED) {
       indicator.classList.add('unlocked');
       if (icon) icon.textContent = '🔓';
-      if (text) text.textContent = 'Déverrouillé';
+      if (text) text.textContent = 'Unlocked';
     } else {
       indicator.classList.remove('unlocked');
       if (icon) icon.textContent = '🔒';
-      if (text) text.textContent = 'Verrouillé';
+      if (text) text.textContent = 'Locked';
     }
   }
 

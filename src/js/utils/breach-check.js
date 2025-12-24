@@ -6,9 +6,11 @@
  */
 
 import { safeLog } from './logger.js';
+import { CACHE } from '../config/ui-constants.js';
 
 const HIBP_API_URL = 'https://api.pwnedpasswords.com/range/';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+// Use centralized cache duration (reuse cleanup interval for consistency)
+const CACHE_DURATION = CACHE.CACHE_CLEANUP_INTERVAL; // 5 minutes
 
 /**
  * Cache for breach check results

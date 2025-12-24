@@ -6,6 +6,8 @@
  * Uses Web Crypto API for browser compatibility
  */
 
+import { safeLog } from '../utils/logger.js';
+
 /**
  * Base32 alphabet for decoding OTP secrets
  */
@@ -252,7 +254,7 @@ export class TOTPManager {
    */
   watch(id, otpConfig, callback) {
     if (!otpConfig?.secret) {
-      console.warn('[TOTP] No secret provided for', id);
+      safeLog(`[TOTP] No secret provided for ${id}`);
       return () => {};
     }
 
@@ -328,7 +330,7 @@ export class TOTPManager {
         callback(result);
       }
     } catch (error) {
-      console.error('[TOTP] Error generating code:', error);
+      safeLog(`[TOTP] Error generating code: ${error.message}`);
       callback({ code: '------', remainingSeconds: 0, period: 30, error });
     }
   }

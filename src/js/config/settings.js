@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/config/settings.js - Gestion de l'état et validation
-import { DEFAULT_SETTINGS, CHAR_SETS, DICTIONARY_CONFIG, LIMITS } from './constants.js';
+// src/js/config/settings.js - State management and validation
+import { DEFAULT_SETTINGS, CHAR_SETS, DICTIONARY_CONFIG, LIMITS, SPECIALS_SAFE, isValidMode, DEFAULT_MODE, PLACEMENT_MODES, CASE_MODES, CASE_BLOCK_TYPES, DEFAULT_CASE_BLOCKS } from './constants.js';
 import { safeLog } from '../utils/logger.js';
 import { LRUCache } from '../utils/lru-cache.js';
 
-// État global de l'application
+// Global application state
 const AppState = {
   settings: { ...DEFAULT_SETTINGS },
   results: [],
@@ -43,7 +43,7 @@ const AppState = {
  */
 function validateCustomSpecials(input) {
   if (typeof input !== 'string') {
-    return CHAR_SETS.SPECIALS_SAFE;
+    return SPECIALS_SAFE;
   }
 
   // Whitelist of allowed special characters (CLI-safe + commonly used)
@@ -63,7 +63,7 @@ function validateCustomSpecials(input) {
   // If empty after validation, return safe defaults
   if (validated.length === 0) {
     safeLog('validateCustomSpecials: No valid characters, using defaults');
-    return CHAR_SETS.SPECIALS_SAFE;
+    return SPECIALS_SAFE;
   }
 
   return validated;
@@ -71,30 +71,30 @@ function validateCustomSpecials(input) {
 
 export function validateSettings(settings) {
   const safe = {
-    mode: ['syllables', 'passphrase', 'leet'].includes(settings.mode) ? settings.mode : 'syllables',
-    qty: Math.max(LIMITS.MIN_QUANTITY, Math.min(LIMITS.MAX_QUANTITY, parseInt(settings.qty) || 5)),
+    mode: isValidMode(settings.mode) ? settings.mode : DEFAULT_MODE,
+    qty: Math.max(LIMITS.MIN_QUANTITY, Math.min(LIMITS.MAX_QUANTITY, parseInt(settings.qty, 10) || 5)),
     mask: Boolean(settings.mask),
-    digitsNum: Math.max(LIMITS.MIN_DIGITS, Math.min(LIMITS.MAX_DIGITS, parseInt(settings.digitsNum) || 0)),
-    specialsNum: Math.max(LIMITS.MIN_SPECIALS, Math.min(LIMITS.MAX_SPECIALS, parseInt(settings.specialsNum) || 0)),
+    digitsNum: Math.max(LIMITS.MIN_DIGITS, Math.min(LIMITS.MAX_DIGITS, parseInt(settings.digitsNum, 10) || 0)),
+    specialsNum: Math.max(LIMITS.MIN_SPECIALS, Math.min(LIMITS.MAX_SPECIALS, parseInt(settings.specialsNum, 10) || 0)),
     customSpecials: validateCustomSpecials(settings.customSpecials),
-    placeDigits: ['debut', 'fin', 'milieu', 'aleatoire', 'positions'].includes(settings.placeDigits) ?
+    placeDigits: PLACEMENT_MODES.includes(settings.placeDigits) ?
       settings.placeDigits : 'aleatoire',
-    placeSpecials: ['debut', 'fin', 'milieu', 'aleatoire', 'positions'].includes(settings.placeSpecials) ?
+    placeSpecials: PLACEMENT_MODES.includes(settings.placeSpecials) ?
       settings.placeSpecials : 'aleatoire',
-    caseMode: ['mixte', 'upper', 'lower', 'title', 'blocks'].includes(settings.caseMode) ? 
+    caseMode: CASE_MODES.includes(settings.caseMode) ?
       settings.caseMode : 'mixte',
     specific: {}
   };
 
-  // Validation spécifique par mode
+  // Mode-specific validation
   if (safe.mode === 'syllables') {
     safe.specific.length = Math.max(LIMITS.SYLLABLES_MIN_LENGTH, 
-      Math.min(LIMITS.SYLLABLES_MAX_LENGTH, parseInt(settings.specific?.length) || 20));
+      Math.min(LIMITS.SYLLABLES_MAX_LENGTH, parseInt(settings.specific?.length, 10) || 20));
     safe.specific.policy = Object.keys(CHAR_SETS).includes(settings.specific?.policy) ? 
       settings.specific.policy : 'standard';
   } else if (safe.mode === 'passphrase') {
     safe.specific.count = Math.max(LIMITS.PASSPHRASE_MIN_WORDS, 
-      Math.min(LIMITS.PASSPHRASE_MAX_WORDS, parseInt(settings.specific?.count) || 5));
+      Math.min(LIMITS.PASSPHRASE_MAX_WORDS, parseInt(settings.specific?.count, 10) || 5));
     safe.specific.sep = ['-', '_', '.', ' '].includes(settings.specific?.sep) ? 
       settings.specific.sep : '-';
     safe.specific.dictionary = Object.keys(DICTIONARY_CONFIG).includes(settings.specific?.dictionary) ?
@@ -122,7 +122,7 @@ export function readSettings() {
       specific: {}
     };
 
-    // Paramètres spécifiques selon le mode
+    // Mode-specific settings
     if (rawSettings.mode === 'syllables') {
       rawSettings.specific.length = getElementValue('#syll-len', '20');
       rawSettings.specific.policy = getElementValue('#policy-select', 'standard');
@@ -155,7 +155,7 @@ export function readSettings() {
 
     return AppState.settings;
   } catch (e) {
-    safeLog(`Erreur readSettings: ${e.message}`);
+    safeLog(`readSettings error: ${e.message}`);
     return AppState.settings;
   }
 }
@@ -195,7 +195,7 @@ function getElementChecked(selector, defaultValue) {
   return el ? el.checked : defaultValue;
 }
 
-// Getters/Setters pour l'état
+// Getters/Setters for state
 export function getSettings() {
   return AppState.settings;
 }
@@ -218,9 +218,9 @@ export function getBlocks() {
 
 export function setBlocks(blocks) {
   if (Array.isArray(blocks) && blocks.length > 0) {
-    AppState.blocks = blocks.filter(b => ['U', 'l', 'T'].includes(b));
+    AppState.blocks = blocks.filter(b => CASE_BLOCK_TYPES.includes(b));
     if (AppState.blocks.length === 0) {
-      AppState.blocks = ['T', 'l'];
+      AppState.blocks = [...DEFAULT_CASE_BLOCKS];
     }
   }
 }

@@ -6,6 +6,7 @@
  */
 
 import { safeLog } from './logger.js';
+import { PBKDF2 } from '../config/crypto-constants.js';
 
 // Share format version
 const SHARE_VERSION = 1;
@@ -86,19 +87,19 @@ export async function openShare(shareString, passphrase) {
   try {
     // Validate format
     if (!shareString.startsWith('GENPWD:')) {
-      throw new Error('Format invalide');
+      throw new Error('Invalid format');
     }
 
     const parts = shareString.split(':');
     if (parts.length !== 3) {
-      throw new Error('Format invalide');
+      throw new Error('Invalid format');
     }
 
-    const version = parseInt(parts[1]);
+    const version = parseInt(parts[1], 10);
     const encrypted = parts[2];
 
     if (version !== SHARE_VERSION) {
-      throw new Error('Version non supportée');
+      throw new Error('Unsupported version');
     }
 
     // Decrypt
@@ -107,7 +108,7 @@ export async function openShare(shareString, passphrase) {
 
     // Check expiration
     if (shareData.expiresAt && new Date(shareData.expiresAt) < new Date()) {
-      throw new Error('Partage expiré');
+      throw new Error('Share expired');
     }
 
     safeLog(`[SecureShare] Opened share: "${shareData.title}"`);
@@ -143,10 +144,10 @@ async function encryptPayload(plaintext, passphrase) {
 
   const key = await crypto.subtle.deriveKey(
     {
-      name: 'PBKDF2',
+      name: PBKDF2.ALGORITHM,
       salt,
-      iterations: 100000,
-      hash: 'SHA-256'
+      iterations: PBKDF2.ITERATIONS,
+      hash: PBKDF2.HASH
     },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
@@ -205,10 +206,10 @@ async function decryptPayload(encryptedBase64, passphrase) {
 
   const key = await crypto.subtle.deriveKey(
     {
-      name: 'PBKDF2',
+      name: PBKDF2.ALGORITHM,
       salt,
-      iterations: 100000,
-      hash: 'SHA-256'
+      iterations: PBKDF2.ITERATIONS,
+      hash: PBKDF2.HASH
     },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
@@ -240,9 +241,13 @@ export function generatePassphrase(wordCount = 4) {
     'golden', 'horizon', 'ivory', 'jasper', 'karma', 'lunar', 'maple', 'noble'
   ];
 
+  // Use CSPRNG for secure word selection
+  const randomBytes = new Uint8Array(wordCount);
+  crypto.getRandomValues(randomBytes);
+
   const selected = [];
   for (let i = 0; i < wordCount; i++) {
-    const idx = Math.floor(Math.random() * words.length);
+    const idx = randomBytes[i] % words.length;
     selected.push(words[idx]);
   }
 
@@ -257,15 +262,15 @@ export function generatePassphrase(wordCount = 4) {
 export function formatShareForDisplay(shareData) {
   const lines = [];
   lines.push(`Type: ${shareData.type}`);
-  lines.push(`Titre: ${shareData.title}`);
+  lines.push(`Title: ${shareData.title}`);
 
-  if (shareData.data.username) lines.push(`Identifiant: ${shareData.data.username}`);
-  if (shareData.data.password) lines.push(`Mot de passe: ${shareData.data.password}`);
+  if (shareData.data.username) lines.push(`Username: ${shareData.data.username}`);
+  if (shareData.data.password) lines.push(`Password: ${shareData.data.password}`);
   if (shareData.data.url) lines.push(`URL: ${shareData.data.url}`);
   if (shareData.data.totp) lines.push(`TOTP: ${shareData.data.totp}`);
   if (shareData.notes) lines.push(`Notes: ${shareData.notes}`);
 
-  lines.push(`Expire: ${new Date(shareData.expiresAt).toLocaleString('fr-FR')}`);
+  lines.push(`Expires: ${new Date(shareData.expiresAt).toLocaleString('en-US')}`);
 
   return lines.join('\n');
 }

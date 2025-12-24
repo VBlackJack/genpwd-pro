@@ -2,7 +2,7 @@
 
 ## Branche: `feature/vault-windows`
 
-### Dernière session: 22 décembre 2025 (Session 3 - Release Prep)
+### Dernière session: 24 décembre 2025 (Session 4 - Cleanup & Refactoring)
 
 ---
 
@@ -112,7 +112,7 @@ src/js/vault/
 └── models.js             # VaultEntry, VaultGroup
 
 src/js/
-├── vault-ui.js           # UI principale du coffre (~9500 lignes)
+├── vault-ui.js           # UI principale du coffre (~10600 lignes)
 └── ...
 
 src/styles/

@@ -45,7 +45,6 @@ export function generateQRCodeSVG(data, options = {}) {
 
   const modules = 17 + version * 4;
   const totalSize = modules + margin * 2;
-  // const moduleSize = size / totalSize;
 
   // Generate QR pattern using a deterministic algorithm
   const matrix = generatePattern(data, modules);

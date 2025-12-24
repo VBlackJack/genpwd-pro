@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-// src/js/utils/error-monitoring.js - Système de monitoring d'erreurs
+// src/js/utils/error-monitoring.js - Error monitoring system
 
 import { isDevelopment } from './environment.js';
 import { safeLog } from './logger.js';
 
 /**
- * Configuration du monitoring d'erreurs
+ * Error monitoring configuration
  */
 const monitoringConfig = {
   enabled: !isDevelopment(),
-  maxErrors: 50, // Maximum d'erreurs à garder en mémoire
-  // URL de votre service de monitoring (Sentry, LogRocket, etc.)
+  maxErrors: 50, // Maximum errors to keep in memory
+  // URL of your monitoring service (Sentry, LogRocket, etc.)
   // endpoint: 'https://your-monitoring-service.com/api/errors',
-  endpoint: null, // Désactivé par défaut
+  endpoint: null, // Disabled by default
   apiKey: null
 };
 
 /**
- * Stockage des erreurs en mémoire
+ * In-memory error storage
  */
 const errorLog = [];
 
 /**
- * Nettoie les données sensibles d'une erreur avant l'envoi
- * @param {Error} error - Erreur à nettoyer
- * @returns {Object} Erreur nettoyée
+ * Sanitizes sensitive data from an error before sending
+ * @param {Error} error - Error to sanitize
+ * @returns {Object} Sanitized error
  */
 function sanitizeError(error) {
   const sanitized = {
@@ -49,15 +49,15 @@ function sanitizeError(error) {
     timestamp: new Date().toISOString(),
     userAgent: navigator.userAgent,
     url: window.location.href,
-    // Retirer les paramètres sensibles de l'URL
+    // Remove sensitive parameters from URL
     cleanUrl: window.location.origin + window.location.pathname
   };
 
-  // Supprimer les informations potentiellement sensibles du stack trace
+  // Remove potentially sensitive information from stack trace
   if (sanitized.stack) {
     sanitized.stack = sanitized.stack
       .split('\n')
-      .slice(0, 10) // Limiter à 10 lignes
+      .slice(0, 10) // Limit to 10 lines
       .join('\n');
   }
 
@@ -65,31 +65,31 @@ function sanitizeError(error) {
 }
 
 /**
- * Enregistre une erreur localement
- * @param {Error} error - Erreur à enregistrer
+ * Logs an error locally
+ * @param {Error} error - Error to log
  */
 function logErrorLocally(error) {
   const sanitized = sanitizeError(error);
 
   errorLog.push(sanitized);
 
-  // Garder uniquement les N dernières erreurs
+  // Keep only the last N errors
   if (errorLog.length > monitoringConfig.maxErrors) {
     errorLog.shift();
   }
 
-  // En développement, logger dans la console
+  // In development, log to console
   if (isDevelopment()) {
     console.error('Error logged:', sanitized);
   }
 }
 
 /**
- * Envoie une erreur à un service de monitoring distant
- * @param {Error} error - Erreur à envoyer
+ * Sends an error to a remote monitoring service
+ * @param {Error} error - Error to send
  */
 async function sendErrorToMonitoring(error) {
-  // Ne pas envoyer en développement
+  // Don't send in development
   if (isDevelopment() || !monitoringConfig.enabled || !monitoringConfig.endpoint) {
     return;
   }
@@ -97,7 +97,7 @@ async function sendErrorToMonitoring(error) {
   try {
     const sanitized = sanitizeError(error);
 
-    // Exemple d'envoi à Sentry ou service similaire
+    // Example: send to Sentry or similar service
     await fetch(monitoringConfig.endpoint, {
       method: 'POST',
       headers: {
@@ -114,60 +114,62 @@ async function sendErrorToMonitoring(error) {
       })
     });
   } catch (sendError) {
-    // En cas d'échec d'envoi, ne pas créer de boucle infinie
+    // On send failure, don't create an infinite loop
     console.warn('Failed to send error to monitoring service:', sendError);
   }
 }
 
 /**
- * Gère une erreur globale
- * @param {Error} error - Erreur à gérer
- * @param {Object} context - Contexte additionnel
+ * Handles a global error
+ * @param {Error} error - Error to handle
+ * @param {Object} context - Additional context
  */
 export function reportError(error, context = {}) {
-  // Ajouter le contexte à l'erreur
+  // Add context to error
   if (context && Object.keys(context).length > 0) {
     error.context = context;
   }
 
-  // Logger localement
+  // Log locally
   logErrorLocally(error);
 
-  // Envoyer au service de monitoring
-  sendErrorToMonitoring(error);
+  // Send to monitoring service (fire-and-forget with error suppression)
+  sendErrorToMonitoring(error).catch(() => {
+    // Intentionally silent - monitoring failures shouldn't break the app
+  });
 }
 
 /**
- * Configure le monitoring d'erreurs
+ * Configures error monitoring
  * @param {Object} config - Configuration
- * @param {boolean} config.enabled - Activer le monitoring
- * @param {string} config.endpoint - URL du service de monitoring
- * @param {string} config.apiKey - Clé API du service
+ * @param {boolean} config.enabled - Enable monitoring
+ * @param {string} config.endpoint - Monitoring service URL
+ * @param {string} config.apiKey - Service API key
  */
 export function configureMonitoring(config) {
   Object.assign(monitoringConfig, config);
 }
 
 /**
- * Récupère les erreurs enregistrées localement
- * @returns {Array} Liste des erreurs
+ * Gets locally logged errors
+ * @returns {Array} List of errors
  */
 export function getErrorLog() {
   return [...errorLog];
 }
 
 /**
- * Efface le log d'erreurs local
+ * Clears the local error log
  */
 export function clearErrorLog() {
   errorLog.length = 0;
 }
 
 /**
- * Initialise le système de monitoring d'erreurs global
+ * Initializes the global error monitoring system
  */
 export function initErrorMonitoring() {
-  // Capture des erreurs non gérées
+  // Capture unhandled errors
   window.addEventListener('error', (event) => {
     const error = new Error(event.message);
     error.stack = event.error?.stack;
@@ -183,7 +185,7 @@ export function initErrorMonitoring() {
     });
   });
 
-  // Capture des promesses rejetées non gérées
+  // Capture unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
     const error = event.reason instanceof Error
       ? event.reason
@@ -204,10 +206,10 @@ export function initErrorMonitoring() {
 }
 
 /**
- * Wrapper pour exécuter du code avec gestion d'erreurs
- * @param {Function} fn - Fonction à exécuter
- * @param {Object} context - Contexte pour le reporting
- * @returns {*} Résultat de la fonction ou null en cas d'erreur
+ * Wrapper to execute code with error handling
+ * @param {Function} fn - Function to execute
+ * @param {Object} context - Context for reporting
+ * @returns {*} Function result or null on error
  */
 export async function withErrorHandling(fn, context = {}) {
   try {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// src/js/utils/integrity.js - Validation d'intégrité des ressources
+// src/js/utils/integrity.js - Resource integrity validation
 
 /**
  * Computes SHA-256 hash of data using Web Crypto API

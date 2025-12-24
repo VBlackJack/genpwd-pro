@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-// src/js/utils/performance.js - Outils de mesure de performance
+// src/js/utils/performance.js - Performance measurement tools
 
 import { safeLog } from './logger.js';
 
 /**
- * Stockage des benchmarks
+ * Benchmark storage
  */
 const benchmarkResults = new Map();
 
 /**
- * Classe pour mesurer le temps d'exécution
+ * Class for measuring execution time
  */
 class PerformanceTimer {
   constructor(name) {
@@ -55,16 +55,16 @@ class PerformanceTimer {
 }
 
 /**
- * Mesure le temps d'exécution d'une fonction
- * @param {string} name - Nom de la mesure
- * @param {Function} fn - Fonction à mesurer
- * @returns {Promise<{result: *, duration: number}>} Résultat et durée
+ * Measures the execution time of a function
+ * @param {string} name - Measurement name
+ * @param {Function} fn - Function to measure
+ * @returns {Promise<{result: *, duration: number}>} Result and duration
  *
  * @example
  * const { result, duration } = await measurePerformance('password-gen', () => {
  *   return generateSyllables({ length: 20 });
  * });
- * console.log(`Génération en ${duration.toFixed(2)}ms`);
+ * console.log(`Generated in ${duration.toFixed(2)}ms`);
  */
 export async function measurePerformance(name, fn) {
   const timer = new PerformanceTimer(name);
@@ -80,7 +80,7 @@ export async function measurePerformance(name, fn) {
 
   const duration = timer.stop();
 
-  // Sauvegarder le résultat
+  // Save result
   if (!benchmarkResults.has(name)) {
     benchmarkResults.set(name, []);
   }
@@ -95,11 +95,11 @@ export async function measurePerformance(name, fn) {
 }
 
 /**
- * Exécute un benchmark N fois et calcule les statistiques
- * @param {string} name - Nom du benchmark
- * @param {Function} fn - Fonction à benchmarker
- * @param {number} iterations - Nombre d'itérations
- * @returns {Promise<Object>} Statistiques de performance
+ * Executes a benchmark N times and calculates statistics
+ * @param {string} name - Benchmark name
+ * @param {Function} fn - Function to benchmark
+ * @param {number} iterations - Number of iterations
+ * @returns {Promise<Object>} Performance statistics
  *
  * @example
  * const stats = await benchmark('password-generation', () => {
@@ -110,7 +110,7 @@ export async function measurePerformance(name, fn) {
  * console.log(`Min: ${stats.min.toFixed(2)}ms, Max: ${stats.max.toFixed(2)}ms`);
  */
 export async function benchmark(name, fn, iterations = 100) {
-  safeLog(`🔬 Démarrage benchmark "${name}" (${iterations} itérations)`);
+  safeLog(`🔬 Starting benchmark "${name}" (${iterations} iterations)`);
 
   const durations = [];
   const startTime = performance.now();
@@ -122,7 +122,7 @@ export async function benchmark(name, fn, iterations = 100) {
 
   const totalTime = performance.now() - startTime;
 
-  // Calcul des statistiques
+  // Calculate statistics
   const sorted = [...durations].sort((a, b) => a - b);
   const stats = {
     name,
@@ -138,21 +138,21 @@ export async function benchmark(name, fn, iterations = 100) {
     stdDev: calculateStdDev(durations)
   };
 
-  safeLog(`📊 Benchmark "${name}" terminé:`);
-  safeLog(`   Moyenne: ${stats.mean.toFixed(2)}ms`);
-  safeLog(`   Médiane: ${stats.median.toFixed(2)}ms`);
+  safeLog(`📊 Benchmark "${name}" completed:`);
+  safeLog(`   Mean: ${stats.mean.toFixed(2)}ms`);
+  safeLog(`   Median: ${stats.median.toFixed(2)}ms`);
   safeLog(`   Min: ${stats.min.toFixed(2)}ms | Max: ${stats.max.toFixed(2)}ms`);
   safeLog(`   P95: ${stats.p95.toFixed(2)}ms | P99: ${stats.p99.toFixed(2)}ms`);
-  safeLog(`   Écart-type: ${stats.stdDev.toFixed(2)}ms`);
-  safeLog(`   Temps total: ${stats.totalTime.toFixed(2)}ms`);
+  safeLog(`   Std Dev: ${stats.stdDev.toFixed(2)}ms`);
+  safeLog(`   Total time: ${stats.totalTime.toFixed(2)}ms`);
 
   return stats;
 }
 
 /**
- * Calcule l'écart-type
- * @param {Array<number>} values - Valeurs
- * @returns {number} Écart-type
+ * Calculates the standard deviation
+ * @param {Array<number>} values - Values
+ * @returns {number} Standard deviation
  */
 function calculateStdDev(values) {
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
@@ -161,9 +161,9 @@ function calculateStdDev(values) {
 }
 
 /**
- * Récupère les résultats de benchmarks
- * @param {string} [name] - Nom du benchmark (optionnel)
- * @returns {Array|Map} Résultats
+ * Gets benchmark results
+ * @param {string} [name] - Benchmark name (optional)
+ * @returns {Array|Map} Results
  */
 export function getBenchmarkResults(name = null) {
   if (name) {
@@ -173,8 +173,8 @@ export function getBenchmarkResults(name = null) {
 }
 
 /**
- * Efface les résultats de benchmarks
- * @param {string} [name] - Nom du benchmark à effacer (optionnel, efface tout si omis)
+ * Clears benchmark results
+ * @param {string} [name] - Benchmark name to clear (optional, clears all if omitted)
  */
 export function clearBenchmarkResults(name = null) {
   if (name) {
@@ -220,8 +220,8 @@ export async function comparePerformance(functions, iterations = 100) {
     results[name] = await benchmark(name, fn, iterations);
   }
 
-  // Afficher la comparaison
-  safeLog('\n📊 COMPARAISON DES PERFORMANCES:');
+  // Display comparison
+  safeLog('\n📊 PERFORMANCE COMPARISON:');
   const sorted = Object.entries(results).sort((a, b) => a[1].mean - b[1].mean);
 
   sorted.forEach(([name, stats], index) => {
@@ -233,12 +233,12 @@ export async function comparePerformance(functions, iterations = 100) {
 }
 
 /**
- * Mesure la mémoire utilisée (si disponible)
- * @returns {Object|null} Info mémoire
+ * Measures memory usage (if available)
+ * @returns {Object|null} Memory info
  */
 export function measureMemory() {
   if (!performance.memory) {
-    safeLog('API memory non disponible');
+    safeLog('Memory API not available');
     return null;
   }
 
@@ -251,13 +251,13 @@ export function measureMemory() {
     limitMB: (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)
   };
 
-  safeLog(`💾 Mémoire: ${memory.usedMB}MB / ${memory.limitMB}MB`);
+  safeLog(`💾 Memory: ${memory.usedMB}MB / ${memory.limitMB}MB`);
   return memory;
 }
 
 /**
- * Exporte les résultats de benchmarks au format JSON
- * @returns {string} JSON des résultats
+ * Exports benchmark results as JSON
+ * @returns {string} JSON results
  */
 export function exportBenchmarkResults() {
   const data = {

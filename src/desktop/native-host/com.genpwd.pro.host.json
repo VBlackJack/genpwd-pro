@@ -1,0 +1,9 @@
+{
+    "name": "com.genpwd.pro.host",
+    "description": "GenPwd Pro Native Messaging Host",
+    "path": "host_wrapper.bat",
+    "type": "stdio",
+    "allowed_origins": [
+        "chrome-extension://<EXTENSION_ID>/"
+    ]
+}

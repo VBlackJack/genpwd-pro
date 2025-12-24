@@ -16,6 +16,7 @@ import { CryptoEngine } from '../crypto/crypto-engine.js';
 import { createEntry, createFolder, createTag } from '../models/vault-types.js';
 import { EventEmitter } from 'node:events';
 
+// Security constant: matches SECURITY_TIMEOUTS.AUTO_LOCK_DEFAULT_MS in ui-constants.js (300000ms = 5 minutes)
 const DEFAULT_AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -536,7 +537,7 @@ export class VaultSessionManager extends EventEmitter {
     if (!this.isUnlocked() || !this.#isDirty) return;
 
     try {
-      await this.#fileManager.saveVault(this.#vaultId, this.#vaultData, this.#key);
+      await this.#fileManager.saveVault(this.#vaultId, this.#vaultData, this.#key, this.#activeSlot);
       this.#isDirty = false;
     } catch (error) {
       this.emit('error', { type: 'save', message: error.message });

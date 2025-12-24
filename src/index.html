@@ -7,6 +7,9 @@
   <!-- Content Security Policy for Enhanced Security -->
   <!-- Updated for Phase 3: Cloud Sync (Google Drive API) -->
   <!-- Note: Add https://*.ingest.sentry.io to connect-src when Sentry is enabled -->
+  <!-- SECURITY NOTE: 'unsafe-inline' for style-src is required for dynamic inline styles
+       (vault colors, tags, progress bars, etc.). TODO: Refactor to use CSS custom properties
+       exclusively to eliminate 'unsafe-inline' in a future security hardening pass. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
 
   <title>GenPwd Pro – Secure Password Generator</title>
@@ -60,8 +63,8 @@
         </div>
         <!-- App Tabs (Electron only) -->
         <div class="header-tabs" id="app-tabs" style="display: none;">
-          <button type="button" class="header-tab active" data-tab="generator">🔒 Générateur</button>
-          <button type="button" class="header-tab" data-tab="vault">🗄️ Coffre</button>
+          <button type="button" class="header-tab active" data-tab="generator" aria-label="Onglet Générateur de mots de passe">🔒 Générateur</button>
+          <button type="button" class="header-tab" data-tab="vault" aria-label="Onglet Coffre-fort de mots de passe">🗄️ Coffre</button>
         </div>
 
         <div class="header-right">
@@ -177,10 +180,10 @@
           </div>
           
           <div class="test-tabs">
-            <button type="button" id="tab-results" class="tab-button active">
+            <button type="button" id="tab-results" class="tab-button active" aria-label="Afficher les résultats des tests">
               Résultats
             </button>
-            <button type="button" id="tab-console" class="tab-button">
+            <button type="button" id="tab-console" class="tab-button" aria-label="Afficher la console des tests">
               Console
             </button>
           </div>
@@ -195,9 +198,9 @@
           
         </div>
         <div class="modal-footer">
-          <button type="button" id="btn-rerun-tests" class="btn">🔄 Relancer</button>
-          <button type="button" id="btn-export-test-results" class="btn">📤 Exporter JSON</button>
-          <button type="button" class="btn danger" id="close-test-results-footer">Fermer</button>
+          <button type="button" id="btn-rerun-tests" class="btn" aria-label="Relancer tous les tests">🔄 Relancer</button>
+          <button type="button" id="btn-export-test-results" class="btn" aria-label="Exporter les résultats en JSON">📤 Exporter JSON</button>
+          <button type="button" class="btn danger" id="close-test-results-footer" aria-label="Fermer la fenêtre des résultats">Fermer</button>
         </div>
       </div>
     </div>
@@ -363,9 +366,9 @@
                     </div>
                   </div>
                   <div class="placement-controls">
-                    <button type="button" class="btn-mini" id="btn-placement-reset">↻ Reset</button>
-                    <button type="button" class="btn-mini" id="btn-placement-auto">🎲 Auto</button>
-                    <button type="button" class="btn-mini" id="btn-placement-toggle">🎯 → 📊</button>
+                    <button type="button" class="btn-mini" id="btn-placement-reset" aria-label="Réinitialiser les positions">↻ Reset</button>
+                    <button type="button" class="btn-mini" id="btn-placement-auto" aria-label="Placement automatique aléatoire">🎲 Auto</button>
+                    <button type="button" class="btn-mini" id="btn-placement-toggle" aria-label="Basculer entre mode visuel et pourcentage">🎯 → 📊</button>
                     <span class="placement-mode" id="placement-mode">Auto</span>
                   </div>
                 </div>
@@ -388,15 +391,15 @@
                 <div class="grow blocks-wrap">
                   <div class="block-controls">
                     <div class="block-controls-left">
-                      <button type="button" class="btn-mini" id="btn-all-title">Tout Title</button>
-                      <button type="button" class="btn-mini" id="btn-all-upper">Tout UPPER</button>
-                      <button type="button" class="btn-mini" id="btn-all-lower">Tout lower</button>
+                      <button type="button" class="btn-mini" id="btn-all-title" aria-label="Mettre tous les blocs en Title Case">Tout Title</button>
+                      <button type="button" class="btn-mini" id="btn-all-upper" aria-label="Mettre tous les blocs en majuscules">Tout UPPER</button>
+                      <button type="button" class="btn-mini" id="btn-all-lower" aria-label="Mettre tous les blocs en minuscules">Tout lower</button>
                     </div>
                     <div class="block-controls-right">
-                      <button type="button" class="btn-mini" id="btn-block-dec">−</button>
+                      <button type="button" class="btn-mini" id="btn-block-dec" aria-label="Diminuer le nombre de blocs">−</button>
                       <span class="hint" id="block-size-label">Blocs: 2</span>
-                      <button type="button" class="btn-mini" id="btn-block-inc">+</button>
-                      <button type="button" class="btn-mini random" id="btn-block-random">🎲 Aléatoire</button>
+                      <button type="button" class="btn-mini" id="btn-block-inc" aria-label="Augmenter le nombre de blocs">+</button>
+                      <button type="button" class="btn-mini random" id="btn-block-random" aria-label="Générer des blocs aléatoires">🎲 Aléatoire</button>
                     </div>
                   </div>
                   <div class="block-sync-toggle">

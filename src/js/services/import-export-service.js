@@ -33,7 +33,11 @@ async function loadKdbxweb() {
       safeLog('kdbxweb loaded successfully');
     } catch (error) {
       safeLog(`kdbxweb not available: ${error.message}`);
+      throw new Error('KDBX import requires the desktop application. Please use the Electron app for KeePass imports.');
     }
+  } else {
+    // Web mode - KDBX not supported
+    throw new Error('KDBX/KeePass import is only available in the desktop application. Please use CSV or JSON export from KeePass instead.');
   }
   return kdbxweb;
 }

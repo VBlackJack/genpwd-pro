@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/utils/toast.js - Système de notifications temporaires
+// src/js/utils/toast.js - Temporary notification system
 import { safeLog } from './logger.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 

@@ -202,7 +202,7 @@ const XMLExportPlugin = {
             const modeNode = metadataNode.querySelector('mode');
             const generatedNode = metadataNode.querySelector('generated');
 
-            if (lengthNode) metadata.length = parseInt(lengthNode.textContent);
+            if (lengthNode) metadata.length = parseInt(lengthNode.textContent, 10);
             if (entropyNode) metadata.entropy = parseFloat(entropyNode.textContent);
             if (modeNode) metadata.mode = modeNode.textContent;
             if (generatedNode) metadata.timestamp = generatedNode.textContent;

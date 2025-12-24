@@ -17,6 +17,7 @@
 // src/js/services/hibp-service.js - Have I Been Pwned API Service
 
 import { safeLog } from '../utils/logger.js';
+import { CACHE } from '../config/ui-constants.js';
 
 /**
  * HIBP Service - Check passwords against Have I Been Pwned database
@@ -27,7 +28,7 @@ class HIBPService {
     this.apiUrl = 'https://api.pwnedpasswords.com/range/';
     this.enabled = true;
     this.cache = new Map();
-    this.cacheTimeout = 3600000; // 1 hour
+    this.cacheTimeout = CACHE.HIBP_TTL;
     this.rateLimitDelay = 1500; // 1.5 seconds between requests
     this.lastRequestTime = 0;
 

@@ -135,7 +135,7 @@ async function auditEntry(entry) {
   };
 
   if (!password) {
-    result.issues.push({ type: 'empty', message: 'Aucun mot de passe défini' });
+    result.issues.push({ type: 'empty', message: 'No password set' });
     return result;
   }
 
@@ -150,7 +150,7 @@ async function auditEntry(entry) {
   if (result.entropy < 60) {
     result.issues.push({
       type: 'weak',
-      message: `Mot de passe faible (${Math.round(result.entropy)} bits)`,
+      message: `Weak password (${Math.round(result.entropy)} bits)`,
       severity: result.entropy < 36 ? 'critical' : 'warning'
     });
   }
@@ -162,7 +162,7 @@ async function auditEntry(entry) {
     if (ageYears > 1) {
       result.issues.push({
         type: 'old',
-        message: `Non modifié depuis ${Math.floor(ageYears)} an(s)`,
+        message: `Unchanged for ${Math.floor(ageYears)} year(s)`,
         severity: 'info'
       });
     }
@@ -254,7 +254,7 @@ export async function auditVault(entries) {
       });
       report.issues.reused.push({
         type: 'reused',
-        message: `Mot de passe partagé par ${ids.length} entrées`,
+        message: `Password shared by ${ids.length} entries`,
         entries: reusedEntries,
         severity: 'critical'
       });
@@ -333,11 +333,11 @@ export function getScoreColor(score) {
  */
 export function getScoreLabel(score) {
   if (score >= 90) return 'Excellent';
-  if (score >= 80) return 'Très bon';
-  if (score >= 60) return 'Bon';
-  if (score >= 40) return 'Moyen';
-  if (score >= 20) return 'Faible';
-  return 'Critique';
+  if (score >= 80) return 'Very Good';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Fair';
+  if (score >= 20) return 'Weak';
+  return 'Critical';
 }
 
 /**
@@ -353,8 +353,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'critical',
       icon: '🔄',
-      message: `${report.stats.reusedPasswords} mots de passe réutilisés`,
-      action: 'Changez ces mots de passe immédiatement',
+      message: `${report.stats.reusedPasswords} reused passwords`,
+      action: 'Change these passwords immediately',
       filter: 'reused'
     });
   }
@@ -365,8 +365,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'critical',
       icon: '⚠️',
-      message: `${criticalWeak.length} mot(s) de passe très faibles`,
-      action: 'Utilisez des mots de passe plus longs et complexes',
+      message: `${criticalWeak.length} very weak password(s)`,
+      action: 'Use longer and more complex passwords',
       filter: 'weak'
     });
   }
@@ -377,8 +377,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'warning',
       icon: '🔐',
-      message: `${warningWeak.length} mot(s) de passe à renforcer`,
-      action: 'Augmentez la complexité de ces mots de passe',
+      message: `${warningWeak.length} password(s) to strengthen`,
+      action: 'Increase the complexity of these passwords',
       filter: 'weak'
     });
   }
@@ -388,8 +388,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'info',
       icon: '📅',
-      message: `${report.issues.old.length} mot(s) de passe ancien(s)`,
-      action: 'Envisagez de les renouveler',
+      message: `${report.issues.old.length} old password(s)`,
+      action: 'Consider renewing them',
       filter: 'old'
     });
   }
@@ -402,8 +402,8 @@ export function getRecommendations(report) {
       recommendations.push({
         priority: 'suggestion',
         icon: '🛡️',
-        message: `${percentage}% des entrées sans 2FA`,
-        action: 'Activez l\'authentification à deux facteurs',
+        message: `${percentage}% of entries without 2FA`,
+        action: 'Enable two-factor authentication',
         filter: 'no2fa'
       });
     }

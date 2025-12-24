@@ -17,12 +17,14 @@
 
 import { EventEmitter } from 'node:events';
 import { promises as fs } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { app } from 'electron';
 import { CryptoEngine } from '../crypto/crypto-engine.js';
 import { DuressManager } from '../crypto/duress-manager.js';
 import { CloudSyncManager } from '../sync/cloud-sync-manager.js';
 import { createEmptyVault, VAULT_FORMAT_VERSION, LEGACY_FORMAT_VERSION } from '../models/vault-types.js';
+import { ALGORITHM } from '../crypto/xchacha20.js';
 
 const VAULT_EXTENSION = '.gpd';
 const BACKUP_EXTENSION = '.gpd.bak';
@@ -47,17 +49,29 @@ export class VaultFileManager extends EventEmitter {
   /** @type {Map<string, {path: string, name: string, isExternal: boolean}>} */
   #vaultRegistry = new Map();
 
+  /** @type {Promise<void>} */
+  #registryReady;
+
   constructor() {
     super();
     this.#crypto = new CryptoEngine();
     this.#cloudSync = new CloudSyncManager();
     this.#vaultsDir = this.#getVaultsDirectory();
     this.#registryPath = path.join(app.getPath('userData'), REGISTRY_FILE);
-    this.#loadRegistry();
+    // Store the promise so we can await it before using the registry
+    this.#registryReady = this.#loadRegistry();
 
     this.#cloudSync.on('status', (data) => {
       this.emit('sync:status', data);
     });
+  }
+
+  /**
+   * Ensure registry is loaded before accessing it
+   * @private
+   */
+  async #ensureRegistryLoaded() {
+    await this.#registryReady;
   }
 
   /**
@@ -85,8 +99,11 @@ export class VaultFileManager extends EventEmitter {
       const content = await fs.readFile(this.#registryPath, 'utf-8');
       const data = JSON.parse(content);
       this.#vaultRegistry = new Map(Object.entries(data.vaults || {}));
-    } catch {
-      // Registry doesn't exist yet, that's OK
+    } catch (error) {
+      // Registry doesn't exist yet (ENOENT) is expected on first run
+      if (error.code !== 'ENOENT') {
+        console.warn('[VaultFileManager] Registry load error (using empty):', error.message);
+      }
       this.#vaultRegistry = new Map();
     }
   }
@@ -111,6 +128,7 @@ export class VaultFileManager extends EventEmitter {
    * @param {boolean} isExternal - True if stored outside default directory
    */
   async registerVault(vaultId, vaultPath, name, isExternal = false) {
+    await this.#ensureRegistryLoaded();
     this.#vaultRegistry.set(vaultId, { path: vaultPath, name, isExternal });
     await this.#saveRegistry();
   }
@@ -120,6 +138,7 @@ export class VaultFileManager extends EventEmitter {
    * @param {string} vaultId - Vault ID
    */
   async unregisterVault(vaultId) {
+    await this.#ensureRegistryLoaded();
     this.#vaultRegistry.delete(vaultId);
     await this.#saveRegistry();
   }
@@ -196,10 +215,35 @@ export class VaultFileManager extends EventEmitter {
     let isExternal = false;
 
     if (customPath) {
+      // Validate customPath for security
+      const normalizedPath = path.normalize(customPath);
+
+      // Check for path traversal attempts
+      if (normalizedPath.includes('..')) {
+        throw new Error('Invalid path: path traversal not allowed');
+      }
+
+      // Ensure it's an absolute path
+      if (!path.isAbsolute(normalizedPath)) {
+        throw new Error('Invalid path: must be an absolute path');
+      }
+
+      // Validate path doesn't contain null bytes or suspicious patterns
+      if (normalizedPath.includes('\0') || /[<>:"|?*]/.test(path.basename(normalizedPath).replace(VAULT_EXTENSION, ''))) {
+        throw new Error('Invalid path: contains invalid characters');
+      }
+
+      // Validate Windows reserved names (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+      const baseName = path.basename(normalizedPath).replace(VAULT_EXTENSION, '').toUpperCase();
+      const WINDOWS_RESERVED = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+      if (WINDOWS_RESERVED.test(baseName)) {
+        throw new Error('Invalid path: Windows reserved name not allowed');
+      }
+
       // External vault - use provided path
-      vaultPath = customPath.endsWith(VAULT_EXTENSION)
-        ? customPath
-        : `${customPath}${VAULT_EXTENSION}`;
+      vaultPath = normalizedPath.endsWith(VAULT_EXTENSION)
+        ? normalizedPath
+        : `${normalizedPath}${VAULT_EXTENSION}`;
       isExternal = true;
       await fs.mkdir(path.dirname(vaultPath), { recursive: true });
     } else {
@@ -219,15 +263,16 @@ export class VaultFileManager extends EventEmitter {
 
     // Generate Chaff that matches the size of true data to mask existence
     const chaffSize = Buffer.from(encryptedPayloadA.ciphertext, 'base64').length;
-    // Add some random variance to size (+/- 10%) so they aren't identical byte-sized
-    const variance = Math.floor(chaffSize * 0.1 * (Math.random() - 0.5));
+    // Add some random variance to size (+/- 10%) so they aren't identical byte-sized (using CSPRNG)
+    const varianceRandom = randomBytes(1)[0] / 255; // 0.0 to 1.0
+    const variance = Math.floor(chaffSize * 0.1 * (varianceRandom - 0.5));
     const chaffData = DuressManager.generateChaff(chaffSize + variance);
 
     // We treat the chaff as "encrypted data" structure
     const encryptedPayloadB = {
-      nonce: DuressManager.generateChaff(12).toString('base64'), // Fake nonce
+      nonce: DuressManager.generateChaff(24).toString('base64'), // XSalsa20 uses 24-byte nonce
       ciphertext: chaffData.toString('base64'),
-      algorithm: 'AES-GCM'
+      algorithm: ALGORITHM
     };
 
     // Create V3 File Structure
@@ -235,15 +280,10 @@ export class VaultFileManager extends EventEmitter {
       version: '3.0.0', // V3
       slots: [
         {
-          salt: slotA.keyData.salt,
-          iv: slotA.keyData.iv, // Using IV field for clarity, though typically KDF uses salt. Adjust if keyData has different structure.
-          iterations: slotA.keyData.kdfParams ? slotA.keyData.kdfParams.iterations : 600000,
-          encryptedKey: slotA.keyData.encryptedKey || '', // If using wrapped keys (Tink)
-          // Store full keyData blob for flexibility
+          // keyData contains: salt, verifier, kdfParams, algorithm
           keyData: slotA.keyData
         },
         {
-          // Store keyData for Slot B
           keyData: slotB.keyData
         }
       ],
@@ -483,21 +523,17 @@ export class VaultFileManager extends EventEmitter {
 
     // --- V3 IMPLEMENTATION (DUAL SLOT) ---
     if (version === VAULT_FORMAT_VERSION) {
-      console.log('[VaultFileManager] Using V3 dual-slot implementation');
       let activeSlot = -1;
       let derivedKey = null;
 
       // Check slot structure
       if (!vaultFile.slots?.[0]?.keyData) {
-        console.error('[VaultFileManager] V3 slots[0].keyData missing!');
         throw new Error('Invalid vault structure: missing slots[0].keyData');
       }
 
       // Try unlocking Slot 0 (Real)
-      console.log('[VaultFileManager] Attempting Slot 0 unlock...');
       try {
         const { valid, key } = await this.#crypto.verifyPassword(password, vaultFile.slots[0].keyData);
-        console.log('[VaultFileManager] Slot 0 password valid:', valid);
         if (valid) {
           // Check if payload decrypts (integrity check)
           try {
@@ -505,45 +541,42 @@ export class VaultFileManager extends EventEmitter {
             this.#crypto.decrypt(payloadA, key); // Check only
             activeSlot = 0;
             derivedKey = key;
-            console.log('[VaultFileManager] Slot 0 decryption successful');
-          } catch (e) {
-            // Password correct for KDF, but payload fail? Unlikely unless corrupted.
-            // Or maybe we unlocked Slot 1 by accident if salts are reused (bad).
-            console.warn('[VaultFileManager] Slot 0 payload decryption failed:', e.message);
+          } catch (payloadError) {
+            // Password correct for KDF, but payload failed - likely chaff slot or corrupted
+            // Silent: security-sensitive, don't reveal slot information
+            void payloadError;
           }
         }
-      } catch (e) {
-        console.warn('[VaultFileManager] Slot 0 KDF verification failed:', e.message);
+      } catch (kdfError) {
+        // Slot 0 KDF verification failed - try next slot
+        // Silent: expected during multi-slot unlock attempts
+        void kdfError;
       }
 
       // If Slot 0 failed, try Slot 1 (Decoy)
       if (activeSlot === -1) {
-        console.log('[VaultFileManager] Attempting Slot 1 unlock...');
         try {
           const { valid, key } = await this.#crypto.verifyPassword(password, vaultFile.slots[1].keyData);
-          console.log('[VaultFileManager] Slot 1 password valid:', valid);
           if (valid) {
             try {
               const payloadB = JSON.parse(vaultFile.payloads[1]);
-              // If this slot is Chaff, decrypt will fail randomness check (Tink/AES-GCM auth tag).
-              // BUT, if user set a duress password, we overwrote Chaff with valid vault.
               this.#crypto.decrypt(payloadB, key);
               activeSlot = 1;
               derivedKey = key;
-              console.log('[VaultFileManager] Slot 1 decryption successful');
-            } catch (e) {
-              // Decrypt failed. If this is Chaff, this is EXPECTED.
-              // It means password matched KDF but Auth Tag rejected the random noise.
-              console.debug('[VaultFileManager] Slot 1 payload decryption failed (expected for chaff):', e.message);
+            } catch (decryptError) {
+              // Decrypt failed - expected for chaff slot
+              // Silent: security-sensitive, don't reveal slot information
+              void decryptError;
             }
           }
-        } catch (e) {
-          console.warn('[VaultFileManager] Slot 1 KDF verification failed:', e.message);
+        } catch (kdfError) {
+          // Slot 1 KDF verification failed
+          // Silent: expected during multi-slot unlock attempts
+          void kdfError;
         }
       }
 
       if (activeSlot === -1 || !derivedKey) {
-        console.log('[VaultFileManager] Both slots failed, invalid password');
         throw new Error('Invalid password');
       }
 
@@ -591,7 +624,10 @@ export class VaultFileManager extends EventEmitter {
     // Create backup before saving
     try {
       await fs.copyFile(vaultPath, backupPath);
-    } catch { /* Ignore */ }
+    } catch (backupError) {
+      console.warn('[VaultFileManager] Failed to create backup:', backupError.message);
+      // Continue with save - backup failure shouldn't block the operation
+    }
 
     // Update metadata
     vaultData.metadata.modifiedAt = new Date().toISOString();
@@ -627,6 +663,8 @@ export class VaultFileManager extends EventEmitter {
     // We don't await this to avoid blocking UI response
     this.#cloudSync.uploadVault(vaultPath, vaultId).catch(err => {
       console.error('[VaultFileManager] Auto-sync failed:', err);
+      // Emit error status so UI can notify user
+      this.emit('sync:status', { vaultId, status: 'error', message: 'Sync failed: ' + err.message });
     });
   }
 
@@ -678,6 +716,7 @@ export class VaultFileManager extends EventEmitter {
    * @returns {Promise<Array<{id: string, name: string, path: string, modifiedAt: string, isExternal: boolean}>>}
    */
   async listVaults() {
+    await this.#ensureRegistryLoaded();
     await this.ensureDirectory();
 
     const vaults = [];
@@ -789,6 +828,7 @@ export class VaultFileManager extends EventEmitter {
       await fs.access(this.getRegisteredVaultPath(vaultId));
       return true;
     } catch {
+      // File doesn't exist or not accessible = vault doesn't exist
       return false;
     }
   }
@@ -801,8 +841,8 @@ export class VaultFileManager extends EventEmitter {
    * @returns {Promise<void>}
    */
   async changePassword(vaultId, currentPassword, newPassword) {
-    // Open with current password
-    const { vaultData, key: oldKey } = await this.openVault(vaultId, currentPassword);
+    // Open with current password (returns activeSlot for V3)
+    const { vaultData, key: oldKey, activeSlot } = await this.openVault(vaultId, currentPassword);
 
     // Create new key
     const { key: newKey, keyData } = await this.#crypto.createVaultKey(newPassword);
@@ -813,21 +853,43 @@ export class VaultFileManager extends EventEmitter {
     const vaultFile = JSON.parse(content);
 
     // Backup current file
-    await fs.copyFile(vaultPath, `${vaultPath}.bak`);
+    try {
+      await fs.copyFile(vaultPath, `${vaultPath}.bak`);
+    } catch (backupError) {
+      console.warn('[VaultFileManager] Failed to backup before password change:', backupError.message);
+    }
 
-    // Update with new encryption
-    const encryptedData = this.#crypto.encrypt(vaultData, newKey);
+    // Check if V3 format
+    const version = vaultFile.version || vaultFile.header?.version || 1;
 
-    const updatedFile = {
-      header: {
-        ...vaultFile.header,
-        keyData
-      },
-      encryptedData
-    };
+    if (version === VAULT_FORMAT_VERSION && vaultFile.slots && vaultFile.payloads) {
+      // V3 FORMAT: Update only the active slot, preserve the other slot
+      const slotIndex = activeSlot !== undefined ? activeSlot : 0;
+      const encryptedPayload = this.#crypto.encrypt(vaultData, newKey);
 
-    // Save
-    await fs.writeFile(vaultPath, JSON.stringify(updatedFile, null, 2), 'utf-8');
+      // Update only the slot that was unlocked
+      vaultFile.slots[slotIndex] = {
+        keyData: keyData
+      };
+      vaultFile.payloads[slotIndex] = JSON.stringify(encryptedPayload);
+
+      // Save preserving V3 structure
+      await fs.writeFile(vaultPath, JSON.stringify(vaultFile, null, 2), 'utf-8');
+    } else {
+      // V1 FORMAT: Traditional single-password structure
+      const encryptedData = this.#crypto.encrypt(vaultData, newKey);
+
+      const updatedFile = {
+        header: {
+          ...vaultFile.header,
+          keyData
+        },
+        encryptedData
+      };
+
+      // Save
+      await fs.writeFile(vaultPath, JSON.stringify(updatedFile, null, 2), 'utf-8');
+    }
 
     // Wipe keys
     this.#crypto.wipeKey(oldKey);
@@ -847,7 +909,11 @@ export class VaultFileManager extends EventEmitter {
     const backupPath = `${vaultPath}.migration.bak`;
 
     // 1. Backup!
-    try { await fs.copyFile(vaultPath, backupPath); } catch { }
+    try {
+      await fs.copyFile(vaultPath, backupPath);
+    } catch (backupError) {
+      console.warn('[VaultFileManager] Failed to backup before V3 migration:', backupError.message);
+    }
 
     // 2. Prepare Slot A (Real Vault)
     const slotA = await this.#crypto.createVaultKey(masterPassword);
@@ -868,10 +934,6 @@ export class VaultFileManager extends EventEmitter {
       version: VAULT_FORMAT_VERSION,
       slots: [
         {
-          salt: slotA.keyData.salt,
-          iv: slotA.keyData.iv,
-          iterations: slotA.keyData.kdfParams ? slotA.keyData.kdfParams.iterations : 600000,
-          encryptedKey: slotA.keyData.encryptedKey || '',
           keyData: slotA.keyData
         },
         {
@@ -907,6 +969,7 @@ export class VaultFileManager extends EventEmitter {
 
   /**
    * Import vault from JSON
+   * Creates a proper V3 dual-slot vault from imported data
    * @param {string} importPath - Import file path
    * @param {string} password - New master password
    * @returns {Promise<{vaultId: string}>}
@@ -925,27 +988,54 @@ export class VaultFileManager extends EventEmitter {
 
     const vaultId = vaultData.metadata.id || crypto.randomUUID();
     vaultData.metadata.id = vaultId;
+    vaultData.metadata.importedAt = new Date().toISOString();
 
-    // Create encryption key
-    const { key, keyData } = await this.#crypto.createVaultKey(password);
+    // --- SLOT A: REAL VAULT ---
+    const slotA = await this.#crypto.createVaultKey(password);
+    const encryptedPayloadA = this.#crypto.encrypt(vaultData, slotA.key);
 
-    // Encrypt vault data
-    const encryptedData = this.#crypto.encrypt(vaultData, key);
+    // --- SLOT B: CHAFF (inaccessible without duress password) ---
+    const randomDuressPassword = crypto.randomUUID() + crypto.randomUUID();
+    const slotB = await this.#crypto.createVaultKey(randomDuressPassword);
 
-    // Create file
+    // Generate Chaff matching the real data size (using CSPRNG)
+    const chaffSize = Buffer.from(encryptedPayloadA.ciphertext, 'base64').length;
+    const varianceRandom = randomBytes(1)[0] / 255; // 0.0 to 1.0
+    const variance = Math.floor(chaffSize * 0.1 * (varianceRandom - 0.5));
+    const chaffData = DuressManager.generateChaff(chaffSize + variance);
+
+    const encryptedPayloadB = {
+      nonce: DuressManager.generateChaff(24).toString('base64'), // XSalsa20 uses 24-byte nonce
+      ciphertext: chaffData.toString('base64'),
+      algorithm: ALGORITHM
+    };
+
+    // Create proper V3 File Structure
     const vaultFile = {
-      header: {
-        version: VAULT_FORMAT_VERSION,
-        vaultId,
-        keyData
-      },
-      encryptedData
+      version: VAULT_FORMAT_VERSION,
+      slots: [
+        {
+          keyData: slotA.keyData
+        },
+        {
+          keyData: slotB.keyData
+        }
+      ],
+      payloads: [
+        JSON.stringify(encryptedPayloadA),
+        JSON.stringify(encryptedPayloadB)
+      ]
     };
 
     const vaultPath = this.getVaultPath(vaultId);
     await fs.writeFile(vaultPath, JSON.stringify(vaultFile, null, 2), 'utf-8');
 
-    this.#crypto.wipeKey(key);
+    // Register the imported vault
+    await this.registerVault(vaultId, vaultPath, vaultData.metadata.name || vaultId.substring(0, 8), false);
+
+    // Wipe keys from memory
+    this.#crypto.wipeKey(slotA.key);
+    this.#crypto.wipeKey(slotB.key);
 
     return { vaultId };
   }
@@ -1099,6 +1189,7 @@ export class VaultFileManager extends EventEmitter {
       // Legacy: check header
       return vaultFile.header?.windowsHello?.enabled === true;
     } catch {
+      // Can't read vault file or parse config = Hello not enabled
       return false;
     }
   }

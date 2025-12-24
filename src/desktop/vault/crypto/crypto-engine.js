@@ -21,6 +21,7 @@
  *   const decrypted = engine.decrypt(encrypted, key);
  */
 
+import { randomFillSync, createHash } from 'node:crypto';
 import { deriveKey, generateSalt, DEFAULT_PARAMS } from './argon2-kdf.js';
 import {
   encryptObject,
@@ -155,7 +156,7 @@ export class CryptoEngine {
    */
   generateId(length = 16) {
     const bytes = new Uint8Array(length);
-    crypto.getRandomValues(bytes);
+    randomFillSync(bytes);
     return Array.from(bytes)
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
@@ -168,9 +169,9 @@ export class CryptoEngine {
    * @returns {Promise<Uint8Array>} Verifier hash
    */
   async #createVerifier(key) {
-    // Use SHA-256 hash of the key as verifier
-    const hashBuffer = await crypto.subtle.digest('SHA-256', key);
-    return new Uint8Array(hashBuffer);
+    // Use SHA-256 hash of the key as verifier (Node.js crypto)
+    const hash = createHash('sha256').update(key).digest();
+    return new Uint8Array(hash);
   }
 
   /**
@@ -196,7 +197,8 @@ export class CryptoEngine {
    * @returns {string} Base64 string
    */
   #arrayToBase64(array) {
-    return btoa(String.fromCharCode(...array));
+    // Use Buffer for Node.js compatibility (btoa is browser-only)
+    return Buffer.from(array).toString('base64');
   }
 
   /**
@@ -206,12 +208,8 @@ export class CryptoEngine {
    * @returns {Uint8Array} Converted array
    */
   #base64ToArray(base64) {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
+    // Use Buffer for Node.js compatibility (atob is browser-only)
+    return new Uint8Array(Buffer.from(base64, 'base64'));
   }
 }
 

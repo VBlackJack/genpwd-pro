@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/dom.js - Utilitaires DOM optimisés
+// src/js/ui/dom.js - Optimized DOM utilities
 import { getCachedElement } from '../config/settings.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
@@ -32,7 +32,7 @@ export function getElement(selector, useCache = true) {
       return document.querySelector(selector);
     }
   } catch (e) {
-    safeLog(`Erreur sélecteur DOM: ${selector} - ${e.message}`);
+    safeLog(`DOM selector error: ${selector} - ${e.message}`);
     return null;
   }
 }
@@ -41,7 +41,7 @@ export function getAllElements(selector) {
   try {
     return Array.from(document.querySelectorAll(selector));
   } catch (e) {
-    safeLog(`Erreur querySelectorAll: ${selector} - ${e.message}`);
+    safeLog(`querySelectorAll error: ${selector} - ${e.message}`);
     return [];
   }
 }
@@ -53,7 +53,7 @@ export function addEventListener(element, event, handler, options = {}) {
     element.addEventListener(event, handler, options);
     return true;
   } catch (e) {
-    safeLog(`Erreur addEventListener: ${e.message}`);
+    safeLog(`addEventListener error: ${e.message}`);
     return false;
   }
 }
@@ -64,7 +64,7 @@ export function updateBadgeForInput(input) {
     const badge = input.parentNode ? input.parentNode.querySelector('.badge') : null;
     if (badge) badge.textContent = input.value;
   } catch (e) {
-    safeLog(`Erreur updateBadgeForInput: ${e.message}`);
+    safeLog(`updateBadgeForInput error: ${e.message}`);
   }
 }
 
@@ -98,7 +98,7 @@ export function updateVisibilityByMode() {
     }
   }
 
-  safeLog(`Mode affiché: ${mode}`);
+  safeLog(`Display mode: ${mode}`);
 }
 
 export function ensureBlockVisible() {
@@ -129,25 +129,7 @@ export function ensureBlockVisible() {
   }
 }
 
-export function showModal(modalSelector) {
-  const modal = getElement(modalSelector);
-  if (modal) {
-    modal.classList.add('show');
-    document.body.classList.add('no-scroll');
-
-    // Focus management
-    const closeBtn = modal.querySelector('.modal-close');
-    if (closeBtn) closeBtn.focus();
-  }
-}
-
-export function hideModal(modalSelector) {
-  const modal = getElement(modalSelector);
-  if (modal) {
-    modal.classList.remove('show');
-    document.body.classList.remove('no-scroll');
-  }
-}
+// NOTE: showModal/hideModal removed - use modal-manager.js instead
 
 export function toggleDebugPanel() {
   const debugPanel = getElement('#debug-panel');
@@ -162,7 +144,7 @@ export function toggleDebugPanel() {
 
   const btn = getElement('#btn-toggle-debug');
   if (btn) {
-    btn.textContent = isVisible ? '🔬 Debug' : '🔬 Fermer';
+    btn.textContent = isVisible ? '🔬 Debug' : '🔬 Close';
   }
 
   return !isVisible;
@@ -178,7 +160,7 @@ export function renderChips(containerSelector, blocks, onChipClick) {
     const chip = document.createElement('button');
     chip.className = 'chip ' + (token === 'U' ? '' : token === 'l' ? 'chip-muted' : 'chip-title');
     chip.textContent = token;
-    chip.title = 'Cliquer pour changer (U → l → T → U)';
+    chip.title = 'Click to cycle (U → l → T → U)';
     
     if (onChipClick) {
       addEventListener(chip, 'click', () => onChipClick(index));
@@ -191,13 +173,13 @@ export function renderChips(containerSelector, blocks, onChipClick) {
 export function updateBlockSizeLabel(labelSelector, blocksCount) {
   const label = getElement(labelSelector);
   if (label) {
-    label.textContent = `Blocs: ${blocksCount}`;
+    label.textContent = `Blocks: ${blocksCount}`;
   }
 }
 
 export async function initializeDOM() {
   try {
-    // Vérifier éléments critiques
+    // Check critical elements
     const criticalElements = [
       '#mode-select',
       '#qty',
@@ -209,20 +191,20 @@ export async function initializeDOM() {
     for (const selector of criticalElements) {
       const element = getElement(selector);
       if (!element) {
-        throw new Error(`Élément critique manquant: ${selector}`);
+        throw new Error(`Missing critical element: ${selector}`);
       }
     }
 
-    // Initialiser les badges des sliders
+    // Initialize slider badges
     getAllElements('input[type="range"]').forEach(updateBadgeForInput);
-    
-    // Initialiser la visibilité selon le mode
+
+    // Initialize visibility by mode
     updateVisibilityByMode();
     ensureBlockVisible();
-    
-    safeLog('DOM initialisé avec succès');
-    
+
+    safeLog('DOM initialized successfully');
+
   } catch (error) {
-    throw new Error(`Erreur initialisation DOM: ${error.message}`);
+    throw new Error(`DOM initialization error: ${error.message}`);
   }
 }

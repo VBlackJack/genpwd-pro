@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/core/dictionaries.js - Système de dictionnaires multilingues
+// src/js/core/dictionaries.js - Multilingual dictionary system
 import { DICTIONARY_CONFIG, FALLBACK_DICTIONARY } from '../config/constants.js';
 import { DICTIONARY } from '../config/crypto-constants.js';
 import { safeLog } from '../utils/logger.js';
@@ -33,7 +33,6 @@ async function loadDictionarySource(config) {
   const { url } = config;
 
   const isBrowserContext = typeof window !== 'undefined' && typeof window.fetch === 'function';
-  console.log(`[DictDebug] isBrowserContext: ${isBrowserContext}, window: ${typeof window}, fetch: ${typeof window?.fetch}`);
   const shouldUseHttpFetch = isBrowserContext || REMOTE_PROTOCOL_REGEX.test(url);
 
   if (shouldUseHttpFetch) {
@@ -119,7 +118,7 @@ async function loadDictionarySource(config) {
   for (const candidate of candidatePaths) {
     try {
       const fileContent = await readFile(candidate, 'utf-8');
-      safeLog(`Lecture locale du dictionnaire ${config.name} depuis ${candidate}`);
+      safeLog(`Local dictionary ${config.name} loaded from ${candidate}`);
       return JSON.parse(fileContent);
     } catch (error) {
       if (error.code !== 'ENOENT') {
@@ -129,10 +128,10 @@ async function loadDictionarySource(config) {
     }
   }
 
-  throw lastError || new Error(`Impossible de localiser le dictionnaire ${url}`);
+  throw lastError || new Error(`Unable to locate dictionary ${url}`);
 }
 
-// État interne du système de dictionnaires
+// Internal state of dictionary system
 const dictionaries = {
   current: 'french',
   cache: new Map(),
@@ -180,7 +179,7 @@ export async function loadDictionary(dictKey) {
   // RACE CONDITION FIX: Create promise for this load
   const loadPromise = (async () => {
     try {
-      safeLog(`Chargement du dictionnaire ${dictKey} depuis ${config.url}`);
+      safeLog(`Loading dictionary ${dictKey} from ${config.url}`);
 
       const data = await loadDictionarySource(config);
 
@@ -206,7 +205,7 @@ export async function loadDictionary(dictKey) {
         }
       }
 
-      // Validation du format
+      // Format validation
       if (!data || !Array.isArray(data.words)) {
         throw new Error('Invalid dictionary format: missing "words" property');
       }
@@ -254,15 +253,15 @@ export async function loadDictionary(dictKey) {
       return words;
 
     } catch (error) {
-      safeLog(`Erreur chargement dictionnaire ${dictKey}: ${error.message}`);
+      safeLog(`Dictionary load error ${dictKey}: ${error.message}`);
       updateDictionaryStatus(dictKey, 'error');
       updateDictionaryInfo(dictKey, 0, null, error.message);
 
-      // Fallback vers le dictionnaire français intégré
+      // Fallback to embedded French dictionary
       if (dictKey !== 'french') {
-        safeLog('Fallback vers dictionnaire français intégré');
+        safeLog('Falling back to embedded French dictionary');
         updateDictionaryStatus(dictKey, 'fallback');
-        updateDictionaryInfo(dictKey, FALLBACK_DICTIONARY.length, null, 'Utilisation du fallback français');
+        updateDictionaryInfo(dictKey, FALLBACK_DICTIONARY.length, null, 'Using French fallback');
         return FALLBACK_DICTIONARY;
       }
 
@@ -285,7 +284,7 @@ export async function getCurrentDictionary(dictKey = null) {
   try {
     return await loadDictionary(targetDict);
   } catch (error) {
-    safeLog(`Impossible de charger le dictionnaire ${targetDict}, utilisation du fallback`);
+    safeLog(`Unable to load dictionary ${targetDict}, using fallback`);
     return FALLBACK_DICTIONARY;
   }
 }
@@ -375,24 +374,24 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
   infoEl.classList.remove('dict-info-error', 'dict-info-success', 'dict-info-warning');
 
   if (error) {
-    infoEl.textContent = `Erreur: ${error}`;
+    infoEl.textContent = `Error: ${error}`;
     infoEl.classList.add('dict-info-error');
   } else if (count > 0) {
     const version = metadata?.version || 'v1.0';
-    const source = metadata?.source || 'inconnu';
-    infoEl.textContent = `${count} mots • ${version} • Source: ${source}`;
+    const source = metadata?.source || 'unknown';
+    infoEl.textContent = `${count} words • ${version} • Source: ${source}`;
     infoEl.classList.add('dict-info-success');
   } else {
-    infoEl.textContent = 'Aucun mot disponible';
+    infoEl.textContent = 'No words available';
     infoEl.classList.add('dict-info-warning');
   }
 }
 
 export function initializeDictionaries() {
-  // Initialiser le fallback français
+  // Initialize French fallback
   updateDictionaryStatus('french', 'fallback');
   updateDictionaryInfo('french', FALLBACK_DICTIONARY.length,
-    { version: 'v1.0', source: 'intégré' });
+    { version: 'v1.0', source: 'embedded' });
 
-  safeLog('Système de dictionnaires initialisé');
+  safeLog('Dictionary system initialized');
 }

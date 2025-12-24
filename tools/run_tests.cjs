@@ -1103,15 +1103,7 @@ class NodeTestRunner {
           return { sample: 'HTML escaped successfully' };
         }
       },
-      {
-        name: 'Helpers - log2 calculation',
-        run: async () => {
-          const { log2 } = this.modules.helpers;
-          const result = log2(8);
-          assert(Math.abs(result - 3) < 0.001, 'log2(8) should be 3');
-          return { sample: `log2(8) = ${result}` };
-        }
-      }
+      // NOTE: log2 test removed - use Math.log2() directly instead
     ];
   }
 

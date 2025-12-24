@@ -81,7 +81,7 @@ function triggerGenerate() {
   const btn = document.getElementById('btn-generate');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Génération de mots de passe');
+    announceAction('Generating passwords');
   }
 }
 
@@ -92,7 +92,7 @@ function triggerCopyAll() {
   const btn = document.getElementById('btn-copy-all');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Copie de tous les mots de passe');
+    announceAction('Copying all passwords');
   }
 }
 
@@ -103,7 +103,7 @@ function triggerRunTests() {
   const btn = document.getElementById('btn-run-tests');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Exécution des tests');
+    announceAction('Running tests');
   }
 }
 
@@ -114,7 +114,7 @@ function triggerExport() {
   const btn = document.getElementById('btn-export');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Export des résultats');
+    announceAction('Exporting results');
   }
 }
 
@@ -132,7 +132,7 @@ function handleEscapeKey() {
 
     if (closeBtn) {
       closeBtn.click();
-      announceAction('Modal fermée');
+      announceAction('Modal closed');
     } else {
       // Fallback: hide modal directly
       lastModal.classList.add('hidden');
@@ -174,11 +174,11 @@ function announceAction(message) {
  */
 export function getKeyboardShortcuts() {
   return [
-    { key: 'Alt+G', description: 'Générer des mots de passe' },
-    { key: 'Alt+C', description: 'Copier tous les mots de passe' },
-    { key: 'Alt+R', description: 'Exécuter les tests' },
-    { key: 'Alt+S', description: 'Exporter les résultats' },
-    { key: 'Escape', description: 'Fermer les modals' }
+    { key: 'Alt+G', description: 'Generate passwords' },
+    { key: 'Alt+C', description: 'Copy all passwords' },
+    { key: 'Alt+R', description: 'Run tests' },
+    { key: 'Alt+S', description: 'Export results' },
+    { key: 'Escape', description: 'Close modals' }
   ];
 }
 

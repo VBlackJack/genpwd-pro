@@ -129,7 +129,12 @@ export function decryptString(payload, key) {
  * @returns {EncryptedPayload} Encrypted payload
  */
 export function encryptObject(obj, key) {
-  const json = JSON.stringify(obj);
+  let json;
+  try {
+    json = JSON.stringify(obj);
+  } catch (stringifyError) {
+    throw new Error(`Object serialization failed: ${stringifyError.message}`);
+  }
   return encryptString(json, key);
 }
 
@@ -142,7 +147,11 @@ export function encryptObject(obj, key) {
  */
 export function decryptObject(payload, key) {
   const json = decryptString(payload, key);
-  return JSON.parse(json);
+  try {
+    return JSON.parse(json);
+  } catch (parseError) {
+    throw new Error(`Decryption succeeded but JSON parsing failed: ${parseError.message}`);
+  }
 }
 
 /**

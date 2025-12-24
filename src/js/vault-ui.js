@@ -41,6 +41,7 @@ import { SettingsModal } from './ui/modals/settings-modal.js';
 import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
+import { generateQRCodeSVG } from './utils/qrcode.js';
 
 // Entry type configuration - function to get translated labels
 const getEntryTypes = () => ({
@@ -127,6 +128,9 @@ export class VaultUI {
   #pendingExternalPath = null; // Path for external vault creation/opening
   #lastAuditReport = null; // Last security audit report
   #auditFilterIds = null; // Set of entry IDs to filter by (from audit)
+  #keyboardHandler = null; // Global keyboard shortcut handler
+  /** @type {AbortController|null} AbortController for main view event cleanup */
+  #mainViewAbortController = null;
 
   /** @type {Object} */
   #duressSetupModal;
@@ -229,8 +233,6 @@ export class VaultUI {
           return;
         }
 
-        console.log('[VaultUI] Global Auto-Type triggered for:', title);
-
         // Smart Matching Heuristic
         const lowerTitle = title.toLowerCase();
 
@@ -250,7 +252,7 @@ export class VaultUI {
             try {
               const hostname = new URL(eUrl).hostname.replace('www.', '').split('.')[0];
               if (hostname && lowerTitle.includes(hostname) && hostname.length > 3) return true;
-            } catch { }
+            } catch { /* Invalid URL format - skip matching */ }
           }
           return false;
         });
@@ -352,7 +354,42 @@ export class VaultUI {
     if (this.#unsubscribeChanged) this.#unsubscribeChanged();
     if (this.#unsubscribeBlur) this.#unsubscribeBlur();
     if (this.#unsubscribeFocus) this.#unsubscribeFocus();
+    // Clean up keyboard shortcuts handler
+    if (this.#keyboardHandler) {
+      document.removeEventListener('keydown', this.#keyboardHandler);
+      this.#keyboardHandler = null;
+    }
     this.#stopAutoLockTimer();
+
+    // Clean up TOTP timer
+    if (this.#totpTimer) {
+      clearInterval(this.#totpTimer);
+      this.#totpTimer = null;
+    }
+
+    // Clean up clipboard timeout
+    if (this.#clipboardTimeout) {
+      clearTimeout(this.#clipboardTimeout);
+      this.#clipboardTimeout = null;
+    }
+
+    // Clean up tooltip timeout
+    if (this.#tooltipTimeout) {
+      clearTimeout(this.#tooltipTimeout);
+      this.#tooltipTimeout = null;
+    }
+
+    // Clean up undo timeout
+    if (this.#undoTimeout) {
+      clearTimeout(this.#undoTimeout);
+      this.#undoTimeout = null;
+    }
+
+    // Clean up main view event listeners
+    if (this.#mainViewAbortController) {
+      this.#mainViewAbortController.abort();
+      this.#mainViewAbortController = null;
+    }
   }
 
   async #loadData() {
@@ -414,7 +451,7 @@ export class VaultUI {
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="vault-password"
                      placeholder="${t('vault.lockScreen.masterPassword')}" autocomplete="current-password"
-                     aria-label="${t('vault.lockScreen.masterPassword')}">
+                     aria-label="${t('vault.lockScreen.masterPassword')}" aria-required="true">
               <button type="button" class="vault-input-btn" id="toggle-password"
                       title="${t('vault.lockScreen.showHide')}" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -577,7 +614,7 @@ export class VaultUI {
         this.#updateHelloSection(vaults[0].id);
       }
     } catch (error) {
-      container.innerHTML = `<div class="vault-error">Error loading vaults</div>`;
+      container.innerHTML = `<div class="vault-error">${t('vault.messages.errorLoadingVaults')}</div>`;
     }
   }
 
@@ -624,7 +661,7 @@ export class VaultUI {
       const isEnabled = await window.vault.hello.isEnabled(vaultId);
       helloSection.hidden = !isEnabled;
     } catch (error) {
-      console.error('[VaultUI] Hello check error:', error);
+      safeLog('[VaultUI] Hello check error:', error);
       helloSection.hidden = true;
     }
   }
@@ -662,7 +699,7 @@ export class VaultUI {
       const progress = document.getElementById('unlock-progress');
 
       btn.disabled = true;
-      btn.querySelector('.btn-text').textContent = 'Unlocking...';
+      btn.querySelector('.btn-text').textContent = t('vault.actions.unlocking');
       if (progress) {
         progress.hidden = false;
         // Animate progress bar
@@ -675,11 +712,11 @@ export class VaultUI {
         await window.vault.unlock(selected.dataset.vaultId, password);
       } catch (error) {
         this.#showDetailedError(
-          error.message || 'Incorrect password',
-          'Check your input and try again'
+          error.message || t('vault.misc.incorrectPassword'),
+          t('vault.messages.checkFileFormat')
         );
         btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'Unlock';
+        btn.querySelector('.btn-text').textContent = t('vault.lockScreen.unlock');
         if (progress) progress.hidden = true;
         document.getElementById('vault-password')?.select();
       }
@@ -849,7 +886,7 @@ export class VaultUI {
 
             <div class="vault-modal-actions">
               <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Create Vault</button>
+              <button type="submit" class="vault-btn vault-btn-primary">${t('vault.actions.createVault')}</button>
             </div>
           </form>
         </div>
@@ -1017,7 +1054,7 @@ export class VaultUI {
             await window.vault.hello.enable(result.vaultId, password);
             this.#showToast(t('vault.messages.vaultCreatedWithHello'), 'success');
           } catch (helloError) {
-            console.error('Windows Hello enable failed:', helloError);
+            safeLog('[VaultUI] Windows Hello enable failed:', helloError);
             this.#showToast(t('vault.messages.vaultCreatedWithoutHello'), 'warning');
           }
         } else {
@@ -1028,9 +1065,9 @@ export class VaultUI {
         this.#pendingExternalPath = null; // Reset
         this.#loadVaultList();
       } catch (error) {
-        this.#showToast(error.message || 'Creation error', 'error');
+        this.#showToast(error.message || t('vault.common.error'), 'error');
         btn.disabled = false;
-        btn.textContent = 'Create Vault';
+        btn.textContent = t('vault.actions.createVault');
       }
     });
 
@@ -1063,8 +1100,7 @@ export class VaultUI {
     try {
       const isAvailable = await window.vault?.hello?.isAvailable();
       helloOption.hidden = !isAvailable;
-    } catch (error) {
-      console.log('Windows Hello not available:', error);
+    } catch {
       helloOption.hidden = true;
     }
   }
@@ -1074,7 +1110,7 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="open-external-modal" role="dialog" aria-modal="true" aria-labelledby="open-external-title">
         <div class="vault-modal vault-modal-sm">
           <div class="vault-modal-header">
-            <h3 id="open-external-title">Open Vault</h3>
+            <h3 id="open-external-title">${t('vault.actions.openVault')}</h3>
             <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1091,7 +1127,8 @@ export class VaultUI {
               <label class="vault-label" for="external-vault-password">Master password <span class="required">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="external-vault-password"
-                       placeholder="Vault password" required autocomplete="current-password">
+                       placeholder="Vault password" required autocomplete="current-password"
+                       aria-label="Vault password" aria-required="true">
                 <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="external-vault-password" aria-label="Show password">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -1102,7 +1139,7 @@ export class VaultUI {
             </div>
             <div class="vault-modal-actions">
               <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Open</button>
+              <button type="submit" class="vault-btn vault-btn-primary">${t('vault.actions.open')}</button>
             </div>
           </form>
         </div>
@@ -1160,9 +1197,9 @@ export class VaultUI {
         this.#pendingExternalPath = null;
         this.#showToast(t('vault.messages.vaultOpenedSuccess'), 'success');
       } catch (error) {
-        this.#showToast(error.message || 'Incorrect password or invalid file', 'error');
+        this.#showToast(error.message || t('vault.misc.incorrectPassword'), 'error');
         btn.disabled = false;
-        btn.textContent = 'Open';
+        btn.textContent = t('vault.actions.open');
         document.getElementById('external-vault-password')?.select();
       }
     });
@@ -1311,7 +1348,7 @@ export class VaultUI {
             <div class="vault-filter-section">
               <label class="vault-filter-label">Type</label>
               <div class="vault-filter-chips" id="filter-type">
-                <button class="vault-chip ${!this.#searchFilters.type ? 'active' : ''}" data-filter-type="">Tous</button>
+                <button class="vault-chip ${!this.#searchFilters.type ? 'active' : ''}" data-filter-type="" aria-label="Filter: All types">Tous</button>
                 ${Object.entries(ENTRY_TYPES).map(([key, val]) => `
                   <button class="vault-chip ${this.#searchFilters.type === key ? 'active' : ''}" data-filter-type="${key}">
                     ${val.icon} ${val.label}
@@ -1322,7 +1359,7 @@ export class VaultUI {
             <div class="vault-filter-section">
               <label class="vault-filter-label">Password strength</label>
               <div class="vault-filter-chips" id="filter-strength">
-                <button class="vault-chip ${!this.#searchFilters.strength ? 'active' : ''}" data-filter-strength="">All</button>
+                <button class="vault-chip ${!this.#searchFilters.strength ? 'active' : ''}" data-filter-strength="" aria-label="Filter: All password strengths">All</button>
                 <button class="vault-chip ${this.#searchFilters.strength === 'weak' ? 'active' : ''}" data-filter-strength="weak" aria-label="Low strength"><span aria-hidden="true">🔴</span> Weak</button>
                 <button class="vault-chip ${this.#searchFilters.strength === 'medium' ? 'active' : ''}" data-filter-strength="medium" aria-label="Medium strength"><span aria-hidden="true">🟡</span> Medium</button>
                 <button class="vault-chip ${this.#searchFilters.strength === 'strong' ? 'active' : ''}" data-filter-strength="strong" aria-label="High strength"><span aria-hidden="true">🟢</span> Strong</button>
@@ -1331,15 +1368,15 @@ export class VaultUI {
             <div class="vault-filter-section">
               <label class="vault-filter-label">${t('vault.detail.passwordAge')}</label>
               <div class="vault-filter-chips" id="filter-age">
-                <button class="vault-chip ${!this.#searchFilters.age ? 'active' : ''}" data-filter-age="">All</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'recent' ? 'active' : ''}" data-filter-age="recent">Recent (&lt;30d)</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'old' ? 'active' : ''}" data-filter-age="old">Old (&gt;180d)</button>
+                <button class="vault-chip ${!this.#searchFilters.age ? 'active' : ''}" data-filter-age="" aria-label="Filter: All ages">All</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'recent' ? 'active' : ''}" data-filter-age="recent" aria-label="Filter: Recent (less than 30 days)">Recent (&lt;30d)</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'old' ? 'active' : ''}" data-filter-age="old" aria-label="Filter: Old (more than 180 days)">Old (&gt;180d)</button>
                 <button class="vault-chip ${this.#searchFilters.age === 'expiring' ? 'active' : ''}" data-filter-age="expiring" aria-label="Expiring soon"><span aria-hidden="true">⏰</span> Expiring</button>
                 <button class="vault-chip ${this.#searchFilters.age === 'expired' ? 'active' : ''}" data-filter-age="expired" aria-label="Expired"><span aria-hidden="true">⚠️</span> Expired</button>
               </div>
             </div>
             <div class="vault-filter-actions">
-              <button class="vault-btn vault-btn-sm vault-btn-secondary" id="clear-filters">Reset</button>
+              <button class="vault-btn vault-btn-sm vault-btn-secondary" id="clear-filters" aria-label="Reset all filters">Reset</button>
             </div>
           </div>
 
@@ -1391,7 +1428,7 @@ export class VaultUI {
                <span class="vault-sync-icon" id="vault-sync-icon"></span>
                <span class="vault-sync-text" id="vault-sync-text">Ready</span>
             </div>
-            <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyze password health">
+            <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyze password health" aria-label="Analyze password health">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
@@ -1509,13 +1546,13 @@ export class VaultUI {
             </label>
             <span class="vault-bulk-count">${this.#selectedEntries.size} selected</span>
             <div class="vault-bulk-buttons">
-              <button class="vault-bulk-btn" id="bulk-move" title="Move to folder">
+              <button class="vault-bulk-btn" id="bulk-move" title="Move to folder" aria-label="Move selected entries to folder">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
                 Move
               </button>
-              <button class="vault-bulk-btn" id="bulk-export" title="Export selection">
+              <button class="vault-bulk-btn" id="bulk-export" title="Export selection" aria-label="Export selected entries">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
@@ -1523,21 +1560,21 @@ export class VaultUI {
                 </svg>
                 Export
               </button>
-              <button class="vault-bulk-btn" id="bulk-tag" title="Manage tags">
+              <button class="vault-bulk-btn" id="bulk-tag" title="Manage tags" aria-label="Manage tags for selected entries">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                   <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
                 Tags
               </button>
-              <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="Delete selection">
+              <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="Delete selection" aria-label="Delete selected entries">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
                 Delete
               </button>
-              <button class="vault-bulk-btn" id="bulk-cancel" title="Cancel selection">
+              <button class="vault-bulk-btn" id="bulk-cancel" title="Cancel selection" aria-label="Cancel selection">
                 Cancel
               </button>
             </div>
@@ -1583,7 +1620,6 @@ export class VaultUI {
    * @returns {Array} Tree structure with children arrays
    */
   #buildFolderTree() {
-    // const rootFolders = [];
     const childMap = new Map(); // parentId -> children[]
 
     // First pass: group by parentId
@@ -1827,19 +1863,23 @@ export class VaultUI {
         const action = item.dataset.action;
         menu.remove();
 
-        switch (action) {
-          case 'rename':
-            this.#showRenameFolderModal(folderId);
-            break;
-          case 'add-subfolder':
-            this.#showAddSubfolderModal(folderId);
-            break;
-          case 'color':
-            this.#showFolderColorPicker(folderId, x, y);
-            break;
-          case 'delete':
-            await this.#confirmDeleteFolder(folderId);
-            break;
+        try {
+          switch (action) {
+            case 'rename':
+              this.#showRenameFolderModal(folderId);
+              break;
+            case 'add-subfolder':
+              this.#showAddSubfolderModal(folderId);
+              break;
+            case 'color':
+              this.#showFolderColorPicker(folderId, x, y);
+              break;
+            case 'delete':
+              await this.#confirmDeleteFolder(folderId);
+              break;
+          }
+        } catch (error) {
+          this.#showToast(error.message || 'Operation failed', 'error');
         }
       });
     });
@@ -1857,35 +1897,39 @@ export class VaultUI {
   /**
    * Show modal to rename a folder
    */
-  #showRenameFolderModal(folderId) {
+  async #showRenameFolderModal(folderId) {
     const folder = this.#folders.find(f => f.id === folderId);
     if (!folder) return;
 
     const newName = prompt('New folder name:', folder.name);
     if (newName && newName.trim() && newName !== folder.name) {
-      window.vault.folders.update(folderId, { name: newName.trim() })
-        .then(() => {
-          this.#showToast(t('vault.messages.folderRenamed'), 'success');
-          this.#loadData().then(() => this.#render());
-        })
-        .catch(e => this.#showToast('Error: ' + e.message, 'error'));
+      try {
+        await window.vault.folders.update(folderId, { name: newName.trim() });
+        this.#showToast(t('vault.messages.folderRenamed'), 'success');
+        await this.#loadData();
+        this.#render();
+      } catch (e) {
+        this.#showToast('Error: ' + e.message, 'error');
+      }
     }
   }
 
   /**
    * Show modal to add a subfolder
    */
-  #showAddSubfolderModal(parentId) {
+  async #showAddSubfolderModal(parentId) {
     const name = prompt('New subfolder name:');
     if (name && name.trim()) {
-      window.vault.folders.add(name.trim(), parentId)
-        .then(() => {
-          // Auto-expand the parent
-          this.#expandedFolders.add(parentId);
-          this.#showToast(t('vault.messages.subfolderCreated'), 'success');
-          this.#loadData().then(() => this.#render());
-        })
-        .catch(e => this.#showToast('Error: ' + e.message, 'error'));
+      try {
+        await window.vault.folders.add(name.trim(), parentId);
+        // Auto-expand the parent
+        this.#expandedFolders.add(parentId);
+        this.#showToast(t('vault.messages.subfolderCreated'), 'success');
+        await this.#loadData();
+        this.#render();
+      } catch (e) {
+        this.#showToast('Error: ' + e.message, 'error');
+      }
     }
   }
 
@@ -2145,14 +2189,14 @@ export class VaultUI {
             <div class="vault-field-label-row">
               <label class="vault-field-label">Contenu</label>
               <div class="vault-notes-toggle">
-                <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview" aria-label="Preview mode">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </button>
-                <button type="button" class="vault-notes-mode" data-mode="source" title="Source Markdown">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="vault-notes-mode" data-mode="source" title="Source Markdown" aria-label="Edit source mode">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <polyline points="16 18 22 12 16 6"></polyline>
                     <polyline points="8 6 2 12 8 18"></polyline>
                   </svg>
@@ -2580,7 +2624,7 @@ export class VaultUI {
           }
         } catch (error) {
           const digitsEl = field.querySelector('.totp-digits');
-          if (digitsEl) digitsEl.textContent = 'Erreur';
+          if (digitsEl) digitsEl.textContent = t('vault.common.error');
         }
       }
     };
@@ -2623,8 +2667,8 @@ export class VaultUI {
       secret: secret.toUpperCase().replace(/\s/g, ''),
       issuer,
       account,
-      period: parseInt(params.get('period')) || 30,
-      digits: parseInt(params.get('digits')) || 6
+      period: parseInt(params.get('period'), 10) || 30,
+      digits: parseInt(params.get('digits'), 10) || 6
     };
   }
 
@@ -3261,7 +3305,7 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="edit-tag-modal" role="dialog" aria-modal="true" aria-labelledby="edit-tag-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="edit-tag-title">${t('vault.dialogs.newTag')}</h3>
+            <h3 id="edit-tag-title">Edit tag</h3>
             <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -3279,7 +3323,7 @@ export class VaultUI {
               <label class="vault-label">Color</label>
               <div class="vault-color-grid" id="edit-tag-colors">
                 ${tagColors.map(color => `
-                  <button type="button" class="vault-color-option" data-color="${color}" style="background: ${color}"></button>
+                  <button type="button" class="vault-color-option" data-color="${color}" style="background: ${color}" aria-label="Select color ${color}"></button>
                 `).join('')}
               </div>
               <input type="hidden" id="edit-tag-color">
@@ -3346,7 +3390,7 @@ export class VaultUI {
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
-              <p>Drag a file here or <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse">browse</button></p>
+              <p>Drag a file here or <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse" aria-label="Browse files to import">browse</button></p>
               <input type="file" id="import-file-input" accept=".xml,.json,.csv" hidden>
               <span class="vault-dropzone-hint">Formats: XML, JSON, CSV</span>
             </div>
@@ -3478,7 +3522,7 @@ export class VaultUI {
           try {
             await window.vault.folders.add(group.name, group.parentId);
           } catch (e) {
-            console.warn('[Import] Group creation error:', e.message);
+            safeLog('[Import] Group creation error:', e.message);
           }
         }
       }
@@ -3507,7 +3551,7 @@ export class VaultUI {
           await window.vault.entries.add(entry.type || 'login', entry.title, entryData);
           importedCount++;
         } catch (e) {
-          console.warn('[Import] Entry creation error:', e.message);
+          safeLog('[Import] Entry creation error:', e.message);
         }
       }
 
@@ -3805,7 +3849,7 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
         <div class="vault-modal vault-modal-shortcuts">
           <div class="vault-modal-header">
-            <h3 id="shortcuts-title">Raccourcis clavier</h3>
+            <h3 id="shortcuts-title">Keyboard shortcuts</h3>
             <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -3929,16 +3973,20 @@ export class VaultUI {
       // Clickable issue cards (filter entries)
       newModal.querySelectorAll('.vault-health-card[data-filter]').forEach(card => {
         card.addEventListener('click', async () => {
-          const filter = card.dataset.filter;
-          if (filter && this.#lastAuditReport) {
-            const { filterEntriesByIssue } = await import('./vault/audit-service.js');
-            const entryIds = filterEntriesByIssue(this.#lastAuditReport, filter);
-            this.#closeModal('health-modal');
-            // Filter the list to show only these entries
-            this.#auditFilterIds = new Set(entryIds);
-            this.#selectedCategory = 'all';
-            this.#updateEntryList();
-            this.#showToast(`${entryIds.length} entry(ies) filtered`, 'info');
+          try {
+            const filter = card.dataset.filter;
+            if (filter && this.#lastAuditReport) {
+              const { filterEntriesByIssue } = await import('./vault/audit-service.js');
+              const entryIds = filterEntriesByIssue(this.#lastAuditReport, filter);
+              this.#closeModal('health-modal');
+              // Filter the list to show only these entries
+              this.#auditFilterIds = new Set(entryIds);
+              this.#selectedCategory = 'all';
+              this.#updateEntryList();
+              this.#showToast(`${entryIds.length} entry(ies) filtered`, 'info');
+            }
+          } catch (error) {
+            this.#showToast(error.message || 'Filter failed', 'error');
           }
         });
       });
@@ -3946,14 +3994,18 @@ export class VaultUI {
       // Clickable recommendation items
       newModal.querySelectorAll('.vault-recommendation[data-filter]').forEach(item => {
         item.addEventListener('click', async () => {
-          const filter = item.dataset.filter;
-          if (filter && this.#lastAuditReport) {
-            const { filterEntriesByIssue } = await import('./vault/audit-service.js');
-            const entryIds = filterEntriesByIssue(this.#lastAuditReport, filter);
-            this.#closeModal('health-modal');
-            this.#auditFilterIds = new Set(entryIds);
-            this.#selectedCategory = 'all';
-            this.#updateEntryList();
+          try {
+            const filter = item.dataset.filter;
+            if (filter && this.#lastAuditReport) {
+              const { filterEntriesByIssue } = await import('./vault/audit-service.js');
+              const entryIds = filterEntriesByIssue(this.#lastAuditReport, filter);
+              this.#closeModal('health-modal');
+              this.#auditFilterIds = new Set(entryIds);
+              this.#selectedCategory = 'all';
+              this.#updateEntryList();
+            }
+          } catch (error) {
+            this.#showToast(error.message || 'Filter failed', 'error');
           }
         });
       });
@@ -4118,10 +4170,10 @@ export class VaultUI {
    */
   #renderLegacyHealthModal(stats) {
     return `
-      <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
+      <div class="vault-modal-overlay" id="legacy-health-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-health-title">
         <div class="vault-modal vault-modal-health">
           <div class="vault-modal-header">
-            <h3 id="health-title">Password health</h3>
+            <h3 id="legacy-health-title">Password health</h3>
             <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -4347,7 +4399,7 @@ export class VaultUI {
         }
         newChecks++;
       } catch (err) {
-        console.warn(`[VaultUI] Breach check error for ${entry.id}:`, err);
+        safeLog(`[VaultUI] Breach check error for ${entry.id}:`, err);
       }
 
       checked++;
@@ -4517,73 +4569,8 @@ export class VaultUI {
   }
 
   #generateQRCode(data) {
-    // Simple QR code generation using SVG
-    // Calculate version based on data length
-    const dataLen = data.length;
-    let version = 2;
-    if (dataLen > 47) version = 3;
-    if (dataLen > 77) version = 4;
-    if (dataLen > 114) version = 5;
-    if (dataLen > 154) version = 6;
-
-    const modules = 17 + version * 4;
-    const size = 200;
-    const margin = 4;
-    const totalSize = modules + margin * 2;
-    // const scale = size / totalSize;
-
-    // Generate pattern from data
-    let binary = '';
-    for (const char of data) {
-      binary += char.charCodeAt(0).toString(2).padStart(8, '0');
-    }
-    while (binary.length < modules * modules * 2) {
-      binary += binary;
-    }
-
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalSize} ${totalSize}" width="${size}" height="${size}" class="vault-qr-svg">`;
-    svg += `<rect width="100%" height="100%" fill="#ffffff"/>`;
-
-    // Finder patterns
-    const drawFinder = (x, y) => {
-      svg += `<rect x="${x}" y="${y}" width="7" height="7" fill="#000"/>`;
-      svg += `<rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/>`;
-      svg += `<rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#000"/>`;
-    };
-
-    drawFinder(margin, margin);
-    drawFinder(margin + modules - 7, margin);
-    drawFinder(margin, margin + modules - 7);
-
-    // Timing patterns
-    for (let i = 8; i < modules - 8; i++) {
-      if (i % 2 === 0) {
-        svg += `<rect x="${margin + i}" y="${margin + 6}" width="1" height="1" fill="#000"/>`;
-        svg += `<rect x="${margin + 6}" y="${margin + i}" width="1" height="1" fill="#000"/>`;
-      }
-    }
-
-    // Data modules
-    const isReserved = (x, y) => {
-      if (x < 9 && y < 9) return true;
-      if (x >= modules - 8 && y < 9) return true;
-      if (x < 9 && y >= modules - 8) return true;
-      if (x === 6 || y === 6) return true;
-      return false;
-    };
-
-    let bitIdx = 0;
-    for (let y = 0; y < modules; y++) {
-      for (let x = 0; x < modules; x++) {
-        if (!isReserved(x, y) && binary[bitIdx % binary.length] === '1') {
-          svg += `<rect x="${margin + x}" y="${margin + y}" width="1" height="1" fill="#000"/>`;
-        }
-        if (!isReserved(x, y)) bitIdx++;
-      }
-    }
-
-    svg += '</svg>';
-    return svg;
+    // Delegate to centralized QR code utility
+    return generateQRCodeSVG(data, { size: 200 });
   }
 
   #openEntryList() {
@@ -4840,13 +4827,18 @@ export class VaultUI {
 
 
 
-    // Generate UUID v4-like
+    // Generate UUID v4 using CSPRNG
     const generateUUID = () => {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      }).toUpperCase();
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID().toUpperCase();
+      }
+      // Fallback using crypto.getRandomValues (CSPRNG)
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
+      bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant
+      const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`.toUpperCase();
     };
 
     // Format date for KeePass XML (ISO format)
@@ -5122,7 +5114,7 @@ export class VaultUI {
         this.#render();
         this.#showToast(`${imported} entry/entries imported`, 'success');
       } catch (error) {
-        console.error('[VaultUI] Import error:', error);
+        safeLog('[VaultUI] Import error:', error);
         this.#showDetailedError(
           'Import error: ' + (error.message || 'invalid format'),
           'Check the file format (CSV or JSON required)'
@@ -5300,7 +5292,7 @@ export class VaultUI {
       this.#closeModal('save-vault-modal');
       this.#showToast(`Vault saved: ${result.fileName}`, 'success');
     } catch (error) {
-      console.error('[VaultUI] Save vault error:', error);
+      safeLog('[VaultUI] Save vault error:', error);
       this.#showToast(`Error: ${error.message}`, 'error');
 
       // Reset button state
@@ -5326,7 +5318,7 @@ export class VaultUI {
    */
   async #toggleCompactMode() {
     if (!window.electronAPI?.toggleCompactMode) {
-      console.warn('[VaultUI] Compact mode not available (not in Electron)');
+      safeLog('[VaultUI] Compact mode not available (not in Electron)');
       return;
     }
 
@@ -5336,7 +5328,7 @@ export class VaultUI {
         this.#handleCompactModeChange(result.compact);
       }
     } catch (error) {
-      console.error('[VaultUI] Compact mode error:', error);
+      safeLog('[VaultUI] Compact mode error:', error);
     }
   }
 
@@ -5503,7 +5495,7 @@ export class VaultUI {
         try {
           const url = new URL(otpMatch[0]);
           entry.totp = url.searchParams.get('secret') || '';
-        } catch { }
+        } catch { /* Invalid otpauth URL - ignore */ }
       }
     }
 
@@ -5631,7 +5623,7 @@ export class VaultUI {
           try {
             const url = new URL(otpSecret1);
             otpSecret1 = url.searchParams.get('secret') || '';
-          } catch { }
+          } catch { /* Invalid otpauth URL - ignore */ }
         }
         return {
           title: row['title'] || row['url'] || 'Import 1Password',
@@ -5714,38 +5706,45 @@ export class VaultUI {
   }
 
   #attachMainViewEvents() {
+    // Cleanup previous event listeners to prevent memory leaks
+    if (this.#mainViewAbortController) {
+      this.#mainViewAbortController.abort();
+    }
+    this.#mainViewAbortController = new AbortController();
+    const signal = this.#mainViewAbortController.signal;
+
     // Welcome Screen Actions
     document.getElementById('btn-welcome-create')?.addEventListener('click', () => {
       this.#openModal('add-entry-modal');
-    });
+    }, { signal });
 
     document.getElementById('btn-welcome-import')?.addEventListener('click', () => {
       this.#openModal('import-modal');
-    });
+    }, { signal });
 
     // Lock button
-    document.getElementById('btn-lock')?.addEventListener('click', () => this.#lock());
+    document.getElementById('btn-lock')?.addEventListener('click', () => this.#lock(), { signal });
 
     // Timer settings button
     document.getElementById('timer-settings')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.#showTimeoutSettings();
-    });
+    }, { signal });
 
     // Theme toggle button
     document.getElementById('theme-toggle')?.addEventListener('click', () => {
       this.#toggleTheme();
-    });
+    }, { signal });
 
     // Cloud Sync button
     document.getElementById('btn-cloud-sync')?.addEventListener('click', () => {
       this.#syncSettingsModal.show();
-    });
+    }, { signal });
 
     // Duress Setup button
     document.getElementById('btn-duress-setup')?.addEventListener('click', () => {
       this.#duressSetupModal.show();
-    });
+    }, { signal });
 
     // Vault switcher dropdown
     const vaultSwitcher = document.getElementById('vault-switcher');
@@ -5756,7 +5755,7 @@ export class VaultUI {
         const isOpen = !vaultDropdown.hidden;
         vaultDropdown.hidden = isOpen;
         vaultSwitcher.setAttribute('aria-expanded', !isOpen);
-      });
+      }, { signal });
 
       // Close dropdown when clicking outside
       document.addEventListener('click', (e) => {
@@ -5764,13 +5763,13 @@ export class VaultUI {
           vaultDropdown.hidden = true;
           vaultSwitcher.setAttribute('aria-expanded', 'false');
         }
-      });
+      }, { signal });
 
       // Switch vault button (lock and return to vault selection)
       document.getElementById('btn-switch-vault')?.addEventListener('click', async () => {
         vaultDropdown.hidden = true;
         await this.#lock();
-      });
+      }, { signal });
 
       // Create new vault button
       document.getElementById('btn-create-new-vault')?.addEventListener('click', async () => {
@@ -5780,7 +5779,7 @@ export class VaultUI {
         setTimeout(() => {
           this.#openModal('create-vault-modal');
         }, 100);
-      });
+      }, { signal });
     }
 
     // Windows Hello settings button
@@ -5794,7 +5793,7 @@ export class VaultUI {
         this.#searchQuery = e.target.value;
         this.#updateEntryList();
       }, 150);
-    });
+    }, { signal });
 
     // Clear search button
     document.getElementById('btn-clear-search')?.addEventListener('click', () => {
@@ -5802,17 +5801,17 @@ export class VaultUI {
       const searchInput = document.getElementById('vault-search');
       if (searchInput) searchInput.value = '';
       this.#updateEntryList();
-    });
+    }, { signal });
 
     // Empty state: add first entry button
     document.getElementById('btn-add-first-entry')?.addEventListener('click', () => {
       this.#openModal('add-entry-modal');
-    });
+    }, { signal });
 
     // Empty state: import first button
     document.getElementById('btn-import-first')?.addEventListener('click', () => {
       this.#openModal('import-modal');
-    });
+    }, { signal });
 
     // Category navigation
     document.querySelectorAll('.vault-nav-item[data-category]').forEach(btn => {
@@ -5821,7 +5820,7 @@ export class VaultUI {
         this.#selectedFolder = null;
         this.#selectedEntry = null;
         this.#render();
-      });
+      }, { signal });
     });
 
     // Folder tree navigation (with expand/collapse)
@@ -5837,7 +5836,7 @@ export class VaultUI {
         this.#selectedFolder = null;
         this.#selectedEntry = null;
         this.#render();
-      });
+      }, { signal });
     });
 
     // Tag edit buttons
@@ -5845,13 +5844,13 @@ export class VaultUI {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.#openEditTagModal(btn.dataset.editTag);
-      });
+      }, { signal });
     });
 
     // Add tag button
     document.getElementById('btn-add-tag')?.addEventListener('click', () => {
       this.#openModal('add-tag-modal');
-    });
+    }, { signal });
 
     // Sort dropdown
     const sortBtn = document.getElementById('sort-btn');
@@ -5860,7 +5859,7 @@ export class VaultUI {
       const isOpen = !sortMenu.hidden;
       sortMenu.hidden = isOpen;
       sortBtn.setAttribute('aria-expanded', !isOpen);
-    });
+    }, { signal });
 
     document.querySelectorAll('.vault-sort-option').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5868,7 +5867,7 @@ export class VaultUI {
         sortMenu.hidden = true;
         sortBtn?.setAttribute('aria-expanded', 'false');
         this.#updateEntryList();
-      });
+      }, { signal });
     });
 
     // Close sort menu on outside click
@@ -5877,7 +5876,7 @@ export class VaultUI {
         sortMenu.hidden = true;
         sortBtn?.setAttribute('aria-expanded', 'false');
       }
-    });
+    }, { signal });
 
     // Filter panel toggle
     const filterBtn = document.getElementById('filter-btn');
@@ -5886,7 +5885,7 @@ export class VaultUI {
       const isOpen = !filterPanel.hidden;
       filterPanel.hidden = isOpen;
       filterBtn.setAttribute('aria-expanded', !isOpen);
-    });
+    }, { signal });
 
     // Filter chips - Type
     document.querySelectorAll('[data-filter-type]').forEach(chip => {
@@ -5894,7 +5893,7 @@ export class VaultUI {
         this.#searchFilters.type = chip.dataset.filterType || null;
         this.#updateFilterUI();
         this.#updateEntryList();
-      });
+      }, { signal });
     });
 
     // Filter chips - Strength
@@ -5903,7 +5902,7 @@ export class VaultUI {
         this.#searchFilters.strength = chip.dataset.filterStrength || null;
         this.#updateFilterUI();
         this.#updateEntryList();
-      });
+      }, { signal });
     });
 
     // Filter chips - Age
@@ -5912,7 +5911,7 @@ export class VaultUI {
         this.#searchFilters.age = chip.dataset.filterAge || null;
         this.#updateFilterUI();
         this.#updateEntryList();
-      });
+      }, { signal });
     });
 
     // Clear all filters
@@ -6015,33 +6014,46 @@ export class VaultUI {
 
     document.getElementById('bulk-delete')?.addEventListener('click', async () => {
       if (this.#selectedEntries.size === 0) return;
-      const count = this.#selectedEntries.size;
-      const ids = [...this.#selectedEntries];
 
-      // Remove from UI immediately
-      this.#entries = this.#entries.filter(e => !this.#selectedEntries.has(e.id));
-      this.#selectedEntries.clear();
-      this.#selectedEntry = null;
-      this.#updateEntryList();
-      this.#updateDetailPanel();
-      this.#updateBulkActionsUI();
+      try {
+        const count = this.#selectedEntries.size;
+        const ids = [...this.#selectedEntries];
 
-      // Delete with toast
-      this.#showToastWithUndo(
-        `${count} entry(ies) deleted`,
-        async () => {
-          // Undo: reload data
-          await this.#loadData();
-          this.#updateEntryList();
-          this.#showToast(t('vault.messages.restored'), 'success');
-        },
-        async () => {
-          // Confirm: delete for real
-          for (const id of ids) {
-            await window.vault.entries.delete(id);
+        // Remove from UI immediately
+        this.#entries = this.#entries.filter(e => !this.#selectedEntries.has(e.id));
+        this.#selectedEntries.clear();
+        this.#selectedEntry = null;
+        this.#updateEntryList();
+        this.#updateDetailPanel();
+        this.#updateBulkActionsUI();
+
+        // Delete with toast
+        this.#showToastWithUndo(
+          `${count} entry(ies) deleted`,
+          async () => {
+            // Undo: reload data
+            try {
+              await this.#loadData();
+              this.#updateEntryList();
+              this.#showToast(t('vault.messages.restored'), 'success');
+            } catch (error) {
+              this.#showToast(error.message || 'Restore failed', 'error');
+            }
+          },
+          async () => {
+            // Confirm: delete for real
+            try {
+              for (const id of ids) {
+                await window.vault.entries.delete(id);
+              }
+            } catch (error) {
+              this.#showToast(error.message || 'Delete failed', 'error');
+            }
           }
-        }
-      );
+        );
+      } catch (error) {
+        this.#showToast(error.message || 'Bulk delete failed', 'error');
+      }
     });
 
     document.getElementById('bulk-move')?.addEventListener('click', () => {
@@ -6218,7 +6230,7 @@ export class VaultUI {
       checkbox.addEventListener('change', (e) => {
         const row = checkbox.closest('.vault-entry-row');
         const entryId = row?.dataset.entryId;
-        const index = parseInt(row?.dataset.entryIndex || '0');
+        const index = parseInt(row?.dataset.entryIndex || '0', 10);
         if (!entryId) return;
 
         if (e.shiftKey && this.#lastSelectedIndex >= 0) {
@@ -6877,7 +6889,7 @@ export class VaultUI {
     document.querySelectorAll('.restore-history-pwd').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!this.#selectedEntry) return;
-        const index = parseInt(btn.dataset.index);
+        const index = parseInt(btn.dataset.index, 10);
         await this.#restorePasswordFromHistory(index);
       });
     });
@@ -7110,11 +7122,11 @@ export class VaultUI {
         if (result.success) {
           this.#showToast(t('vault.messages.autoFillComplete'), 'success');
         } else {
-          console.error('[VaultUI] Auto-type failed:', result.error);
-          this.#showToast(`Erreur: ${result.error}`, 'error');
+          safeLog('[VaultUI] Auto-type failed:', result.error);
+          this.#showToast(`Error: ${result.error}`, 'error');
         }
       } catch (error) {
-        console.error('[VaultUI] Auto-type error:', error);
+        safeLog('[VaultUI] Auto-type error:', error);
         this.#showToast(t('vault.messages.autoFillError'), 'error');
       }
     } else {
@@ -7300,7 +7312,7 @@ export class VaultUI {
     // Generate share
     modal.querySelector('#generate-share').addEventListener('click', async () => {
       const passphrase = modal.querySelector('#share-passphrase').value;
-      const expiry = parseInt(modal.querySelector('#share-expiry').value);
+      const expiry = parseInt(modal.querySelector('#share-expiry').value, 10);
       const includeNotes = modal.querySelector('#share-include-notes').checked;
 
       try {
@@ -7328,9 +7340,13 @@ export class VaultUI {
       'yellow', 'zebre', 'alpha', 'brave', 'crystal', 'diamond', 'ember', 'falcon'
     ];
 
+    // Use CSPRNG for secure word selection
+    const randomBytes = new Uint8Array(4);
+    crypto.getRandomValues(randomBytes);
+
     const selected = [];
     for (let i = 0; i < 4; i++) {
-      const idx = Math.floor(Math.random() * words.length);
+      const idx = randomBytes[i] % words.length;
       selected.push(words[idx]);
     }
 
@@ -7391,8 +7407,9 @@ export class VaultUI {
       ['deriveKey']
     );
 
+    // Using PBKDF2.LEGACY_ITERATIONS (100000) for share compatibility
     const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, // PBKDF2.LEGACY_ITERATIONS
       keyMaterial,
       { name: 'AES-GCM', length: 256 },
       false,
@@ -7607,7 +7624,7 @@ export class VaultUI {
         editExpiresInput.hidden = true;
         // Calculate date from preset (days)
         const date = new Date();
-        date.setDate(date.getDate() + parseInt(value));
+        date.setDate(date.getDate() + parseInt(value, 10));
         editExpiresInput.value = date.toISOString().split('T')[0];
       } else {
         editExpiresInput.hidden = true;
@@ -7702,7 +7719,7 @@ export class VaultUI {
     // Delete handling
     this.#container.querySelectorAll('[data-delete-attachment]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.deleteAttachment);
+        const index = parseInt(btn.dataset.deleteAttachment, 10);
         this.#editingData.attachments.splice(index, 1);
         this.#renderEditModalContent(); // Re-render to update list
       });
@@ -7711,7 +7728,7 @@ export class VaultUI {
     // Download handling
     this.#container.querySelectorAll('[data-download-attachment]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.downloadAttachment);
+        const index = parseInt(btn.dataset.downloadAttachment, 10);
         this.#downloadAttachment(index);
       });
     });
@@ -7740,7 +7757,7 @@ export class VaultUI {
 
         this.#showToast(`Attachment added: ${file.name}`, 'success');
       } catch (err) {
-        console.error('File read error:', err);
+        safeLog('[VaultUI] File read error:', err);
         this.#showToast(t('vault.messages.fileReadError'), 'error');
       }
     }
@@ -8036,9 +8053,9 @@ export class VaultUI {
         // Reset form
         document.getElementById('add-entry-form')?.reset();
       } catch (error) {
-        this.#showToast(error.message || 'Error', 'error');
+        this.#showToast(error.message || t('vault.common.error'), 'error');
         btn.disabled = false;
-        btn.textContent = 'Add';
+        btn.textContent = t('vault.common.add');
       }
     });
   }
@@ -8345,7 +8362,7 @@ export class VaultUI {
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
           this.#showToast(t('vault.messages.aliasGenerated'), 'success');
         } catch (err) {
-          console.error(err);
+          safeLog('[VaultUI] Alias generation error:', err);
           btn.innerHTML = '<span class="icon">❌</span>';
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
           this.#showToast(err.message || 'Alias generation error', 'error');
@@ -8403,7 +8420,7 @@ export class VaultUI {
           expiresInput.hidden = true;
           // Calculate date from preset (days)
           const date = new Date();
-          date.setDate(date.getDate() + parseInt(value));
+          date.setDate(date.getDate() + parseInt(value, 10));
           expiresInput.value = date.toISOString().split('T')[0];
         } else {
           expiresInput.hidden = true;
@@ -8450,10 +8467,6 @@ export class VaultUI {
       { value: 'phone', label: 'Phone' },
       { value: 'date', label: 'Date' }
     ];
-
-    // const kindOptionsHtml = fieldKindOptions.map(opt =>
-    //   `<option value="${opt.value}">${opt.label}</option>`
-    // ).join('');
 
     const existingFieldsHtml = existingFields.map((field, index) => `
       <div class="vault-custom-field" data-field-index="${index}" data-field-id="${this.#escapeHtml(field.id || '')}">
@@ -8884,8 +8897,8 @@ export class VaultUI {
             <p id="confirm-dialog-message" class="confirm-dialog-message">${this.#escapeHtml(message)}</p>
           </div>
           <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel">${this.#escapeHtml(cancelText)}</button>
-            <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm">${this.#escapeHtml(confirmText)}</button>
+            <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="Cancel">${this.#escapeHtml(cancelText)}</button>
+            <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="Confirm">${this.#escapeHtml(confirmText)}</button>
           </div>
         </div>
       `;
@@ -9130,9 +9143,9 @@ export class VaultUI {
         <button class="vault-gen-close" aria-label="${t('vault.common.close')}">&times;</button>
       </div>
       <div class="vault-gen-preview">
-        <input type="text" class="vault-gen-output" id="gen-output" readonly>
-        <button class="vault-gen-copy" title="Copier">📋</button>
-        <button class="vault-gen-refresh" title="Regenerate">🔄</button>
+        <input type="text" class="vault-gen-output" id="gen-output" readonly aria-label="Generated password">
+        <button class="vault-gen-copy" title="Copier" aria-label="Copy password to clipboard">📋</button>
+        <button class="vault-gen-refresh" title="Regenerate" aria-label="Generate new password">🔄</button>
       </div>
       <div class="vault-gen-options">
         <div class="vault-gen-length">
@@ -9155,7 +9168,7 @@ export class VaultUI {
 
     const generate = () => {
       const pwd = this.#generatePassword({
-        length: parseInt(document.getElementById('gen-length').value),
+        length: parseInt(document.getElementById('gen-length').value, 10),
         uppercase: document.getElementById('gen-uppercase').checked,
         lowercase: document.getElementById('gen-lowercase').checked,
         numbers: document.getElementById('gen-numbers').checked,
@@ -9704,7 +9717,7 @@ export class VaultUI {
       // Update button state (enabled/disabled indicator)
       await this.#updateHelloButtonState();
     } catch (error) {
-      console.error('[VaultUI] Hello init error:', error);
+      safeLog('[VaultUI] Hello init error:', error);
       helloBtn.hidden = true;
     }
   }
@@ -9724,7 +9737,7 @@ export class VaultUI {
       helloBtn.classList.toggle('hello-enabled', isEnabled);
       helloBtn.title = isEnabled ? 'Windows Hello (enabled)' : 'Windows Hello (disabled)';
     } catch (error) {
-      console.error('[VaultUI] Hello state check error:', error);
+      safeLog('[VaultUI] Hello state check error:', error);
     }
   }
 
@@ -9804,46 +9817,21 @@ export class VaultUI {
         actionBtn.style.cursor = 'pointer';
       }
 
-      // Debug: log the button element
-      const btn = popover.querySelector('#hello-enable, #hello-disable');
-      console.log('[VaultUI] Button in popover:', btn?.id, btn?.outerHTML?.substring(0, 100));
-
       // Event delegation on popover - capture phase
       popover.addEventListener('click', (e) => {
-        console.log('[VaultUI] Popover click event, target:', e.target.tagName, e.target.id || e.target.className);
         const target = e.target.closest('button');
-        if (!target) {
-          console.log('[VaultUI] No button found in click path');
-          return;
-        }
-
-        console.log('[VaultUI] Button clicked:', target.id);
+        if (!target) return;
 
         if (target.id === 'hello-enable') {
-          console.log('[VaultUI] Enable button clicked');
           e.stopPropagation();
           popover.remove();
           this.#enableWindowsHello(state.vaultId);
         } else if (target.id === 'hello-disable') {
-          console.log('[VaultUI] Disable button clicked');
           e.stopPropagation();
           popover.remove();
           this.#disableWindowsHello(state.vaultId);
         }
       }, true); // Use capture phase
-
-      console.log('[VaultUI] Popover created, isEnabled:', isEnabled);
-      console.log('[VaultUI] Popover in DOM:', document.body.contains(popover));
-
-      // Debug: temporary global click listener to see what's catching clicks
-      const debugClick = (e) => {
-        console.log('[VaultUI] Global click:', e.target.tagName, e.target.id || e.target.className);
-        if (e.target.id === 'hello-enable' || e.target.closest('#hello-enable')) {
-          console.log('[VaultUI] Click was on enable button!');
-        }
-      };
-      document.addEventListener('click', debugClick, true);
-      setTimeout(() => document.removeEventListener('click', debugClick, true), 10000);
 
       // Close on click outside
       const closeHandler = (e) => {
@@ -9855,7 +9843,7 @@ export class VaultUI {
       // Delay to avoid immediate close
       setTimeout(() => document.addEventListener('click', closeHandler), 200);
     } catch (error) {
-      console.error('[VaultUI] Hello settings error:', error);
+      safeLog('[VaultUI] Hello settings error:', error);
       this.#showToast(t('vault.windowsHello.error'), 'error');
     }
   }
@@ -9865,22 +9853,16 @@ export class VaultUI {
    * @param {string} vaultId - Vault ID
    */
   async #enableWindowsHello(vaultId) {
-    console.log('[VaultUI] #enableWindowsHello called for vault:', vaultId);
-
     // Need master password to enable Windows Hello
     const password = await this.#promptPassword('Enter your password to enable Windows Hello');
-    console.log('[VaultUI] Password prompt result:', password ? 'provided' : 'cancelled');
     if (!password) return;
 
     try {
       this.#showToast(t('vault.windowsHello.enabling') || 'Enabling Windows Hello...', 'info');
-      console.log('[VaultUI] Calling vault.hello.enable...');
       await window.vault.hello.enable(vaultId, password);
-      console.log('[VaultUI] Hello enable SUCCESS');
       this.#showToast(t('vault.windowsHello.enableSuccess') || 'Windows Hello enabled!', 'success');
       await this.#updateHelloButtonState();
     } catch (error) {
-      console.error('[VaultUI] Hello enable error:', error);
       this.#showToast(error.message || 'Windows Hello activation failed', 'error');
     }
   }
@@ -9895,7 +9877,7 @@ export class VaultUI {
       this.#showToast(t('vault.windowsHello.disableSuccess'), 'success');
       await this.#updateHelloButtonState();
     } catch (error) {
-      console.error('[VaultUI] Hello disable error:', error);
+      safeLog('[VaultUI] Hello disable error:', error);
       this.#showToast(error.message || 'Deactivation failed', 'error');
     }
   }
@@ -9980,7 +9962,8 @@ export class VaultUI {
   }
 
   #bindKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
+    // Store handler for cleanup in destroy()
+    this.#keyboardHandler = (e) => {
       // Escape to close modals
       if (e.key === 'Escape') {
         const activeModal = document.querySelector('.vault-modal-overlay.active');
@@ -10081,7 +10064,8 @@ export class VaultUI {
 
       // Reset auto-lock on any key
       this.#resetAutoLock();
-    });
+    };
+    document.addEventListener('keydown', this.#keyboardHandler);
 
     // Reset auto-lock on mouse activity
     this.#container.addEventListener('mousemove', () => this.#resetAutoLock(), { passive: true });
@@ -10257,7 +10241,7 @@ export class VaultUI {
           if (onConfirm) await onConfirm();
         }
       } catch (err) {
-        console.error('Undo toast callback failed:', err);
+        safeLog('[VaultUI] Undo toast callback failed:', err);
       }
     }, duration);
   }
@@ -10574,12 +10558,12 @@ export class VaultUI {
       el.classList.add('syncing');
       icon.className = 'vault-sync-icon vault-sync-spinner';
       icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
-      text.textContent = data.message || 'Synchronisation...';
+      text.textContent = data.message || t('vault.sync.syncing');
     } else if (data.status === 'synced') {
       el.classList.add('synced');
       icon.className = 'vault-sync-icon';
       icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
-      text.textContent = data.message || 'Up to date';
+      text.textContent = data.message || t('vault.sync.upToDate');
 
       // Hide after 5 seconds
       this._syncStatusTimeout = setTimeout(() => {
@@ -10589,7 +10573,7 @@ export class VaultUI {
       el.classList.add('error');
       icon.className = 'vault-sync-icon';
       icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-      text.textContent = data.message || 'Erreur Sync';
+      text.textContent = data.message || t('vault.sync.syncError');
     }
   }
 

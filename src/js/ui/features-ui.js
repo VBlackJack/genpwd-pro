@@ -31,9 +31,52 @@ import { getBlocks, setBlocks, setUIState } from '../config/settings.js';
 import { renderChips, updateBlockSizeLabel } from './dom.js';
 
 /**
+ * Shared validation utility for preset name fields
+ * @param {HTMLInputElement} nameInput - The name input element
+ * @param {HTMLElement} nameError - The error display element
+ * @returns {boolean} True if valid
+ */
+function validatePresetName(nameInput, nameError) {
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameError.textContent = 'Name is required';
+    nameError.style.display = 'block';
+    return false;
+  }
+  if (name.length > 50) {
+    nameError.textContent = 'Name cannot exceed 50 characters';
+    nameError.style.display = 'block';
+    return false;
+  }
+  nameError.style.display = 'none';
+  return true;
+}
+
+// AbortController for language selector event listeners cleanup
+let langSelectorAbortController = null;
+
+/**
+ * Cleanup language selector event listeners
+ * @returns {void}
+ */
+export function cleanupLanguageSelector() {
+  if (langSelectorAbortController) {
+    langSelectorAbortController.abort();
+    langSelectorAbortController = null;
+  }
+  // Remove dropdown from DOM if exists
+  const langDropdown = document.getElementById('lang-dropdown');
+  if (langDropdown) {
+    langDropdown.remove();
+  }
+}
+
+/**
  * Initialize language selector in header
  */
 export function initializeLanguageSelector() {
+  // Cleanup any existing listeners first
+  cleanupLanguageSelector();
   const headerRight = document.querySelector('.header-right');
   if (!headerRight) return;
 
@@ -90,6 +133,10 @@ function bindLanguageSelectorEvents() {
 
   if (!langBtn || !langDropdown) return;
 
+  // Create AbortController for cleanup
+  langSelectorAbortController = new AbortController();
+  const { signal } = langSelectorAbortController;
+
   // Position dropdown relative to button
   function positionDropdown() {
     const btnRect = langBtn.getBoundingClientRect();
@@ -109,25 +156,25 @@ function bindLanguageSelectorEvents() {
     } else {
       langDropdown.classList.add('hidden');
     }
-  });
+  }, { signal });
 
   // Reposition on scroll/resize
   window.addEventListener('scroll', () => {
     if (!langDropdown.classList.contains('hidden')) {
       positionDropdown();
     }
-  });
+  }, { passive: true, signal });
 
   window.addEventListener('resize', () => {
     if (!langDropdown.classList.contains('hidden')) {
       positionDropdown();
     }
-  });
+  }, { passive: true, signal });
 
   // Close dropdown when clicking outside
   document.addEventListener('click', () => {
     langDropdown.classList.add('hidden');
-  });
+  }, { signal });
 
   // Handle language selection
   langOptions.forEach(option => {
@@ -154,7 +201,7 @@ function bindLanguageSelectorEvents() {
         showToast('Failed to change language', 'error');
         safeLog(`Error changing language: ${error.message}`);
       }
-    });
+    }, { signal });
   });
 }
 
@@ -667,17 +714,17 @@ function getCurrentGeneratorConfig() {
 
   return {
     mode: document.getElementById('mode-select')?.value || 'syllables',
-    length: parseInt(document.getElementById('syll-len')?.value) || 20,
+    length: parseInt(document.getElementById('syll-len')?.value, 10) || 20,
     policy: document.getElementById('policy-select')?.value || 'standard',
-    digits: parseInt(document.getElementById('digits-count')?.value) || 2,
-    specials: parseInt(document.getElementById('specials-count')?.value) || 2,
+    digits: parseInt(document.getElementById('digits-count')?.value, 10) || 2,
+    specials: parseInt(document.getElementById('specials-count')?.value, 10) || 2,
     customSpecials: document.getElementById('custom-specials')?.value || '_+-=.@#%',
     placeDigits: document.getElementById('place-digits')?.value || 'aleatoire',
     placeSpecials: document.getElementById('place-specials')?.value || 'aleatoire',
     caseMode: caseMode,
     // Always save blocks (they exist even when not in blocks mode)
     blocks: blocks,
-    quantity: parseInt(document.getElementById('qty')?.value) || 5
+    quantity: parseInt(document.getElementById('qty')?.value, 10) || 5
   };
 }
 
@@ -752,22 +799,7 @@ function showSavePresetDialog() {
   // Validation
   const nameInput = document.getElementById('preset-name');
   const nameError = document.getElementById('name-error');
-
-  function validateName() {
-    const name = nameInput.value.trim();
-    if (!name) {
-      nameError.textContent = 'Name is required';
-      nameError.style.display = 'block';
-      return false;
-    }
-    if (name.length > 50) {
-      nameError.textContent = 'Name cannot exceed 50 characters';
-      nameError.style.display = 'block';
-      return false;
-    }
-    nameError.style.display = 'none';
-    return true;
-  }
+  const validateName = () => validatePresetName(nameInput, nameError);
 
   nameInput.addEventListener('input', validateName);
 
@@ -1312,22 +1344,7 @@ function showEditPresetModal(presetId) {
   // Validation
   const nameInput = document.getElementById('edit-preset-name');
   const nameError = document.getElementById('edit-name-error');
-
-  function validateName() {
-    const name = nameInput.value.trim();
-    if (!name) {
-      nameError.textContent = 'Name is required';
-      nameError.style.display = 'block';
-      return false;
-    }
-    if (name.length > 50) {
-      nameError.textContent = 'Name cannot exceed 50 characters';
-      nameError.style.display = 'block';
-      return false;
-    }
-    nameError.style.display = 'none';
-    return true;
-  }
+  const validateName = () => validatePresetName(nameInput, nameError);
 
   nameInput.addEventListener('input', validateName);
 
@@ -1629,7 +1646,7 @@ async function loadVaultPresetsList(modal) {
             // Update count display
             const countEl = modal.querySelector('[style*="rgba(139, 92, 246"]');
             if (countEl) {
-              const currentCount = parseInt(countEl.querySelector('div')?.textContent || '0');
+              const currentCount = parseInt(countEl.querySelector('div')?.textContent || '0', 10);
               const newCount = Math.max(0, currentCount - 1);
               countEl.querySelector('div').textContent = newCount;
             }

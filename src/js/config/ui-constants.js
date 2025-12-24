@@ -62,8 +62,8 @@ export const SIZE_LIMITS = {
   // Generated passwords
   MAX_PASSWORD_LENGTH: 128,
   MIN_PASSWORD_LENGTH: 8,
-  MAX_QUANTITY: 50,
-  MIN_QUANTITY: 1,
+  // Note: MAX_QUANTITY and MIN_QUANTITY for generation limits are in constants.js (LIMITS object)
+  // Import from constants.js instead of duplicating here
 
   // Dictionary words
   MAX_DICTIONARY_WORD_LENGTH: 12,
@@ -105,7 +105,26 @@ export const RATE_LIMIT = {
 };
 
 /**
- * Cache configuration
+ * Security timeouts (centralized to ensure consistency)
+ * NOTE: Use single source of truth (MS values). Compute seconds/minutes: value / 1000 or value / 60000
+ */
+export const SECURITY_TIMEOUTS = {
+  // Clipboard auto-clear (30 seconds)
+  CLIPBOARD_TTL_MS: 30000,
+
+  // Vault auto-lock (5 minutes = 300 seconds)
+  AUTO_LOCK_DEFAULT_MS: 300000,
+
+  // Inactivity warning (1 minute before lock)
+  INACTIVITY_WARNING_MS: 60000,
+
+  // Security lockout
+  MAX_FAILED_ATTEMPTS: 5,
+  LOCKOUT_DURATION_MS: 300000 // 5 minutes after max failed attempts
+};
+
+/**
+ * Cache configuration (unified from crypto-constants.js + ui-constants.js)
  */
 export const CACHE = {
   // Dictionary cache
@@ -114,7 +133,13 @@ export const CACHE = {
 
   // DOM element cache
   MAX_CACHED_ELEMENTS: 50,
-  CACHE_CLEANUP_INTERVAL: 300000 // 5 minutes
+  CACHE_CLEANUP_INTERVAL: 300000, // 5 minutes
+
+  // HIBP breach cache (merged from crypto-constants.js)
+  HIBP_TTL: 3600000, // 1 hour
+
+  // General default TTL
+  DEFAULT_TTL: 3600000 // 1 hour
 };
 
 /**

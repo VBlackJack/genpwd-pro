@@ -31,10 +31,10 @@ import { sanitizeHTML } from './dom-sanitizer.js';
  */
 
 const STORAGE_KEY = 'genpwd_history';
-const MAX_HISTORY_SIZE = 1000; // Maximum number of entries
-const DEFAULT_SETTINGS = {
+const MAX_GENERATION_HISTORY = 1000; // Maximum number of generated passwords to keep
+const DEFAULT_HISTORY_SETTINGS = {
   enabled: false, // History disabled by default for privacy
-  maxSize: MAX_HISTORY_SIZE,
+  maxSize: MAX_GENERATION_HISTORY,
   autoExpire: false,
   expireDays: 30,
   securityWarningShown: false // Track if security warning was shown
@@ -59,12 +59,12 @@ class HistoryManager {
     try {
       const stored = safeGetItem('genpwd_history_settings');
       if (stored) {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+        return { ...DEFAULT_HISTORY_SETTINGS, ...JSON.parse(stored) };
       }
     } catch (error) {
       safeLog(`[HistoryManager] Error loading settings: ${error.message}`);
     }
-    return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_HISTORY_SETTINGS };
   }
 
   /**
@@ -132,38 +132,38 @@ class HistoryManager {
     modal.innerHTML = sanitizeHTML(`
       <div class="modal">
         <div class="modal-header">
-          <h2 id="security-warning-title">⚠️ Avertissement de Sécurité</h2>
+          <h2 id="security-warning-title">⚠️ Security Warning</h2>
         </div>
         <div class="modal-body">
           <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin-top: 0; color: #856404;">Stockage non chiffré</h3>
-            <p><strong>Important :</strong> L'historique des mots de passe est stocké dans le <code>localStorage</code> de votre navigateur <strong>sans chiffrement</strong>.</p>
-            <p>Cela signifie que :</p>
+            <h3 style="margin-top: 0; color: #856404;">Unencrypted Storage</h3>
+            <p><strong>Important:</strong> Password history is stored in your browser's <code>localStorage</code> <strong>without encryption</strong>.</p>
+            <p>This means:</p>
             <ul style="margin: 10px 0; padding-left: 20px;">
-              <li>Les mots de passe sont stockés en texte clair sur votre appareil</li>
-              <li>Toute personne ayant accès à votre ordinateur peut les voir</li>
-              <li>Des extensions malveillantes pourraient y accéder</li>
-              <li>Les mots de passe ne sont pas synchronisés entre appareils</li>
+              <li>Passwords are stored in plain text on your device</li>
+              <li>Anyone with access to your computer can see them</li>
+              <li>Malicious extensions could access them</li>
+              <li>Passwords are not synced between devices</li>
             </ul>
           </div>
 
           <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 15px; margin-bottom: 15px;">
-            <h4 style="margin-top: 0; color: #0c5460;">Recommandations</h4>
+            <h4 style="margin-top: 0; color: #0c5460;">Recommendations</h4>
             <ul style="margin: 5px 0; padding-left: 20px;">
-              <li>N'activez cette fonctionnalité que sur un appareil personnel sécurisé</li>
-              <li>Videz régulièrement l'historique</li>
-              <li>Ne stockez pas les mots de passe de comptes critiques</li>
-              <li>Utilisez un gestionnaire de mots de passe dédié pour un usage à long terme</li>
+              <li>Only enable this feature on a secure personal device</li>
+              <li>Clear history regularly</li>
+              <li>Don't store passwords for critical accounts</li>
+              <li>Use a dedicated password manager for long-term storage</li>
             </ul>
           </div>
 
           <p style="font-size: 0.9em; color: #666;">
-            Note : Une future version pourrait inclure le chiffrement de l'historique avec une clé maître.
+            Note: A future version may include history encryption with a master key.
           </p>
         </div>
         <div class="modal-footer">
-          <button id="security-warning-understood" class="btn btn-primary">J'ai compris</button>
-          <button id="security-warning-cancel" class="btn">Annuler et désactiver</button>
+          <button id="security-warning-understood" class="btn btn-primary">I Understand</button>
+          <button id="security-warning-cancel" class="btn">Cancel and Disable</button>
         </div>
       </div>
     `);
@@ -187,7 +187,7 @@ class HistoryManager {
 
       // Notify user
       if (typeof window.showToast === 'function') {
-        window.showToast('Historique désactivé', 'info');
+        window.showToast('History disabled', 'info');
       }
     });
 

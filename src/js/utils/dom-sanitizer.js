@@ -7,6 +7,8 @@
  * @module dom-sanitizer
  */
 
+import { safeLog } from './logger.js';
+
 // Conditional DOMPurify loading for browser/Node.js compatibility
 let DOMPurify = null;
 let importAttempted = false;
@@ -37,15 +39,15 @@ async function ensureDOMPurify() {
     DOMPurify = module.default || module;
     return DOMPurify;
   } catch (_error) {
-    console.warn('[DOM Sanitizer] DOMPurify not available, using fallback');
+    safeLog('[DOM Sanitizer] DOMPurify not available, using fallback');
     return null;
   }
 }
 
 // Try to load DOMPurify immediately if in browser
 if (typeof window !== 'undefined') {
-  ensureDOMPurify().catch(() => {
-    // Ignore errors, will use fallback
+  ensureDOMPurify().catch((error) => {
+    safeLog(`[DOM Sanitizer] Init failed, using fallback: ${error.message}`);
   });
 }
 
@@ -134,7 +136,7 @@ function fallbackSanitizeWithDOM(html, allowedTags = ['b', 'i', 'em', 'strong', 
     return template.innerHTML;
   } catch (error) {
     // If DOM parsing fails, fall back to full escaping
-    console.warn('[DOM Sanitizer] DOM-based fallback failed, using escape:', error);
+    safeLog(`[DOM Sanitizer] DOM-based fallback failed, using escape: ${error.message}`);
     return fallbackSanitize(html);
   }
 }
@@ -157,7 +159,7 @@ function fallbackSanitizeWithDOM(html, allowedTags = ['b', 'i', 'em', 'strong', 
  */
 export function sanitizeHTML(html, options = {}) {
   if (typeof html !== 'string') {
-    console.warn('[DOM Sanitizer] Invalid input type, expected string, got:', typeof html);
+    safeLog(`[DOM Sanitizer] Invalid input type, expected string, got: ${typeof html}`);
     return '';
   }
 
@@ -241,97 +243,13 @@ export function sanitizeHTML(html, options = {}) {
   try {
     return DOMPurify.sanitize(html, config);
   } catch (error) {
-    console.error('[DOM Sanitizer] Sanitization failed:', error);
+    safeLog(`[DOM Sanitizer] Sanitization failed: ${error.message}`);
     // Use DOM-based fallback in browser, escape in Node.js
     if (typeof document !== 'undefined') {
       return fallbackSanitizeWithDOM(html, config.ALLOWED_TAGS);
     }
     return fallbackSanitize(html);
   }
-}
-
-/**
- * Sanitize HTML with minimal allowed tags (text formatting only)
- *
- * @param {string} html - The HTML content to sanitize
- * @returns {string} - Sanitized HTML with only basic text formatting
- *
- * @example
- * import { sanitizeHTMLStrict } from './utils/dom-sanitizer.js';
- * element.innerHTML = sanitizeHTMLStrict(userInput);
- */
-export function sanitizeHTMLStrict(html) {
-  return sanitizeHTML(html, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'span'],
-    ALLOWED_ATTR: ['class']
-  });
-}
-
-/**
- * Strip all HTML tags and return plain text
- *
- * @param {string} html - The HTML content to strip
- * @returns {string} - Plain text without HTML tags
- *
- * @example
- * import { stripHTML } from './utils/dom-sanitizer.js';
- * element.textContent = stripHTML(userInput);
- */
-export function stripHTML(html) {
-  if (typeof html !== 'string') {
-    return '';
-  }
-
-  if (!DOMPurify) {
-    // Fallback: just remove common HTML tags
-    return html.replace(/<[^>]*>/g, '');
-  }
-
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [],
-    KEEP_CONTENT: true
-  });
-}
-
-/**
- * Check if a string contains potentially dangerous HTML
- *
- * @param {string} html - The HTML content to check
- * @returns {boolean} - True if dangerous content is detected
- *
- * @example
- * import { containsDangerousHTML } from './utils/dom-sanitizer.js';
- * if (containsDangerousHTML(userInput)) {
- *   console.warn('Dangerous content detected!');
- * }
- */
-export function containsDangerousHTML(html) {
-  if (typeof html !== 'string') {
-    return false;
-  }
-
-  const sanitized = sanitizeHTML(html);
-  return html !== sanitized;
-}
-
-/**
- * Safe innerHTML setter with automatic sanitization
- *
- * @param {HTMLElement} element - The DOM element
- * @param {string} html - The HTML content to set
- * @param {Object} [options={}] - Sanitization options
- *
- * @example
- * import { safeSetInnerHTML } from './utils/dom-sanitizer.js';
- * safeSetInnerHTML(element, userInput);
- */
-export function safeSetInnerHTML(element, html, options = {}) {
-  if (!element || !(element instanceof Element)) {
-    console.error('[DOM Sanitizer] Invalid element provided');
-    return;
-  }
-
-  element.innerHTML = sanitizeHTML(html, options);
 }
 
 // Export default sanitize function

@@ -7,6 +7,7 @@
 
 import { VaultBridge } from './vault-bridge.js';
 import { showToast } from '../utils/toast.js';
+import { escapeHtml } from '../utils/helpers.js';
 import { QuickUnlockDialog } from './quick-unlock-dialog.js';
 
 /**
@@ -17,6 +18,7 @@ export class SaveToVaultModal {
   static #isOpen = false;
   static #currentPassword = '';
   static #folders = [];
+  static #escapeHandler = null;
 
   /**
    * Get the singleton instance
@@ -41,7 +43,7 @@ export class SaveToVaultModal {
 
     // Check vault state
     if (!VaultBridge.isAvailable()) {
-      showToast('Coffre non disponible', 'error');
+      showToast('Vault not available', 'error');
       return;
     }
 
@@ -49,7 +51,7 @@ export class SaveToVaultModal {
     if (!isUnlocked) {
       // Show quick unlock dialog instead of switching tabs
       const unlocked = await QuickUnlockDialog.show({
-        message: 'Déverrouillez le coffre pour sauvegarder le mot de passe'
+        message: 'Unlock the vault to save the password'
       });
 
       if (!unlocked) {
@@ -71,6 +73,12 @@ export class SaveToVaultModal {
    * Close the modal
    */
   static close() {
+    // Clean up escape handler
+    if (this.#escapeHandler) {
+      document.removeEventListener('keydown', this.#escapeHandler);
+      this.#escapeHandler = null;
+    }
+
     const overlay = document.getElementById('save-to-vault-modal');
     if (overlay) {
       overlay.classList.remove('active');
@@ -91,7 +99,7 @@ export class SaveToVaultModal {
     if (existing) existing.remove();
 
     const folderOptions = this.#folders.length > 0
-      ? this.#folders.map(f => `<option value="${f.id}">${this.#escapeHtml(f.name)}</option>`).join('')
+      ? this.#folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('')
       : '';
 
     const html = `
@@ -105,9 +113,9 @@ export class SaveToVaultModal {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </div>
-              <h3 id="save-vault-title">Sauvegarder dans le coffre</h3>
+              <h3 id="save-vault-title">Save to Vault</h3>
             </div>
-            <button type="button" class="save-vault-close" id="save-vault-close" aria-label="Fermer">
+            <button type="button" class="save-vault-close" id="save-vault-close" aria-label="Close">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -118,10 +126,10 @@ export class SaveToVaultModal {
           <form class="save-vault-form" id="save-vault-form">
             <!-- Password Preview -->
             <div class="save-vault-password-preview">
-              <label class="save-vault-label">Mot de passe</label>
+              <label class="save-vault-label">Password</label>
               <div class="save-vault-password-display">
-                <code class="save-vault-password-value">${this.#escapeHtml(this.#currentPassword)}</code>
-                <button type="button" class="save-vault-copy-btn" id="save-vault-copy" title="Copier">
+                <code class="save-vault-password-value">${escapeHtml(this.#currentPassword)}</code>
+                <button type="button" class="save-vault-copy-btn" id="save-vault-copy" title="Copy">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -133,14 +141,14 @@ export class SaveToVaultModal {
             <!-- Title (required) -->
             <div class="save-vault-group">
               <label class="save-vault-label" for="save-vault-title-input">
-                Titre <span class="required">*</span>
+                Title <span class="required">*</span>
               </label>
               <input
                 type="text"
                 class="save-vault-input"
                 id="save-vault-title-input"
-                placeholder="Ex: Mon compte Google"
-                value="${this.#escapeHtml(prefill.title || '')}"
+                placeholder="e.g. My Google Account"
+                value="${escapeHtml(prefill.title || '')}"
                 required
                 autofocus
               >
@@ -148,33 +156,33 @@ export class SaveToVaultModal {
 
             <!-- Username -->
             <div class="save-vault-group">
-              <label class="save-vault-label" for="save-vault-username">Nom d'utilisateur</label>
+              <label class="save-vault-label" for="save-vault-username">Username</label>
               <input
                 type="text"
                 class="save-vault-input"
                 id="save-vault-username"
                 placeholder="email@example.com"
-                value="${this.#escapeHtml(prefill.username || '')}"
+                value="${escapeHtml(prefill.username || '')}"
               >
             </div>
 
             <!-- URL -->
             <div class="save-vault-group">
-              <label class="save-vault-label" for="save-vault-url">URL du site</label>
+              <label class="save-vault-label" for="save-vault-url">Website URL</label>
               <input
                 type="url"
                 class="save-vault-input"
                 id="save-vault-url"
                 placeholder="https://example.com"
-                value="${this.#escapeHtml(prefill.url || '')}"
+                value="${escapeHtml(prefill.url || '')}"
               >
             </div>
 
             <!-- Folder -->
             <div class="save-vault-group">
-              <label class="save-vault-label" for="save-vault-folder">Dossier</label>
+              <label class="save-vault-label" for="save-vault-folder">Folder</label>
               <select class="save-vault-select" id="save-vault-folder">
-                <option value="">Aucun dossier</option>
+                <option value="">No folder</option>
                 ${folderOptions}
               </select>
             </div>
@@ -185,13 +193,13 @@ export class SaveToVaultModal {
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 18l6-6-6-6"/>
                 </svg>
-                Ajouter des notes
+                Add notes
               </summary>
               <div class="save-vault-group">
                 <textarea
                   class="save-vault-textarea"
                   id="save-vault-notes"
-                  placeholder="Notes optionnelles..."
+                  placeholder="Optional notes..."
                   rows="3"
                 ></textarea>
               </div>
@@ -200,7 +208,7 @@ export class SaveToVaultModal {
             <!-- Actions -->
             <div class="save-vault-actions">
               <button type="button" class="save-vault-btn save-vault-btn-secondary" id="save-vault-cancel">
-                Annuler
+                Cancel
               </button>
               <button type="submit" class="save-vault-btn save-vault-btn-primary" id="save-vault-submit">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -208,7 +216,7 @@ export class SaveToVaultModal {
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
                 </svg>
-                Sauvegarder
+                Save
               </button>
             </div>
           </form>
@@ -256,24 +264,23 @@ export class SaveToVaultModal {
     closeBtn?.addEventListener('click', () => this.close());
     cancelBtn?.addEventListener('click', () => this.close());
 
-    // Escape key
-    const escHandler = (e) => {
+    // Escape key - store handler for cleanup
+    this.#escapeHandler = (e) => {
       if (e.key === 'Escape' && this.#isOpen) {
         this.close();
-        document.removeEventListener('keydown', escHandler);
       }
     };
-    document.addEventListener('keydown', escHandler);
+    document.addEventListener('keydown', this.#escapeHandler);
 
     // Copy password
     copyBtn?.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(this.#currentPassword);
-        showToast('Mot de passe copié', 'success');
+        showToast('Password copied', 'success');
         copyBtn.classList.add('copied');
         setTimeout(() => copyBtn.classList.remove('copied'), 1000);
       } catch (error) {
-        showToast('Erreur lors de la copie', 'error');
+        showToast('Copy failed', 'error');
       }
     });
 
@@ -299,7 +306,7 @@ export class SaveToVaultModal {
     const title = titleInput?.value?.trim();
     if (!title) {
       titleInput?.focus();
-      showToast('Le titre est requis', 'warning');
+      showToast('Title is required', 'warning');
       return;
     }
 
@@ -308,7 +315,7 @@ export class SaveToVaultModal {
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
         <span class="save-vault-spinner"></span>
-        Sauvegarde...
+        Saving...
       `;
     }
 
@@ -323,7 +330,7 @@ export class SaveToVaultModal {
     if (result.success) {
       this.close();
     } else {
-      showToast(result.error || 'Erreur lors de la sauvegarde', 'error');
+      showToast(result.error || 'Save failed', 'error');
       // Re-enable submit button
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -333,22 +340,12 @@ export class SaveToVaultModal {
             <polyline points="17 21 17 13 7 13 7 21"></polyline>
             <polyline points="7 3 7 8 15 8"></polyline>
           </svg>
-          Sauvegarder
+          Save
         `;
       }
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   * @private
-   */
-  static #escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 }
 
 export default SaveToVaultModal;

@@ -83,12 +83,12 @@ export function randInt(min, max) {
  */
 export function pick(arr) {
   if (!Array.isArray(arr)) {
-    safeLog(`pick() appelé avec un non-array: ${typeof arr}`);
-    throw new Error(`pick: paramètre doit être un array, reçu: ${typeof arr}`);
+    safeLog(`pick() called with non-array: ${typeof arr}`);
+    throw new Error(`pick: parameter must be an array, received: ${typeof arr}`);
   }
   if (arr.length === 0) {
-    safeLog('pick() appelé avec un array vide');
-    throw new Error('pick: tableau vide ou invalide');
+    safeLog('pick() called with empty array');
+    throw new Error('pick: empty or invalid array');
   }
 
   // Use cryptographically secure randInt() instead of Math.random()
@@ -376,12 +376,7 @@ export function insertWithPlacement(base, charsToInsert, placement, options = {}
     }
   } catch (e) {
     // Log error properly instead of silently masking it
-    console.error(`Error in insertWithPlacement: ${e.message}`, {
-      placement,
-      charsLength: chars.length,
-      baseLength: base.length,
-      error: e
-    });
+    safeLog(`Error in insertWithPlacement: ${e.message}`, 'error');
     // Return safe fallback
     return base + chars.join('');
   }
@@ -444,18 +439,7 @@ export function escapeHtml(str) {
   }[m]));
 }
 
-/**
- * Calculates the base-2 logarithm of a number
- * @param {number} n - Input number (must be > 0)
- * @returns {number} Log base 2 of n, or 0 if n <= 0
- * @example
- * log2(8) // → 3
- * log2(256) // → 8
- */
-export function log2(n) {
-  if (typeof n !== 'number' || n <= 0) return 0;
-  return Math.log(n) / Math.log(2);
-}
+// NOTE: log2 removed - use Math.log2() directly instead
 
 // ============================================================================
 // PERFORMANCE UTILITIES
@@ -554,31 +538,3 @@ export function throttle(func, wait = 250, options = {}) {
   };
 }
 
-/**
- * Request Animation Frame throttle - limits execution to browser's animation frame rate (~60fps)
- * Best for visual updates that should sync with browser repaints
- *
- * @param {Function} func - Function to throttle
- * @returns {Function} RAF-throttled function
- *
- * @example
- * const rafUpdate = rafThrottle(() => updateVisualElement());
- * window.addEventListener('scroll', rafUpdate);
- */
-export function _rafThrottle(func) {
-  let rafId = null;
-  let lastArgs = null;
-  let lastContext = null;
-
-  return function rafThrottled(...args) {
-    lastArgs = args;
-    lastContext = this;
-
-    if (!rafId) {
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        func.apply(lastContext, lastArgs);
-      });
-    }
-  };
-}

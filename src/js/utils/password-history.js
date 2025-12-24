@@ -7,8 +7,8 @@
 
 import { safeLog } from './logger.js';
 
-// Maximum history entries to keep per password
-const MAX_HISTORY_SIZE = 10;
+// Maximum password history entries to keep per vault entry
+const MAX_PASSWORD_HISTORY_PER_ENTRY = 10;
 
 /**
  * @typedef {Object} PasswordHistoryEntry
@@ -37,15 +37,15 @@ export function addToHistory(entry, newPassword, reason = '') {
   const historyEntry = {
     password: entry.data.password,
     changedAt: new Date().toISOString(),
-    reason: reason || 'Changement manuel'
+    reason: reason || 'Manual change'
   };
 
   // Add to beginning (most recent first)
   history.unshift(historyEntry);
 
   // Trim to max size
-  if (history.length > MAX_HISTORY_SIZE) {
-    history.length = MAX_HISTORY_SIZE;
+  if (history.length > MAX_PASSWORD_HISTORY_PER_ENTRY) {
+    history.length = MAX_PASSWORD_HISTORY_PER_ENTRY;
   }
 
   safeLog(`[PasswordHistory] Added to history for entry ${entry.id}, total: ${history.length}`);
@@ -93,7 +93,7 @@ export function restoreFromHistory(entry, historyIndex) {
   const toRestore = history[historyIndex];
 
   // Add current password to history first
-  const updatedEntry = addToHistory(entry, toRestore.password, 'Restauration');
+  const updatedEntry = addToHistory(entry, toRestore.password, 'Restoration');
 
   // Set the restored password
   return {
@@ -138,8 +138,8 @@ export function formatHistoryEntry(historyEntry, index) {
     password: historyEntry.password,
     maskedPassword: maskPassword(historyEntry.password),
     changedAt: historyEntry.changedAt,
-    formattedDate: date.toLocaleDateString('fr-FR'),
-    formattedTime: date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    formattedDate: date.toLocaleDateString('en-US'),
+    formattedTime: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     relativeTime,
     reason: historyEntry.reason || ''
   };
@@ -157,12 +157,12 @@ function getRelativeTime(date) {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return "À l'instant";
-  if (minutes < 60) return `Il y a ${minutes} min`;
-  if (hours < 24) return `Il y a ${hours}h`;
-  if (days < 7) return `Il y a ${days}j`;
-  if (days < 30) return `Il y a ${Math.floor(days / 7)} sem.`;
-  return `Il y a ${Math.floor(days / 30)} mois`;
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  return `${Math.floor(days / 30)} months ago`;
 }
 
 /**
@@ -195,5 +195,5 @@ export default {
   clearHistory,
   formatHistoryEntry,
   isInHistory,
-  MAX_HISTORY_SIZE
+  MAX_PASSWORD_HISTORY_PER_ENTRY
 };

@@ -194,10 +194,3 @@ export class PasswordService {
   }
 }
 
-/**
- * Creates a singleton instance of PasswordService
- * @returns {PasswordService} Password service instance
- */
-export function createPasswordService() {
-  return new PasswordService();
-}

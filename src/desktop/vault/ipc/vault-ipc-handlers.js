@@ -32,15 +32,19 @@ let shareService;
 /**
  * Rate limiter for vault unlock attempts
  * Prevents brute force attacks
+ *
+ * Security constants match SECURITY_TIMEOUTS in ui-constants.js:
+ * - MAX_ATTEMPTS matches MAX_FAILED_ATTEMPTS (5)
+ * - LOCKOUT_DURATION matches LOCKOUT_DURATION_MS (5 minutes)
  */
 const unlockRateLimiter = {
   /** @type {Map<string, { attempts: number, lockedUntil: number }>} */
   attempts: new Map(),
 
-  /** Max attempts before lockout */
+  /** Max attempts before lockout - matches SECURITY_TIMEOUTS.MAX_FAILED_ATTEMPTS */
   MAX_ATTEMPTS: 5,
 
-  /** Lockout duration in ms (5 minutes) */
+  /** Lockout duration in ms - matches SECURITY_TIMEOUTS.LOCKOUT_DURATION_MS */
   LOCKOUT_DURATION: 5 * 60 * 1000,
 
   /** Window for counting attempts (5 minutes) */
@@ -99,6 +103,33 @@ const unlockRateLimiter = {
   }
 };
 
+// ==================== SAFE HANDLER WRAPPER ====================
+
+/**
+ * Wrap an IPC handler with consistent error handling
+ * - Validates origin
+ * - Logs errors for debugging
+ * - Sanitizes error messages to prevent internal detail leakage
+ * @param {Function} handler - The handler function
+ * @param {string} name - Handler name for logging
+ * @returns {Function} Wrapped handler
+ */
+function safeHandler(handler, name) {
+  return async (event, ...args) => {
+    try {
+      validateOrigin(event);
+      return await handler(event, ...args);
+    } catch (error) {
+      // Log the full error for debugging
+      console.error(`[IPC:${name}] Error:`, error.message);
+
+      // Re-throw with sanitized message (no stack trace, no internal paths)
+      const safeMessage = error.message || 'An error occurred';
+      throw new Error(safeMessage);
+    }
+  };
+}
+
 /**
  * Register all vault IPC handlers
  * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
@@ -151,50 +182,65 @@ export function registerVaultIPC(ipcMain) {
   /**
    * Get current session state
    */
-  ipcMain.handle('vault:getState', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:getState', safeHandler(async () => {
     return session.getState();
-  });
+  }, 'getState'));
 
   /**
    * List available vaults
    */
-  ipcMain.handle('vault:list', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:list', safeHandler(async () => {
     return fileManager.listVaults();
-  });
+  }, 'list'));
 
   /**
    * Create new vault
    */
-  ipcMain.handle('vault:create', async (event, { name, password, customPath }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:create', safeHandler(async (event, { name, password, customPath }) => {
     validateString(name, 'name');
     validateString(password, 'password');
 
     const vaultId = await session.create(name, password, customPath || null);
     return { vaultId, success: true };
-  });
+  }, 'create'));
 
   // ==================== SECURE SHARING (GenPwd Send) ====================
 
   /**
    * Create a secure share
    */
-  ipcMain.handle('vault:share:create', async (event, { secretData, options }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:share:create', safeHandler(async (event, { secretData, options }) => {
     validateString(secretData, 'secretData');
 
-    return shareService.createShare(secretData, options);
-  });
+    // Validate options if provided
+    if (options !== undefined && options !== null) {
+      validateObject(options, 'options');
+      // Validate specific option fields
+      if (options.expiryType !== undefined && typeof options.expiryType !== 'string') {
+        throw new Error('options.expiryType must be a string');
+      }
+      if (options.burnAfterReading !== undefined && typeof options.burnAfterReading !== 'boolean') {
+        throw new Error('options.burnAfterReading must be a boolean');
+      }
+    }
+
+    return shareService.createShare(secretData, options || {});
+  }, 'share:create'));
 
   // ==================== EXTERNAL VAULT MANAGEMENT ====================
 
   /**
    * Show dialog to select vault file location for creating
    */
-  ipcMain.handle('vault:showSaveDialog', async (event, { defaultName }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:showSaveDialog', safeHandler(async (event, { defaultName }) => {
+    // Validate defaultName if provided (prevent path traversal)
+    if (defaultName !== undefined && defaultName !== null) {
+      validateString(defaultName, 'defaultName');
+      // Sanitize: only allow alphanumeric, dash, underscore, space
+      if (!/^[\w\-\s]+$/.test(defaultName.replace(/\.gpd$/i, ''))) {
+        throw new Error('Invalid vault name characters');
+      }
+    }
 
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Create vault at...',
@@ -210,14 +256,12 @@ export function registerVaultIPC(ipcMain) {
     }
 
     return { canceled: false, filePath: result.filePath };
-  });
+  }, 'showSaveDialog'));
 
   /**
    * Show dialog to open existing vault file
    */
-  ipcMain.handle('vault:showOpenDialog', async (event) => {
-    validateOrigin(event);
-
+  ipcMain.handle('vault:showOpenDialog', safeHandler(async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: 'Open vault...',
       filters: [
@@ -231,13 +275,12 @@ export function registerVaultIPC(ipcMain) {
     }
 
     return { canceled: false, filePath: result.filePaths[0] };
-  });
+  }, 'showOpenDialog'));
 
   /**
    * Open vault from external path
    */
-  ipcMain.handle('vault:openFromPath', async (event, { filePath, password }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:openFromPath', safeHandler(async (event, { filePath, password }) => {
     validateString(filePath, 'filePath');
     validateString(password, 'password');
 
@@ -248,24 +291,22 @@ export function registerVaultIPC(ipcMain) {
     await session.initWithVault(vaultId, vaultData, key, activeSlot);
 
     return { vaultId, success: true };
-  });
+  }, 'openFromPath'));
 
   /**
    * Remove vault from registry (doesn't delete file)
    */
-  ipcMain.handle('vault:unregister', async (event, { vaultId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:unregister', safeHandler(async (event, { vaultId }) => {
     validateString(vaultId, 'vaultId');
 
     await fileManager.unregisterVault(vaultId);
     return { success: true };
-  });
+  }, 'unregister'));
 
   /**
    * Unlock vault (with rate limiting and origin validation)
    */
-  ipcMain.handle('vault:unlock', async (event, { vaultId, password }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:unlock', safeHandler(async (event, { vaultId, password }) => {
     validateString(vaultId, 'vaultId');
     validateString(password, 'password');
 
@@ -282,76 +323,70 @@ export function registerVaultIPC(ipcMain) {
       unlockRateLimiter.clearAttempts(vaultId);
       return { success: true };
     } catch (error) {
-      // Add remaining attempts info to error
-      const remaining = rateCheck.remainingAttempts - 1;
-      if (remaining > 0) {
-        error.message = `${error.message} (${remaining} essai(s) restant(s))`;
-      }
+      // SECURITY: Don't leak remaining attempts count to potential attackers
+      // Just throw the original error without attempt information
       throw error;
     }
-  });
+  }, 'unlock'));
 
   /**
    * Lock vault
    */
-  ipcMain.handle('vault:lock', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:lock', safeHandler(async () => {
     await session.lock();
     return { success: true };
-  });
+  }, 'lock'));
 
   /**
    * Get vault metadata
    */
-  ipcMain.handle('vault:getMetadata', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:getMetadata', safeHandler(async () => {
     return session.getMetadata();
-  });
+  }, 'getMetadata'));
 
   /**
    * Reset activity timer (call on user interaction)
    */
-  ipcMain.handle('vault:resetActivity', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:resetActivity', safeHandler(async () => {
     session.resetActivity();
     return { success: true };
-  });
+  }, 'resetActivity'));
 
   // ==================== ENTRIES ====================
 
   /**
    * Get all entries
    */
-  ipcMain.handle('vault:entries:getAll', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:getAll', safeHandler(async () => {
     return session.getEntries();
-  });
+  }, 'entries:getAll'));
 
   /**
    * Get entry by ID
    */
-  ipcMain.handle('vault:entries:get', async (event, { id }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:get', safeHandler(async (event, { id }) => {
     validateString(id, 'id');
     return session.getEntry(id);
-  });
+  }, 'entries:get'));
 
   /**
    * Get entries by folder
    */
-  ipcMain.handle('vault:entries:getByFolder', async (event, { folderId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:getByFolder', safeHandler(async (event, { folderId }) => {
+    // Validate folderId: must be null (root), undefined (root), or a non-empty string (UUID)
+    if (folderId !== null && folderId !== undefined) {
+      validateString(folderId, 'folderId');
+    }
     return session.getEntriesByFolder(folderId);
-  });
+  }, 'entries:getByFolder'));
 
   /**
    * Search entries
    */
-  ipcMain.handle('vault:entries:search', async (event, { query }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:search', safeHandler(async (event, { query }) => {
     validateString(query, 'query');
     return session.searchEntries(query);
-  });
+  }, 'entries:search'));
 
   /**
    * Add entry
@@ -361,8 +396,7 @@ export function registerVaultIPC(ipcMain) {
    * @param {Object} params.data - Entry data (username, password, etc.)
    * @param {Object} [params.options] - Additional options (folderId, favorite, tags)
    */
-  ipcMain.handle('vault:entries:add', async (event, { type, title, data, options = {} }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:add', safeHandler(async (event, { type, title, data, options = {} }) => {
     validateString(type, 'type');
     validateString(title, 'title');
     // Merge options into data for backward compatibility
@@ -372,149 +406,183 @@ export function registerVaultIPC(ipcMain) {
       favorite: options.favorite ?? data?.favorite ?? false,
       tagIds: options.tagIds || data?.tagIds || []
     };
+    // Deep validation of entry data
+    validateEntryData(type, entryData);
     return session.addEntry(type, title, entryData);
-  });
+  }, 'entries:add'));
 
   /**
    * Update entry
    */
-  ipcMain.handle('vault:entries:update', async (event, { id, updates }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:update', safeHandler(async (event, { id, updates }) => {
     validateString(id, 'id');
     validateObject(updates, 'updates');
     return session.updateEntry(id, updates);
-  });
+  }, 'entries:update'));
 
   /**
    * Delete entry
    */
-  ipcMain.handle('vault:entries:delete', async (event, { id }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:entries:delete', safeHandler(async (event, { id }) => {
     validateString(id, 'id');
     return session.deleteEntry(id);
-  });
+  }, 'entries:delete'));
 
   // ==================== FOLDERS ====================
 
   /**
    * Get all folders
    */
-  ipcMain.handle('vault:folders:getAll', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:folders:getAll', safeHandler(async () => {
     return session.getFolders();
-  });
+  }, 'folders:getAll'));
 
   /**
    * Add folder
    */
-  ipcMain.handle('vault:folders:add', async (event, { name, parentId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:folders:add', safeHandler(async (event, { name, parentId }) => {
     validateString(name, 'name');
+    // Validate parentId if provided
+    if (parentId !== undefined && parentId !== null) {
+      validateString(parentId, 'parentId');
+    }
     return session.addFolder(name, parentId || null);
-  });
+  }, 'folders:add'));
 
   /**
    * Update folder
    */
-  ipcMain.handle('vault:folders:update', async (event, { id, updates }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:folders:update', safeHandler(async (event, { id, updates }) => {
     validateString(id, 'id');
     validateObject(updates, 'updates');
     return session.updateFolder(id, updates);
-  });
+  }, 'folders:update'));
 
   /**
    * Delete folder
    */
-  ipcMain.handle('vault:folders:delete', async (event, { id, deleteEntries }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:folders:delete', safeHandler(async (event, { id, deleteEntries }) => {
     validateString(id, 'id');
     return session.deleteFolder(id, deleteEntries === true);
-  });
+  }, 'folders:delete'));
 
   // ==================== TAGS ====================
 
   /**
    * Get all tags
    */
-  ipcMain.handle('vault:tags:getAll', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:tags:getAll', safeHandler(async () => {
     return session.getTags();
-  });
+  }, 'tags:getAll'));
 
   /**
    * Add tag
    */
-  ipcMain.handle('vault:tags:add', async (event, { name, color }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:tags:add', safeHandler(async (event, { name, color }) => {
     validateString(name, 'name');
+    // Validate color format if provided (hex color)
+    if (color !== undefined && color !== null) {
+      if (typeof color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
+        throw new Error('color must be a valid hex color (e.g., #6366f1)');
+      }
+    }
     return session.addTag(name, color || '#6366f1');
-  });
+  }, 'tags:add'));
 
   /**
    * Update tag
    */
-  ipcMain.handle('vault:tags:update', async (event, { id, updates }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:tags:update', safeHandler(async (event, { id, updates }) => {
     validateString(id, 'id');
     validateObject(updates, 'updates');
     return session.updateTag(id, updates);
-  });
+  }, 'tags:update'));
 
   /**
    * Delete tag
    */
-  ipcMain.handle('vault:tags:delete', async (event, { id }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:tags:delete', safeHandler(async (event, { id }) => {
     validateString(id, 'id');
     return session.deleteTag(id);
-  });
+  }, 'tags:delete'));
 
   // ==================== IMPORT/EXPORT ====================
 
   /**
-   * Export vault (requires dialog in renderer)
+   * Export vault (requires dialog in renderer) - with rate limiting
    */
-  ipcMain.handle('vault:export', async (event, { vaultId, password, exportPath }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:export', safeHandler(async (event, { vaultId, password, exportPath }) => {
     validateString(vaultId, 'vaultId');
     validateString(password, 'password');
     validateString(exportPath, 'exportPath');
 
-    await fileManager.exportVault(vaultId, password, exportPath);
-    return { success: true };
-  });
+    // Check rate limit before attempting export (password verification)
+    const rateCheck = unlockRateLimiter.checkAndRecord(`${vaultId}:export`);
+    if (!rateCheck.allowed) {
+      const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
+      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+    }
+
+    try {
+      await fileManager.exportVault(vaultId, password, exportPath);
+      unlockRateLimiter.clearAttempts(`${vaultId}:export`);
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
+  }, 'export'));
 
   /**
-   * Import vault
+   * Import vault - with rate limiting
    */
-  ipcMain.handle('vault:import', async (event, { importPath, password }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:import', safeHandler(async (event, { importPath, password }) => {
     validateString(importPath, 'importPath');
     validateString(password, 'password');
 
-    const { vaultId } = await fileManager.importVault(importPath, password);
-    return { vaultId, success: true };
-  });
+    // Check rate limit before attempting import (password verification)
+    const rateCheck = unlockRateLimiter.checkAndRecord(`import:${importPath}`);
+    if (!rateCheck.allowed) {
+      const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
+      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+    }
+
+    try {
+      const { vaultId } = await fileManager.importVault(importPath, password);
+      unlockRateLimiter.clearAttempts(`import:${importPath}`);
+      return { vaultId, success: true };
+    } catch (error) {
+      throw error;
+    }
+  }, 'import'));
 
   /**
-   * Change vault password
+   * Change vault password (with rate limiting)
    */
-  ipcMain.handle('vault:changePassword', async (event, { vaultId, currentPassword, newPassword }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:changePassword', safeHandler(async (event, { vaultId, currentPassword, newPassword }) => {
     validateString(vaultId, 'vaultId');
     validateString(currentPassword, 'currentPassword');
     validateString(newPassword, 'newPassword');
 
-    await fileManager.changePassword(vaultId, currentPassword, newPassword);
-    return { success: true };
-  });
+    // Check rate limit before attempting password change
+    const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
+    if (!rateCheck.allowed) {
+      const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
+      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+    }
+
+    try {
+      await fileManager.changePassword(vaultId, currentPassword, newPassword);
+      unlockRateLimiter.clearAttempts(vaultId);
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
+  }, 'changePassword'));
 
   /**
    * Delete vault
    */
-  ipcMain.handle('vault:delete', async (event, { vaultId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:delete', safeHandler(async (event, { vaultId }) => {
     validateString(vaultId, 'vaultId');
 
     // Lock if this vault is open
@@ -524,33 +592,30 @@ export function registerVaultIPC(ipcMain) {
 
     await fileManager.deleteVault(vaultId);
     return { success: true };
-  });
+  }, 'delete'));
 
   /**
    * Panic / Nuke Vault
    */
-  ipcMain.handle('vault:nuke', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:nuke', safeHandler(async () => {
     await session.nuke();
     return { success: true };
-  });
+  }, 'nuke'));
 
   // ==================== WINDOWS HELLO ====================
 
   /**
    * Check if Windows Hello is available
    */
-  ipcMain.handle('vault:hello:isAvailable', async (event) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:hello:isAvailable', safeHandler(async () => {
     return WindowsHelloAuth.isAvailable();
-  });
+  }, 'hello:isAvailable'));
 
   /**
    * Check if Windows Hello is enabled for a vault
    * Checks BOTH Windows Credential Manager AND vault file
    */
-  ipcMain.handle('vault:hello:isEnabled', async (event, { vaultId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:hello:isEnabled', safeHandler(async (event, { vaultId }) => {
     validateString(vaultId, 'vaultId');
 
     // Check if credential exists in Windows Credential Manager
@@ -569,59 +634,69 @@ export function registerVaultIPC(ipcMain) {
     }
 
     return true;
-  });
+  }, 'hello:isEnabled'));
 
   /**
-   * Enable Windows Hello for a vault
+   * Enable Windows Hello for a vault (with rate limiting)
    * Requires master password to derive the vault key
    */
-  ipcMain.handle('vault:hello:enable', async (event, { vaultId, password }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:hello:enable', safeHandler(async (event, { vaultId, password }) => {
     validateString(vaultId, 'vaultId');
     validateString(password, 'password');
 
-    // Check Windows Hello availability
-    const isAvailable = await WindowsHelloAuth.isAvailable();
-    if (!isAvailable) {
-      throw new Error('Windows Hello is not available on this system');
+    // Check rate limit before attempting (password is validated)
+    const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
+    if (!rateCheck.allowed) {
+      const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
+      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
     }
 
-    // Request Windows Hello verification
-    const verified = await WindowsHelloAuth.requestVerification(
-      'GenPwd Pro - Activer Windows Hello'
-    );
-    if (!verified) {
-      throw new Error('Windows Hello verification failed');
+    try {
+      // Check Windows Hello availability
+      const isAvailable = await WindowsHelloAuth.isAvailable();
+      if (!isAvailable) {
+        throw new Error('Windows Hello is not available on this system');
+      }
+
+      // Request Windows Hello verification
+      const verified = await WindowsHelloAuth.requestVerification(
+        'GenPwd Pro - Enable Windows Hello'
+      );
+      if (!verified) {
+        throw new Error('Windows Hello verification failed');
+      }
+
+      // Unlock vault temporarily to get the encryption key
+      const vaultKey = await session.getDerivedKey(vaultId, password);
+      if (!vaultKey) {
+        throw new Error('Incorrect password');
+      }
+
+      // Generate wrapper key and encrypt vault key
+      const wrapperKey = WindowsHelloAuth.generateKeyWrapper();
+      const encryptedKey = WindowsHelloAuth.encryptVaultKey(vaultKey, wrapperKey);
+
+      // Store wrapper in Windows Credential Manager
+      const stored = await WindowsHelloAuth.storeCredential(vaultId, wrapperKey);
+      if (!stored) {
+        throw new Error('Failed to store Windows Hello credentials');
+      }
+
+      // Store encrypted vault key in vault metadata
+      await fileManager.setVaultHelloKey(vaultId, encryptedKey);
+
+      // Clear rate limit on success
+      unlockRateLimiter.clearAttempts(vaultId);
+      return { success: true };
+    } catch (error) {
+      throw error;
     }
-
-    // Unlock vault temporarily to get the encryption key
-    const vaultKey = await session.getDerivedKey(vaultId, password);
-    if (!vaultKey) {
-      throw new Error('Incorrect password');
-    }
-
-    // Generate wrapper key and encrypt vault key
-    const wrapperKey = WindowsHelloAuth.generateKeyWrapper();
-    const encryptedKey = WindowsHelloAuth.encryptVaultKey(vaultKey, wrapperKey);
-
-    // Store wrapper in Windows Credential Manager
-    const stored = await WindowsHelloAuth.storeCredential(vaultId, wrapperKey);
-    if (!stored) {
-      throw new Error('Impossible de stocker les credentials');
-    }
-
-    // Store encrypted vault key in vault metadata
-    await fileManager.setVaultHelloKey(vaultId, encryptedKey);
-
-    console.log(`[WindowsHello] Enabled for vault: ${vaultId}`);
-    return { success: true };
-  });
+  }, 'hello:enable'));
 
   /**
    * Disable Windows Hello for a vault
    */
-  ipcMain.handle('vault:hello:disable', async (event, { vaultId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:hello:disable', safeHandler(async (event, { vaultId }) => {
     validateString(vaultId, 'vaultId');
 
     // Delete credential from Windows Credential Manager
@@ -632,60 +707,71 @@ export function registerVaultIPC(ipcMain) {
 
     console.log(`[WindowsHello] Disabled for vault: ${vaultId}`);
     return { success: true };
-  });
+  }, 'hello:disable'));
 
   /**
-   * Unlock vault using Windows Hello
+   * Unlock vault using Windows Hello (with rate limiting)
    */
-  ipcMain.handle('vault:hello:unlock', async (event, { vaultId }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:hello:unlock', safeHandler(async (event, { vaultId }) => {
     validateString(vaultId, 'vaultId');
 
-    // Get encrypted vault key from vault file FIRST
-    const encryptedKey = await fileManager.getVaultHelloKey(vaultId);
-    if (!encryptedKey) {
-      // Cleanup orphan credential if exists
-      await WindowsHelloAuth.deleteCredential(vaultId);
-      throw new Error('Windows Hello non configuré pour ce coffre. Veuillez le réactiver avec votre mot de passe maître.');
+    // Check rate limit before attempting unlock (same limiter as password unlock)
+    const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
+    if (!rateCheck.allowed) {
+      const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
+      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
     }
 
-    // Check if credential exists in Windows Credential Manager
-    const wrapperKey = await WindowsHelloAuth.retrieveCredential(vaultId);
-    if (!wrapperKey) {
-      throw new Error('Credential Windows Hello introuvable. Veuillez réactiver Windows Hello.');
-    }
-
-    // Request Windows Hello verification
-    const verified = await WindowsHelloAuth.requestVerification(
-      'GenPwd Pro - Déverrouiller le coffre'
-    );
-    if (!verified) {
-      throw new Error('Vérification Windows Hello annulée');
-    }
-
-    // Decrypt vault key
-    let vaultKey;
     try {
-      vaultKey = WindowsHelloAuth.decryptVaultKey(encryptedKey, wrapperKey);
-    } catch (decryptError) {
-      console.error('[WindowsHello] Key decryption failed:', decryptError.message);
-      throw new Error('Erreur de déchiffrement. Veuillez réactiver Windows Hello.');
+      // Get encrypted vault key from vault file FIRST
+      const encryptedKey = await fileManager.getVaultHelloKey(vaultId);
+      if (!encryptedKey) {
+        // Cleanup orphan credential if exists
+        await WindowsHelloAuth.deleteCredential(vaultId);
+        throw new Error('Windows Hello not configured for this vault. Please re-enable it with your master password.');
+      }
+
+      // Check if credential exists in Windows Credential Manager
+      const wrapperKey = await WindowsHelloAuth.retrieveCredential(vaultId);
+      if (!wrapperKey) {
+        throw new Error('Windows Hello credential not found. Please re-enable Windows Hello.');
+      }
+
+      // Request Windows Hello verification
+      const verified = await WindowsHelloAuth.requestVerification(
+        'GenPwd Pro - Unlock Vault'
+      );
+      if (!verified) {
+        throw new Error('Windows Hello verification cancelled');
+      }
+
+      // Decrypt vault key
+      let vaultKey;
+      try {
+        vaultKey = WindowsHelloAuth.decryptVaultKey(encryptedKey, wrapperKey);
+      } catch (decryptError) {
+        console.error('[WindowsHello] Key decryption failed:', decryptError.message);
+        throw new Error('Decryption error. Please re-enable Windows Hello.');
+      }
+
+      // Unlock vault with decrypted key
+      await session.unlockWithKey(vaultId, vaultKey);
+
+      // Clear attempts on successful unlock
+      unlockRateLimiter.clearAttempts(vaultId);
+      return { success: true };
+    } catch (error) {
+      // Re-throw without leaking attempt count
+      throw error;
     }
-
-    // Unlock vault with decrypted key
-    await session.unlockWithKey(vaultId, vaultKey);
-
-    console.log(`[WindowsHello] Vault unlocked: ${vaultId}`);
-    return { success: true };
-  });
+  }, 'hello:unlock'));
 
   // ==================== CLOUD SYNC CONFIGURATION ====================
 
   /**
    * Save cloud configuration securely
    */
-  ipcMain.handle('vault:saveCloudConfig', async (event, config) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:saveCloudConfig', safeHandler(async (event, config) => {
     validateObject(config, 'config');
 
     if (!safeStorage.isEncryptionAvailable()) {
@@ -705,16 +791,14 @@ export function registerVaultIPC(ipcMain) {
       return { success: true };
     } catch (error) {
       console.error('[Vault] Error saving cloud config:', error);
-      throw new Error('Erreur lors de la sauvegarde de la configuration');
+      throw new Error('Failed to save cloud configuration');
     }
-  });
+  }, 'saveCloudConfig'));
 
   /**
    * Get cloud configuration securely
    */
-  ipcMain.handle('vault:getCloudConfig', async (event) => {
-    validateOrigin(event);
-
+  ipcMain.handle('vault:getCloudConfig', safeHandler(async () => {
     if (!safeStorage.isEncryptionAvailable()) {
       return { provider: 'none' };
     }
@@ -730,17 +814,20 @@ export function registerVaultIPC(ipcMain) {
       }
       return { provider: 'none' };
     }
-  });
+  }, 'getCloudConfig'));
 
   // ==================== DURESS MODE ====================
 
   /**
    * Setup Duress Mode (Enable Plausible Deniability migration)
    */
-  ipcMain.handle('vault:duress:setup', async (event, { masterPassword, duressPassword, populateDecoy }) => {
-    validateOrigin(event);
+  ipcMain.handle('vault:duress:setup', safeHandler(async (event, { masterPassword, duressPassword, populateDecoy }) => {
     validateString(masterPassword, 'masterPassword');
     validateString(duressPassword, 'duressPassword');
+    // Validate populateDecoy is boolean
+    if (typeof populateDecoy !== 'boolean') {
+      throw new Error('populateDecoy must be a boolean');
+    }
 
     // Ensure session is unlocked
     const state = session.getState();
@@ -753,7 +840,7 @@ export function registerVaultIPC(ipcMain) {
     await session.enableDuressMode(masterPassword, duressPassword, populateDecoy);
 
     return { success: true };
-  });
+  }, 'duress:setup'));
 
   console.log('[Vault] IPC handlers registered');
 }
@@ -777,10 +864,17 @@ const TRUSTED_ORIGINS = [
  * @throws {Error} If origin is not trusted
  */
 function validateOrigin(event) {
-  // Skip validation if no sender frame (internal call)
-  if (!event.senderFrame) return;
-
-  const url = event.senderFrame.url;
+  // SECURITY: Always validate origin - if senderFrame is undefined,
+  // fall back to event.sender.getURL() which should always be available
+  let url;
+  if (event.senderFrame) {
+    url = event.senderFrame.url;
+  } else if (event.sender) {
+    url = event.sender.getURL();
+  } else {
+    console.error('[Vault] IPC event has no sender information');
+    throw new Error('Unauthorized access');
+  }
 
   // Check against trusted origins
   const isTrusted = TRUSTED_ORIGINS.some(origin => url.startsWith(origin));
@@ -831,6 +925,69 @@ function validateString(value, name) {
 function validateObject(value, name) {
   if (typeof value !== 'object' || value === null) {
     throw new Error(`Invalid parameter: ${name} must be an object`);
+  }
+}
+
+/**
+ * Valid entry types
+ */
+const VALID_ENTRY_TYPES = ['login', 'card', 'note', 'identity'];
+
+/**
+ * Allowed fields per entry type (whitelist)
+ */
+const ALLOWED_ENTRY_FIELDS = {
+  login: ['username', 'password', 'url', 'totp', 'notes', 'folderId', 'favorite', 'tagIds'],
+  card: ['holder', 'number', 'expiry', 'cvv', 'notes', 'folderId', 'favorite', 'tagIds'],
+  note: ['content', 'notes', 'folderId', 'favorite', 'tagIds'],
+  identity: ['fullName', 'email', 'phone', 'address', 'notes', 'folderId', 'favorite', 'tagIds']
+};
+
+/**
+ * Validate entry data structure
+ * @param {string} type - Entry type
+ * @param {Object} data - Entry data
+ * @throws {Error}
+ */
+function validateEntryData(type, data) {
+  // Validate type
+  if (!VALID_ENTRY_TYPES.includes(type)) {
+    throw new Error(`Invalid entry type: ${type}. Must be one of: ${VALID_ENTRY_TYPES.join(', ')}`);
+  }
+
+  // Validate data is object
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Entry data must be an object');
+  }
+
+  // Whitelist allowed fields
+  const allowedFields = ALLOWED_ENTRY_FIELDS[type];
+  const dataFields = Object.keys(data);
+
+  for (const field of dataFields) {
+    if (!allowedFields.includes(field)) {
+      throw new Error(`Invalid field "${field}" for entry type "${type}"`);
+    }
+  }
+
+  // Validate field types
+  for (const [key, value] of Object.entries(data)) {
+    if (value === null || value === undefined) continue;
+
+    if (key === 'tagIds') {
+      if (!Array.isArray(value)) {
+        throw new Error('tagIds must be an array');
+      }
+      if (!value.every(id => typeof id === 'string')) {
+        throw new Error('tagIds must contain only strings');
+      }
+    } else if (key === 'favorite') {
+      if (typeof value !== 'boolean') {
+        throw new Error('favorite must be a boolean');
+      }
+    } else if (typeof value !== 'string') {
+      throw new Error(`Field "${key}" must be a string`);
+    }
   }
 }
 

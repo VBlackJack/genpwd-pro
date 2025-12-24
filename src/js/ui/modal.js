@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/modal.js - Gestion des modaux et overlays
+// src/js/ui/modal.js - Modal and overlay management
 import { getElement, addEventListener } from './dom.js';
 import { safeLog } from '../utils/logger.js';
 
@@ -22,14 +22,14 @@ export function showAboutModal() {
   if (modal) {
     modal.classList.add('show');
 
-    // Focus management pour accessibilité
+    // Focus management for accessibility
     const closeBtn = getElement('#modal-close');
     if (closeBtn) closeBtn.focus();
 
-    // Empêcher scroll body
+    // Prevent body scroll
     document.body.classList.add('no-scroll');
 
-    safeLog('Modal À Propos ouvert');
+    safeLog('About modal opened');
   }
 }
 
@@ -38,37 +38,37 @@ export function hideAboutModal() {
   if (modal) {
     modal.classList.remove('show');
 
-    // Restaurer scroll body
+    // Restore body scroll
     document.body.classList.remove('no-scroll');
 
-    // Retourner focus au bouton
+    // Return focus to button
     const aboutBtn = getElement('#btn-about');
     if (aboutBtn) aboutBtn.focus();
 
-    safeLog('Modal À Propos fermé');
+    safeLog('About modal closed');
   }
 }
 
 export function bindModalEvents() {
-  // Ouvrir modal
+  // Open modal
   addEventListener(getElement('#btn-about'), 'click', showAboutModal);
-  
-  // Fermer modal - bouton
+
+  // Close modal - button
   addEventListener(getElement('#modal-close'), 'click', hideAboutModal);
-  
-  // Fermer modal - clic overlay
+
+  // Close modal - overlay click
   addEventListener(getElement('#about-modal'), 'click', (e) => {
     if (e.target === e.currentTarget) {
       hideAboutModal();
     }
   });
-  
-  // Fermer modal - touche Escape
+
+  // Close modal - Escape key
   addEventListener(document, 'keydown', (e) => {
     if (e.key === 'Escape' && getElement('#about-modal').classList.contains('show')) {
       hideAboutModal();
     }
   });
-  
-  safeLog('Événements modal bindés');
+
+  safeLog('Modal events bound');
 }

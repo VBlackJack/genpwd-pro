@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-// src/js/utils/theme-manager.js - Gestionnaire de thèmes
+// src/js/utils/theme-manager.js - Theme manager
 
 import { safeLog } from './logger.js';
 import { safeGetItem, safeSetItem } from './storage-helper.js';
 
 /**
- * Thèmes disponibles avec leurs variables CSS
+ * Available themes with their CSS variables
  */
 const THEMES = {
   dark: {
-    name: 'Sombre',
+    name: 'Dark',
     icon: '🌙',
     variables: {
       '--bg-primary': '#1a1d29',
@@ -46,7 +46,7 @@ const THEMES = {
   },
 
   light: {
-    name: 'Clair',
+    name: 'Light',
     icon: '☀️',
     variables: {
       '--bg-primary': '#ffffff',
@@ -68,7 +68,7 @@ const THEMES = {
   },
 
   'high-contrast': {
-    name: 'Contraste Élevé',
+    name: 'High Contrast',
     icon: '⚫⚪',
     variables: {
       '--bg-primary': '#000000',
@@ -90,7 +90,7 @@ const THEMES = {
   },
 
   ocean: {
-    name: 'Océan',
+    name: 'Ocean',
     icon: '🌊',
     variables: {
       '--bg-primary': '#0f172a',
@@ -112,7 +112,7 @@ const THEMES = {
   },
 
   forest: {
-    name: 'Forêt',
+    name: 'Forest',
     icon: '🌲',
     variables: {
       '--bg-primary': '#14291e',
@@ -138,50 +138,50 @@ const STORAGE_KEY = 'genpwd-theme';
 let currentTheme = 'dark';
 
 /**
- * Applique un thème à la page
- * @param {string} themeName - Nom du thème à appliquer
+ * Applies a theme to the page
+ * @param {string} themeName - Theme name to apply
  */
 export function applyTheme(themeName) {
   const theme = THEMES[themeName];
 
   if (!theme) {
-    safeLog(`Thème inconnu: ${themeName}, fallback vers 'dark'`);
+    safeLog(`Unknown theme: ${themeName}, falling back to 'dark'`);
     themeName = 'dark';
   }
 
   const root = document.documentElement;
   const variables = THEMES[themeName].variables;
 
-  // Appliquer toutes les variables CSS
+  // Apply all CSS variables
   Object.entries(variables).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });
 
-  // Sauvegarder le choix
+  // Save choice
   currentTheme = themeName;
   try {
     safeSetItem(STORAGE_KEY, themeName);
   } catch (e) {
-    safeLog('Impossible de sauvegarder le thème dans localStorage');
+    safeLog('Unable to save theme to localStorage');
   }
 
-  // Mettre à jour l'attribut data-theme pour CSS avancé
+  // Update data-theme attribute for advanced CSS
   document.body.setAttribute('data-theme', themeName);
 
-  safeLog(`Thème appliqué: ${themeName} (${theme.name})`);
+  safeLog(`Theme applied: ${themeName} (${theme.name})`);
 }
 
 /**
- * Récupère le thème actuel
- * @returns {string} Nom du thème actuel
+ * Gets the current theme
+ * @returns {string} Current theme name
  */
 export function getCurrentTheme() {
   return currentTheme;
 }
 
 /**
- * Récupère tous les thèmes disponibles
- * @returns {Object} Dictionnaire des thèmes
+ * Gets all available themes
+ * @returns {Object} Theme dictionary
  */
 export function getAvailableThemes() {
   return Object.entries(THEMES).map(([id, theme]) => ({
@@ -192,25 +192,25 @@ export function getAvailableThemes() {
 }
 
 /**
- * Charge le thème sauvegardé ou détecte la préférence système
+ * Loads saved theme or detects system preference
  */
 export function loadSavedTheme() {
-  let themeName = 'dark'; // Par défaut
+  let themeName = 'dark'; // Default
 
-  // 1. Vérifier localStorage
+  // 1. Check localStorage
   try {
     const saved = safeGetItem(STORAGE_KEY);
     if (saved && THEMES[saved]) {
       themeName = saved;
-      safeLog(`Thème chargé depuis localStorage: ${themeName}`);
+      safeLog(`Theme loaded from localStorage: ${themeName}`);
       applyTheme(themeName);
       return;
     }
   } catch (e) {
-    safeLog('Impossible de lire localStorage');
+    safeLog('Unable to read localStorage');
   }
 
-  // 2. Détecter la préférence système
+  // 2. Detect system preference
   if (window.matchMedia) {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
@@ -224,7 +224,7 @@ export function loadSavedTheme() {
       themeName = 'dark';
     }
 
-    safeLog(`Thème détecté depuis préférences système: ${themeName}`);
+    safeLog(`Theme detected from system preferences: ${themeName}`);
   }
 
   applyTheme(themeName);
@@ -238,10 +238,10 @@ let systemThemeChangeHandler = null;
 let systemThemeMediaQuery = null;
 
 /**
- * Écoute les changements de préférence système
+ * Listens for system preference changes
  *
- * Note: Pour nettoyer le listener, appelez unwatchSystemThemeChanges()
- * avant de détruire l'application ou lors du cleanup.
+ * Note: To cleanup the listener, call unwatchSystemThemeChanges()
+ * before destroying the application or during cleanup.
  */
 export function watchSystemThemeChanges() {
   if (!window.matchMedia) return;
@@ -252,15 +252,15 @@ export function watchSystemThemeChanges() {
   systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
   systemThemeChangeHandler = (e) => {
-    // Ne changer que si aucun thème n'est explicitement sauvegardé
+    // Only change if no theme is explicitly saved
     try {
       const hasSavedTheme = safeGetItem(STORAGE_KEY);
       if (!hasSavedTheme) {
         applyTheme(e.matches ? 'dark' : 'light');
-        safeLog('Thème mis à jour suite au changement système');
+        safeLog('Theme updated due to system change');
       }
     } catch (err) {
-      safeLog('Erreur lors du changement de thème système');
+      safeLog('Error during system theme change');
     }
   };
 
@@ -276,10 +276,10 @@ export function watchSystemThemeChanges() {
 }
 
 /**
- * Arrête d'écouter les changements de préférence système
- * Nettoie l'event listener pour éviter les fuites mémoire
+ * Stops listening for system preference changes
+ * Cleans up event listener to avoid memory leaks
  *
- * À appeler lors du cleanup de l'application ou avant de recréer le watcher
+ * Call during application cleanup or before recreating the watcher
  */
 export function unwatchSystemThemeChanges() {
   if (!systemThemeMediaQuery || !systemThemeChangeHandler) {
@@ -306,7 +306,7 @@ export function unwatchSystemThemeChanges() {
 }
 
 /**
- * Bascule vers le thème suivant dans la liste
+ * Cycles to the next theme in the list
  */
 export function cycleTheme() {
   const themeIds = Object.keys(THEMES);
@@ -319,22 +319,22 @@ export function cycleTheme() {
 }
 
 /**
- * Initialise le système de thèmes
+ * Initializes the theme system
  */
 export function initThemeSystem() {
   loadSavedTheme();
   watchSystemThemeChanges();
-  safeLog('Système de thèmes initialisé');
+  safeLog('Theme system initialized');
 }
 
 /**
- * Crée un sélecteur de thème UI
- * @param {string} containerId - ID du conteneur où insérer le sélecteur
+ * Creates a theme selector UI
+ * @param {string} containerId - Container ID where to insert the selector
  */
 export function createThemeSelector(containerId) {
   const container = document.getElementById(containerId);
   if (!container) {
-    safeLog(`Conteneur ${containerId} introuvable pour le sélecteur de thème`);
+    safeLog(`Container ${containerId} not found for theme selector`);
     return;
   }
 
@@ -342,7 +342,7 @@ export function createThemeSelector(containerId) {
   wrapper.className = 'theme-selector';
 
   const label = document.createElement('span');
-  label.textContent = 'Thème:';
+  label.textContent = 'Theme:';
   label.className = 'theme-selector-label';
   wrapper.appendChild(label);
 
@@ -350,7 +350,7 @@ export function createThemeSelector(containerId) {
   select.id = 'theme-select';
   select.className = 'theme-select';
 
-  // Ajouter les options
+  // Add options
   getAvailableThemes().forEach(theme => {
     const option = document.createElement('option');
     option.value = theme.id;
@@ -369,5 +369,5 @@ export function createThemeSelector(containerId) {
   wrapper.appendChild(select);
   container.appendChild(wrapper);
 
-  safeLog('Sélecteur de thème créé');
+  safeLog('Theme selector created');
 }

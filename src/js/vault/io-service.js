@@ -22,27 +22,23 @@
  *   }
  * }
  *
- * NAMING CONVENTIONS (Technical Debt):
- * -----------------------------------
- * The codebase has naming inconsistencies between frontend models and backend types:
+ * NAMING CONVENTIONS:
+ * -------------------
+ * The codebase uses consistent naming:
  *
- * 1. groupId vs folderId:
- *    - Frontend (models.js, in-memory-repository.js): Uses `groupId`
- *    - Backend (vault-session.js, vault-ipc-handlers.js): Uses `folderId`
- *    - This service handles conversion with fallback: entry.groupId || entry.folderId
+ * 1. folderId: Used consistently across frontend and backend for entry folder assignment
  *
  * 2. modifiedAt vs updatedAt:
  *    - Backend & file format: Uses `modifiedAt` (ISO string)
  *    - Frontend metadata: Uses `updatedAt` (milliseconds timestamp)
  *    - This service handles conversion in serialize/deserialize functions
  *
- * These inconsistencies are handled by fallback logic throughout the codebase.
- * A full refactor is deferred to avoid breaking changes.
- *
  * @license Apache-2.0
  */
 
 import { VaultEntry, ENTRY_TYPES, FIELD_KINDS, generateUUID } from './models.js';
+import { safeLog } from '../utils/logger.js';
+import { PBKDF2 } from '../config/crypto-constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -54,12 +50,12 @@ const ENCRYPTION_ALGORITHM = 'AES-256-GCM';
 const NONCE_LENGTH = 12;
 const TAG_LENGTH = 128; // bits
 
-// Default KDF parameters (Argon2id-like via PBKDF2 fallback)
+// Default KDF parameters (PBKDF2 fallback for browsers without Argon2 support)
 const DEFAULT_KDF_PARAMS = {
-  algorithm: 'PBKDF2',
-  iterations: 600000,
-  hash: 'SHA-256',
-  saltLength: 32
+  algorithm: PBKDF2.ALGORITHM,
+  iterations: PBKDF2.ITERATIONS,
+  hash: PBKDF2.HASH,
+  saltLength: PBKDF2.SALT_LENGTH
 };
 
 // ============================================================================
@@ -252,7 +248,7 @@ function serializeVaultData(vaultData) {
       uri: entry.uri || entry.data?.url,
       tags: entry.tags || [],
       otpConfig: entry.otpConfig || (entry.data?.totp ? { secret: entry.data.totp } : null),
-      groupId: entry.groupId || entry.folderId,
+      folderId: entry.folderId || entry.groupId || null,
       fields: entry.fields || entry.data?.fields || [],
       metadata: entry.metadata || {
         createdAt: entry.createdAt ? new Date(entry.createdAt).getTime() : Date.now(),
@@ -301,7 +297,7 @@ function deserializeVaultData(data) {
         uri: entry.uri || entry.data?.url || '',
         tags: entry.tags || [],
         otpConfig: entry.otpConfig || null,
-        groupId: entry.groupId || entry.folderId || null,
+        folderId: entry.folderId || entry.groupId || null,
         fields: (entry.fields || entry.data?.fields || []).map(f => ({
           id: f.id,
           label: f.label,
@@ -315,7 +311,7 @@ function deserializeVaultData(data) {
       });
     } catch (e) {
       // Fallback for entries that don't match VaultEntry requirements
-      console.warn(`[io-service] Could not deserialize entry ${entry.id}: ${e.message}`);
+      safeLog(`[io-service] Could not deserialize entry ${entry.id}: ${e.message}`);
       return {
         ...entry,
         _deserializeError: e.message
@@ -472,7 +468,7 @@ export async function importVaultFromBuffer(fileData, password) {
       }
     };
   } catch (error) {
-    console.error('[io-service] Import error:', error);
+    safeLog(`[io-service] Import error: ${error.message}`);
     return { success: false, error: error.message || 'Failed to import vault.' };
   }
 }
@@ -498,14 +494,14 @@ export async function importVaultFromBuffer(fileData, password) {
 async function importV1Vault(parsed, password) {
   // Validate V1 structure
   if (!parsed.header?.keyData || !parsed.encryptedData) {
-    return { success: false, error: 'Format V1 invalide : structure header/encryptedData manquante.' };
+    return { success: false, error: 'Invalid V1 format: missing header/encryptedData structure.' };
   }
 
   try {
-    // V1 used PBKDF2 with SHA-256, 100000 iterations
+    // V1 used PBKDF2 with SHA-256, 100000 iterations (PBKDF2.LEGACY_ITERATIONS in crypto-constants.js)
     const v1KdfParams = {
       algorithm: 'PBKDF2',
-      iterations: 100000,
+      iterations: 100000, // Must match PBKDF2.LEGACY_ITERATIONS for V1 compatibility
       hash: 'SHA-256',
       saltLength: 16
     };
@@ -552,10 +548,10 @@ async function importV1Vault(parsed, password) {
       }
     };
   } catch (error) {
-    console.error('[io-service] V1 migration error:', error);
+    safeLog(`[io-service] V1 migration error: ${error.message}`);
     return {
       success: false,
-      error: `Échec de migration V1 : ${error.message}. Vérifiez le mot de passe.`
+      error: `V1 migration failed: ${error.message}. Check the password.`
     };
   }
 }
@@ -580,7 +576,7 @@ function migrateV1ToV2(v1Data) {
     uri: entry.url || entry.data?.url || '',
     tags: [],
     otpConfig: entry.totp || null,
-    groupId: entry.groupId || entry.folderId || null,
+    folderId: entry.folderId || entry.groupId || null,
     fields: entry.customFields || [],
     metadata: {
       createdAt: entry.createdAt ? new Date(entry.createdAt).getTime() : Date.now(),

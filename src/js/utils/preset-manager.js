@@ -30,7 +30,6 @@ import { safeLog } from './logger.js';
  * @property {boolean} isDefault - Whether this is the default preset
  */
 
-// const STORAGE_KEY = 'genpwd_presets';
 const DEFAULT_PRESET_ID = 'default';
 
 class PresetManager {
@@ -234,8 +233,8 @@ class PresetManager {
     if (!this.presets.has(DEFAULT_PRESET_ID)) {
       const defaultPreset = {
         id: DEFAULT_PRESET_ID,
-        name: 'Par défaut',
-        description: 'Configuration par défaut recommandée',
+        name: 'Default',
+        description: 'Default recommended configuration',
         config: {
           mode: 'syllables',
           length: 20,
@@ -395,7 +394,7 @@ class PresetManager {
     const newId = this.generateId();
     const duplicatedPreset = {
       id: newId,
-      name: `Copie de ${preset.name}`,
+      name: `Copy of ${preset.name}`,
       description: preset.description,
       config: { ...preset.config },
       createdAt: new Date(),
@@ -648,11 +647,11 @@ class PresetManager {
   async exportToVault(id) {
     const preset = this.presets.get(id);
     if (!preset) {
-      return { success: false, error: 'Preset non trouvé' };
+      return { success: false, error: 'Preset not found' };
     }
 
     if (!await this.isVaultReady()) {
-      return { success: false, error: 'Coffre non disponible ou verrouillé' };
+      return { success: false, error: 'Vault unavailable or locked' };
     }
 
     try {
@@ -674,7 +673,7 @@ class PresetManager {
         safeLog(`[PresetManager] Exported preset to vault: ${preset.name}`);
         return { success: true, entryId: result.id };
       }
-      return { success: false, error: 'Erreur lors de l\'export' };
+      return { success: false, error: 'Export failed' };
     } catch (error) {
       safeLog(`[PresetManager] Vault export error: ${error.message}`);
       return { success: false, error: error.message };

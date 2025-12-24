@@ -21,13 +21,13 @@ import { sanitizeHTML } from './utils/dom-sanitizer.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof GenPwdTestSuite === 'undefined') {
-    console.warn('Suite de tests non chargée');
+    console.warn('Test suite not loaded');
     return;
   }
 
   const testSuite = new GenPwdTestSuite();
 
-  // Éléments DOM
+  // DOM elements
   const runTestsBtn = document.getElementById('btn-run-tests');
   const testStatus = document.getElementById('test-status');
   const testModal = document.getElementById('test-results-modal');
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
       runTestsBtn.disabled = true;
       const originalText = runTestsBtn.textContent;
       runTestsBtn.textContent = '⏳ Tests...';
-      testStatus.textContent = 'Exécution...';
+      testStatus.textContent = 'Running...';
       testStatus.className = 'test-status-running';
 
       try {
@@ -55,9 +55,9 @@ document.addEventListener('DOMContentLoaded', function () {
         testStatus.className = score === 100 ? 'test-status-success' : score >= 80 ? 'test-status-warning' : 'test-status-error';
 
       } catch (error) {
-        testStatus.textContent = 'Erreur';
+        testStatus.textContent = 'Error';
         testStatus.className = 'test-status-error';
-        console.error('Erreur tests:', error);
+        console.error('Test error:', error);
       } finally {
         runTestsBtn.disabled = false;
         runTestsBtn.textContent = originalText;
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
     runTestsBtn.click();
   });
 
-  // Export résultats
+  // Export results
   document.getElementById('btn-export-test-results')?.addEventListener('click', () => {
     if (window.lastTestResults) {
       const timestamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      console.log(`Résultats exportés: ${filename}`);
+      console.log(`Results exported: ${filename}`);
     }
   });
 
@@ -131,10 +131,10 @@ document.addEventListener('DOMContentLoaded', function () {
       summary.innerHTML = sanitizeHTML(`
         <div class="test-score ${scoreClass}">${score}%</div>
         <div class="test-score-info">
-          ${results.passed} réussis • ${results.failed} échoués • ${duration}s
+          ${results.passed} passed • ${results.failed} failed • ${duration}s
         </div>
         <div class="test-score-version">
-          ${total} tests exécutés sur GenPwd Pro v3.0.0
+          ${total} tests executed on GenPwd Pro v3.0.0
         </div>
       `);
     }
@@ -142,14 +142,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (details) {
       let html = '<div class="test-list">';
 
-      // Tests réussis
+      // Passed tests
       results.details.forEach((test) => {
         const configErrors = test.configErrors || 0;
         html += `
           <div class="test-item success">
             <div class="test-item-title">✅ ${test.test}</div>
             <div class="test-item-info">
-              ${test.count} mots générés${configErrors > 0 ? ` • ${configErrors} éléments non trouvés` : ''}
+              ${test.count} passwords generated${configErrors > 0 ? ` • ${configErrors} elements not found` : ''}
             </div>
             ${test.passwords[0] ? `
               <div class="test-item-example">
@@ -160,13 +160,13 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
       });
 
-      // Tests échoués
+      // Failed tests
       results.errors.forEach((error) => {
         html += `
           <div class="test-item error">
             <div class="test-item-title-error">❌ ${error.test}</div>
             <div class="test-item-error-message">
-              Erreur: ${error.error}
+              Error: ${error.error}
             </div>
           </div>
         `;
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
     testModal.classList.remove('hidden');
   }
 
-  // Fermeture modal en cliquant à l'extérieur
+  // Close modal by clicking outside
   testModal?.addEventListener('click', (e) => {
     if (e.target === testModal) {
       closeModal();

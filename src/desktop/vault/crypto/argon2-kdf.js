@@ -10,6 +10,7 @@
  */
 
 import { argon2id } from 'hash-wasm';
+import { randomFillSync } from 'node:crypto';
 
 /**
  * @typedef {Object} KdfParams
@@ -34,7 +35,7 @@ const DEFAULT_PARAMS = {
  */
 export function generateSalt(length = 32) {
   const salt = new Uint8Array(length);
-  crypto.getRandomValues(salt);
+  randomFillSync(salt);
   return salt;
 }
 

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/core/casing.js - Gestion de la casse et système de blocs
+// src/js/core/casing.js - Case management and block system
 import { pick } from '../utils/helpers.js';
+import { CASE_BLOCK_TYPES, DEFAULT_CASE_BLOCKS } from '../config/constants.js';
 
 /**
  * Applies case transformation to a string
@@ -124,11 +125,11 @@ export function applyCasePattern(str, tokens, opts = {}) {
  */
 export function calculateBlocksCount(mode, param = 20) {
   if (mode === 'syllables') {
-    // 1 bloc = 3 caractères
+    // 1 block = 3 characters
     return Math.max(1, Math.min(10, Math.ceil(param / 3)));
   } else if (mode === 'passphrase') {
-    // 1 bloc par mot
-    return Math.max(1, Math.min(10, parseInt(param) || 5));
+    // 1 block per word
+    return Math.max(1, Math.min(10, parseInt(param, 10) || 5));
   } else if (mode === 'leet') {
     const length = typeof param === 'number' ? param : parseInt(param, 10);
     return Math.max(1, Math.min(50, Number.isFinite(length) ? length : 0));
@@ -166,7 +167,7 @@ export function defaultBlocksForMode(mode, param = 20) {
     }
     return tokens;
   }
-  return ['T', 'l'];
+  return [...DEFAULT_CASE_BLOCKS];
 }
 
 /**
@@ -181,12 +182,11 @@ export function defaultBlocksForMode(mode, param = 20) {
  */
 export function randomizeBlocks(mode, param = 20) {
   const count = calculateBlocksCount(mode, param);
-  const options = ['U', 'l', 'T'];
   const tokens = [];
-  
+
   for (let i = 0; i < count; i++) {
-    tokens.push(pick(options));
+    tokens.push(pick(CASE_BLOCK_TYPES));
   }
-  
+
   return tokens;
 }

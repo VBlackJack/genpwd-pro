@@ -6,6 +6,8 @@
  */
 
 import { showToast } from '../utils/toast.js';
+import { safeLog } from '../utils/logger.js';
+import { escapeHtml } from '../utils/helpers.js';
 import { VaultBridge, VaultState } from './vault-bridge.js';
 
 /**
@@ -31,7 +33,7 @@ export class QuickUnlockDialog {
 
       // Check if vault is available
       if (!VaultBridge.isAvailable()) {
-        showToast('Coffre non disponible', 'error');
+        showToast('Vault not available', 'error');
         resolve(false);
         return;
       }
@@ -84,14 +86,14 @@ export class QuickUnlockDialog {
     try {
       vaults = await window.vault.list();
     } catch (error) {
-      console.error('[QuickUnlockDialog] Error fetching vaults:', error);
+      safeLog(`[QuickUnlockDialog] Error fetching vaults: ${error.message}`);
     }
 
     const vaultOptions = vaults.map((v, i) => `
-      <option value="${v.id}" ${i === 0 ? 'selected' : ''}>${this.#escapeHtml(v.name || v.id.substring(0, 8))}</option>
+      <option value="${v.id}" ${i === 0 ? 'selected' : ''}>${escapeHtml(v.name || v.id.substring(0, 8))}</option>
     `).join('');
 
-    const message = options.message || 'Déverrouillez le coffre pour continuer';
+    const message = options.message || 'Unlock the vault to continue';
 
     const html = `
       <div class="quick-unlock-overlay" id="quick-unlock-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-unlock-title">
@@ -103,14 +105,14 @@ export class QuickUnlockDialog {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
-            <h3 id="quick-unlock-title">Déverrouiller le coffre</h3>
-            <p class="quick-unlock-message">${this.#escapeHtml(message)}</p>
+            <h3 id="quick-unlock-title">Unlock Vault</h3>
+            <p class="quick-unlock-message">${escapeHtml(message)}</p>
           </div>
 
           <form class="quick-unlock-form" id="quick-unlock-form">
             ${vaults.length > 1 ? `
               <div class="quick-unlock-group">
-                <label for="quick-unlock-vault">Coffre</label>
+                <label for="quick-unlock-vault">Vault</label>
                 <select id="quick-unlock-vault" class="quick-unlock-input">
                   ${vaultOptions}
                 </select>
@@ -120,18 +122,18 @@ export class QuickUnlockDialog {
             `}
 
             <div class="quick-unlock-group">
-              <label for="quick-unlock-password">Mot de passe</label>
+              <label for="quick-unlock-password">Password</label>
               <div class="quick-unlock-password-wrap">
                 <input
                   type="password"
                   id="quick-unlock-password"
                   class="quick-unlock-input"
-                  placeholder="Mot de passe principal"
+                  placeholder="Master password"
                   autocomplete="current-password"
                   autofocus
                   required
                 >
-                <button type="button" class="quick-unlock-toggle-pwd" id="quick-unlock-toggle-pwd" aria-label="Afficher le mot de passe">
+                <button type="button" class="quick-unlock-toggle-pwd" id="quick-unlock-toggle-pwd" aria-label="Show password">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -144,19 +146,19 @@ export class QuickUnlockDialog {
 
             <div class="quick-unlock-actions">
               <button type="button" class="quick-unlock-btn quick-unlock-btn-secondary" id="quick-unlock-cancel">
-                Annuler
+                Cancel
               </button>
               <button type="submit" class="quick-unlock-btn quick-unlock-btn-primary" id="quick-unlock-submit">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
                 </svg>
-                Déverrouiller
+                Unlock
               </button>
             </div>
           </form>
 
-          <button type="button" class="quick-unlock-close" id="quick-unlock-close" aria-label="Fermer">
+          <button type="button" class="quick-unlock-close" id="quick-unlock-close" aria-label="Close">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -246,7 +248,7 @@ export class QuickUnlockDialog {
 
     if (!vaultId || !password) {
       if (errorEl) {
-        errorEl.textContent = 'Veuillez entrer le mot de passe';
+        errorEl.textContent = 'Please enter the password';
         errorEl.hidden = false;
       }
       return;
@@ -255,17 +257,17 @@ export class QuickUnlockDialog {
     // Disable submit
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="quick-unlock-spinner"></span> Déverrouillage...';
+      submitBtn.innerHTML = '<span class="quick-unlock-spinner"></span> Unlocking...';
     }
     if (errorEl) errorEl.hidden = true;
 
     try {
       await window.vault.unlock(vaultId, password);
-      showToast('Coffre déverrouillé', 'success');
+      showToast('Vault unlocked', 'success');
       this.close(true);
     } catch (error) {
       if (errorEl) {
-        errorEl.textContent = error.message || 'Mot de passe incorrect';
+        errorEl.textContent = error.message || 'Incorrect password';
         errorEl.hidden = false;
       }
       passwordInput?.select();
@@ -278,22 +280,12 @@ export class QuickUnlockDialog {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
           </svg>
-          Déverrouiller
+          Unlock
         `;
       }
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   * @private
-   */
-  static #escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 }
 
 export default QuickUnlockDialog;

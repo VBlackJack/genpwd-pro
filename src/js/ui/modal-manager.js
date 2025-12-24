@@ -19,6 +19,7 @@
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
+import { escapeHtml } from '../utils/helpers.js';
 
 /**
  * Creates a modal element with consistent structure and behavior
@@ -79,8 +80,8 @@ export function createModal(options) {
           type="button"
           class="modal-close"
           data-modal-close
-          aria-label="Fermer"
-          title="Fermer (Échap)">
+          aria-label="Close"
+          title="Close (Esc)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
@@ -242,21 +243,7 @@ export function isModalOpen(modalId = null) {
   return document.querySelector('.modal.show') !== null;
 }
 
-/**
- * Escapes HTML to prevent XSS
- * @param {string} str - String to escape
- * @returns {string} Escaped string
- */
-function escapeHtml(str) {
-  if (typeof str !== 'string') return '';
-  return str.replace(/[&<>"']/g, m => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[m]));
-}
+// escapeHtml imported from helpers.js to avoid duplication
 
 /**
  * Creates a confirmation dialog
@@ -265,8 +252,8 @@ function escapeHtml(str) {
  * @param {string} options.message - Dialog message
  * @param {Function} options.onConfirm - Callback when confirmed
  * @param {Function} [options.onCancel] - Callback when cancelled
- * @param {string} [options.confirmLabel] - Confirm button label (default: "Confirmer")
- * @param {string} [options.cancelLabel] - Cancel button label (default: "Annuler")
+ * @param {string} [options.confirmLabel] - Confirm button label (default: "Confirm")
+ * @param {string} [options.cancelLabel] - Cancel button label (default: "Cancel")
  * @param {string} [options.confirmClass] - Confirm button class (default: "btn-danger")
  * @returns {{element: HTMLElement, close: Function}} Modal interface object
  */
@@ -276,8 +263,8 @@ export function createConfirmDialog(options) {
     message,
     onConfirm,
     onCancel = null,
-    confirmLabel = 'Confirmer',
-    cancelLabel = 'Annuler',
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
     confirmClass = 'btn-danger'
   } = options;
 
