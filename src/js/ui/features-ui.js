@@ -2185,7 +2185,7 @@ function bindPluginModalEvents(modal) {
 
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const action = btn.dataset.action;
       const pluginName = btn.dataset.pluginName;
 

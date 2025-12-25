@@ -20,6 +20,8 @@ export class SaveToVaultModal {
   static #currentPassword = '';
   static #folders = [];
   static #escapeHandler = null;
+  static #focusTrapHandler = null;
+  static #previouslyFocusedElement = null;
 
   /**
    * Get the singleton instance
@@ -90,12 +92,24 @@ export class SaveToVaultModal {
       this.#escapeHandler = null;
     }
 
+    // Clean up focus trap handler
+    if (this.#focusTrapHandler) {
+      document.removeEventListener('keydown', this.#focusTrapHandler);
+      this.#focusTrapHandler = null;
+    }
+
     const overlay = document.getElementById('save-to-vault-modal');
     if (overlay) {
       overlay.classList.remove('active');
       setTimeout(() => {
         overlay.remove();
         this.#isOpen = false;
+
+        // Restore focus to previously focused element
+        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
+          this.#previouslyFocusedElement.focus();
+          this.#previouslyFocusedElement = null;
+        }
       }, 200);
     }
   }
@@ -254,6 +268,18 @@ export class SaveToVaultModal {
   }
 
   /**
+   * Get focusable elements within the modal
+   * @private
+   * @returns {HTMLElement[]}
+   */
+  static #getFocusableElements() {
+    const overlay = document.getElementById('save-to-vault-modal');
+    if (!overlay) return [];
+    const selector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
+    return Array.from(overlay.querySelectorAll(selector));
+  }
+
+  /**
    * Bind event handlers
    * @private
    */
@@ -263,6 +289,9 @@ export class SaveToVaultModal {
     const closeBtn = document.getElementById('save-vault-close');
     const cancelBtn = document.getElementById('save-vault-cancel');
     const copyBtn = document.getElementById('save-vault-copy');
+
+    // Save previously focused element
+    this.#previouslyFocusedElement = document.activeElement;
 
     // Close on overlay click
     overlay?.addEventListener('click', (e) => {
@@ -282,6 +311,26 @@ export class SaveToVaultModal {
       }
     };
     document.addEventListener('keydown', this.#escapeHandler);
+
+    // Focus trap - keep focus within modal
+    this.#focusTrapHandler = (e) => {
+      if (e.key !== 'Tab') return;
+
+      const focusable = this.#getFocusableElements();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', this.#focusTrapHandler);
 
     // Copy password
     copyBtn?.addEventListener('click', async () => {

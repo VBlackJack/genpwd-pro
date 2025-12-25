@@ -10096,7 +10096,7 @@ export class VaultUI {
 
   #bindKeyboardShortcuts() {
     // Store handler for cleanup in destroy()
-    this.#keyboardHandler = (e) => {
+    this.#keyboardHandler = async (e) => {
       // Escape to close modals
       if (e.key === 'Escape') {
         const activeModal = document.querySelector('.vault-modal-overlay.active');

@@ -110,25 +110,45 @@ const _ALLOWED_IPC_CHANNELS = new Set([
 // ==================== RATE LIMITING ====================
 
 /**
- * Rate limiter for vault unlock attempts
- * Prevents brute force attacks
+ * Rate limiter for vault unlock attempts with exponential backoff
+ * Prevents brute force attacks with escalating lockout durations
  *
  * Security constants match SECURITY_TIMEOUTS in ui-constants.js:
  * - MAX_ATTEMPTS matches MAX_FAILED_ATTEMPTS (5)
- * - LOCKOUT_DURATION matches LOCKOUT_DURATION_MS (5 minutes)
+ * - Base lockout duration starts at 1 minute
+ * - Exponential backoff: 1min → 5min → 15min → 1hr → 4hr
  */
 const unlockRateLimiter = {
-  /** @type {Map<string, { attempts: number, lockedUntil: number }>} */
+  /** @type {Map<string, { attempts: number, lockedUntil: number, lockoutCount: number, firstAttempt: number }>} */
   attempts: new Map(),
 
   /** Max attempts before lockout - matches SECURITY_TIMEOUTS.MAX_FAILED_ATTEMPTS */
   MAX_ATTEMPTS: 5,
 
-  /** Lockout duration in ms - matches SECURITY_TIMEOUTS.LOCKOUT_DURATION_MS */
-  LOCKOUT_DURATION: 5 * 60 * 1000,
+  /** Base lockout durations in ms (exponential backoff) */
+  LOCKOUT_DURATIONS: [
+    1 * 60 * 1000,      // 1 minute (first lockout)
+    5 * 60 * 1000,      // 5 minutes (second lockout)
+    15 * 60 * 1000,     // 15 minutes (third lockout)
+    60 * 60 * 1000,     // 1 hour (fourth lockout)
+    4 * 60 * 60 * 1000  // 4 hours (fifth+ lockout)
+  ],
 
   /** Window for counting attempts (5 minutes) */
   ATTEMPT_WINDOW: 5 * 60 * 1000,
+
+  /** Grace period after lockout expires to reset lockout count (1 hour) */
+  LOCKOUT_RESET_WINDOW: 60 * 60 * 1000,
+
+  /**
+   * Get lockout duration based on lockout count (exponential backoff)
+   * @param {number} lockoutCount - Number of times user has been locked out
+   * @returns {number} Lockout duration in ms
+   */
+  getLockoutDuration(lockoutCount) {
+    const index = Math.min(lockoutCount, this.LOCKOUT_DURATIONS.length - 1);
+    return this.LOCKOUT_DURATIONS[index];
+  },
 
   /**
    * Check if unlock is allowed and record attempt
@@ -141,8 +161,14 @@ const unlockRateLimiter = {
 
     // Clean up expired lockouts
     if (record && record.lockedUntil && now >= record.lockedUntil) {
-      this.attempts.delete(vaultId);
-      record = null;
+      // Lockout expired - reset attempts but keep lockout count for escalation
+      // Reset lockout count only if enough time has passed (grace period)
+      if (now - record.lockedUntil > this.LOCKOUT_RESET_WINDOW) {
+        record.lockoutCount = 0;
+      }
+      record.attempts = 0;
+      record.lockedUntil = 0;
+      record.firstAttempt = now;
     }
 
     // Check if currently locked out
@@ -151,9 +177,15 @@ const unlockRateLimiter = {
       return { allowed: false, lockoutSeconds };
     }
 
-    // Initialize or reset if window expired
-    if (!record || (now - record.firstAttempt) > this.ATTEMPT_WINDOW) {
-      record = { attempts: 0, firstAttempt: now, lockedUntil: 0 };
+    // Initialize if no record
+    if (!record) {
+      record = { attempts: 0, firstAttempt: now, lockedUntil: 0, lockoutCount: 0 };
+    }
+
+    // Reset attempts if window expired (but keep lockout count)
+    if ((now - record.firstAttempt) > this.ATTEMPT_WINDOW) {
+      record.attempts = 0;
+      record.firstAttempt = now;
     }
 
     // Increment attempts
@@ -161,9 +193,12 @@ const unlockRateLimiter = {
 
     // Check if max attempts exceeded
     if (record.attempts > this.MAX_ATTEMPTS) {
-      record.lockedUntil = now + this.LOCKOUT_DURATION;
+      const lockoutDuration = this.getLockoutDuration(record.lockoutCount);
+      record.lockedUntil = now + lockoutDuration;
+      record.lockoutCount++;
       this.attempts.set(vaultId, record);
-      const lockoutSeconds = Math.ceil(this.LOCKOUT_DURATION / 1000);
+      const lockoutSeconds = Math.ceil(lockoutDuration / 1000);
+      console.log(`[RateLimiter] Lockout #${record.lockoutCount} for ${vaultId}: ${lockoutSeconds}s`);
       return { allowed: false, lockoutSeconds };
     }
 
@@ -176,6 +211,7 @@ const unlockRateLimiter = {
 
   /**
    * Clear attempts on successful unlock
+   * Also resets lockout count since user proved they know the password
    * @param {string} vaultId
    */
   clearAttempts(vaultId) {

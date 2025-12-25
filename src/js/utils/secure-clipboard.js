@@ -98,7 +98,15 @@ class SecureClipboard {
         this.#handleCleared(data?.reason || 'external');
       });
     }
+
+    // Auto-cleanup on page unload to prevent memory leaks
+    this.#unloadHandler = () => this.destroy();
+    window.addEventListener('pagehide', this.#unloadHandler);
+    window.addEventListener('beforeunload', this.#unloadHandler);
   }
+
+  /** @type {Function|null} */
+  #unloadHandler = null;
 
   /**
    * Cleanup resources (call on app shutdown)
@@ -108,6 +116,12 @@ class SecureClipboard {
     if (this.#electronClipboardUnsubscribe) {
       this.#electronClipboardUnsubscribe();
       this.#electronClipboardUnsubscribe = null;
+    }
+    // Remove page unload listeners to prevent memory leaks
+    if (this.#unloadHandler) {
+      window.removeEventListener('pagehide', this.#unloadHandler);
+      window.removeEventListener('beforeunload', this.#unloadHandler);
+      this.#unloadHandler = null;
     }
     this.#resetReference();
     SecureClipboard.#instance = null;

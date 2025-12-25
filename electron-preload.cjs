@@ -76,6 +76,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Quit application completely
   quitApp: () => ipcRenderer.invoke('app:quit'),
 
+  // ==================== AUTO-START ====================
+  // Get auto-start status
+  getAutoStart: () => ipcRenderer.invoke('app:get-autostart'),
+
+  // Set auto-start status
+  setAutoStart: (enabled) => ipcRenderer.invoke('app:set-autostart', enabled),
+
   // ==================== COMPACT/OVERLAY MODE ====================
   // Toggle compact mode (floating widget)
   toggleCompactMode: () => ipcRenderer.invoke('window:toggle-compact'),

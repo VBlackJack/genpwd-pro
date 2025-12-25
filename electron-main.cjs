@@ -74,6 +74,42 @@ function getMainTranslations() {
   return translations[locale] || translations.en;
 }
 
+// ==================== AUTO-START MANAGEMENT ====================
+/**
+ * Get current auto-start status
+ * @returns {boolean} Whether auto-start is enabled
+ */
+function getAutoStartEnabled() {
+  try {
+    const settings = app.getLoginItemSettings();
+    return settings.openAtLogin;
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to get auto-start settings:', error);
+    return false;
+  }
+}
+
+/**
+ * Enable or disable auto-start on Windows login
+ * @param {boolean} enable - Whether to enable auto-start
+ * @returns {boolean} Success status
+ */
+function setAutoStartEnabled(enable) {
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: enable,
+      openAsHidden: true, // Start minimized to tray
+      path: process.execPath,
+      args: ['--hidden'] // Flag to start hidden
+    });
+    console.log(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'}`);
+    return true;
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to set auto-start:', error);
+    return false;
+  }
+}
+
 // ==================== WINDOW STATE PERSISTENCE ====================
 const WINDOW_STATE_FILE = path.join(app.getPath('userData'), 'window-state.json');
 
@@ -318,17 +354,31 @@ function createWindow() {
 
   // Restore position if saved and valid
   if (savedState?.x !== undefined && savedState?.y !== undefined) {
-    // Ensure window is visible on a connected display
+    // Ensure at least 100px of window is visible on a connected display
     const { screen } = require('electron');
     const displays = screen.getAllDisplays();
+    const minVisiblePx = 100;
+    const windowWidth = savedState.width || defaultWidth;
+    const windowHeight = savedState.height || defaultHeight;
+
     const isOnScreen = displays.some(display => {
-      const { x, y, width, height } = display.bounds;
-      return savedState.x >= x && savedState.x < x + width &&
-             savedState.y >= y && savedState.y < y + height;
+      const { x: dx, y: dy, width: dw, height: dh } = display.bounds;
+      // Calculate overlap between window and display
+      const overlapLeft = Math.max(savedState.x, dx);
+      const overlapRight = Math.min(savedState.x + windowWidth, dx + dw);
+      const overlapTop = Math.max(savedState.y, dy);
+      const overlapBottom = Math.min(savedState.y + windowHeight, dy + dh);
+      const overlapWidth = overlapRight - overlapLeft;
+      const overlapHeight = overlapBottom - overlapTop;
+      // Window is visible if overlap is at least minVisiblePx in both dimensions
+      return overlapWidth >= minVisiblePx && overlapHeight >= minVisiblePx;
     });
+
     if (isOnScreen) {
       windowOptions.x = savedState.x;
       windowOptions.y = savedState.y;
+    } else {
+      console.log('[GenPwd Pro] Saved window position off-screen, centering window');
     }
   }
 
@@ -835,6 +885,20 @@ ipcMain.handle('app:quit', (event) => {
   isQuitting = true;
   app.quit();
   return { success: true };
+});
+
+// ==================== AUTO-START IPC ====================
+// Get auto-start status
+ipcMain.handle('app:get-autostart', (event) => {
+  validateOrigin(event);
+  return { enabled: getAutoStartEnabled() };
+});
+
+// Set auto-start status
+ipcMain.handle('app:set-autostart', (event, enabled) => {
+  validateOrigin(event);
+  const success = setAutoStartEnabled(enabled);
+  return { success, enabled: getAutoStartEnabled() };
 });
 
 // ==================== COMPACT/OVERLAY MODE ====================
@@ -1463,6 +1527,8 @@ ipcMain.handle('automation:get-default-sequence', (event) => {
 });
 
 // Gestion du cycle de vie de l'application
+const startHidden = process.argv.includes('--hidden');
+
 app.whenReady().then(async () => {
   // Load vault module (ESM dynamic import)
   try {
@@ -1476,6 +1542,12 @@ app.whenReady().then(async () => {
   createWindow();
   createApplicationMenu();
   createTray();
+
+  // Handle hidden startup (auto-start)
+  if (startHidden && mainWindow) {
+    mainWindow.hide();
+    console.log('[GenPwd Pro] Started hidden (auto-start mode)');
+  }
 
   // ==================== GLOBAL HOTKEY (Boss Key) ====================
   // Register global shortcut to toggle window visibility

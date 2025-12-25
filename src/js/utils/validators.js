@@ -281,6 +281,140 @@ export function validateURL(url, allowedProtocols = ['http:', 'https:']) {
   }
 }
 
+// ==================== DOM VALIDATION HELPERS ====================
+
+/**
+ * Validate a form field and update its aria-invalid state
+ * Also shows/hides associated error message element
+ * @param {HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement} field - Form field
+ * @param {Object} [options] - Validation options
+ * @param {boolean} [options.required=false] - Field is required
+ * @param {number} [options.minLength] - Minimum length
+ * @param {number} [options.maxLength] - Maximum length
+ * @param {RegExp} [options.pattern] - Pattern to match
+ * @param {string} [options.patternMessage] - Custom pattern error message
+ * @param {Function} [options.customValidator] - Custom validation function returning {valid, error}
+ * @returns {{valid: boolean, error: string|null}}
+ */
+export function validateField(field, options = {}) {
+  if (!field) return { valid: false, error: 'Field not found' };
+
+  const value = field.value?.trim() ?? '';
+  const {
+    required = false,
+    minLength,
+    maxLength,
+    pattern,
+    patternMessage,
+    customValidator
+  } = options;
+
+  let error = null;
+
+  // Required check
+  if (required && value.length === 0) {
+    error = 'This field is required';
+  }
+  // Min length check
+  else if (minLength !== undefined && value.length > 0 && value.length < minLength) {
+    error = `Must be at least ${minLength} characters`;
+  }
+  // Max length check
+  else if (maxLength !== undefined && value.length > maxLength) {
+    error = `Must be at most ${maxLength} characters`;
+  }
+  // Pattern check
+  else if (pattern && value.length > 0 && !pattern.test(value)) {
+    error = patternMessage || 'Invalid format';
+  }
+  // Custom validator
+  else if (customValidator && value.length > 0) {
+    const result = customValidator(value);
+    if (!result.valid) {
+      error = result.error;
+    }
+  }
+
+  // Update aria-invalid attribute
+  field.setAttribute('aria-invalid', error ? 'true' : 'false');
+
+  // Update associated error message element if exists
+  const errorId = field.getAttribute('aria-describedby');
+  if (errorId) {
+    const errorEl = document.getElementById(errorId);
+    if (errorEl) {
+      errorEl.textContent = error || '';
+      errorEl.hidden = !error;
+    }
+  }
+
+  // Add/remove invalid class for styling
+  field.classList.toggle('field-invalid', !!error);
+
+  return { valid: !error, error };
+}
+
+/**
+ * Validate all fields in a form
+ * @param {HTMLFormElement} form - Form element
+ * @param {Object} fieldConfigs - Map of field name to validation options
+ * @returns {{valid: boolean, errors: Object}}
+ */
+export function validateForm(form, fieldConfigs = {}) {
+  if (!form) return { valid: false, errors: { form: 'Form not found' } };
+
+  const errors = {};
+  let firstInvalid = null;
+
+  for (const [fieldName, config] of Object.entries(fieldConfigs)) {
+    const field = form.elements[fieldName];
+    if (!field) continue;
+
+    const result = validateField(field, config);
+    if (!result.valid) {
+      errors[fieldName] = result.error;
+      if (!firstInvalid) {
+        firstInvalid = field;
+      }
+    }
+  }
+
+  // Focus first invalid field
+  if (firstInvalid) {
+    firstInvalid.focus();
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+/**
+ * Setup real-time validation on a field (blur + input events)
+ * @param {HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement} field - Form field
+ * @param {Object} options - Validation options (same as validateField)
+ * @param {AbortController} [abortController] - Optional abort controller for cleanup
+ */
+export function setupFieldValidation(field, options, abortController) {
+  if (!field) return;
+
+  const signal = abortController?.signal;
+
+  // Validate on blur
+  field.addEventListener('blur', () => {
+    validateField(field, options);
+  }, { signal });
+
+  // Clear error on input (but don't validate yet)
+  field.addEventListener('input', () => {
+    if (field.getAttribute('aria-invalid') === 'true') {
+      // Re-validate if currently invalid
+      validateField(field, options);
+    }
+  }, { signal });
+}
+
 /**
  * Sanitizes user input by removing dangerous characters
  * @param {string} input - Input to sanitize

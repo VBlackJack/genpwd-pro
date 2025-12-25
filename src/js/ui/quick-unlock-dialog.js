@@ -18,6 +18,9 @@ export class QuickUnlockDialog {
   static #isOpen = false;
   static #resolvePromise = null;
   static #rejectPromise = null;
+  static #escapeHandler = null;
+  static #focusTrapHandler = null;
+  static #previouslyFocusedElement = null;
 
   /**
    * Show the quick unlock dialog
@@ -58,12 +61,29 @@ export class QuickUnlockDialog {
    * @param {boolean} success - Whether unlock was successful
    */
   static close(success = false) {
+    // Clean up keyboard handlers
+    if (this.#escapeHandler) {
+      document.removeEventListener('keydown', this.#escapeHandler);
+      this.#escapeHandler = null;
+    }
+    if (this.#focusTrapHandler) {
+      document.removeEventListener('keydown', this.#focusTrapHandler);
+      this.#focusTrapHandler = null;
+    }
+
     const overlay = document.getElementById('quick-unlock-dialog');
     if (overlay) {
       overlay.classList.remove('active');
       setTimeout(() => {
         overlay.remove();
         this.#isOpen = false;
+
+        // Restore focus to previously focused element
+        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
+          this.#previouslyFocusedElement.focus();
+          this.#previouslyFocusedElement = null;
+        }
+
         if (this.#resolvePromise) {
           this.#resolvePromise(success);
           this.#resolvePromise = null;
@@ -251,6 +271,21 @@ export class QuickUnlockDialog {
   }
 
   /**
+   * Get focusable elements within the dialog
+   * @private
+   * @returns {HTMLElement[]}
+   */
+  static #getFocusableElements() {
+    const overlay = document.getElementById('quick-unlock-dialog');
+    if (!overlay) return [];
+    const selector = 'button:not([disabled]):not([hidden]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
+    return Array.from(overlay.querySelectorAll(selector)).filter(el => {
+      // Filter out hidden elements
+      return el.offsetParent !== null && !el.closest('[hidden]');
+    });
+  }
+
+  /**
    * Bind event handlers
    * @private
    */
@@ -260,6 +295,9 @@ export class QuickUnlockDialog {
     const closeBtn = document.getElementById('quick-unlock-close');
     const cancelBtn = document.getElementById('quick-unlock-cancel');
     const togglePwdBtn = document.getElementById('quick-unlock-toggle-pwd');
+
+    // Save previously focused element
+    this.#previouslyFocusedElement = document.activeElement;
 
     // Close on overlay click
     overlay?.addEventListener('click', (e) => {
@@ -272,14 +310,33 @@ export class QuickUnlockDialog {
     closeBtn?.addEventListener('click', () => this.close(false));
     cancelBtn?.addEventListener('click', () => this.close(false));
 
-    // Escape key
-    const escHandler = (e) => {
+    // Escape key - store handler for cleanup
+    this.#escapeHandler = (e) => {
       if (e.key === 'Escape' && this.#isOpen) {
         this.close(false);
-        document.removeEventListener('keydown', escHandler);
       }
     };
-    document.addEventListener('keydown', escHandler);
+    document.addEventListener('keydown', this.#escapeHandler);
+
+    // Focus trap - keep focus within dialog
+    this.#focusTrapHandler = (e) => {
+      if (e.key !== 'Tab') return;
+
+      const focusable = this.#getFocusableElements();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', this.#focusTrapHandler);
 
     // Toggle password visibility
     togglePwdBtn?.addEventListener('click', () => {

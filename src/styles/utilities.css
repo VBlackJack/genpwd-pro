@@ -133,6 +133,29 @@
   outline-offset: 2px;
 }
 
+.toast-action {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-blue);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.toast-action:hover {
+  background: var(--accent-blue);
+  color: white;
+}
+
+.toast-action:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
 .toast-error {
   border-left: 4px solid var(--accent-red);
 }
@@ -255,4 +278,197 @@
   font-size: 0.75rem;
   padding: 0.5rem 0.75rem;
   min-height: auto;
+}
+
+/* ==================== FORM VALIDATION STYLES ==================== */
+
+/* Invalid field styling */
+.field-invalid,
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: var(--accent-red) !important;
+  box-shadow: 0 0 0 1px var(--accent-red);
+}
+
+.field-invalid:focus,
+input[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus {
+  border-color: var(--accent-red) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+  outline: none;
+}
+
+/* Field error message */
+.field-error {
+  color: var(--accent-red);
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-error[hidden] {
+  display: none;
+}
+
+.field-error::before {
+  content: "⚠";
+  font-size: 11px;
+}
+
+/* Required field indicator */
+.required {
+  color: var(--accent-red);
+  margin-left: 2px;
+}
+
+/* Valid field styling (optional - for positive feedback) */
+input[aria-invalid="false"]:not(:placeholder-shown),
+textarea[aria-invalid="false"]:not(:placeholder-shown) {
+  border-color: var(--accent-green);
+}
+
+/* ==================== LOADING STATES ==================== */
+
+/* Standard spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.spinner-lg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Spinning icon utility */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* Button loading state */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  color: transparent !important;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  opacity: 0.8;
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  height: 1em;
+  margin-bottom: 0.5em;
+}
+
+.skeleton-text:last-child {
+  width: 70%;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-rect {
+  border-radius: 8px;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: var(--z-overlay);
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent-blue);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-indeterminate .progress-bar-fill {
+  width: 30%;
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .spinning,
+  .btn-loading::after,
+  .skeleton,
+  .progress-bar-indeterminate .progress-bar-fill {
+    animation: none;
+  }
+
+  .skeleton {
+    background: var(--bg-tertiary);
+  }
 }
