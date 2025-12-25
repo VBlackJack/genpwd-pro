@@ -1639,7 +1639,7 @@ kbd {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--modal-backdrop-heavy, rgba(0, 0, 0, 0.7));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   opacity: 0;

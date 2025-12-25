@@ -458,9 +458,10 @@ export class QuickUnlockDialog {
       return;
     }
 
-    // Disable submit
+    // Disable submit and set aria-busy
     if (submitBtn) {
       submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-busy', 'true');
       submitBtn.innerHTML = `<span class="quick-unlock-spinner"></span> ${t('vault.actions.unlocking')}`;
     }
     if (errorEl) errorEl.hidden = true;
@@ -485,6 +486,7 @@ export class QuickUnlockDialog {
       // Re-enable submit
       if (submitBtn) {
         submitBtn.disabled = false;
+        submitBtn.removeAttribute('aria-busy');
         submitBtn.innerHTML = `
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>

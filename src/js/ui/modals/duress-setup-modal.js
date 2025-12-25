@@ -22,16 +22,16 @@ export class DuressSetupModal extends Modal {
 
         <form id="duress-setup-form">
           <div class="vault-form-group">
-            <label class="vault-label">Master Password (verification)</label>
-            <input type="password" id="duress-master-pass" class="vault-input" required placeholder="Enter current master password">
+            <label class="vault-label" for="duress-master-pass">Master Password (verification)</label>
+            <input type="password" id="duress-master-pass" class="vault-input" required placeholder="Enter current master password" aria-describedby="duress-error" autofocus>
           </div>
 
           <hr class="separator">
 
           <div class="vault-form-group">
-            <label class="vault-label">New Duress Password</label>
-            <input type="password" id="duress-pass" class="vault-input" required placeholder="Cannot be same as Master Password">
-            <div class="vault-field-hint">Entering this password at login will open the Decoy Vault.</div>
+            <label class="vault-label" for="duress-pass">New Duress Password</label>
+            <input type="password" id="duress-pass" class="vault-input" required placeholder="Cannot be same as Master Password" aria-describedby="duress-pass-hint duress-error">
+            <div class="vault-field-hint" id="duress-pass-hint">Entering this password at login will open the Decoy Vault.</div>
           </div>
 
           <div class="vault-form-group vault-checkbox-group">
@@ -65,18 +65,30 @@ export class DuressSetupModal extends Modal {
 
         errorEl.hidden = true;
 
+        const masterInput = this.element.querySelector('#duress-master-pass');
+        const duressInput = this.element.querySelector('#duress-pass');
+
+        // Clear previous validation states
+        masterInput.removeAttribute('aria-invalid');
+        duressInput.removeAttribute('aria-invalid');
+
         if (!masterPass || !duressPass) {
             this._showError('Both passwords are required.');
+            if (!masterPass) masterInput.setAttribute('aria-invalid', 'true');
+            if (!duressPass) duressInput.setAttribute('aria-invalid', 'true');
             return;
         }
 
         if (masterPass === duressPass) {
             this._showError('Duress password MUST be different from Master password.');
+            duressInput.setAttribute('aria-invalid', 'true');
+            duressInput.focus();
             return;
         }
 
         try {
             btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
             btn.textContent = 'Encrypting Vault (V3)...';
 
             // Call backend to perform migration
@@ -94,7 +106,8 @@ export class DuressSetupModal extends Modal {
         } catch (error) {
             this._showError(error.message);
             btn.disabled = false;
-            btn.textContent = 'Enable Duress Mode';
+            btn.removeAttribute('aria-busy');
+            btn.textContent = '⚠️ Enable Duress Mode';
         }
     }
 

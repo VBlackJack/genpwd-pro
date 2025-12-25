@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--modal-backdrop-heavy, rgba(0, 0, 0, 0.7));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   opacity: 0;
@@ -83,8 +83,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -414,7 +416,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--modal-backdrop-heavy, rgba(0, 0, 0, 0.7));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   opacity: 0;
@@ -454,8 +456,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   background: rgba(255, 255, 255, 0.05);
   border: none;
   border-radius: 8px;
@@ -549,8 +553,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: 6px;

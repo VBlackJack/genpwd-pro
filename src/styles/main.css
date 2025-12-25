@@ -82,6 +82,7 @@
 
   /* Modal Overlay */
   --modal-backdrop: rgba(0, 0, 0, 0.5);
+  --modal-backdrop-heavy: rgba(0, 0, 0, 0.7);
 
   /* Typography */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;

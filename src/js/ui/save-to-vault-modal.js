@@ -401,9 +401,10 @@ export class SaveToVaultModal {
       return;
     }
 
-    // Disable submit button
+    // Disable submit button and set aria-busy
     if (submitBtn) {
       submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-busy', 'true');
       submitBtn.innerHTML = `
         <span class="save-vault-spinner"></span>
         ${t('vault.saveModal.saving')}
@@ -425,6 +426,7 @@ export class SaveToVaultModal {
       // Re-enable submit button
       if (submitBtn) {
         submitBtn.disabled = false;
+        submitBtn.removeAttribute('aria-busy');
         submitBtn.innerHTML = `
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>

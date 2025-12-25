@@ -52,7 +52,12 @@ const translations = {
     paste: 'Paste',
     selectAll: 'Select All',
     undo: 'Undo',
-    redo: 'Redo'
+    redo: 'Redo',
+    // Close dialog
+    minimizeToTray: 'Minimize to Tray',
+    quitApp: 'Quit Application',
+    closePromptTitle: 'Close GenPwd Pro?',
+    closePromptDetail: 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.'
   },
   fr: {
     trayTooltip: 'GenPwd Pro - Générateur de mots de passe',
@@ -69,7 +74,12 @@ const translations = {
     paste: 'Coller',
     selectAll: 'Tout sélectionner',
     undo: 'Annuler',
-    redo: 'Rétablir'
+    redo: 'Rétablir',
+    // Close dialog
+    minimizeToTray: 'Réduire dans la barre',
+    quitApp: 'Quitter l\'application',
+    closePromptTitle: 'Fermer GenPwd Pro ?',
+    closePromptDetail: 'GenPwd Pro peut continuer en arrière-plan pour garder votre coffre accessible. Choisissez "Quitter" pour fermer complètement.'
   },
   es: {
     trayTooltip: 'GenPwd Pro - Generador de contraseñas',
@@ -86,7 +96,12 @@ const translations = {
     paste: 'Pegar',
     selectAll: 'Seleccionar todo',
     undo: 'Deshacer',
-    redo: 'Rehacer'
+    redo: 'Rehacer',
+    // Close dialog
+    minimizeToTray: 'Minimizar a bandeja',
+    quitApp: 'Cerrar aplicación',
+    closePromptTitle: '¿Cerrar GenPwd Pro?',
+    closePromptDetail: 'GenPwd Pro puede ejecutarse en segundo plano para mantener su bóveda accesible. Elija "Cerrar" para salir completamente.'
   }
 };
 
@@ -354,14 +369,29 @@ let mainWindow;
 function createWindow() {
   // Load saved window state or use defaults
   const savedState = loadWindowState();
-  const defaultWidth = 1000;
-  const defaultHeight = 800;
+
+  // ==================== DPI SCALING SUPPORT ====================
+  // Get primary display scale factor for proper sizing on high-DPI screens
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const scaleFactor = primaryDisplay.scaleFactor || 1;
+
+  // Base dimensions (designed for 100% scaling)
+  const baseWidth = 1000;
+  const baseHeight = 800;
+  const baseMinWidth = 900;
+  const baseMinHeight = 650;
+
+  // Apply scale factor for high-DPI displays (125%, 150%, 200%)
+  // Electron handles this automatically for content, but window size needs adjustment
+  const defaultWidth = savedState?.width || baseWidth;
+  const defaultHeight = savedState?.height || baseHeight;
 
   const windowOptions = {
-    width: savedState?.width || defaultWidth,
-    height: savedState?.height || defaultHeight,
-    minWidth: 900,
-    minHeight: 650,
+    width: defaultWidth,
+    height: defaultHeight,
+    minWidth: baseMinWidth,
+    minHeight: baseMinHeight,
     title: 'GenPwd Pro',
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     backgroundColor: '#1a1a2e',
@@ -376,7 +406,6 @@ function createWindow() {
   // Restore position if saved and valid
   if (savedState?.x !== undefined && savedState?.y !== undefined) {
     // Ensure at least 100px of window is visible on a connected display
-    const { screen } = require('electron');
     const displays = screen.getAllDisplays();
     const minVisiblePx = 100;
     const windowWidth = savedState.width || defaultWidth;
@@ -451,9 +480,39 @@ function createWindow() {
 
   // ==================== MINIMIZE TO TRAY ====================
   // Intercept close to minimize to tray instead of quitting
-  mainWindow.on('close', (event) => {
+  // For password managers, keeping in tray is a security feature
+  mainWindow.on('close', async (event) => {
     if (!isQuitting) {
       event.preventDefault();
+
+      // First close attempt: show dialog asking user preference
+      if (!mainWindow._closeDialogShown) {
+        mainWindow._closeDialogShown = true;
+        const t = getMainTranslations();
+
+        const { response } = await dialog.showMessageBox(mainWindow, {
+          type: 'question',
+          buttons: [
+            t.minimizeToTray || 'Minimize to Tray',
+            t.quitApp || 'Quit Application'
+          ],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'GenPwd Pro',
+          message: t.closePromptTitle || 'Close GenPwd Pro?',
+          detail: t.closePromptDetail || 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.',
+          icon: path.join(__dirname, 'assets', 'icon.ico')
+        });
+
+        if (response === 1) {
+          // User chose to quit
+          isQuitting = true;
+          app.quit();
+          return;
+        }
+      }
+
+      // Minimize to tray
       mainWindow.hide();
 
       // Show notification (first 3 times per session to educate users)
