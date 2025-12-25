@@ -3,6 +3,9 @@
  * Centralized settings for GenPwd Pro
  */
 
+import { showConfirm } from '../modal-manager.js';
+import { showToast } from '../../utils/toast.js';
+
 export class SettingsModal {
     #modalId = 'settings-modal';
     #isVisible = false;
@@ -151,16 +154,32 @@ export class SettingsModal {
         // Panic Button
         const panicBtn = document.getElementById('btn-panic-nuke');
         panicBtn?.addEventListener('click', async () => {
-            if (confirm('⚠️ ARE YOU SURE?\n\nThis action will PERMANENTLY DESTROY this vault.\nThere will be NO way to undo this.')) {
-                // Double confirm
-                if (confirm('FINAL CONFIRMATION: Delete everything?')) {
-                    try {
-                        await window.vault.nuke();
-                        alert('Vault destroyed.');
-                        window.location.reload(); // Reset UI
-                    } catch (err) {
-                        alert('Error: ' + err.message);
-                    }
+            const firstConfirm = await showConfirm(
+                'This action will PERMANENTLY DESTROY this vault. There will be NO way to undo this.',
+                {
+                    title: '⚠️ Destroy Vault',
+                    confirmLabel: 'I Understand',
+                    danger: true
+                }
+            );
+            if (!firstConfirm) return;
+
+            // Double confirm for critical action
+            const finalConfirm = await showConfirm(
+                'FINAL CONFIRMATION: Delete everything?',
+                {
+                    title: '⛔ Final Warning',
+                    confirmLabel: 'Delete Everything',
+                    danger: true
+                }
+            );
+            if (finalConfirm) {
+                try {
+                    await window.vault.nuke();
+                    showToast('Vault destroyed.', 'info');
+                    window.location.reload(); // Reset UI
+                } catch (err) {
+                    showToast('Error: ' + err.message, 'error');
                 }
             }
         });

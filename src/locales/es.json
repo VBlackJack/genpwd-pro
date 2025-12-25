@@ -75,12 +75,17 @@
     "select": "-- Seleccionar --",
     "update": "Actualizar",
     "updated": "actualizado",
-    "updateFailed": "Error al actualizar"
+    "updateFailed": "Error al actualizar",
+    "replaceConfirm": "¿Reemplazar la configuración «{name}» con los ajustes actuales?",
+    "emptyState": "Sin presets",
+    "emptyHint": "Guarda tus ajustes favoritos para acceder rápidamente"
   },
   "history": {
     "title": "Historial",
     "search": "Buscar",
-    "empty": "No hay contraseñas en el historial"
+    "empty": "No hay contraseñas en el historial",
+    "emptyState": "No hay contraseñas en el historial",
+    "emptyHint": "Las contraseñas generadas aparecerán aquí"
   },
   "vault": {
     "common": {
@@ -147,11 +152,18 @@
       "encrypting": "Cifrando...",
       "enableDuress": "Activar modo coacción",
       "restore": "Restaurar",
-      "copyValue": "Copiar"
+      "copyValue": "Copiar",
+      "generateNow": "Generar ahora"
     },
     "messages": {
       "vaultLocked": "Bóveda bloqueada",
       "vaultSaved": "Bóveda guardada: {fileName}",
+      "forgetVaultConfirm": "¿Olvidar la bóveda «{name}»?\n\nEl archivo no será eliminado, pero la bóveda será eliminada de la lista.",
+      "vaultForgotten": "Bóveda eliminada de la lista",
+      "deleteFolderConfirm": "¿Eliminar carpeta «{name}»?",
+      "deleteFolderWithEntriesConfirm": "¿Eliminar carpeta «{name}» y mover sus {count} entradas a la raíz?",
+      "deleteEntryConfirm": "¿Eliminar «{title}» de la bóveda?",
+      "uninstallPluginConfirm": "¿Desinstalar el plugin «{name}»?",
       "entryDuplicated": "Entrada duplicada",
       "folderCreated": "Carpeta creada",
       "passwordCopied": "Contraseña copiada",
@@ -284,6 +296,10 @@
       "saveVault": "Guardar bóveda",
       "newTag": "Nueva etiqueta",
       "newEntry": "Nueva entrada",
+      "newFolder": "Nueva carpeta",
+      "newFolderName": "Nombre de la nueva carpeta:",
+      "newSubfolderName": "Nombre de la nueva subcarpeta:",
+      "hidePassword": "Ocultar contraseña",
       "editEntry": "Editar entrada",
       "verificationRequired": "Verificación requerida",
       "unsavedChanges": "Cambios sin guardar",
@@ -314,7 +330,11 @@
       "maxCharacters": "Máximo {count} caracteres",
       "nameRequired": "El nombre es obligatorio",
       "nameTooLong": "El nombre no puede superar los 50 caracteres",
-      "enterPassword": "Por favor ingrese la contraseña"
+      "enterPassword": "Por favor ingrese la contraseña",
+      "fieldRequired": "Este campo es obligatorio",
+      "invalidFormat": "Formato inválido",
+      "passwordsMatch": "Las contraseñas coinciden",
+      "passwordsNoMatch": "Las contraseñas no coinciden"
     },
     "share": {
       "title": "Compartir seguro",
@@ -362,7 +382,8 @@
       "configureDuress": "Configurar modo de coacción"
     },
     "generator": {
-      "title": "Generador de contraseñas"
+      "title": "Generador de contraseñas",
+      "emptyState": "Ninguna contraseña generada"
     },
     "colors": {
       "default": "Predeterminado",
@@ -421,7 +442,8 @@
       "noTags": "Sin etiquetas",
       "passwordHealth": "Salud de contraseñas",
       "newEntry": "Nueva entrada",
-      "allItems": "Todos los elementos"
+      "allItems": "Todos los elementos",
+      "collapse": "Alternar panel lateral"
     },
     "detail": {
       "password": "CONTRASEÑA",
@@ -456,7 +478,13 @@
     "quickUnlock": {
       "title": "Desbloquear bóveda",
       "unlockToContinue": "Desbloquea la bóveda para continuar",
-      "showPassword": "Mostrar contraseña"
+      "showPassword": "Mostrar contraseña",
+      "tryAgain": "Reintentar",
+      "or": "o"
+    },
+    "duress": {
+      "enabled": "¡Modo Coacción activado! La aplicación se reiniciará para aplicar el nuevo contenedor de seguridad.",
+      "destroyed": "Bóveda destruida."
     }
   },
   "toast": {
@@ -473,6 +501,9 @@
     "criticalStartupError": "Error crítico de inicio",
     "vaultNotAvailable": "Bóveda no disponible",
     "vaultUnlocked": "Bóveda desbloqueada",
+    "vaultLocked": "Bóveda bloqueada",
+    "unlockVault": "Por favor desbloquea la bóveda",
+    "languageChanged": "Idioma cambiado a {lang}",
     "languageChangeFailed": "Error al cambiar el idioma",
     "vaultLockedUnlockFirst": "Bóveda bloqueada - desbloquéala primero",
     "noPresetsFound": "No se encontraron presets en la bóveda",
@@ -488,6 +519,65 @@
     "vaultLockedToImport": "Bóveda bloqueada - desbloquea para importar",
     "presetImportFailed": "Error al importar el preset",
     "allPresetsExported": "¡Todos los presets exportados!",
-    "vaultLockedToEdit": "Bóveda bloqueada - desbloquea para editar"
+    "vaultLockedToEdit": "Bóveda bloqueada - desbloquea para editar",
+    "configurationUpdated": "¡Configuración actualizada!",
+    "historyEnabled": "¡Historial activado!",
+    "historyCopied": "¡Copiado!",
+    "historyExported": "¡Historial exportado!",
+    "historyCleared": "Historial borrado",
+    "noDataToImport": "No hay datos para importar",
+    "pluginMetadataExported": "¡Metadatos del plugin exportados!",
+    "pluginInstallFailed": "Error al instalar el plugin",
+    "pluginNotFound": "Plugin no encontrado",
+    "pluginLoading": "Cargando plugin...",
+    "pluginError": "Error del plugin",
+    "webdavFieldsRequired": "Todos los campos WebDAV son requeridos",
+    "syncConfigSaved": "Configuración guardada",
+    "syncConfigError": "Error al guardar",
+    "syncDisabled": "Sincronización desactivada",
+    "nameRequired": "El nombre es requerido",
+    "nameTooLong": "El nombre no puede exceder 50 caracteres",
+    "presetsLoaded": "{count} preset(s) cargado(s) desde la bóveda",
+    "presetSaved": "¡Preset « {name} » guardado!",
+    "presetDuplicated": "¡Preset « {name} » duplicado!",
+    "presetImported": "¡Preset « {name} » importado!",
+    "presetUpdated": "¡Preset « {name} » actualizado con éxito!",
+    "presetLoaded": "¡Preset « {name} » cargado!",
+    "presetLoadFailed": "Error al cargar el preset",
+    "presetDeletedFromVault": "Preset eliminado de la bóveda",
+    "presetDeleteError": "Error al eliminar el preset",
+    "presetsExportedToVault": "{count} preset(s) exportado(s) a la bóveda",
+    "noPresetsExported": "Ningún preset exportado",
+    "presetsImportedFromVault": "{count} preset(s) importado(s) desde la bóveda",
+    "presetsSkipped": "{count} preset(s) omitido(s) (ya existen)",
+    "noPresetsToImport": "No hay presets para importar",
+    "noPasswordsToCheck": "No hay contraseñas para verificar. Genera algunas primero.",
+    "noValidPasswordsToCheck": "No se encontraron contraseñas válidas para verificar",
+    "demoPluginsLoadedSuccess": "¡Plugins demo cargados con éxito!",
+    "demoPluginsPartialLoad": "Algunos plugins demo cargados",
+    "demoPluginsLoadFailed": "Error al cargar plugins demo",
+    "demoPluginsError": "Error cargando plugins demo",
+    "clearPluginsConfirm": "¿Eliminar todos los plugins? ¡Esta acción es irreversible!",
+    "foundPasswordEntries": "{count} entrada(s) de contraseña encontrada(s)",
+    "importedPasswords": "{count} contraseña(s) importada(s) con éxito",
+    "authSuccess": "Autenticación exitosa",
+    "clipboardAutoCleared": "Portapapeles borrado automáticamente",
+    "copiedToClipboard": "Copiado al portapapeles",
+    "passwordNotBreached": "Contraseña no encontrada en filtraciones conocidas",
+    "historyDisabled": "Historial desactivado",
+    "offlineModeCache": "Modo sin conexión - Usando recursos en caché",
+    "appUpdated": "Aplicación actualizada - Usando la última versión",
+    "appInstalled": "¡GenPwd Pro instalado con éxito!",
+    "installingApp": "Instalando GenPwd Pro...",
+    "backOnline": "De vuelta en línea",
+    "offlineMode": "Modo sin conexión - Usando datos en caché",
+    "maxPluginsReached": "Límite máximo de plugins alcanzado",
+    "pluginRegistrationFailed": "Error al registrar el plugin",
+    "pluginHttpsRequired": "La URL del plugin debe usar HTTPS o archivo local",
+    "pluginModuleHttpsRequired": "El plugin debe cargarse a través de HTTPS",
+    "pluginMissingExport": "El módulo del plugin debe tener una exportación por defecto",
+    "pluginModuleLoadFailed": "Error al cargar el módulo del plugin",
+    "pluginDirectCodeDisabled": "Carga de código directo deshabilitada por seguridad. Use módulos ES6.",
+    "allPluginsCleared": "Todos los plugins eliminados"
   }
 }

@@ -6,6 +6,7 @@
 import { showToast } from '../../utils/toast.js';
 import { WebDAVProvider } from '../../core/sync/index.js';
 import { safeLog } from '../../utils/logger.js';
+import { i18n } from '../../utils/i18n.js';
 
 export class SyncSettingsModal {
   #escapeHandler = null;
@@ -185,7 +186,7 @@ export class SyncSettingsModal {
       const password = document.getElementById('webdav-password')?.value;
 
       if (!url || !username || !password) {
-        showToast('All WebDAV fields are required', 'error');
+        showToast(i18n.t('toast.webdavFieldsRequired'), 'error');
         return;
       }
 
@@ -196,17 +197,17 @@ export class SyncSettingsModal {
           username,
           password
         });
-        showToast('Configuration saved', 'success');
+        showToast(i18n.t('toast.syncConfigSaved'), 'success');
         this.hide();
       } catch (error) {
         safeLog(`[SyncSettingsModal] Save error: ${error.message}`);
-        showToast('Save error: ' + error.message, 'error');
+        showToast(i18n.t('toast.syncConfigError') + ': ' + error.message, 'error');
       }
     } else {
       // Save empty config to clear
       try {
         await window.vault.cloud.saveConfig({ provider: 'none' });
-        showToast('Sync disabled', 'success');
+        showToast(i18n.t('toast.syncDisabled'), 'success');
         this.hide();
       } catch (error) {
         showToast(error.message, 'error');

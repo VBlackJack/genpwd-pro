@@ -156,16 +156,56 @@ export function createModal(options) {
     }
   });
 
-  // Focus management
-  const firstFocusable = overlay.querySelector('input, button, textarea, select');
+  // Focus management - get all focusable elements
+  const FOCUSABLE_SELECTOR = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
+
+  const getFocusableElements = () => {
+    return Array.from(overlay.querySelectorAll(FOCUSABLE_SELECTOR)).filter(el => {
+      return el.offsetParent !== null; // Only visible elements
+    });
+  };
+
+  // Focus trap handler
+  const focusTrapHandler = (e) => {
+    if (e.key !== 'Tab') return;
+
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (e.shiftKey) {
+      // Shift+Tab: go to last element if on first
+      if (document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      }
+    } else {
+      // Tab: go to first element if on last
+      if (document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    }
+  };
+
+  // Add focus trap listener
+  overlay.addEventListener('keydown', focusTrapHandler);
+  overlay._focusTrapHandler = focusTrapHandler;
+
+  // Store the element that opened the modal for focus restoration
+  const previouslyFocused = document.activeElement;
+  overlay._previouslyFocused = previouslyFocused;
 
   // Show modal with animation
   setTimeout(() => {
     overlay.classList.add('show');
 
-    // Focus first input
-    if (firstFocusable) {
-      firstFocusable.focus();
+    // Focus first focusable element
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
     }
 
     // Call onOpen callback
@@ -200,6 +240,22 @@ function closeModalInstance(modal, onClose) {
   if (modal._escapeHandler) {
     document.removeEventListener('keydown', modal._escapeHandler);
     delete modal._escapeHandler;
+  }
+
+  // Clean up focus trap handler
+  if (modal._focusTrapHandler) {
+    modal.removeEventListener('keydown', modal._focusTrapHandler);
+    delete modal._focusTrapHandler;
+  }
+
+  // Restore focus to previously focused element
+  if (modal._previouslyFocused && typeof modal._previouslyFocused.focus === 'function') {
+    try {
+      modal._previouslyFocused.focus();
+    } catch (e) {
+      // Element may have been removed from DOM
+    }
+    delete modal._previouslyFocused;
   }
 
   // Call onClose callback
@@ -299,9 +355,34 @@ export function createConfirmDialog(options) {
   });
 }
 
+/**
+ * Promise-based confirmation dialog (drop-in replacement for confirm())
+ * @param {string} message - Confirmation message
+ * @param {Object} [options] - Optional configuration
+ * @param {string} [options.title] - Dialog title (default: "Confirmation")
+ * @param {string} [options.confirmLabel] - Confirm button label (default: "Confirm")
+ * @param {string} [options.cancelLabel] - Cancel button label (default: "Cancel")
+ * @param {boolean} [options.danger] - Use danger styling (default: false)
+ * @returns {Promise<boolean>} Resolves true if confirmed, false if cancelled
+ */
+export function showConfirm(message, options = {}) {
+  return new Promise((resolve) => {
+    createConfirmDialog({
+      title: options.title || 'Confirmation',
+      message,
+      confirmLabel: options.confirmLabel || 'Confirm',
+      cancelLabel: options.cancelLabel || 'Cancel',
+      confirmClass: options.danger ? 'btn-danger' : 'btn-primary',
+      onConfirm: () => resolve(true),
+      onCancel: () => resolve(false)
+    });
+  });
+}
+
 export default {
   createModal,
   closeModal,
   isModalOpen,
-  createConfirmDialog
+  createConfirmDialog,
+  showConfirm
 };

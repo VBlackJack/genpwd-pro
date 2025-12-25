@@ -51,6 +51,7 @@ select {
 }
 
 .slider {
+  -webkit-appearance: none;
   appearance: none;
   height: 10px;
   padding: 0;
@@ -94,18 +95,26 @@ select {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 0.5rem;
   cursor: pointer;
-  background: linear-gradient(135deg, #2b3150, #232740);
+  background: linear-gradient(135deg, var(--bg-button-primary, #2b3150), var(--bg-button-secondary, #232740));
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 10px 12px;
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
+  padding: 0.625rem 1rem;
   border-radius: var(--radius-small);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
   text-decoration: none;
   transition: all 0.2s ease;
   user-select: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 .btn:hover {
@@ -154,8 +163,9 @@ select {
 }
 
 .btn-mini {
-  height: 32px;
-  padding: 0 10px;
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
+  padding: 0 0.75rem;
   border-radius: var(--radius-small);
   font-weight: 700;
   font-size: 12px;
@@ -416,6 +426,25 @@ select {
   font-size: 48px;
   opacity: 0.3;
   margin-bottom: 16px;
+}
+
+.empty-state p {
+  margin-bottom: 1rem;
+}
+
+.empty-state-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.empty-state-cta:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 /* ============================================================================
@@ -1035,4 +1064,24 @@ select {
 
 @keyframes breachSpin {
   to { transform: rotate(360deg); }
+}
+
+/* ==================== REDUCED MOTION SUPPORT ==================== */
+@media (prefers-reduced-motion: reduce) {
+  .loading,
+  .breach-status.loading .breach-spinner,
+  .placement-visual-container.flash-auto,
+  .placement-visual-container.flash-reset,
+  .cursor-mounted,
+  .cursor-removing,
+  [class*="pulse"],
+  [class*="spin"] {
+    animation: none !important;
+  }
+
+  .cursor,
+  .placement-visual-container,
+  .breach-status {
+    transition: none !important;
+  }
 }

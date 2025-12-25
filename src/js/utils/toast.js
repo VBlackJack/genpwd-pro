@@ -47,23 +47,50 @@ export function showToast(message, type = 'info') {
   try {
     const div = document.createElement('div');
     div.className = `toast toast-${type}`;
-    div.textContent = message;
+    div.setAttribute('role', 'alert');
+    div.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+
+    // Toast content with close button
+    const content = document.createElement('span');
+    content.className = 'toast-message';
+    content.textContent = message;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close';
+    closeBtn.setAttribute('aria-label', 'Dismiss notification');
+    closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+    div.appendChild(content);
+    div.appendChild(closeBtn);
 
     activeToasts.add(div);
     wrap.appendChild(div);
 
+    let timeoutId;
+    let fadeTimeoutId;
+
     const cleanup = () => {
+      clearTimeout(timeoutId);
+      clearTimeout(fadeTimeoutId);
       activeToasts.delete(div);
       if (div.parentNode) div.remove();
     };
 
-    setTimeout(() => {
+    // Close button handler
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      div.classList.add('toast-hiding');
+      setTimeout(cleanup, ANIMATION_DURATION.TOAST_FADE_OUT);
+    });
+
+    // Auto-dismiss
+    timeoutId = setTimeout(() => {
       if (div.parentNode) {
         div.classList.add('toast-hiding');
       }
-    }, ANIMATION_DURATION.TOAST_DISPLAY);
+    }, type === 'error' ? ANIMATION_DURATION.TOAST_DISPLAY_ERROR : ANIMATION_DURATION.TOAST_DISPLAY);
 
-    setTimeout(cleanup, ANIMATION_DURATION.TOAST_DISPLAY + ANIMATION_DURATION.TOAST_FADE_OUT);
+    fadeTimeoutId = setTimeout(cleanup, (type === 'error' ? ANIMATION_DURATION.TOAST_DISPLAY_ERROR : ANIMATION_DURATION.TOAST_DISPLAY) + ANIMATION_DURATION.TOAST_FADE_OUT);
   } catch (e) {
     safeLog(`showToast error: ${e.message}`);
   }

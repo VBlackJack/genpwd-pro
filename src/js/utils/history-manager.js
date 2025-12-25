@@ -19,6 +19,7 @@
 import { safeLog } from './logger.js';
 import { safeSetItem, safeGetItem } from './storage-helper.js';
 import { sanitizeHTML } from './dom-sanitizer.js';
+import { i18n } from './i18n.js';
 
 /**
  * @typedef {Object} HistoryEntry
@@ -187,7 +188,7 @@ class HistoryManager {
 
       // Notify user
       if (typeof window.showToast === 'function') {
-        window.showToast('History disabled', 'info');
+        window.showToast(i18n.t('toast.historyDisabled'), 'info');
       }
     });
 

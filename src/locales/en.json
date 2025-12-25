@@ -75,12 +75,17 @@
     "select": "-- Select --",
     "update": "Update",
     "updated": "updated",
-    "updateFailed": "Update failed"
+    "updateFailed": "Update failed",
+    "replaceConfirm": "Replace \"{name}\" configuration with current settings?",
+    "emptyState": "No presets yet",
+    "emptyHint": "Save your favorite settings as presets for quick access"
   },
   "history": {
     "title": "History",
     "search": "Search",
-    "empty": "No passwords in history"
+    "empty": "No passwords in history",
+    "emptyState": "No passwords in history",
+    "emptyHint": "Generated passwords will appear here"
   },
   "vault": {
     "common": {
@@ -147,11 +152,18 @@
       "encrypting": "Encrypting...",
       "enableDuress": "Enable Duress Mode",
       "restore": "Restore",
-      "copyValue": "Copy"
+      "copyValue": "Copy",
+      "generateNow": "Generate Now"
     },
     "messages": {
       "vaultLocked": "Vault locked",
       "vaultSaved": "Vault saved: {fileName}",
+      "forgetVaultConfirm": "Forget vault \"{name}\"?\n\nThe file will not be deleted, but the vault will be removed from the list.",
+      "vaultForgotten": "Vault removed from list",
+      "deleteFolderConfirm": "Delete folder \"{name}\"?",
+      "deleteFolderWithEntriesConfirm": "Delete folder \"{name}\" and move its {count} entries to root?",
+      "deleteEntryConfirm": "Delete \"{title}\" from vault?",
+      "uninstallPluginConfirm": "Uninstall plugin \"{name}\"?",
       "entryDuplicated": "Entry duplicated",
       "folderCreated": "Folder created",
       "passwordCopied": "Password copied",
@@ -284,6 +296,10 @@
       "saveVault": "Save vault",
       "newTag": "New tag",
       "newEntry": "New entry",
+      "newFolder": "New folder",
+      "newFolderName": "New folder name:",
+      "newSubfolderName": "New subfolder name:",
+      "hidePassword": "Hide password",
       "editEntry": "Edit entry",
       "verificationRequired": "Verification required",
       "unsavedChanges": "Unsaved changes",
@@ -314,7 +330,11 @@
       "maxCharacters": "Maximum {count} characters",
       "nameRequired": "Name is required",
       "nameTooLong": "Name cannot exceed 50 characters",
-      "enterPassword": "Please enter the password"
+      "enterPassword": "Please enter the password",
+      "fieldRequired": "This field is required",
+      "invalidFormat": "Invalid format",
+      "passwordsMatch": "Passwords match",
+      "passwordsNoMatch": "Passwords do not match"
     },
     "share": {
       "title": "Secure Share",
@@ -362,7 +382,8 @@
       "configureDuress": "Configure duress mode"
     },
     "generator": {
-      "title": "Password generator"
+      "title": "Password generator",
+      "emptyState": "No passwords generated yet"
     },
     "colors": {
       "default": "Default",
@@ -421,7 +442,8 @@
       "noTags": "No tags",
       "passwordHealth": "Password health",
       "newEntry": "New entry",
-      "allItems": "All items"
+      "allItems": "All items",
+      "collapse": "Toggle sidebar"
     },
     "detail": {
       "password": "PASSWORD",
@@ -456,7 +478,13 @@
     "quickUnlock": {
       "title": "Unlock Vault",
       "unlockToContinue": "Unlock the vault to continue",
-      "showPassword": "Show password"
+      "showPassword": "Show password",
+      "tryAgain": "Try again",
+      "or": "or"
+    },
+    "duress": {
+      "enabled": "Duress Mode Enabled! The application will now restart to apply the new security container.",
+      "destroyed": "Vault destroyed."
     }
   },
   "toast": {
@@ -473,6 +501,9 @@
     "criticalStartupError": "Critical startup error",
     "vaultNotAvailable": "Vault not available",
     "vaultUnlocked": "Vault unlocked",
+    "vaultLocked": "Vault locked",
+    "unlockVault": "Please unlock the vault",
+    "languageChanged": "Language changed to {lang}",
     "languageChangeFailed": "Failed to change language",
     "vaultLockedUnlockFirst": "Vault locked - unlock it first",
     "noPresetsFound": "No presets found in vault",
@@ -488,6 +519,99 @@
     "vaultLockedToImport": "Vault locked - unlock to import",
     "presetImportFailed": "Failed to import preset",
     "allPresetsExported": "All presets exported!",
-    "vaultLockedToEdit": "Vault locked - unlock to edit"
+    "vaultLockedToEdit": "Vault locked - unlock to edit",
+    "configurationUpdated": "Configuration updated!",
+    "historyEnabled": "History enabled!",
+    "historyCopied": "Copied!",
+    "historyExported": "History exported!",
+    "historyCleared": "History cleared",
+    "noDataToImport": "No data to import",
+    "pluginMetadataExported": "Plugin metadata exported!",
+    "pluginInstallFailed": "Failed to install plugin",
+    "pluginNotFound": "Plugin not found",
+    "pluginLoading": "Loading plugin...",
+    "pluginError": "Plugin error",
+    "webdavFieldsRequired": "All WebDAV fields are required",
+    "syncConfigSaved": "Configuration saved",
+    "syncConfigError": "Save error",
+    "syncDisabled": "Sync disabled",
+    "nameRequired": "Name is required",
+    "nameTooLong": "Name cannot exceed 50 characters",
+    "presetsLoaded": "{count} preset(s) loaded from vault",
+    "presetSaved": "Preset \"{name}\" saved!",
+    "presetDuplicated": "Preset \"{name}\" duplicated!",
+    "presetImported": "Preset \"{name}\" imported!",
+    "presetUpdated": "Preset \"{name}\" updated successfully!",
+    "presetLoaded": "Preset \"{name}\" loaded!",
+    "presetLoadFailed": "Failed to load preset",
+    "presetDeletedFromVault": "Preset deleted from vault",
+    "presetDeleteError": "Error deleting preset",
+    "presetsExportedToVault": "{count} preset(s) exported to vault",
+    "noPresetsExported": "No presets exported",
+    "presetsImportedFromVault": "{count} preset(s) imported from vault",
+    "presetsSkipped": "{count} preset(s) skipped (already exist)",
+    "noPresetsToImport": "No presets to import",
+    "noPasswordsToCheck": "No passwords to check. Generate some first.",
+    "noValidPasswordsToCheck": "No valid passwords to check",
+    "demoPluginsLoadedSuccess": "Demo plugins loaded successfully!",
+    "demoPluginsPartialLoad": "Some demo plugins loaded",
+    "demoPluginsLoadFailed": "Failed to load demo plugins",
+    "demoPluginsError": "Error loading demo plugins",
+    "clearPluginsConfirm": "Clear all plugins? This action cannot be undone!",
+    "foundPasswordEntries": "Found {count} password entries",
+    "importedPasswords": "Successfully imported {count} passwords",
+    "authSuccess": "Authentication successful",
+    "clipboardAutoCleared": "Clipboard auto-cleared",
+    "copiedToClipboard": "Copied to clipboard",
+    "passwordNotBreached": "Password not found in known breaches",
+    "historyDisabled": "History disabled",
+    "offlineModeCache": "Offline mode - Using cached resources",
+    "appUpdated": "App updated - Using latest version",
+    "appInstalled": "GenPwd Pro installed successfully!",
+    "installingApp": "Installing GenPwd Pro...",
+    "backOnline": "Back online",
+    "offlineMode": "Offline mode - Using cached data",
+    "maxPluginsReached": "Maximum plugins limit reached",
+    "pluginRegistrationFailed": "Plugin registration failed",
+    "pluginHttpsRequired": "Plugin URL must use HTTPS or local file",
+    "pluginModuleHttpsRequired": "Plugin must be loaded over HTTPS",
+    "pluginMissingExport": "Plugin module must have default export",
+    "pluginModuleLoadFailed": "Failed to load plugin module",
+    "pluginDirectCodeDisabled": "Direct code loading disabled for security. Use ES6 modules.",
+    "allPluginsCleared": "All plugins cleared"
+  },
+  "history": {
+    "title": "History",
+    "search": "Search",
+    "empty": "No passwords in history",
+    "enableConfirm": "History is disabled. Enable now?",
+    "deleteEntryConfirm": "Delete this entry?",
+    "clearAllConfirm": "Clear all history? This action is irreversible!"
+  },
+  "presets": {
+    "title": "Presets",
+    "save": "Save Configuration",
+    "manage": "Manage Presets",
+    "load": "Load a preset",
+    "select": "-- Select --",
+    "update": "Update",
+    "updated": "updated",
+    "updateFailed": "Update failed",
+    "replaceConfirm": "Replace \"{name}\" configuration with current settings?",
+    "deleteConfirm": "Delete this preset?"
+  },
+  "common": {
+    "generate": "Generate",
+    "copy": "Copy",
+    "copyAll": "Copy All",
+    "export": "Export",
+    "clear": "Clear",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "tests": "Tests",
+    "about": "About",
+    "importing": "Importing..."
   }
 }

@@ -6,12 +6,14 @@
  * @version 3.0.0
  * @description Provides keyboard navigation and shortcuts for accessibility
  *
- * Shortcuts:
- * - Alt+G: Generate passwords
- * - Alt+C: Copy all passwords
- * - Alt+R: Run tests
- * - Alt+S: Save/Export results
- * - Escape: Close modals
+ * Shortcuts (Generator tab only):
+ * - Ctrl+Alt+G: Generate passwords
+ * - Ctrl+Alt+C: Copy all passwords
+ * - Ctrl+Alt+R: Run tests
+ * - Ctrl+Alt+S: Save/Export results
+ * - Escape: Close modals (works everywhere)
+ *
+ * Note: Ctrl+Alt combo avoids conflicts with Windows accessibility shortcuts
  */
 
 /**
@@ -22,7 +24,7 @@ export function initKeyboardShortcuts() {
 
   // Log initialization
   if (window.log) {
-    window.log('[Keyboard] Shortcuts initialized - Alt+G/C/R/S, Escape');
+    window.log('[Keyboard] Shortcuts initialized - Ctrl+Alt+G/C/R/S, Escape');
   }
 }
 
@@ -44,32 +46,42 @@ function handleKeyboardShortcut(event) {
     return;
   }
 
-  // Alt+ shortcuts don't work in input fields (except Escape)
-  if (isInputField && !event.altKey) {
+  // Don't process Alt shortcuts when typing in input fields
+  if (isInputField) {
     return;
   }
 
-  // Handle Alt+ combinations
-  if (event.altKey && !event.ctrlKey && !event.metaKey) {
+  // Only handle shortcuts when generator tab is active (not in vault)
+  const isInVault = document.querySelector('.vault-app') !== null ||
+                    document.querySelector('.vault-container') !== null;
+  if (isInVault) {
+    return;
+  }
+
+  // Handle Alt+ combinations (Ctrl+Alt avoids Windows conflicts)
+  if (event.altKey && !event.metaKey) {
     const key = event.key.toLowerCase();
 
-    switch (key) {
-      case 'g':
-        event.preventDefault();
-        triggerGenerate();
-        break;
-      case 'c':
-        event.preventDefault();
-        triggerCopyAll();
-        break;
-      case 'r':
-        event.preventDefault();
-        triggerRunTests();
-        break;
-      case 's':
-        event.preventDefault();
-        triggerExport();
-        break;
+    // Use Ctrl+Alt to avoid Windows accessibility conflicts
+    if (event.ctrlKey) {
+      switch (key) {
+        case 'g':
+          event.preventDefault();
+          triggerGenerate();
+          break;
+        case 'c':
+          event.preventDefault();
+          triggerCopyAll();
+          break;
+        case 'r':
+          event.preventDefault();
+          triggerRunTests();
+          break;
+        case 's':
+          event.preventDefault();
+          triggerExport();
+          break;
+      }
     }
   }
 }
@@ -174,10 +186,10 @@ function announceAction(message) {
  */
 export function getKeyboardShortcuts() {
   return [
-    { key: 'Alt+G', description: 'Generate passwords' },
-    { key: 'Alt+C', description: 'Copy all passwords' },
-    { key: 'Alt+R', description: 'Run tests' },
-    { key: 'Alt+S', description: 'Export results' },
+    { key: 'Ctrl+Alt+G', description: 'Generate passwords' },
+    { key: 'Ctrl+Alt+C', description: 'Copy all passwords' },
+    { key: 'Ctrl+Alt+R', description: 'Run tests' },
+    { key: 'Ctrl+Alt+S', description: 'Export results' },
     { key: 'Escape', description: 'Close modals' }
   ];
 }

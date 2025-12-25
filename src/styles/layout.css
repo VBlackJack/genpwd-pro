@@ -172,7 +172,7 @@ header::before {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 20px;
-  color: #f87171;
+  color: var(--accent-red, #f87171);
   font-size: 0.8rem;
   font-family: inherit;
   cursor: pointer;
@@ -188,7 +188,7 @@ header::before {
 .vault-status-indicator.unlocked {
   background: rgba(34, 197, 94, 0.15);
   border-color: rgba(34, 197, 94, 0.3);
-  color: #4ade80;
+  color: var(--accent-green, #4ade80);
 }
 
 .vault-status-indicator.unlocked:hover {
@@ -229,6 +229,11 @@ header::before {
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+.about-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 .about-icon {
@@ -325,6 +330,12 @@ header::before {
 
 .section-header:hover {
   background: rgba(255,255,255,0.03);
+}
+
+.section-header:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: -2px;
+  background: rgba(255,255,255,0.05);
 }
 
 .section.chevron .chev {
@@ -462,7 +473,7 @@ header::before {
 .log {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
-  color: #cdd3f2;
+  color: var(--text-secondary, #cdd3f2);
   white-space: pre-wrap;
   margin: 0;
 }

@@ -40,8 +40,19 @@ export function renderResults(results, mask) {
       wrap.innerHTML = sanitizeHTML(`
         <div class="empty-state">
           <div class="empty-icon">🔐</div>
-          <p>Click "Generate" to create your passwords</p>
+          <p>${t('generator.emptyState') || 'No passwords generated yet'}</p>
+          <button type="button" class="btn btn-accent empty-state-cta" id="empty-generate-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 3v3m0 12v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M3 12h3m12 0h3M4.22 19.78l2.12-2.12M18.36 6.34l2.12-2.12"/>
+              <circle cx="12" cy="12" r="4"/>
+            </svg>
+            ${t('actions.generateNow') || 'Generate Now'}
+          </button>
         </div>`);
+      // Attach click handler for the CTA button
+      document.getElementById('empty-generate-btn')?.addEventListener('click', () => {
+        document.getElementById('generate-btn')?.click();
+      });
       return;
     }
 
@@ -115,20 +126,20 @@ function createPasswordCard(item, id, mask) {
     <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Click to copy • Double-click to show/hide">
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
-        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="Check for breaches">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton') || 'Check for breaches'}" aria-label="${t('breach.checkButton') || 'Check for breaches'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
         ${saveToVaultBtn}
-        <button class="action-btn copy-btn" type="button" title="Copy">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <button class="action-btn copy-btn" type="button" title="${t('common.copy') || 'Copy'}" aria-label="${t('toast.copyPassword') || 'Copy password'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
         </button>
       </div>
-      <div class="breach-status" hidden></div>
+      <div class="breach-status" role="status" aria-live="polite" hidden></div>
     </div>
     <div class="card-sec comp">
       <div class="comp-bar">
@@ -330,7 +341,7 @@ function bindBreachCheckButtons() {
         } else {
           statusEl.className = 'breach-status safe';
           statusEl.innerHTML = '<span class="breach-icon">✅</span> Not compromised';
-          showToast('Password not found in known breaches', 'success');
+          showToast(t('toast.passwordNotBreached'), 'success');
         }
       } catch (err) {
         statusEl.className = 'breach-status error';
@@ -356,21 +367,24 @@ function showContextMenu(e, password) {
 
   const menu = document.createElement('div');
   menu.className = 'pwd-context-menu';
+  // ARIA: menu role for accessibility
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', t('contextMenu.title') || 'Password actions');
   menu.innerHTML = `
-    <button class="pwd-ctx-item" data-action="copy">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+    <button class="pwd-ctx-item" data-action="copy" role="menuitem" aria-label="${t('contextMenu.copy') || 'Copy password'}">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
       </svg>
-      Copy
+      <span>${t('common.copy') || 'Copy'}</span>
     </button>
     ${vaultAvailable ? `
-      <button class="pwd-ctx-item" data-action="save-vault">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="pwd-ctx-item" data-action="save-vault" role="menuitem" aria-label="${t('contextMenu.saveToVault') || 'Save to vault'}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        Save to vault
+        <span>${t('vault.actions.saveToVault') || 'Save to vault'}</span>
       </button>
     ` : ''}
   `;
@@ -381,31 +395,43 @@ function showContextMenu(e, password) {
 
   document.body.appendChild(menu);
 
-  // Bind menu actions
-  menu.querySelectorAll('.pwd-ctx-item').forEach(item => {
-    item.addEventListener('click', async () => {
-      const action = item.getAttribute('data-action');
+  // Get all menu items for keyboard navigation
+  const menuItems = Array.from(menu.querySelectorAll('.pwd-ctx-item'));
+  let currentIndex = 0;
 
-      if (action === 'copy') {
-        const success = await copyToClipboard(password);
-        if (success) {
-          showToast(t('toast.passwordCopied'), 'success');
-        } else {
-          showToast(t('toast.copyFailed'), 'error');
-        }
-      } else if (action === 'save-vault') {
-        await SaveToVaultModal.open(password);
+  // Focus first item
+  if (menuItems.length > 0) {
+    menuItems[0].focus();
+  }
+
+  // Execute menu action
+  const executeAction = async (item) => {
+    const action = item.getAttribute('data-action');
+
+    if (action === 'copy') {
+      const success = await copyToClipboard(password);
+      if (success) {
+        showToast(t('toast.passwordCopied'), 'success');
+      } else {
+        showToast(t('toast.copyFailed'), 'error');
       }
+    } else if (action === 'save-vault') {
+      await SaveToVaultModal.open(password);
+    }
 
-      cleanupMenu();
-    });
+    cleanupMenu();
+  };
+
+  // Bind menu actions (click)
+  menuItems.forEach(item => {
+    item.addEventListener('click', () => executeAction(item));
   });
 
   // Cleanup function to remove all menu listeners
   const cleanupMenu = () => {
     menu.remove();
     document.removeEventListener('click', closeMenu);
-    document.removeEventListener('keydown', escHandler);
+    document.removeEventListener('keydown', keyHandler);
   };
 
   // Close on click outside
@@ -415,16 +441,38 @@ function showContextMenu(e, password) {
     }
   };
 
-  // Close on escape
-  const escHandler = (ev) => {
-    if (ev.key === 'Escape') {
-      cleanupMenu();
+  // Keyboard navigation handler
+  const keyHandler = (ev) => {
+    switch (ev.key) {
+      case 'Escape':
+        ev.preventDefault();
+        cleanupMenu();
+        break;
+      case 'ArrowDown':
+        ev.preventDefault();
+        currentIndex = (currentIndex + 1) % menuItems.length;
+        menuItems[currentIndex].focus();
+        break;
+      case 'ArrowUp':
+        ev.preventDefault();
+        currentIndex = (currentIndex - 1 + menuItems.length) % menuItems.length;
+        menuItems[currentIndex].focus();
+        break;
+      case 'Enter':
+      case ' ':
+        ev.preventDefault();
+        executeAction(menuItems[currentIndex]);
+        break;
+      case 'Tab':
+        // Close menu on Tab to allow natural focus flow
+        cleanupMenu();
+        break;
     }
   };
 
   setTimeout(() => {
     document.addEventListener('click', closeMenu);
-    document.addEventListener('keydown', escHandler);
+    document.addEventListener('keydown', keyHandler);
   }, 0);
 }
 
@@ -464,7 +512,17 @@ export function renderEmptyState() {
     wrap.innerHTML = sanitizeHTML(`
       <div class="empty-state">
         <div class="empty-icon">🔐</div>
-        <p>Click "Generate" to create your passwords</p>
+        <p>${t('generator.emptyState') || 'No passwords generated yet'}</p>
+        <button type="button" class="btn btn-accent empty-state-cta" id="empty-generate-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 3v3m0 12v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M3 12h3m12 0h3M4.22 19.78l2.12-2.12M18.36 6.34l2.12-2.12"/>
+            <circle cx="12" cy="12" r="4"/>
+          </svg>
+          ${t('actions.generateNow') || 'Generate Now'}
+        </button>
       </div>`);
+    document.getElementById('empty-generate-btn')?.addEventListener('click', () => {
+      document.getElementById('generate-btn')?.click();
+    });
   }
 }

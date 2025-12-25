@@ -5,6 +5,8 @@
 
 export class Modal {
   #escapeHandler = null;
+  #focusTrapHandler = null;
+  #previouslyFocusedElement = null;
 
   constructor(modalId) {
     this._modalId = modalId;
@@ -57,9 +59,21 @@ export class Modal {
   }
 
   /**
+   * Get focusable elements within the modal
+   * @returns {HTMLElement[]} Array of focusable elements
+   */
+  #getFocusableElements() {
+    const selector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
+    return Array.from(this.element.querySelectorAll(selector));
+  }
+
+  /**
    * Show the modal
    */
   show() {
+    // Save currently focused element for restoration
+    this.#previouslyFocusedElement = document.activeElement;
+
     this.element.classList.add('active');
     this.element.style.display = 'flex';
 
@@ -69,9 +83,32 @@ export class Modal {
     };
     document.addEventListener('keydown', this.#escapeHandler);
 
-    // Focus first input
-    const firstInput = this.element.querySelector('input, button:not([data-action="close"])');
-    if (firstInput) firstInput.focus();
+    // Add focus trap handler
+    this.#focusTrapHandler = (e) => {
+      if (e.key !== 'Tab') return;
+
+      const focusable = this.#getFocusableElements();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', this.#focusTrapHandler);
+
+    // Focus first focusable element
+    const focusable = this.#getFocusableElements();
+    const firstInput = focusable.find(el => el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') || focusable[0];
+    if (firstInput) {
+      requestAnimationFrame(() => firstInput.focus());
+    }
   }
 
   /**
@@ -82,10 +119,23 @@ export class Modal {
       this._element.classList.remove('active');
       this._element.style.display = 'none';
     }
+
     // Remove escape key handler to prevent memory leak
     if (this.#escapeHandler) {
       document.removeEventListener('keydown', this.#escapeHandler);
       this.#escapeHandler = null;
+    }
+
+    // Remove focus trap handler
+    if (this.#focusTrapHandler) {
+      document.removeEventListener('keydown', this.#focusTrapHandler);
+      this.#focusTrapHandler = null;
+    }
+
+    // Restore focus to previously focused element
+    if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
+      this.#previouslyFocusedElement.focus();
+      this.#previouslyFocusedElement = null;
     }
   }
 
@@ -97,6 +147,11 @@ export class Modal {
     if (this.#escapeHandler) {
       document.removeEventListener('keydown', this.#escapeHandler);
       this.#escapeHandler = null;
+    }
+    // Clean up focus trap handler
+    if (this.#focusTrapHandler) {
+      document.removeEventListener('keydown', this.#focusTrapHandler);
+      this.#focusTrapHandler = null;
     }
     if (this._element) {
       this._element.remove();

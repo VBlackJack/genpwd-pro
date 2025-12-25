@@ -53,7 +53,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 10001;
+  z-index: var(--z-max);
   min-width: 150px;
   overflow: hidden;
 }
@@ -65,7 +65,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 10002;
+  z-index: var(--z-max);
   min-width: 150px;
   overflow: hidden;
 }
@@ -424,7 +424,7 @@
 }
 
 .info-box {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-blue, #667eea) 0%, var(--accent-purple, #764ba2) 100%);
   color: white;
   padding: 15px 20px;
   border-radius: 8px;
@@ -446,9 +446,9 @@
 }
 
 [data-theme="dark"] .error-box {
-  background: rgba(244, 67, 54, 0.1);
-  border-color: rgba(244, 67, 54, 0.3);
-  color: #FF8A80;
+  background: var(--bg-error);
+  border-color: var(--accent-red-dark);
+  color: var(--accent-red-light);
 }
 
 .error-box strong {
@@ -475,5 +475,20 @@
 
   .hibp-badge {
     margin-left: 0;
+  }
+}
+
+/* ==================== REDUCED MOTION SUPPORT ==================== */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner,
+  [class*="pulse-danger"],
+  [class*="spin"] {
+    animation: none !important;
+  }
+
+  .hibp-result,
+  .plugin-card,
+  .preset-card {
+    transition: none !important;
   }
 }

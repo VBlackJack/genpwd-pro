@@ -76,8 +76,9 @@
 }
 
 .modal-close {
-  width: 32px;
-  height: 32px;
+  /* WCAG 2.1 compliant touch target */
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--radius-small);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -87,6 +88,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-muted);
+}
+
+.modal-close:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 .modal-close:hover {
@@ -358,17 +364,17 @@
    ============================================================================ */
 
 .pwd .action-btn {
-  /* Compact size to fit within card row */
-  width: 28px;
-  height: 28px;
+  /* WCAG 2.1 compliant touch target (44x44px minimum) */
+  min-width: 44px;
+  min-height: 44px;
 
   /* Perfect centering */
   display: grid;
   place-items: center;
-  padding: 0;
+  padding: 8px;
 
   /* Base styling */
-  border-radius: 5px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-secondary, #d1d5db);
@@ -433,8 +439,8 @@
 
 #app-tooltip {
   position: fixed;
-  z-index: 10000;
-  background: #1a1d29;
+  z-index: var(--z-tooltip);
+  background: var(--bg-primary);
   color: white;
   padding: 6px 10px;
   border-radius: 6px;
@@ -632,12 +638,30 @@
     border-radius: 0;
     max-height: none;
   }
-  
+
   .modal-overlay {
     padding: 0;
   }
-  
+
   .modal-body {
     max-height: calc(100vh - 100px);
   }
+}
+
+/* ============================================================================
+   MODAL FOOTER
+   ============================================================================ */
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.modal-footer .btn {
+  min-width: 100px;
 }

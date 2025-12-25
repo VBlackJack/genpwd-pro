@@ -34,6 +34,79 @@ const fs = require('fs');
 const { execSync, spawn } = require('child_process');
 const { version: APP_VERSION } = require('./package.json');
 
+// ==================== MAIN PROCESS TRANSLATIONS ====================
+// Simple i18n for tray menu and notifications (main process only)
+const translations = {
+  en: {
+    trayTooltip: 'GenPwd Pro - Password Generator',
+    showApp: 'Show GenPwd Pro',
+    generatePassword: 'Generate password',
+    lockVault: 'Lock vault',
+    quit: 'Quit',
+    passwordGenerated: 'Password generated',
+    copiedToClipboard: 'Copied to clipboard (30s)',
+    development: 'Development'
+  },
+  fr: {
+    trayTooltip: 'GenPwd Pro - Générateur de mots de passe',
+    showApp: 'Afficher GenPwd Pro',
+    generatePassword: 'Générer un mot de passe',
+    lockVault: 'Verrouiller le coffre',
+    quit: 'Quitter',
+    passwordGenerated: 'Mot de passe généré',
+    copiedToClipboard: 'Copié dans le presse-papier (30s)',
+    development: 'Développement'
+  },
+  es: {
+    trayTooltip: 'GenPwd Pro - Generador de contraseñas',
+    showApp: 'Mostrar GenPwd Pro',
+    generatePassword: 'Generar contraseña',
+    lockVault: 'Bloquear bóveda',
+    quit: 'Salir',
+    passwordGenerated: 'Contraseña generada',
+    copiedToClipboard: 'Copiado al portapapeles (30s)',
+    development: 'Desarrollo'
+  }
+};
+
+function getMainTranslations() {
+  const locale = app.getLocale().split('-')[0]; // Get language code (e.g., 'fr' from 'fr-FR')
+  return translations[locale] || translations.en;
+}
+
+// ==================== WINDOW STATE PERSISTENCE ====================
+const WINDOW_STATE_FILE = path.join(app.getPath('userData'), 'window-state.json');
+
+function loadWindowState() {
+  try {
+    if (fs.existsSync(WINDOW_STATE_FILE)) {
+      const data = fs.readFileSync(WINDOW_STATE_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.log('[GenPwd Pro] Could not load window state:', err.message);
+  }
+  return null;
+}
+
+function saveWindowState(win) {
+  if (!win || win.isDestroyed()) return;
+
+  try {
+    const bounds = win.getBounds();
+    const state = {
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      isMaximized: win.isMaximized()
+    };
+    fs.writeFileSync(WINDOW_STATE_FILE, JSON.stringify(state, null, 2));
+  } catch (err) {
+    console.log('[GenPwd Pro] Could not save window state:', err.message);
+  }
+}
+
 // ==================== SINGLE INSTANCE LOCK ====================
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -222,11 +295,16 @@ let mainWindow;
 
 // Créer la fenêtre principale
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 1200,
-    minWidth: 1200,
-    minHeight: 850,
+  // Load saved window state or use defaults
+  const savedState = loadWindowState();
+  const defaultWidth = 1000;
+  const defaultHeight = 800;
+
+  const windowOptions = {
+    width: savedState?.width || defaultWidth,
+    height: savedState?.height || defaultHeight,
+    minWidth: 900,
+    minHeight: 650,
     title: 'GenPwd Pro',
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     backgroundColor: '#1a1a2e',
@@ -236,7 +314,30 @@ function createWindow() {
     },
     autoHideMenuBar: false,
     show: false // Afficher seulement quand prêt
-  });
+  };
+
+  // Restore position if saved and valid
+  if (savedState?.x !== undefined && savedState?.y !== undefined) {
+    // Ensure window is visible on a connected display
+    const { screen } = require('electron');
+    const displays = screen.getAllDisplays();
+    const isOnScreen = displays.some(display => {
+      const { x, y, width, height } = display.bounds;
+      return savedState.x >= x && savedState.x < x + width &&
+             savedState.y >= y && savedState.y < y + height;
+    });
+    if (isOnScreen) {
+      windowOptions.x = savedState.x;
+      windowOptions.y = savedState.y;
+    }
+  }
+
+  mainWindow = new BrowserWindow(windowOptions);
+
+  // Restore maximized state
+  if (savedState?.isMaximized) {
+    mainWindow.maximize();
+  }
 
   // Charger l'application
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
@@ -245,6 +346,15 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
+
+  // Save window state on resize/move (debounced)
+  let saveStateTimeout = null;
+  const debouncedSaveState = () => {
+    if (saveStateTimeout) clearTimeout(saveStateTimeout);
+    saveStateTimeout = setTimeout(() => saveWindowState(mainWindow), 500);
+  };
+  mainWindow.on('resize', debouncedSaveState);
+  mainWindow.on('move', debouncedSaveState);
 
   // Ouvrir DevTools en mode développement
   if (process.env.NODE_ENV === 'development') {
@@ -275,15 +385,20 @@ function createWindow() {
       event.preventDefault();
       mainWindow.hide();
 
-      // Show notification (only once per session)
-      if (!mainWindow._trayNotificationShown && Notification.isSupported()) {
+      // Show notification (first 3 times per session to educate users)
+      if (!mainWindow._trayNotificationCount) {
+        mainWindow._trayNotificationCount = 0;
+      }
+      if (mainWindow._trayNotificationCount < 3 && Notification.isSupported()) {
         new Notification({
           title: 'GenPwd Pro',
-          body: 'L\'application continue en arrière-plan. Cliquez sur l\'icône pour la rouvrir.',
+          body: mainWindow._trayNotificationCount === 0
+            ? 'App minimized to tray. Click the tray icon to restore, or right-click for options.'
+            : 'Running in background. Right-click tray icon to quit.',
           icon: path.join(__dirname, 'assets', 'icon.ico'),
           silent: true
         }).show();
-        mainWindow._trayNotificationShown = true;
+        mainWindow._trayNotificationCount++;
       }
 
       return false;
@@ -327,12 +442,13 @@ function createTray() {
   }
 
   tray = new Tray(trayIcon);
-  tray.setToolTip('GenPwd Pro - Générateur de mots de passe');
+  const t = getMainTranslations();
+  tray.setToolTip(t.trayTooltip);
 
   // Create context menu
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Afficher GenPwd Pro',
+      label: t.showApp,
       accelerator: GLOBAL_HOTKEY,
       click: () => {
         if (mainWindow) {
@@ -343,7 +459,7 @@ function createTray() {
     },
     { type: 'separator' },
     {
-      label: 'Générer un mot de passe',
+      label: t.generatePassword,
       click: () => {
         const password = generateQuickPassword(20);
         clipboard.writeText(password);
@@ -360,8 +476,8 @@ function createTray() {
         // Show notification
         if (Notification.isSupported()) {
           new Notification({
-            title: 'Mot de passe généré',
-            body: 'Copié dans le presse-papier (30s)',
+            title: t.passwordGenerated,
+            body: t.copiedToClipboard,
             icon: path.join(__dirname, 'assets', 'icon.ico'),
             silent: true
           }).show();
@@ -371,7 +487,7 @@ function createTray() {
       }
     },
     {
-      label: 'Verrouiller le coffre',
+      label: t.lockVault,
       click: async () => {
         if (vaultModule) {
           const session = vaultModule.getSession();
@@ -386,7 +502,7 @@ function createTray() {
     },
     { type: 'separator' },
     {
-      label: 'Quitter',
+      label: t.quit,
       click: () => {
         isQuitting = true;
         app.quit();
@@ -807,12 +923,32 @@ ipcMain.handle('fs:read-binary', async (event, filePath) => {
 });
 
 // Show open file dialog for KDBX import
-ipcMain.handle('fs:show-open-dialog', async (event, options) => {
+ipcMain.handle('fs:show-open-dialog', async (event, options = {}) => {
   validateOrigin(event);
   try {
+    // Validate options
+    const safeTitle = typeof options.title === 'string'
+      ? options.title.slice(0, 255)
+      : 'Ouvrir un fichier';
+
+    // Validate filters array structure
+    let safeFilters = [{ name: 'Tous les fichiers', extensions: ['*'] }];
+    if (Array.isArray(options.filters) && options.filters.length > 0) {
+      safeFilters = options.filters
+        .filter(f => f && typeof f.name === 'string' && Array.isArray(f.extensions))
+        .slice(0, 10) // Max 10 filters
+        .map(f => ({
+          name: String(f.name).slice(0, 100),
+          extensions: f.extensions.filter(e => typeof e === 'string').slice(0, 20)
+        }));
+      if (safeFilters.length === 0) {
+        safeFilters = [{ name: 'Tous les fichiers', extensions: ['*'] }];
+      }
+    }
+
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: options.title || 'Ouvrir un fichier',
-      filters: options.filters || [{ name: 'Tous les fichiers', extensions: ['*'] }],
+      title: safeTitle,
+      filters: safeFilters,
       properties: ['openFile']
     });
 
@@ -1198,7 +1334,7 @@ function buildAutoTypePowerShell(actions) {
 }
 
 // Perform auto-type operation
-ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data }) => {
+ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, targetWindowTitle }) => {
   validateOrigin(event);
   try {
     // Only supported on Windows currently
@@ -1224,6 +1360,53 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data })
 
     // Wait for window switch
     await new Promise(resolve => setTimeout(resolve, 500));
+
+    // SECURITY: Verify foreground window before typing sensitive data
+    const foregroundTitle = await getActiveWindowTitle();
+    if (!foregroundTitle) {
+      if (mainWindow) mainWindow.restore();
+      return { success: false, error: 'Could not detect target window. Auto-type cancelled for security.' };
+    }
+
+    // Check for dangerous target windows (command prompts, terminals, etc.)
+    const dangerousPatterns = [
+      /cmd\.exe/i,
+      /powershell/i,
+      /terminal/i,
+      /command prompt/i,
+      /windows powershell/i,
+      /pwsh/i,
+      /bash/i,
+      /git bash/i,
+      /mintty/i,
+      /conemu/i,
+      /cmder/i,
+      /administrator:/i
+    ];
+
+    const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
+    if (isDangerous) {
+      console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
+      if (mainWindow) mainWindow.restore();
+      return {
+        success: false,
+        error: 'Auto-type blocked: Cannot type into command-line windows for security reasons.',
+        blockedWindow: foregroundTitle
+      };
+    }
+
+    // If a target window title was provided, verify it matches (partial match)
+    if (targetWindowTitle && !foregroundTitle.toLowerCase().includes(targetWindowTitle.toLowerCase())) {
+      console.warn('[GenPwd Pro] Auto-type target mismatch. Expected:', targetWindowTitle, 'Got:', foregroundTitle);
+      if (mainWindow) mainWindow.restore();
+      return {
+        success: false,
+        error: `Target window mismatch. Expected "${targetWindowTitle}" but found "${foregroundTitle}".`,
+        actualWindow: foregroundTitle
+      };
+    }
+
+    console.log('[GenPwd Pro] Auto-type target verified:', foregroundTitle);
 
     // Build and execute PowerShell script using Base64 encoding for security
     // This prevents command injection attacks by encoding the entire script

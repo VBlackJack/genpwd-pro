@@ -43,7 +43,7 @@ import { VaultUI } from './vault-ui.js';
 import { VaultBridge } from './ui/vault-bridge.js';
 
 // Phase 4+5: Native integration
-import { initNativeIntegration } from './ui/native-integration.js';
+import { initNativeIntegration, cleanupNativeIntegration } from './ui/native-integration.js';
 
 // Singleton tooltip manager
 import { initTooltips } from './ui/tooltip-manager.js';
@@ -173,7 +173,8 @@ class GenPwdApp {
         captureException(error, { phase: 'initialization' });
       }
 
-      showToast('Critical startup error', 'error');
+      // Use i18n if available, fallback to English
+      showToast(i18n?.t?.('toast.criticalStartupError') || 'Critical startup error', 'error');
     }
   }
 
@@ -366,6 +367,10 @@ window.addEventListener('beforeunload', () => {
     if (window.genpwdAnalytics && typeof window.genpwdAnalytics.stop === 'function') {
       window.genpwdAnalytics.stop();
     }
+    // Cleanup VaultBridge subscriptions
+    VaultBridge.destroy();
+    // Cleanup native integration listeners
+    cleanupNativeIntegration();
     // Clear any active intervals/timeouts
     safeLog('[App] Cleanup on beforeunload');
   } catch (error) {

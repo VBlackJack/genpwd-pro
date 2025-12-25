@@ -27,6 +27,86 @@ let fileManager;
 /** @type {ShareService} */
 let shareService;
 
+// ==================== SECURITY CONSTANTS ====================
+
+/**
+ * Input size limits to prevent DoS attacks
+ * All sizes in bytes
+ */
+const INPUT_LIMITS = {
+  /** Max password length (256 chars) */
+  PASSWORD_MAX: 256,
+  /** Max name/title length (200 chars) */
+  NAME_MAX: 200,
+  /** Max notes/content length (100KB) */
+  CONTENT_MAX: 100 * 1024,
+  /** Max search query length */
+  QUERY_MAX: 500,
+  /** Max file path length */
+  PATH_MAX: 4096,
+  /** Max secret data for sharing (50KB) */
+  SECRET_MAX: 50 * 1024,
+  /** Max color string length */
+  COLOR_MAX: 10
+};
+
+/**
+ * Whitelist of allowed IPC channels (for documentation and future validation)
+ * Note: Actual enforcement is via ipcMain.handle() registration - only registered channels work
+ * @private
+ */
+const _ALLOWED_IPC_CHANNELS = new Set([
+  // Vault management
+  'vault:getState',
+  'vault:list',
+  'vault:create',
+  'vault:unlock',
+  'vault:lock',
+  'vault:getMetadata',
+  'vault:resetActivity',
+  'vault:delete',
+  'vault:nuke',
+  'vault:unregister',
+  'vault:changePassword',
+  'vault:export',
+  'vault:import',
+  // External vault
+  'vault:showSaveDialog',
+  'vault:showOpenDialog',
+  'vault:openFromPath',
+  // Entries
+  'vault:entries:getAll',
+  'vault:entries:get',
+  'vault:entries:getByFolder',
+  'vault:entries:search',
+  'vault:entries:add',
+  'vault:entries:update',
+  'vault:entries:delete',
+  // Folders
+  'vault:folders:getAll',
+  'vault:folders:add',
+  'vault:folders:update',
+  'vault:folders:delete',
+  // Tags
+  'vault:tags:getAll',
+  'vault:tags:add',
+  'vault:tags:update',
+  'vault:tags:delete',
+  // Windows Hello
+  'vault:hello:isAvailable',
+  'vault:hello:isEnabled',
+  'vault:hello:enable',
+  'vault:hello:disable',
+  'vault:hello:unlock',
+  // Cloud sync
+  'vault:saveCloudConfig',
+  'vault:getCloudConfig',
+  // Sharing
+  'vault:share:create',
+  // Duress mode
+  'vault:duress:setup'
+]);
+
 // ==================== RATE LIMITING ====================
 
 /**
@@ -114,17 +194,66 @@ const unlockRateLimiter = {
  * @param {string} name - Handler name for logging
  * @returns {Function} Wrapped handler
  */
+/**
+ * Sanitize error messages to prevent internal detail leakage
+ * @param {string} message - Raw error message
+ * @returns {string} Sanitized message safe for client
+ */
+function sanitizeErrorMessage(message) {
+  if (!message) return 'An error occurred';
+
+  // Map of internal error patterns to user-friendly actionable messages
+  const errorMappings = [
+    { pattern: /ENOENT|no such file/i, message: 'File not found. Check the file path or restore from backup.' },
+    { pattern: /EACCES|permission denied/i, message: 'Access denied. Run as administrator or check folder permissions.' },
+    { pattern: /EEXIST|already exists/i, message: 'File already exists. Choose a different name or location.' },
+    { pattern: /ENOSPC|no space/i, message: 'Not enough disk space. Free up space and try again.' },
+    { pattern: /SQLITE_BUSY|SQLITE_LOCKED/i, message: 'Database busy. Close other apps using the vault and retry.' },
+    { pattern: /SQLITE_CORRUPT/i, message: 'Database corrupted. Restore from backup or create a new vault.' },
+    { pattern: /SQLITE_/i, message: 'Database error. Try restarting the application.' },
+    { pattern: /crypto|decrypt|cipher/i, message: 'Encryption error. Verify your password is correct.' },
+    { pattern: /password|incorrect/i, message: 'Incorrect password. Please try again.' },
+    { pattern: /timeout|timed out/i, message: 'Operation timed out. Check your connection and retry.' },
+    { pattern: /network|ECONNREFUSED|ETIMEDOUT/i, message: 'Network error. Check your internet connection.' },
+    { pattern: /EPERM|operation not permitted/i, message: 'Operation not permitted. Check file permissions.' },
+    { pattern: /EBUSY|resource busy/i, message: 'File is in use. Close other applications and retry.' },
+  ];
+
+  // Check for known error patterns
+  for (const { pattern, message: safeMsg } of errorMappings) {
+    if (pattern.test(message)) {
+      return safeMsg;
+    }
+  }
+
+  // Remove file paths (Windows and Unix)
+  let sanitized = message
+    .replace(/[A-Za-z]:\\[^\s:]+/g, '[path]')  // Windows paths
+    .replace(/\/[^\s:]+/g, '[path]')            // Unix paths
+    .replace(/at\s+.+\(.*:\d+:\d+\)/g, '')      // Stack trace lines
+    .replace(/\s+at\s+.+/g, '')                  // More stack traces
+    .replace(/Error:\s*/g, '')                   // Error prefix
+    .trim();
+
+  // Limit message length
+  if (sanitized.length > 100) {
+    sanitized = sanitized.substring(0, 100) + '...';
+  }
+
+  return sanitized || 'An error occurred';
+}
+
 function safeHandler(handler, name) {
   return async (event, ...args) => {
     try {
       validateOrigin(event);
       return await handler(event, ...args);
     } catch (error) {
-      // Log the full error for debugging
-      console.error(`[IPC:${name}] Error:`, error.message);
+      // Log the full error for debugging (server-side only)
+      console.error(`[IPC:${name}] Error:`, error.message, error.stack);
 
       // Re-throw with sanitized message (no stack trace, no internal paths)
-      const safeMessage = error.message || 'An error occurred';
+      const safeMessage = sanitizeErrorMessage(error.message);
       throw new Error(safeMessage);
     }
   };
@@ -197,8 +326,11 @@ export function registerVaultIPC(ipcMain) {
    * Create new vault
    */
   ipcMain.handle('vault:create', safeHandler(async (event, { name, password, customPath }) => {
-    validateString(name, 'name');
-    validateString(password, 'password');
+    validateName(name, 'name');
+    validatePassword(password);
+    if (customPath) {
+      validatePath(customPath, 'customPath');
+    }
 
     const vaultId = await session.create(name, password, customPath || null);
     return { vaultId, success: true };
@@ -210,7 +342,7 @@ export function registerVaultIPC(ipcMain) {
    * Create a secure share
    */
   ipcMain.handle('vault:share:create', safeHandler(async (event, { secretData, options }) => {
-    validateString(secretData, 'secretData');
+    validateString(secretData, 'secretData', INPUT_LIMITS.SECRET_MAX);
 
     // Validate options if provided
     if (options !== undefined && options !== null) {
@@ -281,8 +413,8 @@ export function registerVaultIPC(ipcMain) {
    * Open vault from external path
    */
   ipcMain.handle('vault:openFromPath', safeHandler(async (event, { filePath, password }) => {
-    validateString(filePath, 'filePath');
-    validateString(password, 'password');
+    validatePath(filePath, 'filePath');
+    validatePassword(password);
 
     // Use fileManager to open from path
     const { vaultData, key, vaultId, activeSlot } = await fileManager.openVaultFromPath(filePath, password);
@@ -308,7 +440,7 @@ export function registerVaultIPC(ipcMain) {
    */
   ipcMain.handle('vault:unlock', safeHandler(async (event, { vaultId, password }) => {
     validateString(vaultId, 'vaultId');
-    validateString(password, 'password');
+    validatePassword(password);
 
     // Check rate limit before attempting unlock
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
@@ -384,7 +516,7 @@ export function registerVaultIPC(ipcMain) {
    * Search entries
    */
   ipcMain.handle('vault:entries:search', safeHandler(async (event, { query }) => {
-    validateString(query, 'query');
+    validateString(query, 'query', INPUT_LIMITS.QUERY_MAX);
     return session.searchEntries(query);
   }, 'entries:search'));
 
@@ -398,7 +530,7 @@ export function registerVaultIPC(ipcMain) {
    */
   ipcMain.handle('vault:entries:add', safeHandler(async (event, { type, title, data, options = {} }) => {
     validateString(type, 'type');
-    validateString(title, 'title');
+    validateName(title, 'title');
     // Merge options into data for backward compatibility
     const entryData = {
       ...(data || {}),
@@ -441,7 +573,7 @@ export function registerVaultIPC(ipcMain) {
    * Add folder
    */
   ipcMain.handle('vault:folders:add', safeHandler(async (event, { name, parentId }) => {
-    validateString(name, 'name');
+    validateName(name, 'name');
     // Validate parentId if provided
     if (parentId !== undefined && parentId !== null) {
       validateString(parentId, 'parentId');
@@ -479,10 +611,10 @@ export function registerVaultIPC(ipcMain) {
    * Add tag
    */
   ipcMain.handle('vault:tags:add', safeHandler(async (event, { name, color }) => {
-    validateString(name, 'name');
+    validateName(name, 'name');
     // Validate color format if provided (hex color)
     if (color !== undefined && color !== null) {
-      if (typeof color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      if (typeof color !== 'string' || color.length > INPUT_LIMITS.COLOR_MAX || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
         throw new Error('color must be a valid hex color (e.g., #6366f1)');
       }
     }
@@ -516,8 +648,8 @@ export function registerVaultIPC(ipcMain) {
    */
   ipcMain.handle('vault:export', safeHandler(async (event, { vaultId, password, exportPath }) => {
     validateString(vaultId, 'vaultId');
-    validateString(password, 'password');
-    validateString(exportPath, 'exportPath');
+    validatePassword(password);
+    validatePath(exportPath, 'exportPath');
 
     // Check rate limit before attempting export (password verification)
     const rateCheck = unlockRateLimiter.checkAndRecord(`${vaultId}:export`);
@@ -540,8 +672,8 @@ export function registerVaultIPC(ipcMain) {
    * @todo Implement UI in renderer to use this handler
    */
   ipcMain.handle('vault:import', safeHandler(async (event, { importPath, password }) => {
-    validateString(importPath, 'importPath');
-    validateString(password, 'password');
+    validatePath(importPath, 'importPath');
+    validatePassword(password);
 
     // Check rate limit before attempting import (password verification)
     const rateCheck = unlockRateLimiter.checkAndRecord(`import:${importPath}`);
@@ -564,8 +696,8 @@ export function registerVaultIPC(ipcMain) {
    */
   ipcMain.handle('vault:changePassword', safeHandler(async (event, { vaultId, currentPassword, newPassword }) => {
     validateString(vaultId, 'vaultId');
-    validateString(currentPassword, 'currentPassword');
-    validateString(newPassword, 'newPassword');
+    validatePassword(currentPassword);
+    validatePassword(newPassword);
 
     // Check rate limit before attempting password change
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
@@ -646,7 +778,7 @@ export function registerVaultIPC(ipcMain) {
    */
   ipcMain.handle('vault:hello:enable', safeHandler(async (event, { vaultId, password }) => {
     validateString(vaultId, 'vaultId');
-    validateString(password, 'password');
+    validatePassword(password);
 
     // Check rate limit before attempting (password is validated)
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
@@ -826,8 +958,8 @@ export function registerVaultIPC(ipcMain) {
    * Setup Duress Mode (Enable Plausible Deniability migration)
    */
   ipcMain.handle('vault:duress:setup', safeHandler(async (event, { masterPassword, duressPassword, populateDecoy }) => {
-    validateString(masterPassword, 'masterPassword');
-    validateString(duressPassword, 'duressPassword');
+    validatePassword(masterPassword);
+    validatePassword(duressPassword);
     // Validate populateDecoy is boolean
     if (typeof populateDecoy !== 'boolean') {
       throw new Error('populateDecoy must be a boolean');
@@ -909,14 +1041,51 @@ function sendToRenderer(channel, data) {
 }
 
 /**
- * Validate string parameter
+ * Validate string parameter with optional size limit
+ * @param {*} value - Value to validate
+ * @param {string} name - Parameter name
+ * @param {number} [maxLength] - Maximum allowed length
+ * @throws {Error}
+ */
+function validateString(value, name, maxLength) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Invalid parameter: ${name} must be a non-empty string`);
+  }
+  if (maxLength && value.length > maxLength) {
+    throw new Error(`Invalid parameter: ${name} exceeds maximum length of ${maxLength} characters`);
+  }
+}
+
+/**
+ * Validate password with size limit
+ * @param {*} value - Value to validate
+ * @throws {Error}
+ */
+function validatePassword(value) {
+  validateString(value, 'password', INPUT_LIMITS.PASSWORD_MAX);
+}
+
+/**
+ * Validate name/title with size limit
  * @param {*} value - Value to validate
  * @param {string} name - Parameter name
  * @throws {Error}
  */
-function validateString(value, name) {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`Invalid parameter: ${name} must be a non-empty string`);
+function validateName(value, name = 'name') {
+  validateString(value, name, INPUT_LIMITS.NAME_MAX);
+}
+
+/**
+ * Validate file path with size limit and sanitization
+ * @param {*} value - Value to validate
+ * @param {string} name - Parameter name
+ * @throws {Error}
+ */
+function validatePath(value, name = 'path') {
+  validateString(value, name, INPUT_LIMITS.PATH_MAX);
+  // Block null bytes and relative path escape attempts
+  if (value.includes('\0') || value.includes('..')) {
+    throw new Error(`Invalid ${name}: contains forbidden characters`);
   }
 }
 

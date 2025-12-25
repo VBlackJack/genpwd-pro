@@ -133,6 +133,20 @@ async function decryptKeyMaterial(encrypted, keyEncryptionKey, associatedData = 
   }
 }
 
+/**
+ * Abstract base class for crypto engines
+ * Provides common interface for encryption/decryption
+ */
+class CryptoEngine {
+  async encrypt(_plaintext, _associatedData) {
+    throw new Error('encrypt() must be implemented by subclass');
+  }
+
+  async decrypt(_ciphertext, _associatedData) {
+    throw new Error('decrypt() must be implemented by subclass');
+  }
+}
+
 export class TinkAeadCryptoEngine extends CryptoEngine {
   constructor(keysetHandle, tink) {
     super();

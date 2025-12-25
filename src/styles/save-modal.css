@@ -17,7 +17,7 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 10000;
+  z-index: var(--z-modal-backdrop);
 }
 
 .save-vault-modal-overlay.active {
@@ -343,7 +343,7 @@
   box-shadow:
     0 20px 40px -12px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.05);
-  z-index: 10001;
+  z-index: var(--z-max);
   animation: ctx-menu-appear 0.15s ease;
 }
 
@@ -420,7 +420,7 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 10001;
+  z-index: var(--z-max);
 }
 
 .quick-unlock-overlay.active {
@@ -572,6 +572,38 @@
   border-radius: 8px;
   color: #f87171;
   font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.quick-unlock-error-text {
+  flex: 1;
+  min-width: 120px;
+}
+
+.quick-unlock-retry-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #f87171;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.quick-unlock-retry-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #f87171;
+}
+
+.quick-unlock-retry-btn:focus-visible {
+  outline: 2px solid #f87171;
+  outline-offset: 2px;
 }
 
 .quick-unlock-actions {
@@ -635,6 +667,56 @@
 
 @keyframes quick-unlock-spin {
   to { transform: rotate(360deg); }
+}
+
+/* ==================== WINDOWS HELLO SECTION ==================== */
+.quick-unlock-hello {
+  margin-top: 1.25rem;
+}
+
+.quick-unlock-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text-muted, #d1d5db);
+  font-size: 0.85rem;
+}
+
+.quick-unlock-divider::before,
+.quick-unlock-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.quick-unlock-btn-hello {
+  width: 100%;
+  background: linear-gradient(135deg, #0078D4, #106EBE);
+  color: white;
+  box-shadow: 0 4px 15px -3px rgba(0, 120, 212, 0.4);
+}
+
+.quick-unlock-btn-hello:hover {
+  background: linear-gradient(135deg, #106EBE, #005A9E);
+  box-shadow: 0 6px 20px -3px rgba(0, 120, 212, 0.5);
+  transform: translateY(-1px);
+}
+
+.quick-unlock-btn-hello:disabled {
+  opacity: 0.7;
+  transform: none;
+  cursor: wait;
+}
+
+.quick-unlock-btn-hello svg {
+  flex-shrink: 0;
+}
+
+/* Spinning animation for loading states */
+.spinning {
+  animation: quick-unlock-spin 1s linear infinite;
 }
 
 /* ==================== RESPONSIVE ==================== */

@@ -21,6 +21,7 @@ import { safeLog } from '../utils/logger.js';
 import { showToast } from '../utils/toast.js';
 import { SECURITY_TIMEOUTS } from '../config/ui-constants.js';
 import { isValidMode } from '../config/constants.js';
+import { i18n } from '../utils/i18n.js';
 
 /**
  * Native Integration Settings
@@ -132,7 +133,7 @@ function handleOAuthCallback(params) {
       }
     }));
 
-    showToast('Authentication successful', 'success');
+    showToast(i18n.t('toast.authSuccess'), 'success');
   } else if (params.error) {
     showToast(`Authentication error: ${params.error}`, 'error');
   }
@@ -206,7 +207,7 @@ function initClipboardIntegration(signal) {
 
   // Listen for clipboard cleared events
   window.electronAPI.onClipboardCleared((_data) => {
-    showToast('Clipboard auto-cleared', 'info', 2000);
+    showToast(i18n.t('toast.clipboardAutoCleared'), 'info', 2000);
     safeLog('Clipboard auto-cleared');
   });
 
@@ -243,11 +244,11 @@ function overrideCopyBehavior(signal) {
       } else {
         // Fallback to standard clipboard
         await navigator.clipboard.writeText(password);
-        showToast('Copied to clipboard', 'success', 2000);
+        showToast(i18n.t('toast.copiedToClipboard'), 'success', 2000);
       }
     } catch (error) {
       safeLog(`Clipboard copy failed: ${error.message}`);
-      showToast('Copy failed', 'error', 2000);
+      showToast(i18n.t('toast.copyFailed'), 'error', 2000);
     }
   }, { signal });
 }
@@ -326,7 +327,7 @@ function initTrayRestoreBehavior(signal) {
   // Listen for vault lock events from tray menu
   if (window.vault?.on) {
     unsubscribeVaultLocked = window.vault.on('locked', () => {
-      showToast('Vault locked', 'info');
+      showToast(i18n.t('toast.vaultLocked'), 'info');
     });
   }
 }

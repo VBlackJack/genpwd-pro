@@ -18,6 +18,7 @@
 
 import { safeLog } from './logger.js';
 import { showToast } from './toast.js';
+import { i18n } from './i18n.js';
 
 /**
  * Plugin Interface Definition
@@ -192,7 +193,7 @@ class PluginManager {
       // Check max plugins limit
       if (this.plugins.size >= this.config.maxPlugins) {
         safeLog(`Maximum plugins limit (${this.config.maxPlugins}) reached`);
-        showToast('Maximum plugins limit reached', 'error');
+        showToast(i18n.t('toast.maxPluginsReached'), 'error');
         return false;
       }
 
@@ -234,7 +235,7 @@ class PluginManager {
       return true;
     } catch (error) {
       safeLog(`Error registering plugin: ${error.message}`);
-      showToast('Plugin registration failed', 'error');
+      showToast(i18n.t('toast.pluginRegistrationFailed'), 'error');
       return false;
     }
   }
@@ -455,7 +456,7 @@ class PluginManager {
       // Only allow HTTPS or local file protocol
       if (!['https:', 'http:', 'file:'].includes(url.protocol)) {
         safeLog(`Plugin from ${source}: Invalid protocol ${url.protocol}`);
-        showToast('Plugin URL must use HTTPS or local file', 'error');
+        showToast(i18n.t('toast.pluginHttpsRequired'), 'error');
         return false;
       }
 
@@ -464,7 +465,7 @@ class PluginManager {
         url.protocol !== 'https:' &&
         url.protocol !== 'file:') {
         safeLog(`Plugin from ${source}: HTTPS required in production`);
-        showToast('Plugin must be loaded over HTTPS', 'error');
+        showToast(i18n.t('toast.pluginModuleHttpsRequired'), 'error');
         return false;
       }
 
@@ -474,7 +475,7 @@ class PluginManager {
       // Module must export default as plugin object
       if (!module.default) {
         safeLog(`Plugin from ${source}: No default export found`);
-        showToast('Plugin module must have default export', 'error');
+        showToast(i18n.t('toast.pluginMissingExport'), 'error');
         return false;
       }
 
@@ -489,7 +490,7 @@ class PluginManager {
       return this.registerPlugin(plugin);
     } catch (error) {
       safeLog(`Error loading plugin from ${source}: ${error.message}`);
-      showToast('Failed to load plugin module', 'error');
+      showToast(i18n.t('toast.pluginModuleLoadFailed'), 'error');
       return false;
     }
   }
@@ -505,7 +506,7 @@ class PluginManager {
    */
   loadPluginFromCode(code, _source = 'unknown') {
     safeLog(`SECURITY: loadPluginFromCode() is deprecated and disabled. Use loadPluginFromModule() instead.`);
-    showToast('Direct code loading disabled for security. Use ES6 modules.', 'error');
+    showToast(i18n.t('toast.pluginDirectCodeDisabled'), 'error');
     return false;
   }
 
@@ -591,7 +592,7 @@ class PluginManager {
     localStorage.removeItem(this.storageKey);
 
     safeLog('All plugins cleared');
-    showToast('All plugins cleared', 'success');
+    showToast(i18n.t('toast.allPluginsCleared'), 'success');
   }
 
   /**

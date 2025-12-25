@@ -91,23 +91,6 @@ export const INTERACTION = {
 };
 
 /**
- * Rate limiting configuration
- */
-export const RATE_LIMIT = {
-  // Password generation
-  MAX_GENERATIONS_PER_SECOND: 10,
-  GENERATION_COOLDOWN: 100, // ms between generations
-
-  // Clipboard operations
-  MAX_CLIPBOARD_OPS_PER_MINUTE: 60,
-  CLIPBOARD_COOLDOWN: 1000, // ms
-
-  // API calls
-  MAX_API_CALLS_PER_MINUTE: 100,
-  API_RETRY_DELAY: 2000 // ms
-};
-
-/**
  * Security timeouts (centralized to ensure consistency)
  * NOTE: Use single source of truth (MS values). Compute seconds/minutes: value / 1000 or value / 60000
  */
@@ -257,7 +240,6 @@ export const TIME_UNITS = {
 Object.freeze(ANIMATION_DURATION);
 Object.freeze(SIZE_LIMITS);
 Object.freeze(INTERACTION);
-Object.freeze(RATE_LIMIT);
 Object.freeze(SECURITY_TIMEOUTS);
 Object.freeze(TOTP_DEFAULTS);
 Object.freeze(CACHE);

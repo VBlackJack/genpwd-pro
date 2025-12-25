@@ -19,6 +19,7 @@
 import { safeLog } from './logger.js';
 import { showToast } from './toast.js';
 import { sanitizeHTML } from './dom-sanitizer.js';
+import { i18n } from './i18n.js';
 
 /**
  * PWA Manager - Handles Service Worker registration and PWA installation
@@ -103,7 +104,7 @@ class PWAManager {
 
       // Notify user if offline on load
       if (!this.isOnline) {
-        showToast('Offline mode - Using cached resources', 'info');
+        showToast(i18n.t('toast.offlineModeCache'), 'info');
       }
 
     } catch (error) {
@@ -150,7 +151,7 @@ class PWAManager {
     safeLog(`Message from SW: ${JSON.stringify(event.data)}`);
 
     if (event.data.type === 'CACHE_UPDATED') {
-      showToast('App updated - Using latest version', 'success');
+      showToast(i18n.t('toast.appUpdated'), 'success');
     }
   }
 
@@ -221,7 +222,7 @@ class PWAManager {
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
       safeLog('PWA installed successfully');
-      showToast('GenPwd Pro installed successfully!', 'success');
+      showToast(i18n.t('toast.appInstalled'), 'success');
       this.deferredPrompt = null;
     }, { signal });
   }
@@ -283,7 +284,7 @@ class PWAManager {
       safeLog(`Install prompt outcome: ${outcome}`);
 
       if (outcome === 'accepted') {
-        showToast('Installing GenPwd Pro...', 'info');
+        showToast(i18n.t('toast.installingApp'), 'info');
       }
 
       // Clear prompt
@@ -314,7 +315,7 @@ class PWAManager {
     window.addEventListener('online', () => {
       this.isOnline = true;
       safeLog('Back online');
-      showToast('✅ Back online', 'success');
+      showToast('✅ ' + i18n.t('toast.backOnline'), 'success');
 
       // Sync when back online
       this.syncWhenOnline();
@@ -323,7 +324,7 @@ class PWAManager {
     window.addEventListener('offline', () => {
       this.isOnline = false;
       safeLog('Gone offline');
-      showToast('⚠️ Offline mode - Using cached data', 'warning');
+      showToast('⚠️ ' + i18n.t('toast.offlineMode'), 'warning');
     }, { signal });
   }
 

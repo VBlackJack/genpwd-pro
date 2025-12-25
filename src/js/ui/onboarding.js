@@ -6,6 +6,8 @@
  * @license MIT
  */
 
+import { showConfirm } from './modal-manager.js';
+
 export class Onboarding {
   constructor() {
     this.currentStep = 0;
@@ -277,8 +279,13 @@ export class Onboarding {
     `;
 
     // Click overlay to skip tour
-    this.overlay.addEventListener('click', () => {
-      if (confirm('Skip the tour?')) {
+    this.overlay.addEventListener('click', async () => {
+      const confirmed = await showConfirm('Skip the tour?', {
+        title: 'Skip Tour',
+        confirmLabel: 'Skip',
+        cancelLabel: 'Continue'
+      });
+      if (confirmed) {
         this.completeTour();
       }
     });

@@ -75,12 +75,17 @@
     "select": "-- Sélectionner --",
     "update": "Mettre à jour",
     "updated": "mis à jour",
-    "updateFailed": "Échec de la mise à jour"
+    "updateFailed": "Échec de la mise à jour",
+    "replaceConfirm": "Remplacer la configuration « {name} » par les paramètres actuels ?",
+    "emptyState": "Aucun preset",
+    "emptyHint": "Sauvegardez vos paramètres favoris pour un accès rapide"
   },
   "history": {
     "title": "Historique",
     "search": "Rechercher",
-    "empty": "Aucun mot de passe dans l'historique"
+    "empty": "Aucun mot de passe dans l'historique",
+    "emptyState": "Aucun mot de passe dans l'historique",
+    "emptyHint": "Les mots de passe générés apparaîtront ici"
   },
   "vault": {
     "common": {
@@ -147,11 +152,18 @@
       "encrypting": "Chiffrement...",
       "enableDuress": "Activer le mode coercition",
       "restore": "Restaurer",
-      "copyValue": "Copier"
+      "copyValue": "Copier",
+      "generateNow": "Générer maintenant"
     },
     "messages": {
       "vaultLocked": "Coffre verrouillé",
       "vaultSaved": "Coffre sauvegardé : {fileName}",
+      "forgetVaultConfirm": "Oublier le coffre « {name} » ?\n\nLe fichier ne sera pas supprimé, mais le coffre sera retiré de la liste.",
+      "vaultForgotten": "Coffre retiré de la liste",
+      "deleteFolderConfirm": "Supprimer le dossier « {name} » ?",
+      "deleteFolderWithEntriesConfirm": "Supprimer le dossier « {name} » et déplacer ses {count} entrées à la racine ?",
+      "deleteEntryConfirm": "Supprimer « {title} » du coffre ?",
+      "uninstallPluginConfirm": "Désinstaller le plugin « {name} » ?",
       "entryDuplicated": "Entrée dupliquée",
       "folderCreated": "Dossier créé",
       "passwordCopied": "Mot de passe copié",
@@ -284,6 +296,10 @@
       "saveVault": "Sauvegarder le coffre",
       "newTag": "Nouveau tag",
       "newEntry": "Nouvelle entrée",
+      "newFolder": "Nouveau dossier",
+      "newFolderName": "Nom du nouveau dossier :",
+      "newSubfolderName": "Nom du nouveau sous-dossier :",
+      "hidePassword": "Masquer le mot de passe",
       "editEntry": "Modifier l'entrée",
       "verificationRequired": "Vérification requise",
       "unsavedChanges": "Modifications non enregistrées",
@@ -314,7 +330,11 @@
       "maxCharacters": "Maximum {count} caractères",
       "nameRequired": "Le nom est requis",
       "nameTooLong": "Le nom ne peut pas dépasser 50 caractères",
-      "enterPassword": "Veuillez entrer le mot de passe"
+      "enterPassword": "Veuillez entrer le mot de passe",
+      "fieldRequired": "Ce champ est obligatoire",
+      "invalidFormat": "Format invalide",
+      "passwordsMatch": "Les mots de passe correspondent",
+      "passwordsNoMatch": "Les mots de passe ne correspondent pas"
     },
     "share": {
       "title": "Partage sécurisé",
@@ -362,7 +382,8 @@
       "configureDuress": "Configurer le Mode Contrainte"
     },
     "generator": {
-      "title": "Générateur de mot de passe"
+      "title": "Générateur de mot de passe",
+      "emptyState": "Aucun mot de passe généré"
     },
     "colors": {
       "default": "Par défaut",
@@ -421,7 +442,8 @@
       "noTags": "Aucun tag",
       "passwordHealth": "Santé des mots de passe",
       "newEntry": "Nouvelle entrée",
-      "allItems": "Tous les éléments"
+      "allItems": "Tous les éléments",
+      "collapse": "Réduire le panneau"
     },
     "detail": {
       "password": "MOT DE PASSE",
@@ -456,7 +478,13 @@
     "quickUnlock": {
       "title": "Déverrouiller le coffre",
       "unlockToContinue": "Déverrouillez le coffre pour continuer",
-      "showPassword": "Afficher le mot de passe"
+      "showPassword": "Afficher le mot de passe",
+      "tryAgain": "Réessayer",
+      "or": "ou"
+    },
+    "duress": {
+      "enabled": "Mode Coercition activé ! L'application va redémarrer pour appliquer le nouveau conteneur de sécurité.",
+      "destroyed": "Coffre détruit."
     }
   },
   "toast": {
@@ -473,6 +501,9 @@
     "criticalStartupError": "Erreur critique au démarrage",
     "vaultNotAvailable": "Coffre non disponible",
     "vaultUnlocked": "Coffre déverrouillé",
+    "vaultLocked": "Coffre verrouillé",
+    "unlockVault": "Veuillez déverrouiller le coffre",
+    "languageChanged": "Langue changée en {lang}",
     "languageChangeFailed": "Échec du changement de langue",
     "vaultLockedUnlockFirst": "Coffre verrouillé - déverrouillez-le d'abord",
     "noPresetsFound": "Aucun preset trouvé dans le coffre",
@@ -488,6 +519,65 @@
     "vaultLockedToImport": "Coffre verrouillé - déverrouillez pour importer",
     "presetImportFailed": "Échec de l'importation du preset",
     "allPresetsExported": "Tous les presets exportés !",
-    "vaultLockedToEdit": "Coffre verrouillé - déverrouillez pour modifier"
+    "vaultLockedToEdit": "Coffre verrouillé - déverrouillez pour modifier",
+    "configurationUpdated": "Configuration mise à jour !",
+    "historyEnabled": "Historique activé !",
+    "historyCopied": "Copié !",
+    "historyExported": "Historique exporté !",
+    "historyCleared": "Historique effacé",
+    "noDataToImport": "Aucune donnée à importer",
+    "pluginMetadataExported": "Métadonnées du plugin exportées !",
+    "pluginInstallFailed": "Échec de l'installation du plugin",
+    "pluginNotFound": "Plugin non trouvé",
+    "pluginLoading": "Chargement du plugin...",
+    "pluginError": "Erreur du plugin",
+    "webdavFieldsRequired": "Tous les champs WebDAV sont requis",
+    "syncConfigSaved": "Configuration sauvegardée",
+    "syncConfigError": "Erreur de sauvegarde",
+    "syncDisabled": "Synchronisation désactivée",
+    "nameRequired": "Le nom est requis",
+    "nameTooLong": "Le nom ne peut pas dépasser 50 caractères",
+    "presetsLoaded": "{count} preset(s) chargé(s) depuis le coffre",
+    "presetSaved": "Preset « {name} » sauvegardé !",
+    "presetDuplicated": "Preset « {name} » dupliqué !",
+    "presetImported": "Preset « {name} » importé !",
+    "presetUpdated": "Preset « {name} » mis à jour avec succès !",
+    "presetLoaded": "Preset « {name} » chargé !",
+    "presetLoadFailed": "Échec du chargement du preset",
+    "presetDeletedFromVault": "Preset supprimé du coffre",
+    "presetDeleteError": "Erreur lors de la suppression du preset",
+    "presetsExportedToVault": "{count} preset(s) exporté(s) vers le coffre",
+    "noPresetsExported": "Aucun preset exporté",
+    "presetsImportedFromVault": "{count} preset(s) importé(s) depuis le coffre",
+    "presetsSkipped": "{count} preset(s) ignoré(s) (existent déjà)",
+    "noPresetsToImport": "Aucun preset à importer",
+    "noPasswordsToCheck": "Aucun mot de passe à vérifier. Générez-en d'abord.",
+    "noValidPasswordsToCheck": "Aucun mot de passe valide à vérifier",
+    "demoPluginsLoadedSuccess": "Plugins démo chargés avec succès !",
+    "demoPluginsPartialLoad": "Certains plugins démo chargés",
+    "demoPluginsLoadFailed": "Échec du chargement des plugins démo",
+    "demoPluginsError": "Erreur de chargement des plugins démo",
+    "clearPluginsConfirm": "Supprimer tous les plugins ? Cette action est irréversible !",
+    "foundPasswordEntries": "{count} entrée(s) de mot de passe trouvée(s)",
+    "importedPasswords": "{count} mot(s) de passe importé(s) avec succès",
+    "authSuccess": "Authentification réussie",
+    "clipboardAutoCleared": "Presse-papier effacé automatiquement",
+    "copiedToClipboard": "Copié dans le presse-papier",
+    "passwordNotBreached": "Mot de passe non trouvé dans les fuites connues",
+    "historyDisabled": "Historique désactivé",
+    "offlineModeCache": "Mode hors ligne - Utilisation des ressources en cache",
+    "appUpdated": "Application mise à jour - Dernière version utilisée",
+    "appInstalled": "GenPwd Pro installé avec succès !",
+    "installingApp": "Installation de GenPwd Pro...",
+    "backOnline": "De retour en ligne",
+    "offlineMode": "Mode hors ligne - Utilisation des données en cache",
+    "maxPluginsReached": "Limite maximale de plugins atteinte",
+    "pluginRegistrationFailed": "Échec de l'enregistrement du plugin",
+    "pluginHttpsRequired": "L'URL du plugin doit utiliser HTTPS ou un fichier local",
+    "pluginModuleHttpsRequired": "Le plugin doit être chargé via HTTPS",
+    "pluginMissingExport": "Le module du plugin doit avoir un export par défaut",
+    "pluginModuleLoadFailed": "Échec du chargement du module plugin",
+    "pluginDirectCodeDisabled": "Chargement de code direct désactivé pour des raisons de sécurité. Utilisez les modules ES6.",
+    "allPluginsCleared": "Tous les plugins supprimés"
   }
 }

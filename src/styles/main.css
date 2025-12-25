@@ -45,12 +45,26 @@
   --accent-primary: hsl(var(--hue-primary), 100%, 70%);
   --accent-cyan: hsl(185, 80%, 55%);
   --accent-blue: hsl(220, 90%, 65%);
+  --accent-blue-dark: hsl(220, 85%, 50%);
+  --accent-blue-darker: hsl(220, 80%, 42%);
   --accent-green: hsl(150, 70%, 50%);
+  --accent-green-light: hsl(150, 70%, 65%);
   --accent-red: hsl(350, 85%, 60%);
+  --accent-red-light: hsl(350, 90%, 72%);
   --accent-red-dark: hsl(350, 80%, 35%);
   --accent-purple: hsl(270, 80%, 65%);
+  --accent-purple-light: hsl(270, 75%, 75%);
   --accent-orange: hsl(30, 90%, 55%);
   --accent-yellow: hsl(45, 95%, 55%);
+
+  /* Windows Hello / Microsoft Blue */
+  --windows-hello-blue: #0078d4;
+  --windows-hello-blue-hover: #0063b1;
+  --windows-hello-blue-active: #004a85;
+
+  /* Theme-specific text colors (for dark theme) */
+  --text-dimmed: #8c94ca;
+  --text-bright: #d6dcff;
 
   /* Code background (centralized) */
   --bg-code: rgba(0, 0, 0, 0.3);
@@ -63,6 +77,10 @@
   /* Shadows */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* Modal Overlay */
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
 
   /* Typography */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -76,6 +94,113 @@
   --radius: var(--radius-sm);
   --radius-small: var(--radius-sm);
   --radius-large: var(--radius-lg);
+
+  /* Spacing Scale (consistent throughout app) */
+  --space-xs: 0.25rem;  /* 4px */
+  --space-sm: 0.5rem;   /* 8px */
+  --space-md: 0.75rem;  /* 12px */
+  --space-lg: 1rem;     /* 16px */
+  --space-xl: 1.5rem;   /* 24px */
+  --space-2xl: 2rem;    /* 32px */
+  --space-3xl: 3rem;    /* 48px */
+
+  /* Typography Scale */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+
+  /* Z-Index Scale (avoid conflicts) */
+  --z-header: 100;
+  --z-dropdown: 200;
+  --z-sticky: 300;
+  --z-fixed: 400;
+  --z-modal-backdrop: 1000;
+  --z-modal: 1100;
+  --z-toast: 2000;
+  --z-tooltip: 3000;
+  --z-max: 9999;
+}
+
+/* ==================== LIGHT THEME ==================== */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Backgrounds - Light variants */
+    --bg-deep: hsl(220, 20%, 96%);
+    --bg-surface: hsl(220, 15%, 98%);
+    --bg-primary: hsl(220, 20%, 97%);
+    --bg-secondary: hsl(220, 15%, 94%);
+    --bg-tertiary: hsl(220, 10%, 90%);
+    --bg-quaternary: hsl(220, 8%, 86%);
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --bg-error: rgba(244, 67, 54, 0.08);
+
+    /* Glassmorphism - Light */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-border-light: rgba(0, 0, 0, 0.12);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+
+    /* Text Colors - Light theme */
+    --text-primary: rgba(0, 0, 0, 0.87);
+    --text-secondary: rgba(0, 0, 0, 0.6);
+    --text-muted: rgba(0, 0, 0, 0.45);
+    --text-hint: rgba(0, 0, 0, 0.35);
+
+    /* Theme-specific text colors */
+    --text-dimmed: #5a5f7a;
+    --text-bright: #1a1f36;
+
+    /* Code background */
+    --bg-code: rgba(0, 0, 0, 0.05);
+
+    /* Borders - Light theme */
+    --border: rgba(0, 0, 0, 0.1);
+    --border-color: rgba(0, 0, 0, 0.1);
+    --border-hover: rgba(0, 0, 0, 0.2);
+
+    /* Shadows - Light theme */
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 10% 20%, rgba(93, 130, 240, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(240, 100, 180, 0.06) 0%, transparent 40%),
+      var(--bg-deep);
+  }
+}
+
+/* Data attribute for manual theme toggle */
+[data-theme="light"] {
+  --bg-deep: hsl(220, 20%, 96%);
+  --bg-surface: hsl(220, 15%, 98%);
+  --bg-primary: hsl(220, 20%, 97%);
+  --bg-secondary: hsl(220, 15%, 94%);
+  --bg-tertiary: hsl(220, 10%, 90%);
+  --bg-quaternary: hsl(220, 8%, 86%);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-error: rgba(244, 67, 54, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-light: rgba(0, 0, 0, 0.12);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-muted: rgba(0, 0, 0, 0.45);
+  --text-hint: rgba(0, 0, 0, 0.35);
+  --text-dimmed: #5a5f7a;
+  --text-bright: #1a1f36;
+  --bg-code: rgba(0, 0, 0, 0.05);
+  --border: rgba(0, 0, 0, 0.1);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 body {
@@ -161,4 +286,56 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+/* ==================== REDUCED MOTION SUPPORT ==================== */
+/* Respects user preference for reduced motion (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Preserve essential state changes without animation */
+  .animate-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Disable decorative animations */
+  .aurora::before,
+  .aurora::after,
+  [class*="glow"],
+  [class*="pulse"] {
+    animation: none !important;
+  }
+
+  /* Toast notifications: instant appearance */
+  .toast {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Modal transitions */
+  .vault-modal-overlay,
+  .vault-modal,
+  .modal-backdrop {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* Button and interactive element hover states still work, just instantly */
+  button,
+  .btn,
+  a,
+  input,
+  select,
+  textarea {
+    transition: none !important;
+  }
 }

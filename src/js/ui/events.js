@@ -29,7 +29,7 @@ import { t } from '../utils/i18n.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { renderResults, updateMaskDisplay, renderEmptyState } from './render.js';
 import { initVisualPlacement, getVisualPlacement } from './placement.js';
-import { createModal } from './modal-manager.js';
+import { createModal, showConfirm } from './modal-manager.js';
 
 let previewTimeout = null;
 let blockSyncTimeout = null;
@@ -336,6 +336,51 @@ function bindDebugActions() {
       }
     }
   });
+
+  // Section headers - collapsible with keyboard support
+  const sectionHeaders = getAllElements('.section-header[role="button"]');
+  sectionHeaders.forEach(header => {
+    const toggleSection = () => {
+      const section = header.closest('.section');
+      if (!section) return;
+
+      const isCollapsed = section.classList.toggle('collapsed');
+      header.setAttribute('aria-expanded', !isCollapsed);
+
+      // Announce state change for screen readers
+      const sectionName = header.querySelector('strong')?.textContent || 'Section';
+      const announcement = isCollapsed ? `${sectionName} collapsed` : `${sectionName} expanded`;
+      announceToScreenReader(announcement);
+    };
+
+    // Click handler
+    header.addEventListener('click', toggleSection);
+
+    // Keyboard handler (Enter and Space)
+    header.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleSection();
+      }
+    });
+  });
+}
+
+/**
+ * Announce message to screen readers via aria-live region
+ * @param {string} message - Message to announce
+ */
+function announceToScreenReader(message) {
+  let announcer = document.getElementById('sr-announcer');
+  if (!announcer) {
+    announcer = document.createElement('div');
+    announcer.id = 'sr-announcer';
+    announcer.setAttribute('aria-live', 'polite');
+    announcer.setAttribute('aria-atomic', 'true');
+    announcer.className = 'sr-only';
+    document.body.appendChild(announcer);
+  }
+  announcer.textContent = message;
 }
 
 // Actions principales - REFACTORED for better maintainability
@@ -445,14 +490,14 @@ async function generatePasswords() {
   const timeSinceLastGen = now - generationState.lastGeneration;
 
   // Reset burst counter if window expired
-  if (timeSinceLastGen > GENERATION_CONFIG.BURST_WINDOW_MS) {
+  if (timeSinceLastGen > RATE_LIMITING.BURST_WINDOW_MS) {
     generationState.burstCount = 0;
   }
 
   // Check cooldown for non-burst requests
-  if (generationState.burstCount >= GENERATION_CONFIG.MAX_BURST) {
-    if (timeSinceLastGen < GENERATION_CONFIG.COOLDOWN_MS) {
-      const waitTime = Math.ceil((GENERATION_CONFIG.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
+  if (generationState.burstCount >= RATE_LIMITING.MAX_BURST) {
+    if (timeSinceLastGen < RATE_LIMITING.COOLDOWN_MS) {
+      const waitTime = Math.ceil((RATE_LIMITING.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
       showToast(`Generation too fast. Please wait ${waitTime}s`, 'warning');
       safeLog(`Rate limit: ${waitTime}s remaining`);
       return;
@@ -735,7 +780,18 @@ function promptExportFormat() {
   });
 }
 
-function clearResults() {
+async function clearResults() {
+  const results = getResults();
+  // Only confirm if there are results to clear
+  if (results && results.length > 0) {
+    const confirmed = await showConfirm(t('toast.clearResultsConfirm') || 'Clear all generated passwords?', {
+      title: t('actions.clearResults') || 'Clear Results',
+      confirmLabel: t('common.clear') || 'Clear',
+      danger: true
+    });
+    if (!confirmed) return;
+  }
+
   setResults([]);
   renderEmptyState();
   showToast(t('toast.resultsCleared'), 'info');

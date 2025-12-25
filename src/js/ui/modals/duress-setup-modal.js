@@ -1,5 +1,5 @@
-
 import { Modal } from './modal.js';
+import { showToast } from '../../utils/toast.js';
 
 export class DuressSetupModal extends Modal {
     constructor() {
@@ -87,9 +87,9 @@ export class DuressSetupModal extends Modal {
             });
 
             this.hide();
-            // Show success toast or reload
-            alert('Duress Mode Enabled! The application will now restart to apply the new security container.');
-            window.location.reload();
+            // Show success toast then reload
+            showToast('Duress Mode Enabled! Restarting to apply security container...', 'success');
+            setTimeout(() => window.location.reload(), 2000);
 
         } catch (error) {
             this._showError(error.message);

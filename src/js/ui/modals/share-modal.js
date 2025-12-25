@@ -2,6 +2,8 @@
  * @fileoverview Share Modal (GenPwd Send)
  */
 
+import { showToast } from '../../utils/toast.js';
+
 export class ShareModal {
     #modalId = 'share-modal';
     #isVisible = false;
@@ -169,7 +171,7 @@ export class ShareModal {
                 document.getElementById('share-step-1').hidden = true;
                 document.getElementById('share-step-2').hidden = false;
             } catch (err) {
-                alert('Error: ' + err.message);
+                showToast('Error: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Generate link';
@@ -177,10 +179,14 @@ export class ShareModal {
         });
 
         // Copy URL
-        document.getElementById('btn-copy-share-url')?.addEventListener('click', () => {
+        document.getElementById('btn-copy-share-url')?.addEventListener('click', async () => {
             const input = document.getElementById('share-result-url');
-            input.select();
-            document.execCommand('copy');
+            try {
+                await navigator.clipboard.writeText(input.value);
+            } catch {
+                // Fallback: select text for manual copy
+                input.select();
+            }
             // Visual feedback
             const btn = document.getElementById('btn-copy-share-url');
             btn.textContent = '✅';

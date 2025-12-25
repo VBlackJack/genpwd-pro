@@ -29,6 +29,7 @@ import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { getBlocks, setBlocks, setUIState } from '../config/settings.js';
 import { renderChips, updateBlockSizeLabel } from './dom.js';
+import { showConfirm } from './modal-manager.js';
 
 /**
  * Shared validation utility for preset name fields
@@ -39,12 +40,12 @@ import { renderChips, updateBlockSizeLabel } from './dom.js';
 function validatePresetName(nameInput, nameError) {
   const name = nameInput.value.trim();
   if (!name) {
-    nameError.textContent = 'Name is required';
+    nameError.textContent = i18n.t('toast.nameRequired');
     nameError.style.display = 'block';
     return false;
   }
   if (name.length > 50) {
-    nameError.textContent = 'Name cannot exceed 50 characters';
+    nameError.textContent = i18n.t('toast.nameTooLong');
     nameError.style.display = 'block';
     return false;
   }
@@ -194,11 +195,11 @@ function bindLanguageSelectorEvents() {
         // Update interface with new translations
         updateInterfaceLanguage();
 
-        showToast(`Language changed to ${i18n.getLocaleDisplayName(lang)}`, 'success');
+        showToast(i18n.t('toast.languageChanged', { lang: i18n.getLocaleDisplayName(lang) }), 'success');
 
         safeLog(`Language changed to: ${lang}`);
       } catch (error) {
-        showToast('Failed to change language', 'error');
+        showToast(i18n.t('toast.languageChangeFailed'), 'error');
         safeLog(`Error changing language: ${error.message}`);
       }
     }, { signal });
@@ -677,7 +678,7 @@ function bindPresetEvents() {
       try {
         const isReady = await presetManager.isVaultReady();
         if (!isReady) {
-          showToast('Vault locked - unlock it first', 'warning');
+          showToast(i18n.t('toast.vaultLockedUnlockFirst'), 'warning');
           return;
         }
 
@@ -686,13 +687,13 @@ function bindPresetEvents() {
         updatePresetBadge();
 
         if (loaded > 0) {
-          showToast(`${loaded} preset(s) loaded from vault`, 'success');
+          showToast(i18n.t('toast.presetsLoaded', { count: loaded }), 'success');
         } else {
-          showToast('No presets found in vault', 'info');
+          showToast(i18n.t('toast.noPresetsFound'), 'info');
         }
         safeLog(`[RefreshPresets] Loaded ${loaded} presets from vault`);
       } catch (error) {
-        showToast('Error loading presets', 'error');
+        showToast(i18n.t('toast.presetsLoadError'), 'error');
         safeLog(`[RefreshPresets] Error: ${error.message}`);
       } finally {
         btnRefreshPresets.disabled = false;
@@ -815,13 +816,13 @@ function showSavePresetDialog() {
       if (preset) {
         updatePresetDropdown();
         modal.remove();
-        showToast(`Preset "${name}" saved!`, 'success');
+        showToast(i18n.t('toast.presetSaved', { name }), 'success');
         safeLog(`Preset created: ${preset.id}`);
       } else {
-        showToast('Vault locked - unlock vault to save', 'error');
+        showToast(i18n.t('toast.vaultLockedToSave'), 'error');
       }
     } catch (error) {
-      showToast('Failed to save preset', 'error');
+      showToast(i18n.t('toast.presetSaveFailed'), 'error');
       safeLog(`Error saving preset: ${error.message}`);
     }
   });
@@ -875,7 +876,7 @@ function loadPreset(event) {
 
   const preset = presetManager.getPreset(presetId);
   if (!preset) {
-    showToast('Preset not found', 'error');
+    showToast(i18n.t('toast.presetNotFound'), 'error');
     return;
   }
 
@@ -1003,7 +1004,15 @@ function showManagePresetsModal() {
           >
         </div>
         <div class="presets-list">
-          ${presets.map(preset => `
+          ${presets.length === 0 ? `
+            <div class="empty-state">
+              <div class="empty-icon">💾</div>
+              <p>${i18n.t('presets.emptyState') || 'No presets yet'}</p>
+              <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 8px;">
+                ${i18n.t('presets.emptyHint') || 'Save your favorite settings as presets for quick access'}
+              </p>
+            </div>
+          ` : presets.map(preset => `
             <div class="preset-item" data-preset-id="${preset.id}" style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px; background: var(--vault-surface, #f8f9fa); border-radius: 8px; border: 1px solid var(--vault-border, #e0e0e0);">
               <div class="preset-info" style="flex: 1; min-width: 0;">
                 <div class="preset-name" style="font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
@@ -1121,9 +1130,9 @@ function bindPresetModalEvents(modal) {
               updatePresetDropdown();
               modal.remove();
               showManagePresetsModal();
-              showToast(`Preset "${duplicatedPreset.name}" duplicated!`, 'success');
+              showToast(i18n.t('toast.presetDuplicated', { name: duplicatedPreset.name }), 'success');
             } else {
-              showToast('Vault locked - unlock to duplicate', 'error');
+              showToast(i18n.t('toast.vaultLockedToDuplicate'), 'error');
             }
           }
           break;
@@ -1132,37 +1141,47 @@ function bindPresetModalEvents(modal) {
           const json = presetManager.exportPreset(presetId);
           if (json) {
             downloadFile(json, `preset-${presetId}.json`, 'application/json');
-            showToast('Preset exported!', 'success');
+            showToast(i18n.t('toast.presetExported'), 'success');
           }
           break;
 
         case 'update-config':
           const presetToUpdate = presetManager.getPreset(presetId);
           if (presetToUpdate) {
-            if (confirm(`Replace "${presetToUpdate.name}" configuration with current settings?`)) {
+            const confirmed = await showConfirm(i18n.t('presets.replaceConfirm', { name: presetToUpdate.name }), {
+              title: i18n.t('presets.updateTitle') || 'Update Preset',
+              confirmLabel: i18n.t('common.update') || 'Update',
+              danger: false
+            });
+            if (confirmed) {
               const currentConfig = getCurrentGeneratorConfig();
               const success = await presetManager.updatePreset(presetId, { config: currentConfig });
               if (success) {
                 updatePresetDropdown();
                 modal.remove();
                 showManagePresetsModal(); // Refresh the modal
-                showToast(`"${presetToUpdate.name}" configuration updated!`, 'success');
+                showToast(i18n.t('toast.configurationUpdated'), 'success');
               } else {
-                showToast('Vault locked - unlock to update', 'error');
+                showToast(i18n.t('toast.vaultLockedToUpdate'), 'error');
               }
             }
           }
           break;
 
         case 'delete':
-          if (confirm('Delete this preset?')) {
+          const deleteConfirmed = await showConfirm(i18n.t('presets.deleteConfirm'), {
+            title: i18n.t('presets.deleteTitle') || 'Delete Preset',
+            confirmLabel: i18n.t('common.delete') || 'Delete',
+            danger: true
+          });
+          if (deleteConfirmed) {
             const success = await presetManager.deletePreset(presetId);
             if (success) {
               updatePresetDropdown();
               modal.remove();
-              showToast('Preset deleted', 'success');
+              showToast(i18n.t('toast.presetDeleted'), 'success');
             } else {
-              showToast('Deletion failed', 'error');
+              showToast(i18n.t('toast.deletionFailed'), 'error');
             }
           }
           break;
@@ -1186,12 +1205,12 @@ function bindPresetModalEvents(modal) {
           if (preset) {
             updatePresetDropdown();
             modal.remove();
-            showToast(`Preset "${preset.name}" imported!`, 'success');
+            showToast(i18n.t('toast.presetImported', { name: preset.name }), 'success');
           } else {
-            showToast('Vault locked - unlock to import', 'error');
+            showToast(i18n.t('toast.vaultLockedToImport'), 'error');
           }
         } catch (error) {
-          showToast('Failed to import preset', 'error');
+          showToast(i18n.t('toast.presetImportFailed'), 'error');
         }
       };
       reader.readAsText(file);
@@ -1203,7 +1222,7 @@ function bindPresetModalEvents(modal) {
   modal.querySelector('#btn-export-all-presets')?.addEventListener('click', () => {
     const json = presetManager.exportAll();
     downloadFile(json, 'genpwd-presets-all.json', 'application/json');
-    showToast('All presets exported!', 'success');
+    showToast(i18n.t('toast.allPresetsExported'), 'success');
   });
 
   // Vault sync button
@@ -1246,7 +1265,7 @@ function formatPlacementLabel(placement) {
 function showEditPresetModal(presetId) {
   const preset = presetManager.getPreset(presetId);
   if (!preset) {
-    showToast('Preset not found', 'error');
+    showToast(i18n.t('toast.presetNotFound'), 'error');
     return;
   }
 
@@ -1363,10 +1382,10 @@ function showEditPresetModal(presetId) {
     if (success) {
       updatePresetDropdown();
       modal.remove();
-      showToast(`Preset "${name}" updated successfully!`, 'success');
+      showToast(i18n.t('toast.presetUpdated', { name }), 'success');
       safeLog(`Preset updated: ${presetId}`);
     } else {
-      showToast('Vault locked - unlock to edit', 'error');
+      showToast(i18n.t('toast.vaultLockedToEdit'), 'error');
     }
   });
 
@@ -1375,15 +1394,19 @@ function showEditPresetModal(presetId) {
     const preset = presetManager.getPreset(presetId);
     if (!preset) return;
 
-    if (confirm(`Replace "${preset.name}" configuration with current generator settings?`)) {
+    const confirmed = await showConfirm(i18n.t('presets.replaceConfirm', { name: preset.name }), {
+      title: i18n.t('presets.updateTitle') || 'Update Configuration',
+      confirmLabel: i18n.t('common.update') || 'Update'
+    });
+    if (confirmed) {
       const currentConfig = getCurrentGeneratorConfig();
       const success = await presetManager.updatePreset(presetId, { config: currentConfig });
       if (success) {
         modal.remove();
         showEditPresetModal(presetId); // Refresh modal with new config
-        showToast('Configuration updated!', 'success');
+        showToast(i18n.t('toast.configurationUpdated'), 'success');
       } else {
-        showToast('Vault locked - unlock to edit', 'error');
+        showToast(i18n.t('toast.vaultLockedToEdit'), 'error');
       }
     }
   });
@@ -1420,7 +1443,7 @@ function showEditPresetModal(presetId) {
 async function showVaultPresetSyncModal() {
   // Check if vault is available
   if (!window.vault) {
-    showToast('Vault not available', 'error');
+    showToast(i18n.t('toast.vaultNotAvailable'), 'error');
     return;
   }
 
@@ -1531,9 +1554,9 @@ async function showVaultPresetSyncModal() {
     const result = await presetManager.exportAllToVault();
 
     if (result.success > 0) {
-      showToast(`${result.success} preset(s) exported to vault`, 'success');
+      showToast(i18n.t('toast.presetsExportedToVault', { count: result.success }), 'success');
     } else {
-      showToast('No presets exported', 'warning');
+      showToast(i18n.t('toast.noPresetsExported'), 'warning');
     }
 
     modal.remove();
@@ -1545,17 +1568,17 @@ async function showVaultPresetSyncModal() {
     const overwrite = modal.querySelector('#vault-sync-overwrite')?.checked || false;
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Import en cours...';
+    btn.innerHTML = '<span class="spinner"></span> ' + i18n.t('common.importing');
 
     const result = await presetManager.importFromVault(overwrite);
 
     if (result.imported > 0) {
       updatePresetDropdown();
-      showToast(`${result.imported} preset(s) imported from vault`, 'success');
+      showToast(i18n.t('toast.presetsImportedFromVault', { count: result.imported }), 'success');
     } else if (result.skipped > 0) {
-      showToast(`${result.skipped} preset(s) skipped (already exist)`, 'info');
+      showToast(i18n.t('toast.presetsSkipped', { count: result.skipped }), 'info');
     } else {
-      showToast('No presets to import', 'warning');
+      showToast(i18n.t('toast.noPresetsToImport'), 'warning');
     }
 
     modal.remove();
@@ -1624,10 +1647,10 @@ async function loadVaultPresetsList(modal) {
               presetSelect.value = preset.id;
               presetSelect.dispatchEvent(new Event('change'));
             }
-            showToast(`Preset "${entry.title}" loaded!`, 'success');
+            showToast(i18n.t('toast.presetLoaded', { name: entry.title }), 'success');
             modal.remove();
           } else {
-            showToast('Failed to load preset', 'error');
+            showToast(i18n.t('toast.presetLoadFailed'), 'error');
           }
         }
       });
@@ -1637,12 +1660,19 @@ async function loadVaultPresetsList(modal) {
       btn.addEventListener('click', async () => {
         const entryId = btn.dataset.entryId;
         const entry = vaultPresets.find(e => e.id === entryId);
-        if (entry && confirm(`Delete "${entry.title}" from vault?`)) {
+        if (!entry) return;
+
+        const confirmed = await showConfirm(i18n.t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
+          title: i18n.t('vault.actions.delete') || 'Delete Entry',
+          confirmLabel: i18n.t('common.delete') || 'Delete',
+          danger: true
+        });
+        if (confirmed) {
           try {
             await window.vault.entries.delete(entryId);
             // Remove from UI
             btn.closest('.vault-preset-item')?.remove();
-            showToast('Preset deleted from vault', 'success');
+            showToast(i18n.t('toast.presetDeletedFromVault'), 'success');
             // Update count display
             const countEl = modal.querySelector('[style*="rgba(139, 92, 246"]');
             if (countEl) {
@@ -1651,7 +1681,7 @@ async function loadVaultPresetsList(modal) {
               countEl.querySelector('div').textContent = newCount;
             }
           } catch (error) {
-            showToast('Error deleting preset', 'error');
+            showToast(i18n.t('toast.presetDeleteError'), 'error');
           }
         }
       });
@@ -1693,13 +1723,17 @@ export function initializeHistoryUI() {
 /**
  * Show history modal
  */
-function showHistoryModal() {
+async function showHistoryModal() {
   const settings = historyManager.getSettings();
 
   if (!settings.enabled) {
-    if (confirm('History is disabled. Enable now?')) {
+    const confirmed = await showConfirm(i18n.t('history.enableConfirm'), {
+      title: i18n.t('history.title') || 'Enable History',
+      confirmLabel: i18n.t('common.enable') || 'Enable'
+    });
+    if (confirmed) {
       historyManager.updateSettings({ enabled: true });
-      showToast('History enabled!', 'success');
+      showToast(i18n.t('toast.historyEnabled'), 'success');
     }
     return;
   }
@@ -1749,8 +1783,16 @@ function showHistoryModal() {
         </div>
 
         <div class="history-list">
-          ${history.length === 0 ? '<p class="empty-state">No passwords in history</p>' :
-            history.map(entry => `)
+          ${history.length === 0 ? `
+              <div class="empty-state">
+                <div class="empty-icon">📜</div>
+                <p>${i18n.t('history.emptyState') || 'No passwords in history'}</p>
+                <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 8px;">
+                  ${i18n.t('history.emptyHint') || 'Generated passwords will appear here'}
+                </p>
+              </div>
+            ` :
+            history.map(entry => `
               <div class="history-item" data-entry-id="${entry.id}">
                 <div class="history-password">
                   <code>${entry.password}</code>
@@ -1804,18 +1846,23 @@ function bindHistoryModalEvents(modal) {
 
   // Action buttons
   modal.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', (_e) => {
+    btn.addEventListener('click', async (_e) => {
       const action = btn.dataset.action;
       const entryId = btn.dataset.entryId;
 
       switch (action) {
-        case 'copy':
+        case 'copy': {
           const entry = historyManager.getEntry(entryId);
           if (entry) {
-            navigator.clipboard.writeText(entry.password);
-            showToast('Copied!', 'success');
+            try {
+              await navigator.clipboard.writeText(entry.password);
+              showToast(i18n.t('toast.historyCopied'), 'success');
+            } catch (err) {
+              showToast(i18n.t('toast.copyFailed') || 'Copy failed', 'error');
+            }
           }
           break;
+        }
 
         case 'favorite':
           historyManager.toggleFavorite(entryId);
@@ -1823,13 +1870,19 @@ function bindHistoryModalEvents(modal) {
           showHistoryModal(); // Refresh
           break;
 
-        case 'delete':
-          if (confirm('Delete this entry?')) {
+        case 'delete': {
+          const deleteConfirmed = await showConfirm(i18n.t('history.deleteEntryConfirm') || 'Delete this entry?', {
+            title: i18n.t('history.deleteTitle') || 'Delete Entry',
+            confirmLabel: i18n.t('common.delete') || 'Delete',
+            danger: true
+          });
+          if (deleteConfirmed) {
             historyManager.deleteEntry(entryId);
             modal.remove();
             showHistoryModal(); // Refresh
           }
           break;
+        }
       }
     });
   });
@@ -1853,15 +1906,20 @@ function bindHistoryModalEvents(modal) {
   modal.querySelector('#btn-export-history')?.addEventListener('click', () => {
     const json = historyManager.exportHistory();
     downloadFile(json, 'genpwd-history.json', 'application/json');
-    showToast('History exported!', 'success');
+    showToast(i18n.t('toast.historyExported'), 'success');
   });
 
   // Clear all button
-  modal.querySelector('#btn-clear-history')?.addEventListener('click', () => {
-    if (confirm('Clear all history? This action is irreversible!')) {
+  modal.querySelector('#btn-clear-history')?.addEventListener('click', async () => {
+    const confirmed = await showConfirm(i18n.t('history.clearAllConfirm'), {
+      title: i18n.t('history.clearTitle') || 'Clear History',
+      confirmLabel: i18n.t('common.clearAll') || 'Clear All',
+      danger: true
+    });
+    if (confirmed) {
       historyManager.clearHistory();
       modal.remove();
-      showToast('History cleared', 'success');
+      showToast(i18n.t('toast.historyCleared'), 'success');
     }
   });
 }
@@ -1973,17 +2031,17 @@ async function loadDemoPlugins() {
     const xmlSuccess = pluginManager.registerPlugin(xmlPlugin.default);
 
     if (emojiSuccess && xmlSuccess) {
-      showToast('Demo plugins loaded successfully!', 'success');
+      showToast(i18n.t('toast.demoPluginsLoadedSuccess'), 'success');
       updatePluginStatus();
     } else if (emojiSuccess || xmlSuccess) {
-      showToast('Some demo plugins loaded', 'warning');
+      showToast(i18n.t('toast.demoPluginsPartialLoad'), 'warning');
       updatePluginStatus();
     } else {
-      showToast('Failed to load demo plugins', 'error');
+      showToast(i18n.t('toast.demoPluginsLoadFailed'), 'error');
     }
   } catch (error) {
     safeLog(`Error loading demo plugins: ${error.message}`);
-    showToast('Error loading demo plugins', 'error');
+    showToast(i18n.t('toast.demoPluginsError'), 'error');
   }
 }
 
@@ -2150,12 +2208,17 @@ function bindPluginModalEvents(modal) {
           const json = pluginManager.exportPlugin(pluginName);
           if (json) {
             downloadFile(json, `plugin-${pluginName}.json`, 'application/json');
-            showToast('Plugin metadata exported!', 'success');
+            showToast(i18n.t('toast.pluginMetadataExported'), 'success');
           }
           break;
 
         case 'uninstall':
-          if (confirm(`Uninstall plugin "${pluginName}"?`)) {
+          const uninstallConfirmed = await showConfirm(i18n.t('vault.messages.uninstallPluginConfirm', { name: pluginName }), {
+            title: i18n.t('plugins.uninstallTitle') || 'Uninstall Plugin',
+            confirmLabel: i18n.t('common.uninstall') || 'Uninstall',
+            danger: true
+          });
+          if (uninstallConfirmed) {
             pluginManager.unregisterPlugin(pluginName);
             modal.remove();
             showPluginManagerModal(); // Refresh
@@ -2185,7 +2248,7 @@ function bindPluginModalEvents(modal) {
             updatePluginStatus();
           }
         } catch (error) {
-          showToast('Failed to install plugin', 'error');
+          showToast(i18n.t('toast.pluginInstallFailed'), 'error');
         }
       };
       reader.readAsText(file);
@@ -2194,8 +2257,13 @@ function bindPluginModalEvents(modal) {
   });
 
   // Clear all plugins
-  modal.querySelector('#btn-clear-all-plugins')?.addEventListener('click', () => {
-    if (confirm('Clear all plugins? This action cannot be undone!')) {
+  modal.querySelector('#btn-clear-all-plugins')?.addEventListener('click', async () => {
+    const confirmed = await showConfirm(i18n.t('toast.clearPluginsConfirm'), {
+      title: i18n.t('plugins.clearAllTitle') || 'Clear All Plugins',
+      confirmLabel: i18n.t('common.clearAll') || 'Clear All',
+      danger: true
+    });
+    if (confirmed) {
       pluginManager.clearAllPlugins();
       modal.remove();
       showPluginManagerModal(); // Refresh
@@ -2210,7 +2278,7 @@ function bindPluginModalEvents(modal) {
 function showPluginSettingsModal(pluginName) {
   const plugin = pluginManager.getPlugin(pluginName);
   if (!plugin) {
-    showToast('Plugin not found', 'error');
+    showToast(i18n.t('toast.pluginNotFound'), 'error');
     return;
   }
 
@@ -2321,7 +2389,7 @@ function showAdvancedExportModal() {
   // Get current passwords from results
   const passwordElements = document.querySelectorAll('.result-item');
   if (passwordElements.length === 0) {
-    showToast('No passwords to export', 'warning');
+    showToast(i18n.t('toast.noPasswordsToExport'), 'warning');
     return;
   }
 
@@ -2602,7 +2670,7 @@ function showAdvancedImportModal() {
       `);
 
       importButton.disabled = false;
-      showToast(`Found ${importedData.length} password entries`, 'success');
+      showToast(i18n.t('toast.foundPasswordEntries', { count: importedData.length }), 'success');
     } catch (error) {
       showToast(`Import failed: ${error.message}`, 'error');
       safeLog(`Import error: ${error.message}`);
@@ -2614,7 +2682,7 @@ function showAdvancedImportModal() {
   // Import button
   importButton.addEventListener('click', () => {
     if (!importedData || importedData.length === 0) {
-      showToast('No data to import', 'warning');
+      showToast(i18n.t('toast.noDataToImport'), 'warning');
       return;
     }
 
@@ -2650,12 +2718,12 @@ function showAdvancedImportModal() {
         btn.addEventListener('click', () => {
           const password = btn.dataset.password;
           navigator.clipboard.writeText(password);
-          showToast('Password copied!', 'success');
+          showToast(i18n.t('toast.passwordCopied'), 'success');
         });
       });
     }
 
-    showToast(`Successfully imported ${importedData.length} passwords`, 'success');
+    showToast(i18n.t('toast.importedPasswords', { count: importedData.length }), 'success');
     modal.remove();
   });
 
@@ -2707,7 +2775,7 @@ function showHIBPCheckModal() {
   const passwordItems = document.querySelectorAll('.password-item');
 
   if (passwordItems.length === 0) {
-    showToast('No passwords to check. Generate some passwords first.', 'warning');
+    showToast(i18n.t('toast.noPasswordsToCheck'), 'warning');
     return;
   }
 
@@ -2718,7 +2786,7 @@ function showHIBPCheckModal() {
   }).filter(pwd => pwd.length > 0);
 
   if (passwords.length === 0) {
-    showToast('No valid passwords found to check', 'warning');
+    showToast(i18n.t('toast.noValidPasswordsToCheck'), 'warning');
     return;
   }
 

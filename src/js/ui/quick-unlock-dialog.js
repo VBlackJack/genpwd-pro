@@ -143,7 +143,29 @@ export class QuickUnlockDialog {
               </div>
             </div>
 
-            <div class="quick-unlock-error" id="quick-unlock-error" hidden></div>
+            <div class="quick-unlock-error" id="quick-unlock-error" role="alert" aria-live="assertive" hidden>
+              <span class="quick-unlock-error-text"></span>
+              <button type="button" class="quick-unlock-retry-btn" id="quick-unlock-retry">
+                ${t('vault.quickUnlock.tryAgain') || 'Try again'}
+              </button>
+            </div>
+
+            <!-- Windows Hello Section (shown when available) -->
+            <div class="quick-unlock-hello" id="quick-unlock-hello" hidden>
+              <div class="quick-unlock-divider">
+                <span>${t('vault.quickUnlock.or') || 'or'}</span>
+              </div>
+              <button type="button" class="quick-unlock-btn quick-unlock-btn-hello" id="quick-unlock-hello-btn">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                  <path d="M12 6c-2.21 0-4 1.79-4 4v2c0 2.21 1.79 4 4 4s4-1.79 4-4v-2c0-2.21-1.79-4-4-4z"/>
+                  <circle cx="9" cy="10" r="1"/>
+                  <circle cx="15" cy="10" r="1"/>
+                  <path d="M9 14c1.5 1 4.5 1 6 0"/>
+                </svg>
+                <span>Windows Hello</span>
+              </button>
+            </div>
 
             <div class="quick-unlock-actions">
               <button type="button" class="quick-unlock-btn quick-unlock-btn-secondary" id="quick-unlock-cancel">
@@ -179,12 +201,52 @@ export class QuickUnlockDialog {
   static #show() {
     const overlay = document.getElementById('quick-unlock-dialog');
     if (overlay) {
-      requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
         overlay.classList.add('active');
         this.#isOpen = true;
         // Focus password input
         document.getElementById('quick-unlock-password')?.focus();
+        // Check Windows Hello availability
+        await this.#checkWindowsHello();
       });
+    }
+  }
+
+  /**
+   * Check if Windows Hello is available for the selected vault
+   * @private
+   */
+  static async #checkWindowsHello() {
+    const helloSection = document.getElementById('quick-unlock-hello');
+    const vaultSelect = document.getElementById('quick-unlock-vault');
+    if (!helloSection) return;
+
+    // Check if Windows Hello API is available
+    if (!window.vault?.hello) {
+      helloSection.hidden = true;
+      return;
+    }
+
+    try {
+      // Check if Windows Hello is available on this system
+      const isAvailable = await window.vault.hello.isAvailable();
+      if (!isAvailable) {
+        helloSection.hidden = true;
+        return;
+      }
+
+      // Check if Windows Hello is enabled for the selected vault
+      const vaultId = vaultSelect?.value;
+      if (!vaultId) {
+        helloSection.hidden = true;
+        return;
+      }
+
+      const isEnabled = await window.vault.hello.isEnabled(vaultId);
+      helloSection.hidden = !isEnabled;
+    } catch (error) {
+      safeLog('[QuickUnlockDialog] Windows Hello check error:', error);
+      helloSection.hidden = true;
     }
   }
 
@@ -232,6 +294,87 @@ export class QuickUnlockDialog {
       e.preventDefault();
       await this.#handleSubmit();
     });
+
+    // Windows Hello button
+    const helloBtn = document.getElementById('quick-unlock-hello-btn');
+    helloBtn?.addEventListener('click', async () => {
+      await this.#handleWindowsHello();
+    });
+
+    // Update Windows Hello when vault selection changes
+    const vaultSelect = document.getElementById('quick-unlock-vault');
+    vaultSelect?.addEventListener('change', async () => {
+      await this.#checkWindowsHello();
+    });
+
+    // Retry button
+    const retryBtn = document.getElementById('quick-unlock-retry');
+    retryBtn?.addEventListener('click', () => {
+      const errorEl = document.getElementById('quick-unlock-error');
+      const passwordInput = document.getElementById('quick-unlock-password');
+      if (errorEl) errorEl.hidden = true;
+      passwordInput?.focus();
+    });
+  }
+
+  /**
+   * Handle Windows Hello authentication
+   * @private
+   */
+  static async #handleWindowsHello() {
+    const vaultSelect = document.getElementById('quick-unlock-vault');
+    const helloBtn = document.getElementById('quick-unlock-hello-btn');
+    const errorEl = document.getElementById('quick-unlock-error');
+
+    const vaultId = vaultSelect?.value;
+    if (!vaultId) {
+      showToast(t('vault.messages.selectVault'), 'warning');
+      return;
+    }
+
+    // Show loading state
+    if (helloBtn) {
+      helloBtn.disabled = true;
+      helloBtn.innerHTML = `
+        <svg class="spinning" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+        </svg>
+        <span>${t('vault.actions.unlocking') || 'Unlocking...'}</span>
+      `;
+    }
+
+    try {
+      // Attempt Windows Hello unlock
+      await window.vault.hello.unlock(vaultId);
+      showToast(t('vault.messages.unlockSuccess') || 'Vault unlocked', 'success');
+      this.close(true);
+    } catch (error) {
+      safeLog('[QuickUnlockDialog] Windows Hello unlock failed:', error);
+
+      // Show error
+      if (errorEl) {
+        const errorText = errorEl.querySelector('.quick-unlock-error-text');
+        if (errorText) {
+          errorText.textContent = error.message || t('vault.misc.biometricFailed') || 'Windows Hello failed';
+        }
+        errorEl.hidden = false;
+      }
+
+      // Restore button
+      if (helloBtn) {
+        helloBtn.disabled = false;
+        helloBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+            <path d="M12 6c-2.21 0-4 1.79-4 4v2c0 2.21 1.79 4 4 4s4-1.79 4-4v-2c0-2.21-1.79-4-4-4z"/>
+            <circle cx="9" cy="10" r="1"/>
+            <circle cx="15" cy="10" r="1"/>
+            <path d="M9 14c1.5 1 4.5 1 6 0"/>
+          </svg>
+          <span>Windows Hello</span>
+        `;
+      }
+    }
   }
 
   /**
@@ -268,10 +411,14 @@ export class QuickUnlockDialog {
       this.close(true);
     } catch (error) {
       if (errorEl) {
-        errorEl.textContent = error.message || t('vault.misc.incorrectPassword');
+        const errorText = errorEl.querySelector('.quick-unlock-error-text');
+        if (errorText) {
+          errorText.textContent = error.message || t('vault.misc.incorrectPassword');
+        }
         errorEl.hidden = false;
       }
-      passwordInput?.select();
+      passwordInput?.value && (passwordInput.value = '');
+      passwordInput?.focus();
 
       // Re-enable submit
       if (submitBtn) {

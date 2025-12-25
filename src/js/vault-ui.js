@@ -38,6 +38,7 @@ import { SyncSettingsModal } from './ui/modals/sync-settings-modal.js';
 import { AliasService } from './services/alias-service.js';
 import { AliasSettingsModal } from './ui/modals/alias-settings-modal.js';
 import { SettingsModal } from './ui/modals/settings-modal.js';
+import { showConfirm } from './ui/modal-manager.js';
 import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
@@ -463,9 +464,12 @@ export class VaultUI {
               </button>
             </div>
             <button type="submit" class="vault-btn vault-btn-primary vault-btn-full" id="btn-unlock">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+              </svg>
+              <svg class="btn-spinner" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" hidden>
+                <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" stroke-linecap="round"/>
               </svg>
               <span class="btn-text">${t('vault.lockScreen.unlock')}</span>
             </button>
@@ -599,13 +603,18 @@ export class VaultUI {
           const vaultId = btn.dataset.vaultId;
           const vaultName = btn.closest('.vault-list-item')?.querySelector('.vault-list-name')?.textContent || vaultId;
 
-          if (confirm(`Oublier le coffre "${vaultName}" ?\n\nLe fichier ne sera pas supprimé, mais le coffre sera retiré de la liste.`)) {
+          const confirmed = await showConfirm(t('vault.messages.forgetVaultConfirm', { name: vaultName }), {
+            title: t('vault.actions.forgetVault') || 'Forget Vault',
+            confirmLabel: t('common.forget') || 'Forget',
+            danger: true
+          });
+          if (confirmed) {
             try {
               await window.vault.unregister(vaultId);
-              this.#showToast('Coffre retiré de la liste', 'success');
+              this.#showToast(t('vault.messages.vaultForgotten'), 'success');
               this.#loadVaultList();
             } catch (error) {
-              this.#showToast(error.message || 'Erreur', 'error');
+              this.#showToast(error.message || t('vault.common.error'), 'error');
             }
           }
         });
@@ -676,7 +685,7 @@ export class VaultUI {
       if (input && btn) {
         const isPassword = input.type === 'password';
         input.type = isPassword ? 'text' : 'password';
-        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        btn.setAttribute('aria-label', isPassword ? t('vault.dialogs.hidePassword') : t('vault.quickUnlock.showPassword'));
         btn.setAttribute('aria-pressed', String(isPassword));
       }
     });
@@ -699,9 +708,13 @@ export class VaultUI {
 
       const btn = document.getElementById('btn-unlock');
       const progress = document.getElementById('unlock-progress');
+      const btnIcon = btn?.querySelector('.btn-icon');
+      const btnSpinner = btn?.querySelector('.btn-spinner');
 
       btn.disabled = true;
       btn.querySelector('.btn-text').textContent = t('vault.actions.unlocking');
+      if (btnIcon) btnIcon.hidden = true;
+      if (btnSpinner) btnSpinner.hidden = false;
       if (progress) {
         progress.hidden = false;
         // Animate progress bar
@@ -719,6 +732,8 @@ export class VaultUI {
         );
         btn.disabled = false;
         btn.querySelector('.btn-text').textContent = t('vault.lockScreen.unlock');
+        if (btnIcon) btnIcon.hidden = false;
+        if (btnSpinner) btnSpinner.hidden = true;
         if (progress) progress.hidden = true;
         document.getElementById('vault-password')?.select();
       }
@@ -960,7 +975,7 @@ export class VaultUI {
           const isPassword = input.type === 'password';
           input.type = isPassword ? 'text' : 'password';
           btn.setAttribute('aria-pressed', String(isPassword));
-          btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+          btn.setAttribute('aria-label', isPassword ? t('vault.dialogs.hidePassword') : t('vault.quickUnlock.showPassword'));
         }
       });
     });
@@ -1216,6 +1231,14 @@ export class VaultUI {
       <div class="vault-app" role="application" aria-label="Password Manager">
         <!-- Sidebar -->
         <aside class="vault-sidebar" role="navigation" aria-label="Vault navigation">
+          <!-- Sidebar Collapse Toggle -->
+          <button class="vault-sidebar-collapse" id="sidebar-collapse-btn"
+                  aria-label="${t('vault.sidebar.collapse') || 'Toggle sidebar'}"
+                  title="${t('vault.sidebar.collapse') || 'Toggle sidebar'}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
           <!-- Vault Selector -->
           <div class="vault-selector-header">
             <button class="vault-current" id="vault-switcher" aria-haspopup="true" aria-expanded="false">
@@ -1399,7 +1422,7 @@ export class VaultUI {
             <div class="vault-nav-section">
               <div class="vault-nav-title vault-nav-title-with-action">
                 <span>Folders</span>
-                <button class="vault-nav-add-btn" id="btn-add-folder" title="New folder" aria-label="Create folder">
+                <button class="vault-nav-add-btn" id="btn-add-folder" title="${t('vault.dialogs.newFolder')}" aria-label="${t('vault.dialogs.newFolder')}">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1610,6 +1633,7 @@ export class VaultUI {
     this.#attachMainViewEvents();
     this.#updateLockCountdown();
     this.#initTheme();
+    this.#restoreSidebarState();
   }
 
   // ==================== FOLDER TREE VIEW ====================
@@ -1908,7 +1932,7 @@ export class VaultUI {
     const folder = this.#folders.find(f => f.id === folderId);
     if (!folder) return;
 
-    const newName = prompt('New folder name:', folder.name);
+    const newName = prompt(t('vault.dialogs.newFolderName'), folder.name);
     if (newName && newName.trim() && newName !== folder.name) {
       try {
         await window.vault.folders.update(folderId, { name: newName.trim() });
@@ -1925,7 +1949,7 @@ export class VaultUI {
    * Show modal to add a subfolder
    */
   async #showAddSubfolderModal(parentId) {
-    const name = prompt('New subfolder name:');
+    const name = prompt(t('vault.dialogs.newSubfolderName'));
     if (name && name.trim()) {
       try {
         await window.vault.folders.add(name.trim(), parentId);
@@ -1949,10 +1973,15 @@ export class VaultUI {
 
     const entryCount = this.#entries.filter(e => e.folderId === folderId).length;
     const message = entryCount > 0
-      ? `Delete folder "${folder.name}" and move its ${entryCount} entries to root?`
-      : `Delete folder "${folder.name}"?`;
+      ? t('vault.messages.deleteFolderWithEntriesConfirm', { name: folder.name, count: entryCount })
+      : t('vault.messages.deleteFolderConfirm', { name: folder.name });
 
-    if (confirm(message)) {
+    const confirmed = await showConfirm(message, {
+      title: t('vault.actions.deleteFolder') || 'Delete Folder',
+      confirmLabel: t('common.delete') || 'Delete',
+      danger: true
+    });
+    if (confirmed) {
       try {
         await window.vault.folders.delete(folderId, false); // Don't delete entries
         if (this.#selectedFolder === folderId) {
@@ -3803,7 +3832,7 @@ export class VaultUI {
       <div class="vault-modal-overlay" id="add-folder-modal" role="dialog" aria-modal="true" aria-labelledby="add-folder-title">
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="add-folder-title">New folder</h3>
+            <h3 id="add-folder-title">${t('vault.dialogs.newFolder')}</h3>
             <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -5102,7 +5131,7 @@ export class VaultUI {
           const data = JSON.parse(text);
 
           if (!data.entries || !Array.isArray(data.entries)) {
-            throw new Error('Format invalide');
+            throw new Error(t('vault.validation.invalidFormat'));
           }
 
           for (const entry of data.entries) {
@@ -5743,6 +5772,11 @@ export class VaultUI {
       this.#toggleTheme();
     }, { signal });
 
+    // Sidebar collapse toggle
+    document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
+      this.#toggleSidebar();
+    }, { signal });
+
     // Cloud Sync button
     document.getElementById('btn-cloud-sync')?.addEventListener('click', () => {
       this.#syncSettingsModal.show();
@@ -6152,11 +6186,11 @@ export class VaultUI {
 
         // Copy password if available, otherwise copy username
         if (entry.data?.password) {
-          await this.#copyToClipboard(entry.data.password, 'Password copied');
+          await this.#copyToClipboard(entry.data.password, t('vault.messages.passwordCopied'));
         } else if (entry.data?.username) {
-          await this.#copyToClipboard(entry.data.username, 'Username copied');
+          await this.#copyToClipboard(entry.data.username, t('vault.messages.usernameCopied'));
         } else if (entry.data?.content) {
-          await this.#copyToClipboard(entry.data.content, 'Content copied');
+          await this.#copyToClipboard(entry.data.content, t('vault.messages.contentCopied'));
         }
       });
 
@@ -6188,9 +6222,9 @@ export class VaultUI {
 
         const action = btn.dataset.action;
         if (action === 'copy-username') {
-          await this.#copyToClipboard(entry.data?.username, 'Username copied');
+          await this.#copyToClipboard(entry.data?.username, t('vault.messages.usernameCopied'));
         } else if (action === 'copy-password') {
-          await this.#copyToClipboard(entry.data?.password, 'Password copied');
+          await this.#copyToClipboard(entry.data?.password, t('vault.messages.passwordCopied'));
         } else if (action === 'open-url' && entry.data?.url) {
           window.open(entry.data.url, '_blank', 'noopener,noreferrer');
         }
@@ -6425,10 +6459,10 @@ export class VaultUI {
 
         switch (action) {
           case 'copy-username':
-            await this.#copyToClipboard(entry.data?.username, 'Username copied');
+            await this.#copyToClipboard(entry.data?.username, t('vault.messages.usernameCopied'));
             break;
           case 'copy-password':
-            await this.#copyToClipboard(entry.data?.password, 'Password copied');
+            await this.#copyToClipboard(entry.data?.password, t('vault.messages.passwordCopied'));
             break;
           case 'open-url':
             if (entry.data?.url) window.open(entry.data.url, '_blank', 'noopener,noreferrer');
@@ -6453,9 +6487,14 @@ export class VaultUI {
           case 'toggle-pin':
             await this.#toggleEntryPin(entry);
             break;
-          case 'delete':
-            this.#deleteEntryWithUndo(entry);
+          case 'delete': {
+            const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
+              type: 'danger',
+              confirmLabel: t('common.delete') || 'Delete',
+            });
+            if (confirmed) this.#deleteEntryWithUndo(entry);
             break;
+          }
         }
       });
     });
@@ -6849,7 +6888,7 @@ export class VaultUI {
         const codeEl = totpField?.querySelector('.totp-digits');
         const code = codeEl?.textContent?.replace(/\s/g, '');
         if (code && code !== '------') {
-          await this.#copyToClipboard(code, '2FA code copied');
+          await this.#copyToClipboard(code, t('vault.messages.codeCopied'));
         }
       });
     });
@@ -6859,7 +6898,7 @@ export class VaultUI {
       el.addEventListener('click', async () => {
         const code = el.querySelector('.totp-digits')?.textContent?.replace(/\s/g, '');
         if (code && code !== '------') {
-          await this.#copyToClipboard(code, '2FA code copied');
+          await this.#copyToClipboard(code, t('vault.messages.codeCopied'));
           // Visual feedback
           el.animate([
             { transform: 'scale(1)' },
@@ -6900,7 +6939,7 @@ export class VaultUI {
     // Copy history password
     document.querySelectorAll('.copy-history-pwd').forEach(btn => {
       btn.addEventListener('click', async () => {
-        await this.#copyToClipboard(btn.dataset.password, 'Old password copied');
+        await this.#copyToClipboard(btn.dataset.password, t('vault.messages.oldPasswordCopied'));
       });
     });
 
@@ -6946,10 +6985,16 @@ export class VaultUI {
       this.#openEditModal(this.#selectedEntry);
     });
 
-    // Delete entry (with undo)
+    // Delete entry (with confirmation + undo)
     document.getElementById('btn-delete-entry')?.addEventListener('click', async () => {
       if (!this.#selectedEntry) return;
-      this.#deleteEntryWithUndo(this.#selectedEntry);
+      const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
+        type: 'danger',
+        confirmLabel: t('common.delete') || 'Delete',
+      });
+      if (confirmed) {
+        this.#deleteEntryWithUndo(this.#selectedEntry);
+      }
     });
 
     // Duplicate entry
@@ -7202,11 +7247,11 @@ export class VaultUI {
     });
 
     modal.querySelector('#copy-autotype-user').addEventListener('click', async () => {
-      await this.#copyToClipboard(username, 'Username copied');
+      await this.#copyToClipboard(username, t('vault.messages.usernameCopied'));
     });
 
     modal.querySelector('#copy-autotype-pass').addEventListener('click', async () => {
-      await this.#copyToClipboard(password, 'Password copied');
+      await this.#copyToClipboard(password, t('vault.messages.passwordCopied'));
     });
 
     // Auto-focus modal
@@ -7325,7 +7370,7 @@ export class VaultUI {
     // Copy passphrase
     modal.querySelector('#copy-passphrase').addEventListener('click', async () => {
       const passphrase = modal.querySelector('#share-passphrase').value;
-      await this.#copyToClipboard(passphrase, 'Passphrase copied');
+      await this.#copyToClipboard(passphrase, t('vault.messages.passphraseCopied'));
     });
 
     // Generate share
@@ -7347,7 +7392,7 @@ export class VaultUI {
     // Copy share
     modal.querySelector('#copy-share').addEventListener('click', async () => {
       const shareText = modal.querySelector('#share-output').value;
-      await this.#copyToClipboard(shareText, 'Encrypted text copied');
+      await this.#copyToClipboard(shareText, t('vault.messages.encryptedTextCopied'));
     });
   }
 
@@ -7977,18 +8022,22 @@ export class VaultUI {
       toggle.querySelector('.vault-template-chevron').style.transform = isExpanded ? '' : 'rotate(180deg)';
     });
 
-    // Template search
+    // Template search with debounce
+    let templateSearchTimeout;
     document.getElementById('template-search')?.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      document.querySelectorAll('.vault-template-item').forEach(item => {
-        const name = item.querySelector('.vault-template-name')?.textContent.toLowerCase() || '';
-        item.style.display = name.includes(query) ? '' : 'none';
-      });
-      // Show/hide categories
-      document.querySelectorAll('.vault-template-category').forEach(cat => {
-        const hasVisible = cat.querySelector('.vault-template-item:not([style*="display: none"])');
-        cat.style.display = hasVisible ? '' : 'none';
-      });
+      clearTimeout(templateSearchTimeout);
+      templateSearchTimeout = setTimeout(() => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll('.vault-template-item').forEach(item => {
+          const name = item.querySelector('.vault-template-name')?.textContent.toLowerCase() || '';
+          item.style.display = name.includes(query) ? '' : 'none';
+        });
+        // Show/hide categories
+        document.querySelectorAll('.vault-template-category').forEach(cat => {
+          const hasVisible = cat.querySelector('.vault-template-item:not([style*="display: none"])');
+          cat.style.display = hasVisible ? '' : 'none';
+        });
+      }, 100);
     });
 
     // Template selection
@@ -9274,7 +9323,7 @@ export class VaultUI {
     // Required check
     if (rules.required && !value) {
       isValid = false;
-      message = rules.requiredMessage || 'Ce champ est obligatoire';
+      message = rules.requiredMessage || t('vault.validation.fieldRequired');
     }
     // Min length check
     else if (rules.minLength && value.length < rules.minLength) {
@@ -9289,17 +9338,17 @@ export class VaultUI {
     // Pattern check
     else if (rules.pattern && !rules.pattern.test(value)) {
       isValid = false;
-      message = rules.patternMessage || 'Format invalide';
+      message = rules.patternMessage || t('vault.validation.invalidFormat');
     }
     // URL check
     else if (rules.url && value && !this.#isValidUrl(value)) {
       isValid = false;
-      message = rules.urlMessage || 'URL invalide';
+      message = rules.urlMessage || t('vault.validation.invalidUrl');
     }
     // Email check
     else if (rules.email && value && !this.#isValidEmail(value)) {
       isValid = false;
-      message = rules.emailMessage || 'Email invalide';
+      message = rules.emailMessage || t('vault.validation.invalidEmail');
     }
     // Valid
     else if (value && rules.showSuccess) {
@@ -9307,22 +9356,37 @@ export class VaultUI {
       messageType = 'success';
     }
 
-    // Update input classes
+    // Update input classes and ARIA attributes
     input.classList.remove('is-valid', 'is-invalid');
     if (value) {
       input.classList.add(isValid ? 'is-valid' : 'is-invalid');
+      input.setAttribute('aria-invalid', isValid ? 'false' : 'true');
+    } else {
+      input.removeAttribute('aria-invalid');
+    }
+
+    // Ensure message element has an ID for aria-describedby
+    if (!messageEl.id && input.id) {
+      messageEl.id = `${input.id}-message`;
+    }
+    if (messageEl.id) {
+      input.setAttribute('aria-describedby', messageEl.id);
     }
 
     // Update message
     if (message) {
       const icon = messageType === 'error'
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
       messageEl.innerHTML = `${icon}<span>${message}</span>`;
       messageEl.className = `vault-field-message visible ${messageType}`;
+      messageEl.setAttribute('role', 'alert');
+      messageEl.setAttribute('aria-live', messageType === 'error' ? 'assertive' : 'polite');
     } else {
       messageEl.className = 'vault-field-message';
       messageEl.innerHTML = '';
+      messageEl.removeAttribute('role');
+      messageEl.removeAttribute('aria-live');
     }
 
     return isValid;
@@ -9349,28 +9413,43 @@ export class VaultUI {
       isValid = false;
     } else if (confirm !== password) {
       isValid = false;
-      message = 'Les mots de passe ne correspondent pas';
+      message = t('vault.validation.passwordsNoMatch');
     } else {
-      message = 'Les mots de passe correspondent';
+      message = t('vault.validation.passwordsMatch');
       messageType = 'success';
     }
 
-    // Update input classes
+    // Update input classes and ARIA attributes
     confirmInput.classList.remove('is-valid', 'is-invalid');
     if (confirm) {
       confirmInput.classList.add(isValid ? 'is-valid' : 'is-invalid');
+      confirmInput.setAttribute('aria-invalid', isValid ? 'false' : 'true');
+    } else {
+      confirmInput.removeAttribute('aria-invalid');
+    }
+
+    // Ensure message element has an ID for aria-describedby
+    if (!messageEl.id && confirmInput.id) {
+      messageEl.id = `${confirmInput.id}-message`;
+    }
+    if (messageEl.id) {
+      confirmInput.setAttribute('aria-describedby', messageEl.id);
     }
 
     // Update message
     if (message) {
       const icon = messageType === 'error'
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
       messageEl.innerHTML = `${icon}<span>${message}</span>`;
       messageEl.className = `vault-field-message visible ${messageType}`;
+      messageEl.setAttribute('role', 'alert');
+      messageEl.setAttribute('aria-live', messageType === 'error' ? 'assertive' : 'polite');
     } else {
       messageEl.className = 'vault-field-message';
       messageEl.innerHTML = '';
+      messageEl.removeAttribute('role');
+      messageEl.removeAttribute('aria-live');
     }
 
     return isValid;
@@ -9476,6 +9555,35 @@ export class VaultUI {
     localStorage.setItem('vault-theme', this.#theme);
     this.#applyTheme();
     this.#showToast(`${this.#theme === 'dark' ? 'Dark' : 'Light'} theme enabled`, 'success');
+  }
+
+  /**
+   * Toggle sidebar collapsed state
+   */
+  #toggleSidebar() {
+    const sidebar = document.querySelector('.vault-sidebar');
+    if (sidebar) {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      localStorage.setItem('vault-sidebar-collapsed', isCollapsed);
+      // Update button aria-expanded
+      const btn = document.getElementById('sidebar-collapse-btn');
+      if (btn) {
+        btn.setAttribute('aria-expanded', String(!isCollapsed));
+      }
+    }
+  }
+
+  /**
+   * Restore sidebar collapsed state from localStorage
+   */
+  #restoreSidebarState() {
+    const isCollapsed = localStorage.getItem('vault-sidebar-collapsed') === 'true';
+    if (isCollapsed) {
+      const sidebar = document.querySelector('.vault-sidebar');
+      if (sidebar) {
+        sidebar.classList.add('collapsed');
+      }
+    }
   }
 
   #applyTheme() {
@@ -10031,10 +10139,14 @@ export class VaultUI {
         this.#duplicateEntry(this.#selectedEntry);
       }
 
-      // Delete - Delete selected entry
+      // Delete - Delete selected entry (with confirmation)
       if (e.key === 'Delete' && !e.target.matches('input, textarea, select') && this.#selectedEntry) {
         e.preventDefault();
-        this.#deleteEntryWithUndo(this.#selectedEntry);
+        const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
+          type: 'danger',
+          confirmLabel: t('common.delete') || 'Delete',
+        });
+        if (confirmed) this.#deleteEntryWithUndo(this.#selectedEntry);
       }
 
       // ? - Show shortcuts modal
@@ -10046,13 +10158,13 @@ export class VaultUI {
       // Ctrl+U - Copy username
       if (e.ctrlKey && e.key === 'u' && this.#selectedEntry?.data?.username) {
         e.preventDefault();
-        this.#copyToClipboard(this.#selectedEntry.data.username, 'Username copied');
+        this.#copyToClipboard(this.#selectedEntry.data.username, t('vault.messages.usernameCopied'));
       }
 
       // Ctrl+P - Copy password (custom handler, prevent print)
       if (e.ctrlKey && e.key === 'p' && this.#selectedEntry?.data?.password) {
         e.preventDefault();
-        this.#copyToClipboard(this.#selectedEntry.data.password, 'Password copied');
+        this.#copyToClipboard(this.#selectedEntry.data.password, t('vault.messages.passwordCopied'));
       }
 
       // Ctrl+Shift+U - Auto-type

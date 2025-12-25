@@ -7,6 +7,7 @@
 
 import { showToast } from '../utils/toast.js';
 import { safeLog } from '../utils/logger.js';
+import { i18n } from '../utils/i18n.js';
 
 /**
  * Vault state enum
@@ -260,7 +261,7 @@ export class VaultBridge {
    * Prompt user to unlock vault (switches to vault tab)
    */
   static promptUnlock() {
-    showToast('Please unlock the vault', 'warning');
+    showToast(i18n.t('toast.unlockVault'), 'warning');
     this.switchToVaultTab();
   }
 
