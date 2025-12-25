@@ -27,7 +27,7 @@ export const ANIMATION_DURATION = {
 
   // Toast notifications
   TOAST_DISPLAY: 3000,
-  TOAST_DISPLAY_ERROR: 5000, // Longer display for error messages
+  TOAST_DISPLAY_ERROR: 7000, // Longer display for error messages (7s for readability)
   TOAST_FADE_IN: 150,
   TOAST_FADE_OUT: 300,
 

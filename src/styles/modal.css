@@ -433,6 +433,51 @@
   color: #fff;
 }
 
+/* Copy button - Copied state (green checkmark) */
+.pwd .action-btn.copy-btn.copied {
+  border-color: var(--accent-green, #22c55e);
+  background: rgba(34, 197, 94, 0.25);
+  color: var(--accent-green, #22c55e);
+  animation: copySuccess 0.3s ease;
+}
+
+.pwd .action-btn.copy-btn.copied svg {
+  /* Hide the original copy icon */
+  display: none;
+}
+
+.pwd .action-btn.copy-btn.copied::after {
+  /* Checkmark icon */
+  content: "\2713";
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* Password card copying state - subtle flash */
+.pwd.copying {
+  animation: copyFlash 0.4s ease;
+}
+
+@keyframes copySuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes copyFlash {
+  0% { background: transparent; }
+  30% { background: rgba(0, 212, 255, 0.15); }
+  100% { background: transparent; }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pwd .action-btn.copy-btn.copied,
+  .pwd.copying {
+    animation: none;
+  }
+}
+
 /* ============================================================================
    SINGLETON TOOLTIP (position:fixed, bypasses overflow:hidden)
    ============================================================================ */

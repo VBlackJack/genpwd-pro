@@ -489,7 +489,7 @@ export function initializePresetsUI() {
   const presetsSection = document.createElement('section');
   presetsSection.className = 'section';
   presetsSection.innerHTML = sanitizeHTML(`
-    <div class="section-header chevron">
+    <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true">
       <span class="chev">▼</span>
       <strong>💾 ${i18n.t('presets.title')}</strong>
       <span class="badge">${presetManager.getAllPresets().length}</span>
@@ -1952,7 +1952,7 @@ export function initializePluginsUI() {
   const pluginStats = pluginManager.getStats();
 
   pluginsSection.innerHTML = sanitizeHTML(`
-    <div class="section-header chevron">
+    <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true">
       <span class="chev">▼</span>
       <strong>🔌 Plugins & Extensions</strong>
       <span class="badge">${pluginStats.enabledPlugins}/${pluginStats.totalPlugins}</span>

@@ -331,7 +331,53 @@ textarea[aria-invalid="false"]:not(:placeholder-shown) {
   border-color: var(--accent-green);
 }
 
+/* ==================== DISABLED STATES ==================== */
+
+/* Disabled button and input styling */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+.btn:disabled,
+[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+button:disabled:hover,
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Accessible disabled state with pattern */
+.btn-disabled-visible {
+  opacity: 0.6;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+}
+
 /* ==================== LOADING STATES ==================== */
+
+/* aria-busy indicator */
+[aria-busy="true"] {
+  position: relative;
+  pointer-events: none;
+}
+
+[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(1px);
+}
 
 /* Standard spinner */
 .spinner {
