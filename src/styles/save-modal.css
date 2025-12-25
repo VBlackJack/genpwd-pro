@@ -757,3 +757,45 @@
     padding: 0 1.5rem 1.5rem;
   }
 }
+
+/* ==================== REDUCED MOTION SUPPORT ==================== */
+@media (prefers-reduced-motion: reduce) {
+  .save-vault-modal-overlay,
+  .save-vault-modal,
+  .quick-unlock-overlay,
+  .quick-unlock-modal {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .save-vault-modal-overlay.active .save-vault-modal,
+  .quick-unlock-overlay.active .quick-unlock-modal {
+    transform: none !important;
+  }
+
+  .save-vault-notes-toggle svg {
+    transition: none !important;
+  }
+
+  .save-vault-spinner,
+  .quick-unlock-spinner,
+  .spinning {
+    animation: none !important;
+  }
+
+  .pwd-context-menu {
+    animation: none !important;
+  }
+
+  .save-vault-btn,
+  .quick-unlock-btn,
+  .save-vault-close,
+  .quick-unlock-close,
+  .save-vault-input,
+  .save-vault-select,
+  .save-vault-textarea,
+  .quick-unlock-input,
+  .save-vault-copy-btn {
+    transition: none !important;
+  }
+}

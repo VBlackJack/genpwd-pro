@@ -45,7 +45,14 @@ const translations = {
     quit: 'Quit',
     passwordGenerated: 'Password generated',
     copiedToClipboard: 'Copied to clipboard (30s)',
-    development: 'Development'
+    development: 'Development',
+    // Context menu
+    cut: 'Cut',
+    copy: 'Copy',
+    paste: 'Paste',
+    selectAll: 'Select All',
+    undo: 'Undo',
+    redo: 'Redo'
   },
   fr: {
     trayTooltip: 'GenPwd Pro - Générateur de mots de passe',
@@ -55,7 +62,14 @@ const translations = {
     quit: 'Quitter',
     passwordGenerated: 'Mot de passe généré',
     copiedToClipboard: 'Copié dans le presse-papier (30s)',
-    development: 'Développement'
+    development: 'Développement',
+    // Context menu
+    cut: 'Couper',
+    copy: 'Copier',
+    paste: 'Coller',
+    selectAll: 'Tout sélectionner',
+    undo: 'Annuler',
+    redo: 'Rétablir'
   },
   es: {
     trayTooltip: 'GenPwd Pro - Generador de contraseñas',
@@ -65,7 +79,14 @@ const translations = {
     quit: 'Salir',
     passwordGenerated: 'Contraseña generada',
     copiedToClipboard: 'Copiado al portapapeles (30s)',
-    development: 'Desarrollo'
+    development: 'Desarrollo',
+    // Context menu
+    cut: 'Cortar',
+    copy: 'Copiar',
+    paste: 'Pegar',
+    selectAll: 'Seleccionar todo',
+    undo: 'Deshacer',
+    redo: 'Rehacer'
   }
 };
 
@@ -1660,6 +1681,73 @@ app.on('will-quit', () => {
 app.on('web-contents-created', (event, contents) => {
   contents.on('new-window', (event, url) => {
     event.preventDefault();
+  });
+
+  // ==================== NATIVE CONTEXT MENU ====================
+  // Add standard cut/copy/paste context menu to all text inputs
+  contents.on('context-menu', (e, params) => {
+    const { editFlags, isEditable, selectionText } = params;
+    const t = getMainTranslations();
+
+    // Build context menu items based on context
+    const menuTemplate = [];
+
+    // For editable fields (inputs, textareas)
+    if (isEditable) {
+      menuTemplate.push(
+        {
+          label: t.undo || 'Undo',
+          accelerator: 'CmdOrCtrl+Z',
+          enabled: editFlags.canUndo,
+          click: () => contents.undo()
+        },
+        {
+          label: t.redo || 'Redo',
+          accelerator: 'CmdOrCtrl+Y',
+          enabled: editFlags.canRedo,
+          click: () => contents.redo()
+        },
+        { type: 'separator' },
+        {
+          label: t.cut || 'Cut',
+          accelerator: 'CmdOrCtrl+X',
+          enabled: editFlags.canCut,
+          click: () => contents.cut()
+        },
+        {
+          label: t.copy || 'Copy',
+          accelerator: 'CmdOrCtrl+C',
+          enabled: editFlags.canCopy,
+          click: () => contents.copy()
+        },
+        {
+          label: t.paste || 'Paste',
+          accelerator: 'CmdOrCtrl+V',
+          enabled: editFlags.canPaste,
+          click: () => contents.paste()
+        },
+        { type: 'separator' },
+        {
+          label: t.selectAll || 'Select All',
+          accelerator: 'CmdOrCtrl+A',
+          enabled: editFlags.canSelectAll,
+          click: () => contents.selectAll()
+        }
+      );
+    } else if (selectionText) {
+      // For selected text (non-editable)
+      menuTemplate.push({
+        label: t.copy || 'Copy',
+        accelerator: 'CmdOrCtrl+C',
+        click: () => contents.copy()
+      });
+    }
+
+    // Only show menu if we have items
+    if (menuTemplate.length > 0) {
+      const contextMenu = Menu.buildFromTemplate(menuTemplate);
+      contextMenu.popup();
+    }
   });
 });
 

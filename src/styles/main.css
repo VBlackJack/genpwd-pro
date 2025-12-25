@@ -30,10 +30,10 @@
 
   /* Text Colors - WCAG AA compliant (4.5:1 contrast ratio minimum) */
   --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.75);
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --text-hint: rgba(255, 255, 255, 0.5);
-  /* Note: text-hint used only for decorative/non-essential text */
+  --text-secondary: rgba(255, 255, 255, 0.78);
+  --text-muted: rgba(255, 255, 255, 0.65);
+  --text-hint: rgba(255, 255, 255, 0.55);
+  /* Note: Improved contrast ratios for better accessibility */
 
   /* Accent Colors - Semantic */
   --color-primary: hsl(var(--hue-primary), 100%, 70%);
@@ -252,10 +252,25 @@ body {
 
 /* Typography Helpers */
 h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+
+/* Gradient text with accessible fallback */
 .text-gradient {
+  /* Fallback color for browsers that don't support gradient text */
+  color: var(--color-primary);
+  /* Gradient for supporting browsers */
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* High contrast mode fallback */
+@media (forced-colors: active) {
+  .text-gradient {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: CanvasText;
+  }
 }
 
 /* Animations */

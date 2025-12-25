@@ -176,7 +176,13 @@ export class SaveToVaultModal {
                 value="${escapeHtml(prefill.title || '')}"
                 required
                 autofocus
+                aria-required="true"
+                aria-invalid="false"
+                aria-describedby="save-vault-title-error"
+                minlength="1"
+                maxlength="100"
               >
+              <span class="field-error" id="save-vault-title-error" hidden>${t('vault.messages.titleRequired')}</span>
             </div>
 
             <!-- Username -->
@@ -344,6 +350,28 @@ export class SaveToVaultModal {
       }
     });
 
+    // Real-time validation for title field
+    const titleInput = document.getElementById('save-vault-title-input');
+    const titleError = document.getElementById('save-vault-title-error');
+    titleInput?.addEventListener('input', () => {
+      const value = titleInput.value.trim();
+      const isValid = value.length > 0;
+      titleInput.setAttribute('aria-invalid', !isValid);
+      if (titleError) {
+        titleError.hidden = isValid;
+      }
+    });
+
+    // Validate on blur
+    titleInput?.addEventListener('blur', () => {
+      const value = titleInput.value.trim();
+      const isValid = value.length > 0;
+      titleInput.setAttribute('aria-invalid', !isValid);
+      if (titleError) {
+        titleError.hidden = isValid;
+      }
+    });
+
     // Form submit
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -365,6 +393,9 @@ export class SaveToVaultModal {
 
     const title = titleInput?.value?.trim();
     if (!title) {
+      titleInput?.setAttribute('aria-invalid', 'true');
+      const titleError = document.getElementById('save-vault-title-error');
+      if (titleError) titleError.hidden = false;
       titleInput?.focus();
       showToast(t('vault.messages.titleRequired'), 'warning');
       return;

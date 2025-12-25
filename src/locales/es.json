@@ -14,7 +14,8 @@
     "delete": "Eliminar",
     "close": "Cerrar",
     "tests": "Pruebas",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "importing": "Importando..."
   },
   "sections": {
     "generationMode": "Modo de Generación",
