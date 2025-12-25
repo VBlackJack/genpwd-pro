@@ -72,18 +72,15 @@
     "save": "Guardar Configuración",
     "manage": "Gestionar Presets",
     "load": "Cargar un preset",
-    "select": "-- Seleccionar --"
+    "select": "-- Seleccionar --",
+    "update": "Actualizar",
+    "updated": "actualizado",
+    "updateFailed": "Error al actualizar"
   },
   "history": {
     "title": "Historial",
     "search": "Buscar",
     "empty": "No hay contraseñas en el historial"
-  },
-  "language": {
-    "title": "Idioma",
-    "french": "Français",
-    "english": "English",
-    "spanish": "Español"
   },
   "vault": {
     "common": {
@@ -444,6 +441,22 @@
       "sshKey": "Clave SSH",
       "preset": "Preset",
       "recentlyModified": "Modificado recientemente"
+    },
+    "saveModal": {
+      "title": "Guardar en la bóveda",
+      "unlockMessage": "Desbloquea la bóveda para guardar la contraseña",
+      "titlePlaceholder": "ej. Mi cuenta de Google",
+      "urlPlaceholder": "https://ejemplo.com",
+      "noFolder": "Sin carpeta",
+      "addNotes": "Añadir notas",
+      "saving": "Guardando...",
+      "saveFailed": "Error al guardar",
+      "websiteUrl": "URL del sitio web"
+    },
+    "quickUnlock": {
+      "title": "Desbloquear bóveda",
+      "unlockToContinue": "Desbloquea la bóveda para continuar",
+      "showPassword": "Mostrar contraseña"
     }
   },
   "toast": {

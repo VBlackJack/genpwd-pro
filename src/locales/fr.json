@@ -72,18 +72,15 @@
     "save": "Sauvegarder Configuration",
     "manage": "Gérer les Presets",
     "load": "Charger un preset",
-    "select": "-- Sélectionner --"
+    "select": "-- Sélectionner --",
+    "update": "Mettre à jour",
+    "updated": "mis à jour",
+    "updateFailed": "Échec de la mise à jour"
   },
   "history": {
     "title": "Historique",
     "search": "Rechercher",
     "empty": "Aucun mot de passe dans l'historique"
-  },
-  "language": {
-    "title": "Langue",
-    "french": "Français",
-    "english": "English",
-    "spanish": "Español"
   },
   "vault": {
     "common": {
@@ -444,6 +441,22 @@
       "sshKey": "Clé SSH",
       "preset": "Preset",
       "recentlyModified": "Modifié récemment"
+    },
+    "saveModal": {
+      "title": "Enregistrer dans le coffre",
+      "unlockMessage": "Déverrouillez le coffre pour enregistrer le mot de passe",
+      "titlePlaceholder": "ex. Mon compte Google",
+      "urlPlaceholder": "https://exemple.com",
+      "noFolder": "Aucun dossier",
+      "addNotes": "Ajouter des notes",
+      "saving": "Enregistrement...",
+      "saveFailed": "Échec de l'enregistrement",
+      "websiteUrl": "URL du site web"
+    },
+    "quickUnlock": {
+      "title": "Déverrouiller le coffre",
+      "unlockToContinue": "Déverrouillez le coffre pour continuer",
+      "showPassword": "Afficher le mot de passe"
     }
   },
   "toast": {

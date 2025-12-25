@@ -1,4 +1,3 @@
-import { CryptoEngine } from './interfaces.js';
 import { KEYSET_ENVELOPE } from '../config/crypto-constants.js';
 
 const KEYSET_ENVELOPE_VERSION = KEYSET_ENVELOPE.VERSION;
@@ -202,6 +201,5 @@ export class TinkAeadCryptoEngine extends CryptoEngine {
   }
 }
 
-export async function createCryptoEngineFromMasterKey(encryptedKeyset, keyEncryptionKey, associatedData = new Uint8Array()) {
-  return TinkAeadCryptoEngine.fromEncryptedKeyset(encryptedKeyset, keyEncryptionKey, associatedData);
-}
+// NOTE: createCryptoEngineFromMasterKey was removed as dead code.
+// If needed, use: TinkAeadCryptoEngine.fromEncryptedKeyset(encryptedKeyset, keyEncryptionKey, associatedData)

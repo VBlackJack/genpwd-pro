@@ -23,10 +23,11 @@
 export const ANIMATION_DURATION = {
   // Modal animations
   MODAL_FADE_IN: 10,
-  MODAL_FADE_OUT: 200,
+  MODAL_FADE_OUT: 300, // Used consistently across modal-manager, vault-ui, etc.
 
   // Toast notifications
   TOAST_DISPLAY: 3000,
+  TOAST_DISPLAY_ERROR: 5000, // Longer display for error messages
   TOAST_FADE_IN: 150,
   TOAST_FADE_OUT: 300,
 
@@ -58,6 +59,8 @@ export const SIZE_LIMITS = {
   MAX_PRESET_NAME_LENGTH: 50,
   MAX_PRESET_DESC_LENGTH: 200,
   MIN_PRESET_NAME_LENGTH: 3,
+  MAX_CUSTOM_SPECIALS_LENGTH: 20, // Maximum custom special characters
+  MAX_LEET_WORD_LENGTH: 50, // Maximum word length for leet mode
 
   // Generated passwords
   MAX_PASSWORD_LENGTH: 128,
@@ -109,11 +112,15 @@ export const RATE_LIMIT = {
  * NOTE: Use single source of truth (MS values). Compute seconds/minutes: value / 1000 or value / 60000
  */
 export const SECURITY_TIMEOUTS = {
-  // Clipboard auto-clear (30 seconds)
-  CLIPBOARD_TTL_MS: 30000,
+  // Clipboard auto-clear options (in ms)
+  CLIPBOARD_TTL_MS: 30000, // Default: 30 seconds
+  CLIPBOARD_TTL_OPTIONS: [15000, 30000, 60000, 120000], // 15s, 30s, 1min, 2min
 
   // Vault auto-lock (5 minutes = 300 seconds)
   AUTO_LOCK_DEFAULT_MS: 300000,
+
+  // Sync interval (5 minutes)
+  SYNC_INTERVAL_MS: 300000,
 
   // Inactivity warning (1 minute before lock)
   INACTIVITY_WARNING_MS: 60000,
@@ -121,6 +128,15 @@ export const SECURITY_TIMEOUTS = {
   // Security lockout
   MAX_FAILED_ATTEMPTS: 5,
   LOCKOUT_DURATION_MS: 300000 // 5 minutes after max failed attempts
+};
+
+/**
+ * TOTP defaults (RFC 6238)
+ */
+export const TOTP_DEFAULTS = {
+  PERIOD: 30, // seconds
+  DIGITS: 6,
+  ALGORITHM: 'SHA1'
 };
 
 /**
@@ -217,14 +233,37 @@ export const ANALYTICS = {
   REQUEST_TIMEOUT: 10000 // ms - analytics request timeout
 };
 
+/**
+ * Time conversion constants (avoid magic numbers for time calculations)
+ */
+export const TIME_UNITS = {
+  // Milliseconds per time unit
+  MS_PER_SECOND: 1000,
+  MS_PER_MINUTE: 60000,
+  MS_PER_HOUR: 3600000,
+  MS_PER_DAY: 86400000,
+
+  // Password age thresholds (in days)
+  PASSWORD_RENEWAL_DAYS: 365,    // Consider password old after 1 year
+  PASSWORD_WARNING_DAYS: 180,    // Show warning after 6 months
+  PASSWORD_ATTENTION_DAYS: 90,   // Needs attention after 3 months
+
+  // File size units
+  BYTES_PER_KB: 1024,
+  BYTES_PER_MB: 1048576  // 1024 * 1024
+};
+
 // Object.freeze all exported objects to prevent mutations
 Object.freeze(ANIMATION_DURATION);
 Object.freeze(SIZE_LIMITS);
 Object.freeze(INTERACTION);
 Object.freeze(RATE_LIMIT);
+Object.freeze(SECURITY_TIMEOUTS);
+Object.freeze(TOTP_DEFAULTS);
 Object.freeze(CACHE);
 Object.freeze(A11Y);
 Object.freeze(ERROR_HANDLING);
 Object.freeze(PERFORMANCE);
 Object.freeze(DEBUG);
 Object.freeze(ANALYTICS);
+Object.freeze(TIME_UNITS);

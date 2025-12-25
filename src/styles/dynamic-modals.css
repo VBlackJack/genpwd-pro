@@ -48,65 +48,12 @@
   cursor: pointer;
 }
 
-/* Test Results */
-.test-score {
-  font-size: 36px;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.test-score.score-perfect {
-  color: #10b981;
-}
-
-.test-score.score-good {
-  color: #f59e0b;
-}
-
-.test-score.score-fail {
-  color: #ef4444;
-}
-
-.test-meta {
-  color: #8c94ca;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.test-version {
-  color: #8c94ca;
-  font-size: 12px;
-}
-
-.test-item-title {
-  font-weight: 600;
-  color: #10b981;
-  margin-bottom: 6px;
-}
-
-.test-item-info {
-  font-size: 12px;
-  color: #8c94ca;
-  margin-bottom: 4px;
-}
-
-.test-item-example {
-  font-size: 11px;
-  color: #d6dcff;
-  font-family: var(--font-mono);
-  background: rgba(0,0,0,0.2);
-  padding: 6px;
-  border-radius: 4px;
-  margin-top: 6px;
-}
-
-.test-item-error-title {
-  font-weight: 600;
-  color: #ef4444;
-  margin-bottom: 6px;
-}
-
-.test-item-error-msg {
-  font-size: 12px;
-  color: #ef4444;
-}
+/* Test Results - Main styles are in test-modal.css
+   These are aliases for backward compatibility with dynamically created elements */
+.test-score.score-perfect { color: #10b981; }
+.test-score.score-good { color: #f59e0b; }
+.test-score.score-fail { color: #ef4444; }
+.test-meta { color: #8c94ca; font-size: 14px; margin-bottom: 4px; }
+.test-version { color: #8c94ca; font-size: 12px; }
+.test-item-error-title { font-weight: 600; color: #ef4444; margin-bottom: 6px; }
+.test-item-error-msg { font-size: 12px; color: #ef4444; }

@@ -892,10 +892,7 @@ select {
   align-items: center;
 }
 
-.theme-selector-label {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
+/* .theme-selector-label is defined in utilities.css */
 
 .theme-select {
   padding: 0.5rem;

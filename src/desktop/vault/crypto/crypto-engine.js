@@ -71,9 +71,25 @@ export class CryptoEngine {
    * @param {string} password - Master password
    * @param {VaultKeyData} keyData - Stored key derivation data
    * @returns {Promise<Uint8Array>} Derived encryption key
+   * @throws {Error} If keyData is invalid
    */
   async deriveVaultKey(password, keyData) {
+    // Validate inputs
+    if (!password || typeof password !== 'string') {
+      throw new Error('Invalid password: must be a non-empty string');
+    }
+    if (!keyData || typeof keyData !== 'object') {
+      throw new Error('Invalid keyData: must be an object');
+    }
+    if (!keyData.salt || typeof keyData.salt !== 'string') {
+      throw new Error('Invalid keyData.salt: must be a base64 string');
+    }
+
     const salt = this.#base64ToArray(keyData.salt);
+    if (salt.length < 16) {
+      throw new Error('Invalid salt: must be at least 16 bytes');
+    }
+
     const key = await deriveKey(password, salt, keyData.kdfParams);
     return key;
   }
@@ -83,10 +99,22 @@ export class CryptoEngine {
    * @param {string} password - Password to verify
    * @param {VaultKeyData} keyData - Stored key derivation data
    * @returns {Promise<{valid: boolean, key: Uint8Array|null}>}
+   * @throws {Error} If keyData is invalid
    */
   async verifyPassword(password, keyData) {
+    // Validate keyData.verifier before use
+    if (!keyData?.verifier || typeof keyData.verifier !== 'string') {
+      throw new Error('Invalid keyData.verifier: must be a base64 string');
+    }
+
     const key = await this.deriveVaultKey(password, keyData);
     const expectedVerifier = this.#base64ToArray(keyData.verifier);
+
+    if (expectedVerifier.length !== 32) {
+      wipeKey(key);
+      throw new Error('Invalid verifier: must be 32 bytes (SHA-256)');
+    }
+
     const actualVerifier = await this.#createVerifier(key);
 
     // Constant-time comparison

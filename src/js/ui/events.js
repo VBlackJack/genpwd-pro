@@ -38,9 +38,6 @@ const BLOCK_SYNC_DELAY = 200;
 // AbortController for document-level event listeners
 let eventsController = null;
 
-// Rate limiting configuration for password generation
-const GENERATION_CONFIG = RATE_LIMITING;
-
 // State for rate limiting
 const generationState = {
   lastGeneration: 0,

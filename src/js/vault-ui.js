@@ -122,6 +122,7 @@ export class VaultUI {
   #draggedEntry = null; // For drag & drop
   #totpTimer = null; // TOTP update interval
   #pendingExportEntries = null; // Entries pending export
+  #unsubscribeSyncStatus = null; // Sync status listener cleanup
   #faviconCache = new Map(); // Cached favicons
   #breachCache = new Map(); // Cached breach check results (password hash -> count)
   #lastBreachCheck = null; // Last breach check timestamp
@@ -354,6 +355,7 @@ export class VaultUI {
     if (this.#unsubscribeChanged) this.#unsubscribeChanged();
     if (this.#unsubscribeBlur) this.#unsubscribeBlur();
     if (this.#unsubscribeFocus) this.#unsubscribeFocus();
+    if (this.#unsubscribeSyncStatus) this.#unsubscribeSyncStatus();
     // Clean up keyboard shortcuts handler
     if (this.#keyboardHandler) {
       document.removeEventListener('keydown', this.#keyboardHandler);
@@ -1884,8 +1886,13 @@ export class VaultUI {
       });
     });
 
-    // Close on outside click
+    // Close on outside click - with safety check for removed elements
     const closeMenu = (e) => {
+      // Guard: if menu was already removed, just cleanup listener
+      if (!document.body.contains(menu)) {
+        document.removeEventListener('click', closeMenu);
+        return;
+      }
       if (!menu.contains(e.target)) {
         menu.remove();
         document.removeEventListener('click', closeMenu);
@@ -6453,20 +6460,32 @@ export class VaultUI {
       });
     });
 
-    // Close on click outside or Escape
+    // Close on click outside or Escape - with safety check for removed elements
     setTimeout(() => {
+      const cleanup = () => {
+        document.removeEventListener('click', handler);
+        document.removeEventListener('keydown', escHandler);
+      };
       const handler = (e) => {
+        // Guard: if menu was already removed, just cleanup listeners
+        if (!document.body.contains(menu)) {
+          cleanup();
+          return;
+        }
         if (!menu.contains(e.target)) {
           closeMenu();
-          document.removeEventListener('click', handler);
-          document.removeEventListener('keydown', escHandler);
+          cleanup();
         }
       };
       const escHandler = (e) => {
         if (e.key === 'Escape') {
+          // Guard: if menu was already removed, just cleanup listeners
+          if (!document.body.contains(menu)) {
+            cleanup();
+            return;
+          }
           closeMenu();
-          document.removeEventListener('click', handler);
-          document.removeEventListener('keydown', escHandler);
+          cleanup();
         }
       };
       document.addEventListener('click', handler);
@@ -9208,14 +9227,20 @@ export class VaultUI {
 
     popover.querySelector('.vault-gen-close').addEventListener('click', () => popover.remove());
 
-    // Close on outside click
+    // Close on outside click - with safety check for removed elements
     setTimeout(() => {
-      document.addEventListener('click', function closePopover(e) {
+      const closePopover = (e) => {
+        // Guard: if popover was already removed, just cleanup listener
+        if (!document.body.contains(popover)) {
+          document.removeEventListener('click', closePopover);
+          return;
+        }
         if (!popover.contains(e.target) && e.target !== input) {
           popover.remove();
           document.removeEventListener('click', closePopover);
         }
-      });
+      };
+      document.addEventListener('click', closePopover);
     }, 100);
   }
 
@@ -10533,7 +10558,7 @@ export class VaultUI {
   #initSyncStatus() {
     if (!window.vault) return;
 
-    window.vault.on('sync:status', (data) => {
+    this.#unsubscribeSyncStatus = window.vault.on('sync:status', (data) => {
       this.#updateSyncStatus(data);
     });
   }

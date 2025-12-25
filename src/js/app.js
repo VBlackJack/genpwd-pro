@@ -165,8 +165,7 @@ class GenPwdApp {
       this.initializeVault();
 
     } catch (error) {
-      console.error('Critical initialization error:', error);
-      safeLog(`Critical error: ${error.message}`);
+      safeLog(`Critical initialization error: ${error.message}`, 'error');
       reportError(error, { phase: 'initialization' });
 
       // NEW: Report to Sentry

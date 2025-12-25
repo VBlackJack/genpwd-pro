@@ -18,6 +18,7 @@
   --bg-tertiary: hsl(var(--hue-bg), 25%, 18%);
   --bg-quaternary: hsl(var(--hue-bg), 20%, 22%);
   --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-error: rgba(244, 67, 54, 0.1);
 
   /* Glassmorphism Tokens */
   --glass-str: 0.15;
@@ -46,6 +47,7 @@
   --accent-blue: hsl(220, 90%, 65%);
   --accent-green: hsl(150, 70%, 50%);
   --accent-red: hsl(350, 85%, 60%);
+  --accent-red-dark: hsl(350, 80%, 35%);
   --accent-purple: hsl(270, 80%, 65%);
   --accent-orange: hsl(30, 90%, 55%);
   --accent-yellow: hsl(45, 95%, 55%);

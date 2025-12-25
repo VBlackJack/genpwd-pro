@@ -25,6 +25,7 @@ export class VaultBridge {
   static #currentState = VaultState.UNAVAILABLE;
   static #initialized = false;
   static #unsubscribers = [];
+  static #refreshing = false; // Mutex to prevent concurrent refreshState calls
 
   /**
    * Initialize the vault bridge (call once at app startup)
@@ -107,18 +108,24 @@ export class VaultBridge {
    * @private
    */
   static async #refreshState() {
-    if (!this.isAvailable()) {
-      this.#currentState = VaultState.UNAVAILABLE;
-      return;
-    }
+    // Prevent concurrent refresh calls (race condition fix)
+    if (this.#refreshing) return;
+    this.#refreshing = true;
 
     try {
+      if (!this.isAvailable()) {
+        this.#currentState = VaultState.UNAVAILABLE;
+        return;
+      }
+
       const state = await window.vault.getState();
       this.#currentState = state?.status === 'unlocked'
         ? VaultState.UNLOCKED
         : VaultState.LOCKED;
     } catch (error) {
       this.#currentState = VaultState.LOCKED;
+    } finally {
+      this.#refreshing = false;
     }
   }
 

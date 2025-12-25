@@ -72,18 +72,15 @@
     "save": "Save Configuration",
     "manage": "Manage Presets",
     "load": "Load a preset",
-    "select": "-- Select --"
+    "select": "-- Select --",
+    "update": "Update",
+    "updated": "updated",
+    "updateFailed": "Update failed"
   },
   "history": {
     "title": "History",
     "search": "Search",
     "empty": "No passwords in history"
-  },
-  "language": {
-    "title": "Language",
-    "french": "Français",
-    "english": "English",
-    "spanish": "Español"
   },
   "vault": {
     "common": {
@@ -444,6 +441,22 @@
       "sshKey": "SSH Key",
       "preset": "Preset",
       "recentlyModified": "Recently modified"
+    },
+    "saveModal": {
+      "title": "Save to Vault",
+      "unlockMessage": "Unlock the vault to save the password",
+      "titlePlaceholder": "e.g. My Google Account",
+      "urlPlaceholder": "https://example.com",
+      "noFolder": "No folder",
+      "addNotes": "Add notes",
+      "saving": "Saving...",
+      "saveFailed": "Save failed",
+      "websiteUrl": "Website URL"
+    },
+    "quickUnlock": {
+      "title": "Unlock Vault",
+      "unlockToContinue": "Unlock the vault to continue",
+      "showPassword": "Show password"
     }
   },
   "toast": {

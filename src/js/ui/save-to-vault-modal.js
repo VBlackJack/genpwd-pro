@@ -9,6 +9,7 @@ import { VaultBridge } from './vault-bridge.js';
 import { showToast } from '../utils/toast.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { QuickUnlockDialog } from './quick-unlock-dialog.js';
+import { t } from '../utils/i18n.js';
 
 /**
  * SaveToVaultModal - Manages the save-to-vault modal overlay
@@ -40,10 +41,12 @@ export class SaveToVaultModal {
    */
   static async open(password, prefill = {}) {
     if (this.#isOpen) return;
+    this.#isOpen = true; // Set immediately to prevent race condition
 
     // Check vault state
     if (!VaultBridge.isAvailable()) {
-      showToast('Vault not available', 'error');
+      this.#isOpen = false;
+      showToast(t('toast.vaultNotAvailable'), 'error');
       return;
     }
 
@@ -51,18 +54,26 @@ export class SaveToVaultModal {
     if (!isUnlocked) {
       // Show quick unlock dialog instead of switching tabs
       const unlocked = await QuickUnlockDialog.show({
-        message: 'Unlock the vault to save the password'
+        message: t('vault.saveModal.unlockMessage')
       });
 
       if (!unlocked) {
-        // User cancelled, do nothing
+        // User cancelled, reset flag and return
+        this.#isOpen = false;
         return;
       }
       // Vault is now unlocked, continue
     }
 
     this.#currentPassword = password;
-    this.#folders = await VaultBridge.getFolders();
+
+    try {
+      this.#folders = await VaultBridge.getFolders();
+    } catch (error) {
+      this.#isOpen = false;
+      showToast(t('vault.common.error'), 'error');
+      return;
+    }
 
     this.#render(prefill);
     this.#show();
@@ -113,9 +124,9 @@ export class SaveToVaultModal {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </div>
-              <h3 id="save-vault-title">Save to Vault</h3>
+              <h3 id="save-vault-title">${t('vault.saveModal.title')}</h3>
             </div>
-            <button type="button" class="save-vault-close" id="save-vault-close" aria-label="Close">
+            <button type="button" class="save-vault-close" id="save-vault-close" aria-label="${t('common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -126,10 +137,10 @@ export class SaveToVaultModal {
           <form class="save-vault-form" id="save-vault-form">
             <!-- Password Preview -->
             <div class="save-vault-password-preview">
-              <label class="save-vault-label">Password</label>
+              <label class="save-vault-label">${t('vault.labels.password')}</label>
               <div class="save-vault-password-display">
                 <code class="save-vault-password-value">${escapeHtml(this.#currentPassword)}</code>
-                <button type="button" class="save-vault-copy-btn" id="save-vault-copy" title="Copy">
+                <button type="button" class="save-vault-copy-btn" id="save-vault-copy" title="${t('common.copy')}">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -141,13 +152,13 @@ export class SaveToVaultModal {
             <!-- Title (required) -->
             <div class="save-vault-group">
               <label class="save-vault-label" for="save-vault-title-input">
-                Title <span class="required">*</span>
+                ${t('vault.labels.title')} <span class="required">*</span>
               </label>
               <input
                 type="text"
                 class="save-vault-input"
                 id="save-vault-title-input"
-                placeholder="e.g. My Google Account"
+                placeholder="${t('vault.saveModal.titlePlaceholder')}"
                 value="${escapeHtml(prefill.title || '')}"
                 required
                 autofocus
@@ -156,33 +167,33 @@ export class SaveToVaultModal {
 
             <!-- Username -->
             <div class="save-vault-group">
-              <label class="save-vault-label" for="save-vault-username">Username</label>
+              <label class="save-vault-label" for="save-vault-username">${t('vault.labels.username')}</label>
               <input
                 type="text"
                 class="save-vault-input"
                 id="save-vault-username"
-                placeholder="email@example.com"
+                placeholder="${t('vault.form.userPlaceholder')}"
                 value="${escapeHtml(prefill.username || '')}"
               >
             </div>
 
             <!-- URL -->
             <div class="save-vault-group">
-              <label class="save-vault-label" for="save-vault-url">Website URL</label>
+              <label class="save-vault-label" for="save-vault-url">${t('vault.saveModal.websiteUrl')}</label>
               <input
                 type="url"
                 class="save-vault-input"
                 id="save-vault-url"
-                placeholder="https://example.com"
+                placeholder="${t('vault.saveModal.urlPlaceholder')}"
                 value="${escapeHtml(prefill.url || '')}"
               >
             </div>
 
             <!-- Folder -->
             <div class="save-vault-group">
-              <label class="save-vault-label" for="save-vault-folder">Folder</label>
+              <label class="save-vault-label" for="save-vault-folder">${t('vault.labels.folder')}</label>
               <select class="save-vault-select" id="save-vault-folder">
-                <option value="">No folder</option>
+                <option value="">${t('vault.saveModal.noFolder')}</option>
                 ${folderOptions}
               </select>
             </div>
@@ -193,13 +204,13 @@ export class SaveToVaultModal {
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 18l6-6-6-6"/>
                 </svg>
-                Add notes
+                ${t('vault.saveModal.addNotes')}
               </summary>
               <div class="save-vault-group">
                 <textarea
                   class="save-vault-textarea"
                   id="save-vault-notes"
-                  placeholder="Optional notes..."
+                  placeholder="${t('vault.form.optionalNotes')}"
                   rows="3"
                 ></textarea>
               </div>
@@ -208,7 +219,7 @@ export class SaveToVaultModal {
             <!-- Actions -->
             <div class="save-vault-actions">
               <button type="button" class="save-vault-btn save-vault-btn-secondary" id="save-vault-cancel">
-                Cancel
+                ${t('common.cancel')}
               </button>
               <button type="submit" class="save-vault-btn save-vault-btn-primary" id="save-vault-submit">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -216,7 +227,7 @@ export class SaveToVaultModal {
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
                 </svg>
-                Save
+                ${t('common.save')}
               </button>
             </div>
           </form>
@@ -276,11 +287,11 @@ export class SaveToVaultModal {
     copyBtn?.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(this.#currentPassword);
-        showToast('Password copied', 'success');
+        showToast(t('toast.passwordCopied'), 'success');
         copyBtn.classList.add('copied');
         setTimeout(() => copyBtn.classList.remove('copied'), 1000);
       } catch (error) {
-        showToast('Copy failed', 'error');
+        showToast(t('toast.copyFailed'), 'error');
       }
     });
 
@@ -306,7 +317,7 @@ export class SaveToVaultModal {
     const title = titleInput?.value?.trim();
     if (!title) {
       titleInput?.focus();
-      showToast('Title is required', 'warning');
+      showToast(t('vault.messages.titleRequired'), 'warning');
       return;
     }
 
@@ -315,7 +326,7 @@ export class SaveToVaultModal {
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
         <span class="save-vault-spinner"></span>
-        Saving...
+        ${t('vault.saveModal.saving')}
       `;
     }
 
@@ -330,7 +341,7 @@ export class SaveToVaultModal {
     if (result.success) {
       this.close();
     } else {
-      showToast(result.error || 'Save failed', 'error');
+      showToast(result.error || t('vault.saveModal.saveFailed'), 'error');
       // Re-enable submit button
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -340,7 +351,7 @@ export class SaveToVaultModal {
             <polyline points="17 21 17 13 7 13 7 21"></polyline>
             <polyline points="7 3 7 8 15 8"></polyline>
           </svg>
-          Save
+          ${t('common.save')}
         `;
       }
     }

@@ -71,6 +71,9 @@ class SecureClipboard {
   /** @type {boolean} */
   #isClearing = false;
 
+  /** @type {Function|null} - Unsubscribe function for Electron clipboard events */
+  #electronClipboardUnsubscribe = null;
+
   /**
    * Get singleton instance
    * @returns {SecureClipboard}
@@ -88,13 +91,26 @@ class SecureClipboard {
     }
     this.#loadSettings();
 
-    // Listen for Electron clipboard cleared events
+    // Listen for Electron clipboard cleared events (store unsubscribe to prevent memory leaks)
     if (window.electronAPI?.onClipboardCleared) {
-      window.electronAPI.onClipboardCleared((data) => {
+      this.#electronClipboardUnsubscribe = window.electronAPI.onClipboardCleared((data) => {
         safeLog('[SecureClipboard] Electron clipboard cleared event received');
         this.#handleCleared(data?.reason || 'external');
       });
     }
+  }
+
+  /**
+   * Cleanup resources (call on app shutdown)
+   */
+  destroy() {
+    this.#cancelTimer();
+    if (this.#electronClipboardUnsubscribe) {
+      this.#electronClipboardUnsubscribe();
+      this.#electronClipboardUnsubscribe = null;
+    }
+    this.#resetReference();
+    SecureClipboard.#instance = null;
   }
 
   // ==================== CONFIGURATION ====================

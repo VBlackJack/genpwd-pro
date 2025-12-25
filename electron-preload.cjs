@@ -28,11 +28,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Vérifier si on est dans Electron
   isElectron: true,
 
-  // Écouter les événements du main process
-  onGeneratePassword: (callback) => {
-    ipcRenderer.on('generate-password', callback);
-  },
-
   // ==================== FILE SYSTEM ====================
   // Read binary file (for KDBX import)
   readBinaryFile: (filePath) => ipcRenderer.invoke('fs:read-binary', filePath),
@@ -201,6 +196,7 @@ contextBridge.exposeInMainWorld('vault', {
   },
 
   // ==================== IMPORT/EXPORT ====================
+  // NOTE: These methods are available but not yet used in the UI
   export: (vaultId, password, exportPath) =>
     ipcRenderer.invoke('vault:export', { vaultId, password, exportPath }),
   import: (importPath, password) =>
@@ -283,7 +279,9 @@ contextBridge.exposeInMainWorld('vault', {
   },
   once: (event, callback) => {
     const channel = `vault:${event}`;
-    ipcRenderer.once(channel, (_, data) => callback(data));
+    const handler = (_, data) => callback(data);
+    ipcRenderer.once(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
   }
 });
 

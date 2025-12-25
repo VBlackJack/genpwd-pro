@@ -133,9 +133,10 @@ export function reportError(error, context = {}) {
   // Log locally
   logErrorLocally(error);
 
-  // Send to monitoring service (fire-and-forget with error suppression)
-  sendErrorToMonitoring(error).catch(() => {
-    // Intentionally silent - monitoring failures shouldn't break the app
+  // Send to monitoring service (fire-and-forget with minimal logging on failure)
+  sendErrorToMonitoring(error).catch((monitoringError) => {
+    // Log monitoring failure locally but don't break the app
+    logErrorLocally(new Error(`Monitoring service failed: ${monitoringError.message}`));
   });
 }
 

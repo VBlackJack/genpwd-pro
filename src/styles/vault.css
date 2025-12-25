@@ -16,6 +16,14 @@
   --vault-radius-sm: var(--radius-sm, 8px);
   --vault-radius-md: var(--radius-md, 12px);
   --vault-radius-lg: var(--radius-lg, 16px);
+  /* Status colors - used throughout vault UI */
+  --vault-success: var(--accent-green, #22c55e);
+  --vault-warning: var(--accent-yellow, #eab308);
+  --vault-danger: var(--accent-red, #ef4444);
+  --vault-error: var(--vault-danger);
+  /* Transitions and shadows */
+  --vault-transition: 0.15s ease;
+  --vault-shadow-lg: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.3));
 }
 
 /* ==================== LAYOUT: 3-PANE GLASS ==================== */
@@ -132,125 +140,10 @@
   overflow: hidden;
 }
 
-.vault-switcher-section {
-  padding: 0.75rem;
-}
-
-.vault-switcher-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  padding: 0 0.5rem;
-}
-
-.vault-switcher-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0.625rem 0.75rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.vault-switcher-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.vault-switcher-item.current {
-  background: rgba(59, 130, 246, 0.1);
-}
-
-.vault-switcher-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  color: white;
-}
-
-.vault-switcher-name {
-  flex: 1;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.vault-switcher-check {
-  color: var(--vault-primary);
-}
-
-.vault-switcher-divider {
-  height: 1px;
-  background: var(--glass-border);
-  margin: 0;
-}
-
-.vault-switcher-actions {
-  padding: 0.5rem;
-}
-
-.vault-switcher-action {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: left;
-}
-
-.vault-switcher-action:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-}
+/* NOTE: .vault-switcher-action, .vault-nav-item, .vault-list-panel defined in their respective sections below */
 
 .vault-nav-group {
   padding: 1rem;
-}
-
-.vault-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  color: var(--text-secondary);
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.vault-nav-item:hover {
-  background: var(--glass-border);
-  color: var(--text-primary);
-  transform: translateX(4px);
-}
-
-.vault-nav-item.active {
-  background: rgba(59, 130, 246, 0.15);
-  color: var(--color-primary);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-/* ==================== PANEL 2: ENTRY LIST ==================== */
-.vault-list-panel {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(15px);
-  border-right: 1px solid var(--glass-border);
-  display: flex;
-  flex-direction: column;
-  isolation: isolate; /* Create stacking context */
 }
 
 .vault-search-bar {
@@ -291,19 +184,7 @@
   border-left: 3px solid var(--color-primary);
 }
 
-/* ==================== PANEL 3: DETAILS ==================== */
-.vault-detail-panel {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  background: rgba(255, 255, 255, 0.01);
-  /* Most transparent */
-  backdrop-filter: blur(10px);
-  padding: 2rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
+/* NOTE: .vault-detail-panel defined in DETAIL PANEL section below */
 
 /* Fields */
 .field-group {
@@ -562,6 +443,7 @@
 }
 
 .vault-list-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -637,10 +519,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.vault-list-item {
-  position: relative;
 }
 
 .vault-list-item:hover .vault-list-forget {

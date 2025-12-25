@@ -173,6 +173,23 @@ export const DEFAULT_CASE_BLOCKS = Object.freeze(['T', 'l']);
 export const DEFAULT_MODE = 'syllables';
 
 /**
+ * Default dictionary for passphrases
+ */
+export const DEFAULT_DICTIONARY = 'french';
+
+/**
+ * Default leet word
+ */
+export const DEFAULT_LEET_WORD = 'password';
+
+/**
+ * Allowed special characters for custom specials input
+ * Broader set than SPECIALS_SAFE for user flexibility
+ * Excludes: $ (shell variable), ^ (escape), & (background), * (glob), ' (quote), ` (command sub)
+ */
+export const ALLOWED_SPECIALS = '!@#%_+-=.,:;?/\\|[]{}()<>~';
+
+/**
  * Check if a mode is valid
  * @param {string} mode - Mode to validate
  * @returns {boolean}

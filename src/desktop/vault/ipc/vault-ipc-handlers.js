@@ -507,9 +507,12 @@ export function registerVaultIPC(ipcMain) {
   }, 'tags:delete'));
 
   // ==================== IMPORT/EXPORT ====================
+  // NOTE: These handlers are implemented but not yet used in the renderer.
+  // They are available for future vault export/import UI features.
 
   /**
    * Export vault (requires dialog in renderer) - with rate limiting
+   * @todo Implement UI in renderer to use this handler
    */
   ipcMain.handle('vault:export', safeHandler(async (event, { vaultId, password, exportPath }) => {
     validateString(vaultId, 'vaultId');
@@ -534,6 +537,7 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * Import vault - with rate limiting
+   * @todo Implement UI in renderer to use this handler
    */
   ipcMain.handle('vault:import', safeHandler(async (event, { importPath, password }) => {
     validateString(importPath, 'importPath');

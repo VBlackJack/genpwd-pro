@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 // src/js/config/settings.js - State management and validation
-import { DEFAULT_SETTINGS, CHAR_SETS, DICTIONARY_CONFIG, LIMITS, SPECIALS_SAFE, isValidMode, DEFAULT_MODE, PLACEMENT_MODES, CASE_MODES, CASE_BLOCK_TYPES, DEFAULT_CASE_BLOCKS } from './constants.js';
+import { DEFAULT_SETTINGS, CHAR_SETS, DICTIONARY_CONFIG, LIMITS, SPECIALS_SAFE, isValidMode, DEFAULT_MODE, PLACEMENT_MODES, CASE_MODES, CASE_BLOCK_TYPES, DEFAULT_CASE_BLOCKS, DEFAULT_DICTIONARY, DEFAULT_LEET_WORD, ALLOWED_SPECIALS } from './constants.js';
+import { SIZE_LIMITS } from './ui-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { LRUCache } from '../utils/lru-cache.js';
 
@@ -46,19 +47,16 @@ function validateCustomSpecials(input) {
     return SPECIALS_SAFE;
   }
 
-  // Whitelist of allowed special characters (CLI-safe + commonly used)
-  // Excludes: $ (shell variable), ^ (escape), & (background), * (glob), ' (quote), ` (command sub)
-  const ALLOWED_SPECIALS = '!@#%_+-=.,:;?/\\|[]{}()<>~';
-
   // Filter to only allowed characters and remove duplicates
+  // Uses ALLOWED_SPECIALS from constants.js (broader set for user flexibility)
   const filtered = [...new Set(
     input
       .split('')
       .filter(char => ALLOWED_SPECIALS.includes(char))
   )].join('');
 
-  // Limit length
-  const validated = filtered.slice(0, 20);
+  // Limit length using constant from ui-constants.js
+  const validated = filtered.slice(0, SIZE_LIMITS.MAX_CUSTOM_SPECIALS_LENGTH);
 
   // If empty after validation, return safe defaults
   if (validated.length === 0) {
@@ -88,20 +86,20 @@ export function validateSettings(settings) {
 
   // Mode-specific validation
   if (safe.mode === 'syllables') {
-    safe.specific.length = Math.max(LIMITS.SYLLABLES_MIN_LENGTH, 
+    safe.specific.length = Math.max(LIMITS.SYLLABLES_MIN_LENGTH,
       Math.min(LIMITS.SYLLABLES_MAX_LENGTH, parseInt(settings.specific?.length, 10) || 20));
-    safe.specific.policy = Object.keys(CHAR_SETS).includes(settings.specific?.policy) ? 
+    safe.specific.policy = Object.keys(CHAR_SETS).includes(settings.specific?.policy) ?
       settings.specific.policy : 'standard';
   } else if (safe.mode === 'passphrase') {
-    safe.specific.count = Math.max(LIMITS.PASSPHRASE_MIN_WORDS, 
+    safe.specific.count = Math.max(LIMITS.PASSPHRASE_MIN_WORDS,
       Math.min(LIMITS.PASSPHRASE_MAX_WORDS, parseInt(settings.specific?.count, 10) || 5));
-    safe.specific.sep = ['-', '_', '.', ' '].includes(settings.specific?.sep) ? 
+    safe.specific.sep = ['-', '_', '.', ' '].includes(settings.specific?.sep) ?
       settings.specific.sep : '-';
     safe.specific.dictionary = Object.keys(DICTIONARY_CONFIG).includes(settings.specific?.dictionary) ?
-      settings.specific.dictionary : 'french';
+      settings.specific.dictionary : DEFAULT_DICTIONARY;
   } else if (safe.mode === 'leet') {
-    safe.specific.word = typeof settings.specific?.word === 'string' ? 
-      settings.specific.word.slice(0, 50).replace(/[^\w]/g, '') || 'password' : 'password';
+    safe.specific.word = typeof settings.specific?.word === 'string' ?
+      settings.specific.word.slice(0, SIZE_LIMITS.MAX_LEET_WORD_LENGTH).replace(/[^\w]/g, '') || DEFAULT_LEET_WORD : DEFAULT_LEET_WORD;
   }
 
   return safe;

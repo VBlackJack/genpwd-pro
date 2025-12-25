@@ -99,10 +99,6 @@
   padding: 24px;
   overflow-y: auto;
   max-height: 60vh;
-}
-
-/* Scrollbars spécifiques au modal */
-.modal-body {
   scrollbar-width: thin;
   scrollbar-color: var(--accent-purple) var(--bg-tertiary);
 }

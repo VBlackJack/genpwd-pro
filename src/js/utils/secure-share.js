@@ -228,11 +228,11 @@ async function decryptPayload(encryptedBase64, passphrase) {
 }
 
 /**
- * Generate a random passphrase
+ * Generate a simple random passphrase for share links
  * @param {number} [wordCount=4] - Number of words
  * @returns {string}
  */
-export function generatePassphrase(wordCount = 4) {
+export function generateSimplePassphrase(wordCount = 4) {
   const words = [
     'apple', 'banana', 'cherry', 'dragon', 'eagle', 'forest', 'garden', 'harbor',
     'island', 'jungle', 'knight', 'lemon', 'mountain', 'nature', 'ocean', 'palace',
@@ -278,7 +278,7 @@ export function formatShareForDisplay(shareData) {
 export default {
   createShare,
   openShare,
-  generatePassphrase,
+  generateSimplePassphrase,
   formatShareForDisplay,
   SHARE_VERSION
 };

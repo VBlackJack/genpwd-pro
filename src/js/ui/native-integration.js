@@ -30,6 +30,8 @@ const SETTINGS_KEY = 'genpwd_native_settings';
 
 // AbortController for cleanup
 let nativeIntegrationController = null;
+// Vault event unsubscribers
+let unsubscribeVaultLocked = null;
 
 const DEFAULT_SETTINGS = {
   minimizeToTray: true,
@@ -323,7 +325,7 @@ function initTrayRestoreBehavior(signal) {
 
   // Listen for vault lock events from tray menu
   if (window.vault?.on) {
-    window.vault.on('locked', () => {
+    unsubscribeVaultLocked = window.vault.on('locked', () => {
       showToast('Vault locked', 'info');
     });
   }
@@ -437,8 +439,12 @@ export function cleanupNativeIntegration() {
   if (nativeIntegrationController) {
     nativeIntegrationController.abort();
     nativeIntegrationController = null;
-    safeLog('Native integration cleaned up');
   }
+  if (unsubscribeVaultLocked) {
+    unsubscribeVaultLocked();
+    unsubscribeVaultLocked = null;
+  }
+  safeLog('Native integration cleaned up');
 }
 
 /**
