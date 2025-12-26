@@ -33,6 +33,7 @@
   --text-secondary: rgba(255, 255, 255, 0.78);
   --text-muted: rgba(255, 255, 255, 0.65);
   --text-hint: rgba(255, 255, 255, 0.55);
+  --text-on-accent: #ffffff; /* Text on colored buttons/backgrounds */
   /* Note: Improved contrast ratios for better accessibility */
 
   /* Accent Colors - Semantic */
@@ -45,7 +46,9 @@
   /* Accent Colors - Named */
   --accent-primary: hsl(var(--hue-primary), 100%, 70%);
   --accent-cyan: hsl(185, 80%, 55%);
+  --accent-cyan-light: hsl(185, 85%, 65%);
   --accent-blue: hsl(220, 90%, 65%);
+  --accent-blue-light: hsl(220, 85%, 55%);
   --accent-blue-dark: hsl(220, 85%, 50%);
   --accent-blue-darker: hsl(220, 80%, 42%);
   --accent-green: hsl(150, 70%, 50%);
@@ -53,6 +56,12 @@
   --accent-red: hsl(350, 85%, 60%);
   --accent-red-light: hsl(350, 90%, 72%);
   --accent-red-dark: hsl(350, 80%, 35%);
+  /* Danger button color scale */
+  --danger-bg: hsl(350, 40%, 18%);
+  --danger-bg-dark: hsl(350, 30%, 15%);
+  --danger-bg-hover: hsl(350, 45%, 22%);
+  --danger-border: hsl(350, 60%, 30%);
+  --danger-text: hsl(350, 100%, 92%);
   --accent-purple: hsl(270, 80%, 65%);
   --accent-purple-light: hsl(270, 75%, 75%);
   --accent-orange: hsl(30, 90%, 55%);
@@ -66,6 +75,12 @@
   /* Theme-specific text colors (for dark theme) */
   --text-dimmed: #8c94ca;
   --text-bright: #d6dcff;
+
+  /* Contrast text for colored backgrounds */
+  --text-on-yellow: hsl(35, 70%, 10%);
+  --text-on-green: hsl(160, 80%, 8%);
+  --text-on-orange: hsl(30, 80%, 10%);
+  --text-on-blue: hsl(220, 80%, 8%);
 
   /* Code background (centralized) */
   --bg-code: rgba(0, 0, 0, 0.3);
@@ -88,10 +103,15 @@
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
-  /* Border Radius */
+  /* Border Radius Scale */
+  --radius-xs: 4px;
   --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-pill: 999px;
+  --radius-full: 50%;
   /* Aliases for compatibility */
   --radius: var(--radius-sm);
   --radius-small: var(--radius-sm);
@@ -116,15 +136,36 @@
   --text-3xl: 1.875rem; /* 30px */
 
   /* Z-Index Scale (avoid conflicts) */
+  --z-base: 1;
+  --z-above: 2;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 50;
   --z-header: 100;
-  --z-dropdown: 200;
-  --z-sticky: 300;
-  --z-fixed: 400;
+  --z-overlay: 200;
   --z-modal-backdrop: 1000;
   --z-modal: 1100;
   --z-toast: 2000;
   --z-tooltip: 3000;
   --z-max: 9999;
+
+  /* Transitions (consistent timing) */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 0.4s ease;
+
+  /* Focus styles (consistent across app) */
+  --focus-ring-color: var(--accent-cyan);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Common semi-transparent colors */
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.1);
+  --overlay-strong: rgba(255, 255, 255, 0.15);
+  --overlay-dark: rgba(0, 0, 0, 0.2);
+  --overlay-darker: rgba(0, 0, 0, 0.4);
 }
 
 /* ==================== LIGHT THEME ==================== */
@@ -140,11 +181,11 @@
     --bg-hover: rgba(0, 0, 0, 0.04);
     --bg-error: rgba(244, 67, 54, 0.08);
 
-    /* Glassmorphism - Light */
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.08);
-    --glass-border-light: rgba(0, 0, 0, 0.12);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+    /* Glassmorphism - Light (improved visibility on white backgrounds) */
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.12);
+    --glass-border-light: rgba(0, 0, 0, 0.18);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
 
     /* Text Colors - Light theme (WCAG AA compliant) */
     --text-primary: rgba(0, 0, 0, 0.87);
@@ -187,10 +228,10 @@
   --bg-quaternary: hsl(220, 8%, 86%);
   --bg-hover: rgba(0, 0, 0, 0.04);
   --bg-error: rgba(244, 67, 54, 0.08);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-light: rgba(0, 0, 0, 0.12);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --glass-border-light: rgba(0, 0, 0, 0.18);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
   /* Text Colors - WCAG AA compliant */
   --text-primary: rgba(0, 0, 0, 0.87);
   --text-secondary: rgba(0, 0, 0, 0.7);
@@ -232,18 +273,30 @@ body {
 
 /* Scrollbars - Minimal & Integrated */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Wider scrollbars for touch devices (WCAG AA touch target compliance) */
+@media (pointer: coarse) {
+  ::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
 }
 
 /* Modern Reset */
@@ -355,5 +408,37 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   select,
   textarea {
     transition: none !important;
+  }
+}
+
+/* ============================================================================
+   HIGH-DPI SCALING - Ensure touch targets are accessible at all DPI levels
+   ============================================================================ */
+
+/* At 150% DPI (144dpi), increase touch targets proportionally */
+@media (min-resolution: 144dpi) {
+  .btn,
+  .btn-mini,
+  .action-btn,
+  .modal-close,
+  .vault-modal-close,
+  .toggle-pwd-visibility,
+  .vault-input-btn {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* At 200% DPI (192dpi), increase touch targets further */
+@media (min-resolution: 192dpi) {
+  .btn,
+  .btn-mini,
+  .action-btn,
+  .modal-close,
+  .vault-modal-close,
+  .toggle-pwd-visibility,
+  .vault-input-btn {
+    min-width: 52px;
+    min-height: 52px;
   }
 }

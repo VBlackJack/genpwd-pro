@@ -3,12 +3,15 @@
  */
 
 import { showToast } from '../../utils/toast.js';
+import { setMainContentInert } from '../events.js';
 
 export class ShareModal {
     #modalId = 'share-modal';
     #isVisible = false;
     #currentSecret = null;
     #escapeHandler = null;
+    #focusTrapHandler = null;
+    #previouslyFocusedElement = null;
 
     constructor() {
         this.#injectModal();
@@ -16,33 +19,77 @@ export class ShareModal {
     }
 
     show(secretData) {
+        // Save previously focused element
+        this.#previouslyFocusedElement = document.activeElement;
         this.#currentSecret = secretData;
         this.#isVisible = true;
+        setMainContentInert(true);
 
         // Reset state
         document.getElementById('share-step-1').hidden = false;
         document.getElementById('share-step-2').hidden = true;
         document.getElementById('share-result-url').value = '';
 
+        // Reset step indicator
+        document.getElementById('share-step-indicator').textContent = 'Step 1 of 2';
+        const dots = document.querySelectorAll('#share-modal .step-dot');
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === 0));
+
         const modal = document.getElementById(this.#modalId);
         if (modal) {
             modal.hidden = false;
+
+            // Focus first focusable element
+            requestAnimationFrame(() => {
+                modal.querySelector('select, input, button')?.focus();
+            });
+
             // Add escape key handler
             this.#escapeHandler = (e) => {
                 if (e.key === 'Escape') this.hide();
             };
             document.addEventListener('keydown', this.#escapeHandler);
+
+            // Add focus trap
+            this.#focusTrapHandler = (e) => {
+                if (e.key !== 'Tab') return;
+                const focusable = modal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+                const visibleFocusable = Array.from(focusable).filter(el => !el.closest('[hidden]'));
+                const first = visibleFocusable[0];
+                const last = visibleFocusable[visibleFocusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last?.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first?.focus();
+                }
+            };
+            modal.addEventListener('keydown', this.#focusTrapHandler);
         }
     }
 
     hide() {
         this.#isVisible = false;
+        setMainContentInert(false);
         const modal = document.getElementById(this.#modalId);
-        if (modal) modal.hidden = true;
+        if (modal) {
+            modal.hidden = true;
+            // Remove focus trap
+            if (this.#focusTrapHandler) {
+                modal.removeEventListener('keydown', this.#focusTrapHandler);
+                this.#focusTrapHandler = null;
+            }
+        }
         // Remove escape key handler
         if (this.#escapeHandler) {
             document.removeEventListener('keydown', this.#escapeHandler);
             this.#escapeHandler = null;
+        }
+        // Restore focus
+        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
+            this.#previouslyFocusedElement.focus();
+            this.#previouslyFocusedElement = null;
         }
     }
 
@@ -74,7 +121,16 @@ export class ShareModal {
             </button>
           </div>
           <div class="vault-modal-body">
-            
+
+            <!-- Step Progress Indicator -->
+            <div class="step-indicator" aria-live="polite">
+              <span class="step-current" id="share-step-indicator">Step 1 of 2</span>
+              <div class="step-dots">
+                <span class="step-dot active" aria-label="Step 1: Configuration"></span>
+                <span class="step-dot" aria-label="Step 2: Result"></span>
+              </div>
+            </div>
+
             <!-- Step 1: Config -->
             <div id="share-step-1">
               <div class="vault-info-box">
@@ -170,6 +226,11 @@ export class ShareModal {
                 document.getElementById('share-result-url').value = result.url;
                 document.getElementById('share-step-1').hidden = true;
                 document.getElementById('share-step-2').hidden = false;
+
+                // Update step indicator
+                document.getElementById('share-step-indicator').textContent = 'Step 2 of 2';
+                const dots = document.querySelectorAll('#share-modal .step-dot');
+                dots.forEach((dot, i) => dot.classList.toggle('active', i === 1));
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
             } finally {

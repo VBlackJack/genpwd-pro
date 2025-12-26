@@ -63,7 +63,7 @@
         </div>
         <!-- App Tabs (Electron only) -->
         <div class="header-tabs" id="app-tabs" style="display: none;">
-          <button type="button" class="header-tab active" data-tab="generator" aria-label="Password Generator Tab">🔒 Generator</button>
+          <button type="button" class="header-tab active" data-tab="generator" aria-label="Password Generator Tab" aria-current="page">🔒 Generator</button>
           <button type="button" class="header-tab" data-tab="vault" aria-label="Password Vault Tab">🗄️ Vault</button>
         </div>
 
@@ -87,15 +87,15 @@
     </header>
 
     <!-- Modal À Propos -->
-    <div class="modal-overlay" id="about-modal" role="dialog" aria-labelledby="about-modal-title" aria-modal="true" aria-hidden="true">
+    <div class="modal-overlay" id="about-modal" role="dialog" aria-labelledby="about-modal-title" aria-modal="true">
       <div class="modal">
         <div class="modal-header">
-          <div class="modal-title" id="about-modal-title">
+          <h2 class="modal-title" id="about-modal-title">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
             </svg>
             GenPwd Pro
-          </div>
+          </h2>
           <button type="button" class="modal-close" id="modal-close" aria-label="Close" aria-controls="about-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -173,10 +173,10 @@
     </div>
 
     <!-- Modal Résultats Tests -->
-    <div id="test-results-modal" class="modal-overlay hidden" role="dialog" aria-labelledby="test-results-title" aria-modal="true" aria-hidden="true">
+    <div id="test-results-modal" class="modal-overlay hidden" role="dialog" aria-labelledby="test-results-title" aria-modal="true">
       <div class="modal test-modal">
         <div class="modal-header">
-          <div class="modal-title" id="test-results-title">📊 Test Results - GenPwd Pro v3.0.0</div>
+          <h2 class="modal-title" id="test-results-title">📊 Test Results - GenPwd Pro v3.0.0</h2>
           <button type="button" class="modal-close" id="close-test-results" aria-label="Close test results" aria-controls="test-results-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -244,9 +244,9 @@
               <!-- Syllables options -->
               <div id="mode-syllables-opts" aria-label="Syllables mode options">
                 <div class="row">
-                  <label for="syll-len">Length (6–64)</label>
+                  <label for="syll-len" id="syll-len-label">Length <span class="sr-only">(6 to 64 characters)</span></label>
                   <div class="grow slider-wrap">
-                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20" aria-label="Password length" aria-valuemin="6" aria-valuemax="64" aria-valuenow="20">
+                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20" aria-label="Password length" aria-describedby="syll-len-val" aria-valuemin="6" aria-valuemax="64" aria-valuenow="20">
                     <span class="badge" id="syll-len-val" aria-live="polite">20</span>
                   </div>
                 </div>
@@ -264,10 +264,10 @@
               <!-- Passphrase options -->
               <div id="mode-passphrase-opts" class="hidden">
                 <div class="row">
-                  <label for="pp-count">Word count (2–8)</label>
+                  <label for="pp-count">Word count <span class="sr-only">(2 to 8 words)</span></label>
                   <div class="grow slider-wrap">
-                    <input type="range" id="pp-count" class="slider" min="2" max="8" value="5" aria-label="Number of words in passphrase" aria-valuemin="2" aria-valuemax="8" aria-valuenow="5">
-                    <span class="badge" id="pp-count-val">5</span>
+                    <input type="range" id="pp-count" class="slider" min="2" max="8" value="5" aria-label="Number of words in passphrase" aria-describedby="pp-count-val" aria-valuemin="2" aria-valuemax="8" aria-valuenow="5">
+                    <span class="badge" id="pp-count-val" aria-live="polite">5</span>
                   </div>
                 </div>
                 <div class="row">
@@ -314,10 +314,10 @@
             </div>
             <div class="section-content" id="section-params-content">
               <div class="row">
-                <label for="qty">Count (1–20)</label>
+                <label for="qty">Count <span class="sr-only">(1 to 20 passwords)</span></label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="qty" min="1" max="20" value="5" aria-label="Number of passwords">
-                  <span class="badge" id="qty-val">5</span>
+                  <input type="range" class="slider" id="qty" min="1" max="20" value="5" aria-label="Number of passwords" aria-describedby="qty-val">
+                  <span class="badge" id="qty-val" aria-live="polite">5</span>
                 </div>
               </div>
               <div class="row">
@@ -328,17 +328,17 @@
               <div class="divider"></div>
 
               <div class="row">
-                <label for="digits-count">Digits (0–6)</label>
+                <label for="digits-count">Digits <span class="sr-only">(0 to 6)</span></label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2" aria-label="Number of digits">
-                  <span class="badge" id="digits-count-val">2</span>
+                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2" aria-label="Number of digits" aria-describedby="digits-count-val">
+                  <span class="badge" id="digits-count-val" aria-live="polite">2</span>
                 </div>
               </div>
               <div class="row">
-                <label for="specials-count">Specials (0–6)</label>
+                <label for="specials-count">Specials <span class="sr-only">(0 to 6)</span></label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2" aria-label="Number of special characters">
-                  <span class="badge" id="specials-count-val">2</span>
+                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2" aria-label="Number of special characters" aria-describedby="specials-count-val">
+                  <span class="badge" id="specials-count-val" aria-live="polite">2</span>
                 </div>
               </div>
               <div class="row">

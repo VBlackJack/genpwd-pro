@@ -139,7 +139,7 @@ function createPasswordCard(item, id, mask) {
           </svg>
         </button>
       </div>
-      <div class="breach-status" role="status" aria-live="polite" hidden></div>
+      <div class="breach-status" role="status" hidden></div>
     </div>
     <div class="card-sec comp">
       <div class="comp-bar">
@@ -287,7 +287,13 @@ function bindCopyButtons() {
         if (success) {
           showToast(t('toast.passwordCopied'), 'success');
           btn.classList.add('copied');
-          setTimeout(() => btn.classList.remove('copied'), 1000);
+          // Update aria-label for screen readers
+          const originalLabel = btn.getAttribute('aria-label') || t('common.copy') || 'Copy';
+          btn.setAttribute('aria-label', t('toast.passwordCopied') || 'Copied to clipboard');
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.setAttribute('aria-label', originalLabel);
+          }, 1000);
         } else {
           showToast(t('toast.copyFailed'), 'error');
         }
@@ -319,10 +325,13 @@ function bindBreachCheckButtons() {
       const statusEl = card?.querySelector('.breach-status');
       if (!statusEl) return;
 
-      // Show loading state
+      // Show loading state with ARIA attributes for accessibility
       btn.classList.add('checking');
       btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      btn.setAttribute('aria-label', t('breach.checking') || 'Checking if password was breached...');
       statusEl.hidden = false;
+      statusEl.setAttribute('aria-live', 'polite'); // Set aria-live when visible for proper announcements
       statusEl.className = 'breach-status loading';
       statusEl.innerHTML = '<span class="breach-spinner"></span> Checking...';
 
@@ -350,6 +359,8 @@ function bindBreachCheckButtons() {
       } finally {
         btn.classList.remove('checking');
         btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        btn.setAttribute('aria-label', t('breach.checkButton') || 'Check if password was breached');
       }
     }, { signal: eventController.signal });
   });
@@ -389,11 +400,33 @@ function showContextMenu(e, password) {
     ` : ''}
   `;
 
-  // Position menu at cursor
-  menu.style.left = `${e.clientX}px`;
-  menu.style.top = `${e.clientY}px`;
-
   document.body.appendChild(menu);
+
+  // Position menu at cursor with viewport boundary detection
+  const menuRect = menu.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const padding = 8; // Minimum distance from viewport edge
+
+  let left = e.clientX;
+  let top = e.clientY;
+
+  // Prevent menu from going off right edge
+  if (left + menuRect.width + padding > viewportWidth) {
+    left = viewportWidth - menuRect.width - padding;
+  }
+
+  // Prevent menu from going off bottom edge
+  if (top + menuRect.height + padding > viewportHeight) {
+    top = viewportHeight - menuRect.height - padding;
+  }
+
+  // Prevent menu from going off left/top edge
+  left = Math.max(padding, left);
+  top = Math.max(padding, top);
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
 
   // Get all menu items for keyboard navigation
   const menuItems = Array.from(menu.querySelectorAll('.pwd-ctx-item'));

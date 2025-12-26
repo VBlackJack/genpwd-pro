@@ -5,11 +5,14 @@
 
 import { showConfirm } from '../modal-manager.js';
 import { showToast } from '../../utils/toast.js';
+import { setMainContentInert } from '../events.js';
 
 export class SettingsModal {
     #modalId = 'settings-modal';
     #isVisible = false;
     #escapeHandler = null;
+    #focusTrapHandler = null;
+    #previouslyFocusedElement = null;
 
     constructor() {
         this.#injectModal();
@@ -17,28 +20,61 @@ export class SettingsModal {
     }
 
     show() {
+        // Save previously focused element for restoration
+        this.#previouslyFocusedElement = document.activeElement;
         this.#isVisible = true;
+        setMainContentInert(true);
         const modal = document.getElementById(this.#modalId);
         if (modal) {
             modal.hidden = false;
-            // Focus interactions
-            modal.querySelector('button')?.focus();
+            // Focus first focusable element
+            requestAnimationFrame(() => {
+                modal.querySelector('button, [tabindex]:not([tabindex="-1"])')?.focus();
+            });
             // Add escape key handler
             this.#escapeHandler = (e) => {
                 if (e.key === 'Escape') this.hide();
             };
             document.addEventListener('keydown', this.#escapeHandler);
+            // Add focus trap
+            this.#focusTrapHandler = (e) => {
+                if (e.key !== 'Tab') return;
+                const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last?.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first?.focus();
+                }
+            };
+            modal.addEventListener('keydown', this.#focusTrapHandler);
         }
     }
 
     hide() {
         this.#isVisible = false;
+        setMainContentInert(false);
         const modal = document.getElementById(this.#modalId);
-        if (modal) modal.hidden = true;
+        if (modal) {
+            modal.hidden = true;
+            // Remove focus trap
+            if (this.#focusTrapHandler) {
+                modal.removeEventListener('keydown', this.#focusTrapHandler);
+                this.#focusTrapHandler = null;
+            }
+        }
         // Remove escape key handler
         if (this.#escapeHandler) {
             document.removeEventListener('keydown', this.#escapeHandler);
             this.#escapeHandler = null;
+        }
+        // Restore focus to previously focused element
+        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
+            this.#previouslyFocusedElement.focus();
+            this.#previouslyFocusedElement = null;
         }
     }
 
@@ -59,14 +95,15 @@ export class SettingsModal {
           </div>
           <div class="vault-modal-body no-padding">
             <div class="settings-layout">
-              <div class="settings-sidebar">
-                <button class="settings-nav-item active" data-tab="general">General</button>
-                <button class="settings-nav-item" data-tab="security">Security</button>
-                <button class="settings-nav-item danger" data-tab="danger">Danger Zone</button>
+              <div class="settings-sidebar" role="tablist" aria-label="Settings categories">
+                <button class="settings-nav-item active" data-tab="general" role="tab" aria-selected="true" aria-controls="tab-general" id="settings-tab-general">General</button>
+                <button class="settings-nav-item" data-tab="shortcuts" role="tab" aria-selected="false" aria-controls="tab-shortcuts" id="settings-tab-shortcuts">Shortcuts</button>
+                <button class="settings-nav-item" data-tab="security" role="tab" aria-selected="false" aria-controls="tab-security" id="settings-tab-security">Security</button>
+                <button class="settings-nav-item danger" data-tab="danger" role="tab" aria-selected="false" aria-controls="tab-danger" id="settings-tab-danger">Danger Zone</button>
               </div>
               <div class="settings-content">
                 <!-- General Tab -->
-                <div class="settings-tab active" id="tab-general">
+                <div class="settings-tab active" id="tab-general" role="tabpanel" aria-labelledby="settings-tab-general">
                   <div class="setting-group">
                     <label class="setting-label">Appearance</label>
                     <div class="setting-desc">Customize application appearance</div>
@@ -76,8 +113,50 @@ export class SettingsModal {
                   </div>
                 </div>
 
+                <!-- Shortcuts Tab -->
+                <div class="settings-tab" id="tab-shortcuts" role="tabpanel" aria-labelledby="settings-tab-shortcuts" hidden>
+                  <div class="setting-group">
+                    <label class="setting-label">Keyboard Shortcuts</label>
+                    <div class="setting-desc">Quick actions to boost your productivity</div>
+                  </div>
+                  <div class="shortcuts-list">
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>G</kbd></span>
+                      <span class="shortcut-desc">Generate new passwords</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></span>
+                      <span class="shortcut-desc">Copy all passwords</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>L</kbd></span>
+                      <span class="shortcut-desc">Lock vault</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>,</kbd></span>
+                      <span class="shortcut-desc">Open settings</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Escape</kbd></span>
+                      <span class="shortcut-desc">Close modal / Cancel action</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Tab</kbd></span>
+                      <span class="shortcut-desc">Navigate between elements</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Enter</kbd></span>
+                      <span class="shortcut-desc">Confirm / Submit</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>F4</kbd></span>
+                      <span class="shortcut-desc">Exit application</span>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Security Tab -->
-                <div class="settings-tab" id="tab-security" hidden>
+                <div class="settings-tab" id="tab-security" role="tabpanel" aria-labelledby="settings-tab-security" hidden>
                    <div class="setting-group">
                     <label class="setting-label">Auto-Lock</label>
                     <div class="setting-desc">Lock vault after a period of inactivity</div>
@@ -94,7 +173,7 @@ export class SettingsModal {
                 </div>
 
                 <!-- Danger Tab -->
-                <div class="settings-tab" id="tab-danger" hidden>
+                <div class="settings-tab" id="tab-danger" role="tabpanel" aria-labelledby="settings-tab-danger" hidden>
                   <div class="vault-alert count-warning">
                     <div class="alert-icon">⚠️</div>
                     <div class="alert-content">
@@ -137,12 +216,16 @@ export class SettingsModal {
             btn.addEventListener('click', () => this.hide());
         });
 
-        // Tab Navigation
+        // Tab Navigation with ARIA support
         modal.querySelectorAll('.settings-nav-item').forEach(btn => {
             btn.addEventListener('click', () => {
-                // Update nav
-                modal.querySelectorAll('.settings-nav-item').forEach(b => b.classList.remove('active'));
+                // Update nav with aria-selected
+                modal.querySelectorAll('.settings-nav-item').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
+                });
                 btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
 
                 // Update content
                 const tabId = `tab-${btn.dataset.tab}`;

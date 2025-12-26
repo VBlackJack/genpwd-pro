@@ -45,7 +45,7 @@
 /* ==================== PANEL 1: SIDEBAR ==================== */
 .vault-sidebar {
   position: relative;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   isolation: isolate; /* Create stacking context */
   background: rgba(13, 16, 28, 0.6);
   /* Slightly more opaque for readability */
@@ -73,7 +73,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 20;
+  z-index: var(--z-sticky);
   color: var(--vault-text-dim);
   transition: all 0.2s ease;
   opacity: 0;
@@ -238,7 +238,7 @@
   border: 1px solid var(--glass-border);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  z-index: 100;
+  z-index: var(--z-header);
   overflow: hidden;
 }
 
@@ -440,7 +440,7 @@
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--vault-border);
   position: relative;
-  z-index: 20; /* Higher than list panel */
+  z-index: var(--z-sticky); /* Higher than list panel */
   background: inherit; /* Ensure background covers content below */
 }
 
@@ -963,7 +963,7 @@
 
 .vault-nav-item.active::before {
   height: 70%;
-  background: linear-gradient(180deg, var(--vault-primary), #8b5cf6);
+  background: linear-gradient(180deg, var(--vault-primary), var(--accent-purple, #8b5cf6));
 }
 
 .vault-nav-icon {
@@ -1004,7 +1004,7 @@
 /* ==================== ENTRY LIST PANEL ==================== */
 .vault-list-panel {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   display: flex;
   flex-direction: column;
   background: var(--vault-bg);
@@ -1094,7 +1094,7 @@
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);
-  z-index: 50;
+  z-index: var(--z-fixed);
   overflow: hidden;
 }
 
@@ -1195,7 +1195,7 @@
 
 .vault-entry-row.selected::before {
   transform: scaleY(1);
-  background: linear-gradient(180deg, var(--vault-primary), #8b5cf6);
+  background: linear-gradient(180deg, var(--vault-primary), var(--accent-purple, #8b5cf6));
 }
 
 .vault-entry-icon {
@@ -1564,19 +1564,19 @@ kbd {
 }
 
 .vault-strength-fill.weak {
-  background: linear-gradient(90deg, var(--vault-error), #f87171);
+  background: linear-gradient(90deg, var(--vault-error), var(--accent-red-light, #f87171));
 }
 
 .vault-strength-fill.fair {
-  background: linear-gradient(90deg, var(--vault-warning), #fbbf24);
+  background: linear-gradient(90deg, var(--vault-warning), var(--accent-yellow, #fbbf24));
 }
 
 .vault-strength-fill.good {
-  background: linear-gradient(90deg, #06b6d4, #22d3ee);
+  background: linear-gradient(90deg, var(--accent-cyan, #06b6d4), var(--accent-cyan-light, #22d3ee));
 }
 
 .vault-strength-fill.strong {
-  background: linear-gradient(90deg, var(--vault-success), #4ade80);
+  background: linear-gradient(90deg, var(--vault-success), var(--accent-green-light, #4ade80));
 }
 
 .vault-strength-text {
@@ -1596,7 +1596,7 @@ kbd {
 }
 
 .vault-strength-text.good {
-  color: #22d3ee;
+  color: var(--accent-cyan-light);
 }
 
 .vault-strength-text.strong {
@@ -1645,7 +1645,7 @@ kbd {
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 1000;
+  z-index: var(--z-modal-backdrop);
 }
 
 .vault-modal-overlay.active {
@@ -1657,7 +1657,7 @@ kbd {
   width: 100%;
   max-width: 420px;
   max-height: 90vh;
-  background: #1a1d2e;
+  background: var(--vault-bg-primary, #1a1d2e);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius-lg);
   box-shadow:
@@ -2179,13 +2179,13 @@ kbd {
 }
 
 .vault-btn-primary {
-  background: linear-gradient(135deg, var(--vault-primary), #2563eb);
+  background: linear-gradient(135deg, var(--vault-primary), var(--accent-blue-light));
   color: white;
   box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
 }
 
 .vault-btn-primary:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, var(--accent-blue-light), var(--accent-blue-darker));
   box-shadow: 0 6px 20px -3px rgba(59, 130, 246, 0.5);
 }
 
@@ -2318,7 +2318,7 @@ kbd {
   transform: translateY(100px) scale(0.9);
   opacity: 0;
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 2000;
+  z-index: var(--z-toast);
 }
 
 .toast.show {
@@ -2564,7 +2564,7 @@ kbd {
 
 .vault-password-age.warning {
   background: rgba(249, 115, 22, 0.1);
-  border-left-color: #f97316;
+  border-left-color: var(--accent-orange);
 }
 
 .vault-password-age.critical {
@@ -3631,11 +3631,11 @@ kbd {
   right: 0;
   margin-top: 0.5rem;
   padding: 1rem;
-  background: #252a3d;
+  background: var(--vault-bg-secondary, #252a3d);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  z-index: var(--z-header);
   animation: vault-slide-down 0.2s ease;
 }
 
@@ -3880,7 +3880,7 @@ kbd {
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);
-  z-index: 100;
+  z-index: var(--z-header);
   pointer-events: none;
   animation: vault-preview-appear 0.2s ease;
 }
@@ -4420,7 +4420,7 @@ kbd {
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);
-  z-index: 100;
+  z-index: var(--z-header);
   min-width: 150px;
   animation: vault-slide-down 0.2s ease;
 }
@@ -4682,7 +4682,7 @@ kbd {
 /* Windows Hello Popover */
 .vault-hello-popover {
   position: fixed;
-  z-index: 1000;
+  z-index: var(--z-modal-backdrop);
   min-width: 280px;
   background: var(--vault-surface);
   border: 1px solid var(--vault-border);
@@ -4877,7 +4877,7 @@ kbd {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--vault-text);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 @keyframes totpPulse {
@@ -6574,7 +6574,7 @@ kbd {
     max-width: 100vw;
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 100;
+    z-index: var(--z-header);
     box-shadow: var(--vault-shadow-lg);
   }
 
@@ -6604,7 +6604,7 @@ kbd {
     max-width: 85vw;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 200;
+    z-index: var(--z-overlay);
     box-shadow: var(--vault-shadow-lg);
   }
 
@@ -6618,7 +6618,7 @@ kbd {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 199;
+    z-index: calc(var(--z-overlay) - 1);
   }
 
   .vault-sidebar-overlay.visible {
@@ -7225,7 +7225,7 @@ kbd {
   justify-content: center;
   background: rgba(var(--vault-bg-rgb, 15, 23, 42), 0.8);
   backdrop-filter: blur(4px);
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .vault-loading-spinner {

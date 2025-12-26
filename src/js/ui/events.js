@@ -44,6 +44,11 @@ const generationState = {
   burstCount: 0
 };
 
+// Guards for preventing double-submission on async operations
+let isGenerating = false;
+let isCopying = false;
+let isExporting = false;
+
 /**
  * Cleans up all active timeouts and event handlers
  * Should be called on page unload to prevent memory leaks
@@ -307,32 +312,70 @@ function bindCaseAndBlocks() {
   });
 }
 
+/**
+ * Set inert attribute on main content when modal is open
+ * This prevents focus from escaping the modal for accessibility
+ * @param {boolean} inert - Whether to set inert attribute
+ * @export
+ */
+export function setMainContentInert(inert) {
+  const mainContent = getElement('.main');
+  const header = getElement('#app-header');
+  const debugPanel = getElement('#debug-panel');
+
+  [mainContent, header, debugPanel].forEach(el => {
+    if (el) {
+      if (inert) {
+        el.setAttribute('inert', '');
+        el.setAttribute('aria-hidden', 'true');
+      } else {
+        el.removeAttribute('inert');
+        el.removeAttribute('aria-hidden');
+      }
+    }
+  });
+}
+
 function bindDebugActions() {
   // About modal
   addEventListener(getElement('#btn-about'), 'click', () => {
     const modal = getElement('#about-modal');
-    if (modal) modal.classList.add('show');
+    if (modal) {
+      modal.classList.add('show');
+      setMainContentInert(true);
+      // Focus first focusable element
+      requestAnimationFrame(() => {
+        modal.querySelector('.modal-close')?.focus();
+      });
+    }
   });
-  
+
   addEventListener(getElement('#modal-close'), 'click', () => {
     const modal = getElement('#about-modal');
-    if (modal) modal.classList.remove('show');
+    if (modal) {
+      modal.classList.remove('show');
+      setMainContentInert(false);
+    }
   });
-  
+
   // Fermeture modal par overlay
   addEventListener(getElement('#about-modal'), 'click', (e) => {
     if (e.target === e.currentTarget) {
       const modal = getElement('#about-modal');
-      if (modal) modal.classList.remove('show');
+      if (modal) {
+        modal.classList.remove('show');
+        setMainContentInert(false);
+      }
     }
   });
-  
+
   // Fermeture modal par Escape
   addEventListener(document, 'keydown', (e) => {
     if (e.key === 'Escape') {
       const modal = getElement('#about-modal');
       if (modal && modal.classList.contains('show')) {
         modal.classList.remove('show');
+        setMainContentInert(false);
       }
     }
   });
@@ -485,6 +528,10 @@ function handleGenerationResults(results, settings) {
  * Uses parallel generation with Promise.all for better performance
  */
 async function generatePasswords() {
+  // Guard against double-submission
+  if (isGenerating) return;
+  isGenerating = true;
+
   // Rate limiting check
   const now = Date.now();
   const timeSinceLastGen = now - generationState.lastGeneration;
@@ -500,6 +547,7 @@ async function generatePasswords() {
       const waitTime = Math.ceil((RATE_LIMITING.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
       showToast(`Generation too fast. Please wait ${waitTime}s`, 'warning');
       safeLog(`Rate limit: ${waitTime}s remaining`);
+      isGenerating = false;
       return;
     }
     generationState.burstCount = 0; // Reset after cooldown
@@ -508,6 +556,13 @@ async function generatePasswords() {
   // Update state
   generationState.lastGeneration = now;
   generationState.burstCount++;
+
+  // Show loading state
+  const btn = document.getElementById('btn-generate');
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+  }
 
   try {
     const settings = readSettings();
@@ -536,10 +591,20 @@ async function generatePasswords() {
   } catch (error) {
     safeLog(`Generation error: ${error.message}`);
     showToast(t('toast.generationError'), 'error');
+  } finally {
+    // Restore button state
+    isGenerating = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+    }
   }
 }
 
 async function copyAllPasswords() {
+  // Guard against double-submission
+  if (isCopying) return;
+
   const results = getResults();
   if (!results?.length) {
     showToast(t('toast.noPasswordsToCopy'), 'warning');
@@ -556,18 +621,39 @@ async function copyAllPasswords() {
     return;
   }
 
-  const success = await copyToClipboard(passwords);
-  const count = passwords.split('\n').length;
+  isCopying = true;
 
-  showToast(
-    success
-      ? `${count} password${count > 1 ? 's' : ''} copied!`
-      : 'Could not copy passwords',
-    success ? 'success' : 'error'
-  );
+  // Show loading state
+  const btn = document.getElementById('btn-copy-all');
+  const originalHTML = btn?.innerHTML;
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.innerHTML = '<span class="spinner" role="status" aria-label="Copying passwords..."></span>';
+  }
 
-  if (success) {
-    safeLog(`Bulk copy: ${count} entries`);
+  try {
+    const success = await copyToClipboard(passwords);
+    const count = passwords.split('\n').length;
+
+    showToast(
+      success
+        ? `${count} password${count > 1 ? 's' : ''} copied!`
+        : 'Could not copy passwords',
+      success ? 'success' : 'error'
+    );
+
+    if (success) {
+      safeLog(`Bulk copy: ${count} entries`);
+    }
+  } finally {
+    // Restore button state
+    isCopying = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.innerHTML = originalHTML;
+    }
   }
 }
 
@@ -645,6 +731,9 @@ function showClipboardSettings() {
  * Supports formats: TXT, JSON, CSV
  */
 async function exportPasswords() {
+  // Guard against double-submission
+  if (isExporting) return;
+
   const results = getResults();
   if (!results?.length) {
     showToast(t('toast.noPasswordsToExport'), 'warning');
@@ -654,6 +743,17 @@ async function exportPasswords() {
   // Ask for export format
   const format = await promptExportFormat();
   if (!format) return;
+
+  isExporting = true;
+
+  // Show loading state
+  const btn = document.getElementById('btn-export');
+  const originalHTML = btn?.innerHTML;
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.innerHTML = '<span class="spinner" role="status" aria-label="Exporting passwords..."></span>';
+  }
 
   try {
     let content, filename, mimeType;
@@ -723,6 +823,14 @@ async function exportPasswords() {
   } catch (error) {
     safeLog(`Export error: ${error.message}`);
     showToast(t('toast.exportError'), 'error');
+  } finally {
+    // Restore button state
+    isExporting = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.innerHTML = originalHTML;
+    }
   }
 }
 

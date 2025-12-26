@@ -26,8 +26,8 @@ const MAX_TOASTS = 3;
 /** Recent messages for deduplication (message -> timestamp) */
 const recentMessages = new Map();
 
-/** Deduplication window in ms */
-const DEDUPE_WINDOW = 1000;
+/** Deduplication window in ms (reduced to allow rapid valid notifications) */
+const DEDUPE_WINDOW = 500;
 
 /**
  * Check if message was recently shown (deduplication)
@@ -97,6 +97,10 @@ export function showToast(message, type = 'info', options = {}) {
     div.className = `toast toast-${type}`;
     div.setAttribute('role', 'alert');
     div.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+
+    // Set CSS variable for progress bar animation duration (sync with JS timeout)
+    const displayTime = type === 'error' ? ANIMATION_DURATION.TOAST_DISPLAY_ERROR : ANIMATION_DURATION.TOAST_DISPLAY;
+    div.style.setProperty('--toast-duration', `${displayTime}ms`);
 
     // Toast content
     const content = document.createElement('span');

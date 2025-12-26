@@ -1194,7 +1194,7 @@ function bindPresetModalEvents(modal) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json';
-    input.onchange = (e) => {
+    input.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
@@ -1214,7 +1214,7 @@ function bindPresetModalEvents(modal) {
         }
       };
       reader.readAsText(file);
-    };
+    });
     input.click();
   });
 
@@ -2234,7 +2234,7 @@ function bindPluginModalEvents(modal) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.js,application/javascript';
-    input.onchange = (e) => {
+    input.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
@@ -2252,7 +2252,7 @@ function bindPluginModalEvents(modal) {
         }
       };
       reader.readAsText(file);
-    };
+    });
     input.click();
   });
 

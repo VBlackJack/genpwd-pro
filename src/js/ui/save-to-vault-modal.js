@@ -10,6 +10,7 @@ import { showToast } from '../utils/toast.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { QuickUnlockDialog } from './quick-unlock-dialog.js';
 import { t } from '../utils/i18n.js';
+import { setMainContentInert } from './events.js';
 
 /**
  * SaveToVaultModal - Manages the save-to-vault modal overlay
@@ -97,6 +98,8 @@ export class SaveToVaultModal {
       document.removeEventListener('keydown', this.#focusTrapHandler);
       this.#focusTrapHandler = null;
     }
+
+    setMainContentInert(false);
 
     const overlay = document.getElementById('save-to-vault-modal');
     if (overlay) {
@@ -265,6 +268,7 @@ export class SaveToVaultModal {
   static #show() {
     const overlay = document.getElementById('save-to-vault-modal');
     if (overlay) {
+      setMainContentInert(true);
       // Trigger animation
       requestAnimationFrame(() => {
         overlay.classList.add('active');
@@ -406,7 +410,7 @@ export class SaveToVaultModal {
       submitBtn.disabled = true;
       submitBtn.setAttribute('aria-busy', 'true');
       submitBtn.innerHTML = `
-        <span class="save-vault-spinner"></span>
+        <span class="save-vault-spinner" role="status" aria-label="${t('vault.saveModal.saving')}"></span>
         ${t('vault.saveModal.saving')}
       `;
     }

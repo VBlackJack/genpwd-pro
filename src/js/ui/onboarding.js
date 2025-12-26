@@ -344,7 +344,7 @@ export class Onboarding {
     step.buttons.forEach((buttonConfig) => {
       const button = document.createElement('button');
       button.textContent = buttonConfig.text;
-      button.onclick = buttonConfig.action;
+      button.addEventListener('click', buttonConfig.action);
 
       if (buttonConfig.secondary) {
         button.style.cssText = `

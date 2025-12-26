@@ -297,9 +297,13 @@ class GenPwdApp {
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        // Update active tab
-        tabs.forEach(t => t.classList.remove('active'));
+        // Update active tab with aria-current for accessibility
+        tabs.forEach(t => {
+          t.classList.remove('active');
+          t.removeAttribute('aria-current');
+        });
         tab.classList.add('active');
+        tab.setAttribute('aria-current', 'page');
 
         const targetTab = tab.dataset.tab;
 

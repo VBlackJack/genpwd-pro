@@ -156,6 +156,7 @@ export class QuickUnlockDialog {
                   aria-required="true"
                   aria-invalid="false"
                   aria-describedby="quick-unlock-error"
+                  aria-label="${t('vault.labels.password') || 'Master password'}"
                 >
                 <button type="button" class="quick-unlock-toggle-pwd" id="quick-unlock-toggle-pwd" aria-label="${t('vault.quickUnlock.showPassword')}">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">

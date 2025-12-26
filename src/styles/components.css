@@ -28,6 +28,13 @@ select {
   box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.12);
 }
 
+/* Enhanced focus-visible for keyboard navigation */
+.input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.2);
+}
+
 /* Checkbox */
 .checkbox {
   display: flex;
@@ -35,12 +42,34 @@ select {
   gap: 8px;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
+/* WCAG 2.1 compliant: 44px touch target with 18px visual */
 .checkbox input {
+  /* Visual size */
   width: 18px;
   height: 18px;
   accent-color: var(--accent-blue);
+  cursor: pointer;
+  /* Expand clickable area to 44px without changing visual */
+  position: relative;
+}
+
+.checkbox input::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  /* Invisible but clickable */
+}
+
+.checkbox input:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 /* Slider */
@@ -56,7 +85,7 @@ select {
   height: 10px;
   padding: 0;
   width: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   outline: none;
@@ -70,22 +99,34 @@ select {
 
 .slider::-webkit-slider-thumb {
   appearance: none;
-  width: 18px;
-  height: 18px;
+  /* Increased size for better touch targets (WCAG 2.1 - 24px minimum for complex controls) */
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
   border: 2px solid var(--bg-primary, #1c2033);
   box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.35));
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  /* Increased size for better touch targets */
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
   border: 2px solid var(--bg-primary, #1c2033);
   cursor: pointer;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
 }
 
 /* ============================================================================
@@ -125,7 +166,7 @@ select {
 
 .btn.primary {
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  color: #0b0f20;
+  color: var(--bg-deep);
   border: 1px solid transparent;
 }
 
@@ -135,26 +176,76 @@ select {
 }
 
 .btn.danger {
-  background: linear-gradient(135deg, #412032, #2b1a23);
-  border-color: #74223b;
-  color: #ffd7de;
+  background: linear-gradient(135deg, var(--danger-bg), var(--danger-bg-dark));
+  border-color: var(--danger-border);
+  color: var(--danger-text);
 }
 
 .btn.danger:hover {
-  background: linear-gradient(135deg, #512030, #3b1a23);
+  background: linear-gradient(135deg, var(--danger-bg-hover), var(--danger-bg));
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
 .btn.ghost {
   background: transparent;
   border-color: transparent;
-  color: var(--text-muted);
+  /* WCAG AA compliant: improved contrast from text-muted to text-secondary */
+  color: var(--text-secondary);
 }
 
 .btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
   border-color: var(--border);
+}
+
+.btn.ghost:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   DISABLED STATES - Enhanced visibility
+   ============================================================================ */
+
+.btn:disabled,
+.btn[aria-disabled="true"],
+.btn-mini:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  filter: grayscale(30%);
+}
+
+.btn:disabled:hover,
+.btn-mini:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Loading state for buttons */
+.btn[aria-busy="true"] {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
 }
 
 .btn.small {
@@ -200,7 +291,7 @@ select {
   background: var(--bg-secondary);
   color: var(--text-muted);
   padding: 6px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -210,7 +301,7 @@ select {
   background: rgba(0, 212, 255, 0.2);
   color: var(--accent-cyan);
   padding: 8px 14px;
-  border-radius: 25px;
+  border-radius: var(--radius-2xl);
   font-size: 12px;
   font-weight: 700;
   border: 1px solid rgba(0, 212, 255, 0.3);
@@ -222,7 +313,7 @@ select {
 
 .dict-status {
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -317,7 +408,7 @@ select {
   min-width: 32px;
   height: 32px;
   padding: 0 8px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -336,7 +427,7 @@ select {
 
 .chip.chip-muted {
   background: var(--accent-yellow);
-  color: #2b1b00;
+  color: var(--text-on-yellow);
 }
 
 .chip.chip-title {
@@ -538,7 +629,7 @@ select {
   --bar-horizontal-margin: 24px;
   --bar-inner-inset: 8px;
   margin: 0 var(--bar-horizontal-margin);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(90deg, rgba(32, 178, 255, 0.2) 0%, rgba(149, 114, 255, 0.12) 50%, rgba(255, 255, 255, 0.18) 100%);
   border: 1px dashed rgba(110, 117, 164, 0.35);
 }
@@ -547,7 +638,7 @@ select {
   content: '';
   position: absolute;
   inset: var(--bar-inner-inset);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(90deg, rgba(45, 55, 95, 0.55), rgba(14, 20, 40, 0.65));
   box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.45);
 }
@@ -556,7 +647,7 @@ select {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(90deg, rgba(21, 190, 255, 0.06), rgba(101, 123, 255, 0.08), rgba(21, 190, 255, 0.06));
   pointer-events: none;
 }
@@ -596,11 +687,11 @@ select {
 }
 
 .cursor-layer.digits-layer {
-  z-index: 2;
+  z-index: var(--z-above);
 }
 
 .cursor-layer.specials-layer {
-  z-index: 3;
+  z-index: calc(var(--z-above) + 1);
 }
 
 .cursor {  
@@ -610,10 +701,10 @@ select {
   transform: translate(-50%, -50%);
   width: 22px;
   height: 22px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: rgba(34, 197, 94, 0.2);
-  color: #0b1120;
+  color: var(--text-on-blue);
   box-shadow: 0 8px 16px rgba(13, 17, 33, 0.35);
   backdrop-filter: blur(3px);
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
@@ -672,13 +763,13 @@ select {
 .cursor.digit,
 .cursor.digits {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.85), rgba(5, 150, 105, 0.9));
-  color: #06241a;
+  color: var(--text-on-green);
 }
 
 .cursor.special,
 .cursor.specials {
   background: linear-gradient(135deg, rgba(252, 211, 77, 0.9), rgba(217, 119, 6, 0.88));
-  color: #2a1a00;
+  color: var(--text-on-orange);
 }
 
 .cursor.digit .cursor-label,
@@ -697,7 +788,7 @@ select {
   background: var(--tooltip-bg, rgba(8, 12, 28, 0.98));
   color: var(--tooltip-text, #fff);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -726,19 +817,19 @@ select {
 .placement-visual-container .placement-controls .btn-mini {
   background: rgba(19, 26, 52, 0.85);
   border-color: rgba(121, 130, 178, 0.35);
-  color: #d6dcff;
+  color: var(--text-bright);
 }
 
 .placement-visual-container .placement-controls .btn-mini:hover {
   border-color: rgba(21, 190, 255, 0.65);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .placement-visual-container.mode-visual .placement-controls .btn-mini.random,
 .placement-visual-container.mode-visual .placement-controls .btn-mini#btn-placement-auto {
   background: linear-gradient(135deg, rgba(21, 190, 255, 0.86), rgba(59, 130, 246, 0.9));
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #041326;
+  color: var(--bg-deep);
 }
 
 .placement-mode {
@@ -748,7 +839,7 @@ select {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(34, 197, 94, 0.18);
   color: rgba(56, 211, 109, 0.95);
   border: 1px solid rgba(34, 197, 94, 0.45);
@@ -952,18 +1043,24 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 6px;
+  /* WCAG 2.1 compliant touch target - 44px minimum */
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
   background: rgba(96, 165, 250, 0.1);
   border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--accent-blue);
   flex-shrink: 0;
+}
+
+.breach-check-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 .breach-check-btn:hover {
@@ -994,7 +1091,7 @@ select {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.8125rem;
   font-weight: 500;
   margin-top: 0.5rem;
@@ -1027,7 +1124,7 @@ select {
 
 .breach-status.critical {
   background: rgba(248, 113, 113, 0.15);
-  color: #ff6b6b;
+  color: var(--accent-red-light);
   border: 1px solid rgba(248, 113, 113, 0.4);
   font-weight: 600;
 }
@@ -1083,5 +1180,15 @@ select {
   .placement-visual-container,
   .breach-status {
     transition: none !important;
+  }
+
+  /* Disable hover transforms for users who prefer reduced motion */
+  .btn:hover,
+  .btn-mini:hover,
+  .breach-check-btn:hover,
+  .breach-check-btn:active,
+  .slider::-webkit-slider-thumb:hover,
+  .slider::-moz-range-thumb:hover {
+    transform: none !important;
   }
 }
