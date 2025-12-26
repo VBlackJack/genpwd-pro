@@ -131,25 +131,40 @@ header::before {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--glass-border);
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .header-tab {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 10px 20px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.header-tab svg {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-tab:hover svg {
+  transform: scale(1.1);
 }
 
 .header-tab:hover {
@@ -157,10 +172,22 @@ header::before {
   color: var(--text-primary);
 }
 
+.header-tab:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
 .header-tab.active {
-  background: rgba(59, 130, 246, 0.2);
-  color: var(--accent-primary);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.2));
+  color: white;
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.4),
+    0 4px 12px rgba(99, 102, 241, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.header-tab.active svg {
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.5));
 }
 
 /* Vault Status Indicator */

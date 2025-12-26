@@ -15,14 +15,58 @@
     "close": "Fermer",
     "tests": "Tests",
     "about": "À propos",
+    "debug": "Debug",
+    "rerun": "Relancer",
+    "results": "Résultats",
+    "console": "Console",
+    "loading": "Chargement...",
+    "skipToMain": "Aller au contenu principal",
     "importing": "Importation..."
+  },
+  "header": {
+    "generatorTab": "Générateur",
+    "vaultTab": "Coffre",
+    "vaultStatus": "État du coffre",
+    "vaultLocked": "Verrouillé",
+    "vaultUnlocked": "Déverrouillé",
+    "clickToAccessVault": "Cliquer pour accéder au coffre"
   },
   "sections": {
     "generationMode": "Mode de génération",
-    "commonSettings": "Paramètres communs",
+    "commonParameters": "Paramètres communs",
     "visualPlacement": "Placement visuel",
     "casePattern": "Pattern de casse",
-    "helpNotes": "Aide & Notes"
+    "helpNotes": "Aide & Notes",
+    "modesAvailable": "{count} modes"
+  },
+  "generator": {
+    "mode": "Mode",
+    "length": "Longueur",
+    "count": "Nombre",
+    "digits": "Chiffres",
+    "specials": "Spéciaux",
+    "customSpecials": "Spéciaux personnalisés",
+    "digitsPlacement": "Placement des chiffres",
+    "specialsPlacement": "Placement des spéciaux",
+    "maskDisplay": "Masquer l'affichage",
+    "blurPasswords": "Flouter les mots de passe",
+    "caseManagement": "Gestion de la casse",
+    "policy": "Politique",
+    "wordCount": "Nombre de mots",
+    "separator": "Séparateur",
+    "dictionary": "Dictionnaire",
+    "wordToTransform": "Mot à transformer",
+    "preview": "Aperçu",
+    "blocks": "Blocs",
+    "autoSyncBlocks": "Auto-sync des blocs",
+    "resetPositions": "Réinitialiser les positions",
+    "autoRandomPlacement": "Placement aléatoire auto",
+    "toggleVisualMode": "Basculer mode visuel/pourcentage",
+    "placementModeAuto": "Auto",
+    "allTitle": "Tout Titre",
+    "allUpper": "Tout MAJUSCULE",
+    "allLower": "Tout minuscule",
+    "randomBlocks": "Aléatoire"
   },
   "modes": {
     "title": "Mode",
@@ -57,8 +101,26 @@
     "end": "Fin",
     "middle": "Milieu",
     "random": "Aléatoire",
-    "visual": "Visuel",
-    "positions": "Positions"
+    "visual": "🎯 Visuel"
+  },
+  "case": {
+    "mixed": "Mixte (aléatoire)",
+    "upper": "MAJUSCULES",
+    "lower": "minuscules",
+    "title": "Titre",
+    "blocks": "Blocs (M/T/m)"
+  },
+  "separators": {
+    "dash": "- (tiret)",
+    "underscore": "_ (underscore)",
+    "dot": ". (point)",
+    "space": "Espace"
+  },
+  "dictionaries": {
+    "french": "🇫🇷 Français",
+    "english": "🇬🇧 Anglais",
+    "latin": "🏛️ Latin",
+    "loading": "Chargement du dictionnaire..."
   },
   "passphrase": {
     "wordCount": "Nombre de mots (2–8)",
@@ -67,6 +129,116 @@
   },
   "leet": {
     "wordToTransform": "Mot à transformer"
+  },
+  "results": {
+    "title": "Résultats",
+    "emptyState": "Cliquez sur \"Générer\" pour créer vos mots de passe",
+    "copied": "Mot de passe copié !",
+    "allCopied": "Tous les mots de passe copiés !"
+  },
+  "actions": {
+    "generate": "Générer",
+    "generateShortcut": "Générer de nouveaux mots de passe (Raccourci : Alt+G)",
+    "copyAll": "Tout Copier",
+    "copyAllShortcut": "Copier tous les mots de passe générés (Raccourci : Alt+C)",
+    "clipboardSettings": "Configurer l'effacement automatique du presse-papier",
+    "export": "Export",
+    "exportResults": "Exporter les résultats",
+    "clear": "Effacer",
+    "clearAll": "Effacer tous les résultats",
+    "tests": "Tests",
+    "runTests": "Lancer les tests de validation (Raccourci : Alt+R)",
+    "debug": "Debug",
+    "toggleDebug": "Basculer le panneau de debug",
+    "clearLogs": "Effacer les logs de debug"
+  },
+  "about": {
+    "title": "À propos de GenPwd Pro",
+    "tagline": "Gestionnaire de mots de passe professionnel avec coffre-fort chiffré",
+    "secureVault": "Coffre-fort Sécurisé",
+    "secureVaultDesc": {
+      "encryption": "Chiffrement AES-256 avec Argon2id pour la dérivation de clé",
+      "windowsHello": "Windows Hello : Déverrouillage biométrique (empreinte, visage)",
+      "autoLock": "Verrouillage auto : Verrouillage automatique après inactivité",
+      "externalStorage": "Stockage externe : OneDrive, Dropbox, emplacements personnalisés"
+    },
+    "advancedGenerator": "Générateur Avancé",
+    "advancedGeneratorDesc": {
+      "modes": "3 modes : Syllabes, Passphrase, Leet speak",
+      "multiLanguage": "Multilingue : Français, Anglais, Latin (2400+ mots)",
+      "entropy": "Entropie : Jusqu'à 140 bits de sécurité",
+      "presets": "Presets : Configurations sauvegardables et synchronisables"
+    },
+    "features": "Fonctionnalités",
+    "featuresDesc": {
+      "importExport": "Import/Export : CSV compatible avec les autres gestionnaires",
+      "organization": "Organisation : Dossiers, tags et recherche avancée",
+      "totp": "TOTP : Support des codes 2FA (Google Authenticator)",
+      "multiPlatform": "Multi-plateforme : Web, Windows, macOS et Linux bientôt"
+    },
+    "techStack": "Stack Technique",
+    "shortcuts": "Raccourcis Clavier",
+    "shortcutsDesc": {
+      "generate": "Générer des mots de passe",
+      "copy": "Copier tous les mots de passe",
+      "test": "Lancer les tests de sécurité",
+      "export": "Exporter les résultats",
+      "escape": "Fermer les modales"
+    },
+    "author": "Julien Bombled",
+    "license": "Open Source sous Licence Apache 2.0"
+  },
+  "testResults": {
+    "title": "📊 Résultats des Tests - GenPwd Pro v{version}",
+    "closeResults": "Fermer les résultats des tests",
+    "rerunTests": "Relancer tous les tests",
+    "exportJson": "Exporter les résultats en JSON",
+    "closeWindow": "Fermer la fenêtre des résultats"
+  },
+  "help": {
+    "tip": "Astuce",
+    "tipContent": "Cliquez directement sur un mot de passe pour le copier !",
+    "cliSafe": "CLI-Safe",
+    "cliSafeContent": "Les caractères spéciaux par défaut sont optimisés pour les environnements techniques (terminal, ligne de commande).",
+    "dictionaries": "Dictionnaires",
+    "dictionariesContent": "Collections multilingues chargées dynamiquement - Français (intégré), Anglais et Latin (externes).",
+    "builtInTests": "Tests intégrés",
+    "builtInTestsContent": "Utilisez le bouton \"Tests\" pour valider les fonctionnalités (score 100% attendu). Console disponible :",
+    "visualPlacement": "Placement visuel",
+    "visualPlacementContent": "Sélectionnez \"Visuel\" dans les menus de placement pour un contrôle interactif des positions.",
+    "entropy": "Entropie",
+    "entropyContent": "Les mots de passe générés atteignent jusqu'à 140 bits d'entropie pour une sécurité maximale."
+  },
+  "aria": {
+    "appLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé",
+    "configPanel": "Panneau de configuration",
+    "resultsPanel": "Panneau des résultats",
+    "debugPanel": "Panneau de debug",
+    "mainActions": "Actions principales",
+    "generatedPasswordsList": "Liste des mots de passe générés",
+    "passwordLength": "Longueur du mot de passe",
+    "numberOfPasswords": "Nombre de mots de passe",
+    "numberOfDigits": "Nombre de chiffres",
+    "numberOfSpecials": "Nombre de caractères spéciaux",
+    "selectGenerationMode": "Sélectionner le mode de génération",
+    "characterPolicy": "Politique de caractères",
+    "customSpecialsDesc": "Entrez les caractères spéciaux que vous souhaitez inclure dans les mots de passe générés",
+    "digitsPlacement": "Placement des chiffres dans le mot de passe",
+    "specialsPlacement": "Placement des caractères spéciaux",
+    "caseManagement": "Mode de gestion majuscules/minuscules",
+    "numberOfWords": "Nombre de mots dans la passphrase",
+    "wordSeparator": "Séparateur de mots",
+    "dictionarySelection": "Sélection du dictionnaire",
+    "leetWordDesc": "Entrez un mot à convertir en format leet speak",
+    "decreaseBlockCount": "Diminuer le nombre de blocs",
+    "increaseBlockCount": "Augmenter le nombre de blocs",
+    "generateRandomBlocks": "Générer des blocs aléatoires",
+    "setAllTitle": "Mettre tous les blocs en Titre",
+    "setAllUpper": "Mettre tous les blocs en majuscules",
+    "setAllLower": "Mettre tous les blocs en minuscules",
+    "showAbout": "Afficher les informations sur GenPwd Pro",
+    "generatorTab": "Onglet Générateur de mots de passe",
+    "vaultTab": "Onglet Coffre-fort"
   },
   "presets": {
     "title": "Presets",
@@ -78,6 +250,7 @@
     "updated": "mis à jour",
     "updateFailed": "Échec de la mise à jour",
     "replaceConfirm": "Remplacer la configuration « {name} » par les paramètres actuels ?",
+    "deleteConfirm": "Supprimer ce preset ?",
     "emptyState": "Aucun preset",
     "emptyHint": "Sauvegardez vos paramètres favoris pour un accès rapide"
   },
@@ -85,8 +258,9 @@
     "title": "Historique",
     "search": "Rechercher",
     "empty": "Aucun mot de passe dans l'historique",
-    "emptyState": "Aucun mot de passe dans l'historique",
-    "emptyHint": "Les mots de passe générés apparaîtront ici"
+    "enableConfirm": "L'historique est désactivé. L'activer maintenant ?",
+    "deleteEntryConfirm": "Supprimer cette entrée ?",
+    "clearAllConfirm": "Effacer tout l'historique ? Cette action est irréversible !"
   },
   "vault": {
     "common": {

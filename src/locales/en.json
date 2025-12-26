@@ -1,7 +1,10 @@
 {
   "app": {
     "title": "GenPwd Pro",
-    "subtitle": "Secure Password Generator"
+    "subtitle": "Secure Password Manager",
+    "description": "Professional password manager with encrypted vault",
+    "version": "Version {version}",
+    "ariaLabel": "GenPwd Pro - Secure Password Manager"
   },
   "common": {
     "generate": "Generate",
@@ -14,19 +17,63 @@
     "delete": "Delete",
     "close": "Close",
     "tests": "Tests",
-    "about": "About"
+    "about": "About",
+    "debug": "Debug",
+    "rerun": "Rerun",
+    "results": "Results",
+    "console": "Console",
+    "loading": "Loading...",
+    "skipToMain": "Skip to main content"
+  },
+  "header": {
+    "generatorTab": "Generator",
+    "vaultTab": "Vault",
+    "vaultStatus": "Vault status",
+    "vaultLocked": "Locked",
+    "vaultUnlocked": "Unlocked",
+    "clickToAccessVault": "Click to access vault"
   },
   "sections": {
     "generationMode": "Generation Mode",
-    "commonSettings": "Common Settings",
+    "commonParameters": "Common Parameters",
     "visualPlacement": "Visual Placement",
     "casePattern": "Case Pattern",
-    "helpNotes": "Help & Notes"
+    "helpNotes": "Help & Notes",
+    "modesAvailable": "{count} modes"
+  },
+  "generator": {
+    "mode": "Mode",
+    "length": "Length",
+    "count": "Count",
+    "digits": "Digits",
+    "specials": "Specials",
+    "customSpecials": "Custom specials",
+    "digitsPlacement": "Digits placement",
+    "specialsPlacement": "Specials placement",
+    "maskDisplay": "Mask display",
+    "blurPasswords": "Blur passwords",
+    "caseManagement": "Case management",
+    "policy": "Policy",
+    "wordCount": "Word count",
+    "separator": "Separator",
+    "dictionary": "Dictionary",
+    "wordToTransform": "Word to transform",
+    "preview": "Preview",
+    "blocks": "Blocks",
+    "autoSyncBlocks": "Auto-sync blocks",
+    "resetPositions": "Reset positions",
+    "autoRandomPlacement": "Auto random placement",
+    "toggleVisualMode": "Toggle visual/percentage mode",
+    "placementModeAuto": "Auto",
+    "allTitle": "All Title",
+    "allUpper": "All UPPER",
+    "allLower": "All lower",
+    "randomBlocks": "Random"
   },
   "modes": {
     "title": "Mode",
     "syllables": "Syllables (C/V alternation)",
-    "passphrase": "Passphrase (separated words)",
+    "passphrase": "Passphrase (word-based)",
     "leet": "Word → Leet"
   },
   "settings": {
@@ -56,8 +103,26 @@
     "end": "End",
     "middle": "Middle",
     "random": "Random",
-    "visual": "Visual",
-    "positions": "Positions"
+    "visual": "🎯 Visual"
+  },
+  "case": {
+    "mixed": "Mixed (random)",
+    "upper": "UPPERCASE",
+    "lower": "lowercase",
+    "title": "Title Case",
+    "blocks": "Blocks (U/T/L)"
+  },
+  "separators": {
+    "dash": "- (dash)",
+    "underscore": "_ (underscore)",
+    "dot": ". (dot)",
+    "space": "Space"
+  },
+  "dictionaries": {
+    "french": "🇫🇷 French",
+    "english": "🇬🇧 English",
+    "latin": "🏛️ Latin",
+    "loading": "Loading dictionary..."
   },
   "passphrase": {
     "wordCount": "Word count (2–8)",
@@ -67,25 +132,115 @@
   "leet": {
     "wordToTransform": "Word to transform"
   },
-  "presets": {
-    "title": "Presets",
-    "save": "Save Configuration",
-    "manage": "Manage Presets",
-    "load": "Load a preset",
-    "select": "-- Select --",
-    "update": "Update",
-    "updated": "updated",
-    "updateFailed": "Update failed",
-    "replaceConfirm": "Replace \"{name}\" configuration with current settings?",
-    "emptyState": "No presets yet",
-    "emptyHint": "Save your favorite settings as presets for quick access"
+  "results": {
+    "title": "Results",
+    "emptyState": "Click \"Generate\" to create your passwords",
+    "copied": "Password copied!",
+    "allCopied": "All passwords copied!"
   },
-  "history": {
-    "title": "History",
-    "search": "Search",
-    "empty": "No passwords in history",
-    "emptyState": "No passwords in history",
-    "emptyHint": "Generated passwords will appear here"
+  "actions": {
+    "generate": "Generate",
+    "generateShortcut": "Generate new passwords (Shortcut: Alt+G)",
+    "copyAll": "Copy All",
+    "copyAllShortcut": "Copy all generated passwords (Shortcut: Alt+C)",
+    "clipboardSettings": "Configure automatic clipboard clearing",
+    "export": "Export",
+    "exportResults": "Export results",
+    "clear": "Clear",
+    "clearAll": "Clear all results",
+    "tests": "Tests",
+    "runTests": "Run validation tests (Shortcut: Alt+R)",
+    "debug": "Debug",
+    "toggleDebug": "Toggle debug panel",
+    "clearLogs": "Clear debug logs"
+  },
+  "about": {
+    "title": "About GenPwd Pro",
+    "tagline": "Professional password manager with encrypted vault",
+    "secureVault": "Secure Vault",
+    "secureVaultDesc": {
+      "encryption": "AES-256 Encryption with Argon2id for key derivation",
+      "windowsHello": "Windows Hello: Biometric unlock (fingerprint, face)",
+      "autoLock": "Auto-lock: Automatic lock after inactivity",
+      "externalStorage": "External Storage: OneDrive, Dropbox, custom locations"
+    },
+    "advancedGenerator": "Advanced Generator",
+    "advancedGeneratorDesc": {
+      "modes": "3 modes: Syllables, Passphrase, Leet speak",
+      "multiLanguage": "Multi-language: French, English, Latin (2400+ words)",
+      "entropy": "Entropy: Up to 140 bits of security",
+      "presets": "Presets: Savable and syncable configurations"
+    },
+    "features": "Features",
+    "featuresDesc": {
+      "importExport": "Import/Export: CSV compatible with other managers",
+      "organization": "Organization: Folders, tags, and advanced search",
+      "totp": "TOTP: 2FA code support (Google Authenticator)",
+      "multiPlatform": "Multi-platform: Web, Windows, macOS and Linux coming soon"
+    },
+    "techStack": "Technology Stack",
+    "shortcuts": "Keyboard Shortcuts",
+    "shortcutsDesc": {
+      "generate": "Generate passwords",
+      "copy": "Copy all passwords",
+      "test": "Run security tests",
+      "export": "Export results",
+      "escape": "Close modals"
+    },
+    "author": "Julien Bombled",
+    "license": "Open Source under Apache 2.0 License"
+  },
+  "testResults": {
+    "title": "📊 Test Results - GenPwd Pro v{version}",
+    "closeResults": "Close test results",
+    "rerunTests": "Rerun all tests",
+    "exportJson": "Export results as JSON",
+    "closeWindow": "Close results window"
+  },
+  "help": {
+    "tip": "Tip",
+    "tipContent": "Click directly on a password to copy it!",
+    "cliSafe": "CLI-Safe",
+    "cliSafeContent": "Default special characters are optimized for technical environments (terminal, command line).",
+    "dictionaries": "Dictionaries",
+    "dictionariesContent": "Multilingual collections loaded dynamically - French (built-in), English and Latin (external).",
+    "builtInTests": "Built-in tests",
+    "builtInTestsContent": "Use the \"Tests\" button to validate functionality (100% score expected). Console available:",
+    "visualPlacement": "Visual placement",
+    "visualPlacementContent": "Select \"Visual\" in placement dropdowns for interactive position control.",
+    "entropy": "Entropy",
+    "entropyContent": "Generated passwords reach up to 140 bits of entropy for maximum security."
+  },
+  "aria": {
+    "appLabel": "GenPwd Pro - Secure Password Manager",
+    "configPanel": "Configuration panel",
+    "resultsPanel": "Results panel",
+    "debugPanel": "Debug panel",
+    "mainActions": "Main actions",
+    "generatedPasswordsList": "Generated passwords list",
+    "passwordLength": "Password length",
+    "numberOfPasswords": "Number of passwords",
+    "numberOfDigits": "Number of digits",
+    "numberOfSpecials": "Number of special characters",
+    "selectGenerationMode": "Select generation mode",
+    "characterPolicy": "Character policy",
+    "customSpecialsDesc": "Enter the special characters you want to include in generated passwords",
+    "digitsPlacement": "Digits placement in password",
+    "specialsPlacement": "Special characters placement",
+    "caseManagement": "Uppercase/lowercase management mode",
+    "numberOfWords": "Number of words in passphrase",
+    "wordSeparator": "Word separator",
+    "dictionarySelection": "Dictionary selection",
+    "leetWordDesc": "Enter a word to convert to leet speak format",
+    "decreaseBlockCount": "Decrease block count",
+    "increaseBlockCount": "Increase block count",
+    "generateRandomBlocks": "Generate random blocks",
+    "setAllTitle": "Set all blocks to Title Case",
+    "setAllUpper": "Set all blocks to uppercase",
+    "setAllLower": "Set all blocks to lowercase",
+    "showAbout": "Show information about GenPwd Pro",
+    "generatorTab": "Password Generator Tab",
+    "vaultTab": "Password Vault Tab"
   },
   "vault": {
     "common": {
@@ -755,20 +910,8 @@
     "updated": "updated",
     "updateFailed": "Update failed",
     "replaceConfirm": "Replace \"{name}\" configuration with current settings?",
-    "deleteConfirm": "Delete this preset?"
-  },
-  "common": {
-    "generate": "Generate",
-    "copy": "Copy",
-    "copyAll": "Copy All",
-    "export": "Export",
-    "clear": "Clear",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "close": "Close",
-    "tests": "Tests",
-    "about": "About",
-    "importing": "Importing..."
+    "deleteConfirm": "Delete this preset?",
+    "emptyState": "No presets yet",
+    "emptyHint": "Save your favorite settings as presets for quick access"
   }
 }

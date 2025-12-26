@@ -1150,21 +1150,24 @@ function createApplicationMenu() {
     }
   ];
 
-  // Menu Développement (toujours disponible pour debug)
-  template.push({
-    label: 'Développement',
-    submenu: [
-      { role: 'toggleDevTools', label: 'Outils de développement' },
-      { type: 'separator' },
-      {
-        label: 'Recharger et effacer le cache',
-        click: () => {
-          mainWindow.webContents.session.clearCache();
-          mainWindow.reload();
+  // Menu Développement (only in development mode or unpackaged builds)
+  // SECURITY: Hidden from end-users in production builds
+  if (!app.isPackaged || process.env.NODE_ENV === 'development') {
+    template.push({
+      label: 'Développement',
+      submenu: [
+        { role: 'toggleDevTools', label: 'Outils de développement' },
+        { type: 'separator' },
+        {
+          label: 'Recharger et effacer le cache',
+          click: () => {
+            mainWindow.webContents.session.clearCache();
+            mainWindow.reload();
+          }
         }
-      }
-    ]
-  });
+      ]
+    });
+  }
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);

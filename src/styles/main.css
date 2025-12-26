@@ -273,26 +273,110 @@ body {
   margin: 0;
   padding: 0;
   height: 100vh;
-  /* Deep, Rich Gradient Background */
-  background: 
-    radial-gradient(circle at 10% 20%, rgba(93, 58, 240, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(240, 58, 140, 0.1) 0%, transparent 40%),
-    var(--bg-deep);
+  /* Premium Deep Gradient Background with ambient orbs */
+  background:
+    /* Ambient gradient orbs */
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 85% 75%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
+    /* Base gradient */
+    linear-gradient(135deg, hsl(225, 40%, 6%) 0%, hsl(225, 35%, 10%) 50%, hsl(240, 30%, 8%) 100%);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-family);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  overflow: hidden; /* App-like feel */
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  overflow: hidden;
 }
 
-/* Glass Panel Utility */
+/* ==================== GLASS PANEL UTILITIES ==================== */
+
+/* Standard Glass Panel */
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   box-shadow: var(--glass-shadow);
+}
+
+/* Elevated Glass Panel - for cards and modals */
+.glass-elevated {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Frosted Glass - more opaque for content areas */
+.glass-frosted {
+  background: rgba(15, 20, 35, 0.75);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Subtle Glass - minimal effect for nested elements */
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+}
+
+/* Interactive glass hover state */
+.glass-interactive {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-interactive:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient border effect (pseudo-element based) */
+.glass-gradient-border {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  border-radius: var(--radius-lg);
+}
+
+.glass-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(99, 102, 241, 0.4),
+    rgba(236, 72, 153, 0.2),
+    rgba(34, 211, 238, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* Scrollbars - Minimal & Integrated */
@@ -593,14 +677,89 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   }
 }
 
-/* Animations */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+/* ==================== ANIMATIONS - Premium Micro-interactions ==================== */
+
+/* Fade & slide in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .animate-enter { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Modal scale entrance */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Slide up entrance for cards/lists */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered list item animation */
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Floating ambient animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Subtle breathing for icons */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
 
 /* Aurora gradient animation for header backgrounds */
 @keyframes aurora {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    opacity: 0.85;
+    transform: translateX(2%) translateY(-1%);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(0) translateY(1%);
+  }
+  75% {
+    opacity: 0.85;
+    transform: translateX(-2%) translateY(-1%);
+  }
 }
 
 /* Glow pulsing animation for logo badge and emphasis */
@@ -619,11 +778,62 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   }
 }
 
+/* Button glow on hover */
+@keyframes buttonGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  }
+}
+
 /* Generic pulse animation for status indicators */
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.02); }
 }
+
+/* Spin for loading spinners */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Ripple effect for touch feedback */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Gradient shift for premium backgrounds */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Animation utility classes */
+.animate-modal { animation: modalEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-breathe { animation: breathe 3s ease-in-out infinite; }
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Staggered animation delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
 
 /* ==================== REDUCED MOTION SUPPORT ==================== */
 /* Respects user preference for reduced motion (accessibility) */

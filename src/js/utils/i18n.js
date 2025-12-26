@@ -119,6 +119,9 @@ class I18n {
     this.currentLocale = locale;
     safeSetItem(this.config.storageKey, locale);
 
+    // Notify listeners of locale change
+    this._notifyLocaleChange();
+
     safeLog(`[i18n] Locale set to: ${locale}`);
     return true;
   }
@@ -229,6 +232,152 @@ class I18n {
       'es': '🇪🇸'
     };
     return flags[locale] || '🌐';
+  }
+
+  /**
+   * Translate all elements with data-i18n attributes in the page
+   * Supports:
+   * - data-i18n="key" -> sets textContent
+   * - data-i18n-html="key" -> sets innerHTML (use with caution)
+   * - data-i18n-placeholder="key" -> sets placeholder attribute
+   * - data-i18n-aria-label="key" -> sets aria-label attribute
+   * - data-i18n-title="key" -> sets title attribute
+   * - data-i18n-value="key" -> sets value attribute (for inputs)
+   *
+   * @param {Element} [root=document] - Root element to search within
+   * @returns {number} Number of elements translated
+   */
+  translatePage(root = document) {
+    let count = 0;
+
+    // Translate textContent via data-i18n
+    const textElements = root.querySelectorAll('[data-i18n]');
+    for (const el of textElements) {
+      const key = el.getAttribute('data-i18n');
+      if (key) {
+        const translation = this.t(key);
+        // Only update if translation was found (not returning the key itself)
+        if (translation !== key) {
+          el.textContent = translation;
+          count++;
+        }
+      }
+    }
+
+    // Translate innerHTML via data-i18n-html (for content with markup)
+    const htmlElements = root.querySelectorAll('[data-i18n-html]');
+    for (const el of htmlElements) {
+      const key = el.getAttribute('data-i18n-html');
+      if (key) {
+        const translation = this.t(key);
+        if (translation !== key) {
+          el.innerHTML = translation;
+          count++;
+        }
+      }
+    }
+
+    // Translate placeholder attributes
+    const placeholderElements = root.querySelectorAll('[data-i18n-placeholder]');
+    for (const el of placeholderElements) {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (key) {
+        const translation = this.t(key);
+        if (translation !== key) {
+          el.setAttribute('placeholder', translation);
+          count++;
+        }
+      }
+    }
+
+    // Translate aria-label attributes
+    const ariaLabelElements = root.querySelectorAll('[data-i18n-aria-label]');
+    for (const el of ariaLabelElements) {
+      const key = el.getAttribute('data-i18n-aria-label');
+      if (key) {
+        const translation = this.t(key);
+        if (translation !== key) {
+          el.setAttribute('aria-label', translation);
+          count++;
+        }
+      }
+    }
+
+    // Translate title attributes
+    const titleElements = root.querySelectorAll('[data-i18n-title]');
+    for (const el of titleElements) {
+      const key = el.getAttribute('data-i18n-title');
+      if (key) {
+        const translation = this.t(key);
+        if (translation !== key) {
+          el.setAttribute('title', translation);
+          count++;
+        }
+      }
+    }
+
+    // Translate value attributes (for submit buttons, etc.)
+    const valueElements = root.querySelectorAll('[data-i18n-value]');
+    for (const el of valueElements) {
+      const key = el.getAttribute('data-i18n-value');
+      if (key) {
+        const translation = this.t(key);
+        if (translation !== key) {
+          el.setAttribute('value', translation);
+          count++;
+        }
+      }
+    }
+
+    // Update HTML lang attribute
+    if (root === document) {
+      document.documentElement.lang = this.currentLocale;
+    }
+
+    safeLog(`[i18n] Translated ${count} elements`);
+    return count;
+  }
+
+  /**
+   * Set locale and translate the page
+   * @param {string} locale - Locale code to set
+   * @returns {Promise<boolean>} Success status
+   */
+  async setLocaleAndTranslate(locale) {
+    const success = await this.setLocale(locale);
+    if (success) {
+      this.translatePage();
+    }
+    return success;
+  }
+
+  /**
+   * Subscribe to locale changes
+   * @param {Function} callback - Callback function(locale)
+   * @returns {Function} Unsubscribe function
+   */
+  onLocaleChange(callback) {
+    if (!this._localeChangeListeners) {
+      this._localeChangeListeners = new Set();
+    }
+    this._localeChangeListeners.add(callback);
+    return () => this._localeChangeListeners.delete(callback);
+  }
+
+  /**
+   * Notify listeners of locale change
+   * @private
+   */
+  _notifyLocaleChange() {
+    if (this._localeChangeListeners) {
+      for (const callback of this._localeChangeListeners) {
+        try {
+          callback(this.currentLocale);
+        } catch (error) {
+          safeLog(`[i18n] Locale change callback error: ${error.message}`);
+        }
+      }
+    }
   }
 }
 

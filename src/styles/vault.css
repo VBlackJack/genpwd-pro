@@ -271,69 +271,162 @@
 }
 
 .vault-entry-item {
-  padding: 1rem;
-  border-bottom: 1px solid var(--glass-border);
+  position: relative;
+  padding: 1rem 1.25rem;
+  margin: 4px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+}
+
+.vault-entry-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border-radius: 0 3px 3px 0;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vault-entry-item:hover {
-  background: var(--vault-surface-hover);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.vault-entry-item:hover::before {
+  transform: translateY(-50%) scaleY(0.6);
 }
 
 .vault-entry-item.selected {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
-  border-left: 3px solid var(--accent-primary);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow:
+    0 4px 16px rgba(99, 102, 241, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.vault-entry-item.selected::before {
+  transform: translateY(-50%) scaleY(1);
 }
 
 /* NOTE: .vault-detail-panel defined in DETAIL PANEL section below */
 
-/* Fields */
+/* Fields - Premium Card Design */
 .field-group {
-  margin-bottom: 1.5rem;
-  background: rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 1rem;
-  transition: border-color 0.2s;
+  position: relative;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.field-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .field-group:hover {
-  border-color: var(--glass-border-light);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.field-group:hover::before {
+  opacity: 1;
 }
 
 .field-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
+  letter-spacing: 1.5px;
+  color: var(--text-hint);
+  margin-bottom: 0.625rem;
+  font-weight: 600;
 }
 
 .field-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 1rem;
   color: var(--text-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  line-height: 1.5;
 }
 
-/* Action Buttons */
+/* Action Buttons - Premium Style */
 .action-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .action-btn:hover {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow:
+    0 4px 20px rgba(99, 102, 241, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.action-btn:hover::before {
+  opacity: 0.15;
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border-color: transparent;
+  color: white;
+}
+
+.action-btn.primary:hover {
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
 }
 
 /* Hidden by default */
@@ -7680,4 +7773,139 @@ body.mode-compact .vault-empty-text {
 
 .vault-welcome-screen .vault-btn svg {
     margin-right: 0.5rem;
+}
+
+/* ============================================================================
+   CSP-COMPLIANT DYNAMIC STYLING
+   These classes use CSS custom properties set via JavaScript's .style.setProperty()
+   to avoid inline style="" attributes blocked by strict CSP
+   ============================================================================ */
+
+/* Dynamic width for strength bars - set via --strength-width */
+.vault-strength-fill {
+  width: var(--strength-width, 0%);
+}
+
+/* Dynamic background color for vault icons - set via --icon-bg */
+.vault-current-icon,
+.vault-switcher-icon {
+  background: var(--icon-bg, var(--vault-primary));
+}
+
+/* Dynamic entry icon colors - set via --type-color */
+.vault-entry-icon {
+  background: color-mix(in srgb, var(--type-color, var(--vault-primary)) 15%, transparent);
+  color: var(--type-color, var(--vault-primary));
+}
+
+.vault-detail-icon {
+  background: color-mix(in srgb, var(--type-color, var(--vault-primary)) 15%, transparent);
+  color: var(--type-color, var(--vault-primary));
+}
+
+.vault-preview-icon {
+  background: color-mix(in srgb, var(--type-color, var(--vault-primary)) 15%, transparent);
+  color: var(--type-color, var(--vault-primary));
+}
+
+/* Dynamic folder padding - set via --folder-padding */
+.vault-nav-folder {
+  padding-left: var(--folder-padding, 8px);
+}
+
+/* Dynamic folder color - set via --folder-color */
+.vault-folder-color {
+  color: var(--folder-color, inherit);
+}
+
+/* Tag dots and chips already use --tag-color */
+.vault-tag-dot {
+  background: var(--tag-color, var(--vault-text-muted));
+}
+
+.vault-mini-tag {
+  background: color-mix(in srgb, var(--tag-color, #6b7280) 20%, transparent);
+  border-color: var(--tag-color, #6b7280);
+}
+
+.vault-detail-tag {
+  background: color-mix(in srgb, var(--tag-color, #6b7280) 15%, transparent);
+  border-color: var(--tag-color, #6b7280);
+}
+
+.vault-bulk-tag-dot {
+  background: var(--tag-color, #6b7280);
+}
+
+/* Color picker options - set via --option-color */
+.vault-color-option {
+  background: var(--option-color, #6b7280);
+}
+
+/* Health score gauge - uses --score-color and --score-percent */
+.vault-score-gauge {
+  --score-ring-color: var(--score-color, var(--vault-success));
+}
+
+.vault-health-status {
+  color: var(--score-color, var(--vault-text));
+}
+
+/* Context menu icon color */
+.vault-ctx-icon {
+  color: var(--type-color, inherit);
+}
+
+/* Dynamic favicon size - set via --favicon-size */
+.vault-favicon-placeholder,
+.vault-favicon-img {
+  width: var(--favicon-size, 16px);
+  height: var(--favicon-size, 16px);
+}
+
+/* Category badge color */
+.vault-category-badge {
+  background: var(--category-color, var(--vault-text-muted));
+}
+
+/* Welcome screen button styles */
+.vault-empty-actions.vault-welcome-layout {
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.vault-btn.vault-full-width {
+  width: 100%;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Hidden file input */
+.vault-file-input-hidden {
+  display: none;
+}
+
+/* Small spinner */
+.vault-spinner-inline {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* CSP-compliant favicon sizing - set via --favicon-size */
+.vault-favicon,
+.vault-favicon-placeholder {
+  width: var(--favicon-size, 20px);
+  height: var(--favicon-size, 20px);
+}
+
+/* Favicon visibility toggle for onerror fallback */
+.vault-favicon-hidden {
+  display: none !important;
+}
+
+.vault-favicon-visible {
+  display: flex !important;
 }

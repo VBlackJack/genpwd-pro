@@ -1009,10 +1009,13 @@ export class VaultUI {
       if (el) {
         el.innerHTML = `
           <div class="vault-strength-bar">
-            <div class="vault-strength-fill ${strength.level}" style="width: ${strength.percent}%"></div>
+            <div class="vault-strength-fill ${strength.level}"></div>
           </div>
           <span class="vault-strength-text ${strength.level}">${strength.label}</span>
         `;
+        // CSP-compliant: set width via CSS custom property
+        const fill = el.querySelector('.vault-strength-fill');
+        if (fill) fill.style.setProperty('--strength-width', `${strength.percent}%`);
       }
       // Validation message
       this.#validateField(vaultPasswordInput, vaultPasswordMessage, {
@@ -1242,7 +1245,7 @@ export class VaultUI {
           <!-- Vault Selector -->
           <div class="vault-selector-header">
             <button class="vault-current" id="vault-switcher" aria-haspopup="true" aria-expanded="false">
-              <div class="vault-current-icon" style="background: ${this.#getVaultColor()}">
+              <div class="vault-current-icon" data-vault-color="${this.#getVaultColor()}">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -1260,7 +1263,7 @@ export class VaultUI {
               <div class="vault-switcher-section">
                 <div class="vault-switcher-label">Current vault</div>
                 <div class="vault-switcher-item current">
-                  <div class="vault-switcher-icon" style="background: ${this.#getVaultColor()}">
+                  <div class="vault-switcher-icon" data-vault-color="${this.#getVaultColor()}">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -1631,6 +1634,7 @@ export class VaultUI {
     `;
 
     this.#attachMainViewEvents();
+    this.#applyCspCompliantStyles();
     this.#updateLockCountdown();
     this.#initTheme();
     this.#restoreSidebarState();
@@ -1730,13 +1734,13 @@ export class VaultUI {
 
       let html = `
         <div class="vault-folder-node" role="treeitem" aria-selected="${isSelected}" data-folder-depth="${node.depth}">
-          <button class="vault-nav-item vault-folder-item ${isSelected ? 'active' : ''}"
+          <button class="vault-nav-item vault-folder-item vault-nav-folder ${isSelected ? 'active' : ''}"
                   data-folder="${node.id}"
-                  style="padding-left: ${8 + paddingLeft}px"
+                  data-padding="${8 + paddingLeft}"
                   aria-current="${isSelected ? 'true' : 'false'}"
                   draggable="true">
             ${expandIcon}
-            <span class="vault-nav-icon vault-folder-color" style="${folderColor ? `color: ${folderColor}` : ''}" aria-hidden="true">${folderIcon}</span>
+            <span class="vault-nav-icon vault-folder-color" ${folderColor ? `data-folder-color="${folderColor}"` : ''} aria-hidden="true">${folderIcon}</span>
             <span class="vault-nav-label">${this.#escapeHtml(node.name)}</span>
             <span class="vault-nav-count" title="${node.entryCount} in this folder, ${node.totalCount} total">${node.totalCount}</span>
           </button>
@@ -1767,6 +1771,7 @@ export class VaultUI {
     if (treeContainer) {
       treeContainer.innerHTML = this.#renderFolderTree();
       this.#attachFolderTreeEvents();
+      this.#applyCspCompliantStyles(treeContainer);
     }
   }
 
@@ -2060,7 +2065,7 @@ export class VaultUI {
                 aria-pressed="${isFavorite}">
           ${isFavorite ? '★' : '☆'}
         </button>
-        <div class="vault-entry-icon" style="background: ${type.color}20; color: ${type.color}" aria-hidden="true">
+        <div class="vault-entry-icon" data-type-color="${type.color}" aria-hidden="true">
           ${entry.data?.url ? this.#renderFaviconImg(entry.data.url, 20) : type.icon}
         </div>
         <div class="vault-entry-content">
@@ -2116,7 +2121,7 @@ export class VaultUI {
 
     return `
       <div class="vault-detail-header">
-        <div class="vault-detail-icon" style="background: ${type.color}20; color: ${type.color}" aria-hidden="true">
+        <div class="vault-detail-icon" data-type-color="${type.color}" aria-hidden="true">
           ${entry.data?.url ? this.#renderFaviconImg(entry.data.url, 32) : type.icon}
         </div>
         <div class="vault-detail-info">
@@ -2713,7 +2718,7 @@ export class VaultUI {
     return `
       <div class="vault-password-strength">
         <div class="vault-strength-bar">
-          <div class="vault-strength-fill ${strength.level}" style="width: ${strength.percent}%"></div>
+          <div class="vault-strength-fill ${strength.level}" data-strength-width="${strength.percent}"></div>
         </div>
         <span class="vault-strength-text ${strength.level}">${strength.label}</span>
       </div>
@@ -2892,15 +2897,15 @@ export class VaultUI {
         </div>
         <h3 class="vault-empty-title">Welcome to your vault</h3>
         <p class="vault-empty-text">Your vault is ready. Import your passwords or create your first entry.</p>
-        <div class="vault-empty-actions" style="flex-direction: column; gap: 1rem; width: 100%; max-width: 300px;">
-          <button class="vault-btn vault-btn-primary" id="btn-welcome-create" style="width: 100%; justify-content: center; padding: 12px;">
+        <div class="vault-empty-actions vault-welcome-layout">
+          <button class="vault-btn vault-btn-primary vault-full-width" id="btn-welcome-create">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             Create my first entry
           </button>
-          <button class="vault-btn vault-btn-outline" id="btn-welcome-import" style="width: 100%; justify-content: center; padding: 12px;">
+          <button class="vault-btn vault-btn-outline vault-full-width" id="btn-welcome-import">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
@@ -3030,7 +3035,7 @@ export class VaultUI {
               ${Object.entries(ENTRY_TYPES).filter(([k]) => k !== 'preset' && k !== 'ssh').map(([key, type]) => `
                 <label class="vault-type-option">
                   <input type="radio" name="entry-type" value="${key}" ${key === 'login' ? 'checked' : ''}>
-                  <span class="vault-type-card" style="--type-color: ${type.color}">
+                  <span class="vault-type-card" data-type-color="${type.color}">
                     <span class="vault-type-icon">${type.icon}</span>
                     <span class="vault-type-label">${type.label}</span>
                   </span>
@@ -3208,7 +3213,7 @@ export class VaultUI {
         <button class="vault-nav-item vault-tag-item ${this.#selectedTag === tag.id ? 'active' : ''}"
                 data-tag="${tag.id}"
                 aria-current="${this.#selectedTag === tag.id ? 'true' : 'false'}">
-          <span class="vault-tag-dot" style="background: ${tagColor}" aria-hidden="true"></span>
+          <span class="vault-tag-dot" data-tag-color="${tagColor}" aria-hidden="true"></span>
           <span class="vault-nav-label">${this.#escapeHtml(tag.name)}</span>
           <span class="vault-nav-count">${count}</span>
           <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${this.#escapeHtml(tag.name)}">
@@ -3232,7 +3237,7 @@ export class VaultUI {
         this.#tags.map(tag => `
               <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
                 <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
-                <span class="vault-tag-chip" style="--tag-color: ${tag.color || '#6b7280'}">
+                <span class="vault-tag-chip" data-tag-color="${tag.color || '#6b7280'}">
                   ${this.#escapeHtml(tag.name)}
                 </span>
               </label>
@@ -3243,8 +3248,8 @@ export class VaultUI {
           <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="New tag...">
           <div class="vault-tag-color-picker" id="tag-color-picker">
             ${tagColors.map((color, i) => `
-              <button type="button" class="vault-color-btn ${i === 0 ? 'selected' : ''}"
-                      data-color="${color}" style="background: ${color}"
+              <button type="button" class="vault-color-btn vault-color-option ${i === 0 ? 'selected' : ''}"
+                      data-color="${color}"
                       title="Color ${i + 1}" aria-label="Color ${color}"></button>
             `).join('')}
           </div>
@@ -3268,7 +3273,7 @@ export class VaultUI {
     return `
       <div class="vault-entry-tags">
         ${entryTags.slice(0, 3).map(tag => `
-          <span class="vault-mini-tag" style="--tag-color: ${tag.color || '#6b7280'}" title="${this.#escapeHtml(tag.name)}">
+          <span class="vault-mini-tag" data-tag-color="${tag.color || '#6b7280'}" title="${this.#escapeHtml(tag.name)}">
             ${this.#escapeHtml(tag.name)}
           </span>
         `).join('')}
@@ -3283,7 +3288,7 @@ export class VaultUI {
     if (entryTags.length === 0) return '';
 
     return entryTags.map(tag => `
-      <span class="vault-detail-tag" style="--tag-color: ${tag.color || '#6b7280'}">
+      <span class="vault-detail-tag" data-tag-color="${tag.color || '#6b7280'}">
         ${this.#escapeHtml(tag.name)}
       </span>
     `).join('');
@@ -3317,7 +3322,7 @@ export class VaultUI {
               <div class="vault-color-grid" id="add-tag-colors">
                 ${tagColors.map((color, i) => `
                   <button type="button" class="vault-color-option ${i === 0 ? 'selected' : ''}"
-                          data-color="${color}" style="background: ${color}">
+                          data-color="${color}">
                     ${i === 0 ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
                   </button>
                 `).join('')}
@@ -3359,7 +3364,7 @@ export class VaultUI {
               <label class="vault-label">Color</label>
               <div class="vault-color-grid" id="edit-tag-colors">
                 ${tagColors.map(color => `
-                  <button type="button" class="vault-color-option" data-color="${color}" style="background: ${color}" aria-label="Select color ${color}"></button>
+                  <button type="button" class="vault-color-option" data-color="${color}" aria-label="Select color ${color}"></button>
                 `).join('')}
               </div>
               <input type="hidden" id="edit-tag-color">
@@ -3740,7 +3745,7 @@ export class VaultUI {
                          ${tag.state === 'all' ? 'checked' : ''}
                          ${tag.state === 'partial' ? 'data-indeterminate="true"' : ''}>
                   <span class="vault-checkbox-mark ${tag.state === 'partial' ? 'partial' : ''}"></span>
-                  <span class="vault-bulk-tag-dot" style="background: ${tag.color || '#6b7280'}"></span>
+                  <span class="vault-bulk-tag-dot" data-tag-color="${tag.color || '#6b7280'}"></span>
                   <span class="vault-bulk-tag-name">${this.#escapeHtml(tag.name)}</span>
                   <span class="vault-bulk-tag-count">${tag.count}/${count}</span>
                 </label>
@@ -4095,7 +4100,7 @@ export class VaultUI {
           <div class="vault-modal-body">
             <!-- Score Gauge -->
             <div class="vault-health-score">
-              <div class="vault-score-gauge" style="--score-color: ${scoreColor}; --score-percent: ${report.score}%">
+              <div class="vault-score-gauge" data-score-color="${scoreColor}" data-score-percent="${report.score}">
                 <svg viewBox="0 0 120 120" class="vault-score-ring">
                   <circle class="vault-score-bg" cx="60" cy="60" r="54" />
                   <circle class="vault-score-progress" cx="60" cy="60" r="54"
@@ -4107,7 +4112,7 @@ export class VaultUI {
                   <span class="vault-score-max">/100</span>
                 </div>
               </div>
-              <div class="vault-health-status" style="color: ${scoreColor}">${scoreLabel}</div>
+              <div class="vault-health-status" data-score-color="${scoreColor}">${scoreLabel}</div>
               <div class="vault-health-subtitle">Overall security score</div>
             </div>
 
@@ -5741,6 +5746,61 @@ export class VaultUI {
     return result.map(v => v.trim());
   }
 
+  /**
+   * Apply CSS custom properties from data attributes for CSP compliance
+   * Called after innerHTML is set to apply dynamic styles via CSSOM
+   * @param {Element} [container=document] - Container to search within
+   */
+  #applyCspCompliantStyles(container = document) {
+    // Entry type colors
+    container.querySelectorAll('[data-type-color]').forEach(el => {
+      const color = el.dataset.typeColor;
+      if (color) el.style.setProperty('--type-color', color);
+    });
+
+    // Tag colors
+    container.querySelectorAll('[data-tag-color]').forEach(el => {
+      const color = el.dataset.tagColor;
+      if (color) el.style.setProperty('--tag-color', color);
+    });
+
+    // Vault icon colors
+    container.querySelectorAll('[data-vault-color]').forEach(el => {
+      const color = el.dataset.vaultColor;
+      if (color) el.style.setProperty('--vault-icon-color', color);
+    });
+
+    // Folder colors
+    container.querySelectorAll('[data-folder-color]').forEach(el => {
+      const color = el.dataset.folderColor;
+      if (color) el.style.setProperty('--folder-color', color);
+    });
+
+    // Folder item padding
+    container.querySelectorAll('[data-padding]').forEach(el => {
+      const padding = el.dataset.padding;
+      if (padding) el.style.setProperty('padding-left', `${padding}px`);
+    });
+
+    // Favicon sizes
+    container.querySelectorAll('[data-favicon-size]').forEach(el => {
+      const size = el.dataset.faviconSize;
+      if (size) el.style.setProperty('--favicon-size', `${size}px`);
+    });
+
+    // Strength bar widths
+    container.querySelectorAll('[data-strength-width]').forEach(el => {
+      const width = el.dataset.strengthWidth;
+      if (width) el.style.setProperty('--strength-width', width);
+    });
+
+    // Color picker option colors
+    container.querySelectorAll('[data-option-color]').forEach(el => {
+      const color = el.dataset.optionColor;
+      el.style.setProperty('--option-color', color || 'var(--vault-text-muted)');
+    });
+  }
+
   #attachMainViewEvents() {
     // Cleanup previous event listeners to prevent memory leaks
     if (this.#mainViewAbortController) {
@@ -6384,7 +6444,7 @@ export class VaultUI {
     menu.className = 'vault-context-menu';
     menu.innerHTML = `
       <div class="vault-ctx-header">
-        <span class="vault-ctx-icon" style="color: ${type.color}">${type.icon}</span>
+        <span class="vault-ctx-icon" data-type-color="${type.color}">${type.icon}</span>
         <span class="vault-ctx-title">${this.#escapeHtml(entry.title)}</span>
       </div>
       <div class="vault-ctx-divider"></div>
@@ -6660,7 +6720,7 @@ export class VaultUI {
 
     preview.innerHTML = `
       <div class="vault-preview-header">
-        <div class="vault-preview-icon" style="background: ${type.color}20; color: ${type.color}">
+        <div class="vault-preview-icon" data-type-color="${type.color}">
           ${type.icon}
         </div>
         <span class="vault-preview-title">${this.#escapeHtml(entry.title)}</span>
@@ -7710,7 +7770,7 @@ export class VaultUI {
              <div class="vault-file-drop-zone" id="file-drop-zone">
                <span class="drop-icon">📎</span>
                <span class="drop-text">Drop your files here or <button type="button" class="link-btn" id="btn-browse-files">browse</button></span>
-               <input type="file" id="file-input" multiple style="display: none">
+               <input type="file" id="file-input" multiple class="vault-file-input-hidden">
              </div>
            ` : ''}
         </div>
@@ -7862,10 +7922,13 @@ export class VaultUI {
     if (el) {
       el.innerHTML = `
         <div class="vault-strength-bar">
-          <div class="vault-strength-fill ${strength.level}" style="width: ${strength.percent}%"></div>
+          <div class="vault-strength-fill ${strength.level}"></div>
         </div>
         <span class="vault-strength-text ${strength.level}">${strength.label}</span>
       `;
+      // CSP-compliant: set width via CSS custom property
+      const fill = el.querySelector('.vault-strength-fill');
+      if (fill) fill.style.setProperty('--strength-width', `${strength.percent}%`);
     }
   }
 
@@ -8268,7 +8331,7 @@ export class VaultUI {
           pickerList.innerHTML = this.#tags.map(tag => `
             <label class="vault-tag-option">
               <input type="checkbox" name="entry-tags" value="${tag.id}">
-              <span class="vault-tag-chip" style="--tag-color: ${tag.color || '#6b7280'}">
+              <span class="vault-tag-chip" data-tag-color="${tag.color || '#6b7280'}">
                 ${this.#escapeHtml(tag.name)}
               </span>
             </label>
@@ -8418,7 +8481,7 @@ export class VaultUI {
         }
 
         const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<span class="vault-spinner-small" style="width:16px;height:16px;border-width:2px"></span>';
+        btn.innerHTML = '<span class="vault-spinner-small vault-spinner-inline"></span>';
         btn.disabled = true;
 
         try {
@@ -8763,10 +8826,13 @@ export class VaultUI {
     if (el) {
       el.innerHTML = `
         <div class="vault-strength-bar">
-          <div class="vault-strength-fill ${strength.level}" style="width: ${strength.percent}%"></div>
+          <div class="vault-strength-fill ${strength.level}"></div>
         </div>
         <span class="vault-strength-text ${strength.level}">${strength.label}</span>
       `;
+      // CSP-compliant: set width via CSS custom property
+      const fill = el.querySelector('.vault-strength-fill');
+      if (fill) fill.style.setProperty('--strength-width', `${strength.percent}%`);
     }
   }
 
@@ -9718,13 +9784,19 @@ export class VaultUI {
         ${folderColors.map(c => `
           <button class="vault-color-option ${c.color === currentColor || (!c.color && !currentColor) ? 'active' : ''}"
                   data-color="${c.color || ''}"
-                  title="${c.label}"
-                  style="${c.color ? `background: ${c.color}` : 'background: var(--vault-text-muted)'}">
+                  data-option-color="${c.color || ''}"
+                  title="${c.label}">
             ${c.color === currentColor || (!c.color && !currentColor) ? '✓' : ''}
           </button>
         `).join('')}
       </div>
     `;
+
+    // Apply CSP-compliant styles via CSSOM
+    picker.querySelectorAll('[data-option-color]').forEach(btn => {
+      const color = btn.dataset.optionColor;
+      btn.style.setProperty('--option-color', color || 'var(--vault-text-muted)');
+    });
 
     document.body.appendChild(picker);
 
@@ -10505,16 +10577,16 @@ export class VaultUI {
   #renderFaviconImg(url, size = 20) {
     const domain = this.#extractDomain(url);
     if (!domain) {
-      return `<span class="vault-favicon-placeholder" style="width:${size}px;height:${size}px">${this.#getDefaultFaviconSvg()}</span>`;
+      return `<span class="vault-favicon-placeholder" data-favicon-size="${size}">${this.#getDefaultFaviconSvg()}</span>`;
     }
     const faviconUrl = this.#getFaviconUrl(domain);
     return `<img src="${faviconUrl}"
                  class="vault-favicon"
-                 style="width:${size}px;height:${size}px"
+                 data-favicon-size="${size}"
                  alt=""
                  loading="lazy"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span class="vault-favicon-placeholder" style="width:${size}px;height:${size}px;display:none">${this.#getDefaultFaviconSvg()}</span>`;
+                 onerror="this.classList.add('vault-favicon-hidden');this.nextElementSibling.classList.add('vault-favicon-visible')">
+            <span class="vault-favicon-placeholder vault-favicon-hidden" data-favicon-size="${size}">${this.#getDefaultFaviconSvg()}</span>`;
   }
 
   async #preloadFavicons() {

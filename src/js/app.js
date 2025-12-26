@@ -86,7 +86,9 @@ class GenPwdApp {
         const detectedLocale = i18n.detectLocale();
         await i18n.loadLocale(detectedLocale);
         await i18n.setLocale(detectedLocale);
-        safeLog(`i18n initialized: ${detectedLocale}`);
+        // Translate static HTML elements with data-i18n attributes
+        const translatedCount = i18n.translatePage();
+        safeLog(`i18n initialized: ${detectedLocale} (${translatedCount} elements translated)`);
       } catch (i18nError) {
         safeLog(`i18n not available: ${i18nError.message} - continuing without i18n`);
       }

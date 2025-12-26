@@ -7,12 +7,15 @@
   <!-- Content Security Policy for Enhanced Security -->
   <!-- Updated for Phase 3: Cloud Sync (Google Drive API) -->
   <!-- Note: Add https://*.ingest.sentry.io to connect-src when Sentry is enabled -->
-  <!-- SECURITY NOTE: 'unsafe-inline' for style-src is required for dynamic inline styles
-       (vault colors, tags, progress bars, etc.). TODO: Refactor to use CSS custom properties
-       exclusively to eliminate 'unsafe-inline' in a future security hardening pass. -->
+  <!-- SECURITY: 'unsafe-inline' REMOVED from style-src for A+ grade security
+       - Main UI (render.js) refactored to use CSS classes and CSS custom properties
+       - Presets/History UIs refactored to use utility classes
+       - NOTE: vault-ui.js dynamic styles (colors, tags) still need CSS custom property migration
+       - NOTE: Plugin system UI still has inline styles (non-critical secondary feature)
+       - JavaScript CSSOM API (.style.setProperty) is CSP-compliant and still works -->
   <!-- Note: frame-ancestors removed - only works via HTTP headers, not meta tags (causes console warning) -->
   <!-- In Electron, frame embedding is controlled by webPreferences in BrowserWindow -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 
   <title>GenPwd Pro – Secure Password Generator</title>
   <meta name="author" content="Julien Bombled">
@@ -46,9 +49,9 @@
 </head>
 <body>
   <!-- Skip Navigation Link for Accessibility -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link" data-i18n="common.skipToMain">Skip to main content</a>
 
-  <div class="app" role="application" aria-label="GenPwd Pro - Secure Password Manager">
+  <div class="app" role="application" data-i18n-aria-label="aria.appLabel" aria-label="GenPwd Pro - Secure Password Manager">
     <header id="app-header" role="banner">
       <div class="header-inner">
         <div class="logo">
@@ -59,30 +62,30 @@
             </svg>
           </div>
           <div class="logo-text">
-            <div class="logo-title">GenPwd Pro</div>
-            <div class="logo-subtitle">Secure Password Manager</div>
+            <div class="logo-title" data-i18n="app.title">GenPwd Pro</div>
+            <div class="logo-subtitle" data-i18n="app.subtitle">Secure Password Manager</div>
           </div>
         </div>
         <!-- App Tabs (Electron only) -->
         <div class="header-tabs" id="app-tabs" style="display: none;">
-          <button type="button" class="header-tab active" data-tab="generator" aria-label="Password Generator Tab" aria-current="page">🔒 Generator</button>
-          <button type="button" class="header-tab" data-tab="vault" aria-label="Password Vault Tab">🗄️ Vault</button>
+          <button type="button" class="header-tab active" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab" aria-current="page">🔒 <span data-i18n="header.generatorTab">Generator</span></button>
+          <button type="button" class="header-tab" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab">🗄️ <span data-i18n="header.vaultTab">Vault</span></button>
         </div>
 
         <div class="header-right">
           <!-- Vault Status Indicator (Electron only) -->
-          <button type="button" class="vault-status-indicator" id="vault-status-indicator" hidden aria-label="Vault status" title="Click to access vault">
+          <button type="button" class="vault-status-indicator" id="vault-status-indicator" hidden data-i18n-aria-label="header.vaultStatus" aria-label="Vault status" data-i18n-title="header.clickToAccessVault" title="Click to access vault">
             <span class="vault-status-icon">🔒</span>
-            <span class="vault-status-text">Locked</span>
+            <span class="vault-status-text" data-i18n="header.vaultLocked">Locked</span>
           </button>
           <div class="version-badge" aria-label="Version 3.0.0">v3.0.0</div>
-          <button type="button" class="about-btn" id="btn-about" aria-label="Show information about GenPwd Pro">
+          <button type="button" class="about-btn" id="btn-about" data-i18n-aria-label="aria.showAbout" aria-label="Show information about GenPwd Pro">
             <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            <span>About</span>
+            <span data-i18n="common.about">About</span>
           </button>
         </div>
       </div>
@@ -96,9 +99,9 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
             </svg>
-            GenPwd Pro
+            <span data-i18n="app.title">GenPwd Pro</span>
           </h2>
-          <button type="button" class="modal-close" id="modal-close" aria-label="Close" aria-controls="about-modal">
+          <button type="button" class="modal-close" id="modal-close" data-i18n-aria-label="common.close" aria-label="Close" aria-controls="about-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -108,41 +111,41 @@
         <div class="modal-body">
           <div class="about-section about-hero">
             <div class="about-version">Version 3.0.0</div>
-            <p class="about-tagline">Professional password manager with encrypted vault</p>
+            <p class="about-tagline" data-i18n="about.tagline">Professional password manager with encrypted vault</p>
           </div>
 
           <div class="about-section">
-            <h3>Secure Vault</h3>
+            <h3 data-i18n="about.secureVault">Secure Vault</h3>
             <ul class="feature-list">
-              <li><strong>AES-256 Encryption</strong> with Argon2id for key derivation</li>
-              <li><strong>Windows Hello</strong>: Biometric unlock (fingerprint, face)</li>
-              <li><strong>Auto-lock</strong>: Automatic lock after inactivity</li>
-              <li><strong>External Storage</strong>: OneDrive, Dropbox, custom locations</li>
+              <li data-i18n-html="about.secureVaultDesc.encryption"><strong>AES-256 Encryption</strong> with Argon2id for key derivation</li>
+              <li data-i18n-html="about.secureVaultDesc.windowsHello"><strong>Windows Hello</strong>: Biometric unlock (fingerprint, face)</li>
+              <li data-i18n-html="about.secureVaultDesc.autoLock"><strong>Auto-lock</strong>: Automatic lock after inactivity</li>
+              <li data-i18n-html="about.secureVaultDesc.externalStorage"><strong>External Storage</strong>: OneDrive, Dropbox, custom locations</li>
             </ul>
           </div>
 
           <div class="about-section">
-            <h3>Advanced Generator</h3>
+            <h3 data-i18n="about.advancedGenerator">Advanced Generator</h3>
             <ul class="feature-list">
-              <li><strong>3 modes</strong>: Syllables, Passphrase, Leet speak</li>
-              <li><strong>Multi-language</strong>: French, English, Latin (2400+ words)</li>
-              <li><strong>Entropy</strong>: Up to 140 bits of security</li>
-              <li><strong>Presets</strong>: Savable and syncable configurations</li>
+              <li data-i18n-html="about.advancedGeneratorDesc.modes"><strong>3 modes</strong>: Syllables, Passphrase, Leet speak</li>
+              <li data-i18n-html="about.advancedGeneratorDesc.multiLanguage"><strong>Multi-language</strong>: French, English, Latin (2400+ words)</li>
+              <li data-i18n-html="about.advancedGeneratorDesc.entropy"><strong>Entropy</strong>: Up to 140 bits of security</li>
+              <li data-i18n-html="about.advancedGeneratorDesc.presets"><strong>Presets</strong>: Savable and syncable configurations</li>
             </ul>
           </div>
 
           <div class="about-section">
-            <h3>Features</h3>
+            <h3 data-i18n="about.features">Features</h3>
             <ul class="feature-list">
-              <li><strong>Import/Export</strong>: CSV compatible with other managers</li>
-              <li><strong>Organization</strong>: Folders, tags, and advanced search</li>
-              <li><strong>TOTP</strong>: 2FA code support (Google Authenticator)</li>
-              <li><strong>Multi-platform</strong>: Web, Windows, macOS and Linux coming soon</li>
+              <li data-i18n-html="about.featuresDesc.importExport"><strong>Import/Export</strong>: CSV compatible with other managers</li>
+              <li data-i18n-html="about.featuresDesc.organization"><strong>Organization</strong>: Folders, tags, and advanced search</li>
+              <li data-i18n-html="about.featuresDesc.totp"><strong>TOTP</strong>: 2FA code support (Google Authenticator)</li>
+              <li data-i18n-html="about.featuresDesc.multiPlatform"><strong>Multi-platform</strong>: Web, Windows, macOS and Linux coming soon</li>
             </ul>
           </div>
 
           <div class="about-section about-tech">
-            <h3>Technology Stack</h3>
+            <h3 data-i18n="about.techStack">Technology Stack</h3>
             <div class="tech-badges">
               <span class="tech-badge">Electron</span>
               <span class="tech-badge">ES6 Modules</span>
@@ -153,19 +156,19 @@
           </div>
 
           <div class="about-section">
-            <h3>Keyboard Shortcuts</h3>
+            <h3 data-i18n="about.shortcuts">Keyboard Shortcuts</h3>
             <ul class="feature-list shortcuts-list">
-              <li><kbd>Alt</kbd> + <kbd>G</kbd> Generate passwords</li>
-              <li><kbd>Alt</kbd> + <kbd>C</kbd> Copy all passwords</li>
-              <li><kbd>Alt</kbd> + <kbd>R</kbd> Run security tests</li>
-              <li><kbd>Alt</kbd> + <kbd>S</kbd> Export results</li>
-              <li><kbd>Escape</kbd> Close modals</li>
+              <li><kbd>Alt</kbd> + <kbd>G</kbd> <span data-i18n="about.shortcutsDesc.generate">Generate passwords</span></li>
+              <li><kbd>Alt</kbd> + <kbd>C</kbd> <span data-i18n="about.shortcutsDesc.copy">Copy all passwords</span></li>
+              <li><kbd>Alt</kbd> + <kbd>R</kbd> <span data-i18n="about.shortcutsDesc.test">Run security tests</span></li>
+              <li><kbd>Alt</kbd> + <kbd>S</kbd> <span data-i18n="about.shortcutsDesc.export">Export results</span></li>
+              <li><kbd>Escape</kbd> <span data-i18n="about.shortcutsDesc.escape">Close modals</span></li>
             </ul>
           </div>
 
           <div class="author-credit">
-            <div class="author-name">Julien Bombled</div>
-            <div class="author-role">Open Source under Apache 2.0 License</div>
+            <div class="author-name" data-i18n="about.author">Julien Bombled</div>
+            <div class="author-role" data-i18n="about.license">Open Source under Apache 2.0 License</div>
             <div class="about-links">
               <a href="https://github.com/VBlackJack/genpwd-pro" target="_blank" rel="noopener">GitHub</a>
             </div>
@@ -179,7 +182,7 @@
       <div class="modal test-modal">
         <div class="modal-header">
           <h2 class="modal-title" id="test-results-title">📊 Test Results - GenPwd Pro v3.0.0</h2>
-          <button type="button" class="modal-close" id="close-test-results" aria-label="Close test results" aria-controls="test-results-modal">
+          <button type="button" class="modal-close" id="close-test-results" data-i18n-aria-label="testResults.closeResults" aria-label="Close test results" aria-controls="test-results-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -187,33 +190,33 @@
           </button>
         </div>
         <div class="modal-body">
-          
+
           <div id="test-summary" class="test-summary">
             <!-- Score et résumé -->
           </div>
-          
+
           <div class="test-tabs">
             <button type="button" id="tab-results" class="tab-button active" aria-label="Show test results">
-              Results
+              <span data-i18n="common.results">Results</span>
             </button>
             <button type="button" id="tab-console" class="tab-button" aria-label="Show test console">
-              Console
+              <span data-i18n="common.console">Console</span>
             </button>
           </div>
-          
+
           <div id="test-details" class="test-details">
             <!-- Détails des tests -->
           </div>
-          
+
           <div id="test-console" class="test-console hidden">
             <pre id="test-console-output"></pre>
           </div>
-          
+
         </div>
         <div class="modal-footer">
-          <button type="button" id="btn-rerun-tests" class="btn" aria-label="Rerun all tests">🔄 Rerun</button>
-          <button type="button" id="btn-export-test-results" class="btn" aria-label="Export results as JSON">📤 Export JSON</button>
-          <button type="button" class="btn danger" id="close-test-results-footer" aria-label="Close results window">Close</button>
+          <button type="button" id="btn-rerun-tests" class="btn" data-i18n-aria-label="testResults.rerunTests" aria-label="Rerun all tests">🔄 <span data-i18n="common.rerun">Rerun</span></button>
+          <button type="button" id="btn-export-test-results" class="btn" data-i18n-aria-label="testResults.exportJson" aria-label="Export results as JSON">📤 Export JSON</button>
+          <button type="button" class="btn danger" id="close-test-results-footer" data-i18n-aria-label="testResults.closeWindow" aria-label="Close results window"><span data-i18n="common.close">Close</span></button>
         </div>
       </div>
     </div>
@@ -223,42 +226,42 @@
 
     <div class="main" id="main-content">
       <!-- Configuration Panel -->
-      <aside class="panel" id="config-panel" role="complementary" aria-label="Configuration panel">
+      <aside class="panel" id="config-panel" role="complementary" data-i18n-aria-label="aria.configPanel" aria-label="Configuration panel">
         <div class="panel-body">
 
           <!-- Generation Mode -->
           <section class="section" aria-labelledby="section-mode">
             <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-mode-content">
               <span class="chev" aria-hidden="true">▼</span>
-              <strong id="section-mode">Generation Mode</strong>
+              <strong id="section-mode" data-i18n="sections.generationMode">Generation Mode</strong>
               <span class="badge" aria-label="3 modes available">3 modes</span>
             </div>
             <div class="section-content" id="section-mode-content">
               <div class="row">
-                <label for="mode-select">Mode</label>
-                <select id="mode-select" class="grow" aria-label="Select generation mode">
-                  <option value="syllables">Syllables (C/V alternation)</option>
-                  <option value="passphrase">Passphrase (word-based)</option>
-                  <option value="leet">Word → Leet</option>
+                <label for="mode-select" data-i18n="generator.mode">Mode</label>
+                <select id="mode-select" class="grow" data-i18n-aria-label="aria.selectGenerationMode" aria-label="Select generation mode">
+                  <option value="syllables" data-i18n="modes.syllables">Syllables (C/V alternation)</option>
+                  <option value="passphrase" data-i18n="modes.passphrase">Passphrase (word-based)</option>
+                  <option value="leet" data-i18n="modes.leet">Word → Leet</option>
                 </select>
               </div>
 
               <!-- Syllables options -->
               <div id="mode-syllables-opts" aria-label="Syllables mode options">
                 <div class="row">
-                  <label for="syll-len" id="syll-len-label">Length <span class="sr-only">(6 to 64 characters)</span></label>
+                  <label for="syll-len" id="syll-len-label" data-i18n="generator.length">Length</label>
                   <div class="grow slider-wrap">
-                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20" aria-label="Password length" aria-describedby="syll-len-val" aria-valuemin="6" aria-valuemax="64" aria-valuenow="20">
+                    <input type="range" id="syll-len" class="slider" min="6" max="64" value="20" data-i18n-aria-label="aria.passwordLength" aria-label="Password length" aria-describedby="syll-len-val" aria-valuemin="6" aria-valuemax="64" aria-valuenow="20">
                     <span class="badge" id="syll-len-val" aria-live="polite">20</span>
                   </div>
                 </div>
                 <div class="row">
-                  <label for="policy-select">Policy</label>
-                  <select id="policy-select" class="grow" aria-label="Character policy">
-                    <option value="standard" selected>Standard (all characters)</option>
-                    <option value="standard-layout">Standard Layout-Safe (AZERTY/QWERTY)</option>
-                    <option value="alphanumerique">Alphanumeric (letters + digits)</option>
-                    <option value="alphanumerique-layout">Alpha Layout-Safe (AZERTY/QWERTY)</option>
+                  <label for="policy-select" data-i18n="generator.policy">Policy</label>
+                  <select id="policy-select" class="grow" data-i18n-aria-label="aria.characterPolicy" aria-label="Character policy">
+                    <option value="standard" selected data-i18n="policy.standard">Standard (all characters)</option>
+                    <option value="standard-layout" data-i18n="policy.standardLayout">Standard Layout-Safe (AZERTY/QWERTY)</option>
+                    <option value="alphanumerique" data-i18n="policy.alphanumeric">Alphanumeric (letters + digits)</option>
+                    <option value="alphanumerique-layout" data-i18n="policy.alphanumericLayout">Alpha Layout-Safe (AZERTY/QWERTY)</option>
                   </select>
                 </div>
               </div>
@@ -266,43 +269,43 @@
               <!-- Passphrase options -->
               <div id="mode-passphrase-opts" class="hidden">
                 <div class="row">
-                  <label for="pp-count">Word count <span class="sr-only">(2 to 8 words)</span></label>
+                  <label for="pp-count" data-i18n="generator.wordCount">Word count</label>
                   <div class="grow slider-wrap">
-                    <input type="range" id="pp-count" class="slider" min="2" max="8" value="5" aria-label="Number of words in passphrase" aria-describedby="pp-count-val" aria-valuemin="2" aria-valuemax="8" aria-valuenow="5">
+                    <input type="range" id="pp-count" class="slider" min="2" max="8" value="5" data-i18n-aria-label="aria.numberOfWords" aria-label="Number of words in passphrase" aria-describedby="pp-count-val" aria-valuemin="2" aria-valuemax="8" aria-valuenow="5">
                     <span class="badge" id="pp-count-val" aria-live="polite">5</span>
                   </div>
                 </div>
                 <div class="row">
-                  <label for="pp-sep">Separator</label>
-                  <select id="pp-sep" class="grow" aria-label="Word separator">
-                    <option value="-">- (dash)</option>
-                    <option value="_">_ (underscore)</option>
-                    <option value=".">. (dot)</option>
-                    <option value=" ">Space</option>
+                  <label for="pp-sep" data-i18n="generator.separator">Separator</label>
+                  <select id="pp-sep" class="grow" data-i18n-aria-label="aria.wordSeparator" aria-label="Word separator">
+                    <option value="-" data-i18n="separators.dash">- (dash)</option>
+                    <option value="_" data-i18n="separators.underscore">_ (underscore)</option>
+                    <option value="." data-i18n="separators.dot">. (dot)</option>
+                    <option value=" " data-i18n="separators.space">Space</option>
                   </select>
                 </div>
                 <div class="row">
-                  <label for="dict-select">Dictionary</label>
+                  <label for="dict-select" data-i18n="generator.dictionary">Dictionary</label>
                   <div class="dict-selector grow">
-                    <select id="dict-select" class="grow" aria-label="Dictionary selection">
-                      <option value="french">🇫🇷 French</option>
-                      <option value="english">🇬🇧 English</option>
-                      <option value="latin">🏛️ Latin</option>
+                    <select id="dict-select" class="grow" data-i18n-aria-label="aria.dictionarySelection" aria-label="Dictionary selection">
+                      <option value="french" data-i18n="dictionaries.french">🇫🇷 French</option>
+                      <option value="english" data-i18n="dictionaries.english">🇬🇧 English</option>
+                      <option value="latin" data-i18n="dictionaries.latin">🏛️ Latin</option>
                     </select>
                     <div class="dict-status" id="dict-status">--</div>
                   </div>
                 </div>
                 <div class="row">
-                  <div class="dict-info" id="dict-info">Loading dictionary...</div>
+                  <div class="dict-info" id="dict-info" data-i18n="dictionaries.loading">Loading dictionary...</div>
                 </div>
               </div>
 
               <!-- Leet options -->
               <div id="mode-leet-opts" class="hidden">
                 <div class="row">
-                  <label for="leet-input">Word to transform</label>
-                  <input id="leet-input" class="input grow" type="text" value="password" aria-label="Word to transform into leet speak" aria-describedby="leet-input-desc">
-                  <span id="leet-input-desc" class="sr-only">Enter a word to convert to leet speak format</span>
+                  <label for="leet-input" data-i18n="generator.wordToTransform">Word to transform</label>
+                  <input id="leet-input" class="input grow" type="text" value="password" data-i18n-aria-label="aria.leetWordDesc" aria-label="Word to transform into leet speak" aria-describedby="leet-input-desc">
+                  <span id="leet-input-desc" class="sr-only" data-i18n="aria.leetWordDesc">Enter a word to convert to leet speak format</span>
                 </div>
               </div>
             </div>
@@ -312,66 +315,66 @@
           <section class="section" aria-labelledby="section-params">
             <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-params-content">
               <span class="chev" aria-hidden="true">▼</span>
-              <strong id="section-params">Common Parameters</strong>
+              <strong id="section-params" data-i18n="sections.commonParameters">Common Parameters</strong>
             </div>
             <div class="section-content" id="section-params-content">
               <div class="row">
-                <label for="qty">Count <span class="sr-only">(1 to 20 passwords)</span></label>
+                <label for="qty" data-i18n="generator.count">Count</label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="qty" min="1" max="20" value="5" aria-label="Number of passwords" aria-describedby="qty-val">
+                  <input type="range" class="slider" id="qty" min="1" max="20" value="5" data-i18n-aria-label="aria.numberOfPasswords" aria-label="Number of passwords" aria-describedby="qty-val">
                   <span class="badge" id="qty-val" aria-live="polite">5</span>
                 </div>
               </div>
               <div class="row">
-                <label>Mask display</label>
-                <label class="checkbox"><input type="checkbox" id="mask-toggle" checked> Blur passwords</label>
+                <label data-i18n="generator.maskDisplay">Mask display</label>
+                <label class="checkbox"><input type="checkbox" id="mask-toggle" checked> <span data-i18n="generator.blurPasswords">Blur passwords</span></label>
               </div>
 
               <div class="divider"></div>
 
               <div class="row">
-                <label for="digits-count">Digits <span class="sr-only">(0 to 6)</span></label>
+                <label for="digits-count" data-i18n="generator.digits">Digits</label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2" aria-label="Number of digits" aria-describedby="digits-count-val">
+                  <input type="range" class="slider" id="digits-count" min="0" max="6" value="2" data-i18n-aria-label="aria.numberOfDigits" aria-label="Number of digits" aria-describedby="digits-count-val">
                   <span class="badge" id="digits-count-val" aria-live="polite">2</span>
                 </div>
               </div>
               <div class="row">
-                <label for="specials-count">Specials <span class="sr-only">(0 to 6)</span></label>
+                <label for="specials-count" data-i18n="generator.specials">Specials</label>
                 <div class="grow slider-wrap">
-                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2" aria-label="Number of special characters" aria-describedby="specials-count-val">
+                  <input type="range" class="slider" id="specials-count" min="0" max="6" value="2" data-i18n-aria-label="aria.numberOfSpecials" aria-label="Number of special characters" aria-describedby="specials-count-val">
                   <span class="badge" id="specials-count-val" aria-live="polite">2</span>
                 </div>
               </div>
               <div class="row">
-                <label for="custom-specials">Custom specials</label>
-                <input id="custom-specials" class="input grow" type="text" value="_+-=.@#%" aria-label="Custom special characters to use in passwords" aria-describedby="custom-specials-desc">
-                <span id="custom-specials-desc" class="sr-only">Enter the special characters you want to include in generated passwords</span>
+                <label for="custom-specials" data-i18n="generator.customSpecials">Custom specials</label>
+                <input id="custom-specials" class="input grow" type="text" value="_+-=.@#%" data-i18n-aria-label="aria.customSpecialsDesc" aria-label="Custom special characters to use in passwords" aria-describedby="custom-specials-desc">
+                <span id="custom-specials-desc" class="sr-only" data-i18n="aria.customSpecialsDesc">Enter the special characters you want to include in generated passwords</span>
               </div>
 
               <div class="row">
-                <label for="place-digits">Digits placement</label>
-                <select id="place-digits" class="grow" aria-label="Digits placement in password">
-                  <option value="debut">Start</option>
-                  <option value="fin">End</option>
-                  <option value="milieu">Middle</option>
-                  <option value="aleatoire" selected>Random</option>
-                  <option value="positions">🎯 Visual</option>
+                <label for="place-digits" data-i18n="generator.digitsPlacement">Digits placement</label>
+                <select id="place-digits" class="grow" data-i18n-aria-label="aria.digitsPlacement" aria-label="Digits placement in password">
+                  <option value="debut" data-i18n="placement.start">Start</option>
+                  <option value="fin" data-i18n="placement.end">End</option>
+                  <option value="milieu" data-i18n="placement.middle">Middle</option>
+                  <option value="aleatoire" selected data-i18n="placement.random">Random</option>
+                  <option value="positions" data-i18n="placement.visual">🎯 Visual</option>
                 </select>
               </div>
               <div class="row">
-                <label for="place-specials">Specials placement</label>
-                <select id="place-specials" class="grow" aria-label="Special characters placement">
-                  <option value="debut">Start</option>
-                  <option value="fin">End</option>
-                  <option value="milieu">Middle</option>
-                  <option value="aleatoire" selected>Random</option>
-                  <option value="positions">🎯 Visual</option>
+                <label for="place-specials" data-i18n="generator.specialsPlacement">Specials placement</label>
+                <select id="place-specials" class="grow" data-i18n-aria-label="aria.specialsPlacement" aria-label="Special characters placement">
+                  <option value="debut" data-i18n="placement.start">Start</option>
+                  <option value="fin" data-i18n="placement.end">End</option>
+                  <option value="milieu" data-i18n="placement.middle">Middle</option>
+                  <option value="aleatoire" selected data-i18n="placement.random">Random</option>
+                  <option value="positions" data-i18n="placement.visual">🎯 Visual</option>
                 </select>
               </div>
 
               <div class="row">
-                <label>🎯 Visual placement</label>
+                <label>🎯 <span data-i18n="sections.visualPlacement">Visual placement</span></label>
                 <div id="placement-visual-container" class="placement-visual-container">
                   <div class="placement-bar-wrapper">
                     <div class="placement-bar" id="placement-bar">
@@ -381,10 +384,10 @@
                     </div>
                   </div>
                   <div class="placement-controls">
-                    <button type="button" class="btn-mini" id="btn-placement-reset" aria-label="Reset positions">↻ Reset</button>
-                    <button type="button" class="btn-mini" id="btn-placement-auto" aria-label="Auto random placement">🎲 Auto</button>
-                    <button type="button" class="btn-mini" id="btn-placement-toggle" aria-label="Toggle visual/percentage mode">🎯 → 📊</button>
-                    <span class="placement-mode" id="placement-mode">Auto</span>
+                    <button type="button" class="btn-mini" id="btn-placement-reset" data-i18n-aria-label="generator.resetPositions" aria-label="Reset positions">↻ Reset</button>
+                    <button type="button" class="btn-mini" id="btn-placement-auto" data-i18n-aria-label="generator.autoRandomPlacement" aria-label="Auto random placement">🎲 Auto</button>
+                    <button type="button" class="btn-mini" id="btn-placement-toggle" data-i18n-aria-label="generator.toggleVisualMode" aria-label="Toggle visual/percentage mode">🎯 → 📊</button>
+                    <span class="placement-mode" id="placement-mode" data-i18n="generator.placementModeAuto">Auto</span>
                   </div>
                 </div>
               </div>
@@ -392,13 +395,13 @@
               <div class="divider"></div>
 
               <div class="row">
-                <label for="case-mode-select">Case management</label>
-                <select id="case-mode-select" class="grow" aria-label="Uppercase/lowercase management mode">
-                  <option value="mixte">Mixed (random)</option>
-                  <option value="upper">UPPERCASE</option>
-                  <option value="lower">lowercase</option>
-                  <option value="title">Title Case</option>
-                  <option value="blocks">Blocks (U/T/L)</option>
+                <label for="case-mode-select" data-i18n="generator.caseManagement">Case management</label>
+                <select id="case-mode-select" class="grow" data-i18n-aria-label="aria.caseManagement" aria-label="Uppercase/lowercase management mode">
+                  <option value="mixte" data-i18n="case.mixed">Mixed (random)</option>
+                  <option value="upper" data-i18n="case.upper">UPPERCASE</option>
+                  <option value="lower" data-i18n="case.lower">lowercase</option>
+                  <option value="title" data-i18n="case.title">Title Case</option>
+                  <option value="blocks" data-i18n="case.blocks">Blocks (U/T/L)</option>
                 </select>
               </div>
 
@@ -406,21 +409,21 @@
                 <div class="grow blocks-wrap">
                   <div class="block-controls">
                     <div class="block-controls-left">
-                      <button type="button" class="btn-mini" id="btn-all-title" aria-label="Set all blocks to Title Case">All Title</button>
-                      <button type="button" class="btn-mini" id="btn-all-upper" aria-label="Set all blocks to uppercase">All UPPER</button>
-                      <button type="button" class="btn-mini" id="btn-all-lower" aria-label="Set all blocks to lowercase">All lower</button>
+                      <button type="button" class="btn-mini" id="btn-all-title" data-i18n-aria-label="aria.setAllTitle" aria-label="Set all blocks to Title Case"><span data-i18n="generator.allTitle">All Title</span></button>
+                      <button type="button" class="btn-mini" id="btn-all-upper" data-i18n-aria-label="aria.setAllUpper" aria-label="Set all blocks to uppercase"><span data-i18n="generator.allUpper">All UPPER</span></button>
+                      <button type="button" class="btn-mini" id="btn-all-lower" data-i18n-aria-label="aria.setAllLower" aria-label="Set all blocks to lowercase"><span data-i18n="generator.allLower">All lower</span></button>
                     </div>
                     <div class="block-controls-right">
-                      <button type="button" class="btn-mini" id="btn-block-dec" aria-label="Decrease block count">−</button>
-                      <span class="hint" id="block-size-label">Blocks: 2</span>
-                      <button type="button" class="btn-mini" id="btn-block-inc" aria-label="Increase block count">+</button>
-                      <button type="button" class="btn-mini random" id="btn-block-random" aria-label="Generate random blocks">🎲 Random</button>
+                      <button type="button" class="btn-mini" id="btn-block-dec" data-i18n-aria-label="aria.decreaseBlockCount" aria-label="Decrease block count">−</button>
+                      <span class="hint" id="block-size-label"><span data-i18n="generator.blocks">Blocks</span>: 2</span>
+                      <button type="button" class="btn-mini" id="btn-block-inc" data-i18n-aria-label="aria.increaseBlockCount" aria-label="Increase block count">+</button>
+                      <button type="button" class="btn-mini random" id="btn-block-random" data-i18n-aria-label="aria.generateRandomBlocks" aria-label="Generate random blocks">🎲 <span data-i18n="generator.randomBlocks">Random</span></button>
                     </div>
                   </div>
                   <div class="block-sync-toggle">
                     <label class="checkbox">
                       <input type="checkbox" id="blocks-sync-toggle" checked>
-                      Auto-sync blocks
+                      <span data-i18n="generator.autoSyncBlocks">Auto-sync blocks</span>
                     </label>
                   </div>
                   <div class="chips" id="chips"></div>
@@ -428,64 +431,64 @@
               </div>
 
               <div class="row" id="case-preview-row" class="hidden">
-                <label class="hint">Preview</label>
+                <label class="hint" data-i18n="generator.preview">Preview</label>
                 <div class="hint mono" id="case-preview"></div>
               </div>
             </div>
           </section>
 
           <!-- Help & Notes -->
-			<section class="section" aria-labelledby="section-help">
-			  <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-help-content">
-				<span class="chev" aria-hidden="true">▼</span>
-				<strong id="section-help">Help & Notes</strong>
-			  </div>
-			  <div class="section-content" id="section-help-content">
-				<p class="small">
-				  <strong>💡 Tip:</strong> Click directly on a password to copy it!<br><br>
+          <section class="section" aria-labelledby="section-help">
+            <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-help-content">
+              <span class="chev" aria-hidden="true">▼</span>
+              <strong id="section-help" data-i18n="sections.helpNotes">Help & Notes</strong>
+            </div>
+            <div class="section-content" id="section-help-content">
+              <p class="small">
+                <strong>💡 <span data-i18n="help.tip">Tip</span>:</strong> <span data-i18n="help.tipContent">Click directly on a password to copy it!</span><br><br>
 
-				  <strong>🛡️ CLI-Safe:</strong> Default special characters are optimized for technical environments (terminal, command line).<br><br>
+                <strong>🛡️ <span data-i18n="help.cliSafe">CLI-Safe</span>:</strong> <span data-i18n="help.cliSafeContent">Default special characters are optimized for technical environments (terminal, command line).</span><br><br>
 
-				  <strong>🌍 Dictionaries:</strong> Multilingual collections loaded dynamically - French (built-in), English and Latin (external).<br><br>
+                <strong>🌍 <span data-i18n="help.dictionaries">Dictionaries</span>:</strong> <span data-i18n="help.dictionariesContent">Multilingual collections loaded dynamically - French (built-in), English and Latin (external).</span><br><br>
 
-				  <strong>🧪 Built-in tests:</strong> Use the "Tests" button to validate functionality (100% score expected). Console available: <code>runTests()</code><br><br>
+                <strong>🧪 <span data-i18n="help.builtInTests">Built-in tests</span>:</strong> <span data-i18n="help.builtInTestsContent">Use the "Tests" button to validate functionality (100% score expected). Console available:</span> <code>runTests()</code><br><br>
 
-				  <strong>🎯 Visual placement:</strong> Select "Visual" in placement dropdowns for interactive position control.<br><br>
+                <strong>🎯 <span data-i18n="help.visualPlacement">Visual placement</span>:</strong> <span data-i18n="help.visualPlacementContent">Select "Visual" in placement dropdowns for interactive position control.</span><br><br>
 
-				  <strong>📊 Entropy:</strong> Generated passwords reach up to 140 bits of entropy for maximum security.
-				</p>
-			  </div>
-			</section>
+                <strong>📊 <span data-i18n="help.entropy">Entropy</span>:</strong> <span data-i18n="help.entropyContent">Generated passwords reach up to 140 bits of entropy for maximum security.</span>
+              </p>
+            </div>
+          </section>
         </div>
       </aside>
 
       <!-- Results Panel -->
-      <section class="results" id="results-panel" role="main" aria-label="Results panel">
-        <div class="actions" role="toolbar" aria-label="Main actions">
-          <button type="button" class="btn primary" id="btn-generate" aria-label="Generate new passwords (Shortcut: Alt+G)">🔒 Generate</button>
-          <button type="button" class="btn" id="btn-copy-all" aria-label="Copy all generated passwords (Shortcut: Alt+C)">📋 Copy All</button>
-          <button type="button" class="btn icon-btn" id="btn-clipboard-settings" title="Clipboard settings" aria-label="Configure automatic clipboard clearing">⏱️</button>
-          <button type="button" class="btn" id="btn-export" aria-label="Export results">📤 Export</button>
-          <button type="button" class="btn danger" id="btn-clear" aria-label="Clear all results">🗑️ Clear</button>
+      <section class="results" id="results-panel" role="main" data-i18n-aria-label="aria.resultsPanel" aria-label="Results panel">
+        <div class="actions" role="toolbar" data-i18n-aria-label="aria.mainActions" aria-label="Main actions">
+          <button type="button" class="btn primary" id="btn-generate" data-i18n-aria-label="actions.generateShortcut" aria-label="Generate new passwords (Shortcut: Alt+G)">🔒 <span data-i18n="actions.generate">Generate</span></button>
+          <button type="button" class="btn" id="btn-copy-all" data-i18n-aria-label="actions.copyAllShortcut" aria-label="Copy all generated passwords (Shortcut: Alt+C)">📋 <span data-i18n="actions.copyAll">Copy All</span></button>
+          <button type="button" class="btn icon-btn" id="btn-clipboard-settings" data-i18n-title="actions.clipboardSettings" title="Clipboard settings" data-i18n-aria-label="actions.clipboardSettings" aria-label="Configure automatic clipboard clearing">⏱️</button>
+          <button type="button" class="btn" id="btn-export" data-i18n-aria-label="actions.exportResults" aria-label="Export results">📤 <span data-i18n="actions.export">Export</span></button>
+          <button type="button" class="btn danger" id="btn-clear" data-i18n-aria-label="actions.clearAll" aria-label="Clear all results">🗑️ <span data-i18n="actions.clear">Clear</span></button>
           <span class="spacer" aria-hidden="true"></span>
-          <button type="button" class="btn ghost" id="btn-run-tests" aria-label="Run validation tests (Shortcut: Alt+R)">🧪 Tests</button>
+          <button type="button" class="btn ghost" id="btn-run-tests" data-i18n-aria-label="actions.runTests" aria-label="Run validation tests (Shortcut: Alt+R)">🧪 <span data-i18n="actions.tests">Tests</span></button>
           <span id="test-status" role="status" aria-live="polite"></span>
-          <button type="button" class="btn ghost" id="btn-toggle-debug" aria-label="Toggle debug panel">🔬 Debug</button>
+          <button type="button" class="btn ghost" id="btn-toggle-debug" data-i18n-aria-label="actions.toggleDebug" aria-label="Toggle debug panel">🔬 <span data-i18n="actions.debug">Debug</span></button>
         </div>
-        <div class="results-list" id="results-list" role="region" aria-label="Generated passwords list" aria-live="polite">
+        <div class="results-list" id="results-list" role="region" data-i18n-aria-label="aria.generatedPasswordsList" aria-label="Generated passwords list" aria-live="polite">
           <div class="empty-state">
             <div class="empty-icon" aria-hidden="true">🔐</div>
-            <p>Click "Generate" to create your passwords</p>
+            <p data-i18n="results.emptyState">Click "Generate" to create your passwords</p>
           </div>
         </div>
       </section>
     </div>
 
     <!-- Debug Panel -->
-    <aside class="debug hidden" id="debug-panel" role="complementary" aria-label="Debug panel">
+    <aside class="debug hidden" id="debug-panel" role="complementary" data-i18n-aria-label="aria.debugPanel" aria-label="Debug panel">
       <div class="debug-header">
-        <strong>Debug</strong>
-        <button type="button" class="btn ghost small" id="btn-clear-logs" aria-label="Clear debug logs">Clear logs</button>
+        <strong data-i18n="actions.debug">Debug</strong>
+        <button type="button" class="btn ghost small" id="btn-clear-logs" data-i18n-aria-label="actions.clearLogs" aria-label="Clear debug logs"><span data-i18n="actions.clearLogs">Clear logs</span></button>
       </div>
       <div class="debug-body">
         <div id="tests"></div>

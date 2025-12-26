@@ -214,39 +214,12 @@ function bindLanguageSelectorEvents() {
  */
 function updateInterfaceLanguage() {
   try {
-    // Update header
-    const logoSubtitle = document.querySelector('.logo-subtitle');
-    if (logoSubtitle) {
-      logoSubtitle.textContent = i18n.t('app.subtitle');
-    }
+    // Use translatePage() for all data-i18n elements (declarative approach)
+    const translatedCount = i18n.translatePage();
+    safeLog(`Translated ${translatedCount} elements via data-i18n`);
 
-    const aboutBtn = document.querySelector('.about-btn span');
-    if (aboutBtn) {
-      aboutBtn.textContent = i18n.t('common.about');
-    }
-
-    // Update main buttons
-    const btnGenerate = document.getElementById('btn-generate');
-    if (btnGenerate) {
-      btnGenerate.textContent = '🔒 ' + i18n.t('common.generate');
-    }
-
-    const btnCopyAll = document.getElementById('btn-copy-all');
-    if (btnCopyAll) {
-      btnCopyAll.textContent = '📋 ' + i18n.t('common.copyAll');
-    }
-
-    const btnExport = document.getElementById('btn-export');
-    if (btnExport) {
-      btnExport.textContent = '📤 ' + i18n.t('common.export');
-    }
-
-    const btnClear = document.getElementById('btn-clear');
-    if (btnClear) {
-      btnClear.textContent = '🗑️ ' + i18n.t('common.clear');
-    }
-
-    // Update preset buttons if they exist
+    // Legacy updates for dynamically created content and special cases
+    // Update preset buttons if they exist (dynamically created)
     const btnSavePreset = document.getElementById('btn-save-preset');
     if (btnSavePreset) {
       btnSavePreset.textContent = '💾 ' + i18n.t('presets.save');
@@ -257,26 +230,11 @@ function updateInterfaceLanguage() {
       btnManagePresets.textContent = '🗂️ ' + i18n.t('presets.manage');
     }
 
-    // Update history button if it exists
+    // Update history button if it exists (dynamically created)
     const btnHistory = document.getElementById('btn-history');
     if (btnHistory) {
       btnHistory.textContent = '📜 ' + i18n.t('history.title');
     }
-
-    // Update tests button
-    const btnTests = document.getElementById('btn-run-tests');
-    if (btnTests) {
-      btnTests.textContent = '🧪 ' + i18n.t('common.tests');
-    }
-
-    // Update section headers
-    updateSectionHeaders();
-
-    // Update labels
-    updateLabels();
-
-    // Update select options
-    updateSelectOptions();
 
     // Update vault UI if it exists
     if (window.genPwdApp?.vaultUI?.refreshLanguage) {
@@ -498,25 +456,25 @@ export function initializePresetsUI() {
       <span class="badge">${presetManager.getAllPresets().length}</span>
     </div>
     <div class="section-content">
-      <div class="row" style="gap: 8px; align-items: center;">
-        <select id="preset-select" class="grow" style="flex: 1;">
+      <div class="row gap-8 items-center">
+        <select id="preset-select" class="grow flex-1">
           <option value="">${i18n.t('presets.select') || 'Select a preset...'}</option>
         </select>
-        <button class="btn-icon" id="btn-clear-preset" title="Clear selection" style="padding: 4px 8px; display: none;">✕</button>
+        <button class="btn-icon d-none" id="btn-clear-preset" title="Clear selection">✕</button>
       </div>
-      <div class="row" style="gap: 8px;">
-        <button class="btn" id="btn-save-preset" style="flex: 1;">
+      <div class="row gap-8">
+        <button class="btn flex-1" id="btn-save-preset">
           💾 ${i18n.t('presets.save')}
         </button>
-        <button class="btn" id="btn-new-preset" title="Create new preset" style="padding: 8px 12px;">➕</button>
+        <button class="btn px-12" id="btn-new-preset" title="Create new preset">➕</button>
       </div>
       <div class="row">
         <button class="btn full-width" id="btn-manage-presets">
           🗂️ ${i18n.t('presets.manage')}
         </button>
       </div>
-      <button class="btn-icon" id="btn-quick-save-preset" style="display: none;">💾</button>
-      <button class="btn-icon" id="btn-refresh-presets" style="display: none;" aria-label="Refresh presets from vault"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+      <button class="btn-icon d-none" id="btn-quick-save-preset">💾</button>
+      <button class="btn-icon d-none" id="btn-refresh-presets" aria-label="Refresh presets from vault"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
     </div>
   `);
 
@@ -638,10 +596,11 @@ function bindPresetEvents() {
       // Track the loaded preset
       currentLoadedPresetId = event.target.value || null;
       updateSaveButtonState();
-      // Show/hide clear button
+      // Show/hide clear button (CSP-compliant class toggle)
       const btnClear = document.getElementById('btn-clear-preset');
       if (btnClear) {
-        btnClear.style.display = currentLoadedPresetId ? 'inline-flex' : 'none';
+        btnClear.classList.toggle('d-none', !currentLoadedPresetId);
+        btnClear.classList.toggle('d-inline-flex', !!currentLoadedPresetId);
       }
     });
   }
@@ -661,18 +620,20 @@ function bindPresetEvents() {
       }
       currentLoadedPresetId = null;
       updateSaveButtonState();
-      btnClearPreset.style.display = 'none';
+      btnClearPreset.classList.add('d-none');
+      btnClearPreset.classList.remove('d-inline-flex');
     });
   }
 
   // Quick save button - kept for compatibility but hidden
   if (btnQuickSave) {
-    btnQuickSave.style.display = 'none';
+    btnQuickSave.classList.add('d-none');
   }
 
   // Refresh presets button - load from vault (Electron only)
   if (btnRefreshPresets && window.vault) {
-    btnRefreshPresets.style.display = 'inline-flex';
+    btnRefreshPresets.classList.remove('d-none');
+    btnRefreshPresets.classList.add('d-inline-flex');
 
     btnRefreshPresets.addEventListener('click', async () => {
       btnRefreshPresets.disabled = true;
@@ -761,9 +722,9 @@ function showSavePresetDialog() {
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="preset-name">Preset name <span style="color: red;">*</span></label>
+          <label for="preset-name">Preset name <span class="text-red">*</span></label>
           <input type="text" id="preset-name" class="input-field" placeholder="E.g.: My secure preset" required maxlength="50">
-          <span class="error-message" id="name-error" style="display:none; color: red; font-size: 0.85em;"></span>
+          <span class="error-msg" id="name-error"></span>
         </div>
 
         <div class="form-group">
@@ -773,7 +734,7 @@ function showSavePresetDialog() {
 
         <div class="config-preview">
           <strong>Configuration to save:</strong>
-          <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
+          <ul class="my-8 pl-20 text-base">
             <li>Mode: ${config.mode || 'Undefined'}</li>
             <li>Length: ${config.length || 'N/A'} characters</li>
             <li>Policy: ${config.policy || 'Standard'}</li>
@@ -999,13 +960,12 @@ function showManagePresetsModal() {
         </button>
       </div>
       <div class="modal-body">
-        <div class="search-container" style="margin-bottom: 16px;">
+        <div class="search-container mb-16">
           <input
             type="text"
             id="preset-search"
-            class="input-field"
+            class="search-input"
             placeholder="🔍 Search preset..."
-            style="width: 100%; padding: 10px; border: 1px solid var(--vault-border, #ddd); border-radius: 8px; background: var(--vault-bg, #fff);"
           >
         </div>
         <div class="presets-list">
@@ -1013,34 +973,34 @@ function showManagePresetsModal() {
             <div class="empty-state">
               <div class="empty-icon">💾</div>
               <p>${i18n.t('presets.emptyState') || 'No presets yet'}</p>
-              <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 8px;">
+              <p class="text-sm opacity-70 mt-8">
                 ${i18n.t('presets.emptyHint') || 'Save your favorite settings as presets for quick access'}
               </p>
             </div>
           ` : presets.map(preset => `
-            <div class="preset-item" data-preset-id="${preset.id}" style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px; background: var(--vault-surface, #f8f9fa); border-radius: 8px; border: 1px solid var(--vault-border, #e0e0e0);">
-              <div class="preset-info" style="flex: 1; min-width: 0;">
-                <div class="preset-name" style="font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
-                  ${escapeHtml(preset.name)} ${preset.isDefault ? '<span style="color: #f59e0b;">⭐</span>' : ''}
+            <div class="preset-manager-item" data-preset-id="${preset.id}">
+              <div class="preset-manager-info">
+                <div class="preset-manager-name">
+                  ${escapeHtml(preset.name)} ${preset.isDefault ? '<span class="text-yellow">⭐</span>' : ''}
                 </div>
-                <div class="preset-summary" style="font-size: 0.8rem; color: var(--vault-text-muted, #666); margin-top: 4px;">
+                <div class="preset-manager-summary">
                   ${preset.config.mode || 'standard'} • ${preset.config.length || 20} chars • ${preset.config.digits || 0} digits • ${preset.config.specials || 0} specials
                 </div>
               </div>
-              <div class="preset-actions" style="display: flex; gap: 4px; flex-shrink: 0;">
-                <button class="btn-mini" data-action="load" data-preset-id="${preset.id}" title="Load this preset" style="padding: 6px 12px;">▶️</button>
-                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}" title="Edit" style="padding: 6px 10px;">✏️</button>
-                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}" title="Duplicate" style="padding: 6px 10px;">📋</button>
-                ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}" title="Delete" style="padding: 6px 10px;">🗑️</button>` : ''}
+              <div class="preset-manager-actions">
+                <button class="btn-mini" data-action="load" data-preset-id="${preset.id}" title="Load this preset">▶️</button>
+                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}" title="Edit">✏️</button>
+                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}" title="Duplicate">📋</button>
+                ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}" title="Delete">🗑️</button>` : ''}
               </div>
             </div>
           `).join('')}
         </div>
       </div>
-      <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
+      <div class="modal-footer flex-wrap gap-8">
         <button class="btn" id="btn-import-preset">📥 Import</button>
         <button class="btn" id="btn-export-all-presets">📤 Export All</button>
-        <button class="btn" id="btn-vault-sync-presets" style="display: ${window.vault ? 'inline-flex' : 'none'};">🗄️ Vault</button>
+        <button class="btn ${window.vault ? '' : 'd-none'}" id="btn-vault-sync-presets">🗄️ Vault</button>
         <button class="btn danger" id="close-presets-modal-footer">Close</button>
       </div>
     </div>
@@ -1084,7 +1044,8 @@ function bindPresetModalEvents(modal) {
             preset.name.toLowerCase().includes(searchTerm) ||
             (preset.description && preset.description.toLowerCase().includes(searchTerm));
 
-          item.style.display = matchesSearch ? 'block' : 'none';
+          // CSP-compliant: use class toggle instead of inline style
+          item.classList.toggle('d-none', !matchesSearch);
         }
       });
     });
@@ -1114,8 +1075,9 @@ function bindPresetModalEvents(modal) {
           const detailsSection = document.getElementById(`details-${presetId}`);
           const toggleIcon = btn.querySelector('.details-toggle-icon');
           if (detailsSection) {
-            const isVisible = detailsSection.style.display !== 'none';
-            detailsSection.style.display = isVisible ? 'none' : 'block';
+            // CSP-compliant: use class toggle instead of inline style
+            const isVisible = !detailsSection.classList.contains('d-none');
+            detailsSection.classList.toggle('d-none', isVisible);
             if (toggleIcon) {
               toggleIcon.textContent = isVisible ? '▼' : '▲';
             }
@@ -1284,7 +1246,7 @@ function showEditPresetModal(presetId) {
   modal.setAttribute('aria-modal', 'true');
 
   modal.innerHTML = sanitizeHTML(`
-    <div class="modal" style="max-width: 500px;">
+    <div class="modal modal-md">
       <div class="modal-header">
         <div class="modal-title">✏️ Edit "${escapeHtml(preset.name)}"</div>
         <button class="modal-close" id="close-edit-modal" aria-label="Close">
@@ -1297,61 +1259,61 @@ function showEditPresetModal(presetId) {
       <div class="modal-body">
         <!-- Info section -->
         <div class="form-group">
-          <label for="edit-preset-name">Name <span style="color: #ef4444;">*</span></label>
-          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb;">
-          <span class="error-message" id="edit-name-error" style="display:none; color: #ef4444; font-size: 0.85em; margin-top: 4px;"></span>
+          <label for="edit-preset-name">Name <span class="text-red">*</span></label>
+          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50">
+          <span class="error-msg" id="edit-name-error"></span>
         </div>
 
-        <div class="form-group" style="margin-top: 12px;">
+        <div class="form-group mt-12">
           <label for="edit-preset-description">Description</label>
-          <textarea id="edit-preset-description" class="input-field" rows="2" placeholder="Optional description..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; resize: vertical;">${escapeHtml(preset.description || '')}</textarea>
+          <textarea id="edit-preset-description" class="input-field resize-y" rows="2" placeholder="Optional description...">${escapeHtml(preset.description || '')}</textarea>
         </div>
 
         <!-- Config section -->
-        <div style="margin-top: 16px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <strong style="color: #60a5fa;">⚙️ Configuration</strong>
-            <button class="btn-mini" id="btn-update-config-inline" title="Replace with current settings" style="font-size: 0.8em;">
+        <div class="config-info-box">
+          <div class="d-flex justify-between items-center mb-12">
+            <strong class="text-blue">⚙️ Configuration</strong>
+            <button class="btn-mini text-xs" id="btn-update-config-inline" title="Replace with current settings">
               🔄 Update
             </button>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Mode:</span> <span style="color: #e5e7eb;">${escapeHtml(config.mode || 'syllables')}</span>
+          <div class="config-grid">
+            <div class="config-item">
+              <span class="text-slate">Mode:</span> <span class="text-primary">${escapeHtml(config.mode || 'syllables')}</span>
             </div>
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Length:</span> <span style="color: #e5e7eb;">${config.length || 20}</span>
+            <div class="config-item">
+              <span class="text-slate">Length:</span> <span class="text-primary">${config.length || 20}</span>
             </div>
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Digits:</span> <span style="color: #e5e7eb;">${config.digits || 0}</span>
+            <div class="config-item">
+              <span class="text-slate">Digits:</span> <span class="text-primary">${config.digits || 0}</span>
             </div>
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Specials:</span> <span style="color: #e5e7eb;">${config.specials || 0}</span>
+            <div class="config-item">
+              <span class="text-slate">Specials:</span> <span class="text-primary">${config.specials || 0}</span>
             </div>
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; grid-column: span 2;">
-              <span style="color: #94a3b8;">Case:</span> <span style="color: #e5e7eb;">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
+            <div class="config-item col-span-2">
+              <span class="text-slate">Case:</span> <span class="text-primary">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
             </div>
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Digits place:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeDigits)}</span>
+            <div class="config-item">
+              <span class="text-slate">Digits place:</span> <span class="text-primary">${formatPlacementLabel(config.placeDigits)}</span>
             </div>
-            <div style="padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-              <span style="color: #94a3b8;">Specials place:</span> <span style="color: #e5e7eb;">${formatPlacementLabel(config.placeSpecials)}</span>
+            <div class="config-item">
+              <span class="text-slate">Specials place:</span> <span class="text-primary">${formatPlacementLabel(config.placeSpecials)}</span>
             </div>
           </div>
         </div>
 
         ${preset.isDefault ? `
-          <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.9em; color: #fbbf24;">
+          <div class="warning-box">
             ⭐ Default preset
           </div>
         ` : ''}
 
-        <div style="font-size: 0.8em; color: #6b7280; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div class="text-xs text-secondary mt-12 pt-12 border-top">
           📅 Created: ${new Date(preset.createdAt).toLocaleDateString()} • Modified: ${new Date(preset.updatedAt).toLocaleDateString()}
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-edit-preset-confirm" style="background: #3b82f6;">💾 Save</button>
+        <button class="btn bg-blue-alpha" id="btn-edit-preset-confirm">💾 Save</button>
         <button class="btn" id="btn-cancel-edit">Cancel</button>
       </div>
     </div>
@@ -1464,7 +1426,7 @@ async function showVaultPresetSyncModal() {
   modal.setAttribute('aria-modal', 'true');
 
   modal.innerHTML = sanitizeHTML(`
-    <div class="modal" style="max-width: 450px;">
+    <div class="modal modal-sm">
       <div class="modal-header">
         <div class="modal-title">🗄️ Presets & Vault</div>
         <button class="modal-close" id="close-vault-sync-modal" aria-label="Close">
@@ -1476,26 +1438,26 @@ async function showVaultPresetSyncModal() {
       </div>
       <div class="modal-body">
         ${!isVaultReady ? `
-          <div style="text-align: center; padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">🔒</div>
-            <p style="margin: 0; color: #f87171;">Vault is locked</p>
-            <p style="margin: 8px 0 0; font-size: 0.9em; color: #94a3b8;">Unlock it to sync your presets</p>
-            <button class="btn" id="btn-go-to-vault" style="margin-top: 12px;">Go to vault</button>
+          <div class="vault-locked-state">
+            <div class="vault-locked-icon">🔒</div>
+            <p class="m-0 text-red">Vault is locked</p>
+            <p class="mt-8 m-0 text-base text-muted">Unlock it to sync your presets</p>
+            <button class="btn mt-12" id="btn-go-to-vault">Go to vault</button>
           </div>
         ` : `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-            <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.1); border-radius: 8px;">
-              <div style="font-size: 1.5em; font-weight: bold; color: #3b82f6;">${localPresetCount}</div>
-              <div style="font-size: 0.85em; color: #94a3b8;">Local presets</div>
+          <div class="vault-sync-stats">
+            <div class="vault-sync-stat local">
+              <div class="stat-value">${localPresetCount}</div>
+              <div class="text-sm text-muted">Local presets</div>
             </div>
-            <div style="text-align: center; padding: 16px; background: rgba(139, 92, 246, 0.1); border-radius: 8px;">
-              <div style="font-size: 1.5em; font-weight: bold; color: #8b5cf6;">${vaultPresetCount}</div>
-              <div style="font-size: 0.85em; color: #94a3b8;">Vault presets</div>
+            <div class="vault-sync-stat vault">
+              <div class="stat-value">${vaultPresetCount}</div>
+              <div class="text-sm text-muted">Vault presets</div>
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button class="btn full-width" id="btn-export-to-vault" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <div class="vault-sync-actions">
+            <button class="btn full-width d-flex items-center justify-center gap-8" id="btn-export-to-vault">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="17 8 12 3 7 8"/>
@@ -1503,7 +1465,7 @@ async function showVaultPresetSyncModal() {
               </svg>
               Export all to vault
             </button>
-            <button class="btn full-width" id="btn-import-from-vault" style="display: flex; align-items: center; justify-content: center; gap: 8px;" ${vaultPresetCount === 0 ? 'disabled' : ''}>
+            <button class="btn full-width d-flex items-center justify-center gap-8" id="btn-import-from-vault" ${vaultPresetCount === 0 ? 'disabled' : ''}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
@@ -1513,18 +1475,18 @@ async function showVaultPresetSyncModal() {
             </button>
           </div>
 
-          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em;">
-              <input type="checkbox" id="vault-sync-overwrite" style="width: 16px; height: 16px;">
+          <div class="vault-sync-checkbox-row">
+            <label class="vault-sync-checkbox-label">
+              <input type="checkbox" id="vault-sync-overwrite" class="vault-sync-checkbox">
               Overwrite existing presets on import
             </label>
           </div>
 
           ${vaultPresetCount > 0 ? `
-          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #e2e8f0;">📦 Presets in vault</h4>
-            <div id="vault-presets-list" style="max-height: 200px; overflow-y: auto;">
-              <div style="text-align: center; padding: 20px; color: #94a3b8;">Loading...</div>
+          <div class="vault-presets-section">
+            <h4 class="vault-presets-title">📦 Presets in vault</h4>
+            <div id="vault-presets-list" class="vault-presets-list">
+              <div class="text-center p-20 text-muted">Loading...</div>
             </div>
           </div>
           ` : ''}
@@ -1609,19 +1571,19 @@ async function loadVaultPresetsList(modal) {
     const vaultPresets = await presetManager.getVaultPresets();
 
     if (vaultPresets.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No presets in vault</div>';
+      container.innerHTML = '<div class="text-center p-20 text-muted">No presets in vault</div>';
       return;
     }
 
     container.innerHTML = vaultPresets.map(entry => `
-      <div class="vault-preset-item" data-entry-id="${entry.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-        <div style="flex: 1; min-width: 0;">
-          <div style="font-weight: 500; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(entry.title)}</div>
-          <div style="font-size: 0.8em; color: #94a3b8;">
+      <div class="vault-preset-row" data-entry-id="${entry.id}">
+        <div class="vault-preset-info">
+          <div class="vault-preset-name">${escapeHtml(entry.title)}</div>
+          <div class="vault-preset-date">
             ${entry.data?.config?.mode || 'Unknown mode'} • ${entry.data?.config?.length || '?'} chars
           </div>
         </div>
-        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+        <div class="vault-preset-actions">
           <button class="btn-mini" data-action="load-vault-preset" data-entry-id="${entry.id}" title="Load this preset">📥</button>
           <button class="btn-mini danger" data-action="delete-vault-preset" data-entry-id="${entry.id}" title="Delete from vault">🗑️</button>
         </div>
@@ -1693,7 +1655,7 @@ async function loadVaultPresetsList(modal) {
     });
 
   } catch (error) {
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f87171;">Loading error</div>';
+    container.innerHTML = '<div class="text-center p-20 text-red">Loading error</div>';
     safeLog(`[VaultPresets] Error loading: ${error.message}`);
   }
 }
@@ -1792,7 +1754,7 @@ async function showHistoryModal() {
               <div class="empty-state">
                 <div class="empty-icon">📜</div>
                 <p>${i18n.t('history.emptyState') || 'No passwords in history'}</p>
-                <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 8px;">
+                <p class="text-sm opacity-70 mt-8">
                   ${i18n.t('history.emptyHint') || 'Generated passwords will appear here'}
                 </p>
               </div>
@@ -1973,7 +1935,7 @@ export function initializePluginsUI() {
           🎨 Load Demo Plugins
         </button>
       </div>
-      <div class="plugin-status" style="font-size: 0.9em; color: #666; margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+      <div class="plugin-status plugin-status-box">
         <div><strong>Status:</strong> ${pluginStats.totalPlugins} plugin(s) installed</div>
         <div><strong>Hooks:</strong> ${pluginStats.totalHooks} active hook(s)</div>
       </div>
@@ -2099,57 +2061,57 @@ function showPluginManagerModal() {
         </button>
       </div>
       <div class="modal-body">
-        <div class="plugin-stats" style="display: flex; gap: 20px; margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 6px;">
-          <div class="stat-item">
-            <div class="stat-value" style="font-size: 2em; font-weight: bold; color: #4CAF50;">${stats.totalPlugins}</div>
-            <div class="stat-label" style="font-size: 0.9em; color: #666;">Total Plugins</div>
+        <div class="plugin-stats plugin-stats-grid">
+          <div class="plugin-stat-item total">
+            <div class="stat-value">${stats.totalPlugins}</div>
+            <div class="stat-label">Total Plugins</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-value" style="font-size: 2em; font-weight: bold; color: #2196F3;">${stats.enabledPlugins}</div>
-            <div class="stat-label" style="font-size: 0.9em; color: #666;">Enabled</div>
+          <div class="plugin-stat-item enabled">
+            <div class="stat-value">${stats.enabledPlugins}</div>
+            <div class="stat-label">Enabled</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-value" style="font-size: 2em; font-weight: bold; color: #FF9800;">${stats.totalHooks}</div>
-            <div class="stat-label" style="font-size: 0.9em; color: #666;">Active Hooks</div>
+          <div class="plugin-stat-item hooks">
+            <div class="stat-value">${stats.totalHooks}</div>
+            <div class="stat-label">Active Hooks</div>
           </div>
         </div>
 
         <div class="plugins-list">
-          ${plugins.length === 0 ? '<p class="empty-state" style="text-align: center; padding: 40px; color: #999;">No plugins installed. Click "Load Demo Plugins" to get started!</p>' :
-            plugins.map(plugin => `)
-              <div class="plugin-item" data-plugin-name="${plugin.name}" style="border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 15px; background: ${plugin.enabled ? '#fff' : '#f9f9f9'};">
-                <div class="plugin-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                  <div class="plugin-info" style="flex: 1;">
-                    <h4 style="margin: 0 0 5px 0; font-size: 1.1em;">
+          ${plugins.length === 0 ? '<p class="empty-state empty-state-msg">No plugins installed. Click "Load Demo Plugins" to get started!</p>' :
+            plugins.map(plugin => `
+              <div class="plugin-item plugin-card ${plugin.enabled ? 'enabled' : 'disabled'}" data-plugin-name="${plugin.name}">
+                <div class="plugin-header">
+                  <div class="plugin-info">
+                    <h4 class="plugin-title">
                       ${escapeHtml(plugin.name)}
-                      ${plugin.enabled ? '<span style="color: #4CAF50; margin-left: 8px;">●</span>' : '<span style="color: #999; margin-left: 8px;">○</span>'}
+                      <span class="plugin-enabled-dot ${plugin.enabled ? 'on' : 'off'}">${plugin.enabled ? '●' : '○'}</span>
                     </h4>
-                    <div style="font-size: 0.85em; color: #666;">
+                    <div class="plugin-version-author">
                       v${escapeHtml(plugin.version)} by ${escapeHtml(plugin.author)}
                     </div>
                   </div>
                   <div class="plugin-toggle">
-                    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                    <label class="switch">
                       <input type="checkbox" data-action="toggle" data-plugin-name="${plugin.name}" ${plugin.enabled ? 'checked' : ''}>
-                      <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${plugin.enabled ? '#4CAF50' : '#ccc'}; transition: .4s; border-radius: 24px;"></span>
+                      <span class="slider"></span>
                     </label>
                   </div>
                 </div>
 
-                <div class="plugin-description" style="font-size: 0.95em; color: #333; margin-bottom: 10px;">
+                <div class="plugin-description">
                   ${escapeHtml(plugin.description)}
                 </div>
 
-                <div class="plugin-hooks" style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
+                <div class="plugin-hooks plugin-hooks-list">
                   <strong>Hooks:</strong>
-                  ${plugin.hooks ? Object.keys(plugin.hooks).map(h => `<span style="display: inline-block; background: #e3f2fd; padding: 2px 8px; border-radius: 3px; margin: 2px;">${h}</span>`).join('') : '<span>None</span>'}
+                  ${plugin.hooks ? Object.keys(plugin.hooks).map(h => `<span class="hook-badge">${h}</span>`).join('') : '<span>None</span>'}
                 </div>
 
-                <div class="plugin-meta" style="font-size: 0.8em; color: #999; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+                <div class="plugin-meta plugin-meta-info">
                   ${plugin._loadedAt ? `Loaded: ${new Date(plugin._loadedAt).toLocaleString()}` : ''}
                 </div>
 
-                <div class="plugin-actions" style="margin-top: 10px; display: flex; gap: 8px;">
+                <div class="plugin-actions">
                   <button class="btn-mini" data-action="settings" data-plugin-name="${plugin.name}">⚙️ Settings</button>
                   <button class="btn-mini" data-action="export" data-plugin-name="${plugin.name}">📤 Export</button>
                   <button class="btn-mini danger" data-action="uninstall" data-plugin-name="${plugin.name}">🗑️ Uninstall</button>
@@ -2161,7 +2123,7 @@ function showPluginManagerModal() {
       </div>
       <div class="modal-footer">
         <button class="btn" id="btn-install-plugin-file">📁 Install from File</button>
-        <button class="btn" id="btn-clear-all-plugins" style="background: #f44336; color: white;">🗑️ Clear All</button>
+        <button class="btn btn-red" id="btn-clear-all-plugins">🗑️ Clear All</button>
         <button class="btn" id="close-plugins-modal-footer">Close</button>
       </div>
     </div>
@@ -2322,15 +2284,15 @@ function showPluginSettingsModal(pluginName) {
     try {
       plugin.hooks.onUIRender(container);
     } catch (error) {
-      container.innerHTML = sanitizeHTML(`<p style="color: #f44336;">Error rendering plugin settings: ${escapeHtml(error.message)}</p>`);
+      container.innerHTML = sanitizeHTML(`<p class="text-red">Error rendering plugin settings: ${escapeHtml(error.message)}</p>`);
     }
   } else {
     container.innerHTML = sanitizeHTML(`
-      <div style="padding: 20px; text-align: center; color: #666;">
+      <div class="p-20 text-center text-secondary">
         <p>This plugin does not have configurable settings.</p>
-        <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 6px; text-align: left;">
+        <div class="format-info-box mt-20 text-left">
           <strong>Plugin Configuration:</strong>
-          <pre style="margin-top: 10px; font-size: 0.85em; overflow: auto;">${JSON.stringify(plugin.config || {}, null, 2)}</pre>
+          <pre class="config-pre">${JSON.stringify(plugin.config || {}, null, 2)}</pre>
         </div>
       </div>
     `);
@@ -2430,15 +2392,15 @@ function showAdvancedExportModal() {
         </button>
       </div>
       <div class="modal-body">
-        <p style="margin-bottom: 20px; color: #666;">
+        <p class="mb-20 text-secondary">
           Export ${passwords.length} password(s) to various password manager formats
         </p>
 
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="export-format" style="display: block; margin-bottom: 8px; font-weight: 500;">
+        <div class="form-group mb-20">
+          <label for="export-format" class="form-label">
             Select Export Format:
           </label>
-          <select id="export-format" class="input-field" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <select id="export-format" class="input-field format-select">
             <optgroup label="Password Managers">
               <option value="keepass-csv">KeePass (CSV)</option>
               <option value="bitwarden-json">Bitwarden (JSON)</option>
@@ -2452,22 +2414,22 @@ function showAdvancedExportModal() {
           </select>
         </div>
 
-        <div class="format-info" style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+        <div class="format-info format-info-box">
           <strong>Format Information:</strong>
-          <div id="format-description" style="margin-top: 8px; font-size: 0.9em; color: #666;">
+          <div id="format-description" class="form-description">
             Select a format to see details
           </div>
         </div>
 
-        <div class="export-options" style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px;">
+        <div class="export-options mb-20">
+          <label class="form-label">
             <input type="checkbox" id="include-metadata" checked>
             Include metadata (timestamps, notes)
           </label>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-export-download" style="background: #4CAF50; color: white;">
+        <button class="btn btn-green" id="btn-export-download">
           📥 Download Export
         </button>
         <button class="btn" id="close-export-modal-footer">Cancel</button>
@@ -2551,15 +2513,15 @@ function showAdvancedImportModal() {
         </button>
       </div>
       <div class="modal-body">
-        <p style="margin-bottom: 20px; color: #666;">
+        <p class="mb-20 text-secondary">
           Import passwords from popular password managers
         </p>
 
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="import-format" style="display: block; margin-bottom: 8px; font-weight: 500;">
+        <div class="form-group mb-20">
+          <label for="import-format" class="form-label">
             Select Import Format:
           </label>
-          <select id="import-format" class="input-field" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <select id="import-format" class="input-field format-select">
             <optgroup label="Password Managers">
               <option value="keepass-xml">KeePass (XML)</option>
               <option value="keepass-csv">KeePass (CSV)</option>
@@ -2574,28 +2536,28 @@ function showAdvancedImportModal() {
           </select>
         </div>
 
-        <div class="format-info" style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+        <div class="format-info format-info-box">
           <strong>Format Information:</strong>
-          <div id="import-format-description" style="margin-top: 8px; font-size: 0.9em; color: #666;">
+          <div id="import-format-description" class="form-description">
             Select a format to see details
           </div>
         </div>
 
-        <div class="file-upload" style="margin-bottom: 20px;">
-          <input type="file" id="import-file-input" accept=".xml,.csv,.json" style="display: none;">
-          <button class="btn full-width" id="btn-select-file" style="background: #2196F3; color: white;">
+        <div class="file-upload mb-20">
+          <input type="file" id="import-file-input" accept=".xml,.csv,.json" class="file-input-hidden">
+          <button class="btn full-width btn-blue" id="btn-select-file">
             📁 Select File
           </button>
-          <div id="selected-file-name" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+          <div id="selected-file-name" class="file-name-display"></div>
         </div>
 
-        <div id="import-preview" style="display: none; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+        <div id="import-preview" class="import-preview-box">
           <strong>Preview:</strong>
-          <div id="import-preview-content" style="margin-top: 10px; font-size: 0.9em;"></div>
+          <div id="import-preview-content" class="form-description"></div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-import-execute" style="background: #4CAF50; color: white;" disabled>
+        <button class="btn btn-green" id="btn-import-execute" disabled>
           ✅ Import Passwords
         </button>
         <button class="btn" id="close-import-modal-footer">Cancel</button>
@@ -2655,22 +2617,22 @@ function showAdvancedImportModal() {
       importedData = importExportService.import(content, format);
 
       // Show preview
-      importPreview.style.display = 'block';
+      importPreview.classList.add('visible');
       importPreviewContent.innerHTML = sanitizeHTML(`
-        <div style="margin-bottom: 10px;">
+        <div class="mb-10">
           <strong>Entries found:</strong> ${importedData.length}
         </div>
-        <div style="max-height: 200px; overflow-y: auto;">
-          ${importedData.slice(0, 5).map((entry, i) => `)
-            <div style="padding: 8px; margin: 4px 0; background: #f9f9f9; border-radius: 4px;">
-              <div style="font-weight: 500;">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
-              <div style="font-size: 0.85em; color: #666;">
+        <div class="import-entries-list">
+          ${importedData.slice(0, 5).map((entry, i) => `
+            <div class="import-entry-preview">
+              <div class="import-entry-title">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
+              <div class="import-entry-details">
                 ${entry.username ? `👤 ${escapeHtml(entry.username)}` : ''}
                 ${entry.url ? `🔗 ${escapeHtml(entry.url)}` : ''}
               </div>
             </div>
           `).join('')}
-          ${importedData.length > 5 ? `<div style="padding: 8px; text-align: center; color: #999;">... and ${importedData.length - 5} more</div>` : ''}
+          ${importedData.length > 5 ? `<div class="import-more-msg">... and ${importedData.length - 5} more</div>` : ''}
         </div>
       `);
 
@@ -2679,7 +2641,7 @@ function showAdvancedImportModal() {
     } catch (error) {
       showToast(`Import failed: ${error.message}`, 'error');
       safeLog(`Import error: ${error.message}`);
-      importPreview.style.display = 'none';
+      importPreview.classList.remove('visible');
       importButton.disabled = true;
     }
   });
@@ -2696,20 +2658,20 @@ function showAdvancedImportModal() {
     if (resultsDiv) {
       resultsDiv.innerHTML = sanitizeHTML(`
         <div class="import-results">
-          <h3 style="margin-bottom: 15px;">Imported ${importedData.length} Passwords</h3>
-          ${importedData.map((entry, i) => `)
-            <div class="result-item" style="padding: 12px; margin: 8px 0; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #4CAF50;">
-              <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                  <div style="font-weight: 500; margin-bottom: 5px;">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
-                  ${entry.username ? `<div style="font-size: 0.9em; color: #666;">👤 ${escapeHtml(entry.username)}</div>` : ''}
-                  ${entry.url ? `<div style="font-size: 0.9em; color: #666;">🔗 ${escapeHtml(entry.url)}</div>` : ''}
-                  ${entry.notes ? `<div style="font-size: 0.85em; color: #999; margin-top: 5px;">📝 ${escapeHtml(entry.notes.slice(0, 100))}${entry.notes.length > 100 ? '...' : ''}</div>` : ''}
-                  <div style="font-family: monospace; background: white; padding: 8px; border-radius: 4px; margin-top: 8px; word-break: break-all;">
+          <h3 class="heading-3">Imported ${importedData.length} Passwords</h3>
+          ${importedData.map((entry, i) => `
+            <div class="result-item import-result-item">
+              <div class="import-result-content">
+                <div class="import-result-info">
+                  <div class="result-entry-title">${escapeHtml(entry.title || `Entry ${i + 1}`)}</div>
+                  ${entry.username ? `<div class="result-entry-detail">👤 ${escapeHtml(entry.username)}</div>` : ''}
+                  ${entry.url ? `<div class="result-entry-detail">🔗 ${escapeHtml(entry.url)}</div>` : ''}
+                  ${entry.notes ? `<div class="result-entry-notes">📝 ${escapeHtml(entry.notes.slice(0, 100))}${entry.notes.length > 100 ? '...' : ''}</div>` : ''}
+                  <div class="import-password-display">
                     ${entry.password}
                   </div>
                 </div>
-                <button class="btn-mini copy-btn" data-password="${entry.password}" style="margin-left: 10px;">
+                <button class="btn-mini copy-btn copy-btn-result" data-password="${entry.password}">
                   📋 Copy
                 </button>
               </div>
@@ -2815,7 +2777,7 @@ function showHIBPCheckModal() {
       <div class="modal-body">
         <div class="info-box">
           <strong>🛡️ Privacy-Preserving Check</strong>
-          <p style="margin-top: 8px; font-size: 0.9em; opacity: 0.9;">
+          <p class="import-hint">
             This check uses <strong>k-anonymity</strong> to preserve your privacy.
             Only the first 5 characters of the password hash are sent to the HIBP API.
             Your actual password never leaves your device.
@@ -2928,7 +2890,7 @@ function renderHIBPResults(results, container) {
           <div class="password-display">
             <code>${escapeHtml(result.password.substring(0, 20))}${result.password.length > 20 ? '...' : ''}</code>
           </div>
-          <div class="hibp-badge" style="background-color: ${color}">
+          <div class="hibp-badge" data-hibp-color="${color}">
             ${result.isPwned ? `${result.count.toLocaleString()} breaches` : 'Safe'}
           </div>
         </div>
@@ -2942,6 +2904,11 @@ function renderHIBPResults(results, container) {
   resultsHtml += '</div>';
 
   container.innerHTML = summaryHtml + resultsHtml;
+
+  // Apply HIBP badge colors via CSSOM for CSP compliance
+  container.querySelectorAll('[data-hibp-color]').forEach(el => {
+    el.style.setProperty('--hibp-badge-color', el.dataset.hibpColor);
+  });
 
   // Show toast with summary
   if (pwnedCount > 0) {

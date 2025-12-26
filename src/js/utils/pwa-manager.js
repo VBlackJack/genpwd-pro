@@ -174,12 +174,12 @@ class PWAManager {
       font-family: system-ui, -apple-system, sans-serif;
     `;
     updateBtn.innerHTML = sanitizeHTML(`
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div class="pwa-update-content">
         <span>✨ New version available!</span>
-        <button id="update-app-btn" style="background: white; color: #4CAF50; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: 600;">
+        <button id="update-app-btn" class="pwa-update-btn">
           Update
         </button>
-        <button id="dismiss-update-btn" style="background: transparent; color: white; border: 1px solid white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+        <button id="dismiss-update-btn" class="pwa-dismiss-btn">
           Later
         </button>
       </div>
@@ -253,16 +253,16 @@ class PWAManager {
     `;
 
     installBanner.innerHTML = sanitizeHTML(`
-      <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px;">
-          <div style="font-weight: 600; margin-bottom: 5px;">📱 Install GenPwd Pro</div>
-          <div style="font-size: 0.9em; opacity: 0.95;">Add to home screen for offline access</div>
+      <div class="pwa-install-content">
+        <div class="pwa-install-info">
+          <div class="pwa-install-title">📱 Install GenPwd Pro</div>
+          <div class="pwa-install-subtitle">Add to home screen for offline access</div>
         </div>
-        <div style="display: flex; gap: 10px;">
-          <button id="pwa-install-btn" style="background: white; color: #667eea; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.95em;">
+        <div class="pwa-install-actions">
+          <button id="pwa-install-btn" class="pwa-install-btn">
             Install
           </button>
-          <button id="pwa-dismiss-btn" style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95em;">
+          <button id="pwa-dismiss-btn" class="pwa-install-dismiss-btn">
             Not now
           </button>
         </div>
