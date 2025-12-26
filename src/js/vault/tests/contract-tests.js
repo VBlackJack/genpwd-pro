@@ -36,7 +36,7 @@ async function testRepositoryCrud() {
     secret: ['s', 'e', 'c', 'r', 'e', 't'],
     notes: 'Primary account',
     tags: ['personal'],
-    groupId: 'root'
+    folderId: 'root'
   });
 
   await repo.createEntry(entry);
@@ -57,7 +57,7 @@ async function testRepositoryCrud() {
     secret: ['n', 'e', 'w'],
     notes: 'Rotated',
     tags: ['personal', 'important'],
-    groupId: 'root'
+    folderId: 'root'
   }));
 
   const updated = await repo.getEntryById('entry-1');
@@ -68,7 +68,7 @@ async function testRepositoryCrud() {
 
   await repo.deleteGroup('root');
   const afterDeletion = await repo.getEntryById('entry-1');
-  assert(afterDeletion.groupId === null, 'Deleting group should detach entries');
+  assert(afterDeletion.folderId === null, 'Deleting group should detach entries');
 
   await repo.deleteEntry('entry-1');
   const missing = await repo.getEntryById('entry-1');

@@ -51,7 +51,7 @@
   <!-- Skip Navigation Link for Accessibility -->
   <a href="#main-content" class="skip-link" data-i18n="common.skipToMain">Skip to main content</a>
 
-  <div class="app" role="application" data-i18n-aria-label="aria.appLabel" aria-label="GenPwd Pro - Secure Password Manager">
+  <div class="app vault-mode" role="application" data-i18n-aria-label="aria.appLabel" aria-label="GenPwd Pro - Secure Password Manager">
     <header id="app-header" role="banner">
       <div class="header-inner">
         <div class="logo">
@@ -67,9 +67,9 @@
           </div>
         </div>
         <!-- App Tabs (Electron only) -->
-        <div class="header-tabs" id="app-tabs" style="display: none;">
-          <button type="button" class="header-tab active" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab" aria-current="page">🔒 <span data-i18n="header.generatorTab">Generator</span></button>
-          <button type="button" class="header-tab" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab">🗄️ <span data-i18n="header.vaultTab">Vault</span></button>
+        <div class="header-tabs" id="app-tabs" hidden>
+          <button type="button" class="header-tab" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab">🔒 <span data-i18n="header.generatorTab">Generator</span></button>
+          <button type="button" class="header-tab active" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab" aria-current="page">🗄️ <span data-i18n="header.vaultTab">Vault</span></button>
         </div>
 
         <div class="header-right">
@@ -221,10 +221,10 @@
       </div>
     </div>
 
-    <!-- Vault Container (hidden by default, full width for 3-panel layout) -->
-    <div id="vault-container" style="display: none;"></div>
+    <!-- Vault Container (shown by default in Electron) -->
+    <div id="vault-container"></div>
 
-    <div class="main" id="main-content">
+    <div class="main" id="main-content" hidden>
       <!-- Configuration Panel -->
       <aside class="panel" id="config-panel" role="complementary" data-i18n-aria-label="aria.configPanel" aria-label="Configuration panel">
         <div class="panel-body">
@@ -485,7 +485,7 @@
     </div>
 
     <!-- Debug Panel -->
-    <aside class="debug hidden" id="debug-panel" role="complementary" data-i18n-aria-label="aria.debugPanel" aria-label="Debug panel">
+    <aside class="debug hidden" id="debug-panel" hidden role="complementary" data-i18n-aria-label="aria.debugPanel" aria-label="Debug panel">
       <div class="debug-header">
         <strong data-i18n="actions.debug">Debug</strong>
         <button type="button" class="btn ghost small" id="btn-clear-logs" data-i18n-aria-label="actions.clearLogs" aria-label="Clear debug logs"><span data-i18n="actions.clearLogs">Clear logs</span></button>

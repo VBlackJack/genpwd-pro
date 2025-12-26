@@ -271,7 +271,7 @@ class GenPwdApp {
     // Show header tabs
     const tabsEl = document.getElementById('app-tabs');
     if (tabsEl) {
-      tabsEl.style.display = '';  // Use CSS default (flex)
+      tabsEl.removeAttribute('hidden');
     }
 
     // Initialize vault UI
@@ -311,15 +311,15 @@ class GenPwdApp {
 
         if (targetTab === 'generator') {
           // Show generator, hide vault
-          if (mainContent) mainContent.style.display = '';
-          if (vaultContainer) vaultContainer.style.display = 'none';
-          if (debugPanel) debugPanel.style.display = '';
+          if (mainContent) mainContent.removeAttribute('hidden');
+          if (vaultContainer) vaultContainer.setAttribute('hidden', '');
+          if (debugPanel) debugPanel.removeAttribute('hidden');
           if (appContainer) appContainer.classList.remove('vault-mode');
         } else if (targetTab === 'vault') {
           // Show vault, hide generator
-          if (mainContent) mainContent.style.display = 'none';
-          if (vaultContainer) vaultContainer.style.display = 'flex';
-          if (debugPanel) debugPanel.style.display = 'none';
+          if (mainContent) mainContent.setAttribute('hidden', '');
+          if (vaultContainer) vaultContainer.removeAttribute('hidden');
+          if (debugPanel) debugPanel.setAttribute('hidden', '');
           if (appContainer) appContainer.classList.add('vault-mode');
         }
       });

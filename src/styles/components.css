@@ -130,14 +130,26 @@ textarea.field-invalid {
 .slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 10px;
+  height: 8px;
   padding: 0;
   width: 100%;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: var(--bg-primary);
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
   outline: none;
+  cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Slider Track - Webkit (Chrome, Edge, Electron) */
+.slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg,
+    var(--accent-blue) 0%,
+    var(--accent-purple) 50%,
+    var(--bg-tertiary) 50%);
+  background-size: 200% 100%;
 }
 
 .slider:focus {
@@ -145,36 +157,53 @@ textarea.field-invalid {
   box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.12);
 }
 
+/* Slider Thumb - Webkit (Chrome, Edge, Electron) */
 .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
   appearance: none;
-  /* Increased size for better touch targets (WCAG 2.1 - 24px minimum for complex controls) */
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px; /* Center thumb on track */
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  border: 2px solid var(--bg-primary, #1c2033);
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.35));
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  border: 3px solid var(--bg-primary, #1c2033);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(99, 102, 241, 0.3);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5), 0 0 0 3px rgba(99, 102, 241, 0.4);
 }
 
+/* Slider Track - Firefox */
+.slider::-moz-range-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-tertiary);
+}
+
+/* Slider Progress - Firefox */
+.slider::-moz-range-progress {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+}
+
+/* Slider Thumb - Firefox */
 .slider::-moz-range-thumb {
-  /* Increased size for better touch targets */
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  border: 2px solid var(--bg-primary, #1c2033);
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  border: 3px solid var(--bg-primary, #1c2033);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }
 
 .slider::-moz-range-thumb:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 /* ============================================================================
@@ -540,7 +569,10 @@ textarea.field-invalid {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  min-width: 320px;
+  /* Fill grid cell completely */
+  width: 100%;
+  height: 100%;
+  /* Smooth transitions */
   transition: all 0.2s ease;
 }
 

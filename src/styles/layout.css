@@ -45,9 +45,9 @@ header::before {
 .header-inner {
   position: relative;
   z-index: var(--z-above);
-  max-width: 1400px;
+  max-width: 1800px; /* Match main container width */
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -279,13 +279,15 @@ header::before {
    ============================================================================ */
 
 .main {
-  max-width: 1400px;
+  max-width: 1800px; /* Increased for better desktop utilization */
   margin: 18px auto;
-  padding: 0 20px;
+  padding: 0 24px;
   display: grid;
-  grid-template-columns: 480px 1fr;
-  gap: 16px;
+  /* Options panel fixed, results take remaining space */
+  grid-template-columns: minmax(420px, 480px) 1fr;
+  gap: 20px;
   flex: 1;
+  width: 100%;
 }
 
 /* ============================================================================
@@ -429,12 +431,14 @@ header::before {
 
 .results-list {
   overflow-y: auto;
-  padding: 12px;
+  padding: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 12px;
+  /* Responsive grid: wider cards (500px min) for single-line passwords */
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  gap: 1rem;
   flex: 1;
   align-content: start;
+  width: 100%;
   scrollbar-width: thin;
   scrollbar-color: var(--accent-cyan) var(--bg-secondary);
   /* Touch scrolling improvements for tablets/touch screens */
@@ -517,10 +521,10 @@ header::before {
    RESPONSIVE DESIGN
    ============================================================================ */
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   .main {
-    grid-template-columns: 440px 1fr;
-    gap: 12px;
+    grid-template-columns: minmax(380px, 450px) 1fr;
+    gap: 16px;
   }
 }
 
@@ -529,14 +533,24 @@ header::before {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .panel, .results {
     height: auto;
     min-height: 400px;
   }
 
+  /* Single column on tablets for full-width password cards */
   .results-list {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Mobile: single column with reduced padding */
+  .results-list {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 12px;
   }
 }
 

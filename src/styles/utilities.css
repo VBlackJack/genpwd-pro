@@ -654,6 +654,16 @@ button:disabled:focus-visible,
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Global shortcuts (system-wide hotkeys) */
+.shortcut-row.shortcut-global {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid var(--accent-blue);
+}
+
+.shortcut-row.shortcut-global:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
 .shortcut-keys {
   display: flex;
   align-items: center;

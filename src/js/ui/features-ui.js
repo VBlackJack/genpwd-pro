@@ -2093,7 +2093,7 @@ function showPluginManagerModal() {
                   <div class="plugin-toggle">
                     <label class="switch">
                       <input type="checkbox" data-action="toggle" data-plugin-name="${plugin.name}" ${plugin.enabled ? 'checked' : ''}>
-                      <span class="slider"></span>
+                      <span class="toggle-slider"></span>
                     </label>
                   </div>
                 </div>

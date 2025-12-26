@@ -57,11 +57,11 @@ export class SettingsModal extends Modal {
                     <div class="setting-desc">${t('settingsModal.shortcuts.description')}</div>
                   </div>
                   <div class="shortcuts-list">
-                    <div class="shortcut-row" style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue);">
+                    <div class="shortcut-row shortcut-global">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></span>
                       <span class="shortcut-desc">${t('settingsModal.shortcuts.showHideApp')}</span>
                     </div>
-                    <div class="shortcut-row" style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue);">
+                    <div class="shortcut-row shortcut-global">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd></span>
                       <span class="shortcut-desc">${t('settingsModal.shortcuts.autoTypePassword')}</span>
                     </div>

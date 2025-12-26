@@ -573,13 +573,13 @@ h2.modal-title {
    ============================================================================ */
 
 .pwd {
-  /* Flexbox: simple row layout */
+  /* Flexbox: row layout with multi-line password support */
   display: flex !important;
   flex-direction: row !important;
-  align-items: center !important;
+  align-items: flex-start !important; /* Align to top for multi-line passwords */
   justify-content: space-between !important;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   position: relative;
 
   /* Sizing */
@@ -609,27 +609,27 @@ h2.modal-title {
   box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
 }
 
-/* Password value - takes available space */
+/* Password value - full visibility with multi-line wrapping */
 .pwd .value {
   flex: 1 1 auto;
-  min-width: 100px;
-  max-height: 120px;
-  overflow: hidden;
-  overflow-y: auto;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0; /* CRITICAL: allows flex item to shrink below content size */
+  /* Multi-line wrapping for full password visibility */
   word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.4;
+  /* Allow vertical expansion */
+  max-height: none;
+  overflow: visible;
   filter: none;
   transition: filter 0.2s ease;
   /* RTL/LTR auto-detection for international passwords */
   direction: ltr;
   unicode-bidi: plaintext;
-}
-
-/* Allow wrapping for very long passwords */
-.pwd .value.wrap {
-  white-space: normal;
-  word-break: break-all;
+  /* Monospace for password readability */
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.95em;
+  letter-spacing: 0.5px;
 }
 
 .pwd.masked .value {
@@ -657,13 +657,13 @@ h2.modal-title {
   padding-left: 32px;
 }
 
-/* Actions container - stays on the right */
+/* Actions container - stays on the right, never shrinks */
 .pwd .actions {
+  flex: 0 0 auto; /* Never grow or shrink */
   display: flex !important;
   flex-direction: row !important;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  gap: 0.5rem;
   margin-left: auto;
 }
 

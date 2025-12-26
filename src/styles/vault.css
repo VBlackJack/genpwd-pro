@@ -372,9 +372,12 @@
   color: var(--text-primary);
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start; /* Align to top for multi-line passwords */
   gap: 1rem;
-  line-height: 1.5;
+  line-height: 1.4;
+  /* Multi-line wrapping for full password visibility */
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 /* Action Buttons - Premium Style */
@@ -1266,6 +1269,7 @@
 /* Entry Row */
 .vault-entry-row {
   display: flex;
+  flex-wrap: nowrap; /* Prevent wrapping to second line */
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
@@ -1357,8 +1361,10 @@
 }
 
 .vault-entry-actions {
+  flex: 0 0 auto; /* Never grow or shrink - always stay visible */
   display: flex;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
   opacity: 0;
   transition: opacity var(--vault-transition);
 }
@@ -1565,7 +1571,7 @@ kbd {
 
 .vault-field-value {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align to top for multi-line passwords */
   gap: 0.5rem;
   padding: 0.625rem 0.875rem;
   background: var(--vault-bg);
@@ -1577,8 +1583,18 @@ kbd {
   min-width: 0;
   font-size: 0.9rem;
   color: var(--vault-text);
+  /* Multi-line wrapping for full password visibility */
   word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.4;
   font-family: inherit;
+}
+
+/* Password-specific styling for monospace display */
+.vault-field-text.password {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  letter-spacing: 0.5px;
 }
 
 .vault-field-text.masked {
