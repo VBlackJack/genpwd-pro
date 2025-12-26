@@ -442,3 +442,41 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
     min-height: 52px;
   }
 }
+
+/* At 250% DPI (240dpi), Windows 11 accessibility scaling */
+@media (min-resolution: 240dpi) {
+  .btn,
+  .btn-mini,
+  .action-btn,
+  .modal-close,
+  .vault-modal-close,
+  .toggle-pwd-visibility,
+  .vault-input-btn {
+    min-width: 56px;
+    min-height: 56px;
+  }
+}
+
+/* At 300% DPI (288dpi), high accessibility scaling */
+@media (min-resolution: 288dpi) {
+  .btn,
+  .btn-mini,
+  .action-btn,
+  .modal-close,
+  .vault-modal-close,
+  .toggle-pwd-visibility,
+  .vault-input-btn {
+    min-width: 60px;
+    min-height: 60px;
+  }
+}
+
+/* ============================================================================
+   FOCUS RING EDGE CLIPPING FIX
+   Elements near window edges use inset outline to prevent clipping
+   ============================================================================ */
+
+.modal-close:focus-visible,
+.vault-modal-close:focus-visible {
+  outline-offset: -2px; /* Inset to prevent clipping at window edge */
+}

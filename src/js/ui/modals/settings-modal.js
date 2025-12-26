@@ -120,6 +120,14 @@ export class SettingsModal {
                     <div class="setting-desc">Quick actions to boost your productivity</div>
                   </div>
                   <div class="shortcuts-list">
+                    <div class="shortcut-row" style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue);">
+                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></span>
+                      <span class="shortcut-desc">🌐 Show/Hide app (global)</span>
+                    </div>
+                    <div class="shortcut-row" style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue);">
+                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd></span>
+                      <span class="shortcut-desc">🌐 Auto-type password (global)</span>
+                    </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>G</kbd></span>
                       <span class="shortcut-desc">Generate new passwords</span>

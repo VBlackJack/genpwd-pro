@@ -301,6 +301,11 @@ textarea.field-invalid {
   border-color: var(--accent-blue);
 }
 
+.btn-mini:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
 .btn-mini.random {
   background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
   color: white;
@@ -1509,6 +1514,20 @@ textarea.field-invalid {
   [class*="pulse"],
   [class*="spin"] {
     animation: none !important;
+  }
+
+  /* Static loading indicator for reduced motion users */
+  .btn[aria-busy="true"]::after {
+    animation: none !important;
+    border-color: var(--accent-cyan) !important;
+    border-top-color: transparent !important;
+  }
+
+  .vault-spinner,
+  .spinner,
+  .breach-spinner {
+    border-color: var(--accent-cyan) !important;
+    border-top-color: transparent !important;
   }
 
   .cursor,

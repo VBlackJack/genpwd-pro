@@ -123,7 +123,7 @@ function createPasswordCard(item, id, mask) {
       <div class="stat"><span class="dot"></span><strong>${(entropy || 0).toFixed(1)}</strong>&nbsp;bits</div>
       <div class="len">${total} chars</div>
     </div>
-    <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Click to copy • Double-click to show/hide">
+    <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Click to copy • Double-click to show/hide" role="button" tabindex="0" aria-label="Password ${id}: Click to copy, double-click to reveal">
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
         <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton') || 'Check for breaches'}" aria-label="${t('breach.checkButton') || 'Check for breaches'}">
@@ -231,6 +231,29 @@ function bindPasswordClickEvents() {
       const password = el.getAttribute('data-password');
       if (password) {
         showContextMenu(e, password);
+      }
+    }, { signal: eventController.signal });
+
+    // Keyboard support for role="button" accessibility
+    el.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        // Enter: copy password
+        e.preventDefault();
+        const password = el.getAttribute('data-password');
+        if (password) {
+          el.classList.add('copying');
+          const success = await copyToClipboard(password);
+          if (success) {
+            showToast(t('toast.passwordCopied'), 'success');
+          } else {
+            showToast(t('toast.copyFailed'), 'error');
+          }
+          setTimeout(() => el.classList.remove('copying'), 600);
+        }
+      } else if (e.key === ' ') {
+        // Space: toggle mask
+        e.preventDefault();
+        el.classList.toggle('masked');
       }
     }, { signal: eventController.signal });
   });

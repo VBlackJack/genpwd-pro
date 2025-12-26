@@ -336,11 +336,29 @@ export function setMainContentInert(inert) {
   });
 }
 
+// Track previously focused element for about-modal focus restoration
+let aboutModalPreviousFocus = null;
+
+function closeAboutModal() {
+  const modal = getElement('#about-modal');
+  if (modal && modal.classList.contains('show')) {
+    modal.classList.remove('show');
+    setMainContentInert(false);
+    // Restore focus to trigger element
+    if (aboutModalPreviousFocus && typeof aboutModalPreviousFocus.focus === 'function') {
+      aboutModalPreviousFocus.focus();
+      aboutModalPreviousFocus = null;
+    }
+  }
+}
+
 function bindDebugActions() {
   // About modal
   addEventListener(getElement('#btn-about'), 'click', () => {
     const modal = getElement('#about-modal');
     if (modal) {
+      // Save previously focused element
+      aboutModalPreviousFocus = document.activeElement;
       modal.classList.add('show');
       setMainContentInert(true);
       // Focus first focusable element
@@ -350,33 +368,19 @@ function bindDebugActions() {
     }
   });
 
-  addEventListener(getElement('#modal-close'), 'click', () => {
-    const modal = getElement('#about-modal');
-    if (modal) {
-      modal.classList.remove('show');
-      setMainContentInert(false);
-    }
-  });
+  addEventListener(getElement('#modal-close'), 'click', closeAboutModal);
 
   // Fermeture modal par overlay
   addEventListener(getElement('#about-modal'), 'click', (e) => {
     if (e.target === e.currentTarget) {
-      const modal = getElement('#about-modal');
-      if (modal) {
-        modal.classList.remove('show');
-        setMainContentInert(false);
-      }
+      closeAboutModal();
     }
   });
 
   // Fermeture modal par Escape
   addEventListener(document, 'keydown', (e) => {
     if (e.key === 'Escape') {
-      const modal = getElement('#about-modal');
-      if (modal && modal.classList.contains('show')) {
-        modal.classList.remove('show');
-        setMainContentInert(false);
-      }
+      closeAboutModal();
     }
   });
 

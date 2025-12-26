@@ -1590,6 +1590,12 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
       });
 
       ps.on('close', (code) => {
+        // Always restore the main window after auto-type completes
+        if (mainWindow) {
+          mainWindow.restore();
+          mainWindow.focus();
+        }
+
         if (code === 0) {
           console.log('[GenPwd Pro] Auto-type completed successfully');
           resolve({ success: true });
@@ -1601,17 +1607,20 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
 
       ps.on('error', (error) => {
         console.error('[GenPwd Pro] Auto-type spawn error:', error.message);
+        if (mainWindow) mainWindow.restore();
         resolve({ success: false, error: error.message });
       });
 
       // Timeout after 30 seconds
       setTimeout(() => {
         ps.kill();
+        if (mainWindow) mainWindow.restore();
         resolve({ success: false, error: 'Auto-type timed out' });
       }, 30000);
     });
   } catch (error) {
     console.error('[GenPwd Pro] automation:perform-auto-type error:', error.message);
+    if (mainWindow) mainWindow.restore();
     return { success: false, error: error.message };
   }
 });
@@ -1705,6 +1714,15 @@ app.whenReady().then(async () => {
         if (mainWindow && mainWindow.webContents) {
           mainWindow.webContents.send('vault:locked', { reason: 'screen-lock' });
         }
+        // Show notification so user knows vault was locked
+        if (Notification.isSupported()) {
+          new Notification({
+            title: 'GenPwd Pro - Vault Locked',
+            body: 'Your vault was automatically locked for security when the screen was locked.',
+            icon: path.join(__dirname, 'assets', 'icon.ico'),
+            silent: true
+          }).show();
+        }
       }
     }
   });
@@ -1717,6 +1735,15 @@ app.whenReady().then(async () => {
         await session.lock();
         if (mainWindow && mainWindow.webContents) {
           mainWindow.webContents.send('vault:locked', { reason: 'suspend' });
+        }
+        // Show notification on resume (user won't see it during suspend)
+        if (Notification.isSupported()) {
+          new Notification({
+            title: 'GenPwd Pro - Vault Locked',
+            body: 'Your vault was automatically locked for security when the system went to sleep.',
+            icon: path.join(__dirname, 'assets', 'icon.ico'),
+            silent: true
+          }).show();
         }
       }
     }

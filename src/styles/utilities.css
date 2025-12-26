@@ -303,11 +303,18 @@
 /* Icon-only button variant */
 .icon-btn {
   padding: 8px;
-  min-width: auto;
+  /* WCAG 2.1 compliant touch target */
+  min-width: 44px;
+  min-height: 44px;
   aspect-ratio: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 /* Small text/button variant */
