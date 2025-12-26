@@ -27,7 +27,8 @@ const {
   safeStorage,
   Notification,
   nativeImage,
-  globalShortcut
+  globalShortcut,
+  powerMonitor
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -299,17 +300,31 @@ function getActiveWindowTitle() {
       return;
     }
 
+    // Robust PowerShell script with full type definition and error handling
     const script = `
-      $code = @'
-          [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-          [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
-      '@
-      $win32 = Add-Type -MemberDefinition $code -Name "Win32" -Namespace Win32 -PassThru
-      $handle = $win32::GetForegroundWindow()
-      $title = New-Object System.Text.StringBuilder 256
-      $win32::GetWindowText($handle, $title, 256) | Out-Null
-      $title.ToString()
-    `;
+try {
+  Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public class FGWindow {
+  [DllImport("user32.dll")]
+  public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+  public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+  public static string GetTitle() {
+    IntPtr h = GetForegroundWindow();
+    StringBuilder sb = new StringBuilder(256);
+    GetWindowText(h, sb, 256);
+    return sb.ToString();
+  }
+}
+"@
+  [FGWindow]::GetTitle()
+} catch {
+  ""
+}
+`;
 
     const ps = spawn('powershell.exe', [
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script
@@ -319,11 +334,11 @@ function getActiveWindowTitle() {
     ps.stdout.on('data', d => stdout += d.toString());
     ps.on('close', () => resolve(stdout.trim()));
     ps.on('error', () => resolve(''));
-    // Timeout
+    // Timeout - 10s for PowerShell + C# JIT compilation
     setTimeout(() => {
       try { ps.kill(); } catch { }
       resolve('');
-    }, 2000);
+    }, 10000);
   });
 }
 
@@ -1457,7 +1472,7 @@ function escapeForSendKeys(text) {
 function buildAutoTypePowerShell(actions) {
   const lines = [
     'Add-Type -AssemblyName System.Windows.Forms',
-    'Start-Sleep -Milliseconds 100' // Small initial delay
+    'Start-Sleep -Milliseconds 300' // Initial delay - wait for target window focus stabilization
   ];
 
   for (const action of actions) {
@@ -1503,7 +1518,8 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     }
 
     // Wait for window switch
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // 1500ms delay for window focus stabilization (Windows animations)
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // SECURITY: Verify foreground window before typing sensitive data
     const foregroundTitle = await getActiveWindowTitle();
@@ -1601,9 +1617,10 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
 });
 
 // Get default auto-type sequence
+// Includes 50ms delays between fields for slow Windows forms compatibility
 ipcMain.handle('automation:get-default-sequence', (event) => {
   validateOrigin(event);
-  return '{USERNAME}{TAB}{PASSWORD}{ENTER}';
+  return '{USERNAME}{DELAY 50}{TAB}{DELAY 50}{PASSWORD}{DELAY 50}{ENTER}';
 });
 
 // Gestion du cycle de vie de l'application
@@ -1676,6 +1693,42 @@ app.whenReady().then(async () => {
   } catch (error) {
     console.error('[GenPwd Pro] Auto-Type registration error:', error);
   }
+
+  // ==================== POWER MANAGEMENT (Security) ====================
+  // Lock vault on system sleep/lock to require re-authentication
+  powerMonitor.on('lock-screen', async () => {
+    console.log('[GenPwd Pro] Screen locked - locking vault');
+    if (vaultModule) {
+      const session = vaultModule.getSession();
+      if (session && session.isUnlocked()) {
+        await session.lock();
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('vault:locked', { reason: 'screen-lock' });
+        }
+      }
+    }
+  });
+
+  powerMonitor.on('suspend', async () => {
+    console.log('[GenPwd Pro] System suspending - locking vault');
+    if (vaultModule) {
+      const session = vaultModule.getSession();
+      if (session && session.isUnlocked()) {
+        await session.lock();
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('vault:locked', { reason: 'suspend' });
+        }
+      }
+    }
+  });
+
+  powerMonitor.on('resume', () => {
+    console.log('[GenPwd Pro] System resumed from sleep');
+    // Vault already locked on suspend, notify renderer to show unlock screen
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('vault:require-reauth', { reason: 'resume' });
+    }
+  });
 
   // Set main window for vault events
   if (vaultModule && mainWindow) {
