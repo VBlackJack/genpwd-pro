@@ -390,6 +390,7 @@ function createWindow() {
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const scaleFactor = primaryDisplay.scaleFactor || 1;
+  const workArea = primaryDisplay.workAreaSize;
 
   // Base dimensions (designed for 100% scaling)
   const baseWidth = 1000;
@@ -397,16 +398,32 @@ function createWindow() {
   const baseMinWidth = 900;
   const baseMinHeight = 650;
 
+  // Calculate DPI-aware minimum dimensions
+  // At high DPI (250%+), reduce minimum size to fit smaller logical screen areas
+  // workArea is already in logical pixels
+  let adjustedMinWidth = baseMinWidth;
+  let adjustedMinHeight = baseMinHeight;
+
+  // If screen is too small for base minimum, scale down proportionally
+  if (workArea.width < baseMinWidth + 100) {
+    adjustedMinWidth = Math.max(600, workArea.width - 50);
+    console.log(`[GenPwd Pro] Adjusted minWidth for small screen: ${adjustedMinWidth}`);
+  }
+  if (workArea.height < baseMinHeight + 100) {
+    adjustedMinHeight = Math.max(500, workArea.height - 50);
+    console.log(`[GenPwd Pro] Adjusted minHeight for small screen: ${adjustedMinHeight}`);
+  }
+
   // Apply scale factor for high-DPI displays (125%, 150%, 200%)
   // Electron handles this automatically for content, but window size needs adjustment
-  const defaultWidth = savedState?.width || baseWidth;
-  const defaultHeight = savedState?.height || baseHeight;
+  const defaultWidth = savedState?.width || Math.min(baseWidth, workArea.width - 50);
+  const defaultHeight = savedState?.height || Math.min(baseHeight, workArea.height - 50);
 
   const windowOptions = {
     width: defaultWidth,
     height: defaultHeight,
-    minWidth: baseMinWidth,
-    minHeight: baseMinHeight,
+    minWidth: adjustedMinWidth,
+    minHeight: adjustedMinHeight,
     title: 'GenPwd Pro',
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     backgroundColor: '#1a1a2e',
@@ -496,34 +513,65 @@ function createWindow() {
   // ==================== MINIMIZE TO TRAY ====================
   // Intercept close to minimize to tray instead of quitting
   // For password managers, keeping in tray is a security feature
+
+  // Load saved close behavior preference
+  let closeBehavior = 'ask'; // 'ask', 'minimize', 'quit'
+  try {
+    const prefsPath = path.join(app.getPath('userData'), 'close-behavior.json');
+    if (fs.existsSync(prefsPath)) {
+      const prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf8'));
+      closeBehavior = prefs.behavior || 'ask';
+    }
+  } catch (e) {
+    console.log('[GenPwd Pro] No saved close behavior preference');
+  }
+
   mainWindow.on('close', async (event) => {
     if (!isQuitting) {
       event.preventDefault();
 
-      // First close attempt: show dialog asking user preference
-      if (!mainWindow._closeDialogShown) {
-        mainWindow._closeDialogShown = true;
-        const t = getMainTranslations();
+      // Apply saved preference
+      if (closeBehavior === 'minimize') {
+        mainWindow.hide();
+        return false;
+      } else if (closeBehavior === 'quit') {
+        isQuitting = true;
+        app.quit();
+        return;
+      }
 
-        const { response } = await dialog.showMessageBox(mainWindow, {
-          type: 'question',
-          buttons: [
-            t.minimizeToTray || 'Minimize to Tray',
-            t.quitApp || 'Quit Application'
-          ],
-          defaultId: 0,
-          cancelId: 0,
-          title: 'GenPwd Pro',
-          message: t.closePromptTitle || 'Close GenPwd Pro?',
-          detail: t.closePromptDetail || 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.',
-          icon: path.join(__dirname, 'assets', 'icon.ico')
-        });
+      // Show dialog asking user preference (closeBehavior === 'ask')
+      const t = getMainTranslations();
 
-        if (response === 1) {
-          // User chose to quit
-          isQuitting = true;
-          app.quit();
-          return;
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: [
+          t.minimizeToTray || 'Minimize to Tray',
+          t.quitApp || 'Quit Application',
+          t.alwaysMinimize || 'Always Minimize (Remember)'
+        ],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'GenPwd Pro',
+        message: t.closePromptTitle || 'Close GenPwd Pro?',
+        detail: t.closePromptDetail || 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.',
+        icon: path.join(__dirname, 'assets', 'icon.ico')
+      });
+
+      if (response === 1) {
+        // User chose to quit
+        isQuitting = true;
+        app.quit();
+        return;
+      } else if (response === 2) {
+        // User chose "Always Minimize" - save preference
+        try {
+          const prefsPath = path.join(app.getPath('userData'), 'close-behavior.json');
+          fs.writeFileSync(prefsPath, JSON.stringify({ behavior: 'minimize' }), 'utf8');
+          closeBehavior = 'minimize';
+          console.log('[GenPwd Pro] Saved close behavior: always minimize');
+        } catch (e) {
+          console.error('[GenPwd Pro] Failed to save close behavior:', e.message);
         }
       }
 
@@ -1513,7 +1561,8 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     }
 
     // Minimize our window to focus the previous window
-    if (mainWindow) {
+    // Check window state to avoid race conditions
+    if (mainWindow && !mainWindow.isMinimized() && !mainWindow.isDestroyed()) {
       mainWindow.minimize();
     }
 
@@ -1521,10 +1570,18 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     // 1500ms delay for window focus stabilization (Windows animations)
     await new Promise(resolve => setTimeout(resolve, 1500));
 
+    // Helper to safely restore window
+    const safeRestore = () => {
+      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
+        mainWindow.restore();
+        mainWindow.focus();
+      }
+    };
+
     // SECURITY: Verify foreground window before typing sensitive data
     const foregroundTitle = await getActiveWindowTitle();
     if (!foregroundTitle) {
-      if (mainWindow) mainWindow.restore();
+      safeRestore();
       return { success: false, error: 'Could not detect target window. Auto-type cancelled for security.' };
     }
 
@@ -1547,7 +1604,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
     if (isDangerous) {
       console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
-      if (mainWindow) mainWindow.restore();
+      safeRestore();
       return {
         success: false,
         error: 'Auto-type blocked: Cannot type into command-line windows for security reasons.',
@@ -1558,7 +1615,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     // If a target window title was provided, verify it matches (partial match)
     if (targetWindowTitle && !foregroundTitle.toLowerCase().includes(targetWindowTitle.toLowerCase())) {
       console.warn('[GenPwd Pro] Auto-type target mismatch. Expected:', targetWindowTitle, 'Got:', foregroundTitle);
-      if (mainWindow) mainWindow.restore();
+      safeRestore();
       return {
         success: false,
         error: `Target window mismatch. Expected "${targetWindowTitle}" but found "${foregroundTitle}".`,
@@ -1591,10 +1648,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
 
       ps.on('close', (code) => {
         // Always restore the main window after auto-type completes
-        if (mainWindow) {
-          mainWindow.restore();
-          mainWindow.focus();
-        }
+        safeRestore();
 
         if (code === 0) {
           console.log('[GenPwd Pro] Auto-type completed successfully');
@@ -1607,20 +1661,23 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
 
       ps.on('error', (error) => {
         console.error('[GenPwd Pro] Auto-type spawn error:', error.message);
-        if (mainWindow) mainWindow.restore();
+        safeRestore();
         resolve({ success: false, error: error.message });
       });
 
       // Timeout after 30 seconds
       setTimeout(() => {
         ps.kill();
-        if (mainWindow) mainWindow.restore();
+        safeRestore();
         resolve({ success: false, error: 'Auto-type timed out' });
       }, 30000);
     });
   } catch (error) {
     console.error('[GenPwd Pro] automation:perform-auto-type error:', error.message);
-    if (mainWindow) mainWindow.restore();
+    // Can't use safeRestore here as it's defined inside the try block
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
     return { success: false, error: error.message };
   }
 });
@@ -1754,6 +1811,30 @@ app.whenReady().then(async () => {
     // Vault already locked on suspend, notify renderer to show unlock screen
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.send('vault:require-reauth', { reason: 'resume' });
+    }
+  });
+
+  // Handle system shutdown - lock vault before quitting
+  powerMonitor.on('shutdown', async () => {
+    console.log('[GenPwd Pro] System shutting down - locking vault');
+    if (vaultModule) {
+      const session = vaultModule.getSession();
+      if (session && session.isUnlocked()) {
+        await session.lock();
+      }
+    }
+  });
+
+  // Handle app quit - ensure vault is locked
+  app.on('before-quit', async (event) => {
+    if (vaultModule) {
+      const session = vaultModule.getSession();
+      if (session && session.isUnlocked()) {
+        console.log('[GenPwd Pro] App quitting - locking vault');
+        event.preventDefault();
+        await session.lock();
+        app.quit();
+      }
     }
   });
 

@@ -1734,6 +1734,16 @@ kbd {
   overflow-y: auto;
 }
 
+/* Ensure text inputs in vault modals are selectable */
+.vault-modal-body input[type="text"],
+.vault-modal-body input[type="password"],
+.vault-modal-body input[type="email"],
+.vault-modal-body input[type="url"],
+.vault-modal-body textarea,
+.vault-input {
+  user-select: text;
+}
+
 .vault-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -6240,14 +6250,23 @@ kbd {
     0 0 0 4px rgba(59, 130, 246, 0.25) !important;
 }
 
-/* Button focus states */
+/* Button focus states - enhanced for small buttons */
 .vault-btn:focus-visible,
 .vault-quick-btn:focus-visible,
 .vault-icon-btn:focus-visible,
 .vault-field-btn:focus-visible {
   outline: none !important;
-  box-shadow: 0 0 0 2px var(--vault-primary),
-    0 0 0 4px rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 0 0 3px var(--vault-primary),
+    0 0 0 6px rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Extra visible focus for small icon buttons (< 32px) */
+.vault-icon-btn:focus-visible,
+.vault-field-btn:focus-visible,
+.vault-modal-close:focus-visible {
+  box-shadow: 0 0 0 3px var(--vault-primary),
+    0 0 0 6px rgba(59, 130, 246, 0.4),
+    inset 0 0 0 1px var(--vault-primary) !important;
 }
 
 /* Input focus states */

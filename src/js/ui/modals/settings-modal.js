@@ -235,10 +235,15 @@ export class SettingsModal {
                 btn.classList.add('active');
                 btn.setAttribute('aria-selected', 'true');
 
-                // Update content
+                // Update content with proper ARIA for screen readers
                 const tabId = `tab-${btn.dataset.tab}`;
-                modal.querySelectorAll('.settings-tab').forEach(t => t.hidden = true);
-                modal.querySelector(`#${tabId}`).hidden = false;
+                modal.querySelectorAll('.settings-tab').forEach(t => {
+                    t.hidden = true;
+                    t.setAttribute('aria-hidden', 'true');
+                });
+                const activeTab = modal.querySelector(`#${tabId}`);
+                activeTab.hidden = false;
+                activeTab.setAttribute('aria-hidden', 'false');
             });
         });
 

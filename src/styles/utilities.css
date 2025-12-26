@@ -400,6 +400,17 @@ button:disabled:hover,
   box-shadow: none;
 }
 
+/* WCAG 2.1: Remove focus indication from disabled elements */
+button:disabled:focus,
+button:disabled:focus-visible,
+.btn:disabled:focus,
+.btn:disabled:focus-visible,
+[disabled]:focus,
+[disabled]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Accessible disabled state with pattern */
 .btn-disabled-visible {
   opacity: 0.6;
