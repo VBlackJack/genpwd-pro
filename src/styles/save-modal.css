@@ -145,8 +145,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  /* WCAG 2.1 compliant touch target */
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   background: var(--bg-tertiary, #2a2f4a);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
@@ -251,12 +254,26 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
   padding: 0.5rem 0;
   font-size: 0.875rem;
   color: var(--text-muted, #d1d5db);
   cursor: pointer;
   user-select: none;
   list-style: none;
+  border-radius: var(--radius-sm, 8px);
+  transition: background 0.2s ease, outline 0.2s ease;
+}
+
+.save-vault-notes-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.save-vault-notes-toggle:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .save-vault-notes-toggle::-webkit-details-marker {
@@ -353,6 +370,7 @@
 .pwd-context-menu {
   position: fixed;
   min-width: 200px;
+  max-width: calc(100vw - 16px);
   padding: 0.5rem 0;
   background: var(--bg-secondary, #232740);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -362,6 +380,13 @@
     0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: var(--z-max);
   animation: ctx-menu-appear 0.15s ease;
+}
+
+/* Responsive context menu for small screens */
+@media (max-width: 320px) {
+  .pwd-context-menu {
+    min-width: 160px;
+  }
 }
 
 @keyframes ctx-menu-appear {

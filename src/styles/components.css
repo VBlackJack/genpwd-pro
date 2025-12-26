@@ -279,6 +279,8 @@ textarea.field-invalid {
 .btn.small {
   font-size: 12px;
   padding: 6px 10px;
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
 }
 
 .btn-mini {

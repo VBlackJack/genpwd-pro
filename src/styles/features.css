@@ -20,6 +20,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
   padding: 8px 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -33,6 +35,11 @@
 .lang-btn:hover {
   background: var(--bg-hover);
   transform: translateY(-1px);
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 .lang-flag {
@@ -75,6 +82,8 @@
   align-items: center;
   gap: 10px;
   width: 100%;
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
   padding: 10px 15px;
   background: transparent;
   border: none;
@@ -85,6 +94,12 @@
 }
 
 .lang-option:hover {
+  background: var(--bg-hover);
+}
+
+.lang-option:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: -2px;
   background: var(--bg-hover);
 }
 
