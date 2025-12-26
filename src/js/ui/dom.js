@@ -136,19 +136,24 @@ export function toggleDebugPanel() {
   const debugPanel = getElement('#debug-panel');
   if (!debugPanel) return;
 
-  const isVisible = !debugPanel.classList.contains('hidden');
-  if (isVisible) {
-    debugPanel.classList.add('hidden');
-  } else {
+  const isCurrentlyHidden = debugPanel.hasAttribute('hidden');
+
+  if (isCurrentlyHidden) {
+    // Show panel
+    debugPanel.removeAttribute('hidden');
     debugPanel.classList.remove('hidden');
+  } else {
+    // Hide panel
+    debugPanel.setAttribute('hidden', '');
+    debugPanel.classList.add('hidden');
   }
 
   const btn = getElement('#btn-toggle-debug');
   if (btn) {
-    btn.textContent = isVisible ? '🔬 Debug' : '🔬 Close';
+    btn.textContent = isCurrentlyHidden ? '🔬 Close' : '🔬 Debug';
   }
 
-  return !isVisible;
+  return isCurrentlyHidden; // returns true if panel is now visible
 }
 
 export function renderChips(containerSelector, blocks, onChipClick) {

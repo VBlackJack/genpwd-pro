@@ -978,8 +978,8 @@ function promptExportFormat() {
 
 async function clearResults() {
   const results = getResults();
-  // Only confirm if there are results to clear
-  if (results && results.length > 0) {
+  // Only confirm if there are results to clear (skip during automated tests)
+  if (results && results.length > 0 && !window._testMode) {
     const confirmed = await showConfirm(t('toast.clearResultsConfirm') || 'Clear all generated passwords?', {
       title: t('actions.clearResults') || 'Clear Results',
       confirmLabel: t('common.clear') || 'Clear',
@@ -990,7 +990,9 @@ async function clearResults() {
 
   setResults([]);
   renderEmptyState();
-  showToast(t('toast.resultsCleared'), 'info');
+  if (!window._testMode) {
+    showToast(t('toast.resultsCleared'), 'info');
+  }
 }
 // Helpers
 function ensurePolicySelection(select) {

@@ -443,21 +443,29 @@ class GenPwdTestSuite {
       return this.results;
     }
 
+    // Enable test mode to skip confirmations
+    window._testMode = true;
+
     this.isRunning = true;
     this.results = { passed: 0, failed: 0, errors: [], details: [], startTime: new Date(), endTime: null };
     this.consoleOutput = [];
 
     this.log('🚀 DÉBUT DES TESTS - GenPwd Pro v3.0.0');
     this.log('='.repeat(50));
-    
-    const configurations = this.getTestConfigurations();
-    
-    for (let i = 0; i < configurations.length; i++) {
-      await this.testConfiguration(configurations[i]);
-      await this.wait(300);
-    }
 
-    await this.testSpecialFeatures();
+    try {
+      const configurations = this.getTestConfigurations();
+
+      for (let i = 0; i < configurations.length; i++) {
+        await this.testConfiguration(configurations[i]);
+        await this.wait(300);
+      }
+
+      await this.testSpecialFeatures();
+    } finally {
+      // Always disable test mode when done
+      window._testMode = false;
+    }
 
     this.results.endTime = new Date();
     this.displayFinalReport();
@@ -465,7 +473,7 @@ class GenPwdTestSuite {
 
     // Export global
     window.lastTestResults = this.results;
-    
+
     return this.results;
   }
 

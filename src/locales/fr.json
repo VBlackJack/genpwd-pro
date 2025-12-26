@@ -66,7 +66,8 @@
     "allTitle": "Tout Titre",
     "allUpper": "Tout MAJUSCULE",
     "allLower": "Tout minuscule",
-    "randomBlocks": "Aléatoire"
+    "randomBlocks": "Aléatoire",
+    "emptyState": "Cliquez sur \"Générer\" pour créer vos mots de passe"
   },
   "modes": {
     "title": "Mode",
@@ -139,6 +140,7 @@
   "actions": {
     "generate": "Générer",
     "generateShortcut": "Générer de nouveaux mots de passe (Raccourci : Alt+G)",
+    "generateNow": "Générer maintenant",
     "copyAll": "Tout Copier",
     "copyAllShortcut": "Copier tous les mots de passe générés (Raccourci : Alt+C)",
     "clipboardSettings": "Configurer l'effacement automatique du presse-papier",
@@ -146,6 +148,7 @@
     "exportResults": "Exporter les résultats",
     "clear": "Effacer",
     "clearAll": "Effacer tous les résultats",
+    "clearResults": "Effacer les résultats",
     "tests": "Tests",
     "runTests": "Lancer les tests de validation (Raccourci : Alt+R)",
     "debug": "Debug",
@@ -826,6 +829,7 @@
     "unsupportedFormat": "Format non supporté",
     "exportError": "Erreur d'exportation",
     "resultsCleared": "Résultats effacés",
+    "clearResultsConfirm": "Voulez-vous vraiment effacer tous les résultats ?",
     "passwordCopied": "Mot de passe copié !",
     "copyFailed": "Échec de la copie",
     "criticalStartupError": "Erreur critique au démarrage",

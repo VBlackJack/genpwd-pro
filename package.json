@@ -93,11 +93,8 @@
       "node_modules/tweetnacl-util/**/*",
       "node_modules/dompurify/**/*",
       "node_modules/tink-crypto/**/*",
-      "!src/tests/**/*",
-      "!**/*.test.js",
-      "!**/*.spec.js",
-      "!**/test-*.js",
-      "!src/js/test-integration.js"
+      "src/tests/test-suite.js",
+      "src/js/test-integration.js"
     ],
     "directories": {
       "output": "release"

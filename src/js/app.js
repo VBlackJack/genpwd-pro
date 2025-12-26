@@ -310,13 +310,12 @@ class GenPwdApp {
         const targetTab = tab.dataset.tab;
 
         if (targetTab === 'generator') {
-          // Show generator, hide vault
+          // Show generator, hide vault (debug panel state preserved)
           if (mainContent) mainContent.removeAttribute('hidden');
           if (vaultContainer) vaultContainer.setAttribute('hidden', '');
-          if (debugPanel) debugPanel.removeAttribute('hidden');
           if (appContainer) appContainer.classList.remove('vault-mode');
         } else if (targetTab === 'vault') {
-          // Show vault, hide generator
+          // Show vault, hide generator and debug panel
           if (mainContent) mainContent.setAttribute('hidden', '');
           if (vaultContainer) vaultContainer.removeAttribute('hidden');
           if (debugPanel) debugPanel.setAttribute('hidden', '');

@@ -485,7 +485,7 @@
     </div>
 
     <!-- Debug Panel -->
-    <aside class="debug hidden" id="debug-panel" hidden role="complementary" data-i18n-aria-label="aria.debugPanel" aria-label="Debug panel">
+    <aside class="debug" id="debug-panel" hidden role="complementary" data-i18n-aria-label="aria.debugPanel" aria-label="Debug panel">
       <div class="debug-header">
         <strong data-i18n="actions.debug">Debug</strong>
         <button type="button" class="btn ghost small" id="btn-clear-logs" data-i18n-aria-label="actions.clearLogs" aria-label="Clear debug logs"><span data-i18n="actions.clearLogs">Clear logs</span></button>
@@ -502,5 +502,9 @@
 
   <!-- JavaScript modulaire ES6 -->
   <script type="module" src="js/app.js"></script>
+
+  <!-- Test Suite -->
+  <script src="tests/test-suite.js"></script>
+  <script type="module" src="js/test-integration.js"></script>
 </body>
 </html>

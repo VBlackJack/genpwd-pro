@@ -68,7 +68,8 @@
     "allTitle": "All Title",
     "allUpper": "All UPPER",
     "allLower": "All lower",
-    "randomBlocks": "Random"
+    "randomBlocks": "Random",
+    "emptyState": "Click \"Generate\" to create your passwords"
   },
   "modes": {
     "title": "Mode",
@@ -141,6 +142,7 @@
   "actions": {
     "generate": "Generate",
     "generateShortcut": "Generate new passwords (Shortcut: Alt+G)",
+    "generateNow": "Generate now",
     "copyAll": "Copy All",
     "copyAllShortcut": "Copy all generated passwords (Shortcut: Alt+C)",
     "clipboardSettings": "Configure automatic clipboard clearing",
@@ -148,6 +150,7 @@
     "exportResults": "Export results",
     "clear": "Clear",
     "clearAll": "Clear all results",
+    "clearResults": "Clear results",
     "tests": "Tests",
     "runTests": "Run validation tests (Shortcut: Alt+R)",
     "debug": "Debug",
@@ -808,6 +811,7 @@
     "unsupportedFormat": "Unsupported format",
     "exportError": "Export error",
     "resultsCleared": "Results cleared",
+    "clearResultsConfirm": "Are you sure you want to clear all results?",
     "passwordCopied": "Password copied!",
     "copyFailed": "Copy failed",
     "criticalStartupError": "Critical startup error",
