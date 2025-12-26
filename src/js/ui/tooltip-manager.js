@@ -67,6 +67,29 @@ export function initTooltips() {
       hideTooltip();
     }
   }, { signal });
+
+  // Keyboard accessibility: hide tooltip on focus change (Tab away)
+  document.addEventListener('focusout', (e) => {
+    const target = e.target.closest('[data-title]');
+    if (target) {
+      // Restore title attribute for accessibility
+      target.setAttribute('title', target.getAttribute('data-title'));
+      target.removeAttribute('data-title');
+      hideTooltip();
+    }
+  }, { signal });
+
+  // Also hide tooltip on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && tooltipEl?.classList.contains('visible')) {
+      hideTooltip();
+      // Restore any active data-title attributes
+      document.querySelectorAll('[data-title]').forEach(el => {
+        el.setAttribute('title', el.getAttribute('data-title'));
+        el.removeAttribute('data-title');
+      });
+    }
+  }, { signal });
 }
 
 /**

@@ -99,9 +99,9 @@
   --modal-backdrop: rgba(0, 0, 0, 0.5);
   --modal-backdrop-heavy: rgba(0, 0, 0, 0.7);
 
-  /* Typography */
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  /* Typography - Segoe UI for Windows native rendering */
+  --font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
 
   /* Border Radius Scale */
   --radius-xs: 4px;
@@ -259,6 +259,8 @@ body {
   color: var(--text-primary);
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow: hidden; /* App-like feel */
 }
 
@@ -318,12 +320,254 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   -webkit-text-fill-color: transparent;
 }
 
-/* High contrast mode fallback */
+/* ==================== HIGH CONTRAST MODE (Windows) ==================== */
+/* Comprehensive forced-colors support for Windows High Contrast Mode */
 @media (forced-colors: active) {
+  /* Text gradients - use system colors */
   .text-gradient {
     background: none;
     -webkit-text-fill-color: currentColor;
     color: CanvasText;
+  }
+
+  /* Buttons - ensure visible borders */
+  .btn,
+  .btn-mini,
+  button,
+  [role="button"] {
+    border: 2px solid ButtonText !important;
+    background: ButtonFace !important;
+    color: ButtonText !important;
+    forced-color-adjust: none;
+  }
+
+  .btn:hover,
+  .btn-mini:hover,
+  button:hover,
+  [role="button"]:hover {
+    border-color: Highlight !important;
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
+
+  .btn:focus-visible,
+  .btn-mini:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+
+  .btn:disabled,
+  .btn-mini:disabled,
+  button:disabled {
+    border-color: GrayText !important;
+    color: GrayText !important;
+    background: Canvas !important;
+  }
+
+  /* Form inputs */
+  input,
+  select,
+  textarea,
+  .input,
+  .vault-input,
+  .vault-select {
+    border: 2px solid ButtonText !important;
+    background: Field !important;
+    color: FieldText !important;
+    forced-color-adjust: none;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus,
+  .input:focus,
+  .vault-input:focus {
+    outline: 3px solid Highlight !important;
+    outline-offset: 1px !important;
+    border-color: Highlight !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: GrayText !important;
+    opacity: 1 !important;
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    border-color: GrayText !important;
+    color: GrayText !important;
+    background: Canvas !important;
+  }
+
+  /* Links */
+  a,
+  a:visited {
+    color: LinkText !important;
+  }
+
+  a:hover {
+    color: Highlight !important;
+  }
+
+  /* Badges and status indicators */
+  .badge,
+  .dict-status,
+  .version-badge,
+  .chip {
+    border: 2px solid ButtonText !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+    forced-color-adjust: none;
+  }
+
+  /* Cards and panels */
+  .card,
+  .glass-panel,
+  .vault-modal,
+  .modal-content {
+    border: 2px solid CanvasText !important;
+    background: Canvas !important;
+    forced-color-adjust: none;
+  }
+
+  /* Dividers */
+  .divider,
+  hr {
+    border-color: CanvasText !important;
+    background: CanvasText !important;
+  }
+
+  /* Icons - ensure visibility */
+  svg {
+    forced-color-adjust: auto;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar-thumb {
+    background: ButtonText !important;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: Canvas !important;
+  }
+
+  /* Remove glassmorphism effects */
+  .glass-panel,
+  .vault-modal,
+  [class*="glass"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Selection */
+  ::selection {
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
+
+  /* Password cards */
+  .pwd,
+  .pwd:hover {
+    border: 2px solid CanvasText !important;
+    background: Canvas !important;
+  }
+
+  .pwd.copying {
+    border-color: Highlight !important;
+  }
+
+  /* Toast notifications */
+  .toast {
+    border: 2px solid CanvasText !important;
+    background: Canvas !important;
+  }
+
+  .toast-error {
+    border-color: Mark !important;
+  }
+
+  .toast-success {
+    border-color: Highlight !important;
+  }
+
+  /* Breach status */
+  .breach-status {
+    border: 2px solid CanvasText !important;
+    background: Canvas !important;
+  }
+
+  .breach-status.danger,
+  .breach-status.critical {
+    border-color: Mark !important;
+  }
+
+  .breach-status.safe {
+    border-color: Highlight !important;
+  }
+
+  /* Spinners - use system colors */
+  .spinner,
+  .vault-spinner,
+  .breach-spinner,
+  [class*="spinner"] {
+    border-color: GrayText !important;
+    border-top-color: Highlight !important;
+  }
+
+  /* Progress bars */
+  .progress-bar {
+    background: Canvas !important;
+    border: 1px solid CanvasText !important;
+  }
+
+  .progress-bar-fill {
+    background: Highlight !important;
+  }
+
+  /* Checkbox and radio */
+  input[type="checkbox"],
+  input[type="radio"] {
+    forced-color-adjust: none;
+    border: 2px solid ButtonText !important;
+    background: Field !important;
+  }
+
+  input[type="checkbox"]:checked,
+  input[type="radio"]:checked {
+    background: Highlight !important;
+    border-color: Highlight !important;
+  }
+
+  /* Slider thumb */
+  .slider::-webkit-slider-thumb {
+    background: ButtonText !important;
+    border: 2px solid ButtonText !important;
+  }
+
+  .slider::-webkit-slider-thumb:hover,
+  .slider:focus::-webkit-slider-thumb {
+    background: Highlight !important;
+    border-color: Highlight !important;
+  }
+
+  /* Required field indicator */
+  .required,
+  [aria-required="true"]::after {
+    color: Mark !important;
+  }
+
+  /* Error states */
+  [aria-invalid="true"],
+  .field-invalid {
+    border-color: Mark !important;
+  }
+
+  .field-error {
+    color: Mark !important;
   }
 }
 

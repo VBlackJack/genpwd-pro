@@ -317,7 +317,7 @@
   outline-offset: 2px;
 }
 
-/* Small text/button variant */
+/* Small text/button variant - maintains touch target compliance */
 .small {
   font-size: 0.75rem;
   padding: 0.375rem 0.625rem;
@@ -326,18 +326,51 @@
 .btn.small {
   font-size: 0.75rem;
   padding: 0.5rem 0.75rem;
-  min-height: auto;
+  /* Minimum 44px touch target even for small buttons (WCAG 2.1) */
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Touch-friendly target sizing for interactive elements */
+@media (pointer: coarse) {
+  /* Increase touch targets on touch devices */
+  button,
+  .btn,
+  .btn-mini,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ensure adequate spacing between touch targets */
+  .actions button + button,
+  .btn + .btn {
+    margin-left: 8px;
+  }
 }
 
 /* ==================== FORM VALIDATION STYLES ==================== */
 
-/* Invalid field styling */
+/* Invalid field styling with animation */
 .field-invalid,
 input[aria-invalid="true"],
 textarea[aria-invalid="true"],
 select[aria-invalid="true"] {
   border-color: var(--accent-red) !important;
   box-shadow: 0 0 0 1px var(--accent-red);
+  animation: field-shake 0.4s ease;
+}
+
+/* Smooth transition for validation state changes */
+input,
+textarea,
+select,
+.input,
+.vault-input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .field-invalid:focus,
@@ -347,6 +380,15 @@ select[aria-invalid="true"]:focus {
   border-color: var(--accent-red) !important;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
   outline: none;
+}
+
+/* Shake animation for invalid fields */
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
 }
 
 /* Field error message */
@@ -368,10 +410,20 @@ select[aria-invalid="true"]:focus {
   font-size: 11px;
 }
 
-/* Required field indicator */
+/* Required field indicator - enhanced visibility */
 .required {
   color: var(--accent-red);
   margin-left: 2px;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+/* Required asterisk for labels */
+label .required,
+.vault-label .required,
+.setting-label .required {
+  color: var(--accent-red);
+  font-weight: bold;
 }
 
 /* Valid field styling (optional - for positive feedback) */

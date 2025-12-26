@@ -386,19 +386,39 @@ h2.modal-title {
 }
 
 .pwd:hover {
-  background: rgba(0, 212, 255, 0.05);
+  background: rgba(0, 212, 255, 0.08);
   border-color: var(--accent-cyan);
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.15);
+}
+
+/* Enhanced hover feedback - visual elevation */
+.pwd:focus-within {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
 }
 
 /* Password value - takes available space */
 .pwd .value {
   flex: 1 1 auto;
   min-width: 100px;
+  max-height: 120px;
   overflow: hidden;
+  overflow-y: auto;
   text-overflow: ellipsis;
   white-space: nowrap;
+  word-break: break-all;
   filter: none;
   transition: filter 0.2s ease;
+  /* RTL/LTR auto-detection for international passwords */
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+/* Allow wrapping for very long passwords */
+.pwd .value.wrap {
+  white-space: normal;
+  word-break: break-all;
 }
 
 .pwd.masked .value {
@@ -494,11 +514,37 @@ h2.modal-title {
   border-color: rgba(0, 212, 255, 0.4);
   background: rgba(0, 212, 255, 0.15);
   color: var(--accent-cyan, #00d4ff);
+  position: relative;
 }
 .pwd .action-btn.copy-btn:hover {
   background: rgba(0, 212, 255, 0.3);
   border-color: var(--accent-cyan, #00d4ff);
   color: var(--text-on-accent, #fff);
+}
+
+/* Copy button - success state with checkmark */
+.pwd .action-btn.copy-btn.copied {
+  background: var(--accent-green, #22c55e);
+  border-color: var(--accent-green, #22c55e);
+  color: white;
+  animation: copy-success-pulse 0.3s ease;
+}
+
+.pwd .action-btn.copy-btn.copied svg {
+  opacity: 0;
+}
+
+.pwd .action-btn.copy-btn.copied::after {
+  content: "✓";
+  position: absolute;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+@keyframes copy-success-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* Save to vault button - Blue */

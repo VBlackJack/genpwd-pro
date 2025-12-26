@@ -103,7 +103,7 @@ export class SettingsModal {
               </div>
               <div class="settings-content">
                 <!-- General Tab -->
-                <div class="settings-tab active" id="tab-general" role="tabpanel" aria-labelledby="settings-tab-general">
+                <div class="settings-tab active" id="tab-general" role="tabpanel" aria-labelledby="settings-tab-general" aria-hidden="false">
                   <div class="setting-group">
                     <label class="setting-label">Appearance</label>
                     <div class="setting-desc">Customize application appearance</div>
@@ -114,7 +114,7 @@ export class SettingsModal {
                 </div>
 
                 <!-- Shortcuts Tab -->
-                <div class="settings-tab" id="tab-shortcuts" role="tabpanel" aria-labelledby="settings-tab-shortcuts" hidden>
+                <div class="settings-tab" id="tab-shortcuts" role="tabpanel" aria-labelledby="settings-tab-shortcuts" aria-hidden="true" hidden>
                   <div class="setting-group">
                     <label class="setting-label">Keyboard Shortcuts</label>
                     <div class="setting-desc">Quick actions to boost your productivity</div>
@@ -164,7 +164,7 @@ export class SettingsModal {
                 </div>
 
                 <!-- Security Tab -->
-                <div class="settings-tab" id="tab-security" role="tabpanel" aria-labelledby="settings-tab-security" hidden>
+                <div class="settings-tab" id="tab-security" role="tabpanel" aria-labelledby="settings-tab-security" aria-hidden="true" hidden>
                    <div class="setting-group">
                     <label class="setting-label">Auto-Lock</label>
                     <div class="setting-desc">Lock vault after a period of inactivity</div>
@@ -181,7 +181,7 @@ export class SettingsModal {
                 </div>
 
                 <!-- Danger Tab -->
-                <div class="settings-tab" id="tab-danger" role="tabpanel" aria-labelledby="settings-tab-danger" hidden>
+                <div class="settings-tab" id="tab-danger" role="tabpanel" aria-labelledby="settings-tab-danger" aria-hidden="true" hidden>
                   <div class="vault-alert count-warning">
                     <div class="alert-icon">⚠️</div>
                     <div class="alert-content">
@@ -224,26 +224,60 @@ export class SettingsModal {
             btn.addEventListener('click', () => this.hide());
         });
 
-        // Tab Navigation with ARIA support
-        modal.querySelectorAll('.settings-nav-item').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Update nav with aria-selected
-                modal.querySelectorAll('.settings-nav-item').forEach(b => {
-                    b.classList.remove('active');
-                    b.setAttribute('aria-selected', 'false');
-                });
-                btn.classList.add('active');
-                btn.setAttribute('aria-selected', 'true');
+        // Tab Navigation with ARIA support and keyboard navigation
+        const navItems = modal.querySelectorAll('.settings-nav-item');
+        const activateTab = (btn) => {
+            // Update nav with aria-selected
+            navItems.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+                b.setAttribute('tabindex', '-1');
+            });
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+            btn.setAttribute('tabindex', '0');
+            btn.focus();
 
-                // Update content with proper ARIA for screen readers
-                const tabId = `tab-${btn.dataset.tab}`;
-                modal.querySelectorAll('.settings-tab').forEach(t => {
-                    t.hidden = true;
-                    t.setAttribute('aria-hidden', 'true');
-                });
-                const activeTab = modal.querySelector(`#${tabId}`);
-                activeTab.hidden = false;
-                activeTab.setAttribute('aria-hidden', 'false');
+            // Update content with proper ARIA for screen readers
+            const tabId = `tab-${btn.dataset.tab}`;
+            modal.querySelectorAll('.settings-tab').forEach(t => {
+                t.hidden = true;
+                t.setAttribute('aria-hidden', 'true');
+            });
+            const activeTab = modal.querySelector(`#${tabId}`);
+            activeTab.hidden = false;
+            activeTab.setAttribute('aria-hidden', 'false');
+        };
+
+        navItems.forEach((btn, index) => {
+            btn.addEventListener('click', () => activateTab(btn));
+
+            // Arrow key navigation (WCAG 2.1 requirement)
+            btn.addEventListener('keydown', (e) => {
+                let targetIndex = index;
+                switch (e.key) {
+                    case 'ArrowDown':
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        targetIndex = (index + 1) % navItems.length;
+                        break;
+                    case 'ArrowUp':
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        targetIndex = (index - 1 + navItems.length) % navItems.length;
+                        break;
+                    case 'Home':
+                        e.preventDefault();
+                        targetIndex = 0;
+                        break;
+                    case 'End':
+                        e.preventDefault();
+                        targetIndex = navItems.length - 1;
+                        break;
+                    default:
+                        return;
+                }
+                activateTab(navItems[targetIndex]);
             });
         });
 

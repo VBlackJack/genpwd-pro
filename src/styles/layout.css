@@ -410,6 +410,10 @@ header::before {
   align-content: start;
   scrollbar-width: thin;
   scrollbar-color: var(--accent-cyan) var(--bg-secondary);
+  /* Touch scrolling improvements for tablets/touch screens */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .results-list::-webkit-scrollbar {

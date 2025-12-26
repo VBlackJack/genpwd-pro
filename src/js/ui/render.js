@@ -234,7 +234,7 @@ function bindPasswordClickEvents() {
       }
     }, { signal: eventController.signal });
 
-    // Keyboard support for role="button" accessibility
+    // Keyboard support for role="button" accessibility + list navigation
     el.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter') {
         // Enter: copy password
@@ -254,6 +254,45 @@ function bindPasswordClickEvents() {
         // Space: toggle mask
         e.preventDefault();
         el.classList.toggle('masked');
+      } else {
+        // List navigation (Home/End/PageUp/PageDown/Arrow keys)
+        const allCards = Array.from(document.querySelectorAll('.pwd'));
+        const currentIndex = allCards.indexOf(el);
+        const pageSize = 5; // Number of cards to skip with PageUp/PageDown
+        let targetIndex = -1;
+
+        switch (e.key) {
+          case 'Home':
+            e.preventDefault();
+            targetIndex = 0;
+            break;
+          case 'End':
+            e.preventDefault();
+            targetIndex = allCards.length - 1;
+            break;
+          case 'PageUp':
+            e.preventDefault();
+            targetIndex = Math.max(0, currentIndex - pageSize);
+            break;
+          case 'PageDown':
+            e.preventDefault();
+            targetIndex = Math.min(allCards.length - 1, currentIndex + pageSize);
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            targetIndex = Math.max(0, currentIndex - 1);
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            targetIndex = Math.min(allCards.length - 1, currentIndex + 1);
+            break;
+        }
+
+        if (targetIndex >= 0 && targetIndex !== currentIndex && allCards[targetIndex]) {
+          allCards[targetIndex].focus();
+          // Scroll into view smoothly (respects prefers-reduced-motion)
+          allCards[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
     }, { signal: eventController.signal });
   });

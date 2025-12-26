@@ -618,6 +618,97 @@ function createWindow() {
   });
 }
 
+// ==================== WINDOWS JUMP LIST ====================
+// Provides quick access to common actions from taskbar right-click
+function initJumpList() {
+  if (process.platform !== 'win32') return;
+
+  try {
+    app.setJumpList([
+      {
+        type: 'tasks',
+        items: [
+          {
+            type: 'task',
+            title: 'Generate Password',
+            description: 'Generate a new secure password',
+            program: process.execPath,
+            args: '--generate',
+            iconPath: process.execPath,
+            iconIndex: 0
+          },
+          {
+            type: 'task',
+            title: 'Open Vault',
+            description: 'Open password vault',
+            program: process.execPath,
+            args: '--vault',
+            iconPath: process.execPath,
+            iconIndex: 0
+          },
+          {
+            type: 'task',
+            title: 'Lock Vault',
+            description: 'Lock the vault immediately',
+            program: process.execPath,
+            args: '--lock',
+            iconPath: process.execPath,
+            iconIndex: 0
+          }
+        ]
+      }
+    ]);
+    console.log('[GenPwd Pro] Windows Jump List initialized');
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to set Jump List:', error.message);
+  }
+}
+
+// Update Jump List with recent vaults
+function updateJumpListRecentVaults(recentVaults) {
+  if (process.platform !== 'win32') return;
+
+  try {
+    const recentItems = recentVaults.slice(0, 5).map(vault => ({
+      type: 'file',
+      path: vault.path,
+      title: vault.name || path.basename(vault.path)
+    }));
+
+    app.setJumpList([
+      {
+        type: 'recent',
+        items: recentItems
+      },
+      {
+        type: 'tasks',
+        items: [
+          {
+            type: 'task',
+            title: 'Generate Password',
+            description: 'Generate a new secure password',
+            program: process.execPath,
+            args: '--generate',
+            iconPath: process.execPath,
+            iconIndex: 0
+          },
+          {
+            type: 'task',
+            title: 'Lock Vault',
+            description: 'Lock the vault immediately',
+            program: process.execPath,
+            args: '--lock',
+            iconPath: process.execPath,
+            iconIndex: 0
+          }
+        ]
+      }
+    ]);
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to update Jump List:', error.message);
+  }
+}
+
 // ==================== SYSTEM TRAY ====================
 function createTray() {
   // Create tray icon
@@ -939,6 +1030,11 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
       clearTimeout(clipboardTimers.get('secure').timer);
     }
 
+    // Notify renderer about clipboard countdown
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('clipboard:countdown-started', { opId, ttlMs });
+    }
+
     // Set timer to clear clipboard
     const timer = setTimeout(() => {
       // Only clear if clipboard still contains our text
@@ -947,9 +1043,9 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
         clipboard.clear();
         console.log('[GenPwd Pro] Clipboard auto-cleared after timeout');
 
-        // Notify renderer
+        // Notify renderer with clear message for toast
         if (mainWindow && mainWindow.webContents) {
-          mainWindow.webContents.send('clipboard:cleared', { opId });
+          mainWindow.webContents.send('clipboard:cleared', { opId, message: 'Clipboard auto-cleared for security' });
         }
       }
       clipboardTimers.delete('secure');
@@ -1570,11 +1666,20 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     // 1500ms delay for window focus stabilization (Windows animations)
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Helper to safely restore window
+    // Helper to safely restore window with guaranteed focus (Windows-specific)
     const safeRestore = () => {
       if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
         mainWindow.restore();
+        // Use setAlwaysOnTop temporarily to guarantee window comes to front on Windows
+        mainWindow.setAlwaysOnTop(true);
         mainWindow.focus();
+        mainWindow.moveTop();
+        // Remove always-on-top after brief delay to allow focus to settle
+        setTimeout(() => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.setAlwaysOnTop(false);
+          }
+        }, 100);
       }
     };
 
@@ -1604,6 +1709,16 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
     if (isDangerous) {
       console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
+
+      // Notify renderer to show toast notification
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('autotype:blocked', {
+          reason: 'security',
+          windowTitle: foregroundTitle,
+          message: 'Auto-type blocked: Cannot type into command-line windows for security reasons.'
+        });
+      }
+
       safeRestore();
       return {
         success: false,
@@ -1705,6 +1820,7 @@ app.whenReady().then(async () => {
   createWindow();
   createApplicationMenu();
   createTray();
+  initJumpList();
 
   // Handle hidden startup (auto-start)
   if (startHidden && mainWindow) {

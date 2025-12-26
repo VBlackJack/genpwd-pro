@@ -205,16 +205,43 @@ function initClipboardIntegration(signal) {
     return;
   }
 
-  // Listen for clipboard cleared events
-  window.electronAPI.onClipboardCleared((_data) => {
-    showToast(i18n.t('toast.clipboardAutoCleared'), 'info', 2000);
+  // Listen for clipboard cleared events with message
+  window.electronAPI.onClipboardCleared((data) => {
+    const message = data?.message || i18n.t('toast.clipboardAutoCleared') || 'Clipboard auto-cleared';
+    showToast(message, 'info', 2000);
     safeLog('Clipboard auto-cleared');
   });
+
+  // Listen for clipboard countdown started (UX feedback)
+  if (window.electronAPI?.onClipboardCountdownStarted) {
+    window.electronAPI.onClipboardCountdownStarted((data) => {
+      const seconds = Math.round((data?.ttlMs || 30000) / 1000);
+      safeLog(`Clipboard countdown started: ${seconds}s`);
+    });
+  }
 
   // Override default copy behavior for password fields
   overrideCopyBehavior(signal);
 
   safeLog('Clipboard integration initialized');
+}
+
+/**
+ * Initialize Auto-Type Notification Integration
+ */
+function initAutoTypeNotifications() {
+  if (!window.electronAPI?.onAutoTypeBlocked) {
+    return;
+  }
+
+  // Listen for auto-type blocked events
+  window.electronAPI.onAutoTypeBlocked((data) => {
+    const message = data?.message || 'Auto-type blocked for security';
+    showToast(message, 'warning', 5000);
+    safeLog(`Auto-type blocked: ${data?.windowTitle || 'unknown window'}`);
+  });
+
+  safeLog('Auto-type notifications initialized');
 }
 
 /**
@@ -467,6 +494,7 @@ export function initNativeIntegration() {
   // Initialize all handlers
   initDeepLinkHandler();
   initClipboardIntegration(signal);
+  initAutoTypeNotifications();
   // Fire-and-forget with error handling - quick unlock init is optional
   initQuickUnlockIntegration().catch(error => {
     safeLog(`Quick unlock init failed: ${error.message}`);

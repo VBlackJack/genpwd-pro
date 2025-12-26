@@ -63,6 +63,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('clipboard:cleared', handler);
   },
 
+  // Listen for clipboard countdown started (for showing progress indicator)
+  onClipboardCountdownStarted: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('clipboard:countdown-started', handler);
+    return () => ipcRenderer.removeListener('clipboard:countdown-started', handler);
+  },
+
   // ==================== WINDOW CONTROL ====================
   // Minimize to system tray
   minimizeToTray: () => ipcRenderer.invoke('window:minimize-to-tray'),
@@ -112,6 +119,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Get default auto-type sequence
   getDefaultAutoTypeSequence: () => ipcRenderer.invoke('automation:get-default-sequence'),
+
+  // Listen for auto-type blocked events (security)
+  onAutoTypeBlocked: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('autotype:blocked', handler);
+    return () => ipcRenderer.removeListener('autotype:blocked', handler);
+  },
 
   // Listen for global auto-type trigger
   onGlobalAutoType: (callback) => {
