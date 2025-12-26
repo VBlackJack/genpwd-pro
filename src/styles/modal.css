@@ -143,7 +143,22 @@ h2.modal-title {
 /* Wider scrollbar for touch/pointer coarse devices (WCAG AA compliance) */
 @media (pointer: coarse) {
   .modal-body::-webkit-scrollbar {
-    width: 18px;
+    width: 20px;
+  }
+
+  .modal-body::-webkit-scrollbar-thumb {
+    min-height: 48px;
+  }
+}
+
+/* Even wider scrollbar for tablets with no hover capability */
+@media (pointer: coarse) and (hover: none) {
+  .modal-body::-webkit-scrollbar {
+    width: 24px;
+  }
+
+  .modal-body::-webkit-scrollbar-thumb {
+    min-height: 50px;
   }
 }
 
@@ -710,6 +725,35 @@ h2.modal-title {
 }
 
 /* ============================================================================
+   MODAL SIZE VARIANTS
+   ============================================================================ */
+
+.modal.modal-sm {
+  max-width: 400px;
+}
+
+.modal.modal-md {
+  max-width: 600px; /* default */
+}
+
+.modal.modal-lg {
+  max-width: 800px;
+}
+
+.modal.modal-xl {
+  max-width: 1000px;
+}
+
+/* Full-screen modal for mobile or immersive experiences */
+.modal.modal-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+}
+
+/* ============================================================================
    RESPONSIVE MODAL
    ============================================================================ */
 
@@ -771,10 +815,24 @@ h2.modal-title {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
 }
 
 .modal-footer .btn {
   min-width: 100px;
+}
+
+/* Responsive modal footer - stack buttons on small screens */
+@media (max-width: 480px) {
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ============================================================================

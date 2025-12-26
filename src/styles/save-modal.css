@@ -162,6 +162,15 @@
   color: white;
 }
 
+.save-vault-copy-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+}
+
+.save-vault-copy-btn:active {
+  transform: scale(0.95);
+}
+
 .save-vault-copy-btn.copied {
   background: var(--accent-green, #34d399);
   border-color: var(--accent-green, #34d399);

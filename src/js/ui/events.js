@@ -671,18 +671,23 @@ function showClipboardSettings() {
 
   const popover = document.createElement('div');
   popover.className = 'clipboard-settings-popover';
+  popover.setAttribute('role', 'dialog');
+  popover.setAttribute('aria-label', 'Clipboard auto-clear settings');
   popover.innerHTML = `
     <div class="clipboard-settings-header">
       <span>⏱️ Auto-clear</span>
     </div>
     <div class="clipboard-settings-body">
-      <p class="clipboard-settings-desc">
+      <p class="clipboard-settings-desc" id="clipboard-desc">
         Clear clipboard automatically after copy
       </p>
-      <div class="clipboard-settings-options">
+      <div class="clipboard-settings-options" role="listbox" aria-describedby="clipboard-desc">
         ${CLIPBOARD_TIMEOUT_OPTIONS.map(opt => `
           <button class="clipboard-option ${opt.value === currentTimeout ? 'active' : ''}"
-                  data-timeout="${opt.value}">
+                  data-timeout="${opt.value}"
+                  role="option"
+                  aria-selected="${opt.value === currentTimeout}"
+                  aria-label="Set auto-clear to ${opt.label}">
             ${opt.label}
           </button>
         `).join('')}
@@ -690,39 +695,115 @@ function showClipboardSettings() {
     </div>
   `;
 
-  // Position popover
+  // Position popover with viewport boundary detection
   const rect = btn.getBoundingClientRect();
-  popover.style.position = 'fixed';
-  popover.style.top = `${rect.bottom + 8}px`;
-  popover.style.left = `${rect.left}px`;
-  popover.style.zIndex = '1000';
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const padding = 8;
+
+  let top = rect.bottom + padding;
+  let left = rect.left;
 
   document.body.appendChild(popover);
 
-  // Event handlers
-  popover.querySelectorAll('.clipboard-option').forEach(optBtn => {
-    optBtn.addEventListener('click', () => {
-      const timeout = parseInt(optBtn.dataset.timeout, 10);
-      setClipboardTimeout(timeout);
+  // Adjust position after appending (to get actual dimensions)
+  const popoverRect = popover.getBoundingClientRect();
 
-      // Update active state
-      popover.querySelectorAll('.clipboard-option').forEach(b => b.classList.remove('active'));
-      optBtn.classList.add('active');
+  // Prevent going off right edge
+  if (left + popoverRect.width + padding > viewportWidth) {
+    left = viewportWidth - popoverRect.width - padding;
+  }
 
-      showToast(timeout > 0 ? `Auto-clear: ${optBtn.textContent.trim()}` : 'Auto-clear disabled', 'success');
-      setTimeout(() => popover.remove(), 300);
+  // Prevent going off bottom edge - show above button instead
+  if (top + popoverRect.height + padding > viewportHeight) {
+    top = rect.top - popoverRect.height - padding;
+  }
+
+  // Prevent going off left/top edge
+  left = Math.max(padding, left);
+  top = Math.max(padding, top);
+
+  popover.style.top = `${top}px`;
+  popover.style.left = `${left}px`;
+
+  // Get all options for keyboard navigation
+  const options = Array.from(popover.querySelectorAll('.clipboard-option'));
+  let currentIndex = options.findIndex(opt => opt.classList.contains('active'));
+  if (currentIndex === -1) currentIndex = 0;
+
+  // Focus first option
+  options[currentIndex]?.focus();
+
+  // Select option handler
+  const selectOption = (optBtn) => {
+    const timeout = parseInt(optBtn.dataset.timeout, 10);
+    setClipboardTimeout(timeout);
+
+    // Update active and aria-selected state
+    options.forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    optBtn.classList.add('active');
+    optBtn.setAttribute('aria-selected', 'true');
+
+    showToast(timeout > 0 ? `Auto-clear: ${optBtn.textContent.trim()}` : 'Auto-clear disabled', 'success');
+    setTimeout(() => {
+      popover.remove();
+      btn.focus(); // Return focus to trigger button
+    }, 300);
+  };
+
+  // Event handlers for options
+  options.forEach(optBtn => {
+    optBtn.addEventListener('click', () => selectOption(optBtn));
   });
+
+  // Keyboard navigation handler
+  const keyHandler = (e) => {
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        popover.remove();
+        btn.focus();
+        document.removeEventListener('keydown', keyHandler);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        currentIndex = (currentIndex + 1) % options.length;
+        options[currentIndex]?.focus();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        currentIndex = (currentIndex - 1 + options.length) % options.length;
+        options[currentIndex]?.focus();
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        selectOption(options[currentIndex]);
+        document.removeEventListener('keydown', keyHandler);
+        break;
+      case 'Tab':
+        // Close popover on Tab
+        popover.remove();
+        document.removeEventListener('keydown', keyHandler);
+        break;
+    }
+  };
+
+  document.addEventListener('keydown', keyHandler);
 
   // Close on click outside
   setTimeout(() => {
-    const handler = (e) => {
+    const clickHandler = (e) => {
       if (!popover.contains(e.target) && e.target !== btn) {
         popover.remove();
-        document.removeEventListener('click', handler);
+        document.removeEventListener('click', clickHandler);
+        document.removeEventListener('keydown', keyHandler);
       }
     };
-    document.addEventListener('click', handler);
+    document.addEventListener('click', clickHandler);
   }, 0);
 }
 

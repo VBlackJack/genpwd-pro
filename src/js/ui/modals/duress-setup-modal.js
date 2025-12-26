@@ -42,7 +42,7 @@ export class DuressSetupModal extends Modal {
             </label>
           </div>
 
-          <div class="vault-alert vault-alert-danger" id="duress-error" hidden></div>
+          <div class="vault-alert vault-alert-danger" id="duress-error" role="alert" aria-live="assertive" hidden></div>
         </form>
       </div>
       <div class="vault-modal-actions">

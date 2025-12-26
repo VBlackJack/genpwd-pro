@@ -290,10 +290,11 @@ function bindCopyButtons() {
           // Update aria-label for screen readers
           const originalLabel = btn.getAttribute('aria-label') || t('common.copy') || 'Copy';
           btn.setAttribute('aria-label', t('toast.passwordCopied') || 'Copied to clipboard');
+          // WCAG recommends minimum 3 seconds for status messages
           setTimeout(() => {
             btn.classList.remove('copied');
             btn.setAttribute('aria-label', originalLabel);
-          }, 1000);
+          }, 3000);
         } else {
           showToast(t('toast.copyFailed'), 'error');
         }
@@ -333,7 +334,7 @@ function bindBreachCheckButtons() {
       statusEl.hidden = false;
       statusEl.setAttribute('aria-live', 'polite'); // Set aria-live when visible for proper announcements
       statusEl.className = 'breach-status loading';
-      statusEl.innerHTML = '<span class="breach-spinner"></span> Checking...';
+      statusEl.innerHTML = '<span class="breach-spinner" role="status" aria-label="Loading"></span> Checking...';
 
       try {
         const result = await checkPasswordBreach(password);

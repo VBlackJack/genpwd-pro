@@ -35,6 +35,31 @@ select {
   box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.2);
 }
 
+/* Disabled state for inputs */
+.input:disabled, select:disabled, textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.03));
+  color: var(--text-muted);
+}
+
+/* Invalid state for form validation */
+.input[aria-invalid="true"],
+.input.field-invalid,
+select[aria-invalid="true"],
+select.field-invalid,
+textarea[aria-invalid="true"],
+textarea.field-invalid {
+  border-color: var(--accent-red, #ef4444);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.input[aria-invalid="true"]:focus,
+.input.field-invalid:focus {
+  border-color: var(--accent-red, #ef4444);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+}
+
 /* Checkbox */
 .checkbox {
   display: flex;
@@ -211,10 +236,13 @@ select {
 .btn:disabled,
 .btn[aria-disabled="true"],
 .btn-mini:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed !important;
   pointer-events: none;
-  filter: grayscale(30%);
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  filter: grayscale(40%);
 }
 
 .btn:disabled:hover,
@@ -1163,10 +1191,315 @@ select {
   to { transform: rotate(360deg); }
 }
 
+/* ============================================================================
+   CLIPBOARD SETTINGS POPOVER
+   ============================================================================ */
+
+.clipboard-settings-popover {
+  position: fixed;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.3));
+  padding: 0;
+  z-index: var(--z-dropdown, 10);
+  min-width: 200px;
+  max-width: 280px;
+  overflow: hidden;
+  animation: popoverFadeIn 0.15s ease;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.clipboard-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.clipboard-settings-body {
+  padding: 12px;
+}
+
+.clipboard-settings-desc {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.clipboard-settings-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clipboard-option {
+  /* WCAG 2.1 compliant touch target */
+  min-height: 44px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.clipboard-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.clipboard-option:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: -2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.clipboard-option.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue, #3b82f6);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.clipboard-option.active:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+/* Light mode support */
+@media (prefers-color-scheme: light) {
+  .clipboard-settings-popover {
+    background: var(--bg-secondary);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .clipboard-settings-header {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .clipboard-option:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
+
+[data-theme="light"] .clipboard-settings-popover {
+  background: var(--bg-secondary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .clipboard-settings-header {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .clipboard-option:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Reduced motion support for popover */
+@media (prefers-reduced-motion: reduce) {
+  .clipboard-settings-popover {
+    animation: none;
+  }
+
+  .export-modal-button:hover {
+    transform: none;
+  }
+
+  .empty-state-cta:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   EXPORT MODAL BUTTONS
+   ============================================================================ */
+
+.export-modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.export-modal-button {
+  /* WCAG 2.1 compliant touch target */
+  min-height: 48px;
+  padding: 14px 16px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm, 8px);
+  transition: all 0.2s ease;
+}
+
+.export-modal-button:hover {
+  transform: translateX(4px);
+  border-color: var(--accent-cyan, #00d4ff);
+}
+
+.export-modal-button:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   ROLE=BUTTON FOCUS STYLES
+   ============================================================================ */
+
+[role="button"] {
+  cursor: pointer;
+}
+
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm, 8px);
+}
+
+[role="button"][aria-expanded]:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Section headers with proper focus indication */
+.section-header[role="button"]:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   EMPTY STATE CTA
+   ============================================================================ */
+
+.empty-state-cta {
+  min-height: 48px;
+  font-size: 1rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: var(--text-on-accent, #fff);
+  border: none;
+}
+
+.empty-state-cta:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.empty-state-cta:focus-visible {
+  outline: 3px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 3px;
+}
+
+/* ============================================================================
+   HIGH CONTRAST MODE SUPPORT
+   ============================================================================ */
+
+@media (prefers-contrast: high) {
+  .btn,
+  .btn-mini {
+    border-width: 2px;
+  }
+
+  .btn:disabled,
+  .btn-mini:disabled {
+    opacity: 1;
+    background: var(--bg-tertiary) !important;
+    border: 2px solid var(--text-muted) !important;
+    color: var(--text-muted) !important;
+  }
+
+  .clipboard-option {
+    border-width: 2px;
+  }
+
+  .clipboard-option.active {
+    border-width: 2px;
+    border-color: var(--accent-blue);
+  }
+
+  [role="button"]:focus-visible,
+  .btn:focus-visible,
+  .clipboard-option:focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* ============================================================================
+   SPINNER COMPONENT
+   ============================================================================ */
+
+.vault-spinner,
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+  border-top-color: var(--accent-cyan, #00d4ff);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+.vault-spinner.spinner-sm {
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
+}
+
+.vault-spinner.spinner-lg {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
+/* Accessible spinner with screen reader text */
+.vault-spinner[role="status"]::after {
+  content: "";
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
 /* ==================== REDUCED MOTION SUPPORT ==================== */
 @media (prefers-reduced-motion: reduce) {
   .loading,
   .breach-status.loading .breach-spinner,
+  .vault-spinner,
+  .spinner,
   .placement-visual-container.flash-auto,
   .placement-visual-container.flash-reset,
   .cursor-mounted,

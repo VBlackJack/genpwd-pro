@@ -41,15 +41,18 @@ function validatePresetName(nameInput, nameError) {
   const name = nameInput.value.trim();
   if (!name) {
     nameError.textContent = i18n.t('toast.nameRequired');
-    nameError.style.display = 'block';
+    nameError.hidden = false;
+    nameInput.setAttribute('aria-invalid', 'true');
     return false;
   }
   if (name.length > 50) {
     nameError.textContent = i18n.t('toast.nameTooLong');
-    nameError.style.display = 'block';
+    nameError.hidden = false;
+    nameInput.setAttribute('aria-invalid', 'true');
     return false;
   }
-  nameError.style.display = 'none';
+  nameError.hidden = true;
+  nameInput.removeAttribute('aria-invalid');
   return true;
 }
 
