@@ -159,7 +159,7 @@ export class QuickUnlockDialog {
                   aria-label="${t('vault.labels.password') || 'Master password'}"
                 >
                 <button type="button" class="quick-unlock-toggle-pwd" id="quick-unlock-toggle-pwd" aria-label="${t('vault.quickUnlock.showPassword')}">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
@@ -179,8 +179,8 @@ export class QuickUnlockDialog {
               <div class="quick-unlock-divider">
                 <span>${t('vault.quickUnlock.or') || 'or'}</span>
               </div>
-              <button type="button" class="quick-unlock-btn quick-unlock-btn-hello" id="quick-unlock-hello-btn">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <button type="button" class="quick-unlock-btn quick-unlock-btn-hello" id="quick-unlock-hello-btn" aria-label="${t('vault.quickUnlock.unlockWithHello') || 'Unlock with Windows Hello'}">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                   <path d="M12 6c-2.21 0-4 1.79-4 4v2c0 2.21 1.79 4 4 4s4-1.79 4-4v-2c0-2.21-1.79-4-4-4z"/>
                   <circle cx="9" cy="10" r="1"/>

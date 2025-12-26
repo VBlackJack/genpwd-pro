@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-// electron-preload.js - Script de préchargement sécurisé
+// electron-preload.js - Secure preload script
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Exposer une API sécurisée au renderer process
+// Expose secure API to renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Information sur la plateforme
+  // Platform information
   platform: process.platform,
 
-  // Version de l'application
+  // Application version
   version: '3.0.0',
 
-  // Vérifier si on est dans Electron
+  // Check if running in Electron
   isElectron: true,
 
   // ==================== FILE SYSTEM ====================
@@ -90,6 +90,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Set auto-start status
   setAutoStart: (enabled) => ipcRenderer.invoke('app:set-autostart', enabled),
 
+  // ==================== WINDOWS SYSTEM INTEGRATION ====================
+  // Get Windows accent color
+  getAccentColor: () => ipcRenderer.invoke('app:get-accent-color'),
+
+  // Get system info (admin status, platform details)
+  getSystemInfo: () => ipcRenderer.invoke('app:get-system-info'),
+
+  // Listen for system accent color changes
+  onAccentColorChanged: (callback) => {
+    const handler = (_, colors) => callback(colors);
+    ipcRenderer.on('system:accent-color', handler);
+    return () => ipcRenderer.removeListener('system:accent-color', handler);
+  },
+
   // ==================== COMPACT/OVERLAY MODE ====================
   // Toggle compact mode (floating widget)
   toggleCompactMode: () => ipcRenderer.invoke('window:toggle-compact'),
@@ -110,6 +124,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_, url) => callback(url);
     ipcRenderer.on('deep-link', handler);
     return () => ipcRenderer.removeListener('deep-link', handler);
+  },
+
+  // Listen for vault file open events (file association)
+  onVaultFileOpen: (callback) => {
+    const handler = (_, filePath) => callback(filePath);
+    ipcRenderer.on('vault:open-file', handler);
+    return () => ipcRenderer.removeListener('vault:open-file', handler);
   },
 
   // ==================== AUTO-TYPE (KeePass Killer Feature) ====================
@@ -150,7 +171,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   }
 });
 
-// Exposer l'API Vault au renderer process
+// Expose Vault API to renderer process
 contextBridge.exposeInMainWorld('vault', {
   // ==================== STATE ====================
   getState: () => ipcRenderer.invoke('vault:getState'),
@@ -306,8 +327,8 @@ contextBridge.exposeInMainWorld('vault', {
   }
 });
 
-// Log pour debug
-console.log('GenPwd Pro - Preload script chargé');
+// Debug log
+console.log('GenPwd Pro - Preload script loaded');
 console.log('Platform:', process.platform);
 console.log('Electron version:', process.versions.electron);
 console.log('APIs enabled: Vault, SecureStorage, Clipboard, DeepLink, Tray, AutoType, CompactMode, GlobalHotkey');

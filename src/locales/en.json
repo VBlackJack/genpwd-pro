@@ -155,7 +155,23 @@
       "copyValue": "Copy",
       "generateNow": "Generate Now"
     },
+    "validation": {
+      "fieldRequired": "This field is required",
+      "minLength": "Minimum {count} characters",
+      "maxLength": "Maximum {count} characters",
+      "invalidFormat": "Invalid format",
+      "invalidUrl": "Invalid URL",
+      "invalidEmail": "Invalid email address",
+      "passwordsNoMatch": "Passwords do not match",
+      "tooWeak": "Password is too weak"
+    },
     "messages": {
+      "fileNotFound": "File not found",
+      "forgetVault": "Forget this vault",
+      "invalidXmlFormat": "Invalid XML format",
+      "notKeePassFile": "This is not a KeePass XML file",
+      "emptyCsvFile": "Empty CSV file",
+      "fileTooLarge": "File too large: {name} (> 5MB)",
       "vaultLocked": "Vault locked",
       "vaultSaved": "Vault saved: {fileName}",
       "forgetVaultConfirm": "Forget vault \"{name}\"?\n\nThe file will not be deleted, but the vault will be removed from the list.",
@@ -383,7 +399,11 @@
     },
     "generator": {
       "title": "Password generator",
-      "emptyState": "No passwords generated yet"
+      "emptyState": "No passwords generated yet",
+      "invalidData": "Invalid password data",
+      "clickToCycle": "Click to cycle (U → l → T → U)",
+      "blocks": "Blocks:",
+      "manualChange": "Manual change"
     },
     "colors": {
       "default": "Default",
@@ -479,13 +499,150 @@
       "title": "Unlock Vault",
       "unlockToContinue": "Unlock the vault to continue",
       "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "tryAgain": "Try again",
-      "or": "or"
+      "or": "or",
+      "unlockWithHello": "Unlock with Windows Hello"
     },
     "duress": {
       "enabled": "Duress Mode Enabled! The application will now restart to apply the new security container.",
       "destroyed": "Vault destroyed."
+    },
+    "duressModal": {
+      "title": "Plausible Deniability Setup",
+      "explanation1": "This advanced security feature creates a <strong>secondary \"Decoy\" Vault</strong> hidden within your main vault file.",
+      "explanation2": "If you are forced to unlock your vault under duress, enter your <strong>Duress Password</strong> instead of your Master Password.",
+      "explanation3": "The app will unlock the Decoy Vault, which looks fully functional but contains non-sensitive data. It is mathematically impossible to prove the existence of your Real Vault.",
+      "masterPasswordLabel": "Master Password (verification)",
+      "masterPasswordPlaceholder": "Enter current master password",
+      "newDuressLabel": "New Duress Password",
+      "duressPlaceholder": "Cannot be same as Master Password",
+      "duressHint": "Entering this password at login will open the Decoy Vault.",
+      "autofillLabel": "Auto-populate Decoy Vault",
+      "autofillHint": "Generate realistic \"fake\" entries (e.g. Amazon, Google) so the vault doesn't look suspicious/empty.",
+      "bothRequired": "Both passwords are required.",
+      "mustBeDifferent": "Duress password MUST be different from Master password.",
+      "encrypting": "Encrypting Vault (V3)...",
+      "successMessage": "Duress Mode Enabled! Restarting to apply security container...",
+      "enableButton": "Enable Duress Mode"
     }
+  },
+  "aliasModal": {
+    "title": "Configure Email Alias",
+    "provider": "Provider",
+    "apiKey": "API Key / Token",
+    "apiKeyPlaceholder": "Paste your API key here...",
+    "showHide": "Show/Hide password",
+    "helpSimpleLogin": "For SimpleLogin: Go to Settings > API Keys.",
+    "helpAnonAddy": "For AnonAddy: Go to Settings > API > Generate New Token.",
+    "enterApiKey": "Please enter an API key.",
+    "verifying": "Verifying...",
+    "validating": "Validating key...",
+    "keyValidated": "Key validated and saved!",
+    "invalidKey": "Invalid API key. Check your credentials.",
+    "validationError": "Validation error: {message}",
+    "required": "required"
+  },
+  "syncModal": {
+    "title": "Sync Settings",
+    "cloudProvider": "Cloud Provider",
+    "chooseProvider": "Choose where to sync your vault",
+    "disabled": "Disabled (Local only)",
+    "webdav": "WebDAV / Nextcloud / OwnCloud",
+    "serverUrl": "Server URL",
+    "serverUrlHint": "e.g., https://cloud.example.com/remote.php/dav/files/user/",
+    "username": "Username",
+    "usernameHint": "Your WebDAV login username",
+    "passwordToken": "Password / App Token",
+    "passwordHint": "Use an app token if available",
+    "testConnection": "Test connection",
+    "testing": "Connecting...",
+    "connectionSuccess": "Connection successful!",
+    "connectionFailed": "Failed: {message}",
+    "fillAllFields": "Please fill in all required fields",
+    "saving": "Saving...",
+    "required": "required"
+  },
+  "shareModal": {
+    "title": "Secure Share (GenPwd Send)",
+    "step1": "Step 1 of 2",
+    "step2": "Step 2 of 2",
+    "stepConfig": "Step 1: Configuration",
+    "stepResult": "Step 2: Result",
+    "infoText": "Create a secure encrypted link to share this password. The decryption key will be included in the URL but never sent to the server.",
+    "expiration": "Expiration",
+    "hour1": "1 Hour",
+    "day1": "1 Day",
+    "days7": "7 Days",
+    "burnAfterReading": "Burn after reading",
+    "generateLink": "Generate link",
+    "generating": "Generating...",
+    "done": "Done",
+    "linkReady": "Link ready!",
+    "shareLink": "Share Link",
+    "copyLink": "Copy",
+    "warningText": "This link grants access to the secret. Only share it with the intended recipient.",
+    "linkCopied": "Link copied"
+  },
+  "settingsModal": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "shortcuts": "Shortcuts",
+      "security": "Security",
+      "danger": "Danger Zone"
+    },
+    "categories": "Settings categories",
+    "general": {
+      "appearance": "Appearance",
+      "appearanceDesc": "Customize application appearance",
+      "toggleTheme": "Toggle Light/Dark Theme"
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "description": "Quick actions to boost your productivity",
+      "showHideApp": "Show/Hide app (global)",
+      "autoTypePassword": "Auto-type password (global)",
+      "generatePasswords": "Generate new passwords",
+      "copyAllPasswords": "Copy all passwords",
+      "lockVault": "Lock vault",
+      "openSettings": "Open settings",
+      "closeModal": "Close modal / Cancel action",
+      "navigate": "Navigate between elements",
+      "confirm": "Confirm / Submit",
+      "exitApp": "Exit application"
+    },
+    "security": {
+      "autoLock": "Auto-Lock",
+      "autoLockDesc": "Lock vault after a period of inactivity",
+      "minute1": "1 minute",
+      "minutes5": "5 minutes",
+      "minutes15": "15 minutes",
+      "hour1": "1 hour",
+      "never": "Never (not recommended)"
+    },
+    "danger": {
+      "warning": "Warning",
+      "title": "Danger Zone",
+      "irreversible": "Actions here are irreversible.",
+      "panicMode": "Panic Mode (Nuclear Option)",
+      "panicDesc": "Permanently destroys the vault and all its data. No recovery possible.",
+      "destroyVault": "DESTROY VAULT",
+      "destroyConfirm1": "This action will PERMANENTLY DESTROY this vault. There will be NO way to undo this.",
+      "destroyTitle": "Destroy Vault",
+      "iUnderstand": "I Understand",
+      "finalConfirm": "FINAL CONFIRMATION: Delete everything?",
+      "finalWarning": "Final Warning",
+      "deleteEverything": "Delete Everything",
+      "vaultDestroyed": "Vault destroyed."
+    }
+  },
+  "breach": {
+    "notCompromised": "Not compromised",
+    "compromisedTimes": "Compromised {count} times",
+    "compromisedPlus": "Compromised {count}+ times",
+    "compromisedK": "Compromised {count}K+ times",
+    "compromisedM": "Compromised {count}M+ times"
   },
   "toast": {
     "blocksRandomized": "Blocks randomized",

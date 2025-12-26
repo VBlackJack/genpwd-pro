@@ -11,7 +11,7 @@
   --vault-text: var(--text-primary);
   --vault-text-muted: var(--text-secondary);
   --vault-text-dim: var(--text-hint, rgba(255, 255, 255, 0.35));
-  --vault-primary: var(--color-primary);
+  --vault-primary: var(--accent-primary);
   --vault-radius: var(--radius-sm);
   --vault-radius-sm: var(--radius-sm, 8px);
   --vault-radius-md: var(--radius-md, 12px);
@@ -265,7 +265,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   background: rgba(0, 0, 0, 0.3);
 }
@@ -283,7 +283,7 @@
 
 .vault-entry-item.selected {
   background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--accent-primary);
 }
 
 /* NOTE: .vault-detail-panel defined in DETAIL PANEL section below */
@@ -331,8 +331,8 @@
 }
 
 .action-btn:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
@@ -617,10 +617,10 @@
   border: none;
   background: transparent;
   color: var(--vault-text-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 8px);
   cursor: pointer;
   /* Touch-friendly: always visible but subtle, fully visible on hover */
-  opacity: 0.5;
+  opacity: var(--opacity-disabled, 0.5);
   transition: opacity 0.2s, color 0.2s, background 0.2s;
   display: flex;
   align-items: center;
@@ -686,7 +686,7 @@
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 8px);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
@@ -758,13 +758,13 @@
 .vault-link-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-sm, 8px);
   padding: 0.5rem 0.75rem;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 8px);
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--text-sm, 0.875rem);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -801,16 +801,12 @@
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .vault-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: var(--vault-radius-sm);
@@ -824,7 +820,7 @@
   color: var(--vault-text);
 }
 
-.vault-icon-btn:focus {
+.vault-icon-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--vault-primary);
 }
@@ -905,8 +901,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  min-width: 44px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: var(--vault-radius-sm);
@@ -915,9 +911,19 @@
   transition: all var(--vault-transition);
 }
 
+.vault-nav-add-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 .vault-nav-add-btn:hover {
   background: var(--vault-surface-hover);
   color: var(--vault-text);
+}
+
+.vault-nav-add-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vault-primary);
 }
 
 .vault-nav-empty {
@@ -1274,8 +1280,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   background: var(--vault-bg);
   border: none;
   border-radius: var(--vault-radius-sm);
@@ -1287,7 +1293,7 @@
 .vault-quick-btn:hover {
   background: var(--vault-primary);
   color: white;
-  transform: scale(1.1);
+  transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
@@ -1295,9 +1301,16 @@
   transform: scale(0.95);
 }
 
-.vault-quick-btn:focus {
+.vault-quick-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--vault-primary);
+}
+
+.vault-quick-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Copy success animation */
@@ -1500,8 +1513,8 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  min-width: 44px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: var(--vault-radius-sm);
@@ -1515,9 +1528,14 @@ kbd {
   color: var(--vault-text);
 }
 
-.vault-field-btn:focus {
+.vault-field-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--vault-primary);
+}
+
+.vault-field-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .vault-field-note {
@@ -1713,8 +1731,8 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: var(--vault-radius-sm);
@@ -1726,6 +1744,11 @@ kbd {
 .vault-modal-close:hover {
   background: var(--vault-surface-hover);
   color: var(--vault-text);
+}
+
+.vault-modal-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vault-primary);
 }
 
 .vault-modal-body {
@@ -2198,12 +2221,7 @@ kbd {
 
 /* Button spinner for loading states */
 .vault-btn .btn-spinner {
-  animation: vault-btn-spin 1s linear infinite;
-}
-
-@keyframes vault-btn-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  animation: spin 1s linear infinite;
 }
 
 .vault-btn-primary {
@@ -2239,7 +2257,10 @@ kbd {
   padding: 2rem;
 }
 
-.vault-spinner {
+/* Note: .vault-spinner is defined once at line ~795 */
+/* Use .vault-spinner-lg for larger sizes */
+
+.vault-spinner-lg {
   width: 32px;
   height: 32px;
   border: 3px solid var(--vault-border);
@@ -2256,12 +2277,6 @@ kbd {
   border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ==================== EMPTY STATES ==================== */
@@ -2323,8 +2338,10 @@ kbd {
   text-align: center;
 }
 
-/* ==================== TOASTS ==================== */
-.toast {
+/* ==================== VAULT TOASTS (bottom-right animated) ==================== */
+/* Note: Main .toast styles are in utilities.css (top-right container) */
+/* These vault-specific overrides position toasts at bottom-right with animation */
+.vault-toast {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
@@ -2349,33 +2366,9 @@ kbd {
   z-index: var(--z-toast);
 }
 
-.toast.show {
+.vault-toast.show {
   transform: translateY(0) scale(1);
   opacity: 1;
-}
-
-.toast-message {
-  flex: 1;
-}
-
-.toast-close {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  border: none;
-  color: var(--vault-text-muted);
-  font-size: 1.25rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: color var(--vault-transition);
-}
-
-.toast-close:hover {
-  color: var(--vault-text);
 }
 
 .toast-success {
@@ -4032,7 +4025,7 @@ kbd {
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: vault-health-spin 3s linear infinite;
+  animation: spin 3s linear infinite;
 }
 
 @keyframes vault-health-appear {
@@ -4044,12 +4037,6 @@ kbd {
   to {
     opacity: 1;
     transform: scale(1);
-  }
-}
-
-@keyframes vault-health-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 
@@ -5114,7 +5101,8 @@ kbd {
 }
 
 .vault-qr-container {
-  background: #ffffff;
+  /* QR codes require white background for proper contrast */
+  background: var(--bg-qr, #ffffff);
   border-radius: var(--vault-radius);
   padding: 1rem;
   margin-bottom: 1rem;
@@ -6862,9 +6850,9 @@ kbd {
 /* Light theme support */
 [data-theme="light"] .vault-tooltip-js,
 .vault-light .vault-tooltip-js {
-  background: #ffffff;
-  border-color: #d1d5db;
-  color: #1f2937;
+  background: var(--bg-surface-light, #ffffff);
+  border-color: var(--border-light, #d1d5db);
+  color: var(--text-primary-light, #1f2937);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -7271,13 +7259,7 @@ kbd {
   border: 3px solid var(--vault-border);
   border-top-color: var(--vault-primary);
   border-radius: 50%;
-  animation: vault-spin 0.8s linear infinite;
-}
-
-@keyframes vault-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  animation: spin 0.8s linear infinite;
 }
 
 .vault-loading-text {
@@ -7304,7 +7286,7 @@ kbd {
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: vault-spin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 /* ==================== VISUAL PROTECTION (BLUR ON UNFOCUS) ==================== */
@@ -7673,16 +7655,6 @@ body.mode-compact .vault-empty-text {
 
 .vault-sync-spinner {
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .vault-sync-text {

@@ -17,6 +17,7 @@
 import { getCachedElement } from '../config/settings.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
+import { t } from '../utils/i18n.js';
 
 export function getElement(selector, useCache = true) {
   if (!selector) return null;
@@ -160,7 +161,7 @@ export function renderChips(containerSelector, blocks, onChipClick) {
     const chip = document.createElement('button');
     chip.className = 'chip ' + (token === 'U' ? '' : token === 'l' ? 'chip-muted' : 'chip-title');
     chip.textContent = token;
-    chip.title = 'Click to cycle (U → l → T → U)';
+    chip.title = t('vault.generator.clickToCycle');
     
     if (onChipClick) {
       addEventListener(chip, 'click', () => onChipClick(index));
@@ -173,7 +174,7 @@ export function renderChips(containerSelector, blocks, onChipClick) {
 export function updateBlockSizeLabel(labelSelector, blocksCount) {
   const label = getElement(labelSelector);
   if (label) {
-    label.textContent = `Blocks: ${blocksCount}`;
+    label.textContent = `${t('vault.generator.blocks')} ${blocksCount}`;
   }
 }
 

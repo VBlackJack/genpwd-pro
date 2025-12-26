@@ -359,11 +359,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
-  animation: save-vault-spin 0.8s linear infinite;
-}
-
-@keyframes save-vault-spin {
-  to { transform: rotate(360deg); }
+  animation: spin 0.8s linear infinite;
 }
 
 /* ==================== CONTEXT MENU ==================== */
@@ -734,11 +730,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
-  animation: quick-unlock-spin 0.8s linear infinite;
-}
-
-@keyframes quick-unlock-spin {
-  to { transform: rotate(360deg); }
+  animation: spin 0.8s linear infinite;
 }
 
 /* ==================== WINDOWS HELLO SECTION ==================== */
@@ -792,10 +784,7 @@
   flex-shrink: 0;
 }
 
-/* Spinning animation for loading states */
-.spinning {
-  animation: quick-unlock-spin 1s linear infinite;
-}
+/* Note: .spinning is defined in utilities.css */
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 480px) {

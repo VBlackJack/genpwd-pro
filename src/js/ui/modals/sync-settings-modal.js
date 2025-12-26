@@ -3,84 +3,89 @@
  * Manages cloud provider configuration (WebDAV, Google Drive)
  */
 
+import { Modal } from './modal.js';
 import { showToast } from '../../utils/toast.js';
 import { WebDAVProvider } from '../../core/sync/index.js';
 import { safeLog } from '../../utils/logger.js';
-import { i18n } from '../../utils/i18n.js';
-import { setMainContentInert } from '../events.js';
+import { t } from '../../utils/i18n.js';
 
-export class SyncSettingsModal {
-  #modalId = 'sync-settings-modal';
+export class SyncSettingsModal extends Modal {
   #webdavProvider;
-  #escapeHandler = null;
-  #focusTrapHandler = null;
-  #previouslyFocusedElement = null;
 
   constructor() {
+    super('sync-settings-modal');
     this.#webdavProvider = new WebDAVProvider();
   }
 
   /**
-   * Render and inject the modal into the DOM
+   * Show the modal and load config
    */
-  render() {
-    if (document.getElementById(this.#modalId)) return; // Already exists
+  show() {
+    this.#ensureModalExists();
+    super.show();
+    this._loadCurrentConfig();
+  }
+
+  #ensureModalExists() {
+    if (document.getElementById(this._modalId)) return;
 
     const modalHtml = `
-      <div class="vault-modal-overlay" id="${this.#modalId}" role="dialog" aria-modal="true" aria-labelledby="${this.#modalId}-title" hidden>
+      <div class="vault-modal-overlay" id="${this._modalId}" role="dialog" aria-modal="true" aria-labelledby="${this._modalId}-title" hidden>
         <div class="vault-modal">
           <div class="vault-modal-header">
-            <h3 id="${this.#modalId}-title">Sync Settings</h3>
-            <button type="button" class="vault-modal-close" data-close-sync-modal aria-label="Close">
+            <h3 id="${this._modalId}-title">${t('syncModal.title')}</h3>
+            <button type="button" class="vault-modal-close" aria-label="${t('common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
           </div>
-          
+
           <div class="vault-modal-body">
             <!-- Provider Selector -->
             <div class="vault-form-group">
-              <label class="vault-label" for="sync-provider-select">Cloud Provider</label>
+              <label class="vault-label" for="sync-provider-select">${t('syncModal.cloudProvider')}</label>
               <select id="sync-provider-select" class="vault-select" aria-describedby="sync-provider-hint">
-                <option value="none">Disabled (Local only)</option>
-                <option value="webdav">WebDAV / Nextcloud / OwnCloud</option>
+                <option value="none">${t('syncModal.disabled')}</option>
+                <option value="webdav">${t('syncModal.webdav')}</option>
               </select>
-              <div class="vault-field-hint" id="sync-provider-hint">Choose where to sync your vault</div>
+              <div class="vault-field-hint" id="sync-provider-hint">${t('syncModal.chooseProvider')}</div>
             </div>
 
             <!-- WebDAV Configuration -->
             <div id="webdav-config-section" hidden aria-live="polite">
               <div class="vault-form-group">
-                <label class="vault-label" for="webdav-url">Server URL <span class="required" aria-label="required">*</span></label>
+                <label class="vault-label" for="webdav-url">${t('syncModal.serverUrl')} <span class="required" aria-label="${t('syncModal.required')}">*</span></label>
                 <input type="url" id="webdav-url" class="vault-input"
                        placeholder="https://example.com/dav/"
                        autocomplete="url"
                        aria-required="true"
                        aria-describedby="webdav-url-hint">
-                <div class="vault-field-hint" id="webdav-url-hint">e.g., https://cloud.example.com/remote.php/dav/files/user/</div>
+                <div class="vault-field-hint" id="webdav-url-hint">${t('syncModal.serverUrlHint')}</div>
               </div>
 
               <div class="vault-form-group">
-                <label class="vault-label" for="webdav-username">Username <span class="required" aria-label="required">*</span></label>
+                <label class="vault-label" for="webdav-username">${t('syncModal.username')} <span class="required" aria-label="${t('syncModal.required')}">*</span></label>
                 <input type="text" id="webdav-username" class="vault-input"
                        placeholder="your-username"
                        autocomplete="username"
-                       aria-required="true">
+                       aria-required="true"
+                       aria-describedby="webdav-username-hint">
+                <div class="vault-field-hint" id="webdav-username-hint">${t('syncModal.usernameHint')}</div>
               </div>
 
               <div class="vault-form-group">
-                <label class="vault-label" for="webdav-password">Password / App Token <span class="required" aria-label="required">*</span></label>
+                <label class="vault-label" for="webdav-password">${t('syncModal.passwordToken')} <span class="required" aria-label="${t('syncModal.required')}">*</span></label>
                 <div class="vault-input-group">
                   <input type="password" id="webdav-password" class="vault-input"
-                         placeholder="••••••••"
+                         placeholder="${t('vault.labels.password')}"
                          autocomplete="current-password"
                          aria-required="true"
-                         aria-label="WebDAV password or app token">
+                         aria-describedby="webdav-password-hint">
                   <button type="button" class="vault-input-btn toggle-pwd-visibility"
                           data-target="webdav-password"
-                          aria-label="Toggle password visibility"
+                          aria-label="${t('vault.lockScreen.showHide')}"
                           aria-pressed="false">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <circle cx="12" cy="12" r="3"></circle>
@@ -88,22 +93,23 @@ export class SyncSettingsModal {
                     </svg>
                   </button>
                 </div>
+                <div class="vault-field-hint" id="webdav-password-hint">${t('syncModal.passwordHint')}</div>
               </div>
-              
+
               <div class="vault-form-group">
                 <button type="button" id="btn-test-webdav" class="vault-btn vault-btn-outline vault-btn-sm" style="width: 100%">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                   </svg>
-                  Test connection
+                  ${t('syncModal.testConnection')}
                 </button>
                 <div id="webdav-test-result" class="vault-field-message" style="margin-top: 8px;"></div>
               </div>
             </div>
 
             <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-sync-modal>Cancel</button>
-              <button type="button" id="btn-save-sync" class="vault-btn vault-btn-primary">Save</button>
+              <button type="button" class="vault-btn vault-btn-secondary" data-action="close">${t('common.cancel')}</button>
+              <button type="button" id="btn-save-sync" class="vault-btn vault-btn-primary">${t('common.save')}</button>
             </div>
           </div>
         </div>
@@ -111,22 +117,14 @@ export class SyncSettingsModal {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    this._attachEvents();
+    this._element = document.getElementById(this._modalId);
+    this._setupBaseEventHandlers();
+    this.#attachEvents();
   }
 
-  _attachEvents() {
-    const modal = document.getElementById(this.#modalId);
+  #attachEvents() {
+    const modal = this.element;
     if (!modal) return;
-
-    // Backdrop click to close
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) this.hide();
-    });
-
-    // Close buttons
-    modal.querySelectorAll('[data-close-sync-modal]').forEach(btn => {
-      btn.addEventListener('click', () => this.hide());
-    });
 
     // Provider change
     const providerSelect = document.getElementById('sync-provider-select');
@@ -139,12 +137,12 @@ export class SyncSettingsModal {
 
     // Test Connection
     document.getElementById('btn-test-webdav')?.addEventListener('click', async () => {
-      await this._testWebDAVConnection();
+      await this.#testWebDAVConnection();
     });
 
     // Save
     document.getElementById('btn-save-sync')?.addEventListener('click', async () => {
-      await this._saveConfiguration();
+      await this.#saveConfiguration();
     });
 
     // Toggle Password Visibility with ARIA support
@@ -173,7 +171,7 @@ export class SyncSettingsModal {
     });
   }
 
-  async _testWebDAVConnection() {
+  async #testWebDAVConnection() {
     const urlInput = document.getElementById('webdav-url');
     const usernameInput = document.getElementById('webdav-username');
     const passwordInput = document.getElementById('webdav-password');
@@ -200,8 +198,7 @@ export class SyncSettingsModal {
     });
 
     if (hasError) {
-      this._showResult(resultDiv, 'Please fill in all required fields', 'error');
-      // Focus first invalid field
+      this.#showResult(resultDiv, t('syncModal.fillAllFields'), 'error');
       const firstInvalid = fields.find(f => !f.value)?.input;
       firstInvalid?.focus();
       return;
@@ -209,29 +206,27 @@ export class SyncSettingsModal {
 
     try {
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner"></span> Connecting...';
+      btn.innerHTML = `<span class="vault-spinner"></span> ${t('syncModal.testing')}`;
 
       this.#webdavProvider.configure({ url, username, password });
-
-      // Attempt to list files to verify connection
       await this.#webdavProvider.listVaults();
 
-      this._showResult(resultDiv, 'Connection successful!', 'success');
+      this.#showResult(resultDiv, t('syncModal.connectionSuccess'), 'success');
     } catch (error) {
       safeLog(`[SyncSettingsModal] WebDAV test failed: ${error.message}`);
-      this._showResult(resultDiv, `Failed: ${error.message}`, 'error');
+      this.#showResult(resultDiv, t('syncModal.connectionFailed', { message: error.message }), 'error');
     } finally {
       btn.disabled = false;
       btn.innerHTML = `
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
-        Test connection
+        ${t('syncModal.testConnection')}
       `;
     }
   }
 
-  async _saveConfiguration() {
+  async #saveConfiguration() {
     const provider = document.getElementById('sync-provider-select')?.value;
     const saveBtn = document.getElementById('btn-save-sync');
 
@@ -260,21 +255,18 @@ export class SyncSettingsModal {
       });
 
       if (hasError) {
-        showToast(i18n.t('toast.webdavFieldsRequired'), 'error');
-        // Focus first invalid field
+        showToast(t('toast.webdavFieldsRequired'), 'error');
         fields.find(f => !f.value)?.input?.focus();
         return;
       }
 
-      // Double-submission prevention
       if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.setAttribute('aria-busy', 'true');
-        saveBtn.innerHTML = '<span class="vault-spinner" role="status" aria-label="Saving..."></span> Saving...';
+        saveBtn.innerHTML = `<span class="vault-spinner" role="status" aria-label="${t('syncModal.saving')}"></span> ${t('syncModal.saving')}`;
       }
 
       try {
-        // Clear error states on success
         fields.forEach(({ input }) => {
           input?.removeAttribute('aria-invalid');
           input?.classList.remove('field-invalid');
@@ -286,29 +278,27 @@ export class SyncSettingsModal {
           username,
           password
         });
-        showToast(i18n.t('toast.syncConfigSaved'), 'success');
+        showToast(t('toast.syncConfigSaved'), 'success');
         this.hide();
       } catch (error) {
         safeLog(`[SyncSettingsModal] Save error: ${error.message}`);
-        showToast(i18n.t('toast.syncConfigError') + ': ' + error.message, 'error');
+        showToast(t('toast.syncConfigError') + ': ' + error.message, 'error');
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;
           saveBtn.removeAttribute('aria-busy');
-          saveBtn.textContent = 'Save';
+          saveBtn.textContent = t('common.save');
         }
       }
     } else {
-      // Double-submission prevention
       if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.setAttribute('aria-busy', 'true');
       }
 
-      // Save empty config to clear
       try {
         await window.vault.cloud.saveConfig({ provider: 'none' });
-        showToast(i18n.t('toast.syncDisabled'), 'success');
+        showToast(t('toast.syncDisabled'), 'success');
         this.hide();
       } catch (error) {
         showToast(error.message, 'error');
@@ -321,75 +311,11 @@ export class SyncSettingsModal {
     }
   }
 
-  _showResult(element, message, type) {
+  #showResult(element, message, type) {
     if (!element) return;
     element.textContent = message;
     element.className = type === 'error' ? 'vault-field-message error' : 'vault-field-message success';
     element.style.color = type === 'error' ? 'var(--highlight-color)' : 'var(--success-color)';
-  }
-
-  show() {
-    // Save previously focused element
-    this.#previouslyFocusedElement = document.activeElement;
-    this.render(); // Ensure DOM exists
-    setMainContentInert(true);
-    const modal = document.getElementById(this.#modalId);
-    if (modal) {
-      modal.hidden = false;
-
-      // Focus first focusable element
-      requestAnimationFrame(() => {
-        modal.querySelector('select, input, button')?.focus();
-      });
-
-      // Add escape key handler
-      this.#escapeHandler = (e) => {
-        if (e.key === 'Escape') this.hide();
-      };
-      document.addEventListener('keydown', this.#escapeHandler);
-
-      // Add focus trap
-      this.#focusTrapHandler = (e) => {
-        if (e.key !== 'Tab') return;
-        const focusable = modal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      };
-      modal.addEventListener('keydown', this.#focusTrapHandler);
-
-      // Load existing config
-      this._loadCurrentConfig();
-    }
-  }
-
-  hide() {
-    setMainContentInert(false);
-    const modal = document.getElementById(this.#modalId);
-    if (modal) {
-      modal.hidden = true;
-      // Remove focus trap
-      if (this.#focusTrapHandler) {
-        modal.removeEventListener('keydown', this.#focusTrapHandler);
-        this.#focusTrapHandler = null;
-      }
-    }
-    // Remove escape key handler
-    if (this.#escapeHandler) {
-      document.removeEventListener('keydown', this.#escapeHandler);
-      this.#escapeHandler = null;
-    }
-    // Restore focus
-    if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
-      this.#previouslyFocusedElement.focus();
-      this.#previouslyFocusedElement = null;
-    }
   }
 
   async _loadCurrentConfig() {
@@ -411,17 +337,5 @@ export class SyncSettingsModal {
     } catch (error) {
       safeLog(`[SyncSettingsModal] Failed to load cloud config: ${error.message}`);
     }
-  }
-
-  /**
-   * Cleanup and remove modal from DOM
-   */
-  destroy() {
-    if (this.#escapeHandler) {
-      document.removeEventListener('keydown', this.#escapeHandler);
-      this.#escapeHandler = null;
-    }
-    const modal = document.getElementById(this.#modalId);
-    if (modal) modal.remove();
   }
 }

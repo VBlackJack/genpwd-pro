@@ -69,7 +69,7 @@ import {
 } from './src/js/config/settings.js';
 
 // Utilitaires
-import { copyToClipboard } from './src/js/utils/clipboard.js';
+import { copyToClipboard } from './src/js/utils/secure-clipboard.js';
 import { safeLog } from './src/js/utils/logger.js';
 import { pick, insertWithPlacement } from './src/js/utils/helpers.js';
 import { applyCase, applyCasePattern } from './src/js/core/casing.js';
@@ -265,7 +265,7 @@ import {
   generateLeet
 } from './src/js/core/generators.js';
 import { setCurrentDictionary } from './src/js/core/dictionaries.js';
-import { copyToClipboard } from './src/js/utils/clipboard.js';
+import { copyToClipboard } from './src/js/utils/secure-clipboard.js';
 
 async function demoGeneration() {
   const syllables = generateSyllables({ length: 6, digits: 2, specials: 1 });

@@ -343,9 +343,17 @@ export function registerVaultIPC(ipcMain) {
   });
 
   // ==================== VAULT MANAGEMENT ====================
+  //
+  // IPC Return Format Convention:
+  // - QUERY handlers (get*, list, search): Return data directly
+  // - MUTATION handlers (create, update, delete, lock, unlock): Return { success: true, ...extraFields }
+  // - BOOLEAN handlers (is*): Return boolean directly
+  // - DIALOG handlers (showSaveDialog, showOpenDialog): Return { canceled: boolean, filePath?: string }
+  // - ERRORS: Thrown as Error (caught by safeHandler, sanitized)
 
   /**
    * Get current session state
+   * @returns {Promise<{status: string, vaultId: string|null, vaultName: string|null}>}
    */
   ipcMain.handle('vault:getState', safeHandler(async () => {
     return session.getState();
@@ -353,6 +361,7 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * List available vaults
+   * @returns {Promise<Array<{id: string, name: string, path: string, lastOpened: string}>>}
    */
   ipcMain.handle('vault:list', safeHandler(async () => {
     return fileManager.listVaults();
@@ -360,6 +369,7 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * Create new vault
+   * @returns {Promise<{vaultId: string, success: boolean}>}
    */
   ipcMain.handle('vault:create', safeHandler(async (event, { name, password, customPath }) => {
     validateName(name, 'name');
@@ -473,6 +483,7 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * Unlock vault (with rate limiting and origin validation)
+   * @returns {Promise<{success: boolean}>}
    */
   ipcMain.handle('vault:unlock', safeHandler(async (event, { vaultId, password }) => {
     validateString(vaultId, 'vaultId');
@@ -524,6 +535,7 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * Get all entries
+   * @returns {Promise<Array<Object>>} Array of entry objects
    */
   ipcMain.handle('vault:entries:getAll', safeHandler(async () => {
     return session.getEntries();
@@ -531,6 +543,7 @@ export function registerVaultIPC(ipcMain) {
 
   /**
    * Get entry by ID
+   * @returns {Promise<Object|null>} Entry object or null if not found
    */
   ipcMain.handle('vault:entries:get', safeHandler(async (event, { id }) => {
     validateString(id, 'id');

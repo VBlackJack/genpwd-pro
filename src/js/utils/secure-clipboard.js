@@ -23,6 +23,12 @@ const STORAGE_KEY = 'security-clipboard-timeout';
 // Use centralized constant for default (30 seconds, but can be configured higher)
 const DEFAULT_TIMEOUT_MS = SECURITY_TIMEOUTS.CLIPBOARD_TTL_MS;
 
+/**
+ * Maximum text length for clipboard operations (security limit)
+ * Prevents DoS attacks via excessive memory allocation
+ */
+const MAX_CLIPBOARD_LENGTH = 100000; // 100KB
+
 
 /**
  * Available timeout options (in seconds)
@@ -206,8 +212,15 @@ class SecureClipboard {
   async copy(text, options = {}) {
     const { secure = true, label = 'Text' } = options;
 
-    if (!text) {
-      safeLog('[SecureClipboard] Empty text, ignoring copy');
+    // Input validation
+    if (!text || typeof text !== 'string') {
+      safeLog('[SecureClipboard] text must be a non-empty string');
+      return false;
+    }
+
+    // Security check: prevent excessive memory allocation
+    if (text.length > MAX_CLIPBOARD_LENGTH) {
+      safeLog(`[SecureClipboard] text exceeds maximum length (${MAX_CLIPBOARD_LENGTH} chars)`);
       return false;
     }
 
@@ -293,6 +306,32 @@ class SecureClipboard {
    */
   hasPending() {
     return this.#timerId !== null;
+  }
+
+  /**
+   * Read text from clipboard (requires user permission)
+   * @returns {Promise<string|null>} Clipboard text or null if failed
+   */
+  async read() {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        const text = await navigator.clipboard.readText();
+
+        // Security check on read
+        if (text.length > MAX_CLIPBOARD_LENGTH) {
+          safeLog('[SecureClipboard] clipboard content exceeds safe limit');
+          return null;
+        }
+
+        return text;
+      }
+
+      safeLog('[SecureClipboard] Clipboard API not available in this context');
+      return null;
+    } catch (err) {
+      safeLog(`[SecureClipboard] read error: ${err.message}`);
+      return null;
+    }
   }
 
   /**
@@ -493,6 +532,55 @@ export async function unsecureCopy(text) {
  */
 export async function clearClipboard(force = false) {
   return getSecureClipboard().clear(force);
+}
+
+/**
+ * Read text from clipboard
+ * @returns {Promise<string|null>}
+ */
+export async function readFromClipboard() {
+  return getSecureClipboard().read();
+}
+
+// ============================================================================
+// BACKWARD-COMPATIBLE ALIASES (from old clipboard.js)
+// ============================================================================
+
+/**
+ * Copy to clipboard (alias for secureCopy with auto-clear option)
+ * @param {string} text - Text to copy
+ * @param {Object} [options] - Options
+ * @param {boolean} [options.autoClear=true] - Whether to schedule auto-clear
+ * @returns {Promise<boolean>}
+ */
+export async function copyToClipboard(text, options = {}) {
+  const { autoClear = true } = options;
+  return getSecureClipboard().copy(text, { secure: autoClear, label: 'Password' });
+}
+
+/**
+ * Get clipboard auto-clear timeout in seconds
+ * @returns {number}
+ */
+export function getClipboardTimeout() {
+  return getSecureClipboard().getTimeout();
+}
+
+/**
+ * Set clipboard auto-clear timeout in seconds
+ * @param {number} seconds
+ */
+export function setClipboardTimeout(seconds) {
+  getSecureClipboard().setTimeout(seconds);
+}
+
+/**
+ * Cancel scheduled clipboard clear
+ * @deprecated Clearing is handled automatically; this is a no-op
+ */
+export function cancelAutoClear() {
+  // The old clipboard.js had a broken implementation of this.
+  // SecureClipboard manages timers internally - no manual cancellation needed.
 }
 
 export default SecureClipboard;

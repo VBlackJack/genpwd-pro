@@ -245,6 +245,67 @@ function initAutoTypeNotifications() {
 }
 
 /**
+ * Initialize Windows Accent Color Integration
+ * Applies system accent color to CSS variables
+ */
+function initAccentColorIntegration() {
+  if (!window.electronAPI?.onAccentColorChanged) {
+    return;
+  }
+
+  // Apply accent color to CSS custom properties
+  const applyAccentColor = (colors) => {
+    if (!colors?.accent) return;
+
+    const root = document.documentElement;
+    root.style.setProperty('--windows-accent-dynamic', colors.accent);
+    root.style.setProperty('--windows-accent-light-dynamic', colors.accentLight);
+    root.style.setProperty('--windows-accent-dark-dynamic', colors.accentDark);
+
+    safeLog(`Applied Windows accent color: ${colors.accent}`);
+  };
+
+  // Listen for accent color changes (sent on app start)
+  window.electronAPI.onAccentColorChanged(applyAccentColor);
+
+  // Also fetch initial color on load
+  if (window.electronAPI?.getAccentColor) {
+    window.electronAPI.getAccentColor().then(applyAccentColor).catch(() => {
+      // Fallback is already in CSS
+    });
+  }
+
+  safeLog('Accent color integration initialized');
+}
+
+/**
+ * Initialize Vault File Open Handler
+ * Handles .gpdb file association (double-click to open)
+ */
+function initVaultFileOpenHandler() {
+  if (!window.electronAPI?.onVaultFileOpen) {
+    return;
+  }
+
+  window.electronAPI.onVaultFileOpen((filePath) => {
+    safeLog(`Vault file open request: ${filePath}`);
+
+    // Switch to vault tab
+    const vaultTab = document.querySelector('.header-tab[data-tab="vault"]');
+    if (vaultTab) {
+      vaultTab.click();
+    }
+
+    // Dispatch event for vault manager to handle
+    window.dispatchEvent(new CustomEvent('vault:open-request', {
+      detail: { path: filePath }
+    }));
+  });
+
+  safeLog('Vault file open handler initialized');
+}
+
+/**
  * Override copy behavior for secure password copying
  *
  * NOTE: This listens for 'password:copy' custom events. To use this feature,
@@ -495,6 +556,8 @@ export function initNativeIntegration() {
   initDeepLinkHandler();
   initClipboardIntegration(signal);
   initAutoTypeNotifications();
+  initAccentColorIntegration();
+  initVaultFileOpenHandler();
   // Fire-and-forget with error handling - quick unlock init is optional
   initQuickUnlockIntegration().catch(error => {
     safeLog(`Quick unlock init failed: ${error.message}`);

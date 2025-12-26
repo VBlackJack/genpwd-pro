@@ -28,7 +28,9 @@ const {
   Notification,
   nativeImage,
   globalShortcut,
-  powerMonitor
+  powerMonitor,
+  crashReporter,
+  nativeTheme
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -111,6 +113,105 @@ function getMainTranslations() {
   return translations[locale] || translations.en;
 }
 
+// ==================== WINDOWS SYSTEM INTEGRATION ====================
+
+/**
+ * Get Windows accent color from registry
+ * @returns {Promise<{accent: string, accentLight: string, accentDark: string} | null>}
+ */
+async function getWindowsAccentColor() {
+  if (process.platform !== 'win32') return null;
+
+  return new Promise((resolve) => {
+    try {
+      // Read AccentColor from Windows registry (DWORD in ABGR format)
+      const script = `
+        try {
+          $key = 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\DWM'
+          $accent = Get-ItemPropertyValue -Path $key -Name AccentColor -ErrorAction Stop
+          # Convert DWORD (ABGR) to hex RGB
+          $b = ($accent -band 0xFF)
+          $g = (($accent -shr 8) -band 0xFF)
+          $r = (($accent -shr 16) -band 0xFF)
+          "#{0:X2}{1:X2}{2:X2}" -f $r, $g, $b
+        } catch {
+          ""
+        }
+      `;
+
+      const ps = spawn('powershell.exe', [
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script
+      ], { windowsHide: true });
+
+      let stdout = '';
+      ps.stdout.on('data', d => stdout += d.toString());
+      ps.on('close', () => {
+        const color = stdout.trim();
+        if (color && /^#[0-9A-Fa-f]{6}$/.test(color)) {
+          // Generate light and dark variants
+          const r = parseInt(color.slice(1, 3), 16);
+          const g = parseInt(color.slice(3, 5), 16);
+          const b = parseInt(color.slice(5, 7), 16);
+
+          // Light variant: increase brightness by 15%
+          const lighten = (c) => Math.min(255, Math.round(c + (255 - c) * 0.15));
+          const accentLight = `#${lighten(r).toString(16).padStart(2, '0')}${lighten(g).toString(16).padStart(2, '0')}${lighten(b).toString(16).padStart(2, '0')}`;
+
+          // Dark variant: decrease brightness by 15%
+          const darken = (c) => Math.max(0, Math.round(c * 0.85));
+          const accentDark = `#${darken(r).toString(16).padStart(2, '0')}${darken(g).toString(16).padStart(2, '0')}${darken(b).toString(16).padStart(2, '0')}`;
+
+          resolve({ accent: color, accentLight, accentDark });
+        } else {
+          resolve(null);
+        }
+      });
+      ps.on('error', () => resolve(null));
+      setTimeout(() => {
+        try { ps.kill(); } catch { }
+        resolve(null);
+      }, 3000);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Check if running with elevated (admin) privileges
+ * @returns {boolean}
+ */
+function isRunningAsAdmin() {
+  if (process.platform !== 'win32') return false;
+
+  try {
+    // Try to access a protected registry key that requires admin
+    execSync('net session', { stdio: 'ignore', windowsHide: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Initialize crash reporter for debugging
+ */
+function initCrashReporter() {
+  try {
+    crashReporter.start({
+      productName: 'GenPwd Pro',
+      companyName: 'Julien Bombled',
+      submitURL: '', // Local crash dumps only (no remote submission)
+      uploadToServer: false,
+      ignoreSystemCrashHandler: false
+    });
+    console.log('[GenPwd Pro] Crash reporter initialized');
+    console.log('[GenPwd Pro] Crash dumps location:', app.getPath('crashDumps'));
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to initialize crash reporter:', error.message);
+  }
+}
+
 // ==================== AUTO-START MANAGEMENT ====================
 /**
  * Get current auto-start status
@@ -129,7 +230,7 @@ function getAutoStartEnabled() {
 /**
  * Enable or disable auto-start on Windows login
  * @param {boolean} enable - Whether to enable auto-start
- * @returns {boolean} Success status
+ * @returns {{success: boolean, verified: boolean, error?: string}} Result with verification
  */
 function setAutoStartEnabled(enable) {
   try {
@@ -139,11 +240,21 @@ function setAutoStartEnabled(enable) {
       path: process.execPath,
       args: ['--hidden'] // Flag to start hidden
     });
-    console.log(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'}`);
-    return true;
+
+    // Verify the setting was applied correctly
+    const settings = app.getLoginItemSettings();
+    const verified = settings.openAtLogin === enable;
+
+    if (!verified) {
+      console.warn(`[GenPwd Pro] Auto-start verification failed: expected ${enable}, got ${settings.openAtLogin}`);
+      return { success: false, verified: false, error: 'Setting was not applied. Check permissions or antivirus.' };
+    }
+
+    console.log(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'} (verified)`);
+    return { success: true, verified: true };
   } catch (error) {
     console.error('[GenPwd Pro] Failed to set auto-start:', error);
-    return false;
+    return { success: false, verified: false, error: error.message };
   }
 }
 
@@ -198,6 +309,13 @@ if (!gotTheLock) {
       const deepLink = commandLine.find(arg => arg.startsWith('genpwd://'));
       if (deepLink) {
         handleDeepLink(deepLink);
+      }
+
+      // Check for .gpdb vault file in command line (file association)
+      const vaultFile = commandLine.find(arg => arg.endsWith('.gpdb'));
+      if (vaultFile && fs.existsSync(vaultFile)) {
+        console.log('[GenPwd Pro] Opening vault from file association:', vaultFile);
+        mainWindow.webContents.send('vault:open-file', vaultFile);
       }
     }
   });
@@ -353,6 +471,55 @@ public class FGWindow {
  */
 
 /**
+ * Rate limiter for sensitive IPC operations
+ * Prevents brute force attacks on auth handlers
+ */
+const rateLimiter = {
+  /** @type {Map<string, { attempts: number, lockedUntil: number }>} */
+  attempts: new Map(),
+  MAX_ATTEMPTS: 10,
+  LOCKOUT_MS: 60 * 1000, // 1 minute lockout
+
+  /**
+   * Check if operation is allowed
+   * @param {string} key - Operation identifier
+   * @returns {{ allowed: boolean, lockoutSeconds?: number }}
+   */
+  check(key) {
+    const now = Date.now();
+    let record = this.attempts.get(key);
+
+    if (record && record.lockedUntil && now >= record.lockedUntil) {
+      record = { attempts: 0, lockedUntil: 0 };
+      this.attempts.set(key, record);
+    }
+
+    if (record && record.lockedUntil && now < record.lockedUntil) {
+      return { allowed: false, lockoutSeconds: Math.ceil((record.lockedUntil - now) / 1000) };
+    }
+
+    if (!record) {
+      record = { attempts: 1, lockedUntil: 0 };
+    } else {
+      record.attempts++;
+    }
+
+    if (record.attempts > this.MAX_ATTEMPTS) {
+      record.lockedUntil = now + this.LOCKOUT_MS;
+      this.attempts.set(key, record);
+      return { allowed: false, lockoutSeconds: Math.ceil(this.LOCKOUT_MS / 1000) };
+    }
+
+    this.attempts.set(key, record);
+    return { allowed: true };
+  },
+
+  reset(key) {
+    this.attempts.delete(key);
+  }
+};
+
+/**
  * Validate IPC event origin for security
  * Ensures requests come from legitimate renderer process
  */
@@ -368,7 +535,7 @@ function validateOrigin(event) {
   }
 }
 
-// Configuration de sécurité renforcée
+// Enhanced security configuration
 const SECURITY_CONFIG = {
   nodeIntegration: false,
   contextIsolation: true,
@@ -380,7 +547,7 @@ const SECURITY_CONFIG = {
 
 let mainWindow;
 
-// Créer la fenêtre principale
+// Create the main window
 function createWindow() {
   // Load saved window state or use defaults
   const savedState = loadWindowState();
@@ -618,6 +785,48 @@ function createWindow() {
   });
 }
 
+// ==================== WINDOWS TASKBAR THUMBNAIL TOOLBAR ====================
+// Provides quick action buttons in taskbar preview (Windows 7+)
+function initThumbnailToolbar() {
+  if (process.platform !== 'win32' || !mainWindow) return;
+
+  try {
+    // Create thumbnail toolbar buttons
+    const buttons = [
+      {
+        tooltip: 'Generate Password',
+        icon: nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.ico')).resize({ width: 16, height: 16 }),
+        click: () => {
+          if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('generate-password');
+            mainWindow.show();
+          }
+        }
+      },
+      {
+        tooltip: 'Lock Vault',
+        icon: nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.ico')).resize({ width: 16, height: 16 }),
+        click: async () => {
+          if (vaultModule) {
+            const session = vaultModule.getSession();
+            if (session && session.isUnlocked()) {
+              await session.lock();
+              if (mainWindow && mainWindow.webContents) {
+                mainWindow.webContents.send('vault:locked');
+              }
+            }
+          }
+        }
+      }
+    ];
+
+    mainWindow.setThumbnailToolbar(buttons);
+    console.log('[GenPwd Pro] Taskbar thumbnail toolbar initialized');
+  } catch (error) {
+    console.error('[GenPwd Pro] Failed to set thumbnail toolbar:', error.message);
+  }
+}
+
 // ==================== WINDOWS JUMP LIST ====================
 // Provides quick access to common actions from taskbar right-click
 function initJumpList() {
@@ -819,14 +1028,14 @@ function createTray() {
   console.log('[GenPwd Pro] System tray created');
 }
 
-// Créer le menu de l'application
+// Create the application menu
 function createApplicationMenu() {
   const template = [
     {
-      label: 'Fichier',
+      label: 'File',
       submenu: [
         {
-          label: 'Générer nouveau mot de passe',
+          label: 'Generate New Password',
           accelerator: 'CmdOrCtrl+G',
           click: () => {
             if (mainWindow) {
@@ -836,7 +1045,7 @@ function createApplicationMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Quitter',
+          label: 'Quit',
           accelerator: 'CmdOrCtrl+Q',
           click: () => {
             app.quit();
@@ -845,10 +1054,10 @@ function createApplicationMenu() {
       ]
     },
     {
-      label: 'Coffre',
+      label: 'Vault',
       submenu: [
         {
-          label: 'Nouveau coffre...',
+          label: 'New Vault...',
           accelerator: 'CmdOrCtrl+N',
           click: () => {
             if (mainWindow) {
@@ -857,7 +1066,7 @@ function createApplicationMenu() {
           }
         },
         {
-          label: 'Ouvrir coffre...',
+          label: 'Open Vault...',
           accelerator: 'CmdOrCtrl+O',
           click: () => {
             if (mainWindow) {
@@ -867,7 +1076,7 @@ function createApplicationMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Verrouiller',
+          label: 'Lock',
           accelerator: 'CmdOrCtrl+L',
           click: async () => {
             if (vaultModule) {
@@ -881,30 +1090,30 @@ function createApplicationMenu() {
       ]
     },
     {
-      label: 'Édition',
+      label: 'Edit',
       submenu: [
-        { role: 'copy', label: 'Copier' },
-        { role: 'paste', label: 'Coller' },
-        { role: 'selectAll', label: 'Tout sélectionner' }
+        { role: 'copy', label: 'Copy' },
+        { role: 'paste', label: 'Paste' },
+        { role: 'selectAll', label: 'Select All' }
       ]
     },
     {
-      label: 'Affichage',
+      label: 'View',
       submenu: [
-        { role: 'reload', label: 'Recharger' },
-        { role: 'forceReload', label: 'Recharger (force)' },
+        { role: 'reload', label: 'Reload' },
+        { role: 'forceReload', label: 'Force Reload' },
         { type: 'separator' },
-        { role: 'resetZoom', label: 'Zoom normal' },
-        { role: 'zoomIn', label: 'Zoomer' },
-        { role: 'zoomOut', label: 'Dézoomer' },
+        { role: 'resetZoom', label: 'Actual Size' },
+        { role: 'zoomIn', label: 'Zoom In' },
+        { role: 'zoomOut', label: 'Zoom Out' },
         { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Plein écran' },
+        { role: 'togglefullscreen', label: 'Full Screen' },
         { type: 'separator' },
-        { role: 'toggleDevTools', label: 'Outils développeur', accelerator: 'F12' }
+        { role: 'toggleDevTools', label: 'Developer Tools', accelerator: 'F12' }
       ]
     },
     {
-      label: 'Aide',
+      label: 'Help',
       submenu: [
         {
           label: 'Documentation',
@@ -913,23 +1122,23 @@ function createApplicationMenu() {
           }
         },
         {
-          label: 'Signaler un bug',
+          label: 'Report a Bug',
           click: async () => {
             await shell.openExternal('https://github.com/VBlackJack/genpwd-pro/issues');
           }
         },
         { type: 'separator' },
         {
-          label: 'À propos',
+          label: 'About',
           click: () => {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'À propos de GenPwd Pro',
+              title: 'About GenPwd Pro',
               message: `GenPwd Pro v${APP_VERSION}`,
-              detail: 'Générateur de mots de passe sécurisé\n\n' +
+              detail: 'Secure Password Manager\n\n' +
                 'Copyright © 2025 Julien Bombled\n' +
-                'Licence Apache 2.0\n\n' +
+                'Apache 2.0 License\n\n' +
                 'Electron: ' + process.versions.electron + '\n' +
                 'Chrome: ' + process.versions.chrome + '\n' +
                 'Node.js: ' + process.versions.node,
@@ -993,8 +1202,20 @@ ipcMain.handle('auth:encrypt-secret', (event, text) => {
 });
 
 // Decrypt secret using OS-level encryption
+// Rate-limited to prevent brute force attacks
 ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
   validateOrigin(event);
+
+  // Check rate limit before processing
+  const rateCheck = rateLimiter.check('auth:decrypt');
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: `Too many attempts. Try again in ${rateCheck.lockoutSeconds}s`,
+      rateLimited: true
+    };
+  }
+
   try {
     if (!safeStorage.isEncryptionAvailable()) {
       return { success: false, error: 'Secure storage not available' };
@@ -1002,6 +1223,8 @@ ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
 
     const buffer = Buffer.from(base64Data, 'base64');
     const decrypted = safeStorage.decryptString(buffer);
+    // Reset rate limit on success
+    rateLimiter.reset('auth:decrypt');
     return { success: true, data: decrypted };
   } catch (error) {
     console.error('[GenPwd Pro] auth:decrypt-secret error:', error.message);
@@ -1014,6 +1237,8 @@ ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
 
 // Generate unique clipboard operation ID
 let clipboardOpId = 0;
+// Track if clipboard history warning has been shown
+let clipboardHistoryWarningShown = false;
 
 // Copy to clipboard with auto-clear
 ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
@@ -1024,6 +1249,19 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
 
     // Write to clipboard
     clipboard.writeText(text);
+
+    // Show one-time warning about Windows Clipboard History (Win+V)
+    if (process.platform === 'win32' && !clipboardHistoryWarningShown) {
+      clipboardHistoryWarningShown = true;
+      if (Notification.isSupported()) {
+        new Notification({
+          title: 'Security Tip',
+          body: 'Windows Clipboard History (Win+V) may retain copied passwords. Consider disabling it in Windows Settings > System > Clipboard.',
+          icon: path.join(__dirname, 'assets', 'icon.ico'),
+          silent: true
+        }).show();
+      }
+    }
 
     // Clear any existing timer for this type of content
     if (clipboardTimers.has('secure')) {
@@ -1136,8 +1374,35 @@ ipcMain.handle('app:get-autostart', (event) => {
 // Set auto-start status
 ipcMain.handle('app:set-autostart', (event, enabled) => {
   validateOrigin(event);
-  const success = setAutoStartEnabled(enabled);
-  return { success, enabled: getAutoStartEnabled() };
+  const result = setAutoStartEnabled(enabled);
+  return {
+    success: result.success,
+    verified: result.verified,
+    enabled: getAutoStartEnabled(),
+    error: result.error
+  };
+});
+
+// ==================== WINDOWS SYSTEM IPC ====================
+
+// Get Windows accent color
+ipcMain.handle('app:get-accent-color', async (event) => {
+  validateOrigin(event);
+  const colors = await getWindowsAccentColor();
+  return colors || { accent: '#0078d4', accentLight: '#1a8cdb', accentDark: '#006cbd' };
+});
+
+// Get system info (admin status, platform details)
+ipcMain.handle('app:get-system-info', (event) => {
+  validateOrigin(event);
+  return {
+    isAdmin: isRunningAsAdmin(),
+    platform: process.platform,
+    arch: process.arch,
+    electronVersion: process.versions.electron,
+    nodeVersion: process.versions.node,
+    chromeVersion: process.versions.chrome
+  };
 });
 
 // ==================== COMPACT/OVERLAY MODE ====================
@@ -1808,6 +2073,22 @@ ipcMain.handle('automation:get-default-sequence', (event) => {
 const startHidden = process.argv.includes('--hidden');
 
 app.whenReady().then(async () => {
+  // Initialize crash reporter first (before any other code)
+  initCrashReporter();
+
+  // Check for admin mode and warn user (security risk for vault files)
+  if (isRunningAsAdmin()) {
+    console.warn('[GenPwd Pro] ⚠️ Running with administrator privileges');
+    dialog.showMessageBox({
+      type: 'warning',
+      title: 'Security Warning',
+      message: 'GenPwd Pro is running as Administrator',
+      detail: 'Running as admin may cause vault files to have restricted permissions that other users cannot access.\n\nFor best security, run GenPwd Pro as a standard user.',
+      buttons: ['I Understand'],
+      defaultId: 0
+    });
+  }
+
   // Load vault module (ESM dynamic import)
   try {
     vaultModule = await import('./src/desktop/vault/index.js');
@@ -1821,11 +2102,23 @@ app.whenReady().then(async () => {
   createApplicationMenu();
   createTray();
   initJumpList();
+  initThumbnailToolbar();
 
   // Handle hidden startup (auto-start)
   if (startHidden && mainWindow) {
     mainWindow.hide();
     console.log('[GenPwd Pro] Started hidden (auto-start mode)');
+  }
+
+  // Send Windows accent color to renderer after window is ready
+  if (mainWindow && process.platform === 'win32') {
+    mainWindow.webContents.on('did-finish-load', async () => {
+      const colors = await getWindowsAccentColor();
+      if (colors) {
+        mainWindow.webContents.send('system:accent-color', colors);
+        console.log('[GenPwd Pro] Sent Windows accent color:', colors.accent);
+      }
+    });
   }
 
   // ==================== GLOBAL HOTKEY (Boss Key) ====================

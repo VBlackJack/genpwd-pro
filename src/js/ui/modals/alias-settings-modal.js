@@ -1,29 +1,28 @@
+import { Modal } from './modal.js';
 import { AliasService } from '../../services/alias-service.js';
-import { setMainContentInert } from '../events.js';
+import { t } from '../../utils/i18n.js';
 
-export class AliasSettingsModal {
-    #modal;
+export class AliasSettingsModal extends Modal {
     #service;
     #onSaveCallback;
-    #escapeHandler = null;
-    #focusTrapHandler = null;
-    #previouslyFocusedElement = null;
 
     constructor() {
+        super('alias-settings-modal');
         this.#service = new AliasService();
         this.#init();
     }
 
     // Initialize modal structure if not present
     #init() {
-        let modal = document.getElementById('alias-settings-modal');
-        if (!modal) {
+        if (document.getElementById(this._modalId)) {
+            this._element = document.getElementById(this._modalId);
+        } else {
             const modalHtml = `
-        <div class="vault-modal-overlay" id="alias-settings-modal" role="dialog" aria-modal="true" aria-labelledby="alias-settings-modal-title" hidden>
+        <div class="vault-modal-overlay" id="${this._modalId}" role="dialog" aria-modal="true" aria-labelledby="${this._modalId}-title" hidden>
           <div class="vault-modal vault-modal-sm">
             <div class="vault-modal-header">
-              <h2 id="alias-settings-modal-title">Configure Email Alias</h2>
-              <button class="vault-modal-close" type="button" aria-label="Close dialog">
+              <h2 id="${this._modalId}-title">${t('aliasModal.title')}</h2>
+              <button class="vault-modal-close" type="button" aria-label="${t('common.close')}">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -32,7 +31,7 @@ export class AliasSettingsModal {
             </div>
             <div class="vault-modal-body">
               <div class="vault-form-group">
-                <label class="vault-label" for="alias-provider">Provider <span class="required" aria-label="required">*</span></label>
+                <label class="vault-label" for="alias-provider">${t('aliasModal.provider')} <span class="required" aria-label="${t('aliasModal.required')}">*</span></label>
                 <select id="alias-provider" class="vault-select" required aria-required="true">
                   <option value="simplelogin">SimpleLogin</option>
                   <option value="anonaddy">AnonAddy</option>
@@ -40,17 +39,17 @@ export class AliasSettingsModal {
               </div>
 
               <div class="vault-form-group">
-                <label class="vault-label" for="alias-api-key">API Key / Token <span class="required" aria-label="required">*</span></label>
+                <label class="vault-label" for="alias-api-key">${t('aliasModal.apiKey')} <span class="required" aria-label="${t('aliasModal.required')}">*</span></label>
                 <div class="vault-input-group">
                   <input type="password" id="alias-api-key" class="vault-input"
-                         placeholder="Paste your API key here..."
+                         placeholder="${t('aliasModal.apiKeyPlaceholder')}"
                          required
                          aria-required="true"
                          aria-describedby="alias-help-text alias-api-key-error"
                          autocomplete="off">
                   <button type="button" id="btn-toggle-api-key" class="vault-input-btn"
-                          title="Show/Hide password"
-                          aria-label="Toggle API key visibility"
+                          title="${t('aliasModal.showHide')}"
+                          aria-label="${t('aliasModal.showHide')}"
                           aria-pressed="false">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <circle cx="12" cy="12" r="3"></circle>
@@ -59,7 +58,7 @@ export class AliasSettingsModal {
                   </button>
                 </div>
                 <div class="vault-field-hint" id="alias-help-text">
-                  For SimpleLogin: Go to Settings > API Keys.
+                  ${t('aliasModal.helpSimpleLogin')}
                 </div>
                 <div class="field-error" id="alias-api-key-error" hidden aria-live="polite"></div>
               </div>
@@ -67,36 +66,28 @@ export class AliasSettingsModal {
               <div id="alias-status-msg" class="vault-field-message" role="status" aria-live="polite" hidden></div>
             </div>
             <div class="vault-modal-actions">
-              <button class="vault-btn vault-btn-secondary" id="btn-cancel-alias" type="button">Cancel</button>
-              <button class="vault-btn vault-btn-primary" id="btn-save-alias" type="button">Save</button>
+              <button class="vault-btn vault-btn-secondary" id="btn-cancel-alias" type="button" data-action="close">${t('common.cancel')}</button>
+              <button class="vault-btn vault-btn-primary" id="btn-save-alias" type="button">${t('common.save')}</button>
             </div>
           </div>
         </div>
       `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            modal = document.getElementById('alias-settings-modal');
+            this._element = document.getElementById(this._modalId);
         }
 
-        this.#modal = modal;
+        this._setupBaseEventHandlers();
         this.#attachEvents();
     }
 
     #attachEvents() {
-        const closeBtn = this.#modal.querySelector('.vault-modal-close');
-        const cancelBtn = this.#modal.querySelector('#btn-cancel-alias');
-        const saveBtn = this.#modal.querySelector('#btn-save-alias');
-        const providerSelect = this.#modal.querySelector('#alias-provider');
-        const toggleKeyBtn = this.#modal.querySelector('#btn-toggle-api-key');
-        const keyInput = this.#modal.querySelector('#alias-api-key');
+        const modal = this.element;
+        if (!modal) return;
 
-        // Backdrop click to close
-        this.#modal.addEventListener('click', (e) => {
-            if (e.target === this.#modal) this.hide();
-        });
-
-        const closeHandler = () => this.hide();
-        closeBtn.addEventListener('click', closeHandler);
-        cancelBtn.addEventListener('click', closeHandler);
+        const saveBtn = modal.querySelector('#btn-save-alias');
+        const providerSelect = modal.querySelector('#alias-provider');
+        const toggleKeyBtn = modal.querySelector('#btn-toggle-api-key');
+        const keyInput = modal.querySelector('#alias-api-key');
 
         toggleKeyBtn.addEventListener('click', () => {
             const isPassword = keyInput.type === 'password';
@@ -106,7 +97,7 @@ export class AliasSettingsModal {
 
         // Real-time validation on input
         keyInput.addEventListener('input', () => {
-            const errorEl = this.#modal.querySelector('#alias-api-key-error');
+            const errorEl = modal.querySelector('#alias-api-key-error');
             if (keyInput.value.trim()) {
                 keyInput.removeAttribute('aria-invalid');
                 keyInput.classList.remove('field-invalid');
@@ -115,32 +106,33 @@ export class AliasSettingsModal {
         });
 
         providerSelect.addEventListener('change', () => {
-            const helpText = this.#modal.querySelector('#alias-help-text');
+            const helpText = modal.querySelector('#alias-help-text');
             if (providerSelect.value === 'simplelogin') {
-                helpText.textContent = 'For SimpleLogin: Go to Settings > API Keys.';
+                helpText.textContent = t('aliasModal.helpSimpleLogin');
             } else {
-                helpText.textContent = 'For AnonAddy: Go to Settings > API > Generate New Token.';
+                helpText.textContent = t('aliasModal.helpAnonAddy');
             }
         });
 
         saveBtn.addEventListener('click', async () => {
             const provider = providerSelect.value;
             const key = keyInput.value.trim();
-            const errorEl = this.#modal.querySelector('#alias-api-key-error');
+            const errorEl = modal.querySelector('#alias-api-key-error');
 
             if (!key) {
                 // Show inline validation error
                 keyInput.setAttribute('aria-invalid', 'true');
                 keyInput.classList.add('field-invalid');
-                errorEl.textContent = 'Please enter an API key.';
+                errorEl.textContent = t('aliasModal.enterApiKey');
                 errorEl.hidden = false;
                 keyInput.focus();
                 return;
             }
 
             saveBtn.disabled = true;
-            saveBtn.textContent = 'Verifying...';
-            this.#showStatus('Validating key...', 'info');
+            saveBtn.setAttribute('aria-busy', 'true');
+            saveBtn.textContent = t('aliasModal.verifying');
+            this.#showStatus(t('aliasModal.validating'), 'info');
 
             try {
                 const isValid = await this.#service.validateApiKey(provider, key);
@@ -151,16 +143,16 @@ export class AliasSettingsModal {
                     errorEl.hidden = true;
 
                     await this.#service.saveConfig(provider, key);
-                    this.#showStatus('Key validated and saved!', 'success');
+                    this.#showStatus(t('aliasModal.keyValidated'), 'success');
                     setTimeout(() => this.hide(), 1000);
                     if (this.#onSaveCallback) this.#onSaveCallback();
                 } else {
                     // Show validation error with aria-invalid
                     keyInput.setAttribute('aria-invalid', 'true');
                     keyInput.classList.add('field-invalid');
-                    errorEl.textContent = 'Invalid API key. Check your credentials.';
+                    errorEl.textContent = t('aliasModal.invalidKey');
                     errorEl.hidden = false;
-                    this.#showStatus('Invalid API key. Check your credentials.', 'error');
+                    this.#showStatus(t('aliasModal.invalidKey'), 'error');
                 }
             } catch (e) {
                 // Show error with aria-invalid
@@ -168,90 +160,44 @@ export class AliasSettingsModal {
                 keyInput.classList.add('field-invalid');
                 errorEl.textContent = e.message;
                 errorEl.hidden = false;
-                this.#showStatus('Validation error: ' + e.message, 'error');
+                this.#showStatus(t('aliasModal.validationError', { message: e.message }), 'error');
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Save';
+                saveBtn.removeAttribute('aria-busy');
+                saveBtn.textContent = t('common.save');
             }
         });
     }
 
     #showStatus(msg, type) {
-        const el = this.#modal.querySelector('#alias-status-msg');
+        const el = this.element.querySelector('#alias-status-msg');
         el.textContent = msg;
         el.className = `status-message ${type}`;
         el.hidden = false;
     }
 
-    show(callback) {
-        // Save previously focused element
-        this.#previouslyFocusedElement = document.activeElement;
-        this.#onSaveCallback = callback;
-        setMainContentInert(true);
-        this.#modal.hidden = false;
-        this.#modal.querySelector('#alias-api-key').value = ''; // Clean for security
-        this.#modal.querySelector('#alias-api-key').type = 'password'; // Reset to password type
-        this.#modal.querySelector('#alias-status-msg').hidden = true;
-
-        // Focus first input
-        requestAnimationFrame(() => {
-            this.#modal.querySelector('#alias-provider')?.focus();
-        });
-
-        // Add escape key handler
-        this.#escapeHandler = (e) => {
-            if (e.key === 'Escape') this.hide();
-        };
-        document.addEventListener('keydown', this.#escapeHandler);
-
-        // Add focus trap
-        this.#focusTrapHandler = (e) => {
-            if (e.key !== 'Tab') return;
-            const focusable = this.#modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (e.shiftKey && document.activeElement === first) {
-                e.preventDefault();
-                last?.focus();
-            } else if (!e.shiftKey && document.activeElement === last) {
-                e.preventDefault();
-                first?.focus();
-            }
-        };
-        this.#modal.addEventListener('keydown', this.#focusTrapHandler);
-    }
-
-    hide() {
-        setMainContentInert(false);
-        this.#modal.hidden = true;
-        // Remove focus trap
-        if (this.#focusTrapHandler) {
-            this.#modal.removeEventListener('keydown', this.#focusTrapHandler);
-            this.#focusTrapHandler = null;
-        }
-        // Remove escape key handler
-        if (this.#escapeHandler) {
-            document.removeEventListener('keydown', this.#escapeHandler);
-            this.#escapeHandler = null;
-        }
-        // Restore focus
-        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
-            this.#previouslyFocusedElement.focus();
-            this.#previouslyFocusedElement = null;
-        }
-    }
-
     /**
-     * Cleanup and remove modal from DOM
+     * Show the modal with an optional save callback
+     * @param {Function} [callback] - Called when config is saved successfully
      */
-    destroy() {
-        if (this.#escapeHandler) {
-            document.removeEventListener('keydown', this.#escapeHandler);
-            this.#escapeHandler = null;
-        }
-        if (this.#modal) {
-            this.#modal.remove();
-            this.#modal = null;
-        }
+    show(callback) {
+        this.#onSaveCallback = callback;
+
+        // Reset form state for security
+        const modal = this.element;
+        modal.querySelector('#alias-api-key').value = '';
+        modal.querySelector('#alias-api-key').type = 'password';
+        modal.querySelector('#alias-status-msg').hidden = true;
+        modal.querySelector('#btn-toggle-api-key')?.setAttribute('aria-pressed', 'false');
+
+        // Clear any previous validation errors
+        const keyInput = modal.querySelector('#alias-api-key');
+        const errorEl = modal.querySelector('#alias-api-key-error');
+        keyInput?.removeAttribute('aria-invalid');
+        keyInput?.classList.remove('field-invalid');
+        if (errorEl) errorEl.hidden = true;
+
+        // Call base class show (handles inert, escape, focus trap, focus)
+        super.show();
     }
 }

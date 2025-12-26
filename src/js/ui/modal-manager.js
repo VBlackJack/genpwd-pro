@@ -379,10 +379,4 @@ export function showConfirm(message, options = {}) {
   });
 }
 
-export default {
-  createModal,
-  closeModal,
-  isModalOpen,
-  createConfirmDialog,
-  showConfirm
-};
+// Note: Use named exports directly - default export removed for consistency

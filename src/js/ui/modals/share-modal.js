@@ -2,28 +2,25 @@
  * @fileoverview Share Modal (GenPwd Send)
  */
 
+import { Modal } from './modal.js';
 import { showToast } from '../../utils/toast.js';
-import { setMainContentInert } from '../events.js';
+import { t } from '../../utils/i18n.js';
 
-export class ShareModal {
-    #modalId = 'share-modal';
-    #isVisible = false;
+export class ShareModal extends Modal {
     #currentSecret = null;
-    #escapeHandler = null;
-    #focusTrapHandler = null;
-    #previouslyFocusedElement = null;
 
     constructor() {
+        super('share-modal');
         this.#injectModal();
         this.#attachEvents();
     }
 
+    /**
+     * Show the share modal with secret data
+     * @param {string} secretData - The secret to share
+     */
     show(secretData) {
-        // Save previously focused element
-        this.#previouslyFocusedElement = document.activeElement;
         this.#currentSecret = secretData;
-        this.#isVisible = true;
-        setMainContentInert(true);
 
         // Reset state
         document.getElementById('share-step-1').hidden = false;
@@ -31,90 +28,24 @@ export class ShareModal {
         document.getElementById('share-result-url').value = '';
 
         // Reset step indicator
-        document.getElementById('share-step-indicator').textContent = 'Step 1 of 2';
+        document.getElementById('share-step-indicator').textContent = t('shareModal.step1');
         const dots = document.querySelectorAll('#share-modal .step-dot');
         dots.forEach((dot, i) => dot.classList.toggle('active', i === 0));
 
-        const modal = document.getElementById(this.#modalId);
-        if (modal) {
-            modal.hidden = false;
-
-            // Focus first focusable element
-            requestAnimationFrame(() => {
-                modal.querySelector('select, input, button')?.focus();
-            });
-
-            // Add escape key handler
-            this.#escapeHandler = (e) => {
-                if (e.key === 'Escape') this.hide();
-            };
-            document.addEventListener('keydown', this.#escapeHandler);
-
-            // Add focus trap
-            this.#focusTrapHandler = (e) => {
-                if (e.key !== 'Tab') return;
-                const focusable = modal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
-                const visibleFocusable = Array.from(focusable).filter(el => !el.closest('[hidden]'));
-                const first = visibleFocusable[0];
-                const last = visibleFocusable[visibleFocusable.length - 1];
-                if (e.shiftKey && document.activeElement === first) {
-                    e.preventDefault();
-                    last?.focus();
-                } else if (!e.shiftKey && document.activeElement === last) {
-                    e.preventDefault();
-                    first?.focus();
-                }
-            };
-            modal.addEventListener('keydown', this.#focusTrapHandler);
-        }
-    }
-
-    hide() {
-        this.#isVisible = false;
-        setMainContentInert(false);
-        const modal = document.getElementById(this.#modalId);
-        if (modal) {
-            modal.hidden = true;
-            // Remove focus trap
-            if (this.#focusTrapHandler) {
-                modal.removeEventListener('keydown', this.#focusTrapHandler);
-                this.#focusTrapHandler = null;
-            }
-        }
-        // Remove escape key handler
-        if (this.#escapeHandler) {
-            document.removeEventListener('keydown', this.#escapeHandler);
-            this.#escapeHandler = null;
-        }
-        // Restore focus
-        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
-            this.#previouslyFocusedElement.focus();
-            this.#previouslyFocusedElement = null;
-        }
-    }
-
-    /**
-     * Cleanup and remove modal from DOM
-     */
-    destroy() {
-        if (this.#escapeHandler) {
-            document.removeEventListener('keydown', this.#escapeHandler);
-            this.#escapeHandler = null;
-        }
-        const modal = document.getElementById(this.#modalId);
-        if (modal) modal.remove();
+        // Call parent show
+        super.show();
     }
 
     #injectModal() {
-        if (document.getElementById(this.#modalId)) return;
+        if (document.getElementById(this._modalId)) return;
 
         const html = `
-      <div class="vault-modal-overlay" id="${this.#modalId}" hidden role="dialog" aria-modal="true" aria-labelledby="${this.#modalId}-title">
+      <div class="vault-modal-overlay" id="${this._modalId}" hidden role="dialog" aria-modal="true" aria-labelledby="${this._modalId}-title">
         <div class="vault-modal vault-modal-md">
           <div class="vault-modal-header">
-            <h3 id="${this.#modalId}-title">Secure Share (GenPwd Send)</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Close">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <h3 id="${this._modalId}-title">${t('shareModal.title')}</h3>
+            <button type="button" class="vault-modal-close" aria-label="${t('common.close')}">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
@@ -124,64 +55,64 @@ export class ShareModal {
 
             <!-- Step Progress Indicator -->
             <div class="step-indicator" aria-live="polite">
-              <span class="step-current" id="share-step-indicator">Step 1 of 2</span>
+              <span class="step-current" id="share-step-indicator">${t('shareModal.step1')}</span>
               <div class="step-dots">
-                <span class="step-dot active" aria-label="Step 1: Configuration"></span>
-                <span class="step-dot" aria-label="Step 2: Result"></span>
+                <span class="step-dot active" aria-label="${t('shareModal.stepConfig')}"></span>
+                <span class="step-dot" aria-label="${t('shareModal.stepResult')}"></span>
               </div>
             </div>
 
             <!-- Step 1: Config -->
             <div id="share-step-1">
               <div class="vault-info-box">
-                <p>Create a secure encrypted link to share this password. The decryption key will be included in the URL but never sent to the server.</p>
+                <p>${t('shareModal.infoText')}</p>
               </div>
 
               <div class="vault-form-group">
-                <label class="vault-label">Expiration</label>
+                <label class="vault-label">${t('shareModal.expiration')}</label>
                 <select class="vault-select" id="share-expiry">
-                  <option value="1h">1 Hour</option>
-                  <option value="1d" selected>1 Day</option>
-                  <option value="7d">7 Days</option>
+                  <option value="1h">${t('shareModal.hour1')}</option>
+                  <option value="1d" selected>${t('shareModal.day1')}</option>
+                  <option value="7d">${t('shareModal.days7')}</option>
                 </select>
               </div>
 
               <div class="vault-form-group">
                 <label class="vault-checkbox-label">
                   <input type="checkbox" id="share-burn" checked>
-                  <span>Burn after reading</span>
+                  <span>${t('shareModal.burnAfterReading')}</span>
                 </label>
               </div>
 
               <div class="vault-modal-actions">
-                <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Cancel</button>
+                <button type="button" class="vault-btn vault-btn-secondary" data-action="close">${t('common.cancel')}</button>
                 <button type="button" class="vault-btn vault-btn-primary" id="btn-create-share">
-                  Generate link
+                  ${t('shareModal.generateLink')}
                 </button>
               </div>
             </div>
 
             <!-- Step 2: Result -->
             <div id="share-step-2" hidden>
-              <div class="vault-success-icon">✅</div>
-              <h4 class="text-center">Link ready!</h4>
+              <div class="vault-success-icon">${t('shareModal.done')}</div>
+              <h4 class="text-center">${t('shareModal.linkReady')}</h4>
 
               <div class="vault-form-group">
-                <label class="vault-label">Share Link</label>
+                <label class="vault-label">${t('shareModal.shareLink')}</label>
                 <div class="vault-input-group">
                   <input type="text" class="vault-input" id="share-result-url" readonly>
-                  <button type="button" class="vault-input-btn" id="btn-copy-share-url" title="Copy">
-                    📋
+                  <button type="button" class="vault-input-btn" id="btn-copy-share-url" title="${t('shareModal.copyLink')}">
+                    ${t('shareModal.copyLink')}
                   </button>
                 </div>
               </div>
 
               <div class="vault-alert warning-alert">
-                This link grants access to the secret. Only share it with the intended recipient.
+                ${t('shareModal.warningText')}
               </div>
 
               <div class="vault-modal-actions">
-                <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>Close</button>
+                <button type="button" class="vault-btn vault-btn-secondary" data-action="close">${t('common.close')}</button>
               </div>
             </div>
 
@@ -191,21 +122,13 @@ export class ShareModal {
     `;
 
         document.body.insertAdjacentHTML('beforeend', html);
+        this._element = document.getElementById(this._modalId);
+        this._setupBaseEventHandlers();
     }
 
     #attachEvents() {
-        const modal = document.getElementById(this.#modalId);
+        const modal = this.element;
         if (!modal) return;
-
-        // Backdrop click to close
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) this.hide();
-        });
-
-        // Close buttons
-        modal.querySelectorAll('[data-close-modal]').forEach(btn => {
-            btn.addEventListener('click', () => this.hide());
-        });
 
         // Create Share
         document.getElementById('btn-create-share')?.addEventListener('click', async () => {
@@ -214,7 +137,8 @@ export class ShareModal {
 
             const btn = document.getElementById('btn-create-share');
             btn.disabled = true;
-            btn.textContent = 'Generating...';
+            btn.setAttribute('aria-busy', 'true');
+            btn.innerHTML = `<span class="vault-spinner-small"></span> ${t('shareModal.generating')}`;
 
             try {
                 const result = await window.vault.share.create(this.#currentSecret, {
@@ -228,14 +152,15 @@ export class ShareModal {
                 document.getElementById('share-step-2').hidden = false;
 
                 // Update step indicator
-                document.getElementById('share-step-indicator').textContent = 'Step 2 of 2';
+                document.getElementById('share-step-indicator').textContent = t('shareModal.step2');
                 const dots = document.querySelectorAll('#share-modal .step-dot');
                 dots.forEach((dot, i) => dot.classList.toggle('active', i === 1));
             } catch (err) {
-                showToast('Error: ' + err.message, 'error');
+                showToast(t('vault.common.error') + ': ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Generate link';
+                btn.removeAttribute('aria-busy');
+                btn.textContent = t('shareModal.generateLink');
             }
         });
 
@@ -244,14 +169,11 @@ export class ShareModal {
             const input = document.getElementById('share-result-url');
             try {
                 await navigator.clipboard.writeText(input.value);
+                showToast(t('shareModal.linkCopied'), 'success');
             } catch {
                 // Fallback: select text for manual copy
                 input.select();
             }
-            // Visual feedback
-            const btn = document.getElementById('btn-copy-share-url');
-            btn.textContent = '✅';
-            setTimeout(() => btn.textContent = '📋', 1500);
         });
     }
 }

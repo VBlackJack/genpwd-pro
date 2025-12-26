@@ -48,7 +48,7 @@
 .tab-button.active {
   background: rgba(21, 190, 255, 0.1);
   color: var(--text-bright);
-  border-color: #8c94ca;
+  border-color: var(--accent-purple, #8b5cf6);
 }
 
 .test-details {
@@ -62,7 +62,7 @@
 }
 
 #test-console-output {
-  background: #0a0e1a;
+  background: var(--bg-primary, #0a0e1a);
   border: 1px solid rgba(140, 148, 202, 0.15);
   border-radius: 4px;
   padding: 12px;
@@ -85,7 +85,7 @@
 }
 
 .test-item.error {
-  border: 1px solid #ef4444;
+  border: 1px solid var(--accent-red, #ef4444);
   background: rgba(239, 68, 68, 0.05);
 }
 

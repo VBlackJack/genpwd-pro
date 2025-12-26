@@ -7,6 +7,7 @@
 
 import { safeLog } from './logger.js';
 import { CACHE } from '../config/ui-constants.js';
+import { t } from './i18n.js';
 
 const HIBP_API_URL = 'https://api.pwnedpasswords.com/range/';
 // Use centralized cache duration (reuse cleanup interval for consistency)
@@ -135,12 +136,12 @@ export async function checkMultiplePasswords(passwords) {
  * @returns {string} Formatted string
  */
 export function formatBreachCount(count) {
-  if (count === 0) return 'Non compromis';
-  if (count < 10) return `Compromis ${count} fois`;
-  if (count < 100) return `Compromis ${count}+ fois`;
-  if (count < 1000) return `Compromis ${count}+ fois`;
-  if (count < 1000000) return `Compromis ${Math.floor(count / 1000)}K+ fois`;
-  return `Compromis ${Math.floor(count / 1000000)}M+ fois`;
+  if (count === 0) return t('breach.notCompromised');
+  if (count < 10) return t('breach.compromisedTimes', { count });
+  if (count < 100) return t('breach.compromisedPlus', { count });
+  if (count < 1000) return t('breach.compromisedPlus', { count });
+  if (count < 1000000) return t('breach.compromisedK', { count: Math.floor(count / 1000) });
+  return t('breach.compromisedM', { count: Math.floor(count / 1000000) });
 }
 
 /**
@@ -163,10 +164,4 @@ export function clearBreachCache() {
   safeLog('[BreachCheck] Cache cleared');
 }
 
-export default {
-  checkPasswordBreach,
-  checkMultiplePasswords,
-  formatBreachCount,
-  getBreachSeverity,
-  clearBreachCache
-};
+// Note: Use named exports directly - default export removed for consistency

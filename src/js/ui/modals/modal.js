@@ -1,16 +1,31 @@
 /**
  * @fileoverview Base Modal Class
- * Provides common functionality for modal dialogs
+ * Provides common functionality for modal dialogs including:
+ * - Focus trap (Tab cycling within modal)
+ * - Escape key to close
+ * - Focus restoration on close
+ * - Backdrop click to close
+ * - Main content inert state
  */
+
+import { setMainContentInert } from '../events.js';
 
 export class Modal {
   #escapeHandler = null;
   #focusTrapHandler = null;
   #previouslyFocusedElement = null;
+  #useInert = true;
 
-  constructor(modalId) {
+  /**
+   * Create a modal instance
+   * @param {string} modalId - The ID of the modal element
+   * @param {Object} [options] - Configuration options
+   * @param {boolean} [options.useInert=true] - Whether to set main content inert when modal is open
+   */
+  constructor(modalId, options = {}) {
     this._modalId = modalId;
     this._element = null;
+    this.#useInert = options.useInert !== false;
   }
 
   /**
@@ -24,6 +39,13 @@ export class Modal {
       }
     }
     return this._element;
+  }
+
+  /**
+   * Check if modal is currently visible
+   */
+  get isVisible() {
+    return this._element && !this._element.hidden && this._element.style.display !== 'none';
   }
 
   /**
@@ -43,9 +65,22 @@ export class Modal {
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', `${this._modalId}-title`);
+    overlay.hidden = true;
     overlay.innerHTML = `<div class="vault-modal">${this.template}</div>`;
     document.body.appendChild(overlay);
     this._element = overlay;
+
+    this._setupBaseEventHandlers();
+  }
+
+  /**
+   * Setup base event handlers (backdrop click, close buttons)
+   * Can be called by subclasses that inject their own HTML
+   * @protected
+   */
+  _setupBaseEventHandlers() {
+    const overlay = this._element;
+    if (!overlay) return;
 
     // Close on backdrop click
     overlay.addEventListener('click', (e) => {
@@ -56,26 +91,46 @@ export class Modal {
     overlay.querySelectorAll('[data-action="close"]').forEach(btn => {
       btn.addEventListener('click', () => this.hide());
     });
+
+    // Close on .vault-modal-close buttons
+    overlay.querySelectorAll('.vault-modal-close').forEach(btn => {
+      btn.addEventListener('click', () => this.hide());
+    });
   }
 
   /**
-   * Get focusable elements within the modal
+   * Get focusable elements within the modal (excluding hidden elements)
    * @returns {HTMLElement[]} Array of focusable elements
+   * @protected
    */
-  #getFocusableElements() {
+  _getFocusableElements() {
     const selector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
-    return Array.from(this.element.querySelectorAll(selector));
+    const elements = Array.from(this.element.querySelectorAll(selector));
+    // Filter out elements within hidden containers
+    return elements.filter(el => {
+      const hidden = el.closest('[hidden]');
+      return !hidden || hidden === this.element;
+    });
   }
 
   /**
    * Show the modal
+   * @param {...any} _args - Arguments passed to subclass (ignored by base class)
    */
-  show() {
+  show(..._args) {
     // Save currently focused element for restoration
     this.#previouslyFocusedElement = document.activeElement;
 
-    this.element.classList.add('active');
-    this.element.style.display = 'flex';
+    // Set main content inert for accessibility
+    if (this.#useInert) {
+      setMainContentInert(true);
+    }
+
+    // Show the modal
+    const el = this.element;
+    el.hidden = false;
+    el.classList.add('active');
+    el.style.display = 'flex';
 
     // Add escape key handler
     this.#escapeHandler = (e) => {
@@ -87,7 +142,7 @@ export class Modal {
     this.#focusTrapHandler = (e) => {
       if (e.key !== 'Tab') return;
 
-      const focusable = this.#getFocusableElements();
+      const focusable = this._getFocusableElements();
       if (focusable.length === 0) return;
 
       const first = focusable[0];
@@ -103,12 +158,14 @@ export class Modal {
     };
     document.addEventListener('keydown', this.#focusTrapHandler);
 
-    // Focus first focusable element
-    const focusable = this.#getFocusableElements();
-    const firstInput = focusable.find(el => el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') || focusable[0];
-    if (firstInput) {
-      requestAnimationFrame(() => firstInput.focus());
-    }
+    // Focus first focusable element (prefer inputs/textareas)
+    requestAnimationFrame(() => {
+      const focusable = this._getFocusableElements();
+      const firstInput = focusable.find(el => el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') || focusable[0];
+      if (firstInput) {
+        firstInput.focus();
+      }
+    });
   }
 
   /**
@@ -116,8 +173,14 @@ export class Modal {
    */
   hide() {
     if (this._element) {
+      this._element.hidden = true;
       this._element.classList.remove('active');
       this._element.style.display = 'none';
+    }
+
+    // Remove main content inert
+    if (this.#useInert) {
+      setMainContentInert(false);
     }
 
     // Remove escape key handler to prevent memory leak
@@ -143,16 +206,7 @@ export class Modal {
    * Remove the modal from DOM
    */
   destroy() {
-    // Clean up escape handler
-    if (this.#escapeHandler) {
-      document.removeEventListener('keydown', this.#escapeHandler);
-      this.#escapeHandler = null;
-    }
-    // Clean up focus trap handler
-    if (this.#focusTrapHandler) {
-      document.removeEventListener('keydown', this.#focusTrapHandler);
-      this.#focusTrapHandler = null;
-    }
+    this.hide(); // Clean up handlers
     if (this._element) {
       this._element.remove();
       this._element = null;

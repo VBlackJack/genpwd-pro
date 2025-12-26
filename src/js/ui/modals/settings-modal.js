@@ -3,91 +3,28 @@
  * Centralized settings for GenPwd Pro
  */
 
+import { Modal } from './modal.js';
 import { showConfirm } from '../modal-manager.js';
 import { showToast } from '../../utils/toast.js';
-import { setMainContentInert } from '../events.js';
+import { t } from '../../utils/i18n.js';
 
-export class SettingsModal {
-    #modalId = 'settings-modal';
-    #isVisible = false;
-    #escapeHandler = null;
-    #focusTrapHandler = null;
-    #previouslyFocusedElement = null;
-
+export class SettingsModal extends Modal {
     constructor() {
+        super('settings-modal');
         this.#injectModal();
         this.#attachEvents();
     }
 
-    show() {
-        // Save previously focused element for restoration
-        this.#previouslyFocusedElement = document.activeElement;
-        this.#isVisible = true;
-        setMainContentInert(true);
-        const modal = document.getElementById(this.#modalId);
-        if (modal) {
-            modal.hidden = false;
-            // Focus first focusable element
-            requestAnimationFrame(() => {
-                modal.querySelector('button, [tabindex]:not([tabindex="-1"])')?.focus();
-            });
-            // Add escape key handler
-            this.#escapeHandler = (e) => {
-                if (e.key === 'Escape') this.hide();
-            };
-            document.addEventListener('keydown', this.#escapeHandler);
-            // Add focus trap
-            this.#focusTrapHandler = (e) => {
-                if (e.key !== 'Tab') return;
-                const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-                const first = focusable[0];
-                const last = focusable[focusable.length - 1];
-                if (e.shiftKey && document.activeElement === first) {
-                    e.preventDefault();
-                    last?.focus();
-                } else if (!e.shiftKey && document.activeElement === last) {
-                    e.preventDefault();
-                    first?.focus();
-                }
-            };
-            modal.addEventListener('keydown', this.#focusTrapHandler);
-        }
-    }
-
-    hide() {
-        this.#isVisible = false;
-        setMainContentInert(false);
-        const modal = document.getElementById(this.#modalId);
-        if (modal) {
-            modal.hidden = true;
-            // Remove focus trap
-            if (this.#focusTrapHandler) {
-                modal.removeEventListener('keydown', this.#focusTrapHandler);
-                this.#focusTrapHandler = null;
-            }
-        }
-        // Remove escape key handler
-        if (this.#escapeHandler) {
-            document.removeEventListener('keydown', this.#escapeHandler);
-            this.#escapeHandler = null;
-        }
-        // Restore focus to previously focused element
-        if (this.#previouslyFocusedElement && typeof this.#previouslyFocusedElement.focus === 'function') {
-            this.#previouslyFocusedElement.focus();
-            this.#previouslyFocusedElement = null;
-        }
-    }
-
     #injectModal() {
-        if (document.getElementById(this.#modalId)) return;
+        if (document.getElementById(this._modalId)) return;
 
         const html = `
-      <div class="vault-modal-overlay" id="${this.#modalId}" hidden role="dialog" aria-modal="true" aria-labelledby="${this.#modalId}-title">
+      <div class="vault-modal-overlay" id="${this._modalId}" hidden role="dialog" aria-modal="true" aria-labelledby="${this._modalId}-title">
         <div class="vault-modal vault-modal-md">
           <div class="vault-modal-header">
-            <h3 id="${this.#modalId}-title">Settings</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="Close">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <h3 id="${this._modalId}-title">${t('settingsModal.title')}</h3>
+            <button type="button" class="vault-modal-close" aria-label="${t('common.close')}">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
@@ -95,20 +32,20 @@ export class SettingsModal {
           </div>
           <div class="vault-modal-body no-padding">
             <div class="settings-layout">
-              <div class="settings-sidebar" role="tablist" aria-label="Settings categories">
-                <button class="settings-nav-item active" data-tab="general" role="tab" aria-selected="true" aria-controls="tab-general" id="settings-tab-general">General</button>
-                <button class="settings-nav-item" data-tab="shortcuts" role="tab" aria-selected="false" aria-controls="tab-shortcuts" id="settings-tab-shortcuts">Shortcuts</button>
-                <button class="settings-nav-item" data-tab="security" role="tab" aria-selected="false" aria-controls="tab-security" id="settings-tab-security">Security</button>
-                <button class="settings-nav-item danger" data-tab="danger" role="tab" aria-selected="false" aria-controls="tab-danger" id="settings-tab-danger">Danger Zone</button>
+              <div class="settings-sidebar" role="tablist" aria-label="${t('settingsModal.categories')}">
+                <button class="settings-nav-item active" data-tab="general" role="tab" aria-selected="true" aria-controls="tab-general" id="settings-tab-general">${t('settingsModal.tabs.general')}</button>
+                <button class="settings-nav-item" data-tab="shortcuts" role="tab" aria-selected="false" aria-controls="tab-shortcuts" id="settings-tab-shortcuts">${t('settingsModal.tabs.shortcuts')}</button>
+                <button class="settings-nav-item" data-tab="security" role="tab" aria-selected="false" aria-controls="tab-security" id="settings-tab-security">${t('settingsModal.tabs.security')}</button>
+                <button class="settings-nav-item danger" data-tab="danger" role="tab" aria-selected="false" aria-controls="tab-danger" id="settings-tab-danger">${t('settingsModal.tabs.danger')}</button>
               </div>
               <div class="settings-content">
                 <!-- General Tab -->
                 <div class="settings-tab active" id="tab-general" role="tabpanel" aria-labelledby="settings-tab-general" aria-hidden="false">
                   <div class="setting-group">
-                    <label class="setting-label">Appearance</label>
-                    <div class="setting-desc">Customize application appearance</div>
+                    <label class="setting-label">${t('settingsModal.general.appearance')}</label>
+                    <div class="setting-desc">${t('settingsModal.general.appearanceDesc')}</div>
                     <div class="setting-control">
-                      <button class="vault-btn vault-btn-sm" id="btn-theme-toggle-settings">Toggle Light/Dark Theme</button>
+                      <button class="vault-btn vault-btn-sm" id="btn-theme-toggle-settings">${t('settingsModal.general.toggleTheme')}</button>
                     </div>
                   </div>
                 </div>
@@ -116,49 +53,49 @@ export class SettingsModal {
                 <!-- Shortcuts Tab -->
                 <div class="settings-tab" id="tab-shortcuts" role="tabpanel" aria-labelledby="settings-tab-shortcuts" aria-hidden="true" hidden>
                   <div class="setting-group">
-                    <label class="setting-label">Keyboard Shortcuts</label>
-                    <div class="setting-desc">Quick actions to boost your productivity</div>
+                    <label class="setting-label">${t('settingsModal.shortcuts.title')}</label>
+                    <div class="setting-desc">${t('settingsModal.shortcuts.description')}</div>
                   </div>
                   <div class="shortcuts-list">
                     <div class="shortcut-row" style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue);">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></span>
-                      <span class="shortcut-desc">🌐 Show/Hide app (global)</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.showHideApp')}</span>
                     </div>
                     <div class="shortcut-row" style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue);">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd></span>
-                      <span class="shortcut-desc">🌐 Auto-type password (global)</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.autoTypePassword')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>G</kbd></span>
-                      <span class="shortcut-desc">Generate new passwords</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.generatePasswords')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></span>
-                      <span class="shortcut-desc">Copy all passwords</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.copyAllPasswords')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>L</kbd></span>
-                      <span class="shortcut-desc">Lock vault</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.lockVault')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>,</kbd></span>
-                      <span class="shortcut-desc">Open settings</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.openSettings')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Escape</kbd></span>
-                      <span class="shortcut-desc">Close modal / Cancel action</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.closeModal')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Tab</kbd></span>
-                      <span class="shortcut-desc">Navigate between elements</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.navigate')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Enter</kbd></span>
-                      <span class="shortcut-desc">Confirm / Submit</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.confirm')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>F4</kbd></span>
-                      <span class="shortcut-desc">Exit application</span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.exitApp')}</span>
                     </div>
                   </div>
                 </div>
@@ -166,15 +103,15 @@ export class SettingsModal {
                 <!-- Security Tab -->
                 <div class="settings-tab" id="tab-security" role="tabpanel" aria-labelledby="settings-tab-security" aria-hidden="true" hidden>
                    <div class="setting-group">
-                    <label class="setting-label">Auto-Lock</label>
-                    <div class="setting-desc">Lock vault after a period of inactivity</div>
+                    <label class="setting-label">${t('settingsModal.security.autoLock')}</label>
+                    <div class="setting-desc">${t('settingsModal.security.autoLockDesc')}</div>
                     <div class="setting-control">
                       <select class="vault-select" id="settings-autolock">
-                        <option value="1">1 minute</option>
-                        <option value="5">5 minutes</option>
-                        <option value="15">15 minutes</option>
-                        <option value="60">1 hour</option>
-                        <option value="0">Never (not recommended)</option>
+                        <option value="1">${t('settingsModal.security.minute1')}</option>
+                        <option value="5">${t('settingsModal.security.minutes5')}</option>
+                        <option value="15">${t('settingsModal.security.minutes15')}</option>
+                        <option value="60">${t('settingsModal.security.hour1')}</option>
+                        <option value="0">${t('settingsModal.security.never')}</option>
                       </select>
                     </div>
                   </div>
@@ -183,19 +120,19 @@ export class SettingsModal {
                 <!-- Danger Tab -->
                 <div class="settings-tab" id="tab-danger" role="tabpanel" aria-labelledby="settings-tab-danger" aria-hidden="true" hidden>
                   <div class="vault-alert count-warning">
-                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-icon">${t('settingsModal.danger.warning')}</div>
                     <div class="alert-content">
-                      <strong>Danger Zone</strong>
-                      <p>Actions here are irreversible.</p>
+                      <strong>${t('settingsModal.danger.title')}</strong>
+                      <p>${t('settingsModal.danger.irreversible')}</p>
                     </div>
                   </div>
 
                   <div class="setting-group danger-group">
-                    <label class="setting-label text-danger">Panic Mode (Nuclear Option)</label>
-                    <div class="setting-desc">Permanently destroys the vault and all its data. No recovery possible.</div>
+                    <label class="setting-label text-danger">${t('settingsModal.danger.panicMode')}</label>
+                    <div class="setting-desc">${t('settingsModal.danger.panicDesc')}</div>
                     <div class="setting-control">
                       <button class="vault-btn vault-btn-danger" id="btn-panic-nuke">
-                        ☢️ DESTROY VAULT
+                        ${t('settingsModal.danger.destroyVault')}
                       </button>
                     </div>
                   </div>
@@ -208,21 +145,13 @@ export class SettingsModal {
     `;
 
         document.body.insertAdjacentHTML('beforeend', html);
+        this._element = document.getElementById(this._modalId);
+        this._setupBaseEventHandlers();
     }
 
     #attachEvents() {
-        const modal = document.getElementById(this.#modalId);
+        const modal = this.element;
         if (!modal) return;
-
-        // Backdrop click to close
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) this.hide();
-        });
-
-        // Close buttons
-        modal.querySelectorAll('[data-close-modal]').forEach(btn => {
-            btn.addEventListener('click', () => this.hide());
-        });
 
         // Tab Navigation with ARIA support and keyboard navigation
         const navItems = modal.querySelectorAll('.settings-nav-item');
@@ -285,10 +214,10 @@ export class SettingsModal {
         const panicBtn = document.getElementById('btn-panic-nuke');
         panicBtn?.addEventListener('click', async () => {
             const firstConfirm = await showConfirm(
-                'This action will PERMANENTLY DESTROY this vault. There will be NO way to undo this.',
+                t('settingsModal.danger.destroyConfirm1'),
                 {
-                    title: '⚠️ Destroy Vault',
-                    confirmLabel: 'I Understand',
+                    title: t('settingsModal.danger.destroyTitle'),
+                    confirmLabel: t('settingsModal.danger.iUnderstand'),
                     danger: true
                 }
             );
@@ -296,20 +225,20 @@ export class SettingsModal {
 
             // Double confirm for critical action
             const finalConfirm = await showConfirm(
-                'FINAL CONFIRMATION: Delete everything?',
+                t('settingsModal.danger.finalConfirm'),
                 {
-                    title: '⛔ Final Warning',
-                    confirmLabel: 'Delete Everything',
+                    title: t('settingsModal.danger.finalWarning'),
+                    confirmLabel: t('settingsModal.danger.deleteEverything'),
                     danger: true
                 }
             );
             if (finalConfirm) {
                 try {
                     await window.vault.nuke();
-                    showToast('Vault destroyed.', 'info');
+                    showToast(t('settingsModal.danger.vaultDestroyed'), 'info');
                     window.location.reload(); // Reset UI
                 } catch (err) {
-                    showToast('Error: ' + err.message, 'error');
+                    showToast(t('vault.common.error') + ': ' + err.message, 'error');
                 }
             }
         });
@@ -318,17 +247,5 @@ export class SettingsModal {
         document.getElementById('btn-theme-toggle-settings')?.addEventListener('click', () => {
             document.getElementById('theme-toggle')?.click();
         });
-    }
-
-    /**
-     * Cleanup and remove modal from DOM
-     */
-    destroy() {
-        if (this.#escapeHandler) {
-            document.removeEventListener('keydown', this.#escapeHandler);
-            this.#escapeHandler = null;
-        }
-        const modal = document.getElementById(this.#modalId);
-        if (modal) modal.remove();
     }
 }

@@ -370,14 +370,15 @@ h2.modal-title {
   justify-content: space-between !important;
   gap: 12px;
   flex-wrap: wrap;
+  position: relative;
 
   /* Sizing */
-  padding: 10px 12px;
+  padding: var(--space-sm, 10px) var(--space-md, 12px);
 
   /* Visual styling */
   cursor: pointer;
   user-select: all;
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   letter-spacing: 0.25px;
   line-height: 1.4;
   border-radius: var(--radius-small);
@@ -440,9 +441,7 @@ h2.modal-title {
   pointer-events: none;
 }
 
-.pwd {
-  position: relative;
-}
+/* position: relative is set in main .pwd definition above */
 
 .pwd.masked {
   padding-left: 32px;

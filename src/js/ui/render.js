@@ -15,7 +15,7 @@
  */
 // src/js/ui/render.js - Results and cards rendering
 import { getElement } from './dom.js';
-import { copyToClipboard } from '../utils/clipboard.js';
+import { copyToClipboard } from '../utils/secure-clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { t } from '../utils/i18n.js';
 import { compositionCounts, escapeHtml } from '../utils/helpers.js';
@@ -82,7 +82,7 @@ function createPasswordCard(item, id, mask) {
   if (!item?.value || typeof item.value !== 'string') {
     const placeholder = document.createElement('div');
     placeholder.className = 'card card-error';
-    placeholder.textContent = 'Invalid password data';
+    placeholder.textContent = t('vault.generator.invalidData');
     return placeholder;
   }
 

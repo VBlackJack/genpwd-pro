@@ -22,7 +22,7 @@ import { setCurrentDictionary } from '../core/dictionaries.js';
 import { randomizeBlocks, defaultBlocksForMode } from '../core/casing.js';
 import { readSettings, getBlocks, setBlocks, setResults, getResults, getUIState, setUIState } from '../config/settings.js';
 import { RATE_LIMITING } from '../config/crypto-constants.js';
-import { copyToClipboard, getClipboardTimeout, setClipboardTimeout, CLIPBOARD_TIMEOUT_OPTIONS } from '../utils/clipboard.js';
+import { copyToClipboard, getClipboardTimeout, setClipboardTimeout, CLIPBOARD_TIMEOUT_OPTIONS } from '../utils/secure-clipboard.js';
 import { showToast } from '../utils/toast.js';
 import { safeLog, clearLogs } from '../utils/logger.js';
 import { t } from '../utils/i18n.js';
@@ -385,7 +385,10 @@ function bindDebugActions() {
   });
 
   // Section headers - collapsible with keyboard support
+  // Uses eventsController.signal for proper cleanup on page unload
   const sectionHeaders = getAllElements('.section-header[role="button"]');
+  const signal = eventsController?.signal;
+
   sectionHeaders.forEach(header => {
     const toggleSection = () => {
       const section = header.closest('.section');
@@ -400,16 +403,16 @@ function bindDebugActions() {
       announceToScreenReader(announcement);
     };
 
-    // Click handler
-    header.addEventListener('click', toggleSection);
+    // Click handler - uses AbortController signal for cleanup
+    header.addEventListener('click', toggleSection, { signal });
 
-    // Keyboard handler (Enter and Space)
+    // Keyboard handler (Enter and Space) - uses AbortController signal for cleanup
     header.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         toggleSection();
       }
-    });
+    }, { signal });
   });
 }
 

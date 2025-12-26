@@ -516,7 +516,7 @@ export function initializePresetsUI() {
         </button>
       </div>
       <button class="btn-icon" id="btn-quick-save-preset" style="display: none;">💾</button>
-      <button class="btn-icon" id="btn-refresh-presets" style="display: none;">🔄</button>
+      <button class="btn-icon" id="btn-refresh-presets" style="display: none;" aria-label="Refresh presets from vault"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
     </div>
   `);
 
@@ -676,7 +676,8 @@ function bindPresetEvents() {
 
     btnRefreshPresets.addEventListener('click', async () => {
       btnRefreshPresets.disabled = true;
-      btnRefreshPresets.textContent = '⏳';
+      btnRefreshPresets.setAttribute('aria-busy', 'true');
+      btnRefreshPresets.innerHTML = '<span class="spinner-sm" aria-hidden="true"></span>';
 
       try {
         const isReady = await presetManager.isVaultReady();
@@ -700,7 +701,8 @@ function bindPresetEvents() {
         safeLog(`[RefreshPresets] Error: ${error.message}`);
       } finally {
         btnRefreshPresets.disabled = false;
-        btnRefreshPresets.textContent = '🔄';
+        btnRefreshPresets.removeAttribute('aria-busy');
+        btnRefreshPresets.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
       }
     });
   }

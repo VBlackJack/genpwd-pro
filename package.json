@@ -137,8 +137,17 @@
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "license": "LICENSE",
-      "warningsAsErrors": false
+      "warningsAsErrors": false,
+      "perMachine": false
     },
+    "fileAssociations": [
+      {
+        "ext": "gpdb",
+        "name": "GenPwd Pro Vault",
+        "description": "GenPwd Pro Password Vault",
+        "role": "Editor"
+      }
+    ],
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"
     },

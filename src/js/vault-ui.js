@@ -554,9 +554,9 @@ export class VaultUI {
               </div>
               <div class="vault-list-info">
                 <div class="vault-list-name">${this.#escapeHtml(v.name || v.id.substring(0, 8))}</div>
-                <div class="vault-list-meta">${v.isMissing ? '⚠️ Fichier introuvable' : this.#formatDate(v.modifiedAt)}</div>
+                <div class="vault-list-meta">${v.isMissing ? '⚠️ ' + t('vault.messages.fileNotFound') : this.#formatDate(v.modifiedAt)}</div>
               </div>
-              <button type="button" class="vault-list-forget" data-vault-id="${v.id}" title="Oublier ce coffre" aria-label="Oublier ce coffre">
+              <button type="button" class="vault-list-forget" data-vault-id="${v.id}" title="${t('vault.messages.forgetVault')}" aria-label="${t('vault.messages.forgetVault')}">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -988,14 +988,14 @@ export class VaultUI {
         required: true,
         minLength: 1,
         maxLength: 50,
-        requiredMessage: 'Vault name is required',
-        maxLengthMessage: 'Maximum 50 characters'
+        requiredMessage: t('vault.validation.fieldRequired'),
+        maxLengthMessage: t('vault.validation.maxLength', { count: 50 })
       });
     });
     vaultNameInput?.addEventListener('blur', () => {
       this.#validateField(vaultNameInput, vaultNameMessage, {
         required: true,
-        requiredMessage: 'Vault name is required'
+        requiredMessage: t('vault.validation.fieldRequired')
       });
     });
 
@@ -1018,8 +1018,8 @@ export class VaultUI {
       this.#validateField(vaultPasswordInput, vaultPasswordMessage, {
         required: true,
         minLength: 12,
-        requiredMessage: 'Password is required',
-        minLengthMessage: 'Minimum 12 characters required'
+        requiredMessage: t('vault.validation.fieldRequired'),
+        minLengthMessage: t('vault.validation.minLength', { count: 12 })
       });
       // Re-validate confirm if has value
       const confirmInput = document.getElementById('new-vault-confirm');
@@ -2079,7 +2079,7 @@ export class VaultUI {
             <button class="vault-quick-btn copy-user" data-action="copy-username"
                     title="${t('vault.actions.copyUsername')}" aria-label="${t('vault.actions.copyUsername')}">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2"></path>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </button>
@@ -3532,7 +3532,7 @@ export class VaultUI {
       confirmBtn.disabled = result.entries.length === 0;
 
     } catch (error) {
-      importSummary.innerHTML = `<div class="vault-import-error">❌ Erreur: ${this.#escapeHtml(error.message)}</div>`;
+      importSummary.innerHTML = `<div class="vault-import-error">❌ ${t('vault.common.error')}: ${this.#escapeHtml(error.message)}</div>`;
       confirmBtn.disabled = true;
     }
   }
@@ -5289,7 +5289,7 @@ export class VaultUI {
       const result = await window.vault.io.selectSaveLocation(`${vaultName}.gpdb`);
 
       if (!result.success) {
-        this.#showToast(result.error || 'Erreur', 'error');
+        this.#showToast(result.error || t('vault.common.error'), 'error');
         return;
       }
 
@@ -5301,7 +5301,7 @@ export class VaultUI {
       const submitBtn = document.querySelector('#save-vault-form button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="vault-spinner"></span> Chiffrement...';
+        submitBtn.innerHTML = `<span class="vault-spinner"></span> ${t('vault.actions.encrypting')}`;
       }
 
       // Prepare vault data
@@ -5413,13 +5413,13 @@ export class VaultUI {
     // Check for parsing errors
     const parseError = doc.querySelector('parsererror');
     if (parseError) {
-      throw new Error('Format XML invalide');
+      throw new Error(t('vault.messages.invalidXmlFormat'));
     }
 
     // Check if it's a KeePass file
     const root = doc.querySelector('KeePassFile');
     if (!root) {
-      throw new Error('Ce n\'est pas un fichier KeePass XML');
+      throw new Error(t('vault.messages.notKeePassFile'));
     }
 
     let imported = 0;
@@ -5540,7 +5540,7 @@ export class VaultUI {
 
   async #importCSV(csvText) {
     const lines = csvText.split(/\r?\n/).filter(line => line.trim());
-    if (lines.length < 2) throw new Error('Fichier CSV vide');
+    if (lines.length < 2) throw new Error(t('vault.messages.emptyCsvFile'));
 
     const headers = this.#parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
 
@@ -7145,7 +7145,7 @@ export class VaultUI {
       {
         password: currentPassword,
         changedAt: new Date().toISOString(),
-        reason: 'Changement manuel'
+        reason: t('vault.generator.manualChange')
       },
       ...history
     ].slice(0, 10); // Keep max 10
@@ -7803,7 +7803,7 @@ export class VaultUI {
 
     for (const file of fileList) {
       if (file.size > MAX_SIZE) {
-        this.#showToast(`Fichier trop volumineux: ${file.name} (> 5MB)`, 'error');
+        this.#showToast(t('vault.messages.fileTooLarge', { name: file.name }), 'error');
         continue;
       }
 
@@ -8472,7 +8472,7 @@ export class VaultUI {
       urlInput?.addEventListener('blur', () => {
         this.#validateField(urlInput, urlMessage, {
           url: true,
-          urlMessage: 'URL invalide'
+          urlMessage: t('vault.form.invalidUrl')
         });
       });
 
@@ -8512,7 +8512,7 @@ export class VaultUI {
       emailInput?.addEventListener('blur', () => {
         this.#validateField(emailInput, emailMessage, {
           email: true,
-          emailMessage: 'Email invalide'
+          emailMessage: t('vault.form.invalidEmail')
         });
       });
     }
@@ -9255,26 +9255,31 @@ export class VaultUI {
     });
 
     ['gen-uppercase', 'gen-lowercase', 'gen-numbers', 'gen-symbols'].forEach(id => {
-      document.getElementById(id).addEventListener('change', generate);
+      document.getElementById(id)?.addEventListener('change', generate);
     });
 
-    document.getElementById('gen-refresh').addEventListener('click', generate);
+    // Use popover.querySelector for elements inside the popover (safer than getElementById)
+    popover.querySelector('.vault-gen-refresh')?.addEventListener('click', generate);
 
-    document.getElementById('gen-copy').addEventListener('click', () => {
-      const pwd = document.getElementById('gen-output').value;
-      navigator.clipboard.writeText(pwd);
-      this.#showToast(t('vault.common.copied'), 'success');
+    popover.querySelector('.vault-gen-copy')?.addEventListener('click', () => {
+      const pwd = popover.querySelector('.vault-gen-output')?.value;
+      if (pwd) {
+        navigator.clipboard.writeText(pwd);
+        this.#showToast(t('vault.common.copied'), 'success');
+      }
     });
 
-    document.getElementById('gen-use').addEventListener('click', () => {
-      const pwd = document.getElementById('gen-output').value;
-      input.value = pwd;
-      input.type = 'text';
-      if (strengthUpdateFn) strengthUpdateFn(pwd);
+    popover.querySelector('#gen-use')?.addEventListener('click', () => {
+      const pwd = popover.querySelector('.vault-gen-output')?.value;
+      if (pwd) {
+        input.value = pwd;
+        input.type = 'text';
+        if (strengthUpdateFn) strengthUpdateFn(pwd);
+      }
       popover.remove();
     });
 
-    popover.querySelector('.vault-gen-close').addEventListener('click', () => popover.remove());
+    popover.querySelector('.vault-gen-close')?.addEventListener('click', () => popover.remove());
 
     // Close on outside click - with safety check for removed elements
     setTimeout(() => {
@@ -9328,12 +9333,12 @@ export class VaultUI {
     // Min length check
     else if (rules.minLength && value.length < rules.minLength) {
       isValid = false;
-      message = rules.minLengthMessage || `Minimum ${rules.minLength} characters`;
+      message = rules.minLengthMessage || t('vault.validation.minLength', { count: rules.minLength });
     }
     // Max length check
     else if (rules.maxLength && value.length > rules.maxLength) {
       isValid = false;
-      message = rules.maxLengthMessage || `Maximum ${rules.maxLength} characters`;
+      message = rules.maxLengthMessage || t('vault.validation.maxLength', { count: rules.maxLength });
     }
     // Pattern check
     else if (rules.pattern && !rules.pattern.test(value)) {

@@ -479,8 +479,4 @@ export async function validateCSVFile(file) {
   return { valid: true };
 }
 
-export default {
-  importCSV,
-  getFormatDisplayName,
-  validateCSVFile
-};
+// Note: Use named exports directly - default export removed for consistency

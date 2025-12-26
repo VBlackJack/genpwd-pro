@@ -156,7 +156,19 @@
       "copyValue": "Copier",
       "generateNow": "Générer maintenant"
     },
+    "validation": {
+      "fieldRequired": "Ce champ est requis",
+      "minLength": "Minimum {count} caractères",
+      "maxLength": "Maximum {count} caractères",
+      "invalidFormat": "Format invalide",
+      "invalidUrl": "URL invalide",
+      "invalidEmail": "Adresse email invalide",
+      "passwordsNoMatch": "Les mots de passe ne correspondent pas",
+      "tooWeak": "Mot de passe trop faible"
+    },
     "messages": {
+      "forgetVault": "Oublier ce coffre",
+      "fileNotFound": "Fichier non trouvé",
       "vaultLocked": "Coffre verrouillé",
       "vaultSaved": "Coffre sauvegardé : {fileName}",
       "forgetVaultConfirm": "Oublier le coffre « {name} » ?\n\nLe fichier ne sera pas supprimé, mais le coffre sera retiré de la liste.",
@@ -384,7 +396,11 @@
     },
     "generator": {
       "title": "Générateur de mot de passe",
-      "emptyState": "Aucun mot de passe généré"
+      "emptyState": "Aucun mot de passe généré",
+      "invalidData": "Données de mot de passe invalides",
+      "clickToCycle": "Cliquez pour changer (U → l → T → U)",
+      "blocks": "Blocs :",
+      "manualChange": "Modification manuelle"
     },
     "colors": {
       "default": "Par défaut",
@@ -480,13 +496,152 @@
       "title": "Déverrouiller le coffre",
       "unlockToContinue": "Déverrouillez le coffre pour continuer",
       "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
       "tryAgain": "Réessayer",
-      "or": "ou"
+      "or": "ou",
+      "unlockWithHello": "Déverrouiller avec Windows Hello"
     },
     "duress": {
       "enabled": "Mode Coercition activé ! L'application va redémarrer pour appliquer le nouveau conteneur de sécurité.",
       "destroyed": "Coffre détruit."
+    },
+    "duressModal": {
+      "title": "Configuration du Mode Coercition",
+      "explanation1": "Cette fonctionnalité de sécurité avancée crée un <strong>coffre « Leurre » secondaire</strong> caché dans votre fichier de coffre principal.",
+      "explanation2": "Si vous êtes forcé de déverrouiller votre coffre sous contrainte, entrez votre <strong>Mot de passe de coercition</strong> au lieu de votre mot de passe maître.",
+      "explanation3": "L'application ouvrira le coffre Leurre, qui semble entièrement fonctionnel mais contient des données non sensibles. Il est mathématiquement impossible de prouver l'existence de votre vrai coffre.",
+      "masterPasswordLabel": "Mot de passe maître (vérification)",
+      "masterPasswordPlaceholder": "Entrez le mot de passe maître actuel",
+      "newDuressLabel": "Nouveau mot de passe de coercition",
+      "duressPlaceholder": "Doit être différent du mot de passe maître",
+      "duressHint": "Entrer ce mot de passe à la connexion ouvrira le coffre Leurre.",
+      "autofillLabel": "Pré-remplir le coffre Leurre",
+      "autofillHint": "Générer des entrées « factices » réalistes (ex. Amazon, Google) pour que le coffre ne paraisse pas suspect/vide.",
+      "bothRequired": "Les deux mots de passe sont requis.",
+      "mustBeDifferent": "Le mot de passe de coercition DOIT être différent du mot de passe maître.",
+      "encrypting": "Chiffrement du coffre (V3)...",
+      "successMessage": "Mode Coercition activé ! Redémarrage pour appliquer le conteneur de sécurité...",
+      "enableButton": "Activer le Mode Coercition"
     }
+  },
+  "aliasModal": {
+    "title": "Configuration d'alias email",
+    "provider": "Fournisseur",
+    "apiKey": "Clé API / Token",
+    "apiKeyPlaceholder": "Collez votre clé API ici...",
+    "showHide": "Afficher/Masquer",
+    "helpSimpleLogin": "Pour SimpleLogin : Allez dans Paramètres > Clés API.",
+    "helpAnonAddy": "Pour AnonAddy : Allez dans Paramètres > API > Générer un nouveau token.",
+    "enterApiKey": "Veuillez entrer une clé API.",
+    "verifying": "Vérification...",
+    "validating": "Validation de la clé...",
+    "keyValidated": "Clé validée et enregistrée !",
+    "invalidKey": "Clé API invalide. Vérifiez vos identifiants.",
+    "validationError": "Erreur de validation : {message}",
+    "required": "requis"
+  },
+  "syncModal": {
+    "title": "Paramètres de synchronisation",
+    "cloudProvider": "Fournisseur cloud",
+    "chooseProvider": "Choisissez où synchroniser votre coffre",
+    "disabled": "Désactivé (local uniquement)",
+    "webdav": "WebDAV / Nextcloud / OwnCloud",
+    "serverUrl": "URL du serveur",
+    "serverUrlHint": "ex. https://cloud.example.com/remote.php/dav/files/user/",
+    "username": "Nom d'utilisateur",
+    "usernameHint": "Votre identifiant de connexion WebDAV",
+    "passwordToken": "Mot de passe / Token d'application",
+    "passwordHint": "Utilisez un token d'application si disponible",
+    "testConnection": "Tester la connexion",
+    "testing": "Connexion...",
+    "connectionSuccess": "Connexion réussie !",
+    "connectionFailed": "Échec : {message}",
+    "fillAllFields": "Veuillez remplir tous les champs requis",
+    "saving": "Enregistrement...",
+    "required": "requis"
+  },
+  "shareModal": {
+    "title": "Partage sécurisé (GenPwd Send)",
+    "step1": "Étape 1 sur 2",
+    "step2": "Étape 2 sur 2",
+    "stepConfig": "Étape 1 : Configuration",
+    "stepResult": "Étape 2 : Résultat",
+    "infoText": "Créez un lien chiffré sécurisé pour partager ce mot de passe. La clé de déchiffrement sera incluse dans l'URL mais jamais envoyée au serveur.",
+    "expiration": "Expiration",
+    "hour1": "1 Heure",
+    "day1": "1 Jour",
+    "days7": "7 Jours",
+    "burnAfterReading": "Détruire après lecture",
+    "generateLink": "Générer le lien",
+    "generating": "Génération...",
+    "done": "Terminé",
+    "linkReady": "Lien prêt !",
+    "shareLink": "Lien de partage",
+    "copyLink": "Copier",
+    "warningText": "Ce lien donne accès au secret. Ne le partagez qu'avec le destinataire prévu.",
+    "linkCopied": "Lien copié"
+  },
+  "settingsModal": {
+    "title": "Paramètres",
+    "tabs": {
+      "general": "Général",
+      "shortcuts": "Raccourcis",
+      "security": "Sécurité",
+      "danger": "Zone Danger"
+    },
+    "categories": "Catégories de paramètres",
+    "general": {
+      "appearance": "Apparence",
+      "appearanceDesc": "Personnaliser l'apparence de l'application",
+      "toggleTheme": "Basculer Thème Clair/Sombre"
+    },
+    "shortcuts": {
+      "title": "Raccourcis clavier",
+      "description": "Actions rapides pour améliorer votre productivité",
+      "showHideApp": "Afficher/Masquer l'app (global)",
+      "autoTypePassword": "Saisie auto du mot de passe (global)",
+      "generatePasswords": "Générer de nouveaux mots de passe",
+      "copyAllPasswords": "Copier tous les mots de passe",
+      "lockVault": "Verrouiller le coffre",
+      "openSettings": "Ouvrir les paramètres",
+      "closeModal": "Fermer la fenêtre / Annuler",
+      "navigate": "Naviguer entre les éléments",
+      "confirm": "Confirmer / Valider",
+      "exitApp": "Quitter l'application"
+    },
+    "security": {
+      "autoLock": "Verrouillage auto",
+      "autoLockDesc": "Verrouiller le coffre après une période d'inactivité",
+      "minute1": "1 minute",
+      "minutes5": "5 minutes",
+      "minutes15": "15 minutes",
+      "hour1": "1 heure",
+      "never": "Jamais (non recommandé)"
+    },
+    "danger": {
+      "warning": "Attention",
+      "title": "Zone Danger",
+      "irreversible": "Les actions ici sont irréversibles.",
+      "panicMode": "Mode Panique (Option Nucléaire)",
+      "panicDesc": "Détruit définitivement le coffre et toutes ses données. Aucune récupération possible.",
+      "destroyVault": "DÉTRUIRE LE COFFRE",
+      "destroyConfirm1": "Cette action DÉTRUIRA DÉFINITIVEMENT ce coffre. Il n'y aura AUCUN moyen d'annuler.",
+      "destroyTitle": "Détruire le coffre",
+      "iUnderstand": "Je comprends",
+      "finalConfirm": "CONFIRMATION FINALE : Tout supprimer ?",
+      "finalWarning": "Avertissement final",
+      "deleteEverything": "Tout supprimer",
+      "vaultDestroyed": "Coffre détruit."
+    }
+  },
+  "breach": {
+    "checkButton": "Vérifier les fuites",
+    "checking": "Vérification...",
+    "notCompromised": "Non compromis",
+    "compromisedTimes": "Compromis {count} fois",
+    "compromisedPlus": "Compromis {count}+ fois",
+    "compromisedK": "Compromis {count}K+ fois",
+    "compromisedM": "Compromis {count}M+ fois"
   },
   "toast": {
     "blocksRandomized": "Blocs randomisés",
@@ -522,6 +677,7 @@
     "allPresetsExported": "Tous les presets exportés !",
     "vaultLockedToEdit": "Coffre verrouillé - déverrouillez pour modifier",
     "configurationUpdated": "Configuration mise à jour !",
+    "copyPassword": "Copier le mot de passe",
     "historyEnabled": "Historique activé !",
     "historyCopied": "Copié !",
     "historyExported": "Historique exporté !",

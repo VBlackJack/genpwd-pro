@@ -269,11 +269,7 @@ textarea.field-invalid {
   border: 2px solid var(--glass-border);
   border-top-color: var(--accent-cyan);
   border-radius: 50%;
-  animation: btn-spin 0.8s linear infinite;
-}
-
-@keyframes btn-spin {
-  to { transform: rotate(360deg); }
+  animation: spin 0.8s linear infinite;
 }
 
 .btn.small {
@@ -1181,7 +1177,7 @@ textarea.field-invalid {
   border: 2px solid rgba(96, 165, 250, 0.3);
   border-top-color: var(--accent-blue);
   border-radius: 50%;
-  animation: breachSpin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes breachPulse {
@@ -1192,10 +1188,6 @@ textarea.field-invalid {
 @keyframes breachFadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes breachSpin {
-  to { transform: rotate(360deg); }
 }
 
 /* ============================================================================
@@ -1467,7 +1459,7 @@ textarea.field-invalid {
   border: 2px solid var(--glass-border, rgba(255, 255, 255, 0.2));
   border-top-color: var(--accent-cyan, #00d4ff);
   border-radius: 50%;
-  animation: spinner-rotate 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
   vertical-align: middle;
 }
 
@@ -1497,9 +1489,6 @@ textarea.field-invalid {
   border: 0;
 }
 
-@keyframes spinner-rotate {
-  to { transform: rotate(360deg); }
-}
 
 /* ==================== REDUCED MOTION SUPPORT ==================== */
 @media (prefers-reduced-motion: reduce) {

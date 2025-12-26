@@ -15,7 +15,7 @@
  */
 // src/js/utils/helpers.js - Fonctions utilitaires extraites
 
-import { safeLog } from './logger.js';
+import { safeLog, LOG_LEVEL } from './logger.js';
 
 // Polyfill for crypto in Node.js environment
 const crypto = globalThis.crypto;
@@ -376,7 +376,7 @@ export function insertWithPlacement(base, charsToInsert, placement, options = {}
     }
   } catch (e) {
     // Log error properly instead of silently masking it
-    safeLog(`Error in insertWithPlacement: ${e.message}`, 'error');
+    safeLog(`Error in insertWithPlacement: ${e.message}`, LOG_LEVEL.ERROR);
     // Return safe fallback
     return base + chars.join('');
   }

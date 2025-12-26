@@ -236,13 +236,4 @@ export function downloadCSV(content, filename) {
   URL.revokeObjectURL(url);
 }
 
-export default {
-  exportToBitwarden,
-  exportToLastPass,
-  exportTo1Password,
-  exportToChrome,
-  exportToGeneric,
-  exportToFormat,
-  downloadCSV,
-  EXPORT_FORMATS
-};
+// Note: Use named exports directly - default export removed for consistency
