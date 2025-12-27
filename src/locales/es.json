@@ -53,10 +53,6 @@
     "confirm": "Confirmar",
     "confirmation": "Confirmación"
   },
-  "toast": {
-    "dismiss": "Cerrar notificación",
-    "undo": "Deshacer"
-  },
   "header": {
     "generatorTab": "Generador",
     "vaultTab": "Bóveda",
@@ -1012,6 +1008,9 @@
     }
   },
   "toast": {
+    "dismiss": "Cerrar notificación",
+    "undo": "Deshacer",
+    "copyPassword": "Copiar contraseña",
     "passwordsGenerated": "¡{count} contraseña(s) generada(s){dict}!",
     "storageQuotaExceeded": "Almacenamiento lleno. Algunos datos no se pudieron guardar.",
     "blocksRandomized": "Bloques aleatorizados",

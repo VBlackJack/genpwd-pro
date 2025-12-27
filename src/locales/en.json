@@ -53,10 +53,6 @@
     "confirm": "Confirm",
     "confirmation": "Confirmation"
   },
-  "toast": {
-    "dismiss": "Dismiss notification",
-    "undo": "Undo"
-  },
   "header": {
     "generatorTab": "Generator",
     "vaultTab": "Vault",
@@ -1012,6 +1008,9 @@
     }
   },
   "toast": {
+    "dismiss": "Dismiss notification",
+    "undo": "Undo",
+    "copyPassword": "Copy password",
     "passwordsGenerated": "Generated {count} password(s){dict}!",
     "storageQuotaExceeded": "Storage full. Some data could not be saved.",
     "blocksRandomized": "Blocks randomized",
@@ -1193,7 +1192,8 @@
       "noPresetsInVault": "No presets in vault",
       "exporting": "Exporting...",
       "loadingError": "Loading error",
-      "deleteFromVault": "Delete from vault"
+      "deleteFromVault": "Delete from vault",
+      "loadPreset": "Load this preset"
     },
     "config": {
       "mode": "Mode",

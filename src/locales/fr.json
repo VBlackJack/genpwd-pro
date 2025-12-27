@@ -53,10 +53,6 @@
     "confirm": "Confirmer",
     "confirmation": "Confirmation"
   },
-  "toast": {
-    "dismiss": "Fermer la notification",
-    "undo": "Annuler"
-  },
   "header": {
     "generatorTab": "Générateur",
     "vaultTab": "Coffre",
@@ -1114,6 +1110,8 @@
     }
   },
   "toast": {
+    "dismiss": "Fermer la notification",
+    "undo": "Annuler",
     "passwordsGenerated": "{count} mot(s) de passe généré(s){dict} !",
     "storageQuotaExceeded": "Stockage plein. Certaines données n'ont pas pu être enregistrées.",
     "blocksRandomized": "Blocs randomisés",
