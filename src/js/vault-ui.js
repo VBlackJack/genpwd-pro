@@ -1362,7 +1362,7 @@ export class VaultUI {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input type="search" class="vault-search-input" id="vault-search"
-                   placeholder="Search... (Ctrl+F)" value="${this.#escapeHtml(this.#searchQuery)}"
+                   placeholder="${t('vault.placeholders.searchCtrlF')}" value="${this.#escapeHtml(this.#searchQuery)}"
                    aria-label="Search vault">
             <button class="vault-filter-btn ${this.#hasActiveFilters() ? 'active' : ''}" id="filter-btn"
                     title="Advanced filters" aria-haspopup="true" aria-expanded="false">
@@ -3024,7 +3024,7 @@ export class VaultUI {
                 </svg>
               </button>
               <div class="vault-template-picker" id="template-picker" hidden>
-                <input type="text" class="vault-input vault-template-search" id="template-search" placeholder="Search template...">
+                <input type="text" class="vault-input vault-template-search" id="template-search" placeholder="${t('vault.placeholders.searchTemplate')}">
                 <div class="vault-template-grid" id="template-grid">
                   ${this.#renderTemplateGrid()}
                 </div>
@@ -3045,7 +3045,7 @@ export class VaultUI {
 
             <div class="vault-form-group">
               <label class="vault-label" for="entry-title">Titre <span class="required" aria-label="obligatoire">*</span></label>
-              <input type="text" class="vault-input" id="entry-title" placeholder="Ex: Gmail, Amazon..." required aria-describedby="entry-title-message" aria-invalid="false">
+              <input type="text" class="vault-input" id="entry-title" placeholder="${t('vault.placeholders.entryTitleExample')}" required aria-describedby="entry-title-message" aria-invalid="false">
               <div class="vault-field-message" id="entry-title-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -3245,7 +3245,7 @@ export class VaultUI {
       }
         </div>
         <div class="vault-tag-picker-add">
-          <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="New tag...">
+          <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="${t('vault.placeholders.newTag')}">
           <div class="vault-tag-color-picker" id="tag-color-picker">
             ${tagColors.map((color, i) => `
               <button type="button" class="vault-color-btn vault-color-option ${i === 0 ? 'selected' : ''}"
@@ -3315,7 +3315,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="add-tag-form">
             <div class="vault-form-group">
               <label class="vault-label" for="tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="tag-name" placeholder="E.g., Important, To check..." required maxlength="30" aria-invalid="false">
+              <input type="text" class="vault-input" id="tag-name" placeholder="${t('vault.placeholders.tagExample')}" required maxlength="30" aria-invalid="false">
             </div>
             <div class="vault-form-group">
               <label class="vault-label">Color</label>
@@ -3848,7 +3848,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="add-folder-form">
             <div class="vault-form-group">
               <label class="vault-label" for="folder-name">Folder name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="folder-name" placeholder="E.g., Work, Personal..." required aria-invalid="false">
+              <input type="text" class="vault-input" id="folder-name" placeholder="${t('vault.placeholders.folderExample')}" required aria-invalid="false">
             </div>
             <div class="vault-modal-actions">
               <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
@@ -5214,7 +5214,7 @@ export class VaultUI {
             </label>
             <p class="vault-form-hint">This password protects the exported file. It can be different from the vault password.</p>
             <div class="vault-input-group">
-              <input type="password" class="vault-input" id="save-vault-password" placeholder="Password..." required minlength="8" aria-invalid="false">
+              <input type="password" class="vault-input" id="save-vault-password" placeholder="${t('vault.form.passwordPlaceholder')}" required minlength="8" aria-invalid="false">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Show">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -5227,7 +5227,7 @@ export class VaultUI {
             <label class="vault-label" for="save-vault-confirm">
               Confirm password <span class="required">*</span>
             </label>
-            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="Confirm..." required minlength="8" aria-invalid="false">
+            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="${t('vault.form.confirmPlaceholder')}" required minlength="8" aria-invalid="false">
           </div>
           <div class="vault-modal-actions">
             <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
@@ -7680,7 +7680,7 @@ export class VaultUI {
             <label class="vault-label" for="edit-totp">TOTP Key (2FA)</label>
             <div class="vault-input-group">
               <input type="text" class="vault-input mono" id="edit-totp" value="${this.#escapeHtml(entry.data?.totp || '')}"
-                     placeholder="JBSWY3DPEHPK3PXP..." autocomplete="off" spellcheck="false">
+                     placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
               <button type="button" class="vault-input-btn" id="edit-scan-totp" data-tooltip="Scanner QR" aria-label="Scanner QR ou coller otpauth://">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="7" height="7"></rect>
@@ -7735,7 +7735,7 @@ export class VaultUI {
           <div class="vault-form-row">
             <div class="vault-form-group">
               <label class="vault-label" for="edit-expiry">Expiration</label>
-              <input type="text" class="vault-input" id="edit-expiry" value="${this.#escapeHtml(entry.data?.expiry || '')}" placeholder="MM/AA">
+              <input type="text" class="vault-input" id="edit-expiry" value="${this.#escapeHtml(entry.data?.expiry || '')}" placeholder="${t('vault.placeholders.expiryFormat')}">
             </div>
             <div class="vault-form-group">
               <label class="vault-label" for="edit-cvv">CVV</label>
@@ -8428,7 +8428,7 @@ export class VaultUI {
         <div class="vault-form-group">
           <label class="vault-label" for="entry-username">Username / Email</label>
           <div class="input-with-action">
-            <input type="text" class="vault-input" id="entry-username" placeholder="user@example.com" autocomplete="username">
+            <input type="text" class="vault-input" id="entry-username" placeholder="${t('vault.form.userPlaceholder')}" autocomplete="username">
             <button type="button" class="vault-btn-icon" id="btn-create-alias" title="Generate Email Alias (Hide-My-Email)">
               <span class="icon">🕵️</span>
             </button>
@@ -8454,12 +8454,12 @@ export class VaultUI {
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-url">${t('vault.labels.url')}</label>
-          <input type="url" class="vault-input" id="entry-url" placeholder="https://example.com" aria-describedby="entry-url-message">
+          <input type="url" class="vault-input" id="entry-url" placeholder="${t('vault.placeholders.urlExample')}" aria-describedby="entry-url-message">
           <div class="vault-field-message" id="entry-url-message" role="alert" aria-live="polite"></div>
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-totp">TOTP Key (2FA)</label>
-          <input type="text" class="vault-input mono" id="entry-totp" placeholder="JBSWY3DPEHPK3PXP ou otpauth://..." autocomplete="off" spellcheck="false">
+          <input type="text" class="vault-input mono" id="entry-totp" placeholder="${t('vault.placeholders.totpSecretExample')}" autocomplete="off" spellcheck="false">
           <span class="vault-field-hint">Optionnel - Secret Base32 ou URI otpauth://</span>
         </div>
         <div class="vault-form-group">
@@ -8480,48 +8480,48 @@ export class VaultUI {
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-notes">${t('vault.labels.notes')}</label>
-          <textarea class="vault-input vault-textarea" id="entry-notes" rows="2" placeholder="Optional notes..."></textarea>
+          <textarea class="vault-input vault-textarea" id="entry-notes" rows="2" placeholder="${t('vault.form.optionalNotes')}"></textarea>
         </div>
       `,
       note: `
         <div class="vault-form-group">
           <label class="vault-label" for="entry-content">Content <span class="required">*</span></label>
-          <textarea class="vault-input vault-textarea" id="entry-content" rows="8" placeholder="Your secure note..." required></textarea>
+          <textarea class="vault-input vault-textarea" id="entry-content" rows="8" placeholder="${t('vault.form.secureNote')}" required></textarea>
         </div>
       `,
       card: `
         <div class="vault-form-group">
           <label class="vault-label" for="entry-holder">Holder</label>
-          <input type="text" class="vault-input" id="entry-holder" placeholder="JEAN DUPONT" autocomplete="cc-name">
+          <input type="text" class="vault-input" id="entry-holder" placeholder="${t('vault.placeholders.holderExample')}" autocomplete="cc-name">
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-cardnumber">Card number</label>
-          <input type="text" class="vault-input" id="entry-cardnumber" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
+          <input type="text" class="vault-input" id="entry-cardnumber" placeholder="${t('vault.placeholders.cardNumberExample')}" autocomplete="cc-number">
         </div>
         <div class="vault-form-row">
           <div class="vault-form-group">
             <label class="vault-label" for="entry-expiry">Expiration</label>
-            <input type="text" class="vault-input" id="entry-expiry" placeholder="MM/AA" autocomplete="cc-exp">
+            <input type="text" class="vault-input" id="entry-expiry" placeholder="${t('vault.placeholders.expiryFormat')}" autocomplete="cc-exp">
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="entry-cvv">CVV</label>
-            <input type="password" class="vault-input" id="entry-cvv" placeholder="123" maxlength="4" autocomplete="cc-csc">
+            <input type="password" class="vault-input" id="entry-cvv" placeholder="${t('vault.placeholders.cvvExample')}" maxlength="4" autocomplete="cc-csc">
           </div>
         </div>
       `,
       identity: `
         <div class="vault-form-group">
           <label class="vault-label" for="entry-fullname">Full name</label>
-          <input type="text" class="vault-input" id="entry-fullname" placeholder="Jean Dupont" autocomplete="name">
+          <input type="text" class="vault-input" id="entry-fullname" placeholder="${t('vault.placeholders.fullNameExample')}" autocomplete="name">
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-email">Email</label>
-          <input type="email" class="vault-input" id="entry-email" placeholder="jean@example.com" autocomplete="email" aria-describedby="entry-email-message">
+          <input type="email" class="vault-input" id="entry-email" placeholder="${t('vault.placeholders.emailExample')}" autocomplete="email" aria-describedby="entry-email-message">
           <div class="vault-field-message" id="entry-email-message" role="alert" aria-live="polite"></div>
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-phone">Phone</label>
-          <input type="tel" class="vault-input" id="entry-phone" placeholder="+33 6 12 34 56 78" autocomplete="tel">
+          <input type="tel" class="vault-input" id="entry-phone" placeholder="${t('vault.placeholders.phoneExample')}" autocomplete="tel">
         </div>
       `
     };
@@ -8668,7 +8668,7 @@ export class VaultUI {
     const existingFieldsHtml = existingFields.map((field, index) => `
       <div class="vault-custom-field" data-field-index="${index}" data-field-id="${this.#escapeHtml(field.id || '')}">
         <div class="vault-custom-field-header">
-          <input type="text" class="vault-input vault-custom-field-label" placeholder="Nom du champ" value="${this.#escapeHtml(field.label || '')}" aria-label="Nom du champ">
+          <input type="text" class="vault-input vault-custom-field-label" placeholder="${t('vault.placeholders.fieldName')}" value="${this.#escapeHtml(field.label || '')}" aria-label="${t('vault.placeholders.fieldName')}">
           <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
             ${fieldKindOptions.map(opt =>
       `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
@@ -8688,9 +8688,9 @@ export class VaultUI {
         <div class="vault-input-group">
           <input type="${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? 'password' : 'text'}"
                  class="vault-input vault-custom-field-value"
-                 placeholder="Value"
+                 placeholder="${t('vault.placeholders.fieldValue')}"
                  value="${this.#escapeHtml(field.value || '')}"
-                 aria-label="Field value">
+                 aria-label="${t('vault.placeholders.fieldValue')}">
           ${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? `
             <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="${t('vault.aria.toggleVisibility')}">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -8738,7 +8738,7 @@ export class VaultUI {
     return `
       <div class="vault-custom-field" data-field-index="${index}">
         <div class="vault-custom-field-header">
-          <input type="text" class="vault-input vault-custom-field-label" placeholder="Nom du champ" aria-label="Nom du champ">
+          <input type="text" class="vault-input vault-custom-field-label" placeholder="${t('vault.placeholders.fieldName')}" aria-label="${t('vault.placeholders.fieldName')}">
           <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
             <option value="text">Texte</option>
             <option value="hidden">Hidden</option>
@@ -8760,7 +8760,7 @@ export class VaultUI {
           </button>
         </div>
         <div class="vault-input-group">
-          <input type="text" class="vault-input vault-custom-field-value" placeholder="Value" aria-label="Field value">
+          <input type="text" class="vault-input vault-custom-field-value" placeholder="${t('vault.placeholders.fieldValue')}" aria-label="${t('vault.placeholders.fieldValue')}">
         </div>
       </div>
     `;
@@ -10226,7 +10226,7 @@ export class VaultUI {
             <div class="vault-form-group">
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="pwd-prompt-input"
-                       placeholder="Password" autocomplete="current-password" required autofocus>
+                       placeholder="${t('vault.placeholders.password')}" autocomplete="current-password" required autofocus>
                 <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="pwd-prompt-input">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>

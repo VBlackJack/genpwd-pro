@@ -334,6 +334,27 @@
       "unlocked": "Unlocked",
       "locked": "Locked"
     },
+    "placeholders": {
+      "searchCtrlF": "Search... (Ctrl+F)",
+      "searchTemplate": "Search template...",
+      "entryTitleExample": "E.g., Gmail, Amazon...",
+      "newTag": "New tag...",
+      "tagExample": "E.g., Important, To check...",
+      "folderExample": "E.g., Work, Personal...",
+      "totpKeyExample": "JBSWY3DPEHPK3PXP...",
+      "totpSecretExample": "JBSWY3DPEHPK3PXP or otpauth://...",
+      "expiryFormat": "MM/YY",
+      "urlExample": "https://example.com",
+      "holderExample": "JOHN DOE",
+      "cardNumberExample": "1234 5678 9012 3456",
+      "cvvExample": "123",
+      "fullNameExample": "John Doe",
+      "emailExample": "john@example.com",
+      "phoneExample": "+1 555 123 4567",
+      "fieldName": "Field name",
+      "fieldValue": "Value",
+      "password": "Password"
+    },
     "aria": {
       "hideValue": "Hide value",
       "showValue": "Show value",

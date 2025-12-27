@@ -893,7 +893,7 @@
   height: 24px;
   border: 2px solid var(--glass-border);
   border-top-color: var(--vault-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -2306,7 +2306,7 @@ kbd {
   width: 0;
   height: 0;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transform: translate(-50%, -50%);
   transition: width 0.4s ease, height 0.4s ease;
 }
@@ -2386,7 +2386,7 @@ kbd {
   height: 32px;
   border: 3px solid var(--vault-border);
   border-top-color: var(--vault-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -2396,7 +2396,7 @@ kbd {
   height: 16px;
   border: 2px solid var(--vault-border);
   border-top-color: currentColor;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -2657,7 +2657,7 @@ kbd {
   width: 24px;
   height: 24px;
   background: var(--vault-success);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: white;
   animation: vault-check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -3004,7 +3004,7 @@ kbd {
   width: 8px;
   height: 8px;
   background: var(--vault-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .vault-filter-panel {
@@ -3114,7 +3114,7 @@ kbd {
   width: 8px;
   height: 8px;
   margin-left: 0.5rem;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
@@ -3888,7 +3888,7 @@ kbd {
   width: 18px;
   height: 18px;
   background: var(--vault-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: transform var(--vault-transition);
 }
@@ -4129,7 +4129,7 @@ kbd {
   justify-content: center;
   width: 110px;
   height: 110px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   margin-bottom: 0.75rem;
   position: relative;
   animation: vault-health-appear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -4139,7 +4139,7 @@ kbd {
   content: '';
   position: absolute;
   inset: -4px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   padding: 4px;
   background: conic-gradient(from 0deg, var(--health-color, var(--vault-success)) 0%, transparent 75%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -4530,7 +4530,7 @@ kbd {
   margin-left: 0.25rem;
   background: transparent;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: var(--vault-text-muted);
   cursor: pointer;
   opacity: 0;
@@ -4669,7 +4669,7 @@ kbd {
   width: 28px;
   height: 28px;
   border: 2px solid transparent;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4811,7 +4811,7 @@ kbd {
   width: 8px;
   height: 8px;
   background: var(--vault-success);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 2px solid var(--vault-surface);
 }
 
@@ -5654,7 +5654,7 @@ kbd {
 .vault-tag-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
@@ -5813,7 +5813,7 @@ kbd {
 .vault-color-btn {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s;
@@ -6256,7 +6256,7 @@ kbd {
 .vault-bulk-tag-dot {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
@@ -7070,7 +7070,7 @@ kbd {
   position: absolute;
   inset: -10px;
   border: 2px dashed var(--vault-border-light);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: vault-empty-rotate 20s linear infinite;
 }
 
@@ -7379,7 +7379,7 @@ kbd {
   height: 32px;
   border: 3px solid var(--vault-border);
   border-top-color: var(--vault-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -7406,7 +7406,7 @@ kbd {
   margin: -8px 0 0 -8px;
   border: 2px solid currentColor;
   border-top-color: transparent;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -7466,7 +7466,7 @@ kbd {
   color: white;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7716,7 +7716,7 @@ body.mode-compact .vault-empty-text {
   top: 4px;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--vault-success);
   opacity: 0;
   transition: opacity 0.2s ease;

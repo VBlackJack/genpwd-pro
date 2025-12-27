@@ -155,12 +155,12 @@ header::before {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-smooth);
   overflow: hidden;
 }
 
 .header-tab svg {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--transition-smooth);
 }
 
 .header-tab:hover svg {
@@ -267,7 +267,7 @@ header::before {
   width: 16px;
   height: 16px;
   opacity: 0.8;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-smooth);
 }
 
 .about-btn:hover .about-icon {
@@ -326,7 +326,7 @@ header::before {
 .panel-body::-webkit-scrollbar-thumb {
   background: var(--accent-green);
   border-radius: var(--radius-xs);
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-normal);
 }
 
 .panel-body::-webkit-scrollbar-thumb:hover {
@@ -354,7 +354,7 @@ header::before {
   user-select: none;
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
   border-bottom: 1px solid transparent;
-  transition: background 0.2s ease;
+  transition: background var(--transition-normal);
 }
 
 .section-header:hover {
@@ -368,7 +368,7 @@ header::before {
 }
 
 .section.chevron .chev {
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-normal);
   font-size: 12px;
 }
 

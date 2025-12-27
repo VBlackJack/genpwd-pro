@@ -334,6 +334,27 @@
       "unlocked": "Desbloqueado",
       "locked": "Bloqueado"
     },
+    "placeholders": {
+      "searchCtrlF": "Buscar... (Ctrl+F)",
+      "searchTemplate": "Buscar plantilla...",
+      "entryTitleExample": "Ej: Gmail, Amazon...",
+      "newTag": "Nueva etiqueta...",
+      "tagExample": "Ej: Importante, Revisar...",
+      "folderExample": "Ej: Trabajo, Personal...",
+      "totpKeyExample": "JBSWY3DPEHPK3PXP...",
+      "totpSecretExample": "JBSWY3DPEHPK3PXP u otpauth://...",
+      "expiryFormat": "MM/AA",
+      "urlExample": "https://ejemplo.com",
+      "holderExample": "JUAN PÉREZ",
+      "cardNumberExample": "1234 5678 9012 3456",
+      "cvvExample": "123",
+      "fullNameExample": "Juan Pérez",
+      "emailExample": "juan@ejemplo.com",
+      "phoneExample": "+34 612 345 678",
+      "fieldName": "Nombre del campo",
+      "fieldValue": "Valor",
+      "password": "Contraseña"
+    },
     "aria": {
       "hideValue": "Ocultar valor",
       "showValue": "Mostrar valor",
