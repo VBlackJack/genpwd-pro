@@ -191,6 +191,9 @@
     "toggleDebug": "Basculer le panneau de debug",
     "clearLogs": "Effacer les logs de debug"
   },
+  "debug": {
+    "waitingInit": "[--:--:--] En attente de l'initialisation..."
+  },
   "about": {
     "title": "À propos de GenPwd Pro",
     "tagline": "Gestionnaire de mots de passe professionnel avec coffre chiffré",
@@ -232,6 +235,7 @@
     "closeResults": "Fermer les résultats des tests",
     "rerunTests": "Relancer tous les tests",
     "exportJson": "Exporter les résultats en JSON",
+    "exportButton": "Exporter JSON",
     "closeWindow": "Fermer la fenêtre des résultats"
   },
   "help": {
@@ -277,7 +281,8 @@
     "setAllLower": "Mettre tous les blocs en minuscules",
     "showAbout": "Afficher les informations sur GenPwd Pro",
     "generatorTab": "Onglet Générateur de mots de passe",
-    "vaultTab": "Onglet Coffre"
+    "vaultTab": "Onglet Coffre",
+    "mainNavigation": "Navigation principale"
   },
   "presets": {
     "title": "Préréglages",

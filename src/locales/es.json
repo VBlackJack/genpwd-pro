@@ -191,6 +191,9 @@
     "toggleDebug": "Alternar panel de debug",
     "clearLogs": "Limpiar logs de debug"
   },
+  "debug": {
+    "waitingInit": "[--:--:--] Esperando inicialización..."
+  },
   "about": {
     "title": "Acerca de GenPwd Pro",
     "tagline": "Gestor de contraseñas profesional con bóveda cifrada",
@@ -232,6 +235,7 @@
     "closeResults": "Cerrar resultados de pruebas",
     "rerunTests": "Relanzar todas las pruebas",
     "exportJson": "Exportar resultados como JSON",
+    "exportButton": "Exportar JSON",
     "closeWindow": "Cerrar ventana de resultados"
   },
   "help": {
@@ -277,7 +281,8 @@
     "setAllLower": "Establecer todos los bloques en minúsculas",
     "showAbout": "Mostrar información sobre GenPwd Pro",
     "generatorTab": "Pestaña Generador de contraseñas",
-    "vaultTab": "Pestaña Bóveda de contraseñas"
+    "vaultTab": "Pestaña Bóveda de contraseñas",
+    "mainNavigation": "Navegación principal"
   },
   "vault": {
     "aria": {

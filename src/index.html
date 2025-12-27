@@ -67,7 +67,7 @@
           </div>
         </div>
         <!-- App Tabs (Electron only) -->
-        <nav class="header-tabs" id="app-tabs" aria-label="Main navigation" hidden>
+        <nav class="header-tabs" id="app-tabs" data-i18n-aria-label="aria.mainNavigation" aria-label="Main navigation" hidden>
           <button type="button" class="header-tab" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab"><span aria-hidden="true">🔒</span> <span data-i18n="header.generatorTab">Generator</span></button>
           <button type="button" class="header-tab active" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab" aria-current="page"><span aria-hidden="true">🗄️</span> <span data-i18n="header.vaultTab">Vault</span></button>
         </nav>
@@ -181,7 +181,7 @@
     <div id="test-results-modal" class="modal-overlay hidden" role="dialog" aria-labelledby="test-results-title" aria-modal="true">
       <div class="modal test-modal">
         <div class="modal-header">
-          <h2 class="modal-title" id="test-results-title">📊 Test Results - GenPwd Pro v3.0.0</h2>
+          <h2 class="modal-title" id="test-results-title" data-i18n="testResults.title" data-i18n-options='{"version":"3.0.0"}'>📊 Test Results - GenPwd Pro v3.0.0</h2>
           <button type="button" class="modal-close" id="close-test-results" data-i18n-aria-label="testResults.closeResults" aria-label="Close test results" aria-controls="test-results-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -215,7 +215,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" id="btn-rerun-tests" class="btn" data-i18n-aria-label="testResults.rerunTests" aria-label="Rerun all tests">🔄 <span data-i18n="common.rerun">Rerun</span></button>
-          <button type="button" id="btn-export-test-results" class="btn" data-i18n-aria-label="testResults.exportJson" aria-label="Export results as JSON">📤 Export JSON</button>
+          <button type="button" id="btn-export-test-results" class="btn" data-i18n-aria-label="testResults.exportJson" aria-label="Export results as JSON">📤 <span data-i18n="testResults.exportButton">Export JSON</span></button>
           <button type="button" class="btn danger" id="close-test-results-footer" data-i18n-aria-label="testResults.closeWindow" aria-label="Close results window"><span data-i18n="common.close">Close</span></button>
         </div>
       </div>
@@ -234,7 +234,7 @@
             <button type="button" class="section-header chevron" aria-expanded="true" aria-controls="section-mode-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-mode" data-i18n="sections.generationMode">Generation Mode</strong>
-              <span class="badge" aria-label="3 modes available">3 modes</span>
+              <span class="badge" data-i18n="sections.modesAvailable" data-i18n-options='{"count":"3"}' aria-label="3 modes available">3 modes</span>
             </button>
             <div class="section-content" id="section-mode-content">
               <div class="row">
@@ -492,7 +492,7 @@
       </div>
       <div class="debug-body">
         <div id="tests"></div>
-        <pre class="log" id="logs" role="log" aria-live="polite">[--:--:--] Waiting for initialization...</pre>
+        <pre class="log" id="logs" role="log" aria-live="polite" data-i18n="debug.waitingInit">[--:--:--] Waiting for initialization...</pre>
       </div>
     </aside>
 

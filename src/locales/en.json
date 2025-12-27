@@ -191,6 +191,9 @@
     "toggleDebug": "Toggle debug panel",
     "clearLogs": "Clear debug logs"
   },
+  "debug": {
+    "waitingInit": "[--:--:--] Waiting for initialization..."
+  },
   "about": {
     "title": "About GenPwd Pro",
     "tagline": "Professional password manager with encrypted vault",
@@ -232,6 +235,7 @@
     "closeResults": "Close test results",
     "rerunTests": "Rerun all tests",
     "exportJson": "Export results as JSON",
+    "exportButton": "Export JSON",
     "closeWindow": "Close results window"
   },
   "help": {
@@ -277,7 +281,8 @@
     "setAllLower": "Set all blocks to lowercase",
     "showAbout": "Show information about GenPwd Pro",
     "generatorTab": "Password Generator Tab",
-    "vaultTab": "Password Vault Tab"
+    "vaultTab": "Password Vault Tab",
+    "mainNavigation": "Main navigation"
   },
   "vault": {
     "aria": {
