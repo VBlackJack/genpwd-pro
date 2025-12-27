@@ -823,15 +823,15 @@ export class VaultUI {
           </div>
           <form class="vault-modal-body" id="create-vault-form">
             <div class="vault-form-group">
-              <label class="vault-label" for="new-vault-name">Vault name <span class="required" aria-label="required">*</span></label>
-              <input type="text" class="vault-input" id="new-vault-name" placeholder="My Vault" required aria-describedby="vault-name-message">
+              <label class="vault-label" for="new-vault-name">${t('vault.createModal.vaultName')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
+              <input type="text" class="vault-input" id="new-vault-name" placeholder="${t('vault.createModal.vaultNamePlaceholder')}" required aria-describedby="vault-name-message">
               <div class="vault-field-message" id="vault-name-message" role="alert" aria-live="polite"></div>
             </div>
 
             <!-- Location selector -->
             <fieldset class="vault-form-group vault-fieldset">
-              <legend class="vault-label">Location</legend>
-              <div class="vault-location-options" role="radiogroup" aria-label="Vault location">
+              <legend class="vault-label">${t('vault.createModal.location')}</legend>
+              <div class="vault-location-options" role="radiogroup" aria-label="${t('vault.createModal.locationAria')}">
                 <label class="vault-radio-option">
                   <input type="radio" name="vault-location-type" value="default" checked>
                   <span class="vault-radio-label">
@@ -839,7 +839,7 @@ export class VaultUI {
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                       <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
-                    Default folder
+                    ${t('vault.createModal.defaultFolder')}
                   </span>
                 </label>
                 <label class="vault-radio-option">
@@ -848,7 +848,7 @@ export class VaultUI {
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    Choose location...
+                    ${t('vault.createModal.chooseLocation')}
                   </span>
                 </label>
               </div>
@@ -857,18 +857,18 @@ export class VaultUI {
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                   </svg>
-                  Browse...
+                  ${t('vault.createModal.browse')}
                 </button>
                 <div class="vault-location-path" id="create-vault-location" hidden></div>
               </div>
             </fieldset>
 
             <div class="vault-form-group">
-              <label class="vault-label" for="new-vault-password">Master password <span class="required" aria-label="required">*</span></label>
+              <label class="vault-label" for="new-vault-password">${t('vault.createModal.masterPassword')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="new-vault-password"
-                       placeholder="Minimum 12 characters" required minlength="12" aria-describedby="vault-password-message">
-                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="Show password" aria-pressed="false">
+                       placeholder="${t('vault.createModal.passwordPlaceholder')}" required minlength="12" aria-describedby="vault-password-message">
+                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -879,8 +879,8 @@ export class VaultUI {
               <div class="vault-field-message" id="vault-password-message" role="alert" aria-live="polite"></div>
             </div>
             <div class="vault-form-group">
-              <label class="vault-label" for="new-vault-confirm">Confirm password <span class="required" aria-label="required">*</span></label>
-              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="Re-enter password" required aria-describedby="vault-confirm-message">
+              <label class="vault-label" for="new-vault-confirm">${t('vault.createModal.confirmPassword')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
+              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="${t('vault.createModal.confirmPlaceholder')}" required aria-describedby="vault-confirm-message">
               <div class="vault-field-message" id="vault-confirm-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -895,9 +895,9 @@ export class VaultUI {
                     <circle cx="15.5" cy="10" r="1.5"/>
                     <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
                   </svg>
-                  Enable Windows Hello
+                  ${t('vault.createModal.enableHello')}
                 </span>
-                <span class="vault-checkbox-hint">Unlock with your face or fingerprint</span>
+                <span class="vault-checkbox-hint">${t('vault.createModal.helloHint')}</span>
               </label>
             </div>
 
@@ -1140,16 +1140,16 @@ export class VaultUI {
           </div>
           <form class="vault-modal-body" id="open-external-form">
             <div class="vault-form-group">
-              <label class="vault-label">File</label>
+              <label class="vault-label">${t('vault.externalModal.file')}</label>
               <div class="vault-location-path" id="external-vault-path"></div>
             </div>
             <div class="vault-form-group">
-              <label class="vault-label" for="external-vault-password">Master password <span class="required">*</span></label>
+              <label class="vault-label" for="external-vault-password">${t('vault.createModal.masterPassword')} <span class="required">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="external-vault-password"
-                       placeholder="Vault password" required autocomplete="current-password"
-                       aria-label="Vault password" aria-required="true">
-                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="external-vault-password" aria-label="Show password">
+                       placeholder="${t('vault.externalModal.passwordPlaceholder')}" required autocomplete="current-password"
+                       aria-label="${t('vault.labels.password')}" aria-required="true">
+                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="external-vault-password" aria-label="${t('vault.lockScreen.showHide')}">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>

@@ -189,7 +189,41 @@
     "runTests": "Lancer les tests de validation (Raccourci : Alt+R)",
     "debug": "Debug",
     "toggleDebug": "Basculer le panneau de debug",
-    "clearLogs": "Effacer les logs de debug"
+    "clearLogs": "Effacer les logs de debug",
+    "closeDebug": "Fermer"
+  },
+  "modal": {
+    "closeEsc": "Fermer (Échap)",
+    "confirmation": "Confirmation",
+    "confirm": "Confirmer"
+  },
+  "dashboard": {
+    "title": "Santé du coffre",
+    "checkBreaches": "Vérifier les fuites (HIBP)",
+    "overallScore": "Score global",
+    "stats": {
+      "weak": "Mots de passe faibles",
+      "reused": "Réutilisés",
+      "old": "Anciens (> 1 an)",
+      "compromised": "Compromis"
+    },
+    "sections": {
+      "compromised": "Mots de passe compromis",
+      "reused": "Mots de passe réutilisés",
+      "weak": "Mots de passe faibles"
+    },
+    "noWeak": "Aucun mot de passe faible détecté. Excellent !",
+    "noReused": "Aucun mot de passe réutilisé. Parfait !",
+    "noUsername": "Aucun nom d'utilisateur",
+    "accountsSamePassword": "{count} comptes utilisent le même mot de passe",
+    "foundInBreaches": "Trouvé dans {count} fuites de données",
+    "analyzing": "Analyse en cours...",
+    "analysisComplete": "Analyse terminée",
+    "actions": {
+      "fix": "Corriger",
+      "change": "Modifier",
+      "changeNow": "Modifier maintenant !"
+    }
   },
   "debug": {
     "waitingInit": "[--:--:--] En attente de l'initialisation..."
@@ -458,6 +492,28 @@
       "restore": "Restaurer",
       "copyValue": "Copier",
       "generateNow": "Générer maintenant"
+    },
+    "form": {
+      "required": "requis"
+    },
+    "createModal": {
+      "vaultName": "Nom du coffre",
+      "vaultNamePlaceholder": "Mon Coffre",
+      "location": "Emplacement",
+      "locationAria": "Emplacement du coffre",
+      "defaultFolder": "Dossier par défaut",
+      "chooseLocation": "Choisir un emplacement...",
+      "browse": "Parcourir...",
+      "masterPassword": "Mot de passe maître",
+      "passwordPlaceholder": "Minimum 12 caractères",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPlaceholder": "Ressaisir le mot de passe",
+      "enableHello": "Activer Windows Hello",
+      "helloHint": "Déverrouillez avec votre visage ou empreinte"
+    },
+    "externalModal": {
+      "file": "Fichier",
+      "passwordPlaceholder": "Mot de passe du coffre"
     },
     "validation": {
       "fieldRequired": "Ce champ est requis",

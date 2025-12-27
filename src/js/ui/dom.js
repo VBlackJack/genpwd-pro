@@ -150,7 +150,7 @@ export function toggleDebugPanel() {
 
   const btn = getElement('#btn-toggle-debug');
   if (btn) {
-    btn.textContent = isCurrentlyHidden ? '🔬 Close' : '🔬 Debug';
+    btn.innerHTML = `🔬 ${isCurrentlyHidden ? t('actions.closeDebug') : t('actions.debug')}`;
   }
 
   return isCurrentlyHidden; // returns true if panel is now visible

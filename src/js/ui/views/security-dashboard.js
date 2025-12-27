@@ -5,6 +5,7 @@
 
 import hibpService from '../../services/hibp-service.js';
 import { escapeHtml } from '../../utils/helpers.js';
+import { t } from '../../utils/i18n.js';
 
 export class SecurityDashboard {
     #container;
@@ -26,10 +27,10 @@ export class SecurityDashboard {
         this.#container.innerHTML = `
       <div class="security-dashboard">
         <div class="dashboard-header">
-          <h2>Vault Health</h2>
+          <h2>${t('dashboard.title')}</h2>
           <div class="dashboard-actions">
              <button class="vault-btn vault-btn-primary" id="btn-analyze-breaches">
-               <span class="icon">🔍</span> Check for breaches (HIBP)
+               <span class="icon">🔍</span> ${t('dashboard.checkBreaches')}
              </button>
           </div>
         </div>
@@ -43,7 +44,7 @@ export class SecurityDashboard {
                  <circle class="score-ring-progress" cx="50" cy="50" r="45" stroke-dasharray="283" stroke-dashoffset="0"></circle>
                  <text x="50" y="55" text-anchor="middle" class="score-text">--</text>
                </svg>
-               <div class="score-label">Overall Score</div>
+               <div class="score-label">${t('dashboard.overallScore')}</div>
             </div>
             <div class="score-grade" id="score-grade">--</div>
           </div>
@@ -52,19 +53,19 @@ export class SecurityDashboard {
           <div class="dashboard-card stats-card">
             <div class="stat-item">
               <span class="stat-value" id="count-weak">0</span>
-              <span class="stat-label">Weak passwords</span>
+              <span class="stat-label">${t('dashboard.stats.weak')}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value" id="count-reused">0</span>
-              <span class="stat-label">Reused</span>
+              <span class="stat-label">${t('dashboard.stats.reused')}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value" id="count-old">0</span>
-              <span class="stat-label">Old (> 1 year)</span>
+              <span class="stat-label">${t('dashboard.stats.old')}</span>
             </div>
             <div class="stat-item danger">
               <span class="stat-value" id="count-breached">0</span>
-              <span class="stat-label">Compromised</span>
+              <span class="stat-label">${t('dashboard.stats.compromised')}</span>
             </div>
           </div>
         </div>
@@ -72,17 +73,17 @@ export class SecurityDashboard {
         <!-- Issue Lists -->
         <div class="dashboard-issues">
            <div class="issue-section" id="section-breached" hidden>
-             <h3>🚨 Compromised passwords</h3>
+             <h3>🚨 ${t('dashboard.sections.compromised')}</h3>
              <div class="issue-list" id="list-breached"></div>
            </div>
 
            <div class="issue-section">
-             <h3>⚠️ Reused passwords</h3>
+             <h3>⚠️ ${t('dashboard.sections.reused')}</h3>
              <div class="issue-list" id="list-reused"></div>
            </div>
 
            <div class="issue-section">
-             <h3>⚠️ Weak passwords</h3>
+             <h3>⚠️ ${t('dashboard.sections.weak')}</h3>
              <div class="issue-list" id="list-weak"></div>
            </div>
         </div>
@@ -188,7 +189,7 @@ export class SecurityDashboard {
         if (!container) return;
 
         if (entries.length === 0) {
-            container.innerHTML = '<div class="empty-issue">No weak passwords detected. Great job!</div>';
+            container.innerHTML = `<div class="empty-issue">${t('dashboard.noWeak')}</div>`;
             return;
         }
 
@@ -197,9 +198,9 @@ export class SecurityDashboard {
         <div class="issue-icon">🔓</div>
         <div class="issue-info">
           <div class="issue-title">${escapeHtml(entry.title)}</div>
-          <div class="issue-desc">${escapeHtml(entry.data.username || 'No username')}</div>
+          <div class="issue-desc">${escapeHtml(entry.data.username || t('dashboard.noUsername'))}</div>
         </div>
-        <button class="vault-btn vault-btn-sm vault-btn-outline" data-action="edit" data-id="${entry.id}">Fix</button>
+        <button class="vault-btn vault-btn-sm vault-btn-outline" data-action="edit" data-id="${entry.id}">${t('dashboard.actions.fix')}</button>
       </div>
     `).join('');
     }
@@ -209,14 +210,14 @@ export class SecurityDashboard {
         if (!container) return;
 
         if (groups.length === 0) {
-            container.innerHTML = '<div class="empty-issue">No reused passwords. Excellent!</div>';
+            container.innerHTML = `<div class="empty-issue">${t('dashboard.noReused')}</div>`;
             return;
         }
 
         container.innerHTML = groups.map(group => `
       <div class="issue-group">
         <div class="issue-group-header">
-           <strong>${group.count} accounts use the same password</strong>
+           <strong>${t('dashboard.accountsSamePassword', { count: group.count })}</strong>
         </div>
         ${group.entries.map(entry => `
           <div class="issue-item">
@@ -225,7 +226,7 @@ export class SecurityDashboard {
               <div class="issue-title">${escapeHtml(entry.title)}</div>
               <div class="issue-desc">${escapeHtml(entry.data.username || '')}</div>
             </div>
-             <button class="vault-btn vault-btn-sm vault-btn-outline" data-action="edit" data-id="${entry.id}">Change</button>
+             <button class="vault-btn vault-btn-sm vault-btn-outline" data-action="edit" data-id="${entry.id}">${t('dashboard.actions.change')}</button>
           </div>
         `).join('')}
       </div>
@@ -239,7 +240,7 @@ export class SecurityDashboard {
         const btn = document.getElementById('btn-analyze-breaches');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span class="vault-spinner-small"></span> Analyzing...';
+        btn.innerHTML = `<span class="vault-spinner-small"></span> ${t('dashboard.analyzing')}`;
 
         let breachedCount = 0;
         const breachedList = [];
@@ -264,7 +265,7 @@ export class SecurityDashboard {
         if (newScore < 0) newScore = 0;
         this.#updateScoreUI(newScore);
 
-        btn.innerHTML = '✅ Analysis complete';
+        btn.innerHTML = `✅ ${t('dashboard.analysisComplete')}`;
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -283,9 +284,9 @@ export class SecurityDashboard {
           <div class="issue-icon">🚨</div>
           <div class="issue-info">
             <div class="issue-title">${escapeHtml(item.entry.title)}</div>
-            <div class="issue-desc">Found in ${item.count.toLocaleString()} data breaches</div>
+            <div class="issue-desc">${t('dashboard.foundInBreaches', { count: item.count.toLocaleString() })}</div>
           </div>
-          <button class="vault-btn vault-btn-sm vault-btn-danger" data-action="edit" data-id="${item.entry.id}">Change now!</button>
+          <button class="vault-btn vault-btn-sm vault-btn-danger" data-action="edit" data-id="${item.entry.id}">${t('dashboard.actions.changeNow')}</button>
         </div>
       `).join('');
         } else {

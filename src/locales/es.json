@@ -189,7 +189,41 @@
     "runTests": "Ejecutar pruebas de validación (Atajo: Alt+R)",
     "debug": "Debug",
     "toggleDebug": "Alternar panel de debug",
-    "clearLogs": "Limpiar logs de debug"
+    "clearLogs": "Limpiar logs de debug",
+    "closeDebug": "Cerrar"
+  },
+  "modal": {
+    "closeEsc": "Cerrar (Esc)",
+    "confirmation": "Confirmación",
+    "confirm": "Confirmar"
+  },
+  "dashboard": {
+    "title": "Estado del Vault",
+    "checkBreaches": "Buscar filtraciones (HIBP)",
+    "overallScore": "Puntuación global",
+    "stats": {
+      "weak": "Contraseñas débiles",
+      "reused": "Reutilizadas",
+      "old": "Antiguas (> 1 año)",
+      "compromised": "Comprometidas"
+    },
+    "sections": {
+      "compromised": "Contraseñas comprometidas",
+      "reused": "Contraseñas reutilizadas",
+      "weak": "Contraseñas débiles"
+    },
+    "noWeak": "¡No se detectaron contraseñas débiles. Excelente!",
+    "noReused": "¡No hay contraseñas reutilizadas. Perfecto!",
+    "noUsername": "Sin nombre de usuario",
+    "accountsSamePassword": "{count} cuentas usan la misma contraseña",
+    "foundInBreaches": "Encontrada en {count} filtraciones de datos",
+    "analyzing": "Analizando...",
+    "analysisComplete": "Análisis completado",
+    "actions": {
+      "fix": "Corregir",
+      "change": "Cambiar",
+      "changeNow": "¡Cambiar ahora!"
+    }
   },
   "debug": {
     "waitingInit": "[--:--:--] Esperando inicialización..."
@@ -358,6 +392,28 @@
       "restore": "Restaurar",
       "copyValue": "Copiar",
       "generateNow": "Generar ahora"
+    },
+    "form": {
+      "required": "requerido"
+    },
+    "createModal": {
+      "vaultName": "Nombre de la bóveda",
+      "vaultNamePlaceholder": "Mi Bóveda",
+      "location": "Ubicación",
+      "locationAria": "Ubicación de la bóveda",
+      "defaultFolder": "Carpeta predeterminada",
+      "chooseLocation": "Elegir ubicación...",
+      "browse": "Explorar...",
+      "masterPassword": "Contraseña maestra",
+      "passwordPlaceholder": "Mínimo 12 caracteres",
+      "confirmPassword": "Confirmar contraseña",
+      "confirmPlaceholder": "Reingrese la contraseña",
+      "enableHello": "Activar Windows Hello",
+      "helloHint": "Desbloquea con tu rostro o huella"
+    },
+    "externalModal": {
+      "file": "Archivo",
+      "passwordPlaceholder": "Contraseña de la bóveda"
     },
     "validation": {
       "fieldRequired": "Este campo es obligatorio",

@@ -189,7 +189,41 @@
     "runTests": "Run validation tests (Shortcut: Alt+R)",
     "debug": "Debug",
     "toggleDebug": "Toggle debug panel",
-    "clearLogs": "Clear debug logs"
+    "clearLogs": "Clear debug logs",
+    "closeDebug": "Close"
+  },
+  "modal": {
+    "closeEsc": "Close (Esc)",
+    "confirmation": "Confirmation",
+    "confirm": "Confirm"
+  },
+  "dashboard": {
+    "title": "Vault Health",
+    "checkBreaches": "Check for breaches (HIBP)",
+    "overallScore": "Overall Score",
+    "stats": {
+      "weak": "Weak passwords",
+      "reused": "Reused",
+      "old": "Old (> 1 year)",
+      "compromised": "Compromised"
+    },
+    "sections": {
+      "compromised": "Compromised passwords",
+      "reused": "Reused passwords",
+      "weak": "Weak passwords"
+    },
+    "noWeak": "No weak passwords detected. Great job!",
+    "noReused": "No reused passwords. Excellent!",
+    "noUsername": "No username",
+    "accountsSamePassword": "{count} accounts use the same password",
+    "foundInBreaches": "Found in {count} data breaches",
+    "analyzing": "Analyzing...",
+    "analysisComplete": "Analysis complete",
+    "actions": {
+      "fix": "Fix",
+      "change": "Change",
+      "changeNow": "Change now!"
+    }
   },
   "debug": {
     "waitingInit": "[--:--:--] Waiting for initialization..."
@@ -358,6 +392,28 @@
       "restore": "Restore",
       "copyValue": "Copy",
       "generateNow": "Generate Now"
+    },
+    "form": {
+      "required": "required"
+    },
+    "createModal": {
+      "vaultName": "Vault name",
+      "vaultNamePlaceholder": "My Vault",
+      "location": "Location",
+      "locationAria": "Vault location",
+      "defaultFolder": "Default folder",
+      "chooseLocation": "Choose location...",
+      "browse": "Browse...",
+      "masterPassword": "Master password",
+      "passwordPlaceholder": "Minimum 12 characters",
+      "confirmPassword": "Confirm password",
+      "confirmPlaceholder": "Re-enter password",
+      "enableHello": "Enable Windows Hello",
+      "helloHint": "Unlock with your face or fingerprint"
+    },
+    "externalModal": {
+      "file": "File",
+      "passwordPlaceholder": "Vault password"
     },
     "validation": {
       "fieldRequired": "This field is required",

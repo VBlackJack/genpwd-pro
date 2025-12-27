@@ -20,6 +20,7 @@ import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { t } from '../utils/i18n.js';
 
 /**
  * Creates a modal element with consistent structure and behavior
@@ -80,8 +81,8 @@ export function createModal(options) {
           type="button"
           class="modal-close"
           data-modal-close
-          aria-label="Close"
-          title="Close (Esc)">
+          aria-label="${t('common.close')}"
+          title="${t('modal.closeEsc')}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
@@ -315,12 +316,12 @@ export function isModalOpen(modalId = null) {
  */
 export function createConfirmDialog(options) {
   const {
-    title = 'Confirmation',
+    title = t('modal.confirmation'),
     message,
     onConfirm,
     onCancel = null,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = t('modal.confirm'),
+    cancelLabel = t('common.cancel'),
     confirmClass = 'btn-danger'
   } = options;
 
@@ -368,10 +369,10 @@ export function createConfirmDialog(options) {
 export function showConfirm(message, options = {}) {
   return new Promise((resolve) => {
     createConfirmDialog({
-      title: options.title || 'Confirmation',
+      title: options.title || t('modal.confirmation'),
       message,
-      confirmLabel: options.confirmLabel || 'Confirm',
-      cancelLabel: options.cancelLabel || 'Cancel',
+      confirmLabel: options.confirmLabel || t('modal.confirm'),
+      cancelLabel: options.cancelLabel || t('common.cancel'),
       confirmClass: options.danger ? 'btn-danger' : 'btn-primary',
       onConfirm: () => resolve(true),
       onCancel: () => resolve(false)
