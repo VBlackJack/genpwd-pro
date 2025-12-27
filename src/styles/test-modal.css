@@ -23,7 +23,7 @@
 
 .test-summary {
   background: rgba(19, 26, 52, 0.5);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 20px;
   text-align: center;
   margin-bottom: 20px;
@@ -39,10 +39,10 @@
   padding: 8px 16px;
   border: 1px solid rgba(140, 148, 202, 0.3);
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: var(--text-dimmed);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .tab-button.active {
@@ -64,7 +64,7 @@
 #test-console-output {
   background: var(--bg-primary, #0a0e1a);
   border: 1px solid rgba(140, 148, 202, 0.15);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 12px;
   color: var(--text-bright);
   font-size: 11px;
@@ -76,7 +76,7 @@
 .test-item {
   margin-bottom: 12px;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
 }
 
 .test-item.success {
@@ -145,7 +145,7 @@
   font-family: var(--font-mono);
   background: rgba(0, 0, 0, 0.2);
   padding: 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin-top: 6px;
 }
 

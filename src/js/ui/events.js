@@ -689,14 +689,14 @@ function showClipboardSettings() {
   const popover = document.createElement('div');
   popover.className = 'clipboard-settings-popover';
   popover.setAttribute('role', 'dialog');
-  popover.setAttribute('aria-label', 'Clipboard auto-clear settings');
+  popover.setAttribute('aria-label', t('clipboard.settingsAriaLabel'));
   popover.innerHTML = `
     <div class="clipboard-settings-header">
-      <span>⏱️ Auto-clear</span>
+      <span>${t('clipboard.autoClearTitle')}</span>
     </div>
     <div class="clipboard-settings-body">
       <p class="clipboard-settings-desc" id="clipboard-desc">
-        Clear clipboard automatically after copy
+        ${t('clipboard.autoClearDesc')}
       </p>
       <div class="clipboard-settings-options" role="listbox" aria-describedby="clipboard-desc">
         ${CLIPBOARD_TIMEOUT_OPTIONS.map(opt => `
@@ -704,7 +704,7 @@ function showClipboardSettings() {
                   data-timeout="${opt.value}"
                   role="option"
                   aria-selected="${opt.value === currentTimeout}"
-                  aria-label="Set auto-clear to ${opt.label}">
+                  aria-label="${t('clipboard.setAutoClearTo', { time: opt.label })}">
             ${opt.label}
           </button>
         `).join('')}
@@ -883,7 +883,13 @@ async function exportPasswords() {
         break;
 
       case 'csv': {
-        const headers = ['Password', 'Mode', 'Entropy (bits)', 'Length', 'Details'];
+        const headers = [
+          t('export.csvHeaders.password'),
+          t('export.csvHeaders.mode'),
+          t('export.csvHeaders.entropy'),
+          t('export.csvHeaders.length'),
+          t('export.csvHeaders.details')
+        ];
         const rows = results.map(r => [
           r.value,
           r.mode,
@@ -941,24 +947,24 @@ function promptExportFormat() {
     const content = `
       <div class="export-modal-buttons">
         <button id="export-txt" class="btn export-modal-button">
-          📄 Text (.txt) - Simple list
+          ${t('export.txtButton')}
         </button>
         <button id="export-json" class="btn export-modal-button">
-          📊 JSON (.json) - Complete data
+          ${t('export.jsonButton')}
         </button>
         <button id="export-csv" class="btn export-modal-button">
-          📈 CSV (.csv) - Excel/Spreadsheet
+          ${t('export.csvButton')}
         </button>
       </div>
     `;
 
     const modal = createModal({
       id: 'export-format-modal',
-      title: 'Choose export format',
+      title: t('export.simpleTitle'),
       content,
       actions: [
         {
-          label: 'Cancel',
+          label: t('common.cancel'),
           className: 'btn btn-secondary',
           onClick: () => {
             modal.close();

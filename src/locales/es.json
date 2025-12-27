@@ -1165,8 +1165,25 @@
       "unknownMode": "Modo desconocido"
     }
   },
+  "clipboard": {
+    "settingsAriaLabel": "Configuración de borrado automático del portapapeles",
+    "autoClearTitle": "⏱️ Borrado automático",
+    "autoClearDesc": "Borrar el portapapeles automáticamente después de copiar",
+    "setAutoClearTo": "Establecer borrado automático a {time}"
+  },
   "export": {
     "title": "📤 Exportación avanzada",
+    "simpleTitle": "Elegir formato de exportación",
+    "txtButton": "📄 Texto (.txt) - Lista simple",
+    "jsonButton": "📊 JSON (.json) - Datos completos",
+    "csvButton": "📈 CSV (.csv) - Excel/Hoja de cálculo",
+    "csvHeaders": {
+      "password": "Contraseña",
+      "mode": "Modo",
+      "entropy": "Entropía (bits)",
+      "length": "Longitud",
+      "details": "Detalles"
+    },
     "description": "Exportar {count} contraseña(s) a varios formatos de gestores",
     "selectFormat": "Seleccionar formato de exportación:",
     "passwordManagers": "Gestores de contraseñas",

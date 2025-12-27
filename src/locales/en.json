@@ -1164,8 +1164,25 @@
       "unknownMode": "Unknown mode"
     }
   },
+  "clipboard": {
+    "settingsAriaLabel": "Clipboard auto-clear settings",
+    "autoClearTitle": "⏱️ Auto-clear",
+    "autoClearDesc": "Clear clipboard automatically after copy",
+    "setAutoClearTo": "Set auto-clear to {time}"
+  },
   "export": {
     "title": "📤 Advanced Export",
+    "simpleTitle": "Choose export format",
+    "txtButton": "📄 Text (.txt) - Simple list",
+    "jsonButton": "📊 JSON (.json) - Complete data",
+    "csvButton": "📈 CSV (.csv) - Excel/Spreadsheet",
+    "csvHeaders": {
+      "password": "Password",
+      "mode": "Mode",
+      "entropy": "Entropy (bits)",
+      "length": "Length",
+      "details": "Details"
+    },
     "description": "Export {count} password(s) to various password manager formats",
     "selectFormat": "Select Export Format:",
     "passwordManagers": "Password Managers",

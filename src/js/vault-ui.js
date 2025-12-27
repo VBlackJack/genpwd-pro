@@ -3045,7 +3045,7 @@ export class VaultUI {
 
             <div class="vault-form-group">
               <label class="vault-label" for="entry-title">Titre <span class="required" aria-label="obligatoire">*</span></label>
-              <input type="text" class="vault-input" id="entry-title" placeholder="${t('vault.placeholders.entryTitleExample')}" required aria-describedby="entry-title-message" aria-invalid="false">
+              <input type="text" class="vault-input" id="entry-title" placeholder="${t('vault.placeholders.entryTitleExample')}" required aria-required="true" aria-describedby="entry-title-message" aria-invalid="false">
               <div class="vault-field-message" id="entry-title-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -3315,7 +3315,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="add-tag-form">
             <div class="vault-form-group">
               <label class="vault-label" for="tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="tag-name" placeholder="${t('vault.placeholders.tagExample')}" required maxlength="30" aria-invalid="false">
+              <input type="text" class="vault-input" id="tag-name" placeholder="${t('vault.placeholders.tagExample')}" required aria-required="true" maxlength="30" aria-invalid="false">
             </div>
             <div class="vault-form-group">
               <label class="vault-label">Color</label>
@@ -3358,7 +3358,7 @@ export class VaultUI {
             <input type="hidden" id="edit-tag-id">
             <div class="vault-form-group">
               <label class="vault-label" for="edit-tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="edit-tag-name" required maxlength="30" aria-invalid="false">
+              <input type="text" class="vault-input" id="edit-tag-name" required aria-required="true" maxlength="30" aria-invalid="false">
             </div>
             <div class="vault-form-group">
               <label class="vault-label">Color</label>
@@ -3848,7 +3848,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="add-folder-form">
             <div class="vault-form-group">
               <label class="vault-label" for="folder-name">Folder name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="folder-name" placeholder="${t('vault.placeholders.folderExample')}" required aria-invalid="false">
+              <input type="text" class="vault-input" id="folder-name" placeholder="${t('vault.placeholders.folderExample')}" required aria-required="true" aria-invalid="false">
             </div>
             <div class="vault-modal-actions">
               <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
@@ -5214,7 +5214,7 @@ export class VaultUI {
             </label>
             <p class="vault-form-hint">This password protects the exported file. It can be different from the vault password.</p>
             <div class="vault-input-group">
-              <input type="password" class="vault-input" id="save-vault-password" placeholder="${t('vault.form.passwordPlaceholder')}" required minlength="8" aria-invalid="false">
+              <input type="password" class="vault-input" id="save-vault-password" placeholder="${t('vault.form.passwordPlaceholder')}" required aria-required="true" minlength="8" aria-invalid="false">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Show">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -5227,7 +5227,7 @@ export class VaultUI {
             <label class="vault-label" for="save-vault-confirm">
               Confirm password <span class="required">*</span>
             </label>
-            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="${t('vault.form.confirmPlaceholder')}" required minlength="8" aria-invalid="false">
+            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="${t('vault.form.confirmPlaceholder')}" required aria-required="true" minlength="8" aria-invalid="false">
           </div>
           <div class="vault-modal-actions">
             <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
@@ -7636,7 +7636,7 @@ export class VaultUI {
     let fieldsHtml = `
       <div class="vault-form-group">
         <label class="vault-label" for="edit-title">Titre <span class="required">*</span></label>
-        <input type="text" class="vault-input" id="edit-title" value="${this.#escapeHtml(entry.title)}" required aria-invalid="false">
+        <input type="text" class="vault-input" id="edit-title" value="${this.#escapeHtml(entry.title)}" required aria-required="true" aria-invalid="false">
       </div>
       <div class="vault-form-group">
         <label class="vault-label" for="edit-folder">${t('vault.labels.folder')}</label>

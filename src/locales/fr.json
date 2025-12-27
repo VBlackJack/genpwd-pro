@@ -1166,8 +1166,25 @@
     "autoClearDisabled": "Effacement auto désactivé",
     "passwordsCopied": "{count} mot(s) de passe copié(s) !"
   },
+  "clipboard": {
+    "settingsAriaLabel": "Paramètres d'effacement automatique du presse-papiers",
+    "autoClearTitle": "⏱️ Effacement auto",
+    "autoClearDesc": "Effacer le presse-papiers automatiquement après copie",
+    "setAutoClearTo": "Définir l'effacement auto à {time}"
+  },
   "export": {
     "title": "📤 Export avancé",
+    "simpleTitle": "Choisir le format d'export",
+    "txtButton": "📄 Texte (.txt) - Liste simple",
+    "jsonButton": "📊 JSON (.json) - Données complètes",
+    "csvButton": "📈 CSV (.csv) - Excel/Tableur",
+    "csvHeaders": {
+      "password": "Mot de passe",
+      "mode": "Mode",
+      "entropy": "Entropie (bits)",
+      "length": "Longueur",
+      "details": "Détails"
+    },
     "description": "Exporter {count} mot(s) de passe vers différents formats de gestionnaires",
     "selectFormat": "Sélectionner le format d'export :",
     "passwordManagers": "Gestionnaires de mots de passe",
