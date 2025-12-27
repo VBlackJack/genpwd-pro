@@ -676,7 +676,11 @@
       "addedToFavorites": "Ajouté aux favoris",
       "removedFromFavorites": "Retiré des favoris",
       "attachmentAdded": "Pièce jointe ajoutée : {name}",
-      "noCompromisedPasswords": "Aucun mot de passe compromis trouvé sur {count} vérifiés"
+      "noCompromisedPasswords": "Aucun mot de passe compromis trouvé sur {count} vérifiés",
+      "noResults": "Aucun résultat",
+      "noEntryMatches": "Aucune entrée ne correspond à « {query} »",
+      "clearSearch": "Effacer la recherche",
+      "searchTip": "Essayez des termes plus courts ou vérifiez l'orthographe"
     },
     "health": {
       "title": "Tableau de bord Sécurité",
@@ -699,6 +703,11 @@
       "expiredPasswords": "{count} mot(s) de passe expiré(s)",
       "expiringPasswords": "{count} mot(s) de passe bientôt expiré(s)",
       "oldPasswords": "{count} mot(s) de passe ancien(s) (> 6 mois)",
+      "iconWarning": "Attention",
+      "iconReused": "Réutilisé",
+      "iconExpired": "Expiré",
+      "iconExpiring": "Expire bientôt",
+      "iconOld": "Ancien",
       "compromised": "Compromis",
       "safe": "Sûr",
       "breachWarning": "Ce mot de passe a été exposé dans {count} fuites de données",
@@ -743,6 +752,21 @@
       "ariaExpiring": "Expire bientôt",
       "ariaExpired": "Expiré",
       "ariaReset": "Réinitialiser tous les filtres"
+    },
+    "entryCard": {
+      "pinned": "Épinglé",
+      "reusedPassword": "Mot de passe réutilisé",
+      "strengthPrefix": "Force du mot de passe",
+      "strengthTitle": "Force"
+    },
+    "age": {
+      "label": "Âge du mot de passe",
+      "today": "Aujourd'hui",
+      "days": "{count} jour(s)",
+      "months": "{count} mois",
+      "years": "{count} an(s)",
+      "recent": "Récent",
+      "renewalRecommended": "Renouvellement recommandé"
     },
     "lockScreen": {
       "title": "Coffre",

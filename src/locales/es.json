@@ -574,7 +574,11 @@
       "addedToFavorites": "Añadido a favoritos",
       "removedFromFavorites": "Eliminado de favoritos",
       "attachmentAdded": "Archivo adjunto añadido: {name}",
-      "noCompromisedPasswords": "No se encontraron contraseñas comprometidas en {count} verificadas"
+      "noCompromisedPasswords": "No se encontraron contraseñas comprometidas en {count} verificadas",
+      "noResults": "Sin resultados",
+      "noEntryMatches": "Ninguna entrada coincide con \"{query}\"",
+      "clearSearch": "Borrar búsqueda",
+      "searchTip": "Pruebe términos más cortos o verifique la ortografía"
     },
     "health": {
       "title": "Panel de Seguridad",
@@ -597,6 +601,11 @@
       "expiredPasswords": "{count} contraseña(s) vencida(s)",
       "expiringPasswords": "{count} contraseña(s) por vencer",
       "oldPasswords": "{count} contraseña(s) antigua(s) (> 6 meses)",
+      "iconWarning": "Advertencia",
+      "iconReused": "Reutilizada",
+      "iconExpired": "Vencida",
+      "iconExpiring": "Por vencer",
+      "iconOld": "Antigua",
       "compromised": "Comprometida",
       "safe": "Segura",
       "breachWarning": "Esta contraseña ha sido expuesta en {count} filtraciones de datos",
@@ -641,6 +650,21 @@
       "ariaExpiring": "Por vencer pronto",
       "ariaExpired": "Vencido",
       "ariaReset": "Restablecer todos los filtros"
+    },
+    "entryCard": {
+      "pinned": "Fijado",
+      "reusedPassword": "Contraseña reutilizada",
+      "strengthPrefix": "Fuerza de la contraseña",
+      "strengthTitle": "Fuerza"
+    },
+    "age": {
+      "label": "Antigüedad de la contraseña",
+      "today": "Hoy",
+      "days": "{count} día(s)",
+      "months": "{count} mes(es)",
+      "years": "{count} año(s)",
+      "recent": "Reciente",
+      "renewalRecommended": "Renovación recomendada"
     },
     "lockScreen": {
       "title": "Bóveda",

@@ -574,7 +574,11 @@
       "addedToFavorites": "Added to favorites",
       "removedFromFavorites": "Removed from favorites",
       "attachmentAdded": "Attachment added: {name}",
-      "noCompromisedPasswords": "No compromised passwords found in {count} checked"
+      "noCompromisedPasswords": "No compromised passwords found in {count} checked",
+      "noResults": "No results",
+      "noEntryMatches": "No entry matches \"{query}\"",
+      "clearSearch": "Clear search",
+      "searchTip": "Try shorter terms or check spelling"
     },
     "health": {
       "title": "Security Dashboard",
@@ -597,6 +601,11 @@
       "expiredPasswords": "{count} expired password(s)",
       "expiringPasswords": "{count} password(s) expiring soon",
       "oldPasswords": "{count} old password(s) (> 6 months)",
+      "iconWarning": "Warning",
+      "iconReused": "Reused",
+      "iconExpired": "Expired",
+      "iconExpiring": "Expiring soon",
+      "iconOld": "Old",
       "compromised": "Compromised",
       "safe": "Safe",
       "breachWarning": "This password has been exposed in {count} data breaches",
@@ -641,6 +650,21 @@
       "ariaExpiring": "Expiring soon",
       "ariaExpired": "Expired",
       "ariaReset": "Reset all filters"
+    },
+    "entryCard": {
+      "pinned": "Pinned",
+      "reusedPassword": "Reused password",
+      "strengthPrefix": "Password strength",
+      "strengthTitle": "Strength"
+    },
+    "age": {
+      "label": "Password age",
+      "today": "Today",
+      "days": "{count} day(s)",
+      "months": "{count} month(s)",
+      "years": "{count} year(s)",
+      "recent": "Recent",
+      "renewalRecommended": "Renewal recommended"
     },
     "lockScreen": {
       "title": "Vault",

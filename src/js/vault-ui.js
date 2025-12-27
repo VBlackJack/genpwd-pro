@@ -2070,10 +2070,10 @@ export class VaultUI {
         </div>
         <div class="vault-entry-content">
           <div class="vault-entry-title">
-            ${isPinned ? '<span class="vault-pin-badge" role="img" aria-label="Pinned"><span aria-hidden="true">📌</span></span>' : ''}
+            ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.entryCard.pinned')}"><span aria-hidden="true">📌</span></span>` : ''}
             ${this.#escapeHtml(entry.title)}
-            ${strength ? `<span class="vault-strength-dot ${strength}" role="img" aria-label="Password strength: ${strength === 'strong' ? 'Strong' : strength === 'medium' ? 'Medium' : 'Weak'}" title="Strength: ${strength === 'strong' ? 'Strong' : strength === 'medium' ? 'Medium' : 'Weak'}"></span>` : ''}
-            ${isDuplicate ? '<span class="vault-duplicate-badge" role="img" aria-label="Reused password" title="Reused password"><span aria-hidden="true">🔁</span></span>' : ''}
+            ${strength ? `<span class="vault-strength-dot ${strength}" role="img" aria-label="${t('vault.entryCard.strengthPrefix')}: ${t('vault.filters.' + strength)}" title="${t('vault.entryCard.strengthTitle')}: ${t('vault.filters.' + strength)}"></span>` : ''}
+            ${isDuplicate ? `<span class="vault-duplicate-badge" role="img" aria-label="${t('vault.entryCard.reusedPassword')}" title="${t('vault.entryCard.reusedPassword')}"><span aria-hidden="true">🔁</span></span>` : ''}
             ${expiryStatus.badge}
           </div>
           <div class="vault-entry-subtitle">${this.#escapeHtml(subtitle)}</div>
@@ -2804,25 +2804,26 @@ export class VaultUI {
     const daysSinceModified = Math.floor((now - modifiedAt) / (1000 * 60 * 60 * 24));
 
     let ageClass = 'good';
-    let ageLabel = 'Recent';
+    let ageLabel = t('vault.age.recent');
     let ageIcon = 'check';
 
     if (daysSinceModified > 365) {
       ageClass = 'critical';
-      ageLabel = `${Math.floor(daysSinceModified / 365)} year(s) - Renewal recommended`;
+      const years = Math.floor(daysSinceModified / 365);
+      ageLabel = `${t('vault.age.years', { count: years })} - ${t('vault.age.renewalRecommended')}`;
       ageIcon = 'alert';
     } else if (daysSinceModified > 180) {
       ageClass = 'warning';
-      ageLabel = `${Math.floor(daysSinceModified / 30)} month(s)`;
+      ageLabel = t('vault.age.months', { count: Math.floor(daysSinceModified / 30) });
       ageIcon = 'clock';
     } else if (daysSinceModified > 90) {
       ageClass = 'fair';
-      ageLabel = `${Math.floor(daysSinceModified / 30)} month(s)`;
+      ageLabel = t('vault.age.months', { count: Math.floor(daysSinceModified / 30) });
       ageIcon = 'clock';
     } else if (daysSinceModified > 30) {
-      ageLabel = `${Math.floor(daysSinceModified / 30)} month(s)`;
+      ageLabel = t('vault.age.months', { count: Math.floor(daysSinceModified / 30) });
     } else {
-      ageLabel = daysSinceModified === 0 ? "Today" : `${daysSinceModified} day(s)`;
+      ageLabel = daysSinceModified === 0 ? t('vault.age.today') : t('vault.age.days', { count: daysSinceModified });
     }
 
     return `
@@ -2847,7 +2848,7 @@ export class VaultUI {
           `}
         </div>
         <div class="vault-age-info">
-          <span class="vault-age-label">Password age</span>
+          <span class="vault-age-label">${t('vault.age.label')}</span>
           <span class="vault-age-value">${ageLabel}</span>
         </div>
       </div>
@@ -2866,19 +2867,19 @@ export class VaultUI {
               <path d="M45 42 L50 48 L58 38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
             </svg>
           </div>
-          <h3 class="vault-empty-title">No results</h3>
-          <p class="vault-empty-text">No entry matches "<strong>${this.#escapeHtml(this.#searchQuery)}</strong>"</p>
+          <h3 class="vault-empty-title">${t('vault.messages.noResults')}</h3>
+          <p class="vault-empty-text">${t('vault.messages.noEntryMatches', { query: this.#escapeHtml(this.#searchQuery) })}</p>
           <div class="vault-empty-actions">
             <button class="vault-btn vault-btn-secondary" id="btn-clear-search">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-              Clear search
+              ${t('vault.messages.clearSearch')}
             </button>
           </div>
           <div class="vault-empty-tips">
-            <span class="vault-empty-tip">Try shorter terms or check spelling</span>
+            <span class="vault-empty-tip">${t('vault.messages.searchTip')}</span>
           </div>
         </div>
       `;
@@ -4308,16 +4309,16 @@ export class VaultUI {
     // Determine status
     let status, scoreClass;
     if (score >= 90) {
-      status = 'Excellent';
+      status = t('vault.health.excellent');
       scoreClass = 'excellent';
     } else if (score >= 70) {
-      status = 'Good';
+      status = t('vault.health.good');
       scoreClass = 'good';
     } else if (score >= 50) {
-      status = 'Needs improvement';
+      status = t('vault.health.needsImprovement');
       scoreClass = 'medium';
     } else {
-      status = 'Critical';
+      status = t('vault.health.critical');
       scoreClass = 'poor';
     }
 
@@ -4327,8 +4328,8 @@ export class VaultUI {
       issues.push({
         severity: 'high',
         icon: '⚠️',
-        iconLabel: 'Warning',
-        message: `${weak} weak password(s) to strengthen`,
+        iconLabel: t('vault.health.iconWarning'),
+        message: t('vault.health.weakPasswords', { count: weak }),
         count: weak
       });
     }
@@ -4336,8 +4337,8 @@ export class VaultUI {
       issues.push({
         severity: 'high',
         icon: '🔁',
-        iconLabel: 'Reused',
-        message: `${reused} reused password(s)`,
+        iconLabel: t('vault.health.iconReused'),
+        message: t('vault.health.reusedPasswords', { count: reused }),
         count: reused
       });
     }
@@ -4345,8 +4346,8 @@ export class VaultUI {
       issues.push({
         severity: 'high',
         icon: '⚠️',
-        iconLabel: 'Expired',
-        message: `${expired} expired password(s)`,
+        iconLabel: t('vault.health.iconExpired'),
+        message: t('vault.health.expiredPasswords', { count: expired }),
         count: expired
       });
     }
@@ -4354,8 +4355,8 @@ export class VaultUI {
       issues.push({
         severity: 'medium',
         icon: '⏰',
-        iconLabel: 'Expiring soon',
-        message: `${expiring} password(s) expiring soon`,
+        iconLabel: t('vault.health.iconExpiring'),
+        message: t('vault.health.expiringPasswords', { count: expiring }),
         count: expiring
       });
     }
@@ -4363,8 +4364,8 @@ export class VaultUI {
       issues.push({
         severity: 'low',
         icon: '📅',
-        iconLabel: 'Old',
-        message: `${old} old password(s) (> 6 months)`,
+        iconLabel: t('vault.health.iconOld'),
+        message: t('vault.health.oldPasswords', { count: old }),
         count: old
       });
     }
@@ -8190,16 +8191,16 @@ export class VaultUI {
         required: true,
         minLength: 1,
         maxLength: 100,
-        requiredMessage: 'Title is required',
-        minLengthMessage: 'Title is too short',
-        maxLengthMessage: 'Title is too long (max 100 characters)'
+        requiredMessage: t('vault.form.titleRequired'),
+        minLengthMessage: t('vault.form.titleTooShort'),
+        maxLengthMessage: t('vault.form.titleTooLong')
       });
     });
     titleInput?.addEventListener('blur', () => {
       this.#validateField(titleInput, titleMessage, {
         required: true,
         minLength: 1,
-        requiredMessage: 'Title is required'
+        requiredMessage: t('vault.form.titleRequired')
       });
     });
 
@@ -8593,9 +8594,9 @@ export class VaultUI {
       urlInput?.addEventListener('input', () => {
         this.#validateField(urlInput, urlMessage, {
           url: true,
-          urlMessage: 'Enter a valid URL (https://...)',
+          urlMessage: t('vault.form.invalidUrl'),
           showSuccess: true,
-          successMessage: 'Valid URL'
+          successMessage: t('vault.form.validUrl')
         });
       });
       urlInput?.addEventListener('blur', () => {
@@ -8633,9 +8634,9 @@ export class VaultUI {
       emailInput?.addEventListener('input', () => {
         this.#validateField(emailInput, emailMessage, {
           email: true,
-          emailMessage: 'Enter a valid email address',
+          emailMessage: t('vault.form.invalidEmail'),
           showSuccess: true,
-          successMessage: 'Valid email'
+          successMessage: t('vault.form.validEmail')
         });
       });
       emailInput?.addEventListener('blur', () => {
