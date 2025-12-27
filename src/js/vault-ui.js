@@ -1374,9 +1374,9 @@ export class VaultUI {
           </div>
           <div class="vault-filter-panel" id="filter-panel" hidden>
             <div class="vault-filter-section">
-              <label class="vault-filter-label">Type</label>
+              <label class="vault-filter-label">${t('vault.filters.type')}</label>
               <div class="vault-filter-chips" id="filter-type">
-                <button class="vault-chip ${!this.#searchFilters.type ? 'active' : ''}" data-filter-type="" aria-label="Filter: All types">Tous</button>
+                <button class="vault-chip ${!this.#searchFilters.type ? 'active' : ''}" data-filter-type="" aria-label="${t('vault.filters.ariaAllTypes')}">${t('vault.filters.allTypes')}</button>
                 ${Object.entries(ENTRY_TYPES).map(([key, val]) => `
                   <button class="vault-chip ${this.#searchFilters.type === key ? 'active' : ''}" data-filter-type="${key}">
                     ${val.icon} ${val.label}
@@ -1385,26 +1385,26 @@ export class VaultUI {
               </div>
             </div>
             <div class="vault-filter-section">
-              <label class="vault-filter-label">Password strength</label>
+              <label class="vault-filter-label">${t('vault.filters.passwordStrength')}</label>
               <div class="vault-filter-chips" id="filter-strength">
-                <button class="vault-chip ${!this.#searchFilters.strength ? 'active' : ''}" data-filter-strength="" aria-label="Filter: All password strengths">All</button>
-                <button class="vault-chip ${this.#searchFilters.strength === 'weak' ? 'active' : ''}" data-filter-strength="weak" aria-label="Low strength"><span aria-hidden="true">🔴</span> Weak</button>
-                <button class="vault-chip ${this.#searchFilters.strength === 'medium' ? 'active' : ''}" data-filter-strength="medium" aria-label="Medium strength"><span aria-hidden="true">🟡</span> Medium</button>
-                <button class="vault-chip ${this.#searchFilters.strength === 'strong' ? 'active' : ''}" data-filter-strength="strong" aria-label="High strength"><span aria-hidden="true">🟢</span> Strong</button>
+                <button class="vault-chip ${!this.#searchFilters.strength ? 'active' : ''}" data-filter-strength="" aria-label="${t('vault.filters.ariaAllStrengths')}">${t('vault.filters.allStrengths')}</button>
+                <button class="vault-chip ${this.#searchFilters.strength === 'weak' ? 'active' : ''}" data-filter-strength="weak" aria-label="${t('vault.filters.ariaLowStrength')}"><span aria-hidden="true">🔴</span> ${t('vault.filters.weak')}</button>
+                <button class="vault-chip ${this.#searchFilters.strength === 'medium' ? 'active' : ''}" data-filter-strength="medium" aria-label="${t('vault.filters.ariaMediumStrength')}"><span aria-hidden="true">🟡</span> ${t('vault.filters.medium')}</button>
+                <button class="vault-chip ${this.#searchFilters.strength === 'strong' ? 'active' : ''}" data-filter-strength="strong" aria-label="${t('vault.filters.ariaHighStrength')}"><span aria-hidden="true">🟢</span> ${t('vault.filters.strong')}</button>
               </div>
             </div>
             <div class="vault-filter-section">
-              <label class="vault-filter-label">${t('vault.detail.passwordAge')}</label>
+              <label class="vault-filter-label">${t('vault.filters.passwordAge')}</label>
               <div class="vault-filter-chips" id="filter-age">
-                <button class="vault-chip ${!this.#searchFilters.age ? 'active' : ''}" data-filter-age="" aria-label="Filter: All ages">All</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'recent' ? 'active' : ''}" data-filter-age="recent" aria-label="Filter: Recent (less than 30 days)">Recent (&lt;30d)</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'old' ? 'active' : ''}" data-filter-age="old" aria-label="Filter: Old (more than 180 days)">Old (&gt;180d)</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'expiring' ? 'active' : ''}" data-filter-age="expiring" aria-label="Expiring soon"><span aria-hidden="true">⏰</span> Expiring</button>
-                <button class="vault-chip ${this.#searchFilters.age === 'expired' ? 'active' : ''}" data-filter-age="expired" aria-label="Expired"><span aria-hidden="true">⚠️</span> Expired</button>
+                <button class="vault-chip ${!this.#searchFilters.age ? 'active' : ''}" data-filter-age="" aria-label="${t('vault.filters.ariaAllAges')}">${t('vault.filters.allAges')}</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'recent' ? 'active' : ''}" data-filter-age="recent" aria-label="${t('vault.filters.ariaRecent')}">${t('vault.filters.recent')}</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'old' ? 'active' : ''}" data-filter-age="old" aria-label="${t('vault.filters.ariaOld')}">${t('vault.filters.old')}</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'expiring' ? 'active' : ''}" data-filter-age="expiring" aria-label="${t('vault.filters.ariaExpiring')}"><span aria-hidden="true">⏰</span> ${t('vault.filters.expiring')}</button>
+                <button class="vault-chip ${this.#searchFilters.age === 'expired' ? 'active' : ''}" data-filter-age="expired" aria-label="${t('vault.filters.ariaExpired')}"><span aria-hidden="true">⚠️</span> ${t('vault.filters.expired')}</button>
               </div>
             </div>
             <div class="vault-filter-actions">
-              <button class="vault-btn vault-btn-sm vault-btn-secondary" id="clear-filters" aria-label="Reset all filters">Reset</button>
+              <button class="vault-btn vault-btn-sm vault-btn-secondary" id="clear-filters" aria-label="${t('vault.filters.ariaReset')}">${t('vault.filters.reset')}</button>
             </div>
           </div>
 
