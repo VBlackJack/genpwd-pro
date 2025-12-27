@@ -27,6 +27,35 @@ import { safeLog } from '../utils/logger.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
+
+/**
+ * Simple throttle utility for scroll/resize events
+ * @param {Function} func - Function to throttle
+ * @param {number} limit - Minimum time between calls (ms)
+ * @returns {Function} Throttled function
+ */
+function throttle(func, limit) {
+  let lastCall = 0;
+  let timeout = null;
+  return function(...args) {
+    const now = Date.now();
+    const remaining = limit - (now - lastCall);
+    if (remaining <= 0) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      lastCall = now;
+      func.apply(this, args);
+    } else if (!timeout) {
+      timeout = setTimeout(() => {
+        lastCall = Date.now();
+        timeout = null;
+        func.apply(this, args);
+      }, remaining);
+    }
+  };
+}
 import { getBlocks, setBlocks, setUIState } from '../config/settings.js';
 import { renderChips, updateBlockSizeLabel } from './dom.js';
 import { showConfirm } from './modal-manager.js';
@@ -162,18 +191,21 @@ function bindLanguageSelectorEvents() {
     }
   }, { signal });
 
-  // Reposition on scroll/resize
-  window.addEventListener('scroll', () => {
+  // Reposition on scroll/resize (throttled for performance)
+  const throttledPositionOnScroll = throttle(() => {
     if (!langDropdown.classList.contains('hidden')) {
       positionDropdown();
     }
-  }, { passive: true, signal });
+  }, ANIMATION_DURATION.DEBOUNCE_SCROLL);
 
-  window.addEventListener('resize', () => {
+  const throttledPositionOnResize = throttle(() => {
     if (!langDropdown.classList.contains('hidden')) {
       positionDropdown();
     }
-  }, { passive: true, signal });
+  }, ANIMATION_DURATION.DEBOUNCE_RESIZE);
+
+  window.addEventListener('scroll', throttledPositionOnScroll, { passive: true, signal });
+  window.addEventListener('resize', throttledPositionOnResize, { passive: true, signal });
 
   // Close dropdown when clicking outside
   document.addEventListener('click', () => {

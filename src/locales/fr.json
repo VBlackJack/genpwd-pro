@@ -1,7 +1,30 @@
 {
   "app": {
     "title": "GenPwd Pro",
-    "subtitle": "Générateur de mots de passe sécurisés"
+    "subtitle": "Générateur de mots de passe sécurisés",
+    "description": "Gestionnaire de mots de passe professionnel avec coffre-fort chiffré",
+    "version": "Version",
+    "ariaLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé"
+  },
+  "keyboard": {
+    "generatingPasswords": "Génération des mots de passe",
+    "copyingPasswords": "Copie de tous les mots de passe",
+    "runningTests": "Exécution des tests",
+    "exportingResults": "Exportation des résultats",
+    "modalClosed": "Fenêtre fermée"
+  },
+  "passwordHealth": {
+    "noPassword": "Pas de mot de passe",
+    "tooShort": "Trop court (< 8 caractères)",
+    "recommendedLength": "Longueur recommandée : 12+ caractères",
+    "mixCase": "Mélangez majuscules et minuscules",
+    "addDigits": "Ajoutez des chiffres",
+    "addSpecials": "Ajoutez des caractères spéciaux",
+    "tooManyRepeated": "Trop de caractères répétés",
+    "onlyLetters": "Uniquement des lettres",
+    "onlyDigits": "Uniquement des chiffres",
+    "repetitiveSequences": "Séquences répétitives",
+    "commonPattern": "Motif commun détecté"
   },
   "common": {
     "generate": "Générer",
@@ -779,6 +802,8 @@
       "autoTypePassword": "Saisie auto du mot de passe (global)",
       "generatePasswords": "Générer de nouveaux mots de passe",
       "copyAllPasswords": "Copier tous les mots de passe",
+      "runTests": "Lancer les tests de sécurité",
+      "exportResults": "Exporter les résultats",
       "lockVault": "Verrouiller le coffre",
       "openSettings": "Ouvrir les paramètres",
       "closeModal": "Fermer la fenêtre / Annuler",
@@ -813,15 +838,23 @@
   },
   "breach": {
     "checkButton": "Vérifier les fuites",
-    "checking": "Vérification...",
+    "checking": "Vérification des fuites de données...",
+    "checkingShort": "Vérification...",
     "notCompromised": "Non compromis",
     "compromisedTimes": "Compromis {count} fois",
     "compromisedPlus": "Compromis {count}+ fois",
     "compromisedK": "Compromis {count}K+ fois",
-    "compromisedM": "Compromis {count}M+ fois"
+    "compromisedM": "Compromis {count}M+ fois",
+    "error": "Erreur : {error}",
+    "connectionError": "Erreur de connexion",
+    "passwordBreached": "Mot de passe compromis ! ({count})"
   },
   "toast": {
     "blocksRandomized": "Blocs randomisés",
+    "blockAdded": "Bloc ajouté",
+    "blockRemoved": "Bloc supprimé",
+    "blockMinReached": "Nombre minimum de blocs atteint",
+    "blockMaxReached": "Nombre maximum de blocs atteint",
     "generationError": "Erreur lors de la génération",
     "noPasswordsToCopy": "Aucun mot de passe à copier",
     "noValidPasswords": "Aucun mot de passe valide trouvé",
@@ -913,6 +946,13 @@
     "pluginMissingExport": "Le module du plugin doit avoir un export par défaut",
     "pluginModuleLoadFailed": "Échec du chargement du module plugin",
     "pluginDirectCodeDisabled": "Chargement de code direct désactivé pour des raisons de sécurité. Utilisez les modules ES6.",
-    "allPluginsCleared": "Tous les plugins supprimés"
+    "allPluginsCleared": "Tous les plugins supprimés",
+    "dictionarySelected": "Dictionnaire {dict} sélectionné",
+    "dictionaryError": "Erreur dictionnaire : {dict}",
+    "generationTooFast": "Génération trop rapide. Patientez {time}s",
+    "exportSuccess": "Export {format} réussi ({count} mots de passe)",
+    "autoClearEnabled": "Effacement auto : {time}",
+    "autoClearDisabled": "Effacement auto désactivé",
+    "passwordsCopied": "{count} mot(s) de passe copié(s) !"
   }
 }

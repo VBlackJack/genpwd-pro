@@ -340,7 +340,7 @@ header::before {
 .section {
   border: 1px solid var(--border);
   background: var(--bg-tertiary);
-  border-radius: var(--radius-small);
+  border-radius: var(--radius-sm);
   margin: 10px 0;
   overflow: hidden;
 }
@@ -482,7 +482,7 @@ header::before {
   width: 360px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: var(--radius-small);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
   overflow: hidden;
   z-index: var(--z-fixed);

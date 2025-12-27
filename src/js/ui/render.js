@@ -396,28 +396,30 @@ function bindBreachCheckButtons() {
       statusEl.hidden = false;
       statusEl.setAttribute('aria-live', 'polite'); // Set aria-live when visible for proper announcements
       statusEl.className = 'breach-status loading';
-      statusEl.innerHTML = '<span class="breach-spinner" role="status" aria-label="Loading"></span> Checking...';
+      statusEl.innerHTML = `<span class="breach-spinner" role="status" aria-label="Loading"></span> ${t('breach.checkingShort')}`;
 
       try {
         const result = await checkPasswordBreach(password);
 
         if (result.error) {
           statusEl.className = 'breach-status error';
-          statusEl.innerHTML = `<span class="breach-icon">⚠️</span> Error: ${result.error}`;
+          statusEl.innerHTML = `<span class="breach-icon">⚠️</span> ${t('breach.error', { error: result.error })}`;
+          showToast(t('breach.error', { error: result.error }), 'error');
         } else if (result.breached) {
           const severity = getBreachSeverity(result.count);
           const countText = formatBreachCount(result.count);
           statusEl.className = `breach-status ${severity}`;
           statusEl.innerHTML = `<span class="breach-icon">🚨</span> ${countText}`;
-          showToast(`Password compromised! (${countText})`, 'error', 5000);
+          showToast(t('breach.passwordBreached', { count: countText }), 'error', 5000);
         } else {
           statusEl.className = 'breach-status safe';
-          statusEl.innerHTML = '<span class="breach-icon">✅</span> Not compromised';
+          statusEl.innerHTML = `<span class="breach-icon">✅</span> ${t('breach.notCompromised')}`;
           showToast(t('toast.passwordNotBreached'), 'success');
         }
       } catch (err) {
         statusEl.className = 'breach-status error';
-        statusEl.innerHTML = '<span class="breach-icon">⚠️</span> Connection error';
+        statusEl.innerHTML = `<span class="breach-icon">⚠️</span> ${t('breach.connectionError')}`;
+        showToast(t('breach.connectionError'), 'error');
         safeLog(`Breach check error: ${err.message}`);
       } finally {
         btn.classList.remove('checking');

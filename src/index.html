@@ -62,20 +62,20 @@
             </svg>
           </div>
           <div class="logo-text">
-            <div class="logo-title" data-i18n="app.title">GenPwd Pro</div>
+            <h1 class="logo-title" data-i18n="app.title">GenPwd Pro</h1>
             <div class="logo-subtitle" data-i18n="app.subtitle">Secure Password Manager</div>
           </div>
         </div>
         <!-- App Tabs (Electron only) -->
-        <div class="header-tabs" id="app-tabs" hidden>
-          <button type="button" class="header-tab" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab">🔒 <span data-i18n="header.generatorTab">Generator</span></button>
-          <button type="button" class="header-tab active" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab" aria-current="page">🗄️ <span data-i18n="header.vaultTab">Vault</span></button>
-        </div>
+        <nav class="header-tabs" id="app-tabs" aria-label="Main navigation" hidden>
+          <button type="button" class="header-tab" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab"><span aria-hidden="true">🔒</span> <span data-i18n="header.generatorTab">Generator</span></button>
+          <button type="button" class="header-tab active" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab" aria-current="page"><span aria-hidden="true">🗄️</span> <span data-i18n="header.vaultTab">Vault</span></button>
+        </nav>
 
         <div class="header-right">
           <!-- Vault Status Indicator (Electron only) -->
           <button type="button" class="vault-status-indicator" id="vault-status-indicator" hidden data-i18n-aria-label="header.vaultStatus" aria-label="Vault status" data-i18n-title="header.clickToAccessVault" title="Click to access vault">
-            <span class="vault-status-icon">🔒</span>
+            <span class="vault-status-icon" aria-hidden="true">🔒</span>
             <span class="vault-status-text" data-i18n="header.vaultLocked">Locked</span>
           </button>
           <div class="version-badge" aria-label="Version 3.0.0">v3.0.0</div>
@@ -231,11 +231,11 @@
 
           <!-- Generation Mode -->
           <section class="section" aria-labelledby="section-mode">
-            <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-mode-content">
+            <button type="button" class="section-header chevron" aria-expanded="true" aria-controls="section-mode-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-mode" data-i18n="sections.generationMode">Generation Mode</strong>
               <span class="badge" aria-label="3 modes available">3 modes</span>
-            </div>
+            </button>
             <div class="section-content" id="section-mode-content">
               <div class="row">
                 <label for="mode-select" data-i18n="generator.mode">Mode</label>
@@ -313,10 +313,10 @@
 
           <!-- Common Parameters -->
           <section class="section" aria-labelledby="section-params">
-            <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-params-content">
+            <button type="button" class="section-header chevron" aria-expanded="true" aria-controls="section-params-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-params" data-i18n="sections.commonParameters">Common Parameters</strong>
-            </div>
+            </button>
             <div class="section-content" id="section-params-content">
               <div class="row">
                 <label for="qty" data-i18n="generator.count">Count</label>
@@ -439,10 +439,10 @@
 
           <!-- Help & Notes -->
           <section class="section" aria-labelledby="section-help">
-            <div class="section-header chevron" role="button" tabindex="0" aria-expanded="true" aria-controls="section-help-content">
+            <button type="button" class="section-header chevron" aria-expanded="true" aria-controls="section-help-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-help" data-i18n="sections.helpNotes">Help & Notes</strong>
-            </div>
+            </button>
             <div class="section-content" id="section-help-content">
               <p class="small">
                 <strong>💡 <span data-i18n="help.tip">Tip</span>:</strong> <span data-i18n="help.tipContent">Click directly on a password to copy it!</span><br><br>

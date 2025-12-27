@@ -163,9 +163,9 @@ function bindModeAndSettings() {
 
     try {
       // Loading is handled by the dictionary system
-      showToast(`Dictionary ${newDict} selected`, 'success');
+      showToast(t('toast.dictionarySelected', { dict: newDict }), 'success');
     } catch (error) {
-      showToast(`Dictionary error: ${newDict}`, 'error');
+      showToast(t('toast.dictionaryError', { dict: newDict }), 'error');
     }
   });
 
@@ -277,6 +277,9 @@ function bindCaseAndBlocks() {
       setUIState('blockDirty', true);
       renderBlocksUI();
       debouncedUpdatePreview();
+      showToast(t('toast.blockRemoved'), 'success');
+    } else {
+      showToast(t('toast.blockMinReached'), 'warning');
     }
   });
 
@@ -290,6 +293,9 @@ function bindCaseAndBlocks() {
       setUIState('blockDirty', true);
       renderBlocksUI();
       debouncedUpdatePreview();
+      showToast(t('toast.blockAdded'), 'success');
+    } else {
+      showToast(t('toast.blockMaxReached'), 'warning');
     }
   });
 
@@ -552,7 +558,7 @@ async function generatePasswords() {
   if (generationState.burstCount >= RATE_LIMITING.MAX_BURST) {
     if (timeSinceLastGen < RATE_LIMITING.COOLDOWN_MS) {
       const waitTime = Math.ceil((RATE_LIMITING.COOLDOWN_MS - timeSinceLastGen) / 100) / 10;
-      showToast(`Generation too fast. Please wait ${waitTime}s`, 'warning');
+      showToast(t('toast.generationTooFast', { time: waitTime }), 'warning');
       safeLog(`Rate limit: ${waitTime}s remaining`);
       isGenerating = false;
       return;
@@ -645,8 +651,8 @@ async function copyAllPasswords() {
 
     showToast(
       success
-        ? `${count} password${count > 1 ? 's' : ''} copied!`
-        : 'Could not copy passwords',
+        ? t('toast.passwordsCopied', { count })
+        : t('toast.copyFailed'),
       success ? 'success' : 'error'
     );
 
@@ -754,7 +760,7 @@ function showClipboardSettings() {
     optBtn.classList.add('active');
     optBtn.setAttribute('aria-selected', 'true');
 
-    showToast(timeout > 0 ? `Auto-clear: ${optBtn.textContent.trim()}` : 'Auto-clear disabled', 'success');
+    showToast(timeout > 0 ? t('toast.autoClearEnabled', { time: optBtn.textContent.trim() }) : t('toast.autoClearDisabled'), 'success');
     setTimeout(() => {
       popover.remove();
       btn.focus(); // Return focus to trigger button
@@ -905,7 +911,7 @@ async function exportPasswords() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast(`${format.toUpperCase()} export successful (${results.length} passwords)`, 'success');
+    showToast(t('toast.exportSuccess', { format: format.toUpperCase(), count: results.length }), 'success');
     safeLog(`Export successful: ${filename} (${results.length} entries)`);
 
   } catch (error) {

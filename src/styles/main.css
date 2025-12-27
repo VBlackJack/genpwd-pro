@@ -120,8 +120,6 @@
   --radius-full: 50%;
   /* Aliases for compatibility */
   --radius: var(--radius-sm);
-  --radius-small: var(--radius-sm);
-  --radius-large: var(--radius-lg);
 
   /* Spacing Scale (consistent throughout app) */
   --space-xs: 0.25rem;  /* 4px */
@@ -794,10 +792,7 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   50% { opacity: 0.8; transform: scale(1.02); }
 }
 
-/* Spin for loading spinners */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+/* Note: @keyframes spin defined in utilities.css to avoid duplication */
 
 /* Ripple effect for touch feedback */
 @keyframes ripple {

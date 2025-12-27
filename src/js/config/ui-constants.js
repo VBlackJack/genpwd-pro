@@ -22,7 +22,7 @@
  */
 export const ANIMATION_DURATION = {
   // Modal animations
-  MODAL_FADE_IN: 10,
+  MODAL_FADE_IN: 200, // 200ms for smooth entrance (was 10ms - too fast for perception)
   MODAL_FADE_OUT: 300, // Used consistently across modal-manager, vault-ui, etc.
 
   // Toast notifications

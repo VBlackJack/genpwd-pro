@@ -6,6 +6,26 @@
     "version": "Version {version}",
     "ariaLabel": "GenPwd Pro - Secure Password Manager"
   },
+  "keyboard": {
+    "generatingPasswords": "Generating passwords",
+    "copyingPasswords": "Copying all passwords",
+    "runningTests": "Running tests",
+    "exportingResults": "Exporting results",
+    "modalClosed": "Modal closed"
+  },
+  "passwordHealth": {
+    "noPassword": "No password",
+    "tooShort": "Too short (< 8 characters)",
+    "recommendedLength": "Recommended length: 12+ characters",
+    "mixCase": "Mix uppercase and lowercase",
+    "addDigits": "Add digits",
+    "addSpecials": "Add special characters",
+    "tooManyRepeated": "Too many repeated characters",
+    "onlyLetters": "Only letters",
+    "onlyDigits": "Only digits",
+    "repetitiveSequences": "Repetitive sequences",
+    "commonPattern": "Common pattern detected"
+  },
   "common": {
     "generate": "Generate",
     "copy": "Copy",
@@ -763,6 +783,8 @@
       "autoTypePassword": "Auto-type password (global)",
       "generatePasswords": "Generate new passwords",
       "copyAllPasswords": "Copy all passwords",
+      "runTests": "Run security tests",
+      "exportResults": "Export results",
       "lockVault": "Lock vault",
       "openSettings": "Open settings",
       "closeModal": "Close modal / Cancel action",
@@ -800,10 +822,19 @@
     "compromisedTimes": "Compromised {count} times",
     "compromisedPlus": "Compromised {count}+ times",
     "compromisedK": "Compromised {count}K+ times",
-    "compromisedM": "Compromised {count}M+ times"
+    "compromisedM": "Compromised {count}M+ times",
+    "checking": "Checking if password was breached...",
+    "checkingShort": "Checking...",
+    "error": "Error: {error}",
+    "connectionError": "Connection error",
+    "passwordBreached": "Password compromised! ({count})"
   },
   "toast": {
     "blocksRandomized": "Blocks randomized",
+    "blockAdded": "Block added",
+    "blockRemoved": "Block removed",
+    "blockMinReached": "Minimum blocks reached",
+    "blockMaxReached": "Maximum blocks reached",
     "generationError": "Error during generation",
     "noPasswordsToCopy": "No passwords to copy",
     "noValidPasswords": "No valid passwords found",
@@ -894,7 +925,14 @@
     "pluginMissingExport": "Plugin module must have default export",
     "pluginModuleLoadFailed": "Failed to load plugin module",
     "pluginDirectCodeDisabled": "Direct code loading disabled for security. Use ES6 modules.",
-    "allPluginsCleared": "All plugins cleared"
+    "allPluginsCleared": "All plugins cleared",
+    "dictionarySelected": "Dictionary {dict} selected",
+    "dictionaryError": "Dictionary error: {dict}",
+    "generationTooFast": "Generation too fast. Please wait {time}s",
+    "exportSuccess": "{format} export successful ({count} passwords)",
+    "autoClearEnabled": "Auto-clear: {time}",
+    "autoClearDisabled": "Auto-clear disabled",
+    "passwordsCopied": "{count} password(s) copied!"
   },
   "history": {
     "title": "History",

@@ -22,7 +22,7 @@ export class SettingsModal extends Modal {
       <div class="vault-modal-overlay" id="${this._modalId}" hidden role="dialog" aria-modal="true" aria-labelledby="${this._modalId}-title">
         <div class="vault-modal vault-modal-md">
           <div class="vault-modal-header">
-            <h3 id="${this._modalId}-title">${t('settingsModal.title')}</h3>
+            <h2 id="${this._modalId}-title">${t('settingsModal.title')}</h2>
             <button type="button" class="vault-modal-close" aria-label="${t('common.close')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -66,16 +66,20 @@ export class SettingsModal extends Modal {
                       <span class="shortcut-desc">${t('settingsModal.shortcuts.autoTypePassword')}</span>
                     </div>
                     <div class="shortcut-row">
-                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>G</kbd></span>
+                      <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>G</kbd></span>
                       <span class="shortcut-desc">${t('settingsModal.shortcuts.generatePasswords')}</span>
                     </div>
                     <div class="shortcut-row">
-                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></span>
+                      <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>C</kbd></span>
                       <span class="shortcut-desc">${t('settingsModal.shortcuts.copyAllPasswords')}</span>
                     </div>
                     <div class="shortcut-row">
-                      <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>L</kbd></span>
-                      <span class="shortcut-desc">${t('settingsModal.shortcuts.lockVault')}</span>
+                      <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>R</kbd></span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.runTests')}</span>
+                    </div>
+                    <div class="shortcut-row">
+                      <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>S</kbd></span>
+                      <span class="shortcut-desc">${t('settingsModal.shortcuts.exportResults')}</span>
                     </div>
                     <div class="shortcut-row">
                       <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>,</kbd></span>

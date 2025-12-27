@@ -7,14 +7,16 @@
  * @description Provides keyboard navigation and shortcuts for accessibility
  *
  * Shortcuts (Generator tab only):
- * - Ctrl+Alt+G: Generate passwords
- * - Ctrl+Alt+C: Copy all passwords
- * - Ctrl+Alt+R: Run tests
- * - Ctrl+Alt+S: Save/Export results
+ * - Alt+G: Generate passwords
+ * - Alt+C: Copy all passwords
+ * - Alt+R: Run tests
+ * - Alt+S: Export results
  * - Escape: Close modals (works everywhere)
  *
- * Note: Ctrl+Alt combo avoids conflicts with Windows accessibility shortcuts
+ * Note: Alt key avoids conflicts with browser and system shortcuts
  */
+
+import { t } from './i18n.js';
 
 /**
  * Initialize keyboard shortcuts
@@ -24,7 +26,7 @@ export function initKeyboardShortcuts() {
 
   // Log initialization
   if (window.log) {
-    window.log('[Keyboard] Shortcuts initialized - Ctrl+Alt+G/C/R/S, Escape');
+    window.log('[Keyboard] Shortcuts initialized - Alt+G/C/R/S, Escape');
   }
 }
 
@@ -58,30 +60,27 @@ function handleKeyboardShortcut(event) {
     return;
   }
 
-  // Handle Alt+ combinations (Ctrl+Alt avoids Windows conflicts)
-  if (event.altKey && !event.metaKey) {
+  // Handle Alt+ combinations (avoids conflicts with browser/system shortcuts)
+  if (event.altKey && !event.ctrlKey && !event.metaKey) {
     const key = event.key.toLowerCase();
 
-    // Use Ctrl+Alt to avoid Windows accessibility conflicts
-    if (event.ctrlKey) {
-      switch (key) {
-        case 'g':
-          event.preventDefault();
-          triggerGenerate();
-          break;
-        case 'c':
-          event.preventDefault();
-          triggerCopyAll();
-          break;
-        case 'r':
-          event.preventDefault();
-          triggerRunTests();
-          break;
-        case 's':
-          event.preventDefault();
-          triggerExport();
-          break;
-      }
+    switch (key) {
+      case 'g':
+        event.preventDefault();
+        triggerGenerate();
+        break;
+      case 'c':
+        event.preventDefault();
+        triggerCopyAll();
+        break;
+      case 'r':
+        event.preventDefault();
+        triggerRunTests();
+        break;
+      case 's':
+        event.preventDefault();
+        triggerExport();
+        break;
     }
   }
 }
@@ -93,7 +92,7 @@ function triggerGenerate() {
   const btn = document.getElementById('btn-generate');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Generating passwords');
+    announceAction(t('keyboard.generatingPasswords') || 'Generating passwords');
   }
 }
 
@@ -104,7 +103,7 @@ function triggerCopyAll() {
   const btn = document.getElementById('btn-copy-all');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Copying all passwords');
+    announceAction(t('keyboard.copyingPasswords') || 'Copying all passwords');
   }
 }
 
@@ -115,7 +114,7 @@ function triggerRunTests() {
   const btn = document.getElementById('btn-run-tests');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Running tests');
+    announceAction(t('keyboard.runningTests') || 'Running tests');
   }
 }
 
@@ -126,7 +125,7 @@ function triggerExport() {
   const btn = document.getElementById('btn-export');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction('Exporting results');
+    announceAction(t('keyboard.exportingResults') || 'Exporting results');
   }
 }
 
@@ -144,7 +143,7 @@ function handleEscapeKey() {
 
     if (closeBtn) {
       closeBtn.click();
-      announceAction('Modal closed');
+      announceAction(t('keyboard.modalClosed') || 'Modal closed');
     } else {
       // Fallback: hide modal directly
       lastModal.classList.add('hidden');
@@ -186,10 +185,10 @@ function announceAction(message) {
  */
 export function getKeyboardShortcuts() {
   return [
-    { key: 'Ctrl+Alt+G', description: 'Generate passwords' },
-    { key: 'Ctrl+Alt+C', description: 'Copy all passwords' },
-    { key: 'Ctrl+Alt+R', description: 'Run tests' },
-    { key: 'Ctrl+Alt+S', description: 'Export results' },
+    { key: 'Alt+G', description: 'Generate passwords' },
+    { key: 'Alt+C', description: 'Copy all passwords' },
+    { key: 'Alt+R', description: 'Run tests' },
+    { key: 'Alt+S', description: 'Export results' },
     { key: 'Escape', description: 'Close modals' }
   ];
 }

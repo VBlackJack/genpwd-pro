@@ -7,6 +7,7 @@
 
 import { safeLog } from './logger.js';
 import { checkPasswordBreach } from './breach-check.js';
+import { t } from './i18n.js';
 
 /**
  * Calculate password strength score (0-100)
@@ -14,7 +15,7 @@ import { checkPasswordBreach } from './breach-check.js';
  * @returns {{score: number, level: string, issues: string[]}}
  */
 export function analyzePasswordStrength(password) {
-  if (!password) return { score: 0, level: 'none', issues: ['No password'] };
+  if (!password) return { score: 0, level: 'none', issues: [t('passwordHealth.noPassword') || 'No password'] };
 
   const issues = [];
   let score = 0;
@@ -26,8 +27,8 @@ export function analyzePasswordStrength(password) {
   else if (len >= 8) score += 15;
   else if (len >= 6) score += 5;
 
-  if (len < 8) issues.push('Too short (< 8 characters)');
-  if (len < 12) issues.push('Recommended length: 12+ characters');
+  if (len < 8) issues.push(t('passwordHealth.tooShort') || 'Too short (< 8 characters)');
+  if (len < 12) issues.push(t('passwordHealth.recommendedLength') || 'Recommended length: 12+ characters');
 
   // Character variety (max 40 points)
   const hasLower = /[a-z]/.test(password);
@@ -40,33 +41,33 @@ export function analyzePasswordStrength(password) {
   if (hasDigit) score += 10;
   if (hasSpecial) score += 10;
 
-  if (!hasLower || !hasUpper) issues.push('Mix uppercase and lowercase');
-  if (!hasDigit) issues.push('Add digits');
-  if (!hasSpecial) issues.push('Add special characters');
+  if (!hasLower || !hasUpper) issues.push(t('passwordHealth.mixCase') || 'Mix uppercase and lowercase');
+  if (!hasDigit) issues.push(t('passwordHealth.addDigits') || 'Add digits');
+  if (!hasSpecial) issues.push(t('passwordHealth.addSpecials') || 'Add special characters');
 
   // Entropy bonus (max 20 points)
   const uniqueChars = new Set(password).size;
   const uniqueRatio = uniqueChars / len;
   score += Math.min(20, Math.round(uniqueRatio * 25));
 
-  if (uniqueRatio < 0.5) issues.push('Too many repeated characters');
+  if (uniqueRatio < 0.5) issues.push(t('passwordHealth.tooManyRepeated') || 'Too many repeated characters');
 
   // Pattern penalties
   if (/^[a-z]+$/i.test(password)) {
     score -= 10;
-    issues.push('Only letters');
+    issues.push(t('passwordHealth.onlyLetters') || 'Only letters');
   }
   if (/^[0-9]+$/.test(password)) {
     score -= 20;
-    issues.push('Only digits');
+    issues.push(t('passwordHealth.onlyDigits') || 'Only digits');
   }
   if (/(.)\1{2,}/.test(password)) {
     score -= 5;
-    issues.push('Repetitive sequences');
+    issues.push(t('passwordHealth.repetitiveSequences') || 'Repetitive sequences');
   }
   if (/^(123|abc|qwerty|azerty|password|motdepasse)/i.test(password)) {
     score -= 30;
-    issues.push('Common pattern detected');
+    issues.push(t('passwordHealth.commonPattern') || 'Common pattern detected');
   }
 
   // Clamp score
