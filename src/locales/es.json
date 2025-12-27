@@ -49,7 +49,9 @@
     "creating": "Creando...",
     "opening": "Abriendo...",
     "analyzing": "Analizando...",
-    "checking": "Verificando..."
+    "checking": "Verificando...",
+    "confirm": "Confirmar",
+    "confirmation": "Confirmación"
   },
   "toast": {
     "dismiss": "Cerrar notificación",

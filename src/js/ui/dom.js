@@ -21,12 +21,10 @@ import { t } from '../utils/i18n.js';
 
 export function getElement(selector, useCache = true) {
   if (!selector) return null;
-  
   try {
     if (useCache) {
       return getCachedElement(selector);
     }
-    
     if (selector.startsWith('#')) {
       return document.getElementById(selector.slice(1));
     } else {
@@ -49,7 +47,6 @@ export function getAllElements(selector) {
 
 export function addEventListener(element, event, handler, options = {}) {
   if (!element || typeof handler !== 'function') return false;
-  
   try {
     element.addEventListener(event, handler, options);
     return true;
@@ -98,7 +95,6 @@ export function updateVisibilityByMode() {
       leetEl.classList.add('hidden');
     }
   }
-
   safeLog(`Display mode: ${mode}`);
 }
 
@@ -112,25 +108,17 @@ export function ensureBlockVisible() {
     const prev = getElement('#case-preview-row');
 
     if (row) {
-      if (show) {
-        row.classList.remove('hidden');
-      } else {
-        row.classList.add('hidden');
-      }
+      if (show) row.classList.remove('hidden');
+      else row.classList.add('hidden');
     }
     if (prev) {
-      if (show) {
-        prev.classList.remove('hidden');
-      } else {
-        prev.classList.add('hidden');
-      }
+      if (show) prev.classList.remove('hidden');
+      else prev.classList.add('hidden');
     }
   } catch (e) {
     safeLog('ensureBlockVisible error: ' + (e?.message || e));
   }
 }
-
-// NOTE: showModal/hideModal removed - use modal-manager.js instead
 
 export function toggleDebugPanel() {
   const debugPanel = getElement('#debug-panel');
@@ -139,21 +127,22 @@ export function toggleDebugPanel() {
   const isCurrentlyHidden = debugPanel.hasAttribute('hidden');
 
   if (isCurrentlyHidden) {
-    // Show panel
     debugPanel.removeAttribute('hidden');
     debugPanel.classList.remove('hidden');
   } else {
-    // Hide panel
     debugPanel.setAttribute('hidden', '');
     debugPanel.classList.add('hidden');
   }
 
   const btn = getElement('#btn-toggle-debug');
   if (btn) {
-    btn.innerHTML = `🔬 ${isCurrentlyHidden ? t('actions.closeDebug') : t('actions.debug')}`;
+    // FIXED: Uses i18n keys for "Close" and "Debug"
+    btn.textContent = isCurrentlyHidden ?
+      `🔬 ${t('common.close')}` :
+      `🔬 ${t('common.debug')}`;
   }
 
-  return isCurrentlyHidden; // returns true if panel is now visible
+  return isCurrentlyHidden;
 }
 
 export function renderChips(containerSelector, blocks, onChipClick) {
@@ -167,11 +156,11 @@ export function renderChips(containerSelector, blocks, onChipClick) {
     chip.className = 'chip ' + (token === 'U' ? '' : token === 'l' ? 'chip-muted' : 'chip-title');
     chip.textContent = token;
     chip.title = t('vault.generator.clickToCycle');
-    
+
     if (onChipClick) {
       addEventListener(chip, 'click', () => onChipClick(index));
     }
-    
+
     container.appendChild(chip);
   });
 }
@@ -185,13 +174,8 @@ export function updateBlockSizeLabel(labelSelector, blocksCount) {
 
 export async function initializeDOM() {
   try {
-    // Check critical elements
     const criticalElements = [
-      '#mode-select',
-      '#qty',
-      '#results-list',
-      '#btn-generate',
-      '#logs'
+      '#mode-select', '#qty', '#results-list', '#btn-generate', '#logs'
     ];
 
     for (const selector of criticalElements) {
@@ -201,15 +185,11 @@ export async function initializeDOM() {
       }
     }
 
-    // Initialize slider badges
     getAllElements('input[type="range"]').forEach(updateBadgeForInput);
-
-    // Initialize visibility by mode
     updateVisibilityByMode();
     ensureBlockVisible();
 
     safeLog('DOM initialized successfully');
-
   } catch (error) {
     throw new Error(`DOM initialization error: ${error.message}`);
   }

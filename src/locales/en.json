@@ -49,7 +49,9 @@
     "opening": "Opening...",
     "analyzing": "Analyzing...",
     "checking": "Checking...",
-    "skipToMain": "Skip to main content"
+    "skipToMain": "Skip to main content",
+    "confirm": "Confirm",
+    "confirmation": "Confirmation"
   },
   "toast": {
     "dismiss": "Dismiss notification",
