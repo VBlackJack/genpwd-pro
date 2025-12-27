@@ -293,15 +293,91 @@
     "emptyState": "Aucun préréglage",
     "emptyHint": "Sauvegardez vos paramètres favoris pour un accès rapide",
     "clearSelection": "Effacer la sélection",
-    "createNew": "Créer un nouveau préréglage"
+    "createNew": "Créer un nouveau préréglage",
+    "loaded": "Préréglage « {name} » chargé !",
+    "dialog": {
+      "saveTitle": "💾 Sauvegarder le préréglage",
+      "editTitle": "✏️ Modifier « {name} »",
+      "manageTitle": "🗂️ Gérer les préréglages",
+      "nameLabel": "Nom du préréglage",
+      "namePlaceholder": "Ex : Mon préréglage sécurisé",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Description optionnelle...",
+      "configToSave": "Configuration à sauvegarder :",
+      "configuration": "⚙️ Configuration",
+      "updateConfig": "🔄 Mettre à jour",
+      "replaceWithCurrent": "Remplacer par les paramètres actuels",
+      "defaultPreset": "⭐ Préréglage par défaut",
+      "created": "📅 Créé :",
+      "modified": "Modifié :",
+      "searchPlaceholder": "🔍 Rechercher un préréglage...",
+      "loadPreset": "Charger ce préréglage",
+      "edit": "Modifier",
+      "duplicate": "Dupliquer",
+      "import": "📥 Importer",
+      "exportAll": "📤 Exporter tout"
+    },
+    "vaultSync": {
+      "title": "🗄️ Préréglages & Coffre",
+      "vaultLocked": "Coffre verrouillé",
+      "unlockToSync": "Déverrouillez-le pour synchroniser vos préréglages",
+      "goToVault": "Aller au coffre",
+      "localPresets": "Préréglages locaux",
+      "vaultPresets": "Préréglages du coffre",
+      "exportToVault": "Exporter tout vers le coffre",
+      "importFromVault": "Importer tout depuis le coffre",
+      "overwriteOption": "Remplacer les préréglages existants à l'importation",
+      "presetsInVault": "📦 Préréglages dans le coffre",
+      "noPresetsInVault": "Aucun préréglage dans le coffre",
+      "exporting": "Exportation...",
+      "loadingError": "Erreur de chargement"
+    },
+    "config": {
+      "mode": "Mode",
+      "length": "Longueur",
+      "characters": "caractères",
+      "chars": "car.",
+      "policy": "Politique",
+      "digits": "Chiffres",
+      "specials": "Spéciaux",
+      "specialCharacters": "Caractères spéciaux",
+      "customSpecials": "Spéciaux personnalisés",
+      "digitsPlacement": "Placement des chiffres",
+      "specialsPlacement": "Placement des spéciaux",
+      "digitsPlace": "Place chiffres",
+      "specialsPlace": "Place spéciaux",
+      "case": "Casse",
+      "quantity": "Quantité",
+      "undefined": "Non défini",
+      "notAvailable": "N/D",
+      "standard": "Standard",
+      "random": "Aléatoire",
+      "mixed": "Mixte",
+      "unknownMode": "Mode inconnu"
+    }
   },
   "history": {
     "title": "Historique",
+    "modalTitle": "📜 Historique des mots de passe",
     "search": "Rechercher",
+    "searchPlaceholder": "Rechercher...",
     "empty": "Aucun mot de passe dans l'historique",
+    "emptyState": "Aucun mot de passe dans l'historique",
+    "emptyHint": "Les mots de passe générés apparaîtront ici",
     "enableConfirm": "L'historique est désactivé. L'activer maintenant ?",
     "deleteEntryConfirm": "Supprimer cette entrée ?",
-    "clearAllConfirm": "Effacer tout l'historique ? Cette action est irréversible !"
+    "clearAllConfirm": "Effacer tout l'historique ? Cette action est irréversible !",
+    "stats": {
+      "total": "Total",
+      "favorites": "Favoris",
+      "avgEntropy": "Entropie Moy."
+    },
+    "meta": {
+      "mode": "Mode",
+      "entropy": "Entropie"
+    },
+    "export": "📤 Exporter",
+    "clearAll": "🗑️ Tout effacer"
   },
   "vault": {
     "aria": {
@@ -982,5 +1058,53 @@
     "autoClearEnabled": "Effacement auto : {time}",
     "autoClearDisabled": "Effacement auto désactivé",
     "passwordsCopied": "{count} mot(s) de passe copié(s) !"
+  },
+  "export": {
+    "title": "📤 Export avancé",
+    "description": "Exporter {count} mot(s) de passe vers différents formats de gestionnaires",
+    "selectFormat": "Sélectionner le format d'export :",
+    "passwordManagers": "Gestionnaires de mots de passe",
+    "genericFormats": "Formats génériques",
+    "formatInfo": "Informations sur le format :",
+    "selectFormatDetails": "Sélectionnez un format pour voir les détails",
+    "includeMetadata": "Inclure les métadonnées (horodatages, notes)",
+    "download": "📥 Télécharger l'export",
+    "success": "{count} mots de passe exportés vers {format}",
+    "failed": "Échec de l'export : {error}",
+    "formats": {
+      "keepassCsv": "Format CSV compatible avec le gestionnaire KeePass. Champs : Account, Login Name, Password, Web Site, Comments.",
+      "bitwardenJson": "Format JSON pour Bitwarden. Complet avec dossiers, favoris et horodatages.",
+      "lastpassCsv": "Format CSV compatible avec LastPass. Champs : url, username, password, extra, name, grouping.",
+      "onepasswordCsv": "Format CSV pour 1Password. Champs : Title, URL, Username, Password, Notes, Category.",
+      "genericJson": "Format JSON universel avec tous les champs. Peut être réimporté dans GenPwd Pro.",
+      "genericCsv": "Format CSV simple avec les champs de base : title, username, password, url, notes."
+    }
+  },
+  "import": {
+    "title": "📥 Import avancé",
+    "description": "Importer des mots de passe depuis des gestionnaires populaires",
+    "failed": "Échec de l'import : {error}"
+  },
+  "breach": {
+    "checkButton": "Vérifier les fuites",
+    "checkResults": "Résultats de vérification",
+    "modalTitle": "🔍 Vérification HIBP",
+    "privacyTitle": "🛡️ Vérification préservant la confidentialité",
+    "privacyDescription": "Cette vérification utilise le <strong>k-anonymat</strong> pour préserver votre vie privée. Seuls les 5 premiers caractères du hash du mot de passe sont envoyés à l'API HIBP. Votre mot de passe ne quitte jamais votre appareil.",
+    "checkingStatus": "Vérification de {count} mot(s) de passe dans la base de données des fuites...",
+    "checkingProgress": "Vérification du mot de passe {current} sur {total}...",
+    "errorTitle": "❌ Erreur lors de la vérification",
+    "pwnedWarning": "⚠️ {count} mot(s) de passe trouvé(s) dans les fuites",
+    "safeMessage": "✅ Tous les {count} mot(s) de passe sont sûrs",
+    "notCompromised": "Non compromis",
+    "compromisedTimes": "Compromis {count} fois",
+    "compromisedPlus": "Compromis {count}+ fois",
+    "compromisedK": "Compromis {count}K+ fois",
+    "compromisedM": "Compromis {count}M+ fois",
+    "checking": "Vérification des fuites de données...",
+    "checkingShort": "Vérification...",
+    "error": "Erreur : {error}",
+    "connectionError": "Erreur de connexion",
+    "passwordBreached": "Mot de passe compromis ! ({count})"
   }
 }

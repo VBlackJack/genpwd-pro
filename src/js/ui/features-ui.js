@@ -787,8 +787,8 @@ function showSavePresetDialog() {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">💾 Save Preset</div>
-        <button class="modal-close" id="close-save-modal" aria-label="Close">
+        <div class="modal-title">${i18n.t('presets.dialog.saveTitle')}</div>
+        <button class="modal-close" id="close-save-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -797,35 +797,35 @@ function showSavePresetDialog() {
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="preset-name">Preset name <span class="text-red">*</span></label>
-          <input type="text" id="preset-name" class="input-field" placeholder="E.g.: My secure preset" required maxlength="50">
+          <label for="preset-name">${i18n.t('presets.dialog.nameLabel')} <span class="text-red">*</span></label>
+          <input type="text" id="preset-name" class="input-field" placeholder="${i18n.t('presets.dialog.namePlaceholder')}" required maxlength="50">
           <span class="error-msg" id="name-error"></span>
         </div>
 
         <div class="form-group">
-          <label for="preset-description">Description</label>
-          <textarea id="preset-description" class="input-field" rows="2" placeholder="Optional description..."></textarea>
+          <label for="preset-description">${i18n.t('presets.dialog.descriptionLabel')}</label>
+          <textarea id="preset-description" class="input-field" rows="2" placeholder="${i18n.t('presets.dialog.descriptionPlaceholder')}"></textarea>
         </div>
 
         <div class="config-preview">
-          <strong>Configuration to save:</strong>
+          <strong>${i18n.t('presets.dialog.configToSave')}</strong>
           <ul class="my-8 pl-20 text-base">
-            <li>Mode: ${config.mode || 'Undefined'}</li>
-            <li>Length: ${config.length || 'N/A'} characters</li>
-            <li>Policy: ${config.policy || 'Standard'}</li>
-            <li>Digits: ${config.digits || 0}</li>
-            <li>Special characters: ${config.specials || 0}</li>
-            ${config.customSpecials ? `<li>Custom specials: ${config.customSpecials}</li>` : ''}
-            <li>Digits placement: ${config.placeDigits || 'Random'}</li>
-            <li>Specials placement: ${config.placeSpecials || 'Random'}</li>
-            <li>Case: ${config.caseMode || 'Mixed'}</li>
-            <li>Quantity: ${config.quantity || 1}</li>
+            <li>${i18n.t('presets.config.mode')}: ${config.mode || i18n.t('presets.config.undefined')}</li>
+            <li>${i18n.t('presets.config.length')}: ${config.length || i18n.t('presets.config.notAvailable')} ${i18n.t('presets.config.characters')}</li>
+            <li>${i18n.t('presets.config.policy')}: ${config.policy || i18n.t('presets.config.standard')}</li>
+            <li>${i18n.t('presets.config.digits')}: ${config.digits || 0}</li>
+            <li>${i18n.t('presets.config.specialCharacters')}: ${config.specials || 0}</li>
+            ${config.customSpecials ? `<li>${i18n.t('presets.config.customSpecials')}: ${config.customSpecials}</li>` : ''}
+            <li>${i18n.t('presets.config.digitsPlacement')}: ${config.placeDigits || i18n.t('presets.config.random')}</li>
+            <li>${i18n.t('presets.config.specialsPlacement')}: ${config.placeSpecials || i18n.t('presets.config.random')}</li>
+            <li>${i18n.t('presets.config.case')}: ${config.caseMode || i18n.t('presets.config.mixed')}</li>
+            <li>${i18n.t('presets.config.quantity')}: ${config.quantity || 1}</li>
           </ul>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-save-preset-confirm">💾 Save</button>
-        <button class="btn" id="btn-cancel-save">Cancel</button>
+        <button class="btn" id="btn-save-preset-confirm">💾 ${i18n.t('common.save')}</button>
+        <button class="btn" id="btn-cancel-save">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -1003,7 +1003,7 @@ function loadPreset(event) {
     }
   }
 
-  showToast(`Preset "${preset.name}" loaded!`, 'success');
+  showToast(i18n.t('presets.loaded', { name: preset.name }), 'success');
   safeLog(`Preset loaded: ${preset.id}`);
 }
 
@@ -1025,9 +1025,9 @@ function showManagePresetsModal() {
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title" id="presets-modal-title">
-          🗂️ Manage Presets
+          ${i18n.t('presets.dialog.manageTitle')}
         </div>
-        <button class="modal-close" id="close-presets-modal" aria-label="Close">
+        <button class="modal-close" id="close-presets-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1040,16 +1040,16 @@ function showManagePresetsModal() {
             type="text"
             id="preset-search"
             class="search-input"
-            placeholder="🔍 Search preset..."
+            placeholder="${i18n.t('presets.dialog.searchPlaceholder')}"
           >
         </div>
         <div class="presets-list">
           ${presets.length === 0 ? `
             <div class="empty-state">
               <div class="empty-icon">💾</div>
-              <p>${i18n.t('presets.emptyState') || 'No presets yet'}</p>
+              <p>${i18n.t('presets.emptyState')}</p>
               <p class="text-sm opacity-70 mt-8">
-                ${i18n.t('presets.emptyHint') || 'Save your favorite settings as presets for quick access'}
+                ${i18n.t('presets.emptyHint')}
               </p>
             </div>
           ` : presets.map(preset => `
@@ -1059,24 +1059,24 @@ function showManagePresetsModal() {
                   ${escapeHtml(preset.name)} ${preset.isDefault ? '<span class="text-yellow">⭐</span>' : ''}
                 </div>
                 <div class="preset-manager-summary">
-                  ${preset.config.mode || 'standard'} • ${preset.config.length || 20} chars • ${preset.config.digits || 0} digits • ${preset.config.specials || 0} specials
+                  ${preset.config.mode || 'standard'} • ${preset.config.length || 20} ${i18n.t('presets.config.chars')} • ${preset.config.digits || 0} ${i18n.t('presets.config.digits').toLowerCase()} • ${preset.config.specials || 0} ${i18n.t('presets.config.specials').toLowerCase()}
                 </div>
               </div>
               <div class="preset-manager-actions">
-                <button class="btn-mini" data-action="load" data-preset-id="${preset.id}" title="Load this preset">▶️</button>
-                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}" title="Edit">✏️</button>
-                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}" title="Duplicate">📋</button>
-                ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}" title="Delete">🗑️</button>` : ''}
+                <button class="btn-mini" data-action="load" data-preset-id="${preset.id}" title="${i18n.t('presets.dialog.loadPreset')}">▶️</button>
+                <button class="btn-mini" data-action="edit" data-preset-id="${preset.id}" title="${i18n.t('presets.dialog.edit')}">✏️</button>
+                <button class="btn-mini" data-action="duplicate" data-preset-id="${preset.id}" title="${i18n.t('presets.dialog.duplicate')}">📋</button>
+                ${!preset.isDefault ? `<button class="btn-mini danger" data-action="delete" data-preset-id="${preset.id}" title="${i18n.t('common.delete')}">🗑️</button>` : ''}
               </div>
             </div>
           `).join('')}
         </div>
       </div>
       <div class="modal-footer flex-wrap gap-8">
-        <button class="btn" id="btn-import-preset">📥 Import</button>
-        <button class="btn" id="btn-export-all-presets">📤 Export All</button>
+        <button class="btn" id="btn-import-preset">${i18n.t('presets.dialog.import')}</button>
+        <button class="btn" id="btn-export-all-presets">${i18n.t('presets.dialog.exportAll')}</button>
         <button class="btn ${window.vault ? '' : 'd-none'}" id="btn-vault-sync-presets">🗄️ Vault</button>
-        <button class="btn danger" id="close-presets-modal-footer">Close</button>
+        <button class="btn danger" id="close-presets-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -1323,8 +1323,8 @@ function showEditPresetModal(presetId) {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal modal-md">
       <div class="modal-header">
-        <div class="modal-title">✏️ Edit "${escapeHtml(preset.name)}"</div>
-        <button class="modal-close" id="close-edit-modal" aria-label="Close">
+        <div class="modal-title">${i18n.t('presets.dialog.editTitle', { name: escapeHtml(preset.name) })}</div>
+        <button class="modal-close" id="close-edit-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1334,62 +1334,62 @@ function showEditPresetModal(presetId) {
       <div class="modal-body">
         <!-- Info section -->
         <div class="form-group">
-          <label for="edit-preset-name">Name <span class="text-red">*</span></label>
+          <label for="edit-preset-name">${i18n.t('presets.dialog.nameLabel')} <span class="text-red">*</span></label>
           <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50">
           <span class="error-msg" id="edit-name-error"></span>
         </div>
 
         <div class="form-group mt-12">
-          <label for="edit-preset-description">Description</label>
-          <textarea id="edit-preset-description" class="input-field resize-y" rows="2" placeholder="Optional description...">${escapeHtml(preset.description || '')}</textarea>
+          <label for="edit-preset-description">${i18n.t('presets.dialog.descriptionLabel')}</label>
+          <textarea id="edit-preset-description" class="input-field resize-y" rows="2" placeholder="${i18n.t('presets.dialog.descriptionPlaceholder')}">${escapeHtml(preset.description || '')}</textarea>
         </div>
 
         <!-- Config section -->
         <div class="config-info-box">
           <div class="d-flex justify-between items-center mb-12">
-            <strong class="text-blue">⚙️ Configuration</strong>
-            <button class="btn-mini text-xs" id="btn-update-config-inline" title="Replace with current settings">
-              🔄 Update
+            <strong class="text-blue">${i18n.t('presets.dialog.configuration')}</strong>
+            <button class="btn-mini text-xs" id="btn-update-config-inline" title="${i18n.t('presets.dialog.replaceWithCurrent')}">
+              ${i18n.t('presets.dialog.updateConfig')}
             </button>
           </div>
           <div class="config-grid">
             <div class="config-item">
-              <span class="text-slate">Mode:</span> <span class="text-primary">${escapeHtml(config.mode || 'syllables')}</span>
+              <span class="text-slate">${i18n.t('presets.config.mode')}:</span> <span class="text-primary">${escapeHtml(config.mode || 'syllables')}</span>
             </div>
             <div class="config-item">
-              <span class="text-slate">Length:</span> <span class="text-primary">${config.length || 20}</span>
+              <span class="text-slate">${i18n.t('presets.config.length')}:</span> <span class="text-primary">${config.length || 20}</span>
             </div>
             <div class="config-item">
-              <span class="text-slate">Digits:</span> <span class="text-primary">${config.digits || 0}</span>
+              <span class="text-slate">${i18n.t('presets.config.digits')}:</span> <span class="text-primary">${config.digits || 0}</span>
             </div>
             <div class="config-item">
-              <span class="text-slate">Specials:</span> <span class="text-primary">${config.specials || 0}</span>
+              <span class="text-slate">${i18n.t('presets.config.specials')}:</span> <span class="text-primary">${config.specials || 0}</span>
             </div>
             <div class="config-item col-span-2">
-              <span class="text-slate">Case:</span> <span class="text-primary">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
+              <span class="text-slate">${i18n.t('presets.config.case')}:</span> <span class="text-primary">${formatCaseModeLabel(config.caseMode, config.blocks)}</span>
             </div>
             <div class="config-item">
-              <span class="text-slate">Digits place:</span> <span class="text-primary">${formatPlacementLabel(config.placeDigits)}</span>
+              <span class="text-slate">${i18n.t('presets.config.digitsPlace')}:</span> <span class="text-primary">${formatPlacementLabel(config.placeDigits)}</span>
             </div>
             <div class="config-item">
-              <span class="text-slate">Specials place:</span> <span class="text-primary">${formatPlacementLabel(config.placeSpecials)}</span>
+              <span class="text-slate">${i18n.t('presets.config.specialsPlace')}:</span> <span class="text-primary">${formatPlacementLabel(config.placeSpecials)}</span>
             </div>
           </div>
         </div>
 
         ${preset.isDefault ? `
           <div class="warning-box">
-            ⭐ Default preset
+            ${i18n.t('presets.dialog.defaultPreset')}
           </div>
         ` : ''}
 
         <div class="text-xs text-secondary mt-12 pt-12 border-top">
-          📅 Created: ${new Date(preset.createdAt).toLocaleDateString()} • Modified: ${new Date(preset.updatedAt).toLocaleDateString()}
+          ${i18n.t('presets.dialog.created')} ${new Date(preset.createdAt).toLocaleDateString()} • ${i18n.t('presets.dialog.modified')} ${new Date(preset.updatedAt).toLocaleDateString()}
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn bg-blue-alpha" id="btn-edit-preset-confirm">💾 Save</button>
-        <button class="btn" id="btn-cancel-edit">Cancel</button>
+        <button class="btn bg-blue-alpha" id="btn-edit-preset-confirm">💾 ${i18n.t('common.save')}</button>
+        <button class="btn" id="btn-cancel-edit">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -1503,8 +1503,8 @@ async function showVaultPresetSyncModal() {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal modal-sm">
       <div class="modal-header">
-        <div class="modal-title">🗄️ Presets & Vault</div>
-        <button class="modal-close" id="close-vault-sync-modal" aria-label="Close">
+        <div class="modal-title">${i18n.t('presets.vaultSync.title')}</div>
+        <button class="modal-close" id="close-vault-sync-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1515,19 +1515,19 @@ async function showVaultPresetSyncModal() {
         ${!isVaultReady ? `
           <div class="vault-locked-state">
             <div class="vault-locked-icon">🔒</div>
-            <p class="m-0 text-red">Vault is locked</p>
-            <p class="mt-8 m-0 text-base text-muted">Unlock it to sync your presets</p>
-            <button class="btn mt-12" id="btn-go-to-vault">Go to vault</button>
+            <p class="m-0 text-red">${i18n.t('presets.vaultSync.vaultLocked')}</p>
+            <p class="mt-8 m-0 text-base text-muted">${i18n.t('presets.vaultSync.unlockToSync')}</p>
+            <button class="btn mt-12" id="btn-go-to-vault">${i18n.t('presets.vaultSync.goToVault')}</button>
           </div>
         ` : `
           <div class="vault-sync-stats">
             <div class="vault-sync-stat local">
               <div class="stat-value">${localPresetCount}</div>
-              <div class="text-sm text-muted">Local presets</div>
+              <div class="text-sm text-muted">${i18n.t('presets.vaultSync.localPresets')}</div>
             </div>
             <div class="vault-sync-stat vault">
               <div class="stat-value">${vaultPresetCount}</div>
-              <div class="text-sm text-muted">Vault presets</div>
+              <div class="text-sm text-muted">${i18n.t('presets.vaultSync.vaultPresets')}</div>
             </div>
           </div>
 
@@ -1538,7 +1538,7 @@ async function showVaultPresetSyncModal() {
                 <polyline points="17 8 12 3 7 8"/>
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
-              Export all to vault
+              ${i18n.t('presets.vaultSync.exportToVault')}
             </button>
             <button class="btn full-width d-flex items-center justify-center gap-8" id="btn-import-from-vault" ${vaultPresetCount === 0 ? 'disabled' : ''}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -1546,29 +1546,29 @@ async function showVaultPresetSyncModal() {
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Import all from vault
+              ${i18n.t('presets.vaultSync.importFromVault')}
             </button>
           </div>
 
           <div class="vault-sync-checkbox-row">
             <label class="vault-sync-checkbox-label">
               <input type="checkbox" id="vault-sync-overwrite" class="vault-sync-checkbox">
-              Overwrite existing presets on import
+              ${i18n.t('presets.vaultSync.overwriteOption')}
             </label>
           </div>
 
           ${vaultPresetCount > 0 ? `
           <div class="vault-presets-section">
-            <h4 class="vault-presets-title">📦 Presets in vault</h4>
+            <h4 class="vault-presets-title">${i18n.t('presets.vaultSync.presetsInVault')}</h4>
             <div id="vault-presets-list" class="vault-presets-list">
-              <div class="text-center p-20 text-muted">Loading...</div>
+              <div class="text-center p-20 text-muted">${i18n.t('common.loading')}</div>
             </div>
           </div>
           ` : ''}
         `}
       </div>
       <div class="modal-footer">
-        <button class="btn" id="close-vault-sync-footer">Close</button>
+        <button class="btn" id="close-vault-sync-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -1591,7 +1591,7 @@ async function showVaultPresetSyncModal() {
   modal.querySelector('#btn-export-to-vault')?.addEventListener('click', async () => {
     const btn = modal.querySelector('#btn-export-to-vault');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Exporting...';
+    btn.innerHTML = `<span class="spinner"></span> ${i18n.t('presets.vaultSync.exporting')}`;
 
     const result = await presetManager.exportAllToVault();
 
@@ -1646,7 +1646,7 @@ async function loadVaultPresetsList(modal) {
     const vaultPresets = await presetManager.getVaultPresets();
 
     if (vaultPresets.length === 0) {
-      container.innerHTML = '<div class="text-center p-20 text-muted">No presets in vault</div>';
+      container.innerHTML = `<div class="text-center p-20 text-muted">${i18n.t('presets.vaultSync.noPresetsInVault')}</div>`;
       return;
     }
 
@@ -1655,7 +1655,7 @@ async function loadVaultPresetsList(modal) {
         <div class="vault-preset-info">
           <div class="vault-preset-name">${escapeHtml(entry.title)}</div>
           <div class="vault-preset-date">
-            ${entry.data?.config?.mode || 'Unknown mode'} • ${entry.data?.config?.length || '?'} chars
+            ${entry.data?.config?.mode || i18n.t('presets.config.unknownMode')} • ${entry.data?.config?.length || '?'} ${i18n.t('presets.config.chars')}
           </div>
         </div>
         <div class="vault-preset-actions">
@@ -1730,7 +1730,7 @@ async function loadVaultPresetsList(modal) {
     });
 
   } catch (error) {
-    container.innerHTML = '<div class="text-center p-20 text-red">Loading error</div>';
+    container.innerHTML = `<div class="text-center p-20 text-red">${i18n.t('presets.vaultSync.loadingError')}</div>`;
     safeLog(`[VaultPresets] Error loading: ${error.message}`);
   }
 }
@@ -1795,9 +1795,9 @@ async function showHistoryModal() {
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">
-          📜 Password History
+          ${i18n.t('history.modalTitle')}
         </div>
-        <button class="modal-close" id="close-history-modal" aria-label="Close">
+        <button class="modal-close" id="close-history-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1808,29 +1808,29 @@ async function showHistoryModal() {
         <div class="history-stats">
           <div class="stat-item">
             <div class="stat-value">${stats.totalEntries}</div>
-            <div class="stat-label">Total</div>
+            <div class="stat-label">${i18n.t('history.stats.total')}</div>
           </div>
           <div class="stat-item">
             <div class="stat-value">${stats.favorites}</div>
-            <div class="stat-label">Favoris</div>
+            <div class="stat-label">${i18n.t('history.stats.favorites')}</div>
           </div>
           <div class="stat-item">
             <div class="stat-value">${Math.round(stats.averageEntropy)}</div>
-            <div class="stat-label">Entropie Moy.</div>
+            <div class="stat-label">${i18n.t('history.stats.avgEntropy')}</div>
           </div>
         </div>
 
         <div class="history-search">
-          <input type="text" id="history-search-input" placeholder="Search..." class="input" />
+          <input type="text" id="history-search-input" placeholder="${i18n.t('history.searchPlaceholder')}" class="input" />
         </div>
 
         <div class="history-list">
           ${history.length === 0 ? `
               <div class="empty-state">
                 <div class="empty-icon">📜</div>
-                <p>${i18n.t('history.emptyState') || 'No passwords in history'}</p>
+                <p>${i18n.t('history.emptyState')}</p>
                 <p class="text-sm opacity-70 mt-8">
-                  ${i18n.t('history.emptyHint') || 'Generated passwords will appear here'}
+                  ${i18n.t('history.emptyHint')}
                 </p>
               </div>
             ` :
@@ -1841,7 +1841,7 @@ async function showHistoryModal() {
                   ${entry.isFavorite ? '⭐' : ''}
                 </div>
                 <div class="history-meta">
-                  Mode: ${entry.metadata.mode} | Entropie: ${entry.metadata.entropy?.toFixed(1)} bits |
+                  ${i18n.t('history.meta.mode')}: ${entry.metadata.mode} | ${i18n.t('history.meta.entropy')}: ${entry.metadata.entropy?.toFixed(1)} bits |
                   ${new Date(entry.timestamp).toLocaleString()}
                 </div>
                 <div class="history-tags">
@@ -1858,9 +1858,9 @@ async function showHistoryModal() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-export-history">📤 Export</button>
-        <button class="btn danger" id="btn-clear-history">🗑️ Clear All</button>
-        <button class="btn" id="close-history-modal-footer">Close</button>
+        <button class="btn" id="btn-export-history">${i18n.t('history.export')}</button>
+        <button class="btn danger" id="btn-clear-history">${i18n.t('history.clearAll')}</button>
+        <button class="btn" id="close-history-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2458,8 +2458,8 @@ function showAdvancedExportModal() {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">📤 Advanced Export</div>
-        <button class="modal-close" id="close-export-modal" aria-label="Close">
+        <div class="modal-title">${i18n.t('export.title')}</div>
+        <button class="modal-close" id="close-export-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2468,21 +2468,21 @@ function showAdvancedExportModal() {
       </div>
       <div class="modal-body">
         <p class="mb-20 text-secondary">
-          Export ${passwords.length} password(s) to various password manager formats
+          ${i18n.t('export.description', { count: passwords.length })}
         </p>
 
         <div class="form-group mb-20">
           <label for="export-format" class="form-label">
-            Select Export Format:
+            ${i18n.t('export.selectFormat')}
           </label>
           <select id="export-format" class="input-field format-select">
-            <optgroup label="Password Managers">
+            <optgroup label="${i18n.t('export.passwordManagers')}">
               <option value="keepass-csv">KeePass (CSV)</option>
               <option value="bitwarden-json">Bitwarden (JSON)</option>
               <option value="lastpass-csv">LastPass (CSV)</option>
               <option value="1password-csv">1Password (CSV)</option>
             </optgroup>
-            <optgroup label="Generic Formats">
+            <optgroup label="${i18n.t('export.genericFormats')}">
               <option value="generic-json">Generic JSON</option>
               <option value="generic-csv">Generic CSV</option>
             </optgroup>
@@ -2490,24 +2490,24 @@ function showAdvancedExportModal() {
         </div>
 
         <div class="format-info format-info-box">
-          <strong>Format Information:</strong>
+          <strong>${i18n.t('export.formatInfo')}</strong>
           <div id="format-description" class="form-description">
-            Select a format to see details
+            ${i18n.t('export.selectFormatDetails')}
           </div>
         </div>
 
         <div class="export-options mb-20">
           <label class="form-label">
             <input type="checkbox" id="include-metadata" checked>
-            Include metadata (timestamps, notes)
+            ${i18n.t('export.includeMetadata')}
           </label>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-green" id="btn-export-download">
-          📥 Download Export
+          ${i18n.t('export.download')}
         </button>
-        <button class="btn" id="close-export-modal-footer">Cancel</button>
+        <button class="btn" id="close-export-modal-footer">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -2519,17 +2519,17 @@ function showAdvancedExportModal() {
   const formatDescription = modal.querySelector('#format-description');
 
   const formatDescriptions = {
-    'keepass-csv': 'CSV format compatible with KeePass password manager. Fields: Account, Login Name, Password, Web Site, Comments.',
-    'bitwarden-json': 'JSON format for Bitwarden. Full-featured with folders, favorites, and timestamps.',
-    'lastpass-csv': 'CSV format compatible with LastPass. Fields: url, username, password, extra, name, grouping.',
-    '1password-csv': 'CSV format for 1Password. Fields: Title, URL, Username, Password, Notes, Category.',
-    'generic-json': 'Universal JSON format with all fields. Can be re-imported to GenPwd Pro.',
-    'generic-csv': 'Simple CSV format with basic fields: title, username, password, url, notes.'
+    'keepass-csv': i18n.t('export.formats.keepassCsv'),
+    'bitwarden-json': i18n.t('export.formats.bitwardenJson'),
+    'lastpass-csv': i18n.t('export.formats.lastpassCsv'),
+    '1password-csv': i18n.t('export.formats.onepasswordCsv'),
+    'generic-json': i18n.t('export.formats.genericJson'),
+    'generic-csv': i18n.t('export.formats.genericCsv')
   };
 
   formatSelect.addEventListener('change', () => {
     const format = formatSelect.value;
-    formatDescription.textContent = formatDescriptions[format] || 'Select a format to see details';
+    formatDescription.textContent = formatDescriptions[format] || i18n.t('export.selectFormatDetails');
   });
 
   // Trigger initial description
@@ -2549,10 +2549,10 @@ function showAdvancedExportModal() {
       const filename = `genpwd-export-${new Date().toISOString().slice(0, 10)}${formatInfo.extension}`;
       downloadFile(exported, filename, format.includes('json') ? 'application/json' : 'text/csv');
 
-      showToast(`Exported ${passwords.length} passwords to ${formatInfo.name}`, 'success');
+      showToast(i18n.t('export.success', { count: passwords.length, format: formatInfo.name }), 'success');
       modal.remove();
     } catch (error) {
-      showToast(`Export failed: ${error.message}`, 'error');
+      showToast(i18n.t('export.failed', { error: error.message }), 'error');
       safeLog(`Export error: ${error.message}`);
     }
   });
@@ -2839,9 +2839,9 @@ function showHIBPCheckModal() {
     <div class="modal large">
       <div class="modal-header">
         <div class="modal-title">
-          🔍 HIBP Breach Check
+          ${i18n.t('breach.modalTitle')}
         </div>
-        <button class="modal-close" id="close-hibp-modal" aria-label="Close">
+        <button class="modal-close" id="close-hibp-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2851,24 +2851,22 @@ function showHIBPCheckModal() {
 
       <div class="modal-body">
         <div class="info-box">
-          <strong>🛡️ Privacy-Preserving Check</strong>
+          <strong>${i18n.t('breach.privacyTitle')}</strong>
           <p class="import-hint">
-            This check uses <strong>k-anonymity</strong> to preserve your privacy.
-            Only the first 5 characters of the password hash are sent to the HIBP API.
-            Your actual password never leaves your device.
+            ${i18n.t('breach.privacyDescription')}
           </p>
         </div>
 
         <div id="hibp-checking-status" class="checking-status">
           <div class="spinner"></div>
-          <p>Checking ${passwords.length} password(s) against breach database...</p>
+          <p>${i18n.t('breach.checkingStatus', { count: passwords.length })}</p>
         </div>
 
         <div id="hibp-results" class="hibp-results hidden"></div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn" id="close-hibp-modal-footer">Close</button>
+        <button class="btn" id="close-hibp-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2902,7 +2900,7 @@ async function checkPasswordsWithHIBP(passwords, modal) {
 
       // Update status
       statusDiv.querySelector('p').textContent =
-        `Checking password ${i + 1} of ${passwords.length}...`;
+        i18n.t('breach.checkingProgress', { current: i + 1, total: passwords.length });
 
       const result = await hibpService.checkPassword(password);
       results.push({
@@ -2923,7 +2921,7 @@ async function checkPasswordsWithHIBP(passwords, modal) {
     resultsDiv.classList.remove('hidden');
     resultsDiv.innerHTML = sanitizeHTML(`
       <div class="error-box">
-        <strong>❌ Error checking passwords</strong>
+        <strong>${i18n.t('breach.errorTitle')}</strong>
         <p>${escapeHtml(error.message)}</p>
       </div>
     `);
@@ -2987,9 +2985,9 @@ function renderHIBPResults(results, container) {
 
   // Show toast with summary
   if (pwnedCount > 0) {
-    showToast(`⚠️ ${pwnedCount} password(s) found in breach database`, 'warning');
+    showToast(i18n.t('breach.pwnedWarning', { count: pwnedCount }), 'warning');
   } else {
-    showToast(`✅ All ${safeCount} password(s) are safe`, 'success');
+    showToast(i18n.t('breach.safeMessage', { count: safeCount }), 'success');
   }
 }
 
