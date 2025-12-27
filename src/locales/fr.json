@@ -51,6 +51,10 @@
     "analyzing": "Analyse...",
     "checking": "Vérification..."
   },
+  "toast": {
+    "dismiss": "Fermer la notification",
+    "undo": "Annuler"
+  },
   "header": {
     "generatorTab": "Générateur",
     "vaultTab": "Coffre",

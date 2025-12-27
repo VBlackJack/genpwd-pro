@@ -16,6 +16,7 @@
 // src/js/utils/toast.js - Temporary notification system
 import { safeLog } from './logger.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
+import { i18n } from '../i18n/index.js';
 
 /** @type {Map<HTMLElement, {message: string, cleanup: Function}>} */
 const activeToasts = new Map();
@@ -124,7 +125,7 @@ export function showToast(message, type = 'info', options = {}) {
     // Close button
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close';
-    closeBtn.setAttribute('aria-label', 'Dismiss notification');
+    closeBtn.setAttribute('aria-label', i18n.t('toast.dismiss'));
     closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
     div.appendChild(closeBtn);
 
@@ -197,7 +198,7 @@ export function clearAllToasts() {
 export function showUndoToast(message, onUndo) {
   return showToast(message, 'info', {
     action: {
-      label: 'Undo',
+      label: i18n.t('toast.undo'),
       onClick: onUndo
     },
     dedupe: false

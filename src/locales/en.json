@@ -51,6 +51,10 @@
     "checking": "Checking...",
     "skipToMain": "Skip to main content"
   },
+  "toast": {
+    "dismiss": "Dismiss notification",
+    "undo": "Undo"
+  },
   "header": {
     "generatorTab": "Generator",
     "vaultTab": "Vault",

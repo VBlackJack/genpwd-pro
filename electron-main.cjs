@@ -41,6 +41,7 @@ const { version: APP_VERSION } = require('./package.json');
 // Simple i18n for tray menu and notifications (main process only)
 const translations = {
   en: {
+    // Tray menu
     trayTooltip: 'GenPwd Pro - Password Generator',
     showApp: 'Show GenPwd Pro',
     generatePassword: 'Generate password',
@@ -59,10 +60,72 @@ const translations = {
     // Close dialog
     minimizeToTray: 'Minimize to Tray',
     quitApp: 'Quit Application',
+    alwaysMinimize: 'Always Minimize (Remember)',
     closePromptTitle: 'Close GenPwd Pro?',
-    closePromptDetail: 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.'
+    closePromptDetail: 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.',
+    // Tray notifications
+    trayNotifyFirst: 'App minimized to tray. Click the tray icon to restore, or right-click for options.',
+    trayNotifyRepeat: 'Running in background. Right-click tray icon to quit.',
+    // Clipboard security
+    securityTip: 'Security Tip',
+    clipboardHistoryWarning: 'Windows Clipboard History (Win+V) may retain copied passwords. Consider disabling it in Windows Settings > System > Clipboard.',
+    // Vault locked notifications
+    vaultLockedTitle: 'GenPwd Pro - Vault Locked',
+    vaultLockedScreenLock: 'Your vault was automatically locked for security when the screen was locked.',
+    vaultLockedSuspend: 'Your vault was automatically locked for security when the system went to sleep.',
+    // Admin warning
+    securityWarning: 'Security Warning',
+    runningAsAdmin: 'GenPwd Pro is running as Administrator',
+    adminWarningDetail: 'Running as admin may cause vault files to have restricted permissions that other users cannot access.\n\nFor best security, run GenPwd Pro as a standard user.',
+    iUnderstand: 'I Understand',
+    // Auto-type
+    autoTypeBlocked: 'Auto-type blocked: Cannot type into command-line windows for security reasons.',
+    // File dialogs
+    openFile: 'Open a file',
+    openVault: 'Open a vault',
+    saveVault: 'Save vault',
+    allFiles: 'All files',
+    genPwdVault: 'GenPwd Vault',
+    jsonExport: 'JSON Export',
+    // Menu - File
+    menuFile: 'File',
+    menuGenerateNew: 'Generate New Password',
+    menuQuit: 'Quit',
+    // Menu - Vault
+    menuVault: 'Vault',
+    menuNewVault: 'New Vault...',
+    menuOpenVault: 'Open Vault...',
+    menuLock: 'Lock',
+    // Menu - Edit
+    menuEdit: 'Edit',
+    // Menu - View
+    menuView: 'View',
+    menuReload: 'Reload',
+    menuForceReload: 'Force Reload',
+    menuActualSize: 'Actual Size',
+    menuZoomIn: 'Zoom In',
+    menuZoomOut: 'Zoom Out',
+    menuFullScreen: 'Full Screen',
+    menuDevTools: 'Developer Tools',
+    // Menu - Help
+    menuHelp: 'Help',
+    menuDocumentation: 'Documentation',
+    menuReportBug: 'Report a Bug',
+    menuAbout: 'About',
+    // About dialog
+    aboutTitle: 'About GenPwd Pro',
+    aboutDescription: 'Secure Password Manager',
+    // Dev menu
+    menuDev: 'Development',
+    menuDevTools2: 'Developer Tools',
+    menuClearCache: 'Reload and clear cache',
+    // Jump List / Thumbnail
+    generateSecurePassword: 'Generate a new secure password',
+    openPasswordVault: 'Open password vault',
+    lockVaultImmediately: 'Lock the vault immediately'
   },
   fr: {
+    // Tray menu
     trayTooltip: 'GenPwd Pro - Générateur de mots de passe',
     showApp: 'Afficher GenPwd Pro',
     generatePassword: 'Générer un mot de passe',
@@ -81,10 +144,72 @@ const translations = {
     // Close dialog
     minimizeToTray: 'Réduire dans la barre',
     quitApp: 'Quitter l\'application',
+    alwaysMinimize: 'Toujours réduire (Mémoriser)',
     closePromptTitle: 'Fermer GenPwd Pro ?',
-    closePromptDetail: 'GenPwd Pro peut continuer en arrière-plan pour garder votre coffre accessible. Choisissez "Quitter" pour fermer complètement.'
+    closePromptDetail: 'GenPwd Pro peut continuer en arrière-plan pour garder votre coffre accessible. Choisissez "Quitter" pour fermer complètement.',
+    // Tray notifications
+    trayNotifyFirst: 'Application réduite dans la barre. Cliquez sur l\'icône pour restaurer, ou clic droit pour les options.',
+    trayNotifyRepeat: 'Exécution en arrière-plan. Clic droit sur l\'icône pour quitter.',
+    // Clipboard security
+    securityTip: 'Conseil de sécurité',
+    clipboardHistoryWarning: 'L\'historique du presse-papier Windows (Win+V) peut conserver les mots de passe copiés. Pensez à le désactiver dans Paramètres > Système > Presse-papiers.',
+    // Vault locked notifications
+    vaultLockedTitle: 'GenPwd Pro - Coffre verrouillé',
+    vaultLockedScreenLock: 'Votre coffre a été automatiquement verrouillé pour votre sécurité lors du verrouillage de l\'écran.',
+    vaultLockedSuspend: 'Votre coffre a été automatiquement verrouillé pour votre sécurité lors de la mise en veille.',
+    // Admin warning
+    securityWarning: 'Avertissement de sécurité',
+    runningAsAdmin: 'GenPwd Pro s\'exécute en tant qu\'Administrateur',
+    adminWarningDetail: 'L\'exécution en tant qu\'admin peut créer des fichiers de coffre avec des permissions restreintes inaccessibles aux autres utilisateurs.\n\nPour une meilleure sécurité, lancez GenPwd Pro en utilisateur standard.',
+    iUnderstand: 'Je comprends',
+    // Auto-type
+    autoTypeBlocked: 'Saisie automatique bloquée : impossible de saisir dans les fenêtres de ligne de commande pour des raisons de sécurité.',
+    // File dialogs
+    openFile: 'Ouvrir un fichier',
+    openVault: 'Ouvrir un coffre',
+    saveVault: 'Sauvegarder le coffre',
+    allFiles: 'Tous les fichiers',
+    genPwdVault: 'Coffre GenPwd',
+    jsonExport: 'Export JSON',
+    // Menu - File
+    menuFile: 'Fichier',
+    menuGenerateNew: 'Générer un nouveau mot de passe',
+    menuQuit: 'Quitter',
+    // Menu - Vault
+    menuVault: 'Coffre',
+    menuNewVault: 'Nouveau coffre...',
+    menuOpenVault: 'Ouvrir un coffre...',
+    menuLock: 'Verrouiller',
+    // Menu - Edit
+    menuEdit: 'Édition',
+    // Menu - View
+    menuView: 'Affichage',
+    menuReload: 'Recharger',
+    menuForceReload: 'Forcer le rechargement',
+    menuActualSize: 'Taille réelle',
+    menuZoomIn: 'Zoom avant',
+    menuZoomOut: 'Zoom arrière',
+    menuFullScreen: 'Plein écran',
+    menuDevTools: 'Outils de développement',
+    // Menu - Help
+    menuHelp: 'Aide',
+    menuDocumentation: 'Documentation',
+    menuReportBug: 'Signaler un bug',
+    menuAbout: 'À propos',
+    // About dialog
+    aboutTitle: 'À propos de GenPwd Pro',
+    aboutDescription: 'Gestionnaire de mots de passe sécurisé',
+    // Dev menu
+    menuDev: 'Développement',
+    menuDevTools2: 'Outils de développement',
+    menuClearCache: 'Recharger et effacer le cache',
+    // Jump List / Thumbnail
+    generateSecurePassword: 'Générer un nouveau mot de passe sécurisé',
+    openPasswordVault: 'Ouvrir le coffre de mots de passe',
+    lockVaultImmediately: 'Verrouiller le coffre immédiatement'
   },
   es: {
+    // Tray menu
     trayTooltip: 'GenPwd Pro - Generador de contraseñas',
     showApp: 'Mostrar GenPwd Pro',
     generatePassword: 'Generar contraseña',
@@ -103,8 +228,69 @@ const translations = {
     // Close dialog
     minimizeToTray: 'Minimizar a bandeja',
     quitApp: 'Cerrar aplicación',
+    alwaysMinimize: 'Siempre minimizar (Recordar)',
     closePromptTitle: '¿Cerrar GenPwd Pro?',
-    closePromptDetail: 'GenPwd Pro puede ejecutarse en segundo plano para mantener su bóveda accesible. Elija "Cerrar" para salir completamente.'
+    closePromptDetail: 'GenPwd Pro puede ejecutarse en segundo plano para mantener su bóveda accesible. Elija "Cerrar" para salir completamente.',
+    // Tray notifications
+    trayNotifyFirst: 'Aplicación minimizada a la bandeja. Haga clic en el icono para restaurar, o clic derecho para opciones.',
+    trayNotifyRepeat: 'Ejecutándose en segundo plano. Clic derecho en el icono para salir.',
+    // Clipboard security
+    securityTip: 'Consejo de seguridad',
+    clipboardHistoryWarning: 'El historial del portapapeles de Windows (Win+V) puede retener contraseñas copiadas. Considere deshabilitarlo en Configuración > Sistema > Portapapeles.',
+    // Vault locked notifications
+    vaultLockedTitle: 'GenPwd Pro - Bóveda bloqueada',
+    vaultLockedScreenLock: 'Su bóveda fue bloqueada automáticamente por seguridad cuando se bloqueó la pantalla.',
+    vaultLockedSuspend: 'Su bóveda fue bloqueada automáticamente por seguridad cuando el sistema entró en suspensión.',
+    // Admin warning
+    securityWarning: 'Advertencia de seguridad',
+    runningAsAdmin: 'GenPwd Pro se está ejecutando como Administrador',
+    adminWarningDetail: 'Ejecutar como admin puede crear archivos de bóveda con permisos restringidos inaccesibles para otros usuarios.\n\nPara mayor seguridad, ejecute GenPwd Pro como usuario estándar.',
+    iUnderstand: 'Entiendo',
+    // Auto-type
+    autoTypeBlocked: 'Escritura automática bloqueada: no se puede escribir en ventanas de línea de comandos por razones de seguridad.',
+    // File dialogs
+    openFile: 'Abrir un archivo',
+    openVault: 'Abrir una bóveda',
+    saveVault: 'Guardar bóveda',
+    allFiles: 'Todos los archivos',
+    genPwdVault: 'Bóveda GenPwd',
+    jsonExport: 'Exportar JSON',
+    // Menu - File
+    menuFile: 'Archivo',
+    menuGenerateNew: 'Generar nueva contraseña',
+    menuQuit: 'Salir',
+    // Menu - Vault
+    menuVault: 'Bóveda',
+    menuNewVault: 'Nueva bóveda...',
+    menuOpenVault: 'Abrir bóveda...',
+    menuLock: 'Bloquear',
+    // Menu - Edit
+    menuEdit: 'Editar',
+    // Menu - View
+    menuView: 'Ver',
+    menuReload: 'Recargar',
+    menuForceReload: 'Forzar recarga',
+    menuActualSize: 'Tamaño real',
+    menuZoomIn: 'Acercar',
+    menuZoomOut: 'Alejar',
+    menuFullScreen: 'Pantalla completa',
+    menuDevTools: 'Herramientas de desarrollo',
+    // Menu - Help
+    menuHelp: 'Ayuda',
+    menuDocumentation: 'Documentación',
+    menuReportBug: 'Reportar un error',
+    menuAbout: 'Acerca de',
+    // About dialog
+    aboutTitle: 'Acerca de GenPwd Pro',
+    aboutDescription: 'Gestor de contraseñas seguro',
+    // Dev menu
+    menuDev: 'Desarrollo',
+    menuDevTools2: 'Herramientas de desarrollo',
+    menuClearCache: 'Recargar y limpiar caché',
+    // Jump List / Thumbnail
+    generateSecurePassword: 'Generar una nueva contraseña segura',
+    openPasswordVault: 'Abrir bóveda de contraseñas',
+    lockVaultImmediately: 'Bloquear la bóveda inmediatamente'
   }
 };
 
@@ -1030,12 +1216,13 @@ function createTray() {
 
 // Create the application menu
 function createApplicationMenu() {
+  const t = getMainTranslations();
   const template = [
     {
-      label: 'File',
+      label: t.menuFile,
       submenu: [
         {
-          label: 'Generate New Password',
+          label: t.menuGenerateNew,
           accelerator: 'CmdOrCtrl+G',
           click: () => {
             if (mainWindow) {
@@ -1045,7 +1232,7 @@ function createApplicationMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Quit',
+          label: t.menuQuit,
           accelerator: 'CmdOrCtrl+Q',
           click: () => {
             app.quit();
@@ -1054,10 +1241,10 @@ function createApplicationMenu() {
       ]
     },
     {
-      label: 'Vault',
+      label: t.menuVault,
       submenu: [
         {
-          label: 'New Vault...',
+          label: t.menuNewVault,
           accelerator: 'CmdOrCtrl+N',
           click: () => {
             if (mainWindow) {
@@ -1066,7 +1253,7 @@ function createApplicationMenu() {
           }
         },
         {
-          label: 'Open Vault...',
+          label: t.menuOpenVault,
           accelerator: 'CmdOrCtrl+O',
           click: () => {
             if (mainWindow) {
@@ -1076,7 +1263,7 @@ function createApplicationMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Lock',
+          label: t.menuLock,
           accelerator: 'CmdOrCtrl+L',
           click: async () => {
             if (vaultModule) {
@@ -1090,53 +1277,53 @@ function createApplicationMenu() {
       ]
     },
     {
-      label: 'Edit',
+      label: t.menuEdit,
       submenu: [
-        { role: 'copy', label: 'Copy' },
-        { role: 'paste', label: 'Paste' },
-        { role: 'selectAll', label: 'Select All' }
+        { role: 'copy', label: t.copy },
+        { role: 'paste', label: t.paste },
+        { role: 'selectAll', label: t.selectAll }
       ]
     },
     {
-      label: 'View',
+      label: t.menuView,
       submenu: [
-        { role: 'reload', label: 'Reload' },
-        { role: 'forceReload', label: 'Force Reload' },
+        { role: 'reload', label: t.menuReload },
+        { role: 'forceReload', label: t.menuForceReload },
         { type: 'separator' },
-        { role: 'resetZoom', label: 'Actual Size' },
-        { role: 'zoomIn', label: 'Zoom In' },
-        { role: 'zoomOut', label: 'Zoom Out' },
+        { role: 'resetZoom', label: t.menuActualSize },
+        { role: 'zoomIn', label: t.menuZoomIn },
+        { role: 'zoomOut', label: t.menuZoomOut },
         { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Full Screen' },
+        { role: 'togglefullscreen', label: t.menuFullScreen },
         { type: 'separator' },
-        { role: 'toggleDevTools', label: 'Developer Tools', accelerator: 'F12' }
+        { role: 'toggleDevTools', label: t.menuDevTools, accelerator: 'F12' }
       ]
     },
     {
-      label: 'Help',
+      label: t.menuHelp,
       submenu: [
         {
-          label: 'Documentation',
+          label: t.menuDocumentation,
           click: async () => {
             await shell.openExternal('https://github.com/VBlackJack/genpwd-pro');
           }
         },
         {
-          label: 'Report a Bug',
+          label: t.menuReportBug,
           click: async () => {
             await shell.openExternal('https://github.com/VBlackJack/genpwd-pro/issues');
           }
         },
         { type: 'separator' },
         {
-          label: 'About',
+          label: t.menuAbout,
           click: () => {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About GenPwd Pro',
+              title: t.aboutTitle,
               message: `GenPwd Pro v${APP_VERSION}`,
-              detail: 'Secure Password Manager\n\n' +
+              detail: t.aboutDescription + '\n\n' +
                 'Copyright © 2025 Julien Bombled\n' +
                 'Apache 2.0 License\n\n' +
                 'Electron: ' + process.versions.electron + '\n' +
@@ -1154,12 +1341,12 @@ function createApplicationMenu() {
   // SECURITY: Hidden from end-users in production builds
   if (!app.isPackaged || process.env.NODE_ENV === 'development') {
     template.push({
-      label: 'Développement',
+      label: t.menuDev,
       submenu: [
-        { role: 'toggleDevTools', label: 'Outils de développement' },
+        { role: 'toggleDevTools', label: t.menuDevTools2 },
         { type: 'separator' },
         {
-          label: 'Recharger et effacer le cache',
+          label: t.menuClearCache,
           click: () => {
             mainWindow.webContents.session.clearCache();
             mainWindow.reload();
@@ -1257,9 +1444,10 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
     if (process.platform === 'win32' && !clipboardHistoryWarningShown) {
       clipboardHistoryWarningShown = true;
       if (Notification.isSupported()) {
+        const t = getMainTranslations();
         new Notification({
-          title: 'Security Tip',
-          body: 'Windows Clipboard History (Win+V) may retain copied passwords. Consider disabling it in Windows Settings > System > Clipboard.',
+          title: t.securityTip,
+          body: t.clipboardHistoryWarning,
           icon: path.join(__dirname, 'assets', 'icon.ico'),
           silent: true
         }).show();
@@ -1707,12 +1895,13 @@ ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
 ipcMain.handle('vaultIO:selectFile', async (event) => {
   validateOrigin(event);
   try {
+    const t = getMainTranslations();
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Ouvrir un coffre',
+      title: t.openVault,
       filters: [
-        { name: 'GenPwd Vault', extensions: ['gpdb', 'gpd'] },
+        { name: t.genPwdVault, extensions: ['gpdb', 'gpd'] },
         { name: 'JSON', extensions: ['json'] },
-        { name: 'Tous les fichiers', extensions: ['*'] }
+        { name: t.allFiles, extensions: ['*'] }
       ],
       properties: ['openFile']
     });
@@ -1743,12 +1932,13 @@ ipcMain.handle('vaultIO:selectFile', async (event) => {
 ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
   validateOrigin(event);
   try {
+    const t = getMainTranslations();
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'Sauvegarder le coffre',
+      title: t.saveVault,
       defaultPath: defaultName || 'vault.gpdb',
       filters: [
-        { name: 'GenPwd Vault', extensions: ['gpdb'] },
-        { name: 'JSON Export', extensions: ['json'] }
+        { name: t.genPwdVault, extensions: ['gpdb'] },
+        { name: t.jsonExport, extensions: ['json'] }
       ]
     });
 
@@ -1977,20 +2167,21 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
     if (isDangerous) {
       console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
+      const t = getMainTranslations();
 
       // Notify renderer to show toast notification
       if (mainWindow && mainWindow.webContents) {
         mainWindow.webContents.send('autotype:blocked', {
           reason: 'security',
           windowTitle: foregroundTitle,
-          message: 'Auto-type blocked: Cannot type into command-line windows for security reasons.'
+          message: t.autoTypeBlocked
         });
       }
 
       safeRestore();
       return {
         success: false,
-        error: 'Auto-type blocked: Cannot type into command-line windows for security reasons.',
+        error: t.autoTypeBlocked,
         blockedWindow: foregroundTitle
       };
     }
@@ -2082,12 +2273,13 @@ app.whenReady().then(async () => {
   // Check for admin mode and warn user (security risk for vault files)
   if (isRunningAsAdmin()) {
     console.warn('[GenPwd Pro] ⚠️ Running with administrator privileges');
+    const t = getMainTranslations();
     dialog.showMessageBox({
       type: 'warning',
-      title: 'Security Warning',
-      message: 'GenPwd Pro is running as Administrator',
-      detail: 'Running as admin may cause vault files to have restricted permissions that other users cannot access.\n\nFor best security, run GenPwd Pro as a standard user.',
-      buttons: ['I Understand'],
+      title: t.securityWarning,
+      message: t.runningAsAdmin,
+      detail: t.adminWarningDetail,
+      buttons: [t.iUnderstand],
       defaultId: 0
     });
   }
@@ -2185,9 +2377,10 @@ app.whenReady().then(async () => {
         }
         // Show notification so user knows vault was locked
         if (Notification.isSupported()) {
+          const t = getMainTranslations();
           new Notification({
-            title: 'GenPwd Pro - Vault Locked',
-            body: 'Your vault was automatically locked for security when the screen was locked.',
+            title: t.vaultLockedTitle,
+            body: t.vaultLockedScreenLock,
             icon: path.join(__dirname, 'assets', 'icon.ico'),
             silent: true
           }).show();
@@ -2207,9 +2400,10 @@ app.whenReady().then(async () => {
         }
         // Show notification on resume (user won't see it during suspend)
         if (Notification.isSupported()) {
+          const t = getMainTranslations();
           new Notification({
-            title: 'GenPwd Pro - Vault Locked',
-            body: 'Your vault was automatically locked for security when the system went to sleep.',
+            title: t.vaultLockedTitle,
+            body: t.vaultLockedSuspend,
             icon: path.join(__dirname, 'assets', 'icon.ico'),
             silent: true
           }).show();
