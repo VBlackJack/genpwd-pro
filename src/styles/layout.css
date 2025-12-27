@@ -340,8 +340,8 @@ header::before {
 .section {
   border: 1px solid var(--border);
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-  margin: 10px 0;
+  border-radius: var(--radius-md);
+  margin: 12px 0;
   overflow: hidden;
 }
 
@@ -349,27 +349,50 @@ header::before {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px;
+  padding: 14px 16px;
   cursor: pointer;
   user-select: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
-  border-bottom: 1px solid transparent;
-  transition: background var(--transition-normal);
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: all var(--transition-normal);
 }
 
 .section-header:hover {
-  background: rgba(255,255,255,0.03);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
 }
 
 .section-header:focus-visible {
   outline: 2px solid var(--accent-cyan);
   outline-offset: -2px;
-  background: rgba(255,255,255,0.05);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(255,255,255,0.02) 100%);
+}
+
+.section-header strong {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.section-header .badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: var(--accent-cyan);
 }
 
 .section.chevron .chev {
   transition: transform var(--transition-normal);
-  font-size: 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.section-header:hover .chev {
+  opacity: 1;
+  color: var(--accent-cyan);
 }
 
 .section.collapsed .chev {
