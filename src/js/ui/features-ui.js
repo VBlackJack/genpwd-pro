@@ -186,9 +186,52 @@ function bindLanguageSelectorEvents() {
     if (isHidden) {
       positionDropdown();
       langDropdown.classList.remove('hidden');
+      // Focus first option for keyboard navigation
+      langOptions[0]?.focus();
     } else {
       langDropdown.classList.add('hidden');
     }
+  }, { signal });
+
+  // Keyboard navigation for dropdown trigger
+  langBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      positionDropdown();
+      langDropdown.classList.remove('hidden');
+      langOptions[0]?.focus();
+    }
+  }, { signal });
+
+  // Keyboard navigation within dropdown options
+  const optionsArray = Array.from(langOptions);
+  langOptions.forEach((option, idx) => {
+    option.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          optionsArray[Math.min(idx + 1, optionsArray.length - 1)]?.focus();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (idx === 0) {
+            langBtn.focus();
+            langDropdown.classList.add('hidden');
+          } else {
+            optionsArray[idx - 1]?.focus();
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          langDropdown.classList.add('hidden');
+          langBtn.focus();
+          break;
+        case 'Tab':
+          // Close on tab out
+          langDropdown.classList.add('hidden');
+          break;
+      }
+    }, { signal });
   }, { signal });
 
   // Reposition on scroll/resize (throttled for performance)

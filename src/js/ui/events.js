@@ -570,11 +570,12 @@ async function generatePasswords() {
   generationState.lastGeneration = now;
   generationState.burstCount++;
 
-  // Show loading state
+  // Show loading state with visual spinner
   const btn = document.getElementById('btn-generate');
   if (btn) {
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
+    btn.classList.add('btn-loading'); // CSS handles spinner display
   }
 
   try {
@@ -610,6 +611,7 @@ async function generatePasswords() {
     if (btn) {
       btn.disabled = false;
       btn.removeAttribute('aria-busy');
+      btn.classList.remove('btn-loading');
     }
   }
 }

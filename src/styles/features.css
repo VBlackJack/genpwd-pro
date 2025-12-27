@@ -688,7 +688,7 @@ input:checked + .toggle-slider::before {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: var(--z-max);
+  z-index: var(--z-tooltip); /* Dropdown above most content but below max */
   min-width: 150px;
   overflow: hidden;
 }
@@ -700,7 +700,7 @@ input:checked + .toggle-slider::before {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: var(--z-max);
+  z-index: var(--z-tooltip); /* Dropdown above most content but below max */
   min-width: 150px;
   overflow: hidden;
 }

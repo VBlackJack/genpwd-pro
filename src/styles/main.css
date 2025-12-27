@@ -31,8 +31,8 @@
   /* Text Colors - WCAG AA compliant (4.5:1 contrast ratio minimum) */
   --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: rgba(255, 255, 255, 0.78);
-  --text-muted: rgba(255, 255, 255, 0.65);
-  --text-hint: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.72); /* Improved from 0.65 for better contrast */
+  --text-hint: rgba(255, 255, 255, 0.60); /* Improved from 0.55 for better contrast */
   --text-on-accent: #ffffff; /* Text on colored buttons/backgrounds */
   /* Note: Improved contrast ratios for better accessibility */
 

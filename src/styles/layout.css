@@ -78,7 +78,7 @@ header::before {
     0 0 0 1px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   animation: glow 3s ease-in-out infinite;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-smooth);
 }
 
 .logo-badge:hover {
@@ -203,7 +203,7 @@ header::before {
   font-size: 0.8rem;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-normal);
 }
 
 .vault-status-indicator:hover {
@@ -242,7 +242,7 @@ header::before {
   border-radius: var(--radius-pill);
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-smooth);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;

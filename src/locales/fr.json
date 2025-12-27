@@ -2,8 +2,8 @@
   "app": {
     "title": "GenPwd Pro",
     "subtitle": "Générateur de mots de passe sécurisés",
-    "description": "Gestionnaire de mots de passe professionnel avec coffre-fort chiffré",
-    "version": "Version",
+    "description": "Gestionnaire de mots de passe professionnel avec coffre chiffré",
+    "version": "Version {version}",
     "ariaLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé"
   },
   "keyboard": {
@@ -180,8 +180,8 @@
   },
   "about": {
     "title": "À propos de GenPwd Pro",
-    "tagline": "Gestionnaire de mots de passe professionnel avec coffre-fort chiffré",
-    "secureVault": "Coffre-fort Sécurisé",
+    "tagline": "Gestionnaire de mots de passe professionnel avec coffre chiffré",
+    "secureVault": "Coffre Sécurisé",
     "secureVaultDesc": {
       "encryption": "Chiffrement AES-256 avec Argon2id pour la dérivation de clé",
       "windowsHello": "Windows Hello : Déverrouillage biométrique (empreinte, visage)",
@@ -264,7 +264,7 @@
     "setAllLower": "Mettre tous les blocs en minuscules",
     "showAbout": "Afficher les informations sur GenPwd Pro",
     "generatorTab": "Onglet Générateur de mots de passe",
-    "vaultTab": "Onglet Coffre-fort"
+    "vaultTab": "Onglet Coffre"
   },
   "presets": {
     "title": "Presets",
@@ -401,6 +401,10 @@
       "restoreError": "Erreur de restauration",
       "generationError": "Erreur de génération",
       "importError": "Erreur d'import : {message}",
+      "invalidXmlFormat": "Format XML invalide",
+      "notKeePassFile": "Ce fichier n'est pas un export KeePass XML",
+      "emptyCsvFile": "Fichier CSV vide",
+      "fileTooLarge": "Fichier trop volumineux : {name} (> 5 Mo)",
       "checkFileFormat": "Vérifiez le format du fichier (CSV ou JSON requis)",
       "kdbxNotSupported": "Les fichiers .kdbx ne sont pas supportés. Exportez en XML depuis KeePass.",
       "aliasGenerated": "Alias généré avec succès",
@@ -520,7 +524,7 @@
       "closeWithoutSaving": "Fermer sans sauvegarder",
       "vaultNotAvailable": "Coffre non disponible",
       "vaultApiNotAvailable": "L'API du coffre n'est pas disponible dans ce contexte.",
-      "vaultRequiresElectron": "Le coffre-fort nécessite l'application Electron pour fonctionner."
+      "vaultRequiresElectron": "Le coffre nécessite l'application Electron pour fonctionner."
     },
     "form": {
       "filePassword": "Mot de passe du fichier",
