@@ -133,8 +133,8 @@ function triggerExport() {
  * Handle Escape key - close modals
  */
 function handleEscapeKey() {
-  // Find open modals
-  const modals = document.querySelectorAll('.modal-overlay:not(.hidden)');
+  // Find open modals (both .show class and :not(.hidden) for compatibility)
+  const modals = document.querySelectorAll('.modal-overlay.show, .modal-overlay:not(.hidden)');
 
   if (modals.length > 0) {
     // Close the last opened modal

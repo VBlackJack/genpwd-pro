@@ -5858,6 +5858,30 @@ export class VaultUI {
         vaultSwitcher.setAttribute('aria-expanded', !isOpen);
       }, { signal });
 
+      // Keyboard navigation for vault switcher
+      vaultSwitcher.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          vaultDropdown.hidden = false;
+          vaultSwitcher.setAttribute('aria-expanded', 'true');
+          // Focus first focusable element in dropdown
+          const firstBtn = vaultDropdown.querySelector('button');
+          firstBtn?.focus();
+        } else if (e.key === 'Escape') {
+          vaultDropdown.hidden = true;
+          vaultSwitcher.setAttribute('aria-expanded', 'false');
+        }
+      }, { signal });
+
+      // Close dropdown on Escape from within dropdown
+      vaultDropdown.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          vaultDropdown.hidden = true;
+          vaultSwitcher.setAttribute('aria-expanded', 'false');
+          vaultSwitcher.focus();
+        }
+      }, { signal });
+
       // Close dropdown when clicking outside
       document.addEventListener('click', (e) => {
         if (!vaultSwitcher.contains(e.target) && !vaultDropdown.contains(e.target)) {
@@ -5962,12 +5986,54 @@ export class VaultUI {
       sortBtn.setAttribute('aria-expanded', !isOpen);
     }, { signal });
 
-    document.querySelectorAll('.vault-sort-option').forEach(btn => {
+    // Keyboard navigation for sort button
+    sortBtn?.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        sortMenu.hidden = false;
+        sortBtn.setAttribute('aria-expanded', 'true');
+        const firstOption = sortMenu.querySelector('.vault-sort-option');
+        firstOption?.focus();
+      } else if (e.key === 'Escape') {
+        sortMenu.hidden = true;
+        sortBtn.setAttribute('aria-expanded', 'false');
+      }
+    }, { signal });
+
+    const sortOptions = document.querySelectorAll('.vault-sort-option');
+    const sortOptionsArray = Array.from(sortOptions);
+    sortOptions.forEach((btn, idx) => {
       btn.addEventListener('click', () => {
         this.#sortBy = btn.dataset.sort;
         sortMenu.hidden = true;
         sortBtn?.setAttribute('aria-expanded', 'false');
         this.#updateEntryList();
+      }, { signal });
+
+      // Keyboard navigation within sort options
+      btn.addEventListener('keydown', (e) => {
+        switch (e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            sortOptionsArray[(idx + 1) % sortOptionsArray.length]?.focus();
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            sortOptionsArray[(idx - 1 + sortOptionsArray.length) % sortOptionsArray.length]?.focus();
+            break;
+          case 'Escape':
+            e.preventDefault();
+            sortMenu.hidden = true;
+            sortBtn?.setAttribute('aria-expanded', 'false');
+            sortBtn?.focus();
+            break;
+          case 'Enter':
+          case ' ':
+            e.preventDefault();
+            btn.click();
+            sortBtn?.focus();
+            break;
+        }
       }, { signal });
     });
 
@@ -9674,6 +9740,11 @@ export class VaultUI {
       const sidebar = document.querySelector('.vault-sidebar');
       if (sidebar) {
         sidebar.classList.add('collapsed');
+      }
+      // Sync aria-expanded with restored state
+      const btn = document.getElementById('sidebar-collapse-btn');
+      if (btn) {
+        btn.setAttribute('aria-expanded', 'false');
       }
     }
   }

@@ -1018,21 +1018,8 @@
       "vaultDestroyed": "Coffre détruit."
     }
   },
-  "breach": {
-    "checkButton": "Vérifier les fuites",
-    "checkResults": "Résultats de vérification",
-    "checking": "Vérification des fuites de données...",
-    "checkingShort": "Vérification...",
-    "notCompromised": "Non compromis",
-    "compromisedTimes": "Compromis {count} fois",
-    "compromisedPlus": "Compromis {count}+ fois",
-    "compromisedK": "Compromis {count}K+ fois",
-    "compromisedM": "Compromis {count}M+ fois",
-    "error": "Erreur : {error}",
-    "connectionError": "Erreur de connexion",
-    "passwordBreached": "Mot de passe compromis ! ({count})"
-  },
   "toast": {
+    "storageQuotaExceeded": "Stockage plein. Certaines données n'ont pas pu être enregistrées.",
     "blocksRandomized": "Blocs randomisés",
     "blockAdded": "Bloc ajouté",
     "blockRemoved": "Bloc supprimé",
