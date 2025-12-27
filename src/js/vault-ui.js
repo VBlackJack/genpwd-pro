@@ -2298,7 +2298,7 @@ export class VaultUI {
               <line x1="12" y1="8" x2="12" y2="16"></line>
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
-            Custom fields
+            ${t('vault.labels.customFields')}
           </span>
         </div>
         ${fields.map(field => {
@@ -8712,14 +8712,14 @@ export class VaultUI {
               <line x1="12" y1="8" x2="12" y2="16"></line>
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
-            Custom fields
+            ${t('vault.labels.customFields')}
           </h4>
           <button type="button" class="vault-btn vault-btn-sm vault-btn-ghost" id="btn-add-custom-field">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            Add field
+            ${t('vault.labels.addField')}
           </button>
         </div>
         <div id="custom-fields-container">
