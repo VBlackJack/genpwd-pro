@@ -152,12 +152,24 @@
 .opacity-70 { opacity: 0.7 !important; }
 .opacity-90 { opacity: 0.9 !important; }
 
-/* Switch/Toggle component */
+/* Switch/Toggle component - WCAG 2.1 AA compliant 44px touch target */
 .switch {
   position: relative !important;
   display: inline-block !important;
   width: 50px !important;
   height: 24px !important;
+}
+
+/* Invisible touch target extender for WCAG 2.1 AA (44px minimum) */
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 50px;
+  min-height: 44px;
+  cursor: pointer;
 }
 
 .switch input {
@@ -175,7 +187,7 @@
   bottom: 0 !important;
   background-color: var(--bg-disabled, #ccc) !important;
   transition: var(--transition-slow) !important;
-  border-radius: 24px !important;
+  border-radius: var(--radius-full, 24px) !important;
 }
 
 .toggle-slider::before {
@@ -206,7 +218,7 @@ input:checked + .toggle-slider::before {
 .input-field {
   width: 100%;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   border: 1px solid var(--border-color, #374151);
   background: var(--bg-input, #1f2937);
   color: var(--text-primary, #e5e7eb);
@@ -235,7 +247,7 @@ input:checked + .toggle-slider::before {
   margin-top: 16px;
   padding: 12px;
   background: rgba(59, 130, 246, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
@@ -249,7 +261,7 @@ input:checked + .toggle-slider::before {
 .config-item {
   padding: 6px 10px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
 }
 
 /* Warning box */
@@ -353,7 +365,7 @@ input:checked + .toggle-slider::before {
   display: inline-block;
   background: #e3f2fd;
   padding: 2px 8px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs, 3px);
   margin: 2px;
 }
 
@@ -432,7 +444,7 @@ input:checked + .toggle-slider::before {
   font-family: monospace;
   background: white;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   margin-top: 8px;
   word-break: break-all;
 }
@@ -442,7 +454,7 @@ input:checked + .toggle-slider::before {
   text-align: center;
   padding: 20px;
   background: rgba(239, 68, 68, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   margin-bottom: 16px;
 }
 
@@ -461,7 +473,7 @@ input:checked + .toggle-slider::before {
 .vault-sync-stat {
   text-align: center;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
 }
 
 .vault-sync-stat.local {
@@ -534,7 +546,7 @@ input:checked + .toggle-slider::before {
   padding: 10px;
   margin-bottom: 8px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
 }
 
 .vault-preset-info { flex: 1; min-width: 0; }
@@ -567,7 +579,7 @@ input:checked + .toggle-slider::before {
   width: 100%;
   padding: 10px;
   border: 1px solid var(--vault-border, #ddd);
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   background: var(--vault-bg, #fff);
 }
 
@@ -579,7 +591,7 @@ input:checked + .toggle-slider::before {
   padding: 12px;
   margin-bottom: 8px;
   background: var(--vault-surface, #f8f9fa);
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   border: 1px solid var(--vault-border, #e0e0e0);
 }
 
@@ -611,9 +623,9 @@ input:checked + .toggle-slider::before {
   border: none;
   background: var(--bg-secondary, #374151);
   color: var(--text-primary, #e5e7eb);
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-fast, 0.2s);
   min-height: 44px;
   min-width: 44px;
 }
@@ -1241,7 +1253,7 @@ input:checked + .toggle-slider::before {
   color: #4CAF50;
   border: none;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   cursor: pointer;
   font-weight: 600;
 }
@@ -1251,7 +1263,7 @@ input:checked + .toggle-slider::before {
   color: white;
   border: 1px solid white;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   cursor: pointer;
 }
 
@@ -1288,7 +1300,7 @@ input:checked + .toggle-slider::before {
   color: #667eea;
   border: none;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95em;
@@ -1299,7 +1311,7 @@ input:checked + .toggle-slider::before {
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.5);
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   font-size: 0.95em;
 }

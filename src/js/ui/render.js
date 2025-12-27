@@ -49,10 +49,10 @@ export function renderResults(results, mask) {
             ${t('actions.generateNow') || 'Generate Now'}
           </button>
         </div>`);
-      // Attach click handler for the CTA button
+      // Attach click handler for the CTA button (with AbortController signal for proper cleanup)
       document.getElementById('empty-generate-btn')?.addEventListener('click', () => {
         document.getElementById('btn-generate')?.click();
-      });
+      }, { signal: eventController.signal });
       return;
     }
 
@@ -620,8 +620,9 @@ export function renderEmptyState() {
           ${t('actions.generateNow') || 'Generate Now'}
         </button>
       </div>`);
+    // Attach click handler with AbortController signal for proper cleanup
     document.getElementById('empty-generate-btn')?.addEventListener('click', () => {
       document.getElementById('btn-generate')?.click();
-    });
+    }, { signal: eventController.signal });
   }
 }
