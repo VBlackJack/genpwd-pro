@@ -44,7 +44,12 @@
     "console": "Console",
     "loading": "Chargement...",
     "skipToMain": "Aller au contenu principal",
-    "importing": "Importation..."
+    "importing": "Importation...",
+    "verifying": "Vérification...",
+    "creating": "Création...",
+    "opening": "Ouverture...",
+    "analyzing": "Analyse...",
+    "checking": "Vérification..."
   },
   "header": {
     "generatorTab": "Générateur",
@@ -136,7 +141,7 @@
   },
   "separators": {
     "dash": "- (tiret)",
-    "underscore": "_ (underscore)",
+    "underscore": "_ (tiret bas)",
     "dot": ". (point)",
     "space": "Espace"
   },
@@ -158,7 +163,15 @@
     "title": "Résultats",
     "emptyState": "Cliquez sur \"Générer\" pour créer vos mots de passe",
     "copied": "Mot de passe copié !",
-    "allCopied": "Tous les mots de passe copiés !"
+    "allCopied": "Tous les mots de passe copiés !",
+    "composition": {
+      "upper": "majuscules",
+      "lower": "minuscules",
+      "digits": "chiffres",
+      "special": "spéciaux",
+      "mode": "Mode",
+      "cliSafe": "CLI-Safe"
+    }
   },
   "actions": {
     "generate": "Générer",
@@ -193,7 +206,7 @@
       "modes": "3 modes : Syllabes, Passphrase, Leet speak",
       "multiLanguage": "Multilingue : Français, Anglais, Latin (2400+ mots)",
       "entropy": "Entropie : Jusqu'à 140 bits de sécurité",
-      "presets": "Presets : Configurations sauvegardables et synchronisables"
+      "presets": "Préréglages : Configurations sauvegardables et synchronisables"
     },
     "features": "Fonctionnalités",
     "featuresDesc": {
@@ -267,18 +280,20 @@
     "vaultTab": "Onglet Coffre"
   },
   "presets": {
-    "title": "Presets",
-    "save": "Sauvegarder Configuration",
-    "manage": "Gérer les Presets",
-    "load": "Charger un preset",
+    "title": "Préréglages",
+    "save": "Sauvegarder la configuration",
+    "manage": "Gérer les préréglages",
+    "load": "Charger un préréglage",
     "select": "-- Sélectionner --",
     "update": "Mettre à jour",
     "updated": "mis à jour",
     "updateFailed": "Échec de la mise à jour",
     "replaceConfirm": "Remplacer la configuration « {name} » par les paramètres actuels ?",
-    "deleteConfirm": "Supprimer ce preset ?",
-    "emptyState": "Aucun preset",
-    "emptyHint": "Sauvegardez vos paramètres favoris pour un accès rapide"
+    "deleteConfirm": "Supprimer ce préréglage ?",
+    "emptyState": "Aucun préréglage",
+    "emptyHint": "Sauvegardez vos paramètres favoris pour un accès rapide",
+    "clearSelection": "Effacer la sélection",
+    "createNew": "Créer un nouveau préréglage"
   },
   "history": {
     "title": "Historique",
@@ -289,6 +304,13 @@
     "clearAllConfirm": "Effacer tout l'historique ? Cette action est irréversible !"
   },
   "vault": {
+    "aria": {
+      "hideValue": "Masquer la valeur",
+      "showValue": "Afficher la valeur",
+      "toggleVisibility": "Afficher/Masquer",
+      "showQRCode": "Afficher le QR Code",
+      "clickToCopy": "Cliquer pour copier"
+    },
     "common": {
       "save": "Sauvegarder",
       "cancel": "Annuler",
@@ -414,7 +436,7 @@
       "shareGenerated": "Partage généré",
       "themeEnabled": "Thème {theme} activé",
       "timeoutSet": "Délai : {value}",
-      "compactMode": "Mode compact activé (Always on Top)",
+      "compactMode": "Mode compact activé (Toujours visible)",
       "normalMode": "Mode normal",
       "autoLockWarning": "Verrouillage automatique dans 1 minute",
       "stayConnected": "Rester connecté",
@@ -432,8 +454,8 @@
       "folderRenamed": "Dossier renommé",
       "subfolderCreated": "Sous-dossier créé",
       "folderDeleted": "Dossier supprimé",
-      "tagModified": "Tag modifié",
-      "tagDeleted": "Tag supprimé",
+      "tagModified": "Étiquette modifiée",
+      "tagDeleted": "Étiquette supprimée",
       "deleteError": "Erreur de suppression",
       "invalidIndex": "Index invalide",
       "autoFillProgress": "Auto-remplissage en cours...",
@@ -575,6 +597,7 @@
       "enableSuccess": "Windows Hello activé",
       "disableSuccess": "Windows Hello désactivé",
       "enableFailed": "Échec activation Windows Hello",
+      "failed": "Échec Windows Hello",
       "disableFailed": "Échec désactivation",
       "error": "Erreur Windows Hello",
       "enterPassword": "Entrez votre mot de passe pour activer Windows Hello",
@@ -595,8 +618,8 @@
     },
     "settings": {
       "lockTimeout": "Délai de verrouillage",
-      "duressMode": "Mode Contrainte",
-      "configureDuress": "Configurer le Mode Contrainte"
+      "duressMode": "Mode Coercition",
+      "configureDuress": "Configurer le Mode Coercition"
     },
     "generator": {
       "title": "Générateur de mot de passe",
@@ -682,7 +705,7 @@
       "creditCard": "Carte bancaire",
       "identity": "Identité",
       "sshKey": "Clé SSH",
-      "preset": "Preset",
+      "preset": "Préréglage",
       "recentlyModified": "Modifié récemment"
     },
     "saveModal": {
@@ -842,6 +865,7 @@
   },
   "breach": {
     "checkButton": "Vérifier les fuites",
+    "checkResults": "Résultats de vérification",
     "checking": "Vérification des fuites de données...",
     "checkingShort": "Vérification...",
     "notCompromised": "Non compromis",
@@ -877,19 +901,19 @@
     "languageChanged": "Langue changée en {lang}",
     "languageChangeFailed": "Échec du changement de langue",
     "vaultLockedUnlockFirst": "Coffre verrouillé - déverrouillez-le d'abord",
-    "noPresetsFound": "Aucun preset trouvé dans le coffre",
-    "presetsLoadError": "Erreur de chargement des presets",
+    "noPresetsFound": "Aucun préréglage trouvé dans le coffre",
+    "presetsLoadError": "Erreur de chargement des préréglages",
     "vaultLockedToSave": "Coffre verrouillé - déverrouillez pour sauvegarder",
-    "presetSaveFailed": "Échec de la sauvegarde du preset",
-    "presetNotFound": "Preset non trouvé",
+    "presetSaveFailed": "Échec de la sauvegarde du préréglage",
+    "presetNotFound": "Préréglage non trouvé",
     "vaultLockedToDuplicate": "Coffre verrouillé - déverrouillez pour dupliquer",
-    "presetExported": "Preset exporté !",
+    "presetExported": "Préréglage exporté !",
     "vaultLockedToUpdate": "Coffre verrouillé - déverrouillez pour mettre à jour",
-    "presetDeleted": "Preset supprimé",
+    "presetDeleted": "Préréglage supprimé",
     "deletionFailed": "Échec de la suppression",
     "vaultLockedToImport": "Coffre verrouillé - déverrouillez pour importer",
-    "presetImportFailed": "Échec de l'importation du preset",
-    "allPresetsExported": "Tous les presets exportés !",
+    "presetImportFailed": "Échec de l'importation du préréglage",
+    "allPresetsExported": "Tous les préréglages exportés !",
     "vaultLockedToEdit": "Coffre verrouillé - déverrouillez pour modifier",
     "configurationUpdated": "Configuration mise à jour !",
     "copyPassword": "Copier le mot de passe",
@@ -909,20 +933,20 @@
     "syncDisabled": "Synchronisation désactivée",
     "nameRequired": "Le nom est requis",
     "nameTooLong": "Le nom ne peut pas dépasser 50 caractères",
-    "presetsLoaded": "{count} preset(s) chargé(s) depuis le coffre",
-    "presetSaved": "Preset « {name} » sauvegardé !",
-    "presetDuplicated": "Preset « {name} » dupliqué !",
-    "presetImported": "Preset « {name} » importé !",
-    "presetUpdated": "Preset « {name} » mis à jour avec succès !",
-    "presetLoaded": "Preset « {name} » chargé !",
-    "presetLoadFailed": "Échec du chargement du preset",
-    "presetDeletedFromVault": "Preset supprimé du coffre",
-    "presetDeleteError": "Erreur lors de la suppression du preset",
-    "presetsExportedToVault": "{count} preset(s) exporté(s) vers le coffre",
-    "noPresetsExported": "Aucun preset exporté",
-    "presetsImportedFromVault": "{count} preset(s) importé(s) depuis le coffre",
-    "presetsSkipped": "{count} preset(s) ignoré(s) (existent déjà)",
-    "noPresetsToImport": "Aucun preset à importer",
+    "presetsLoaded": "{count} préréglage(s) chargé(s) depuis le coffre",
+    "presetSaved": "Préréglage « {name} » sauvegardé !",
+    "presetDuplicated": "Préréglage « {name} » dupliqué !",
+    "presetImported": "Préréglage « {name} » importé !",
+    "presetUpdated": "Préréglage « {name} » mis à jour avec succès !",
+    "presetLoaded": "Préréglage « {name} » chargé !",
+    "presetLoadFailed": "Échec du chargement du préréglage",
+    "presetDeletedFromVault": "Préréglage supprimé du coffre",
+    "presetDeleteError": "Erreur lors de la suppression du préréglage",
+    "presetsExportedToVault": "{count} préréglage(s) exporté(s) vers le coffre",
+    "noPresetsExported": "Aucun préréglage exporté",
+    "presetsImportedFromVault": "{count} préréglage(s) importé(s) depuis le coffre",
+    "presetsSkipped": "{count} préréglage(s) ignoré(s) (existent déjà)",
+    "noPresetsToImport": "Aucun préréglage à importer",
     "noPasswordsToCheck": "Aucun mot de passe à vérifier. Générez-en d'abord.",
     "noValidPasswordsToCheck": "Aucun mot de passe valide à vérifier",
     "demoPluginsLoadedSuccess": "Plugins démo chargés avec succès !",

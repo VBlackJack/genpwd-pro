@@ -756,13 +756,13 @@ export class VaultUI {
       const btn = document.getElementById('btn-hello-unlock');
       const originalContent = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner"></span> Verifying...';
+      btn.innerHTML = `<span class="vault-spinner"></span> ${t('common.verifying')}`;
 
       try {
         await window.vault.hello.unlock(selected.dataset.vaultId);
         // Success - vault:unlocked event will handle view switch
       } catch (error) {
-        this.#showToast(error.message || 'Windows Hello failed', 'error');
+        this.#showToast(error.message || t('vault.windowsHello.failed'), 'error');
         btn.disabled = false;
         btn.innerHTML = originalContent;
       }
@@ -1061,7 +1061,7 @@ export class VaultUI {
 
       const btn = e.target.querySelector('button[type="submit"]');
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner-small"></span> Creating...';
+      btn.innerHTML = `<span class="vault-spinner-small"></span> ${t('common.creating')}`;
 
       try {
         // Use custom path if set (external vault)
@@ -1209,7 +1209,7 @@ export class VaultUI {
 
       const btn = e.target.querySelector('button[type="submit"]');
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner-small"></span> Ouverture...';
+      btn.innerHTML = `<span class="vault-spinner-small"></span> ${t('common.opening')}`;
 
       try {
         await window.vault.openFromPath(this.#pendingExternalPath, password);
@@ -1927,7 +1927,7 @@ export class VaultUI {
         document.removeEventListener('click', closeMenu);
       }
     };
-    setTimeout(() => document.addEventListener('click', closeMenu), 10);
+    setTimeout(() => document.addEventListener('click', closeMenu), 100);
   }
 
   /**
@@ -2341,7 +2341,7 @@ export class VaultUI {
                 <span class="vault-field-revealed">${this.#escapeHtml(field.value || '')}</span>
                 <div class="vault-field-actions">
                   ${isMasked ? `
-                    <button class="vault-field-btn toggle-visibility" title="Afficher/Masquer" aria-label="Afficher ou masquer la valeur" aria-pressed="false">
+                    <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
                       <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
@@ -2389,7 +2389,7 @@ export class VaultUI {
           <span class="vault-field-revealed">${this.#escapeHtml(value)}</span>
           <div class="vault-field-actions">
             ${masked ? `
-              <button class="vault-field-btn toggle-visibility" title="Afficher/Masquer" aria-label="Afficher ou masquer la valeur" aria-pressed="false">
+              <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
                 <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -2600,7 +2600,7 @@ export class VaultUI {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="vault-field-btn show-totp-qr" data-secret="${this.#escapeHtml(totpSecret)}" data-title="${this.#escapeHtml(entry.title)}" data-account="${this.#escapeHtml(entry.data?.username || '')}" title="Afficher QR Code" aria-label="Afficher QR Code">
+          <button class="vault-field-btn show-totp-qr" data-secret="${this.#escapeHtml(totpSecret)}" data-title="${this.#escapeHtml(entry.title)}" data-account="${this.#escapeHtml(entry.data?.username || '')}" title="${t('vault.aria.showQRCode')}" aria-label="${t('vault.aria.showQRCode')}">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
@@ -3488,7 +3488,7 @@ export class VaultUI {
     try {
       // Show loading
       importPreview.hidden = false;
-      importSummary.innerHTML = '<div class="vault-loading"><span class="vault-spinner"></span> Analyse du fichier...</div>';
+      importSummary.innerHTML = `<div class="vault-loading"><span class="vault-spinner"></span> ${t('common.analyzing')}</div>`;
       importWarnings.hidden = true;
       confirmBtn.disabled = true;
 
@@ -3553,7 +3553,7 @@ export class VaultUI {
 
     try {
       confirmBtn.disabled = true;
-      confirmBtn.innerHTML = '<span class="vault-spinner"></span> Importation...';
+      confirmBtn.innerHTML = `<span class="vault-spinner"></span> ${t('common.importing')}`;
 
       const { entries, groups } = this.#pendingImport;
 
@@ -4193,10 +4193,10 @@ export class VaultUI {
 
             <!-- Breach Results -->
             <div class="vault-health-breaches" id="breach-results" hidden>
-              <h4>Check results</h4>
+              <h4>${t('vault.breach.checkResults')}</h4>
               <div class="vault-breach-loading" id="breach-loading">
                 <span class="vault-spinner-small"></span>
-                Checking...
+                ${t('common.checking')}
               </div>
               <div class="vault-breach-results" id="breach-list"></div>
             </div>
@@ -4383,7 +4383,7 @@ export class VaultUI {
     // Show loading (non-silent mode only)
     if (!silent) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="vault-spinner-small"></span> Checking...';
+      btn.innerHTML = `<span class="vault-spinner-small"></span> ${t('common.checking')}`;
       resultsDiv.hidden = false;
       loadingDiv.hidden = false;
       listDiv.innerHTML = '';
@@ -6918,14 +6918,14 @@ export class VaultUI {
           btn.querySelector('.icon-show').hidden = true;
           btn.querySelector('.icon-hide').hidden = false;
           btn.setAttribute('aria-pressed', 'true');
-          btn.setAttribute('aria-label', 'Masquer la valeur');
+          btn.setAttribute('aria-label', window.i18n?.t('vault.aria.hideValue') || 'Hide value');
         } else {
           textEl.textContent = '•'.repeat(Math.min(realValue.length, 24));
           textEl.classList.add('masked');
           btn.querySelector('.icon-show').hidden = false;
           btn.querySelector('.icon-hide').hidden = true;
           btn.setAttribute('aria-pressed', 'false');
-          btn.setAttribute('aria-label', 'Afficher la valeur');
+          btn.setAttribute('aria-label', window.i18n?.t('vault.aria.showValue') || 'Show value');
         }
       });
     });
@@ -6970,7 +6970,7 @@ export class VaultUI {
         }
       });
       el.style.cursor = 'pointer';
-      el.title = 'Cliquer pour copier';
+      el.title = t('vault.aria.clickToCopy');
     });
 
     // Show TOTP QR Code
@@ -8626,7 +8626,7 @@ export class VaultUI {
                  value="${this.#escapeHtml(field.value || '')}"
                  aria-label="Field value">
           ${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? `
-            <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="Afficher/Masquer">
+            <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="${t('vault.aria.toggleVisibility')}">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -8761,7 +8761,7 @@ export class VaultUI {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'vault-input-btn toggle-pwd-visibility';
-          btn.setAttribute('aria-label', 'Afficher/Masquer');
+          btn.setAttribute('aria-label', t('vault.aria.toggleVisibility'));
           btn.innerHTML = `
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -9537,9 +9537,13 @@ export class VaultUI {
 
   #startAutoLockTimer() {
     // Load saved timeout preference
-    const savedTimeout = localStorage.getItem('vault-autolock-timeout');
-    if (savedTimeout) {
-      this.#autoLockTimeout = parseInt(savedTimeout, 10);
+    try {
+      const savedTimeout = localStorage.getItem('vault-autolock-timeout');
+      if (savedTimeout) {
+        this.#autoLockTimeout = parseInt(savedTimeout, 10);
+      }
+    } catch {
+      // Use default timeout
     }
     this.#autoLockSeconds = this.#autoLockTimeout;
 
@@ -9616,14 +9620,22 @@ export class VaultUI {
   }
 
   #initTheme() {
-    const savedTheme = localStorage.getItem('vault-theme') || 'dark';
-    this.#theme = savedTheme;
+    try {
+      const savedTheme = localStorage.getItem('vault-theme') || 'dark';
+      this.#theme = savedTheme;
+    } catch {
+      this.#theme = 'dark';
+    }
     this.#applyTheme();
   }
 
   #toggleTheme() {
     this.#theme = this.#theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('vault-theme', this.#theme);
+    try {
+      localStorage.setItem('vault-theme', this.#theme);
+    } catch {
+      // Storage not available
+    }
     this.#applyTheme();
     this.#showToast(`${this.#theme === 'dark' ? 'Dark' : 'Light'} theme enabled`, 'success');
   }
@@ -9635,7 +9647,11 @@ export class VaultUI {
     const sidebar = document.querySelector('.vault-sidebar');
     if (sidebar) {
       const isCollapsed = sidebar.classList.toggle('collapsed');
-      localStorage.setItem('vault-sidebar-collapsed', isCollapsed);
+      try {
+        localStorage.setItem('vault-sidebar-collapsed', isCollapsed);
+      } catch {
+        // Storage not available
+      }
       // Update button aria-expanded
       const btn = document.getElementById('sidebar-collapse-btn');
       if (btn) {
@@ -9648,7 +9664,12 @@ export class VaultUI {
    * Restore sidebar collapsed state from localStorage
    */
   #restoreSidebarState() {
-    const isCollapsed = localStorage.getItem('vault-sidebar-collapsed') === 'true';
+    let isCollapsed = false;
+    try {
+      isCollapsed = localStorage.getItem('vault-sidebar-collapsed') === 'true';
+    } catch {
+      // Storage not available
+    }
     if (isCollapsed) {
       const sidebar = document.querySelector('.vault-sidebar');
       if (sidebar) {
@@ -9745,18 +9766,26 @@ export class VaultUI {
   }
 
   #getFolderColor(folderId) {
-    const colors = JSON.parse(localStorage.getItem('vault-folder-colors') || '{}');
-    return colors[folderId] || null;
+    try {
+      const colors = JSON.parse(localStorage.getItem('vault-folder-colors') || '{}');
+      return colors[folderId] || null;
+    } catch {
+      return null;
+    }
   }
 
   #setFolderColor(folderId, color) {
-    const colors = JSON.parse(localStorage.getItem('vault-folder-colors') || '{}');
-    if (color) {
-      colors[folderId] = color;
-    } else {
-      delete colors[folderId];
+    try {
+      const colors = JSON.parse(localStorage.getItem('vault-folder-colors') || '{}');
+      if (color) {
+        colors[folderId] = color;
+      } else {
+        delete colors[folderId];
+      }
+      localStorage.setItem('vault-folder-colors', JSON.stringify(colors));
+    } catch {
+      // Silently fail - folder colors are not critical
     }
-    localStorage.setItem('vault-folder-colors', JSON.stringify(colors));
   }
 
   #showFolderColorPicker(folderId, x, y) {
@@ -9872,7 +9901,11 @@ export class VaultUI {
         const newTimeout = parseInt(btn.dataset.timeout, 10);
         this.#autoLockTimeout = newTimeout;
         this.#autoLockSeconds = newTimeout;
-        localStorage.setItem('vault-autolock-timeout', newTimeout.toString());
+        try {
+          localStorage.setItem('vault-autolock-timeout', newTimeout.toString());
+        } catch {
+          // Storage not available
+        }
 
         // Update UI
         popover.querySelectorAll('.vault-timeout-option').forEach(b => b.classList.remove('active'));

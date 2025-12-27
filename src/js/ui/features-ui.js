@@ -535,13 +535,13 @@ export function initializePresetsUI() {
         <select id="preset-select" class="grow flex-1">
           <option value="">${i18n.t('presets.select') || 'Select a preset...'}</option>
         </select>
-        <button class="btn-icon d-none" id="btn-clear-preset" title="Clear selection">✕</button>
+        <button class="btn-icon d-none" id="btn-clear-preset" title="${i18n.t('presets.clearSelection') || 'Clear selection'}" aria-label="${i18n.t('presets.clearSelection') || 'Clear selection'}">✕</button>
       </div>
       <div class="row gap-8">
         <button class="btn flex-1" id="btn-save-preset">
           💾 ${i18n.t('presets.save')}
         </button>
-        <button class="btn px-12" id="btn-new-preset" title="Create new preset">➕</button>
+        <button class="btn px-12" id="btn-new-preset" title="${i18n.t('presets.createNew') || 'Create new preset'}" aria-label="${i18n.t('presets.createNew') || 'Create new preset'}">➕</button>
       </div>
       <div class="row">
         <button class="btn full-width" id="btn-manage-presets">

@@ -43,6 +43,12 @@
     "results": "Results",
     "console": "Console",
     "loading": "Loading...",
+    "importing": "Importing...",
+    "verifying": "Verifying...",
+    "creating": "Creating...",
+    "opening": "Opening...",
+    "analyzing": "Analyzing...",
+    "checking": "Checking...",
     "skipToMain": "Skip to main content"
   },
   "header": {
@@ -157,7 +163,15 @@
     "title": "Results",
     "emptyState": "Click \"Generate\" to create your passwords",
     "copied": "Password copied!",
-    "allCopied": "All passwords copied!"
+    "allCopied": "All passwords copied!",
+    "composition": {
+      "upper": "upper",
+      "lower": "lower",
+      "digits": "digits",
+      "special": "special",
+      "mode": "Mode",
+      "cliSafe": "CLI-Safe"
+    }
   },
   "actions": {
     "generate": "Generate",
@@ -266,6 +280,13 @@
     "vaultTab": "Password Vault Tab"
   },
   "vault": {
+    "aria": {
+      "hideValue": "Hide value",
+      "showValue": "Show value",
+      "toggleVisibility": "Show/Hide",
+      "showQRCode": "Show QR Code",
+      "clickToCopy": "Click to copy"
+    },
     "common": {
       "save": "Save",
       "cancel": "Cancel",
@@ -552,6 +573,7 @@
       "enableSuccess": "Windows Hello enabled",
       "disableSuccess": "Windows Hello disabled",
       "enableFailed": "Windows Hello activation failed",
+      "failed": "Windows Hello failed",
       "disableFailed": "Deactivation failed",
       "error": "Windows Hello error",
       "enterPassword": "Enter your password to enable Windows Hello",
@@ -818,6 +840,8 @@
     }
   },
   "breach": {
+    "checkButton": "Check for breaches",
+    "checkResults": "Check results",
     "notCompromised": "Not compromised",
     "compromisedTimes": "Compromised {count} times",
     "compromisedPlus": "Compromised {count}+ times",
@@ -954,6 +978,8 @@
     "replaceConfirm": "Replace \"{name}\" configuration with current settings?",
     "deleteConfirm": "Delete this preset?",
     "emptyState": "No presets yet",
-    "emptyHint": "Save your favorite settings as presets for quick access"
+    "emptyHint": "Save your favorite settings as presets for quick access",
+    "clearSelection": "Clear selection",
+    "createNew": "Create new preset"
   }
 }

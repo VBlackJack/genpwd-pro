@@ -149,13 +149,13 @@ function createPasswordCard(item, id, mask) {
         ${segS > 0 ? `<div class="seg s" data-width="${segS}"></div>` : ''}
       </div>
       <div class="comp-legend">
-        <span class="legend-item"><span class="legend-dot u"></span>${counts.U} upper</span>
-        <span class="legend-item"><span class="legend-dot l"></span>${counts.L} lower</span>
-        <span class="legend-item"><span class="legend-dot d"></span>${counts.D} digits</span>
-        <span class="legend-item"><span class="legend-dot s"></span>${counts.S} special</span>
+        <span class="legend-item"><span class="legend-dot u"></span>${counts.U} ${t('results.composition.upper')}</span>
+        <span class="legend-item"><span class="legend-dot l"></span>${counts.L} ${t('results.composition.lower')}</span>
+        <span class="legend-item"><span class="legend-dot d"></span>${counts.D} ${t('results.composition.digits')}</span>
+        <span class="legend-item"><span class="legend-dot s"></span>${counts.S} ${t('results.composition.special')}</span>
       </div>
     </div>
-    <div class="card-sec info"><div>Mode: ${dictInfo}</div><div>CLI-Safe: ✓</div></div>
+    <div class="card-sec info"><div>${t('results.composition.mode')}: ${dictInfo}</div><div>${t('results.composition.cliSafe')}: ✓</div></div>
   `;
 
   // Apply widths via CSS custom properties (CSP-compliant)
