@@ -829,13 +829,13 @@ export class VaultUI {
             </div>
 
             <!-- Location selector -->
-            <div class="vault-form-group">
-              <label class="vault-label">Location</label>
-              <div class="vault-location-options">
+            <fieldset class="vault-form-group vault-fieldset">
+              <legend class="vault-label">Location</legend>
+              <div class="vault-location-options" role="radiogroup" aria-label="Vault location">
                 <label class="vault-radio-option">
                   <input type="radio" name="vault-location-type" value="default" checked>
                   <span class="vault-radio-label">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                       <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
@@ -845,7 +845,7 @@ export class VaultUI {
                 <label class="vault-radio-option">
                   <input type="radio" name="vault-location-type" value="custom">
                   <span class="vault-radio-label">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
                     Choose location...
@@ -854,14 +854,14 @@ export class VaultUI {
               </div>
               <div class="vault-custom-location" id="custom-location-section" hidden>
                 <button type="button" class="vault-btn vault-btn-outline vault-btn-sm" id="btn-choose-location">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                   </svg>
                   Browse...
                 </button>
                 <div class="vault-location-path" id="create-vault-location" hidden></div>
               </div>
-            </div>
+            </fieldset>
 
             <div class="vault-form-group">
               <label class="vault-label" for="new-vault-password">Master password <span class="required" aria-label="required">*</span></label>

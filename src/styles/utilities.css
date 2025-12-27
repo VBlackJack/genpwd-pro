@@ -166,7 +166,7 @@
 
 .toast-success {
   border-left: 4px solid var(--accent-green);
-  background: linear-gradient(to right, rgba(34, 197, 94, 0.08), var(--bg-secondary));
+  background: linear-gradient(to right, rgba(var(--rgb-success), 0.08), var(--bg-secondary));
 }
 
 .toast-warning {

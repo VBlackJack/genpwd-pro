@@ -340,8 +340,8 @@ h2.modal-title {
 }
 
 .feature-list li:hover {
-  background: rgba(34, 197, 94, 0.05);
-  border-color: rgba(34, 197, 94, 0.15);
+  background: rgba(var(--rgb-success), 0.05);
+  border-color: rgba(var(--rgb-success), 0.15);
 }
 
 .feature-list li::before {

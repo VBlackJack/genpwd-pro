@@ -213,14 +213,14 @@ header::before {
 }
 
 .vault-status-indicator.unlocked {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(var(--rgb-success), 0.15);
+  border-color: rgba(var(--rgb-success), 0.3);
   color: var(--accent-green, #4ade80);
 }
 
 .vault-status-indicator.unlocked:hover {
-  background: rgba(34, 197, 94, 0.25);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+  background: rgba(var(--rgb-success), 0.25);
+  box-shadow: 0 4px 12px rgba(var(--rgb-success), 0.2);
 }
 
 .vault-status-icon {
