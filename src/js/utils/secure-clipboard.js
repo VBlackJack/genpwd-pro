@@ -59,6 +59,9 @@ class SecureClipboard {
   /** @type {number|null} */
   #timerId = null;
 
+  /** @type {number|null} - Timestamp when timer started */
+  #timerStartTime = null;
+
   /** @type {string|null} */
   #copiedHash = null;
 
@@ -339,10 +342,10 @@ class SecureClipboard {
    * @returns {number|null}
    */
   getTimeRemaining() {
-    if (!this.#timerId) return null;
-    // Note: We'd need to track start time for accurate remaining time
-    // This is a simplified version
-    return Math.floor(this.#timeoutMs / 1000);
+    if (!this.#timerId || !this.#timerStartTime) return null;
+    const elapsed = Date.now() - this.#timerStartTime;
+    const remaining = Math.max(0, this.#timeoutMs - elapsed);
+    return Math.ceil(remaining / 1000);
   }
 
   // ==================== PRIVATE METHODS ====================
@@ -411,6 +414,7 @@ class SecureClipboard {
 
     if (this.#timeoutMs <= 0) return;
 
+    this.#timerStartTime = Date.now();
     this.#timerId = window.setTimeout(async () => {
       try {
         await this.clear();
@@ -430,6 +434,7 @@ class SecureClipboard {
     if (this.#timerId) {
       window.clearTimeout(this.#timerId);
       this.#timerId = null;
+      this.#timerStartTime = null;
     }
   }
 

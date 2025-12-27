@@ -425,7 +425,7 @@
       "confirmPassword": "Confirmar contraseña",
       "confirmPlaceholder": "Reingrese la contraseña",
       "enableHello": "Activar Windows Hello",
-      "helloHint": "Desbloquea con tu rostro o huella"
+      "helloHint": "Desbloquee con su rostro o huella"
     },
     "externalModal": {
       "file": "Archivo",
@@ -530,7 +530,25 @@
         "simplelogin": "Para SimpleLogin: Vaya a Configuración > Claves API.",
         "anonaddy": "Para AnonAddy: Vaya a Configuración > API > Generar nuevo token."
       },
-      "invalidPasswordData": "Datos de contraseña inválidos"
+      "invalidPasswordData": "Datos de contraseña inválidos",
+      "vaultCreatedAt": "Bóveda creada en {path}",
+      "vaultCreatedSuccess": "Bóveda creada con éxito",
+      "operationFailed": "Operación fallida",
+      "templateApplied": "Plantilla \"{name}\" aplicada",
+      "tagCreated": "Etiqueta \"{name}\" creada",
+      "creationError": "Error de creación",
+      "modificationError": "Error de modificación",
+      "tagsUpdated": "Etiquetas actualizadas en {count} entrada(s)",
+      "entriesFiltered": "{count} entrada(s) filtrada(s)",
+      "filterFailed": "Error de filtro",
+      "compromisedDetected": "⚠️ {count} contraseña(s) comprometida(s) detectada(s)",
+      "keepassImported": "KeePass XML: {count} entrada(s) importada(s)",
+      "formatImported": "{format}: {count} entradas importadas{totpInfo}",
+      "bulkDeleteFailed": "Error de eliminación masiva",
+      "addedToFavorites": "Añadido a favoritos",
+      "removedFromFavorites": "Eliminado de favoritos",
+      "attachmentAdded": "Archivo adjunto añadido: {name}",
+      "noCompromisedPasswords": "No se encontraron contraseñas comprometidas en {count} verificadas"
     },
     "health": {
       "title": "Panel de Seguridad",

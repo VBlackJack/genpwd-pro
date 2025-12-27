@@ -186,8 +186,8 @@
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+  transition: var(--transition-slow);
+  border-radius: var(--radius-full);
 }
 
 input:checked + .toggle-slider {
@@ -334,7 +334,7 @@ input:checked + .toggle-slider::before {
 
 .plugin-version-author {
   font-size: 0.85em;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .plugin-description {

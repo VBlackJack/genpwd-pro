@@ -165,8 +165,8 @@ h2.modal-title {
 }
 
 .modal-close:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(var(--rgb-danger), 0.15);
+  border-color: rgba(var(--rgb-danger), 0.3);
   color: var(--accent-red);
 }
 
@@ -1207,5 +1207,23 @@ h2.modal-title {
 
   .step-dot.active {
     border-color: var(--accent-primary);
+  }
+
+  .about-section h3 {
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
+  }
+}
+
+@media (forced-colors: active) {
+  .about-section h3 {
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
   }
 }

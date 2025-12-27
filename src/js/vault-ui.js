@@ -786,7 +786,7 @@ export class VaultUI {
 
         document.getElementById('external-vault-password')?.focus();
       } catch (error) {
-        this.#showToast(error.message || 'Error selecting file', 'error');
+        this.#showToast(error.message || t('vault.messages.errorSelectingFile'), 'error');
       }
     });
 
@@ -824,7 +824,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="create-vault-form">
             <div class="vault-form-group">
               <label class="vault-label" for="new-vault-name">${t('vault.createModal.vaultName')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
-              <input type="text" class="vault-input" id="new-vault-name" placeholder="${t('vault.createModal.vaultNamePlaceholder')}" required aria-describedby="vault-name-message">
+              <input type="text" class="vault-input" id="new-vault-name" placeholder="${t('vault.createModal.vaultNamePlaceholder')}" required aria-describedby="vault-name-message" aria-invalid="false">
               <div class="vault-field-message" id="vault-name-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -867,7 +867,7 @@ export class VaultUI {
               <label class="vault-label" for="new-vault-password">${t('vault.createModal.masterPassword')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="new-vault-password"
-                       placeholder="${t('vault.createModal.passwordPlaceholder')}" required minlength="12" aria-describedby="vault-password-message">
+                       placeholder="${t('vault.createModal.passwordPlaceholder')}" required minlength="12" aria-describedby="vault-password-message" aria-invalid="false">
                 <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -880,7 +880,7 @@ export class VaultUI {
             </div>
             <div class="vault-form-group">
               <label class="vault-label" for="new-vault-confirm">${t('vault.createModal.confirmPassword')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
-              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="${t('vault.createModal.confirmPlaceholder')}" required aria-describedby="vault-confirm-message">
+              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="${t('vault.createModal.confirmPlaceholder')}" required aria-describedby="vault-confirm-message" aria-invalid="false">
               <div class="vault-field-message" id="vault-confirm-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -1078,7 +1078,7 @@ export class VaultUI {
             this.#showToast(t('vault.messages.vaultCreatedWithoutHello'), 'warning');
           }
         } else {
-          this.#showToast(customPath ? `Vault created at ${customPath}` : 'Vault created successfully', 'success');
+          this.#showToast(customPath ? t('vault.messages.vaultCreatedAt', { path: customPath }) : t('vault.messages.vaultCreatedSuccess'), 'success');
         }
 
         this.#closeModal('create-vault-modal');
@@ -1910,7 +1910,7 @@ export class VaultUI {
               break;
           }
         } catch (error) {
-          this.#showToast(error.message || 'Operation failed', 'error');
+          this.#showToast(error.message || t('vault.messages.operationFailed'), 'error');
         }
       });
     });
@@ -1945,7 +1945,7 @@ export class VaultUI {
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast('Error: ' + e.message, 'error');
+        this.#showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
       }
     }
   }
@@ -1964,7 +1964,7 @@ export class VaultUI {
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast('Error: ' + e.message, 'error');
+        this.#showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
       }
     }
   }
@@ -1996,7 +1996,7 @@ export class VaultUI {
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast('Error: ' + e.message, 'error');
+        this.#showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
       }
     }
   }
@@ -3045,7 +3045,7 @@ export class VaultUI {
 
             <div class="vault-form-group">
               <label class="vault-label" for="entry-title">Titre <span class="required" aria-label="obligatoire">*</span></label>
-              <input type="text" class="vault-input" id="entry-title" placeholder="Ex: Gmail, Amazon..." required aria-describedby="entry-title-message">
+              <input type="text" class="vault-input" id="entry-title" placeholder="Ex: Gmail, Amazon..." required aria-describedby="entry-title-message" aria-invalid="false">
               <div class="vault-field-message" id="entry-title-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -3196,7 +3196,7 @@ export class VaultUI {
     const selectedItem = document.querySelector(`.vault-template-item[data-template-id="${templateId}"]`);
     if (selectedItem) selectedItem.classList.add('selected');
 
-    this.#showToast(`Template "${template.name}" applied`, 'success');
+    this.#showToast(t('vault.messages.templateApplied', { name: template.name }), 'success');
   }
 
   // ==================== TAGS SYSTEM ====================
@@ -3315,7 +3315,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="add-tag-form">
             <div class="vault-form-group">
               <label class="vault-label" for="tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="tag-name" placeholder="E.g., Important, To check..." required maxlength="30">
+              <input type="text" class="vault-input" id="tag-name" placeholder="E.g., Important, To check..." required maxlength="30" aria-invalid="false">
             </div>
             <div class="vault-form-group">
               <label class="vault-label">Color</label>
@@ -3358,7 +3358,7 @@ export class VaultUI {
             <input type="hidden" id="edit-tag-id">
             <div class="vault-form-group">
               <label class="vault-label" for="edit-tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="edit-tag-name" required maxlength="30">
+              <input type="text" class="vault-input" id="edit-tag-name" required maxlength="30" aria-invalid="false">
             </div>
             <div class="vault-form-group">
               <label class="vault-label">Color</label>
@@ -3601,7 +3601,7 @@ export class VaultUI {
       this.#render();
 
       this.#closeModal('import-modal');
-      this.#showToast(`${importedCount} entries imported successfully`, 'success');
+      this.#showToast(t('vault.messages.entriesImported', { count: importedCount }), 'success');
       this.#pendingImport = null;
 
     } catch (error) {
@@ -3623,10 +3623,10 @@ export class VaultUI {
     try {
       await window.vault.tags.add({ name: name.trim(), color });
       await this.#loadData();
-      this.#showToast(`Tag "${name}" created`, 'success');
+      this.#showToast(t('vault.messages.tagCreated', { name }), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || 'Creation error', 'error');
+      this.#showToast(error.message || t('vault.messages.creationError'), 'error');
       return false;
     }
   }
@@ -3638,7 +3638,7 @@ export class VaultUI {
       this.#showToast(t('vault.messages.tagModified'), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || 'Modification error', 'error');
+      this.#showToast(error.message || t('vault.messages.modificationError'), 'error');
       return false;
     }
   }
@@ -3660,7 +3660,7 @@ export class VaultUI {
       this.#showToast(t('vault.messages.tagDeleted'), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || 'Deletion error', 'error');
+      this.#showToast(error.message || t('vault.messages.deleteError'), 'error');
       return false;
     }
   }
@@ -3828,7 +3828,7 @@ export class VaultUI {
     this.#render();
 
     if (updated > 0) {
-      this.#showToast(`Tags updated on ${updated} entr${updated > 1 ? 'ies' : 'y'}`, 'success');
+      this.#showToast(t('vault.messages.tagsUpdated', { count: updated }), 'success');
     }
   }
 
@@ -3848,7 +3848,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="add-folder-form">
             <div class="vault-form-group">
               <label class="vault-label" for="folder-name">Folder name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="folder-name" placeholder="E.g., Work, Personal..." required>
+              <input type="text" class="vault-input" id="folder-name" placeholder="E.g., Work, Personal..." required aria-invalid="false">
             </div>
             <div class="vault-modal-actions">
               <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
@@ -4024,10 +4024,10 @@ export class VaultUI {
               this.#auditFilterIds = new Set(entryIds);
               this.#selectedCategory = 'all';
               this.#updateEntryList();
-              this.#showToast(`${entryIds.length} entry(ies) filtered`, 'info');
+              this.#showToast(t('vault.messages.entriesFiltered', { count: entryIds.length }), 'info');
             }
           } catch (error) {
-            this.#showToast(error.message || 'Filter failed', 'error');
+            this.#showToast(error.message || t('vault.messages.filterFailed'), 'error');
           }
         });
       });
@@ -4046,7 +4046,7 @@ export class VaultUI {
               this.#updateEntryList();
             }
           } catch (error) {
-            this.#showToast(error.message || 'Filter failed', 'error');
+            this.#showToast(error.message || t('vault.messages.filterFailed'), 'error');
           }
         });
       });
@@ -4461,7 +4461,7 @@ export class VaultUI {
     // Silent mode: just update entry list to show badges
     if (silent) {
       if (compromised.length > 0) {
-        this.#showToast(`⚠️ ${compromised.length} compromised password(s) detected`, 'warning', 5000);
+        this.#showToast(t('vault.messages.compromisedDetected', { count: compromised.length }), 'warning', 5000);
         this.#updateEntryList(); // Refresh to show badges
       }
       return compromised.length;
@@ -4794,7 +4794,7 @@ export class VaultUI {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    this.#showToast(`${entries.length} entry/entries exported (${format.toUpperCase()})`, 'success');
+    this.#showToast(t('vault.messages.entriesExported', { count: entries.length, format: format.toUpperCase() }), 'success');
     this.#pendingExportEntries = null;
   }
 
@@ -5126,7 +5126,7 @@ export class VaultUI {
           imported = await this.#importKeePassXML(text);
           await this.#loadData();
           this.#render();
-          this.#showToast(`KeePass XML: ${imported} entry/entries imported`, 'success', 4000);
+          this.#showToast(t('vault.messages.keepassImported', { count: imported }), 'success', 4000);
           return;
         } else if (file.name.endsWith('.kdbx')) {
           this.#showToast(t('vault.messages.kdbxNotSupported'), 'warning', 5000);
@@ -5153,12 +5153,12 @@ export class VaultUI {
 
         await this.#loadData();
         this.#render();
-        this.#showToast(`${imported} entry/entries imported`, 'success');
+        this.#showToast(t('vault.messages.entriesImported', { count: imported }), 'success');
       } catch (error) {
         safeLog('[VaultUI] Import error:', error);
         this.#showDetailedError(
-          'Import error: ' + (error.message || 'invalid format'),
-          'Check the file format (CSV or JSON required)'
+          t('vault.messages.importError', { message: error.message || t('vault.messages.invalidFormat') }),
+          t('vault.messages.checkFileFormat')
         );
       }
     });
@@ -5214,7 +5214,7 @@ export class VaultUI {
             </label>
             <p class="vault-form-hint">This password protects the exported file. It can be different from the vault password.</p>
             <div class="vault-input-group">
-              <input type="password" class="vault-input" id="save-vault-password" placeholder="Password..." required minlength="8">
+              <input type="password" class="vault-input" id="save-vault-password" placeholder="Password..." required minlength="8" aria-invalid="false">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Show">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -5227,7 +5227,7 @@ export class VaultUI {
             <label class="vault-label" for="save-vault-confirm">
               Confirm password <span class="required">*</span>
             </label>
-            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="Confirm..." required minlength="8">
+            <input type="password" class="vault-input" id="save-vault-confirm" placeholder="Confirm..." required minlength="8" aria-invalid="false">
           </div>
           <div class="vault-modal-actions">
             <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
@@ -5331,10 +5331,10 @@ export class VaultUI {
       }
 
       this.#closeModal('save-vault-modal');
-      this.#showToast(`Vault saved: ${result.fileName}`, 'success');
+      this.#showToast(t('vault.messages.vaultSaved', { fileName: result.fileName }), 'success');
     } catch (error) {
       safeLog('[VaultUI] Save vault error:', error);
-      this.#showToast(`Error: ${error.message}`, 'error');
+      this.#showToast(`${t('vault.common.error')}: ${error.message}`, 'error');
 
       // Reset button state
       const submitBtn = document.querySelector('#save-vault-form button[type="submit"]');
@@ -5584,7 +5584,7 @@ export class VaultUI {
 
     // Show format info in toast
     const totpInfo = withTotp > 0 ? ` (${withTotp} with 2FA)` : '';
-    this.#showToast(`${formatNames[format]}: ${imported} entries imported${totpInfo}`, 'success', 4000);
+    this.#showToast(t('vault.messages.formatImported', { format: formatNames[format], count: imported, totpInfo }), 'success', 4000);
 
     return imported;
   }
@@ -6204,7 +6204,7 @@ export class VaultUI {
               this.#updateEntryList();
               this.#showToast(t('vault.messages.restored'), 'success');
             } catch (error) {
-              this.#showToast(error.message || 'Restore failed', 'error');
+              this.#showToast(error.message || t('vault.messages.restoreError'), 'error');
             }
           },
           async () => {
@@ -6214,12 +6214,12 @@ export class VaultUI {
                 await window.vault.entries.delete(id);
               }
             } catch (error) {
-              this.#showToast(error.message || 'Delete failed', 'error');
+              this.#showToast(error.message || t('vault.messages.deleteError'), 'error');
             }
           }
         );
       } catch (error) {
-        this.#showToast(error.message || 'Bulk delete failed', 'error');
+        this.#showToast(error.message || t('vault.messages.bulkDeleteFailed'), 'error');
       }
     });
 
@@ -6373,10 +6373,10 @@ export class VaultUI {
           // Update UI immediately
           btn.classList.toggle('active', newFavorite);
           btn.textContent = newFavorite ? '★' : '☆';
-          btn.title = newFavorite ? 'Remove from favorites' : 'Add to favorites';
+          btn.title = newFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites');
           btn.setAttribute('aria-pressed', newFavorite);
 
-          this.#showToast(newFavorite ? 'Added to favorites' : 'Removed from favorites', 'success');
+          this.#showToast(newFavorite ? t('vault.messages.addedToFavorites') : t('vault.messages.removedFromFavorites'), 'success');
 
           // Update category counts
           const favCount = document.querySelector('[data-category="favorites"] .vault-nav-count');
@@ -6663,7 +6663,7 @@ export class VaultUI {
       const newFavorite = !entry.favorite;
       await window.vault.entries.update(entry.id, { favorite: newFavorite });
       entry.favorite = newFavorite;
-      this.#showToast(newFavorite ? 'Added to favorites' : 'Removed from favorites', 'success');
+      this.#showToast(newFavorite ? t('vault.messages.addedToFavorites') : t('vault.messages.removedFromFavorites'), 'success');
       this.#render();
       if (this.#selectedEntry?.id === entry.id) {
         this.#updateDetailPanel();
@@ -6678,7 +6678,7 @@ export class VaultUI {
       const newPinned = !entry.pinned;
       await window.vault.entries.update(entry.id, { pinned: newPinned });
       entry.pinned = newPinned;
-      this.#showToast(newPinned ? 'Pinned to top' : 'Unpinned', 'success');
+      this.#showToast(newPinned ? t('vault.messages.pinnedToTop') : t('vault.messages.unpinned'), 'success');
       this.#render();
       if (this.#selectedEntry?.id === entry.id) {
         this.#updateDetailPanel();
@@ -6855,7 +6855,7 @@ export class VaultUI {
         if (entry) entry.folderId = folderId || null;
       }
       this.#selectedEntries.clear();
-      this.#showToast(`${entryIds.length} entry/entries moved`, 'success');
+      this.#showToast(t('vault.messages.entriesMoved', { count: entryIds.length }), 'success');
       this.#render();
     } catch (error) {
       this.#showToast(t('vault.messages.moveError'), 'error');
@@ -7313,7 +7313,7 @@ export class VaultUI {
           this.#showToast(t('vault.messages.autoFillComplete'), 'success');
         } else {
           safeLog('[VaultUI] Auto-type failed:', result.error);
-          this.#showToast(`Error: ${result.error}`, 'error');
+          this.#showToast(`${t('vault.common.error')}: ${result.error}`, 'error');
         }
       } catch (error) {
         safeLog('[VaultUI] Auto-type error:', error);
@@ -7636,7 +7636,7 @@ export class VaultUI {
     let fieldsHtml = `
       <div class="vault-form-group">
         <label class="vault-label" for="edit-title">Titre <span class="required">*</span></label>
-        <input type="text" class="vault-input" id="edit-title" value="${this.#escapeHtml(entry.title)}" required>
+        <input type="text" class="vault-input" id="edit-title" value="${this.#escapeHtml(entry.title)}" required aria-invalid="false">
       </div>
       <div class="vault-form-group">
         <label class="vault-label" for="edit-folder">${t('vault.labels.folder')}</label>
@@ -7945,7 +7945,7 @@ export class VaultUI {
           id: crypto.randomUUID()
         });
 
-        this.#showToast(`Attachment added: ${file.name}`, 'success');
+        this.#showToast(t('vault.messages.attachmentAdded', { name: file.name }), 'success');
       } catch (err) {
         safeLog('[VaultUI] File read error:', err);
         this.#showToast(t('vault.messages.fileReadError'), 'error');
@@ -8106,7 +8106,7 @@ export class VaultUI {
         this.#closeModal('edit-entry-modal');
         this.#showToast(t('vault.messages.entryModified'), 'success');
       } catch (error) {
-        this.#showToast(error.message || 'Error', 'error');
+        this.#showToast(error.message || t('vault.common.error'), 'error');
       }
     });
   }
@@ -8280,7 +8280,7 @@ export class VaultUI {
         this.#showToast(t('vault.messages.folderCreated'), 'success');
         document.getElementById('add-folder-form')?.reset();
       } catch (error) {
-        this.#showToast(error.message || 'Error', 'error');
+        this.#showToast(error.message || t('vault.common.error'), 'error');
       }
     });
   }
@@ -8562,7 +8562,7 @@ export class VaultUI {
           safeLog('[VaultUI] Alias generation error:', err);
           btn.innerHTML = '<span class="icon">❌</span>';
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
-          this.#showToast(err.message || 'Alias generation error', 'error');
+          this.#showToast(err.message || t('vault.messages.aliasError'), 'error');
         } finally {
           btn.disabled = false;
         }
@@ -9703,7 +9703,7 @@ export class VaultUI {
       // Storage not available
     }
     this.#applyTheme();
-    this.#showToast(`${this.#theme === 'dark' ? 'Dark' : 'Light'} theme enabled`, 'success');
+    this.#showToast(t('vault.messages.themeEnabled', { theme: this.#theme === 'dark' ? 'Dark' : 'Light' }), 'success');
   }
 
   /**
@@ -9982,7 +9982,7 @@ export class VaultUI {
         popover.querySelectorAll('.vault-timeout-option').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        this.#showToast(`Timeout: ${btn.textContent.trim()}`, 'success');
+        this.#showToast(t('vault.messages.timeoutSet', { value: btn.textContent.trim() }), 'success');
         popover.remove();
       });
     });
@@ -10168,16 +10168,16 @@ export class VaultUI {
    */
   async #enableWindowsHello(vaultId) {
     // Need master password to enable Windows Hello
-    const password = await this.#promptPassword('Enter your password to enable Windows Hello');
+    const password = await this.#promptPassword(t('vault.windowsHello.enterPassword'));
     if (!password) return;
 
     try {
-      this.#showToast(t('vault.windowsHello.enabling') || 'Enabling Windows Hello...', 'info');
+      this.#showToast(t('vault.windowsHello.enabling'), 'info');
       await window.vault.hello.enable(vaultId, password);
-      this.#showToast(t('vault.windowsHello.enableSuccess') || 'Windows Hello enabled!', 'success');
+      this.#showToast(t('vault.windowsHello.enableSuccess'), 'success');
       await this.#updateHelloButtonState();
     } catch (error) {
-      this.#showToast(error.message || 'Windows Hello activation failed', 'error');
+      this.#showToast(error.message || t('vault.windowsHello.enableFailed'), 'error');
     }
   }
 
@@ -10192,7 +10192,7 @@ export class VaultUI {
       await this.#updateHelloButtonState();
     } catch (error) {
       safeLog('[VaultUI] Hello disable error:', error);
-      this.#showToast(error.message || 'Deactivation failed', 'error');
+      this.#showToast(error.message || t('vault.windowsHello.disableFailed'), 'error');
     }
   }
 

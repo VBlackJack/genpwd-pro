@@ -632,7 +632,25 @@
         "simplelogin": "Pour SimpleLogin : Allez dans Paramètres > Clés API.",
         "anonaddy": "Pour AnonAddy : Allez dans Paramètres > API > Générer un nouveau token."
       },
-      "invalidPasswordData": "Données de mot de passe invalides"
+      "invalidPasswordData": "Données de mot de passe invalides",
+      "vaultCreatedAt": "Coffre créé à l'emplacement {path}",
+      "vaultCreatedSuccess": "Coffre créé avec succès",
+      "operationFailed": "Opération échouée",
+      "templateApplied": "Modèle « {name} » appliqué",
+      "tagCreated": "Étiquette « {name} » créée",
+      "creationError": "Erreur de création",
+      "modificationError": "Erreur de modification",
+      "tagsUpdated": "Étiquettes mises à jour sur {count} entrée(s)",
+      "entriesFiltered": "{count} entrée(s) filtrée(s)",
+      "filterFailed": "Échec du filtre",
+      "compromisedDetected": "⚠️ {count} mot(s) de passe compromis détecté(s)",
+      "keepassImported": "KeePass XML : {count} entrée(s) importée(s)",
+      "formatImported": "{format} : {count} entrées importées{totpInfo}",
+      "bulkDeleteFailed": "Échec de la suppression en masse",
+      "addedToFavorites": "Ajouté aux favoris",
+      "removedFromFavorites": "Retiré des favoris",
+      "attachmentAdded": "Pièce jointe ajoutée : {name}",
+      "noCompromisedPasswords": "Aucun mot de passe compromis trouvé sur {count} vérifiés"
     },
     "health": {
       "title": "Tableau de bord Sécurité",
@@ -864,8 +882,8 @@
       "recentlyModified": "Modifié récemment"
     },
     "saveModal": {
-      "title": "Enregistrer dans le coffre",
-      "unlockMessage": "Déverrouillez le coffre pour enregistrer le mot de passe",
+      "title": "Sauvegarder dans le coffre",
+      "unlockMessage": "Déverrouillez le coffre pour sauvegarder le mot de passe",
       "titlePlaceholder": "ex. Mon compte Google",
       "urlPlaceholder": "https://exemple.com",
       "noFolder": "Aucun dossier",

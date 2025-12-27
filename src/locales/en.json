@@ -530,7 +530,25 @@
         "simplelogin": "For SimpleLogin: Go to Settings > API Keys.",
         "anonaddy": "For AnonAddy: Go to Settings > API > Generate New Token."
       },
-      "invalidPasswordData": "Invalid password data"
+      "invalidPasswordData": "Invalid password data",
+      "vaultCreatedAt": "Vault created at {path}",
+      "vaultCreatedSuccess": "Vault created successfully",
+      "operationFailed": "Operation failed",
+      "templateApplied": "Template \"{name}\" applied",
+      "tagCreated": "Tag \"{name}\" created",
+      "creationError": "Creation error",
+      "modificationError": "Modification error",
+      "tagsUpdated": "Tags updated on {count} entry/entries",
+      "entriesFiltered": "{count} entry/entries filtered",
+      "filterFailed": "Filter failed",
+      "compromisedDetected": "⚠️ {count} compromised password(s) detected",
+      "keepassImported": "KeePass XML: {count} entry/entries imported",
+      "formatImported": "{format}: {count} entries imported{totpInfo}",
+      "bulkDeleteFailed": "Bulk delete failed",
+      "addedToFavorites": "Added to favorites",
+      "removedFromFavorites": "Removed from favorites",
+      "attachmentAdded": "Attachment added: {name}",
+      "noCompromisedPasswords": "No compromised passwords found in {count} checked"
     },
     "health": {
       "title": "Security Dashboard",

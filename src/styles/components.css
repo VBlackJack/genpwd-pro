@@ -164,9 +164,9 @@ textarea.field-invalid {
   width: 20px;
   height: 20px;
   margin-top: -6px; /* Center thumb on track */
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-  border: 3px solid var(--bg-primary, #1c2033);
+  border: 3px solid var(--bg-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(99, 102, 241, 0.3);
   cursor: pointer;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -195,9 +195,9 @@ textarea.field-invalid {
 .slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-  border: 3px solid var(--bg-primary, #1c2033);
+  border: 3px solid var(--bg-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }

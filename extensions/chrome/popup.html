@@ -28,7 +28,8 @@
       <div id="syllables-options" class="mode-options">
         <div class="option-group">
           <label for="length">Longueur</label>
-          <input type="number" id="length" class="input-field" value="20" min="6" max="64">
+          <input type="number" id="length" class="input-field" value="20" min="6" max="64" aria-describedby="length-help">
+          <span id="length-help" class="visually-hidden">Entre 6 et 64 caractères</span>
         </div>
 
         <div class="option-group">
@@ -46,7 +47,8 @@
       <div id="passphrase-options" class="mode-options hidden">
         <div class="option-group">
           <label for="wordCount">Nombre de mots</label>
-          <input type="number" id="wordCount" class="input-field" value="5" min="2" max="8">
+          <input type="number" id="wordCount" class="input-field" value="5" min="2" max="8" aria-describedby="wordCount-help">
+          <span id="wordCount-help" class="visually-hidden">Entre 2 et 8 mots</span>
         </div>
 
         <div class="option-group">
