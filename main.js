@@ -23,6 +23,7 @@ import { defaultBlocksForMode } from './core/casing.js';
 import { setBlocks } from './config/settings.js';
 import { safeLog } from './utils/logger.js';
 import { showToast } from './utils/toast.js';
+import { t } from './utils/i18n.js';
 
 class GenPwdApp {
   constructor() {
@@ -34,14 +35,14 @@ class GenPwdApp {
     try {
       safeLog(`Démarrage GenPwd Pro v${this.version} - Architecture modulaire`);
       
-      // 1. Validation de l'environnement
+      // 1. Environment validation
       if (!this.validateEnvironment()) {
-        throw new Error('Environnement non compatible');
+        throw new Error(t('toast.incompatibleEnvironment') || 'Incompatible environment');
       }
 
-      // 2. Validation des données critiques
+      // 2. Critical data validation
       if (!validateCharSets()) {
-        throw new Error('Données CHAR_SETS corrompues');
+        throw new Error(t('toast.corruptedCharsets') || 'Corrupted character sets');
       }
 
       // 3. Initialisation DOM
@@ -69,9 +70,9 @@ class GenPwdApp {
       safeLog('Application initialisée avec succès');
       
     } catch (error) {
-      console.error('Erreur critique initialisation:', error);
-      safeLog(`Erreur critique: ${error.message}`);
-      showToast('Erreur critique au démarrage', 'error');
+      console.error('Critical initialization error:', error);
+      safeLog(`Critical error: ${error.message}`);
+      showToast(t('toast.criticalStartupError') || 'Critical startup error', 'error');
     }
   }
 
@@ -93,7 +94,7 @@ class GenPwdApp {
     const testEl = document.createElement('div');
     testEl.style.display = 'grid';
     if (testEl.style.display !== 'grid') {
-      safeLog('CSS Grid non supporté');
+      safeLog(t('toast.cssGridNotSupported') || 'CSS Grid not supported');
       return false;
     }
 

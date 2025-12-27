@@ -643,18 +643,32 @@ header::before {
   .version-badge {
     display: none;
   }
-  
+
   .logo-subtitle {
     display: none;
   }
-  
+
   .row {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
+
   .row label {
     min-width: auto;
+  }
+
+  /* Fix horizontal overflow on small screens */
+  .main {
+    padding: 0 12px;
+    gap: 12px;
+    margin: 8px auto;
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    min-width: 0;
+    height: auto;
+    min-height: 300px;
   }
 }

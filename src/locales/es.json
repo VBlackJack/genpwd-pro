@@ -62,11 +62,11 @@
     "clickToAccessVault": "Clic para acceder a la bóveda"
   },
   "sections": {
-    "generationMode": "Modo de Generación",
-    "commonParameters": "Parámetros Comunes",
-    "visualPlacement": "Ubicación Visual",
-    "casePattern": "Patrón de Mayúsculas",
-    "helpNotes": "Ayuda y Notas",
+    "generationMode": "Modo de generación",
+    "commonParameters": "Parámetros comunes",
+    "visualPlacement": "Ubicación visual",
+    "casePattern": "Patrón de mayúsculas",
+    "helpNotes": "Ayuda y notas",
     "modesAvailable": "{count} modos"
   },
   "generator": {
@@ -93,7 +93,7 @@
     "autoRandomPlacement": "Ubicación aleatoria auto",
     "toggleVisualMode": "Alternar modo visual/porcentaje",
     "placementModeAuto": "Auto",
-    "allTitle": "Todo Título",
+    "allTitle": "Todo título",
     "allUpper": "Todo MAYÚSCULA",
     "allLower": "Todo minúscula",
     "randomBlocks": "Aleatorio",
@@ -205,7 +205,7 @@
     "confirm": "Confirmar"
   },
   "dashboard": {
-    "title": "Estado de la Bóveda",
+    "title": "Estado de la bóveda",
     "checkBreaches": "Buscar filtraciones (HIBP)",
     "overallScore": "Puntuación global",
     "stats": {
@@ -238,14 +238,14 @@
   "about": {
     "title": "Acerca de GenPwd Pro",
     "tagline": "Gestor de contraseñas profesional con bóveda cifrada",
-    "secureVault": "Bóveda Segura",
+    "secureVault": "Bóveda segura",
     "secureVaultDesc": {
       "encryption": "Cifrado AES-256 con Argon2id para derivación de clave",
       "windowsHello": "Windows Hello: Desbloqueo biométrico (huella, rostro)",
       "autoLock": "Bloqueo auto: Bloqueo automático tras inactividad",
       "externalStorage": "Almacenamiento externo: OneDrive, Dropbox, ubicaciones personalizadas"
     },
-    "advancedGenerator": "Generador Avanzado",
+    "advancedGenerator": "Generador avanzado",
     "advancedGeneratorDesc": {
       "modes": "3 modos: Sílabas, Frase, Leet speak",
       "multiLanguage": "Multilingüe: Francés, Inglés, Latín (2400+ palabras)",
@@ -259,8 +259,8 @@
       "totp": "TOTP: Soporte de códigos 2FA (Google Authenticator)",
       "multiPlatform": "Multiplataforma: Web, Windows, macOS y Linux próximamente"
     },
-    "techStack": "Stack Tecnológico",
-    "shortcuts": "Atajos de Teclado",
+    "techStack": "Stack tecnológico",
+    "shortcuts": "Atajos de teclado",
     "shortcutsDesc": {
       "generate": "Generar contraseñas",
       "copy": "Copiar todas las contraseñas",
@@ -436,7 +436,7 @@
     },
     "createModal": {
       "vaultName": "Nombre de la bóveda",
-      "vaultNamePlaceholder": "Mi Bóveda",
+      "vaultNamePlaceholder": "Mi bóveda",
       "location": "Ubicación",
       "locationAria": "Ubicación de la bóveda",
       "defaultFolder": "Carpeta predeterminada",
@@ -877,26 +877,26 @@
       "destroyed": "Bóveda destruida."
     },
     "duressModal": {
-      "title": "Configuración de Negación Plausible",
+      "title": "Configuración de negación plausible",
       "explanation1": "Esta funcionalidad de seguridad avanzada crea una <strong>Bóveda \"Señuelo\" secundaria</strong> oculta en su archivo de bóveda principal.",
       "explanation2": "Si se le obliga a desbloquear su bóveda bajo coacción, introduzca su <strong>Contraseña de Coacción</strong> en lugar de su Contraseña Maestra.",
       "explanation3": "La aplicación abrirá la Bóveda Señuelo, que parece totalmente funcional pero contiene datos no sensibles. Es matemáticamente imposible demostrar la existencia de su Bóveda Real.",
-      "masterPasswordLabel": "Contraseña Maestra (verificación)",
+      "masterPasswordLabel": "Contraseña maestra (verificación)",
       "masterPasswordPlaceholder": "Introduzca la contraseña maestra actual",
-      "newDuressLabel": "Nueva Contraseña de Coacción",
-      "duressPlaceholder": "No puede ser igual a la Contraseña Maestra",
+      "newDuressLabel": "Nueva contraseña de coacción",
+      "duressPlaceholder": "No puede ser igual a la contraseña maestra",
       "duressHint": "Introducir esta contraseña al iniciar sesión abrirá la Bóveda Señuelo.",
       "autofillLabel": "Rellenar automáticamente la Bóveda Señuelo",
       "autofillHint": "Generar entradas \"falsas\" realistas (ej. Amazon, Google) para que la bóveda no parezca sospechosa/vacía.",
       "bothRequired": "Ambas contraseñas son requeridas.",
       "mustBeDifferent": "La contraseña de coacción DEBE ser diferente de la contraseña maestra.",
-      "encrypting": "Cifrando Bóveda (V3)...",
+      "encrypting": "Cifrando bóveda (V3)...",
       "successMessage": "¡Modo Coacción activado! Reiniciando para aplicar el contenedor de seguridad...",
-      "enableButton": "Activar Modo Coacción"
+      "enableButton": "Activar modo coacción"
     }
   },
   "aliasModal": {
-    "title": "Configurar Alias de Email",
+    "title": "Configurar alias de email",
     "provider": "Proveedor",
     "apiKey": "Clave API / Token",
     "apiKeyPlaceholder": "Pegue su clave API aquí...",
@@ -932,7 +932,7 @@
     "required": "requerido"
   },
   "shareModal": {
-    "title": "Compartir Seguro (GenPwd Send)",
+    "title": "Compartir seguro (GenPwd Send)",
     "step1": "Paso 1 de 2",
     "step2": "Paso 2 de 2",
     "stepConfig": "Paso 1: Configuración",
@@ -958,16 +958,16 @@
       "general": "General",
       "shortcuts": "Atajos",
       "security": "Seguridad",
-      "danger": "Zona Peligro"
+      "danger": "Zona peligro"
     },
     "categories": "Categorías de configuración",
     "general": {
       "appearance": "Apariencia",
       "appearanceDesc": "Personalizar apariencia de la aplicación",
-      "toggleTheme": "Alternar Tema Claro/Oscuro"
+      "toggleTheme": "Alternar tema claro/oscuro"
     },
     "shortcuts": {
-      "title": "Atajos de Teclado",
+      "title": "Atajos de teclado",
       "description": "Acciones rápidas para aumentar su productividad",
       "showHideApp": "Mostrar/Ocultar app (global)",
       "autoTypePassword": "Auto-escritura de contraseña (global)",
@@ -983,7 +983,7 @@
       "exitApp": "Salir de la aplicación"
     },
     "security": {
-      "autoLock": "Bloqueo Automático",
+      "autoLock": "Bloqueo automático",
       "autoLockDesc": "Bloquear bóveda después de un período de inactividad",
       "minute1": "1 minuto",
       "minutes5": "5 minutos",
@@ -993,17 +993,17 @@
     },
     "danger": {
       "warning": "Advertencia",
-      "title": "Zona Peligro",
+      "title": "Zona peligro",
       "irreversible": "Las acciones aquí son irreversibles.",
-      "panicMode": "Modo Pánico (Opción Nuclear)",
+      "panicMode": "Modo pánico (opción nuclear)",
       "panicDesc": "Destruye permanentemente la bóveda y todos sus datos. Sin posibilidad de recuperación.",
       "destroyVault": "DESTRUIR BÓVEDA",
       "destroyConfirm1": "Esta acción DESTRUIRÁ PERMANENTEMENTE esta bóveda. NO habrá forma de deshacer esto.",
-      "destroyTitle": "Destruir Bóveda",
+      "destroyTitle": "Destruir bóveda",
       "iUnderstand": "Entiendo",
       "finalConfirm": "CONFIRMACIÓN FINAL: ¿Eliminar todo?",
-      "finalWarning": "Advertencia Final",
-      "deleteEverything": "Eliminar Todo",
+      "finalWarning": "Advertencia final",
+      "deleteEverything": "Eliminar todo",
       "vaultDestroyed": "Bóveda destruida."
     }
   },
@@ -1029,6 +1029,9 @@
     "passwordCopied": "¡Contraseña copiada!",
     "copyFailed": "Error al copiar",
     "criticalStartupError": "Error crítico de inicio",
+    "incompatibleEnvironment": "Entorno no compatible",
+    "corruptedCharsets": "Datos de conjuntos de caracteres corruptos",
+    "cssGridNotSupported": "CSS Grid no soportado",
     "vaultNotAvailable": "Bóveda no disponible",
     "vaultUnlocked": "Bóveda desbloqueada",
     "vaultLocked": "Bóveda bloqueada",
@@ -1128,6 +1131,7 @@
     "enableConfirm": "El historial está desactivado. ¿Activarlo ahora?",
     "deleteEntryConfirm": "¿Eliminar esta entrada?",
     "clearAllConfirm": "¿Borrar todo el historial? ¡Esta acción es irreversible!",
+    "favorite": "Alternar favorito",
     "stats": {
       "total": "Total",
       "favorites": "Favoritos",
@@ -1142,8 +1146,10 @@
   },
   "presets": {
     "title": "Presets",
-    "save": "Guardar Configuración",
-    "manage": "Gestionar Presets",
+    "save": "Guardar configuración",
+    "manage": "Gestionar presets",
+    "quickSave": "Guardado rápido del preset",
+    "refreshFromVault": "Actualizar presets desde la bóveda",
     "load": "Cargar un preset",
     "select": "-- Seleccionar --",
     "update": "Actualizar",

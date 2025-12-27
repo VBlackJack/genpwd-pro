@@ -3096,10 +3096,10 @@ export class VaultUI {
       return `
         <div class="vault-template-category">
           <div class="vault-template-category-header">${cat.icon} ${cat.name}</div>
-          <div class="vault-template-items">
+          <div class="vault-template-items" role="listbox">
             ${catTemplates.map(t => `
-              <button type="button" class="vault-template-item" data-template-id="${t.id}" title="${t.name}">
-                <span class="vault-template-icon">${t.icon}</span>
+              <button type="button" class="vault-template-item" data-template-id="${t.id}" title="${t.name}" role="option">
+                <span class="vault-template-icon" aria-hidden="true">${t.icon}</span>
                 <span class="vault-template-name">${t.name}</span>
               </button>
             `).join('')}
@@ -4199,7 +4199,7 @@ export class VaultUI {
                 <span class="vault-spinner-small"></span>
                 ${t('common.checking')}
               </div>
-              <div class="vault-breach-results" id="breach-list"></div>
+              <div class="vault-breach-results" id="breach-list" role="region" aria-live="polite" aria-label="Breach check results"></div>
             </div>
           </div>
         </div>
@@ -4633,14 +4633,14 @@ export class VaultUI {
               </svg>
             </button>
           </div>
-          <div class="vault-modal-body vault-folder-list">
-            <button class="vault-folder-option" data-folder-id="">
-              <span class="vault-folder-icon">📁</span>
+          <div class="vault-modal-body vault-folder-list" role="listbox" aria-label="Select folder">
+            <button class="vault-folder-option" data-folder-id="" role="option">
+              <span class="vault-folder-icon" aria-hidden="true">📁</span>
               <span class="vault-folder-name">No folder (root)</span>
             </button>
             ${this.#folders.map(f => `
-              <button class="vault-folder-option" data-folder-id="${f.id}">
-                <span class="vault-folder-icon">📂</span>
+              <button class="vault-folder-option" data-folder-id="${f.id}" role="option">
+                <span class="vault-folder-icon" aria-hidden="true">📂</span>
                 <span class="vault-folder-name">${this.#escapeHtml(f.name)}</span>
               </button>
             `).join('')}

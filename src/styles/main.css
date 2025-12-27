@@ -218,7 +218,7 @@
     --text-primary: rgba(0, 0, 0, 0.87);
     --text-secondary: rgba(0, 0, 0, 0.7);
     --text-muted: rgba(0, 0, 0, 0.55);
-    --text-hint: rgba(0, 0, 0, 0.45);
+    --text-hint: rgba(0, 0, 0, 0.60); /* WCAG AA: 4.5:1 contrast ratio */
 
     /* Theme-specific text colors */
     --text-dimmed: #5a5f7a;
@@ -951,10 +951,12 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
 
 /* ============================================================================
    FOCUS RING EDGE CLIPPING FIX
-   Elements near window edges use inset outline to prevent clipping
+   Elements near window edges use box-shadow instead of outline to prevent clipping
    ============================================================================ */
 
 .modal-close:focus-visible,
 .vault-modal-close:focus-visible {
-  outline-offset: -2px; /* Inset to prevent clipping at window edge */
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent-cyan, #22d3ee),
+              0 0 0 2px rgba(34, 211, 238, 0.25);
 }
