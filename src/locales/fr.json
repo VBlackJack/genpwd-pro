@@ -494,6 +494,7 @@
       "cardNumber": "Numéro de carte",
       "holder": "Titulaire",
       "expiration": "Expiration",
+      "cvv": "CVV",
       "fullName": "Nom complet",
       "content": "Contenu",
       "title": "Titre",
@@ -1060,6 +1061,7 @@
     }
   },
   "toast": {
+    "passwordsGenerated": "{count} mot(s) de passe généré(s){dict} !",
     "storageQuotaExceeded": "Stockage plein. Certaines données n'ont pas pu être enregistrées.",
     "blocksRandomized": "Blocs randomisés",
     "blockAdded": "Bloc ajouté",

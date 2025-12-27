@@ -392,6 +392,7 @@
       "cardNumber": "Card number",
       "holder": "Holder",
       "expiration": "Expiration",
+      "cvv": "CVV",
       "fullName": "Full name",
       "content": "Content",
       "title": "Title",
@@ -958,6 +959,7 @@
     }
   },
   "toast": {
+    "passwordsGenerated": "Generated {count} password(s){dict}!",
     "storageQuotaExceeded": "Storage full. Some data could not be saved.",
     "blocksRandomized": "Blocks randomized",
     "blockAdded": "Block added",

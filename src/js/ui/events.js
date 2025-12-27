@@ -529,10 +529,9 @@ function handleGenerationResults(results, settings) {
   const dictText = settings.mode === 'passphrase'
     ? ` (${settings.specific.dictionary})`
     : '';
-  const plural = results.length > 1 ? 's' : '';
 
   showToast(
-    `Generated ${results.length} password${plural}${dictText}!`,
+    t('toast.passwordsGenerated', { count: results.length, dict: dictText }),
     'success'
   );
 }

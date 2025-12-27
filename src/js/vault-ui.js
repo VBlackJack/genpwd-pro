@@ -2216,11 +2216,11 @@ export class VaultUI {
     switch (entry.type) {
       case 'login':
         return `
-          ${this.#renderField('Username', entry.data?.username, 'username', false, true)}
-          ${this.#renderField('Password', entry.data?.password, 'password', true, true)}
+          ${this.#renderField(t('vault.labels.username'), entry.data?.username, 'username', false, true)}
+          ${this.#renderField(t('vault.labels.password'), entry.data?.password, 'password', true, true)}
           ${this.#renderPasswordHistory(entry)}
           ${entry.data?.totp ? this.#renderTOTPField(entry) : ''}
-          ${this.#renderField('URL', entry.data?.url, 'url', false, true, true)}
+          ${this.#renderField(t('vault.labels.url'), entry.data?.url, 'url', false, true, true)}
           ${this.#renderExpirationField(entry)}
           ${entry.notes ? this.#renderNotesField(entry.notes) : ''}
         `;
@@ -2228,15 +2228,15 @@ export class VaultUI {
         return `
           <div class="vault-field vault-notes-field">
             <div class="vault-field-label-row">
-              <label class="vault-field-label">Contenu</label>
+              <label class="vault-field-label">${t('vault.fields.content') || 'Content'}</label>
               <div class="vault-notes-toggle">
-                <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview" aria-label="Preview mode">
+                <button type="button" class="vault-notes-mode active" data-mode="preview" title="${t('vault.actions.preview') || 'Preview'}" aria-label="${t('vault.actions.previewMode') || 'Preview mode'}">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </button>
-                <button type="button" class="vault-notes-mode" data-mode="source" title="Source Markdown" aria-label="Edit source mode">
+                <button type="button" class="vault-notes-mode" data-mode="source" title="${t('vault.actions.sourceMarkdown') || 'Source Markdown'}" aria-label="${t('vault.actions.editSourceMode') || 'Edit source mode'}">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <polyline points="16 18 22 12 16 6"></polyline>
                     <polyline points="8 6 2 12 8 18"></polyline>
@@ -2254,16 +2254,16 @@ export class VaultUI {
         `;
       case 'card':
         return `
-          ${this.#renderField('Cardholder', entry.data?.holder)}
-          ${this.#renderField('Number', entry.data?.number, 'number', true, true)}
-          ${this.#renderField('Expiration', entry.data?.expiry)}
-          ${this.#renderField('CVV', entry.data?.cvv, 'cvv', true, true)}
+          ${this.#renderField(t('vault.labels.holder'), entry.data?.holder)}
+          ${this.#renderField(t('vault.labels.cardNumber'), entry.data?.number, 'number', true, true)}
+          ${this.#renderField(t('vault.labels.expiration'), entry.data?.expiry)}
+          ${this.#renderField(t('vault.labels.cvv') || 'CVV', entry.data?.cvv, 'cvv', true, true)}
         `;
       case 'identity':
         return `
-          ${this.#renderField('Full name', entry.data?.fullName)}
-          ${this.#renderField('Email', entry.data?.email, 'email', false, true)}
-          ${this.#renderField('Phone', entry.data?.phone, 'phone', false, true)}
+          ${this.#renderField(t('vault.labels.fullName'), entry.data?.fullName)}
+          ${this.#renderField(t('vault.labels.email'), entry.data?.email, 'email', false, true)}
+          ${this.#renderField(t('vault.labels.phone'), entry.data?.phone, 'phone', false, true)}
         `;
       default:
         return '';

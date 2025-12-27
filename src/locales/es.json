@@ -392,6 +392,7 @@
       "cardNumber": "Número de tarjeta",
       "holder": "Titular",
       "expiration": "Vencimiento",
+      "cvv": "CVV",
       "fullName": "Nombre completo",
       "content": "Contenido",
       "title": "Título",
@@ -958,6 +959,7 @@
     }
   },
   "toast": {
+    "passwordsGenerated": "¡{count} contraseña(s) generada(s){dict}!",
     "storageQuotaExceeded": "Almacenamiento lleno. Algunos datos no se pudieron guardar.",
     "blocksRandomized": "Bloques aleatorizados",
     "blockAdded": "Bloque añadido",
