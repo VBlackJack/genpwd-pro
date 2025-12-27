@@ -117,7 +117,7 @@ export function initializeLanguageSelector() {
   const langSelector = document.createElement('div');
   langSelector.className = 'language-selector';
   langSelector.innerHTML = sanitizeHTML(`
-    <button class="lang-btn" id="lang-btn" aria-label="Change language" title="Language">
+    <button class="lang-btn" id="lang-btn" aria-label="${i18n.t('settings.changeLanguage')}" title="${i18n.t('settings.language')}">
       <span class="lang-flag" id="lang-flag">${escapeHtml(i18n.getLocaleFlag(i18n.getLocale()))}</span>
       <span class="lang-code" id="lang-code">${escapeHtml(i18n.getLocale().toUpperCase())}</span>
     </button>
@@ -1659,8 +1659,8 @@ async function loadVaultPresetsList(modal) {
           </div>
         </div>
         <div class="vault-preset-actions">
-          <button class="btn-mini" data-action="load-vault-preset" data-entry-id="${entry.id}" title="Load this preset">📥</button>
-          <button class="btn-mini danger" data-action="delete-vault-preset" data-entry-id="${entry.id}" title="Delete from vault">🗑️</button>
+          <button class="btn-mini" data-action="load-vault-preset" data-entry-id="${entry.id}" title="${i18n.t('presets.vaultSync.loadPreset')}">📥</button>
+          <button class="btn-mini danger" data-action="delete-vault-preset" data-entry-id="${entry.id}" title="${i18n.t('presets.vaultSync.deleteFromVault')}">🗑️</button>
         </div>
       </div>
     `).join('');

@@ -285,11 +285,11 @@ export class VaultBridge {
     if (this.#currentState === VaultState.UNLOCKED) {
       indicator.classList.add('unlocked');
       if (icon) icon.textContent = '🔓';
-      if (text) text.textContent = 'Unlocked';
+      if (text) text.textContent = i18n.t('vault.status.unlocked');
     } else {
       indicator.classList.remove('unlocked');
       if (icon) icon.textContent = '🔒';
-      if (text) text.textContent = 'Locked';
+      if (text) text.textContent = i18n.t('vault.status.locked');
     }
   }
 

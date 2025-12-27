@@ -644,7 +644,7 @@ async function copyAllPasswords() {
   if (btn) {
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
-    btn.innerHTML = '<span class="spinner" role="status" aria-label="Copying passwords..."></span>';
+    btn.innerHTML = `<span class="spinner" role="status" aria-label="${t('actions.copyingPasswords')}"></span>`;
   }
 
   try {
@@ -848,7 +848,7 @@ async function exportPasswords() {
   if (btn) {
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
-    btn.innerHTML = '<span class="spinner" role="status" aria-label="Exporting passwords..."></span>';
+    btn.innerHTML = `<span class="spinner" role="status" aria-label="${t('actions.exportingPasswords')}"></span>`;
   }
 
   try {

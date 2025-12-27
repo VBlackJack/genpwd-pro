@@ -117,7 +117,9 @@
     "placementDigits": "Placement chiffres",
     "placementSpecials": "Placement spéciaux",
     "maskDisplay": "Masquer l'affichage",
-    "blurPasswords": "Flouter les mots de passe"
+    "blurPasswords": "Flouter les mots de passe",
+    "language": "Langue",
+    "changeLanguage": "Changer de langue"
   },
   "policy": {
     "standard": "Standard (tous caractères)",
@@ -171,7 +173,9 @@
       "special": "spéciaux",
       "mode": "Mode",
       "cliSafe": "CLI-Safe"
-    }
+    },
+    "clickToCopyHint": "Cliquer pour copier • Double-clic pour afficher/masquer",
+    "passwordAriaLabel": "Mot de passe {id} : Cliquer pour copier, double-clic pour révéler"
   },
   "actions": {
     "generate": "Générer",
@@ -190,7 +194,8 @@
     "debug": "Debug",
     "toggleDebug": "Basculer le panneau de debug",
     "clearLogs": "Effacer les logs de debug",
-    "closeDebug": "Fermer"
+    "closeDebug": "Fermer",
+    "exportingPasswords": "Export des mots de passe..."
   },
   "modal": {
     "closeEsc": "Fermer (Échap)",
@@ -369,7 +374,9 @@
       "presetsInVault": "📦 Préréglages dans le coffre",
       "noPresetsInVault": "Aucun préréglage dans le coffre",
       "exporting": "Exportation...",
-      "loadingError": "Erreur de chargement"
+      "loadingError": "Erreur de chargement",
+      "loadPreset": "Charger ce préréglage",
+      "deleteFromVault": "Supprimer du coffre"
     },
     "config": {
       "mode": "Mode",
@@ -419,6 +426,10 @@
     "clearAll": "🗑️ Tout effacer"
   },
   "vault": {
+    "status": {
+      "unlocked": "Déverrouillé",
+      "locked": "Verrouillé"
+    },
     "aria": {
       "hideValue": "Masquer la valeur",
       "showValue": "Afficher la valeur",
@@ -491,7 +502,8 @@
       "enableDuress": "Activer le mode coercition",
       "restore": "Restaurer",
       "copyValue": "Copier",
-      "generateNow": "Générer maintenant"
+      "generateNow": "Générer maintenant",
+      "saveToVault": "Enregistrer dans le coffre"
     },
     "form": {
       "required": "requis"

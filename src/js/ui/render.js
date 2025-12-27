@@ -104,7 +104,7 @@ function createPasswordCard(item, id, mask) {
   // Vault save button (only visible in Electron)
   const vaultAvailable = VaultBridge.isAvailable();
   const saveToVaultBtn = vaultAvailable ? `
-    <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="Save" aria-label="Save to vault">
+    <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="${t('common.save')}" aria-label="${t('vault.actions.saveToVault')}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -123,7 +123,7 @@ function createPasswordCard(item, id, mask) {
       <div class="stat"><span class="dot"></span><strong>${(entropy || 0).toFixed(1)}</strong>&nbsp;bits</div>
       <div class="len">${total} chars</div>
     </div>
-    <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="Click to copy • Double-click to show/hide" role="button" tabindex="0" aria-label="Password ${id}: Click to copy, double-click to reveal">
+    <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="${t('results.clickToCopyHint')}" role="button" tabindex="0" aria-label="${t('results.passwordAriaLabel', { id })}">
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
         <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton') || 'Check for breaches'}" aria-label="${t('breach.checkButton') || 'Check for breaches'}">

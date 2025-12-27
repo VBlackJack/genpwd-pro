@@ -117,7 +117,9 @@
     "placementDigits": "Digits placement",
     "placementSpecials": "Specials placement",
     "maskDisplay": "Hide display",
-    "blurPasswords": "Blur passwords"
+    "blurPasswords": "Blur passwords",
+    "language": "Language",
+    "changeLanguage": "Change language"
   },
   "policy": {
     "standard": "Standard (all characters)",
@@ -171,7 +173,9 @@
       "special": "special",
       "mode": "Mode",
       "cliSafe": "CLI-Safe"
-    }
+    },
+    "clickToCopyHint": "Click to copy • Double-click to show/hide",
+    "passwordAriaLabel": "Password {id}: Click to copy, double-click to reveal"
   },
   "actions": {
     "generate": "Generate",
@@ -190,7 +194,8 @@
     "debug": "Debug",
     "toggleDebug": "Toggle debug panel",
     "clearLogs": "Clear debug logs",
-    "closeDebug": "Close"
+    "closeDebug": "Close",
+    "exportingPasswords": "Exporting passwords..."
   },
   "modal": {
     "closeEsc": "Close (Esc)",
@@ -319,6 +324,10 @@
     "mainNavigation": "Main navigation"
   },
   "vault": {
+    "status": {
+      "unlocked": "Unlocked",
+      "locked": "Locked"
+    },
     "aria": {
       "hideValue": "Hide value",
       "showValue": "Show value",
@@ -391,7 +400,8 @@
       "enableDuress": "Enable Duress Mode",
       "restore": "Restore",
       "copyValue": "Copy",
-      "generateNow": "Generate Now"
+      "generateNow": "Generate Now",
+      "saveToVault": "Save to vault"
     },
     "form": {
       "required": "required"
@@ -1093,7 +1103,8 @@
       "presetsInVault": "📦 Presets in vault",
       "noPresetsInVault": "No presets in vault",
       "exporting": "Exporting...",
-      "loadingError": "Loading error"
+      "loadingError": "Loading error",
+      "deleteFromVault": "Delete from vault"
     },
     "config": {
       "mode": "Mode",

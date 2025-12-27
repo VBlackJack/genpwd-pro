@@ -117,7 +117,9 @@
     "placementDigits": "Ubicación dígitos",
     "placementSpecials": "Ubicación especiales",
     "maskDisplay": "Ocultar pantalla",
-    "blurPasswords": "Difuminar contraseñas"
+    "blurPasswords": "Difuminar contraseñas",
+    "language": "Idioma",
+    "changeLanguage": "Cambiar idioma"
   },
   "policy": {
     "standard": "Estándar (todos los caracteres)",
@@ -171,7 +173,9 @@
       "special": "especiales",
       "mode": "Modo",
       "cliSafe": "CLI-Safe"
-    }
+    },
+    "clickToCopyHint": "Clic para copiar • Doble clic para mostrar/ocultar",
+    "passwordAriaLabel": "Contraseña {id}: Clic para copiar, doble clic para revelar"
   },
   "actions": {
     "generate": "Generar",
@@ -190,7 +194,8 @@
     "debug": "Debug",
     "toggleDebug": "Alternar panel de debug",
     "clearLogs": "Limpiar logs de debug",
-    "closeDebug": "Cerrar"
+    "closeDebug": "Cerrar",
+    "exportingPasswords": "Exportando contraseñas..."
   },
   "modal": {
     "closeEsc": "Cerrar (Esc)",
@@ -319,6 +324,10 @@
     "mainNavigation": "Navegación principal"
   },
   "vault": {
+    "status": {
+      "unlocked": "Desbloqueado",
+      "locked": "Bloqueado"
+    },
     "aria": {
       "hideValue": "Ocultar valor",
       "showValue": "Mostrar valor",
@@ -391,7 +400,8 @@
       "enableDuress": "Activar modo coacción",
       "restore": "Restaurar",
       "copyValue": "Copiar",
-      "generateNow": "Generar ahora"
+      "generateNow": "Generar ahora",
+      "saveToVault": "Guardar en la bóveda"
     },
     "form": {
       "required": "requerido"
@@ -1093,7 +1103,9 @@
       "presetsInVault": "📦 Presets en la bóveda",
       "noPresetsInVault": "No hay presets en la bóveda",
       "exporting": "Exportando...",
-      "loadingError": "Error de carga"
+      "loadingError": "Error de carga",
+      "loadPreset": "Cargar este preset",
+      "deleteFromVault": "Eliminar de la bóveda"
     },
     "config": {
       "mode": "Modo",
