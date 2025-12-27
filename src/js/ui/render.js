@@ -51,7 +51,7 @@ export function renderResults(results, mask) {
         </div>`);
       // Attach click handler for the CTA button
       document.getElementById('empty-generate-btn')?.addEventListener('click', () => {
-        document.getElementById('generate-btn')?.click();
+        document.getElementById('btn-generate')?.click();
       });
       return;
     }
@@ -219,6 +219,7 @@ function bindPasswordClickEvents() {
           }
         } catch (err) {
           safeLog('Copy to clipboard failed:', err);
+          showToast(t('toast.copyFailed'), 'error');
         }
       }, 250);
 
@@ -620,7 +621,7 @@ export function renderEmptyState() {
         </button>
       </div>`);
     document.getElementById('empty-generate-btn')?.addEventListener('click', () => {
-      document.getElementById('generate-btn')?.click();
+      document.getElementById('btn-generate')?.click();
     });
   }
 }

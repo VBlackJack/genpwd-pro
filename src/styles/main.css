@@ -495,7 +495,7 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   .input:focus,
   .vault-input:focus {
     outline: 3px solid Highlight !important;
-    outline-offset: 1px !important;
+    outline-offset: 2px !important;
     border-color: Highlight !important;
   }
 

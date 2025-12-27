@@ -106,7 +106,7 @@
   "modes": {
     "title": "Mode",
     "syllables": "Syllabes (alternance C/V)",
-    "passphrase": "Passphrase (mots séparés)",
+    "passphrase": "Phrase de passe (mots séparés)",
     "leet": "Mot → Leet"
   },
   "settings": {
@@ -129,9 +129,9 @@
   },
   "policy": {
     "standard": "Standard (tous caractères)",
-    "standardLayout": "Standard Layout-Safe (AZERTY/QWERTY)",
+    "standardLayout": "Standard compatible clavier (AZERTY/QWERTY)",
     "alphanumeric": "Alphanumérique (lettres + chiffres)",
-    "alphanumericLayout": "Alpha Layout-Safe (AZERTY/QWERTY)"
+    "alphanumericLayout": "Alpha compatible clavier (AZERTY/QWERTY)"
   },
   "placement": {
     "start": "Début",
@@ -910,7 +910,7 @@
     "title": "Configuration d'alias email",
     "provider": "Fournisseur",
     "apiKey": "Clé API / Token",
-    "apiKeyPlaceholder": "Collez votre clé API ici...",
+    "apiKeyPlaceholder": "Veuillez coller votre clé API ici...",
     "showHide": "Afficher/Masquer",
     "helpSimpleLogin": "Pour SimpleLogin : Allez dans Paramètres > Clés API.",
     "helpAnonAddy": "Pour AnonAddy : Allez dans Paramètres > API > Générer un nouveau token.",

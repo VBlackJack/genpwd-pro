@@ -27,7 +27,7 @@ import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
 import { ANIMATION_DURATION } from './config/ui-constants.js';
 import { initThemeSystem } from './utils/theme-manager.js';
 import { isDevelopment } from './utils/environment.js';
-import { initKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
+import { initKeyboardShortcuts, removeKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
 
 // Feature imports (v3.0.0)
 import { i18n } from './utils/i18n.js';
@@ -376,6 +376,8 @@ window.addEventListener('beforeunload', () => {
     VaultBridge.destroy();
     // Cleanup native integration listeners
     cleanupNativeIntegration();
+    // Cleanup keyboard shortcuts event listener
+    removeKeyboardShortcuts();
     // Clear any active intervals/timeouts
     safeLog('[App] Cleanup on beforeunload');
   } catch (error) {

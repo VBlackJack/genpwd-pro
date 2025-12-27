@@ -129,9 +129,9 @@
   },
   "policy": {
     "standard": "Estándar (todos los caracteres)",
-    "standardLayout": "Estándar Layout-Safe (AZERTY/QWERTY)",
+    "standardLayout": "Estándar compatible con teclado (AZERTY/QWERTY)",
     "alphanumeric": "Alfanumérico (letras + dígitos)",
-    "alphanumericLayout": "Alfa Layout-Safe (AZERTY/QWERTY)"
+    "alphanumericLayout": "Alfa compatible con teclado (AZERTY/QWERTY)"
   },
   "placement": {
     "start": "Inicio",

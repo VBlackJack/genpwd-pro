@@ -437,7 +437,7 @@ export class VaultUI {
       <div class="vault-lock-screen">
         <div class="vault-lock-content">
           <div class="vault-lock-icon">
-            <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5">
+            <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               <circle cx="12" cy="16" r="1"></circle>
@@ -457,7 +457,7 @@ export class VaultUI {
                      aria-label="${t('vault.lockScreen.masterPassword')}" aria-required="true">
               <button type="button" class="vault-input-btn" id="toggle-password"
                       title="${t('vault.lockScreen.showHide')}" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>

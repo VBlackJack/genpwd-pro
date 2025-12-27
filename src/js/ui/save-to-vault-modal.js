@@ -46,41 +46,41 @@ export class SaveToVaultModal {
     if (this.#isOpen) return;
     this.#isOpen = true; // Set immediately to prevent race condition
 
-    // Check vault state
-    if (!VaultBridge.isAvailable()) {
-      this.#isOpen = false;
-      showToast(t('toast.vaultNotAvailable'), 'error');
-      return;
-    }
-
-    const isUnlocked = await VaultBridge.isUnlocked();
-    if (!isUnlocked) {
-      // Show quick unlock dialog instead of switching tabs
-      const unlocked = await QuickUnlockDialog.show({
-        message: t('vault.saveModal.unlockMessage')
-      });
-
-      if (!unlocked) {
-        // User cancelled, reset flag and return
-        this.#isOpen = false;
+    try {
+      // Check vault state
+      if (!VaultBridge.isAvailable()) {
+        showToast(t('toast.vaultNotAvailable'), 'error');
         return;
       }
-      // Vault is now unlocked, continue
-    }
 
-    this.#currentPassword = password;
+      const isUnlocked = await VaultBridge.isUnlocked();
+      if (!isUnlocked) {
+        // Show quick unlock dialog instead of switching tabs
+        const unlocked = await QuickUnlockDialog.show({
+          message: t('vault.saveModal.unlockMessage')
+        });
 
-    try {
+        if (!unlocked) {
+          // User cancelled
+          return;
+        }
+        // Vault is now unlocked, continue
+      }
+
+      this.#currentPassword = password;
       this.#folders = await VaultBridge.getFolders();
-    } catch (error) {
-      this.#isOpen = false;
-      showToast(t('vault.common.error'), 'error');
-      return;
-    }
 
-    this.#render(prefill);
-    this.#show();
-    this.#bindEvents();
+      this.#render(prefill);
+      this.#show();
+      this.#bindEvents();
+    } catch (error) {
+      showToast(t('vault.common.error'), 'error');
+    } finally {
+      // Reset flag only if modal didn't open successfully
+      if (!document.getElementById('save-to-vault-modal')) {
+        this.#isOpen = false;
+      }
+    }
   }
 
   /**
