@@ -397,7 +397,7 @@ function bindBreachCheckButtons() {
       statusEl.hidden = false;
       statusEl.setAttribute('aria-live', 'polite'); // Set aria-live when visible for proper announcements
       statusEl.className = 'breach-status loading';
-      statusEl.innerHTML = `<span class="breach-spinner" role="status" aria-label="Loading"></span> ${t('breach.checkingShort')}`;
+      statusEl.innerHTML = `<span class="breach-spinner" role="status" aria-label="${t('common.loading')}"></span> ${t('breach.checkingShort')}`;
 
       try {
         const result = await checkPasswordBreach(password);

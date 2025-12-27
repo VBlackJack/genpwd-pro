@@ -298,6 +298,8 @@
     "entropyContent": "Generated passwords reach up to 140 bits of entropy for maximum security."
   },
   "aria": {
+    "sectionCollapsed": "{name} collapsed",
+    "sectionExpanded": "{name} expanded",
     "appLabel": "GenPwd Pro - Secure Password Manager",
     "configPanel": "Configuration panel",
     "resultsPanel": "Results panel",

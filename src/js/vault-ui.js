@@ -464,11 +464,11 @@ export class VaultUI {
               </button>
             </div>
             <button type="submit" class="vault-btn vault-btn-primary vault-btn-full" id="btn-unlock">
-              <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
               </svg>
-              <svg class="btn-spinner" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" hidden>
+              <svg class="btn-spinner" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" hidden>
                 <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" stroke-linecap="round"/>
               </svg>
               <span class="btn-text">${t('vault.lockScreen.unlock')}</span>
@@ -485,7 +485,7 @@ export class VaultUI {
               <span>${t('vault.lockScreen.or')}</span>
             </div>
             <button type="button" class="vault-btn vault-btn-hello" id="btn-hello-unlock">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                 <circle cx="8.5" cy="10" r="1.5"/>
                 <circle cx="15.5" cy="10" r="1.5"/>
@@ -497,7 +497,7 @@ export class VaultUI {
 
           <div class="vault-lock-actions">
             <button type="button" class="vault-link-btn" id="btn-create-vault">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="16"></line>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -506,7 +506,7 @@ export class VaultUI {
             </button>
             <span class="vault-action-divider">|</span>
             <button type="button" class="vault-link-btn" id="btn-open-external">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
               </svg>
               ${t('vault.lockScreen.openFile')}
@@ -824,7 +824,7 @@ export class VaultUI {
           <form class="vault-modal-body" id="create-vault-form">
             <div class="vault-form-group">
               <label class="vault-label" for="new-vault-name">${t('vault.createModal.vaultName')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
-              <input type="text" class="vault-input" id="new-vault-name" placeholder="${t('vault.createModal.vaultNamePlaceholder')}" required aria-describedby="vault-name-message" aria-invalid="false">
+              <input type="text" class="vault-input" id="new-vault-name" placeholder="${t('vault.createModal.vaultNamePlaceholder')}" required aria-required="true" aria-describedby="vault-name-message" aria-invalid="false">
               <div class="vault-field-message" id="vault-name-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -867,9 +867,9 @@ export class VaultUI {
               <label class="vault-label" for="new-vault-password">${t('vault.createModal.masterPassword')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="new-vault-password"
-                       placeholder="${t('vault.createModal.passwordPlaceholder')}" required minlength="12" aria-describedby="vault-password-message" aria-invalid="false">
+                       placeholder="${t('vault.createModal.passwordPlaceholder')}" required aria-required="true" minlength="12" aria-describedby="vault-password-message" aria-invalid="false">
                 <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
@@ -880,7 +880,7 @@ export class VaultUI {
             </div>
             <div class="vault-form-group">
               <label class="vault-label" for="new-vault-confirm">${t('vault.createModal.confirmPassword')} <span class="required" aria-label="${t('vault.form.required')}">*</span></label>
-              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="${t('vault.createModal.confirmPlaceholder')}" required aria-describedby="vault-confirm-message" aria-invalid="false">
+              <input type="password" class="vault-input" id="new-vault-confirm" placeholder="${t('vault.createModal.confirmPlaceholder')}" required aria-required="true" aria-describedby="vault-confirm-message" aria-invalid="false">
               <div class="vault-field-message" id="vault-confirm-message" role="alert" aria-live="polite"></div>
             </div>
 
@@ -889,7 +889,7 @@ export class VaultUI {
               <label class="vault-checkbox-option">
                 <input type="checkbox" id="new-vault-hello">
                 <span class="vault-checkbox-label">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                     <circle cx="8.5" cy="10" r="1.5"/>
                     <circle cx="15.5" cy="10" r="1.5"/>

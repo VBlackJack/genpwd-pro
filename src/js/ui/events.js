@@ -405,7 +405,9 @@ function bindDebugActions() {
 
       // Announce state change for screen readers
       const sectionName = header.querySelector('strong')?.textContent || 'Section';
-      const announcement = isCollapsed ? `${sectionName} collapsed` : `${sectionName} expanded`;
+      const announcement = isCollapsed
+        ? t('aria.sectionCollapsed', { name: sectionName })
+        : t('aria.sectionExpanded', { name: sectionName });
       announceToScreenReader(announcement);
     };
 
@@ -769,19 +771,27 @@ function showClipboardSettings() {
     }, 300);
   };
 
+  // AbortController for cleanup
+  const abortController = new AbortController();
+  const { signal } = abortController;
+
+  const closePopover = () => {
+    abortController.abort();
+    popover.remove();
+    btn.focus();
+  };
+
   // Event handlers for options
   options.forEach(optBtn => {
-    optBtn.addEventListener('click', () => selectOption(optBtn));
+    optBtn.addEventListener('click', () => selectOption(optBtn), { signal });
   });
 
   // Keyboard navigation handler
-  const keyHandler = (e) => {
+  document.addEventListener('keydown', (e) => {
     switch (e.key) {
       case 'Escape':
         e.preventDefault();
-        popover.remove();
-        btn.focus();
-        document.removeEventListener('keydown', keyHandler);
+        closePopover();
         break;
       case 'ArrowDown':
         e.preventDefault();
@@ -797,28 +807,20 @@ function showClipboardSettings() {
       case ' ':
         e.preventDefault();
         selectOption(options[currentIndex]);
-        document.removeEventListener('keydown', keyHandler);
         break;
       case 'Tab':
-        // Close popover on Tab
-        popover.remove();
-        document.removeEventListener('keydown', keyHandler);
+        closePopover();
         break;
     }
-  };
-
-  document.addEventListener('keydown', keyHandler);
+  }, { signal });
 
   // Close on click outside
   setTimeout(() => {
-    const clickHandler = (e) => {
+    document.addEventListener('click', (e) => {
       if (!popover.contains(e.target) && e.target !== btn) {
-        popover.remove();
-        document.removeEventListener('click', clickHandler);
-        document.removeEventListener('keydown', keyHandler);
+        closePopover();
       }
-    };
-    document.addEventListener('click', clickHandler);
+    }, { signal });
   }, 0);
 }
 

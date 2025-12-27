@@ -30,7 +30,7 @@
     "generate": "Générer",
     "copy": "Copier",
     "copyAll": "Tout Copier",
-    "export": "Export",
+    "export": "Exporter",
     "clear": "Effacer",
     "save": "Sauvegarder",
     "cancel": "Annuler",
@@ -190,7 +190,7 @@
     "copyAll": "Tout Copier",
     "copyAllShortcut": "Copier tous les mots de passe générés (Raccourci : Alt+C)",
     "clipboardSettings": "Configurer l'effacement automatique du presse-papier",
-    "export": "Export",
+    "export": "Exporter",
     "exportResults": "Exporter les résultats",
     "clear": "Effacer",
     "clearAll": "Effacer tous les résultats",
@@ -298,6 +298,8 @@
     "entropyContent": "Les mots de passe générés atteignent jusqu'à 140 bits d'entropie pour une sécurité maximale."
   },
   "aria": {
+    "sectionCollapsed": "{name} réduit",
+    "sectionExpanded": "{name} développé",
     "appLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé",
     "configPanel": "Panneau de configuration",
     "resultsPanel": "Panneau des résultats",

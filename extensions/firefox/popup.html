@@ -53,7 +53,8 @@
 
         <div class="option-group">
           <label for="separator">Séparateur</label>
-          <input type="text" id="separator" class="input-field" value="-" maxlength="3">
+          <input type="text" id="separator" class="input-field" value="-" maxlength="3" aria-describedby="separator-help">
+          <span id="separator-help" class="visually-hidden">Maximum 3 caractères</span>
         </div>
 
         <div class="option-group">
@@ -70,7 +71,8 @@
       <div id="leet-options" class="mode-options hidden">
         <div class="option-group">
           <label for="leetWord">Mot à transformer</label>
-          <input type="text" id="leetWord" class="input-field" value="password">
+          <input type="text" id="leetWord" class="input-field" value="password" aria-describedby="leetWord-help">
+          <span id="leetWord-help" class="visually-hidden">Mot à convertir en leet speak</span>
         </div>
       </div>
 
@@ -79,12 +81,14 @@
         <div class="option-row">
           <div class="option-group">
             <label for="digits">Chiffres</label>
-            <input type="number" id="digits" class="input-field" value="2" min="0" max="6">
+            <input type="number" id="digits" class="input-field" value="2" min="0" max="6" aria-describedby="digits-help">
+            <span id="digits-help" class="visually-hidden">Entre 0 et 6 chiffres</span>
           </div>
 
           <div class="option-group">
             <label for="specials">Spéciaux</label>
-            <input type="number" id="specials" class="input-field" value="2" min="0" max="6">
+            <input type="number" id="specials" class="input-field" value="2" min="0" max="6" aria-describedby="specials-help">
+            <span id="specials-help" class="visually-hidden">Entre 0 et 6 caractères spéciaux</span>
           </div>
         </div>
 

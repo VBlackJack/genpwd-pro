@@ -298,6 +298,8 @@
     "entropyContent": "Las contraseñas generadas alcanzan hasta 140 bits de entropía para máxima seguridad."
   },
   "aria": {
+    "sectionCollapsed": "{name} contraído",
+    "sectionExpanded": "{name} expandido",
     "appLabel": "GenPwd Pro - Gestor de Contraseñas Seguro",
     "configPanel": "Panel de configuración",
     "resultsPanel": "Panel de resultados",
@@ -797,7 +799,7 @@
       "creditCard": "Tarjeta de crédito",
       "identity": "Identidad",
       "sshKey": "Clave SSH",
-      "preset": "Preset",
+      "preset": "Preajuste",
       "recentlyModified": "Modificado recientemente"
     },
     "saveModal": {

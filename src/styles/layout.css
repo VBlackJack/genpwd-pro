@@ -518,6 +518,31 @@ header::before {
    ============================================================================ */
 
 /* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  header::before {
+    animation: none;
+  }
+
+  .logo-badge {
+    animation: none;
+  }
+
+  .logo-badge:hover {
+    transform: none;
+  }
+
+  .header-tab svg,
+  .header-tab,
+  .vault-status-indicator,
+  .about-btn {
+    transition: none;
+  }
+}
+
+/* ============================================================================
    RESPONSIVE DESIGN
    ============================================================================ */
 
