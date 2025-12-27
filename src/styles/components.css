@@ -511,11 +511,12 @@ textarea.field-invalid {
   font-size: 12px;
 }
 
+/* WCAG 2.1 AA: Minimum 44px touch targets */
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 8px;
   background: var(--bg-quaternary);
   border: 1px solid var(--border);
@@ -527,9 +528,9 @@ textarea.field-invalid {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
   border-radius: var(--radius-lg);
   font-size: 12px;
   font-weight: 600;

@@ -2060,8 +2060,8 @@ export class VaultUI {
         </label>
         <button class="vault-fav-toggle ${isFavorite ? 'active' : ''}"
                 data-action="toggle-favorite"
-                title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
-                aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
+                title="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
+                aria-label="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
                 aria-pressed="${isFavorite}">
           ${isFavorite ? '★' : '☆'}
         </button>
@@ -2129,29 +2129,29 @@ export class VaultUI {
           <span class="vault-detail-type">${type.label}</span>
           <div class="vault-detail-tags">${this.#renderTagsInDetail(entry)}</div>
         </div>
-        <div class="vault-detail-actions" role="group" aria-label="Entry actions">
+        <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions') || 'Entry actions'}">
           <button class="vault-icon-btn ${entry.favorite ? 'active' : ''}" id="btn-toggle-favorite"
-                  data-tooltip="${entry.favorite ? 'Remove from favorites' : 'Add to favorites'}"
-                  aria-label="${entry.favorite ? 'Remove from favorites' : 'Add to favorites'}"
+                  data-tooltip="${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
+                  aria-label="${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
                   aria-pressed="${entry.favorite}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="${entry.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
           </button>
-          <button class="vault-icon-btn" id="btn-edit-entry" data-tooltip="Edit (E)" aria-label="Edit entry">
+          <button class="vault-icon-btn" id="btn-edit-entry" data-tooltip="${t('vault.common.edit')} (E)" aria-label="${t('vault.dialogs.editEntry')}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
-          <button class="vault-icon-btn" id="btn-duplicate-entry" data-tooltip="Duplicate" aria-label="Duplicate entry">
+          <button class="vault-icon-btn" id="btn-duplicate-entry" data-tooltip="${t('vault.common.duplicate')}" aria-label="${t('vault.common.duplicate')}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
           ${entry.type === 'login' ? `
-          <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="Auto-fill (Ctrl+Shift+U)" aria-label="Auto-fill form">
+          <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="${t('vault.actions.autoFill') || 'Auto-fill'} (Ctrl+Shift+U)" aria-label="${t('vault.actions.autoFill') || 'Auto-fill form'}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
               <line x1="6" y1="8" x2="6" y2="8"></line>
@@ -2161,7 +2161,7 @@ export class VaultUI {
             </svg>
           </button>
           ` : ''}
-          <button class="vault-icon-btn share" id="btn-share-entry" data-tooltip="Share" aria-label="Share securely">
+          <button class="vault-icon-btn share" id="btn-share-entry" data-tooltip="${t('vault.share.title')}" aria-label="${t('vault.share.title')}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="18" cy="5" r="3"></circle>
               <circle cx="6" cy="12" r="3"></circle>
@@ -2170,7 +2170,7 @@ export class VaultUI {
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
             </svg>
           </button>
-          <button class="vault-icon-btn danger" id="btn-delete-entry" data-tooltip="Delete" data-tooltip-pos="left" aria-label="Delete entry">
+          <button class="vault-icon-btn danger" id="btn-delete-entry" data-tooltip="${t('vault.common.delete')}" data-tooltip-pos="left" aria-label="${t('vault.common.delete')}">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -6535,28 +6535,28 @@ export class VaultUI {
       <div class="vault-ctx-divider"></div>
       <button class="vault-ctx-item" data-action="edit">
         <span class="vault-ctx-item-icon">✏️</span>
-        Edit
+        ${t('vault.common.edit')}
       </button>
       <button class="vault-ctx-item" data-action="duplicate">
         <span class="vault-ctx-item-icon">📋</span>
-        Duplicate
+        ${t('vault.common.duplicate')}
       </button>
       <button class="vault-ctx-item" data-action="move">
         <span class="vault-ctx-item-icon">📁</span>
-        Move to...
+        ${t('vault.common.move')}
       </button>
       <button class="vault-ctx-item" data-action="toggle-favorite">
         <span class="vault-ctx-item-icon">${entry.favorite ? '☆' : '★'}</span>
-        ${entry.favorite ? 'Remove from favorites' : 'Add to favorites'}
+        ${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}
       </button>
       <button class="vault-ctx-item" data-action="toggle-pin">
         <span class="vault-ctx-item-icon">${entry.pinned ? '📍' : '📌'}</span>
-        ${entry.pinned ? 'Unpin' : 'Pin to top'}
+        ${entry.pinned ? t('vault.actions.unpin') : t('vault.actions.pinToTop')}
       </button>
       <div class="vault-ctx-divider"></div>
       <button class="vault-ctx-item vault-ctx-danger" data-action="delete">
         <span class="vault-ctx-item-icon">🗑️</span>
-        Delete
+        ${t('vault.common.delete')}
       </button>
     `;
 

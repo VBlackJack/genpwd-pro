@@ -174,10 +174,10 @@
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md, 10px);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast, 0.2s) ease;
   text-align: left;
 }
 
@@ -192,7 +192,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   color: white;
 }
 
@@ -603,7 +603,7 @@
   padding: 2rem;
   background: rgba(13, 16, 28, 0.8);
   backdrop-filter: blur(20px);
-  border-radius: 16px;
+  border-radius: var(--radius-lg, 16px);
   border: 1px solid var(--glass-border);
   text-align: center;
 }
@@ -648,9 +648,9 @@
   padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast, 0.2s) ease;
   text-align: left;
 }
 
@@ -830,11 +830,11 @@
   padding: 0.875rem 1.5rem;
   background: linear-gradient(135deg, var(--windows-hello-blue) 0%, var(--windows-hello-blue-hover) 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   color: white;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast, 0.2s);
 }
 
 .vault-btn-hello:hover {
