@@ -16,7 +16,7 @@
 // src/js/utils/toast.js - Temporary notification system
 import { safeLog } from './logger.js';
 import { ANIMATION_DURATION } from '../config/ui-constants.js';
-import { i18n } from '../i18n/index.js';
+import { i18n } from './i18n.js';
 
 /** @type {Map<HTMLElement, {message: string, cleanup: Function}>} */
 const activeToasts = new Map();
