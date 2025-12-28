@@ -111,3 +111,9 @@ export {
   renderTemplatePicker,
   createTemplatePickerController
 } from './entry-templates.js';
+
+// Vault Management modals
+export {
+  renderCreateVaultModal,
+  renderOpenExternalModal
+} from './vault-management.js';
