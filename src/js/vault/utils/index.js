@@ -38,5 +38,5 @@ export {
   getFaviconUrl,
   getDefaultFaviconSvg,
   renderFaviconImg,
-  createFaviconCache
+  preloadFavicons
 } from './favicon-manager.js';
