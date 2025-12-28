@@ -42,7 +42,7 @@ import { showConfirm } from './ui/modal-manager.js';
 import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
-import { generateQRCodeSVG } from './utils/qrcode.js';
+// QR code generation moved to totp-qr-modal.js
 
 // Vault utility imports (Phase 6 modularization)
 import { escapeHtml, formatDate, formatDateTime } from './vault/utils/formatter.js';
@@ -67,7 +67,7 @@ import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.
 // Vault components imports (Phase 6 modularization)
 import { showContextMenu } from './vault/components/context-menu.js';
 import { showFolderContextMenu, FOLDER_ACTIONS } from './vault/components/folder-context-menu.js';
-import { showPasswordGenerator as showPwdGenerator, generatePassword } from './vault/components/password-generator.js';
+import { showPasswordGenerator as showPwdGenerator } from './vault/components/password-generator.js';
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 import { showColorPicker } from './vault/components/color-picker.js';
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
