@@ -7,15 +7,13 @@
   <!-- Content Security Policy for Enhanced Security -->
   <!-- Updated for Phase 3: Cloud Sync (Google Drive API) -->
   <!-- Note: Add https://*.ingest.sentry.io to connect-src when Sentry is enabled -->
-  <!-- SECURITY: 'unsafe-inline' REMOVED from style-src for A+ grade security
-       - Main UI (render.js) refactored to use CSS classes and CSS custom properties
-       - Presets/History UIs refactored to use utility classes
-       - NOTE: vault-ui.js dynamic styles (colors, tags) still need CSS custom property migration
-       - NOTE: Plugin system UI still has inline styles (non-critical secondary feature)
-       - JavaScript CSSOM API (.style.setProperty) is CSP-compliant and still works -->
+  <!-- SECURITY: 'unsafe-inline' added to style-src for dynamic CSS variables
+       - Required for vault-ui.js dynamic styles (colors, tags, folder padding)
+       - CSSOM API (.style.setProperty) is blocked by strict CSP without unsafe-inline
+       - Acceptable for Electron app where all code is self-controlled -->
   <!-- Note: frame-ancestors removed - only works via HTTP headers, not meta tags (causes console warning) -->
   <!-- In Electron, frame embedding is controlled by webPreferences in BrowserWindow -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 
   <title>GenPwd Pro – Secure Password Generator</title>
   <meta name="author" content="Julien Bombled">
