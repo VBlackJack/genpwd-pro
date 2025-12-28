@@ -22,3 +22,8 @@ export * from './in-memory-repository.js';
 // Import directly from utils/ for tree-shaking benefits:
 // import { escapeHtml, formatDate } from './vault/utils/index.js';
 export * from './utils/index.js';
+
+// ==================== UI SERVICES ====================
+// Extracted from vault-ui.js for better testability and reuse
+// import { createClipboardService } from './vault/services/index.js';
+export * from './services/index.js';
