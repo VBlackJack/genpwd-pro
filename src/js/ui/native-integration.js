@@ -356,11 +356,26 @@ async function initQuickUnlockIntegration() {
   }
 
   // Make quick unlock functions available globally
+  /**
+   * SECURITY NOTICE - Quick Unlock Tradeoff:
+   * =========================================
+   * Quick unlock stores the master password encrypted with OS-level encryption
+   * (DPAPI on Windows, Keychain on macOS) in localStorage.
+   *
+   * Security implications:
+   * - Encrypted data is tied to the current user session and machine
+   * - Compromise requires both localStorage AND OS encryption compromise
+   * - Reduces security compared to full master password entry each time
+   * - Provides convenience for frequent vault access
+   *
+   * Users should understand this is a convenience/security tradeoff.
+   */
   window.quickUnlock = {
     isAvailable: true,
 
     /**
-     * Store master password securely
+     * Store master password securely (DPAPI/Keychain encrypted)
+     * WARNING: This is a security/convenience tradeoff
      */
     async store(vaultId, password) {
       const result = await window.electronAPI.encryptSecret(password);
@@ -464,7 +479,10 @@ export function createNativeSettingsUI() {
                  ${settings.quickUnlockEnabled ? 'checked' : ''}>
           <span>Quick unlock (Windows Hello)</span>
         </label>
-        <p class="setting-description">Uses biometrics to unlock vault</p>
+        <p class="setting-description">Uses biometrics to unlock vault faster</p>
+        <p class="setting-warning" style="color: var(--warning-color, #f59e0b); font-size: 0.8em; margin-top: 4px;">
+          ⚠️ Security tradeoff: Stores encrypted password locally for convenience
+        </p>
       </div>
     </div>
   `;

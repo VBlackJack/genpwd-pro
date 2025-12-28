@@ -54,6 +54,7 @@ import { getSecureClipboard } from './utils/secure-clipboard.js';
 import { showToast } from './utils/toast.js';
 import { safeLog } from './utils/logger.js';
 import { t } from './utils/i18n.js';
+import { getPasswordRateLimiter, formatLockoutTime } from './utils/rate-limiter.js';
 import { SyncSettingsModal } from './ui/modals/sync-settings-modal.js';
 import { AliasService } from './services/alias-service.js';
 import { AliasSettingsModal } from './ui/modals/alias-settings-modal.js';
@@ -663,7 +664,7 @@ export class VaultUI {
       }
     });
 
-    // Unlock form
+    // Unlock form with rate limiting
     document.getElementById('unlock-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const selected = document.querySelector('.vault-list-item.selected');
@@ -676,6 +677,21 @@ export class VaultUI {
       if (!password) {
         showToast(t('vault.messages.enterPassword'), 'warning');
         document.getElementById('vault-password')?.focus();
+        return;
+      }
+
+      const vaultId = selected.dataset.vaultId;
+      const rateLimiter = getPasswordRateLimiter();
+
+      // SECURITY: Check rate limiting before attempting unlock
+      const rateCheck = rateLimiter.check(vaultId);
+      if (!rateCheck.allowed) {
+        const remaining = formatLockoutTime(rateCheck.remainingMs);
+        showToast(
+          t('vault.security.rateLimited', { time: remaining }) ||
+          `Too many attempts. Try again in ${remaining}`,
+          'error'
+        );
         return;
       }
 
@@ -697,10 +713,23 @@ export class VaultUI {
       }
 
       try {
-        await window.vault.unlock(selected.dataset.vaultId, password);
+        await window.vault.unlock(vaultId, password);
+        // SECURITY: Reset rate limiter on successful unlock
+        rateLimiter.recordSuccess(vaultId);
       } catch (error) {
+        // SECURITY: Record failed attempt for rate limiting
+        const failResult = rateLimiter.recordFailure(vaultId);
+
+        let errorMessage = error.message || t('vault.misc.incorrectPassword');
+        if (failResult.delayMs > 0) {
+          const lockTime = formatLockoutTime(failResult.delayMs);
+          errorMessage += ` (${t('vault.security.lockedFor', { time: lockTime }) || `Locked for ${lockTime}`})`;
+        } else if (failResult.attempts >= 2) {
+          errorMessage += ` (${failResult.attempts} ${t('vault.security.attempts') || 'attempts'})`;
+        }
+
         this.#showDetailedError(
-          error.message || t('vault.misc.incorrectPassword'),
+          errorMessage,
           t('vault.messages.checkFileFormat')
         );
         btn.disabled = false;
