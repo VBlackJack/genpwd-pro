@@ -21,5 +21,8 @@ export {
 // Icons
 export * from './icons.js';
 
+// Lock screen
+export { renderLockScreen } from './lock-screen.js';
+
 // Templates
 export * from './templates/index.js';
