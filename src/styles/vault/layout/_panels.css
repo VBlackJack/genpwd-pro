@@ -925,6 +925,20 @@ kbd {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.vault-strength-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-strength-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .vault-strength-text.weak {

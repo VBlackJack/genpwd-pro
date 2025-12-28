@@ -19,7 +19,10 @@ export function renderPasswordStrength(password, t = (k) => k) {
       <div class="vault-strength-bar">
         <div class="vault-strength-fill ${strength.level}" data-strength-width="${strength.percent}"></div>
       </div>
-      <span class="vault-strength-text ${strength.level}">${strength.label}</span>
+      <span class="vault-strength-text ${strength.level}">
+        <span class="vault-strength-icon">${strength.icon}</span>
+        ${strength.label}
+      </span>
     </div>
   `;
 }

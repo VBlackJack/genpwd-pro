@@ -865,7 +865,10 @@ export class VaultUI {
           <div class="vault-strength-bar">
             <div class="vault-strength-fill ${strength.level}"></div>
           </div>
-          <span class="vault-strength-text ${strength.level}">${strength.label}</span>
+          <span class="vault-strength-text ${strength.level}">
+            <span class="vault-strength-icon">${strength.icon}</span>
+            ${strength.label}
+          </span>
         `;
         // CSP-compliant: set width via CSS custom property
         const fill = el.querySelector('.vault-strength-fill');
@@ -4458,7 +4461,10 @@ export class VaultUI {
         <div class="vault-strength-bar">
           <div class="vault-strength-fill ${strength.level}"></div>
         </div>
-        <span class="vault-strength-text ${strength.level}">${strength.label}</span>
+        <span class="vault-strength-text ${strength.level}">
+          <span class="vault-strength-icon">${strength.icon}</span>
+          ${strength.label}
+        </span>
       `;
       // CSP-compliant: set width via CSS custom property
       const fill = el.querySelector('.vault-strength-fill');
@@ -5251,7 +5257,10 @@ export class VaultUI {
         <div class="vault-strength-bar">
           <div class="vault-strength-fill ${strength.level}"></div>
         </div>
-        <span class="vault-strength-text ${strength.level}">${strength.label}</span>
+        <span class="vault-strength-text ${strength.level}">
+          <span class="vault-strength-icon">${strength.icon}</span>
+          ${strength.label}
+        </span>
       `;
       // CSP-compliant: set width via CSS custom property
       const fill = el.querySelector('.vault-strength-fill');

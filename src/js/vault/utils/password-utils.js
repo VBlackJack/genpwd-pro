@@ -31,10 +31,10 @@ export function getPasswordStrength(password) {
  * Calculate detailed password strength
  * @param {string} password - Password to analyze
  * @param {Function} t - Translation function (optional)
- * @returns {{level: string, label: string, percent: number}}
+ * @returns {{level: string, label: string, percent: number, icon: string}}
  */
 export function calculatePasswordStrength(password, t = null) {
-  if (!password) return { level: 'none', label: '', percent: 0 };
+  if (!password) return { level: 'none', label: '', percent: 0, icon: '' };
 
   let score = 0;
   if (password.length >= 8) score++;
@@ -47,10 +47,10 @@ export function calculatePasswordStrength(password, t = null) {
 
   // Labels with i18n support
   const labels = t ? {
-    weak: t('vault.detail.weak') || 'Weak',
-    fair: t('vault.detail.fair') || 'Fair',
-    good: t('vault.detail.good') || 'Good',
-    excellent: t('vault.detail.excellent') || 'Excellent'
+    weak: t('vault.detail.weak'),
+    fair: t('vault.detail.fair'),
+    good: t('vault.detail.good'),
+    excellent: t('vault.detail.excellent')
   } : {
     weak: 'Weak',
     fair: 'Fair',
@@ -69,7 +69,37 @@ export function calculatePasswordStrength(password, t = null) {
     { level: 'strong', label: labels.excellent, percent: 100 }
   ];
 
-  return levels[score] || levels[0];
+  const result = levels[score] || levels[0];
+  result.icon = getStrengthIcon(result.level);
+  return result;
+}
+
+/**
+ * Get SVG icon for password strength level
+ * Provides visual redundancy for colorblind users
+ * @param {string} level - Strength level (weak, fair, good, strong)
+ * @returns {string} SVG icon HTML
+ */
+export function getStrengthIcon(level) {
+  const icons = {
+    weak: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+      <line x1="12" y1="9" x2="12" y2="13"></line>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>`,
+    fair: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>`,
+    good: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>`,
+    strong: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      <polyline points="9 12 11 14 15 10"></polyline>
+    </svg>`
+  };
+  return icons[level] || '';
 }
 
 /**
