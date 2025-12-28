@@ -16,3 +16,11 @@ export {
   closeFolderContextMenu,
   FOLDER_ACTIONS
 } from './folder-context-menu.js';
+
+// Password generator
+export {
+  showPasswordGenerator,
+  closePasswordGenerator,
+  generatePassword,
+  DEFAULT_OPTIONS as PASSWORD_DEFAULTS
+} from './password-generator.js';

@@ -67,6 +67,7 @@ import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.
 // Vault components imports (Phase 6 modularization)
 import { showContextMenu } from './vault/components/context-menu.js';
 import { showFolderContextMenu, FOLDER_ACTIONS } from './vault/components/folder-context-menu.js';
+import { showPasswordGenerator as showPwdGenerator, generatePassword } from './vault/components/password-generator.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -6178,7 +6179,16 @@ export class VaultUI {
     // Generate password with popover
     document.getElementById('edit-generate-password')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.#showPasswordGenerator('edit-password', (pwd) => this.#updateEditPasswordStrength(pwd));
+      showPwdGenerator({
+        targetInputId: 'edit-password',
+        onPasswordGenerated: (pwd, input) => {
+          input.value = pwd;
+          input.type = 'text';
+          this.#updateEditPasswordStrength(pwd);
+        },
+        onCopy: () => this.#showToast(t('vault.common.copied'), 'success'),
+        t
+      });
     });
 
     // Password strength
@@ -6968,7 +6978,16 @@ export class VaultUI {
       // Generate password with popover
       document.getElementById('generate-password')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.#showPasswordGenerator('entry-password', (pwd) => this.#updateAddPasswordStrength(pwd));
+        showPwdGenerator({
+          targetInputId: 'entry-password',
+          onPasswordGenerated: (pwd, input) => {
+            input.value = pwd;
+            input.type = 'text';
+            this.#updateAddPasswordStrength(pwd);
+          },
+          onCopy: () => this.#showToast(t('vault.common.copied'), 'success'),
+          t
+        });
       });
 
       // Password strength
@@ -7560,129 +7579,7 @@ export class VaultUI {
     return levels[score] || levels[0];
   }
 
-  #generatePassword(options = {}) {
-    const {
-      length = 20,
-      uppercase = true,
-      lowercase = true,
-      numbers = true,
-      symbols = true
-    } = options;
-
-    let chars = '';
-    if (lowercase) chars += 'abcdefghijklmnopqrstuvwxyz';
-    if (uppercase) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    if (numbers) chars += '0123456789';
-    if (symbols) chars += '!@#$%&*_+-=.?';
-
-    if (!chars) chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-    const array = new Uint32Array(length);
-    crypto.getRandomValues(array);
-    return Array.from(array, n => chars[n % chars.length]).join('');
-  }
-
-  #showPasswordGenerator(targetInputId, strengthUpdateFn) {
-    // Remove existing popover
-    document.querySelector('.vault-password-generator')?.remove();
-
-    const input = document.getElementById(targetInputId);
-    if (!input) return;
-
-    const popover = document.createElement('div');
-    popover.className = 'vault-password-generator';
-    popover.innerHTML = `
-      <div class="vault-gen-header">
-        <span>Password generator</span>
-        <button class="vault-gen-close" aria-label="${t('vault.common.close')}">&times;</button>
-      </div>
-      <div class="vault-gen-preview">
-        <input type="text" class="vault-gen-output" id="gen-output" readonly aria-label="Generated password">
-        <button class="vault-gen-copy" title="Copier" aria-label="Copy password to clipboard">📋</button>
-        <button class="vault-gen-refresh" title="Regenerate" aria-label="Generate new password">🔄</button>
-      </div>
-      <div class="vault-gen-options">
-        <div class="vault-gen-length">
-          <label>Longueur: <span id="gen-length-value">20</span></label>
-          <input type="range" id="gen-length" min="8" max="64" value="20">
-        </div>
-        <div class="vault-gen-checkboxes">
-          <label><input type="checkbox" id="gen-uppercase" checked> A-Z</label>
-          <label><input type="checkbox" id="gen-lowercase" checked> a-z</label>
-          <label><input type="checkbox" id="gen-numbers" checked> 0-9</label>
-          <label><input type="checkbox" id="gen-symbols" checked> !@#$</label>
-        </div>
-      </div>
-      <button class="vault-btn vault-btn-primary vault-btn-sm vault-btn-full" id="gen-use">
-        Use this password
-      </button>
-    `;
-
-    input.parentElement.appendChild(popover);
-
-    const generate = () => {
-      const pwd = this.#generatePassword({
-        length: parseInt(document.getElementById('gen-length').value, 10),
-        uppercase: document.getElementById('gen-uppercase').checked,
-        lowercase: document.getElementById('gen-lowercase').checked,
-        numbers: document.getElementById('gen-numbers').checked,
-        symbols: document.getElementById('gen-symbols').checked
-      });
-      document.getElementById('gen-output').value = pwd;
-      return pwd;
-    };
-
-    generate();
-
-    // Event listeners
-    document.getElementById('gen-length').addEventListener('input', (e) => {
-      document.getElementById('gen-length-value').textContent = e.target.value;
-      generate();
-    });
-
-    ['gen-uppercase', 'gen-lowercase', 'gen-numbers', 'gen-symbols'].forEach(id => {
-      document.getElementById(id)?.addEventListener('change', generate);
-    });
-
-    // Use popover.querySelector for elements inside the popover (safer than getElementById)
-    popover.querySelector('.vault-gen-refresh')?.addEventListener('click', generate);
-
-    popover.querySelector('.vault-gen-copy')?.addEventListener('click', () => {
-      const pwd = popover.querySelector('.vault-gen-output')?.value;
-      if (pwd) {
-        navigator.clipboard.writeText(pwd);
-        this.#showToast(t('vault.common.copied'), 'success');
-      }
-    });
-
-    popover.querySelector('#gen-use')?.addEventListener('click', () => {
-      const pwd = popover.querySelector('.vault-gen-output')?.value;
-      if (pwd) {
-        input.value = pwd;
-        input.type = 'text';
-        if (strengthUpdateFn) strengthUpdateFn(pwd);
-      }
-      popover.remove();
-    });
-
-    popover.querySelector('.vault-gen-close')?.addEventListener('click', () => popover.remove());
-
-    // Close on outside click - with safety check for removed elements
-    setTimeout(() => {
-      const closePopover = (e) => {
-        // Guard: if popover was already removed, just cleanup listener
-        if (!document.body.contains(popover)) {
-          document.removeEventListener('click', closePopover);
-          return;
-        }
-        if (!popover.contains(e.target) && e.target !== input) {
-          popover.remove();
-          document.removeEventListener('click', closePopover);
-        }
-      };
-      document.addEventListener('click', closePopover);
-    }, 100);
-  }
+  // Password generator moved to ./vault/components/password-generator.js
 
   #isValidUrl(string) {
     try {
