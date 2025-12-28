@@ -48,6 +48,24 @@ import { generateQRCodeSVG } from './utils/qrcode.js';
 import { escapeHtml, formatDate, formatDateTime } from './vault/utils/formatter.js';
 import { getPasswordStrength, isPasswordDuplicated } from './vault/utils/password-utils.js';
 
+// Vault modals imports (Phase 6 modularization)
+import {
+  getTemplates,
+  getTemplateById,
+  renderTemplateGrid,
+  searchTemplates
+} from './vault/modals/entry-templates.js';
+import {
+  renderHealthDashboardModal as renderHealthDashboard,
+  renderLegacyHealthModal,
+  renderBreachResultsSafe,
+  renderBreachResultsCompromised
+} from './vault/modals/health-dashboard-modal.js';
+import { renderImportModal } from './vault/modals/import-export-modal.js';
+
+// Vault services imports (Phase 6 modularization)
+import { getBreachCheckService, formatBreachCount } from './vault/services/breach-check-service.js';
+
 // Entry type configuration - function to get translated labels
 const getEntryTypes = () => ({
   login: { icon: '🔑', label: t('vault.detail.login'), color: '#60a5fa' },
@@ -1630,11 +1648,11 @@ export class VaultUI {
       ${this.#renderAddFolderModal()}
       ${this.#renderEditEntryModal()}
       ${this.#renderShortcutsModal()}
-      ${this.#renderHealthDashboardModal()}
+      ${renderHealthDashboard({ t })}
       ${this.#renderMoveFolderModal()}
       ${this.#renderAddTagModal()}
       ${this.#renderEditTagModal()}
-      ${this.#renderImportModal()}
+      ${renderImportModal({ t })}
     `;
 
     this.#attachMainViewEvents();
@@ -3031,7 +3049,7 @@ export class VaultUI {
               <div class="vault-template-picker" id="template-picker" hidden>
                 <input type="text" class="vault-input vault-template-search" id="template-search" placeholder="${t('vault.placeholders.searchTemplate')}">
                 <div class="vault-template-grid" id="template-grid">
-                  ${this.#renderTemplateGrid()}
+                  ${renderTemplateGrid()}
                 </div>
               </div>
             </div>
@@ -3079,83 +3097,8 @@ export class VaultUI {
     `;
   }
 
-  #renderTemplateGrid() {
-    const categories = [
-      { id: 'social', name: 'Social networks', icon: '👥' },
-      { id: 'email', name: 'Email', icon: '📧' },
-      { id: 'shopping', name: 'Shopping', icon: '🛒' },
-      { id: 'finance', name: 'Finance', icon: '💰' },
-      { id: 'streaming', name: 'Streaming', icon: '🎬' },
-      { id: 'gaming', name: 'Jeux', icon: '🎮' },
-      { id: 'dev', name: 'Dev / Travail', icon: '💻' },
-      { id: 'other', name: 'Autre', icon: '📁' }
-    ];
-
-    const templates = this.#getTemplates();
-
-    return categories.map(cat => {
-      const catTemplates = templates.filter(t => t.category === cat.id);
-      if (catTemplates.length === 0) return '';
-
-      return `
-        <div class="vault-template-category">
-          <div class="vault-template-category-header">${cat.icon} ${cat.name}</div>
-          <div class="vault-template-items" role="listbox">
-            ${catTemplates.map(t => `
-              <button type="button" class="vault-template-item" data-template-id="${t.id}" title="${t.name}" role="option">
-                <span class="vault-template-icon" aria-hidden="true">${t.icon}</span>
-                <span class="vault-template-name">${t.name}</span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  #getTemplates() {
-    return [
-      // Social
-      { id: 'google', name: 'Google', icon: '🔵', category: 'social', type: 'login', url: 'https://accounts.google.com', suggestTotp: true },
-      { id: 'facebook', name: 'Facebook', icon: '📘', category: 'social', type: 'login', url: 'https://www.facebook.com', suggestTotp: true },
-      { id: 'instagram', name: 'Instagram', icon: '📷', category: 'social', type: 'login', url: 'https://www.instagram.com', suggestTotp: true },
-      { id: 'twitter', name: 'X (Twitter)', icon: '🐦', category: 'social', type: 'login', url: 'https://twitter.com', suggestTotp: true },
-      { id: 'linkedin', name: 'LinkedIn', icon: '💼', category: 'social', type: 'login', url: 'https://www.linkedin.com', suggestTotp: true },
-      { id: 'discord', name: 'Discord', icon: '🎮', category: 'social', type: 'login', url: 'https://discord.com', suggestTotp: true },
-      { id: 'reddit', name: 'Reddit', icon: '🟠', category: 'social', type: 'login', url: 'https://www.reddit.com', suggestTotp: true },
-      // Email
-      { id: 'outlook', name: 'Outlook', icon: '📧', category: 'email', type: 'login', url: 'https://outlook.live.com', suggestTotp: true },
-      { id: 'protonmail', name: 'ProtonMail', icon: '🔒', category: 'email', type: 'login', url: 'https://mail.proton.me', suggestTotp: true },
-      // Shopping
-      { id: 'amazon', name: 'Amazon', icon: '📦', category: 'shopping', type: 'login', url: 'https://www.amazon.fr', suggestTotp: true },
-      { id: 'ebay', name: 'eBay', icon: '🛒', category: 'shopping', type: 'login', url: 'https://www.ebay.fr', suggestTotp: false },
-      // Finance
-      { id: 'paypal', name: 'PayPal', icon: '💰', category: 'finance', type: 'login', url: 'https://www.paypal.com', suggestTotp: true },
-      { id: 'bank', name: 'Banque', icon: '🏦', category: 'finance', type: 'login', url: '', suggestTotp: true },
-      { id: 'card', name: 'Carte bancaire', icon: '💳', category: 'finance', type: 'card', url: '', suggestTotp: false },
-      // Streaming
-      { id: 'netflix', name: 'Netflix', icon: '🎬', category: 'streaming', type: 'login', url: 'https://www.netflix.com', suggestTotp: false },
-      { id: 'spotify', name: 'Spotify', icon: '🎧', category: 'streaming', type: 'login', url: 'https://www.spotify.com', suggestTotp: false },
-      { id: 'disney', name: 'Disney+', icon: '🏰', category: 'streaming', type: 'login', url: 'https://www.disneyplus.com', suggestTotp: false },
-      { id: 'twitch', name: 'Twitch', icon: '🟣', category: 'streaming', type: 'login', url: 'https://www.twitch.tv', suggestTotp: true },
-      // Gaming
-      { id: 'steam', name: 'Steam', icon: '🎮', category: 'gaming', type: 'login', url: 'https://store.steampowered.com', suggestTotp: true },
-      { id: 'epic', name: 'Epic Games', icon: '🎯', category: 'gaming', type: 'login', url: 'https://www.epicgames.com', suggestTotp: true },
-      { id: 'playstation', name: 'PlayStation', icon: '🎮', category: 'gaming', type: 'login', url: 'https://www.playstation.com', suggestTotp: true },
-      // Dev
-      { id: 'github', name: 'GitHub', icon: '🐙', category: 'dev', type: 'login', url: 'https://github.com', suggestTotp: true },
-      { id: 'gitlab', name: 'GitLab', icon: '🦊', category: 'dev', type: 'login', url: 'https://gitlab.com', suggestTotp: true },
-      { id: 'aws', name: 'AWS', icon: '☁️', category: 'dev', type: 'login', url: 'https://aws.amazon.com', suggestTotp: true },
-      { id: 'slack', name: 'Slack', icon: '💬', category: 'dev', type: 'login', url: 'https://slack.com', suggestTotp: true },
-      // Other
-      { id: 'wifi', name: 'WiFi', icon: '📶', category: 'other', type: 'login', url: '', suggestTotp: false },
-      { id: 'identity', name: 'Identity', icon: '🪪', category: 'other', type: 'identity', url: '', suggestTotp: false },
-      { id: 'custom', name: 'Custom', icon: '✏️', category: 'other', type: 'login', url: '', suggestTotp: false }
-    ];
-  }
-
   #applyTemplate(templateId) {
-    const template = this.#getTemplates().find(t => t.id === templateId);
+    const template = getTemplateById(templateId);
     if (!template) return;
 
     // Set entry type
@@ -3393,88 +3336,6 @@ export class VaultUI {
     `;
   }
 
-  // ==================== IMPORT MODAL ====================
-
-  #renderImportModal() {
-    return `
-      <div class="vault-modal-overlay" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
-        <div class="vault-modal vault-modal-lg">
-          <div class="vault-modal-header">
-            <h3 id="import-title">${t('vault.common.import')}</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <div class="vault-modal-body">
-            <div class="vault-import-formats">
-              <h4>Supported formats</h4>
-              <div class="vault-format-cards">
-                <div class="vault-format-card">
-                  <span class="vault-format-icon">🔐</span>
-                  <span class="vault-format-name">KeePass</span>
-                  <span class="vault-format-ext">.xml</span>
-                </div>
-                <div class="vault-format-card">
-                  <span class="vault-format-icon">🛡️</span>
-                  <span class="vault-format-name">Bitwarden</span>
-                  <span class="vault-format-ext">.json</span>
-                </div>
-                <div class="vault-format-card">
-                  <span class="vault-format-icon">📊</span>
-                  <span class="vault-format-name">Generic CSV</span>
-                  <span class="vault-format-ext">.csv</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="vault-import-dropzone" id="import-dropzone">
-              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              <p>Drag a file here or <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse" aria-label="Browse files to import">browse</button></p>
-              <input type="file" id="import-file-input" accept=".xml,.json,.csv" hidden>
-              <span class="vault-dropzone-hint">Formats: XML, JSON, CSV</span>
-            </div>
-
-            <div class="vault-import-preview" id="import-preview" hidden>
-              <div class="vault-import-summary" id="import-summary">
-                <!-- Filled dynamically -->
-              </div>
-              <div class="vault-import-options">
-                <label class="vault-checkbox-label">
-                  <input type="checkbox" id="import-include-groups" checked>
-                  <span>Import folders/groups</span>
-                </label>
-                <label class="vault-checkbox-label">
-                  <input type="checkbox" id="import-merge-duplicates">
-                  <span>Merge duplicates (by title)</span>
-                </label>
-              </div>
-              <div class="vault-import-warnings" id="import-warnings" hidden>
-                <!-- Warnings shown here -->
-              </div>
-            </div>
-          </div>
-          <div class="vault-modal-footer">
-            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-            <button type="button" class="vault-btn vault-btn-primary" id="btn-import-confirm" disabled>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              Import
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
 
   /** @type {Object|null} Pending import data */
   #pendingImport = null;
@@ -3997,7 +3858,14 @@ export class VaultUI {
     // Re-render to get fresh stats
     const healthModal = document.getElementById('health-modal');
     if (healthModal) {
-      healthModal.outerHTML = this.#renderHealthDashboardModal(report, recommendations, getScoreColor, getScoreLabel);
+      healthModal.outerHTML = renderHealthDashboard({
+        report,
+        recommendations,
+        getScoreColor,
+        getScoreLabel,
+        hasAuditFilter: !!this.#auditFilterIds,
+        t
+      });
     }
 
     // Open modal
@@ -4078,173 +3946,6 @@ export class VaultUI {
         this.#updateEntryList();
       });
     }
-  }
-
-  #renderHealthDashboardModal(report = null, recommendations = [], getScoreColor = null, getScoreLabel = null) {
-    // Fallback to legacy stats if no report provided
-    if (!report) {
-      const stats = this.#calculateHealthStats();
-      return this.#renderLegacyHealthModal(stats);
-    }
-
-    const scoreColor = getScoreColor?.(report.score) || 'var(--vault-primary)';
-    const scoreLabel = getScoreLabel?.(report.score) || 'N/A';
-
-    return `
-      <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
-        <div class="vault-modal vault-modal-health">
-          <div class="vault-modal-header">
-            <h3 id="health-title">Security Dashboard</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <div class="vault-modal-body">
-            <!-- Score Gauge -->
-            <div class="vault-health-score">
-              <div class="vault-score-gauge" data-score-color="${scoreColor}" data-score-percent="${report.score}">
-                <svg viewBox="0 0 120 120" class="vault-score-ring">
-                  <circle class="vault-score-bg" cx="60" cy="60" r="54" />
-                  <circle class="vault-score-progress" cx="60" cy="60" r="54"
-                    stroke-dasharray="${2 * Math.PI * 54}"
-                    stroke-dashoffset="${2 * Math.PI * 54 * (1 - report.score / 100)}" />
-                </svg>
-                <div class="vault-score-content">
-                  <span class="vault-score-value">${report.score}</span>
-                  <span class="vault-score-max">/100</span>
-                </div>
-              </div>
-              <div class="vault-health-status" data-score-color="${scoreColor}">${scoreLabel}</div>
-              <div class="vault-health-subtitle">Overall security score</div>
-            </div>
-
-            <!-- Stats Cards -->
-            <div class="vault-health-grid">
-              <div class="vault-health-card vault-health-total">
-                <div class="vault-health-card-icon">📊</div>
-                <div class="vault-health-card-value">${report.totalEntries}</div>
-                <div class="vault-health-card-label">Total entries</div>
-              </div>
-              <div class="vault-health-card vault-health-strong clickable" data-filter="strong">
-                <div class="vault-health-card-icon">✅</div>
-                <div class="vault-health-card-value">${report.stats.strongPasswords}</div>
-                <div class="vault-health-card-label">Mots de passe forts</div>
-              </div>
-              <div class="vault-health-card vault-health-weak clickable" data-filter="weak">
-                <div class="vault-health-card-icon">⚠️</div>
-                <div class="vault-health-card-value">${report.stats.weakPasswords}</div>
-                <div class="vault-health-card-label">Mots de passe faibles</div>
-              </div>
-              <div class="vault-health-card vault-health-reused clickable" data-filter="reused">
-                <div class="vault-health-card-icon">🔄</div>
-                <div class="vault-health-card-value">${report.stats.reusedPasswords}</div>
-                <div class="vault-health-card-label">Reused</div>
-              </div>
-              <div class="vault-health-card vault-health-old clickable" data-filter="old">
-                <div class="vault-health-card-icon">📅</div>
-                <div class="vault-health-card-value">${report.stats.oldPasswords}</div>
-                <div class="vault-health-card-label">Anciens (&gt;1 an)</div>
-              </div>
-              <div class="vault-health-card vault-health-2fa">
-                <div class="vault-health-card-icon">🛡️</div>
-                <div class="vault-health-card-value">${report.stats.with2FA}</div>
-                <div class="vault-health-card-label">Avec 2FA</div>
-              </div>
-            </div>
-
-            <!-- Recommendations -->
-            ${recommendations.length > 0 ? `
-              <div class="vault-health-recommendations">
-                <h4>Recommandations</h4>
-                <div class="vault-recommendation-list">
-                  ${recommendations.map(rec => `
-                    <div class="vault-recommendation vault-recommendation-${rec.priority} clickable" data-filter="${rec.filter}">
-                      <span class="vault-recommendation-icon">${rec.icon}</span>
-                      <div class="vault-recommendation-content">
-                        <div class="vault-recommendation-title">${rec.message}</div>
-                        <div class="vault-recommendation-action">${rec.action}</div>
-                      </div>
-                      <svg class="vault-recommendation-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : `
-              <div class="vault-health-success">
-                <span class="vault-health-success-icon">🎉</span>
-                <span>Excellent! Your vault is well secured.</span>
-              </div>
-            `}
-
-            <!-- Actions -->
-            <div class="vault-health-actions">
-              <button class="vault-btn vault-btn-outline" id="btn-check-breaches">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                Check for breaches (HIBP)
-              </button>
-              ${this.#auditFilterIds ? `
-                <button class="vault-btn vault-btn-secondary" id="btn-clear-audit-filter">
-                  Clear filter
-                </button>
-              ` : ''}
-            </div>
-
-            <!-- Breach Results -->
-            <div class="vault-health-breaches" id="breach-results" hidden>
-              <h4>${t('vault.breach.checkResults')}</h4>
-              <div class="vault-breach-loading" id="breach-loading">
-                <span class="vault-spinner-small"></span>
-                ${t('common.checking')}
-              </div>
-              <div class="vault-breach-results" id="breach-list" role="region" aria-live="polite" aria-label="Breach check results"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /**
-   * Legacy health modal for backwards compatibility
-   */
-  #renderLegacyHealthModal(stats) {
-    return `
-      <div class="vault-modal-overlay" id="legacy-health-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-health-title">
-        <div class="vault-modal vault-modal-health">
-          <div class="vault-modal-header">
-            <h3 id="legacy-health-title">Password health</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <div class="vault-modal-body">
-            <div class="vault-health-score">
-              <div class="vault-health-circle ${stats.scoreClass}">
-                <span class="vault-health-value">${stats.score}</span>
-                <span class="vault-health-label">/ 100</span>
-              </div>
-              <div class="vault-health-status">${stats.status}</div>
-            </div>
-            <div class="vault-health-grid">
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.total}</div><div class="vault-health-card-label">Total</div></div>
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.strong}</div><div class="vault-health-card-label">Strong</div></div>
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.weak}</div><div class="vault-health-card-label">Weak</div></div>
-              <div class="vault-health-card"><div class="vault-health-card-value">${stats.reused}</div><div class="vault-health-card-label">Reused</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
   }
 
   #calculateHealthStats() {
