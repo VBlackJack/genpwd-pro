@@ -51,6 +51,7 @@ import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
 import { renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
 import { parseMarkdown, renderNotesFieldHTML } from './vault/utils/markdown-parser.js';
 import { renderPasswordStrength, renderPasswordHistory, renderPasswordAge } from './vault/utils/password-display.js';
+import { validateField, validatePasswordMatch } from './vault/utils/form-validation.js';
 
 // Vault modals imports (Phase 6 modularization)
 import { getTemplateById, renderTemplateGrid } from './vault/modals/entry-templates.js';
@@ -71,6 +72,7 @@ import { renderLockScreen } from './vault/views/lock-screen.js';
 import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.js';
 import { renderEntryRow } from './vault/views/entry-row-renderer.js';
 import { renderField, renderCustomFieldsDisplay } from './vault/views/field-renderer.js';
+import { buildFolderTree, renderFolderTree, renderFolderNodes } from './vault/views/folder-tree-renderer.js';
 
 // Vault components imports (Phase 6 modularization)
 import { showContextMenu } from './vault/components/context-menu.js';
@@ -837,7 +839,7 @@ export class VaultUI {
     const vaultNameInput = document.getElementById('new-vault-name');
     const vaultNameMessage = document.getElementById('vault-name-message');
     vaultNameInput?.addEventListener('input', () => {
-      this.#validateField(vaultNameInput, vaultNameMessage, {
+      validateField(vaultNameInput, vaultNameMessage, {
         required: true,
         minLength: 1,
         maxLength: 50,
@@ -846,7 +848,7 @@ export class VaultUI {
       });
     });
     vaultNameInput?.addEventListener('blur', () => {
-      this.#validateField(vaultNameInput, vaultNameMessage, {
+      validateField(vaultNameInput, vaultNameMessage, {
         required: true,
         requiredMessage: t('vault.validation.fieldRequired')
       });
@@ -871,7 +873,7 @@ export class VaultUI {
         if (fill) fill.style.setProperty('--strength-width', `${strength.percent}%`);
       }
       // Validation message
-      this.#validateField(vaultPasswordInput, vaultPasswordMessage, {
+      validateField(vaultPasswordInput, vaultPasswordMessage, {
         required: true,
         minLength: 12,
         requiredMessage: t('vault.validation.fieldRequired'),
@@ -881,7 +883,7 @@ export class VaultUI {
       const confirmInput = document.getElementById('new-vault-confirm');
       const confirmMessage = document.getElementById('vault-confirm-message');
       if (confirmInput?.value) {
-        this.#validatePasswordMatch(confirmInput, vaultPasswordInput, confirmMessage);
+        validatePasswordMatch(confirmInput, vaultPasswordInput, confirmMessage);
       }
     });
 
@@ -889,10 +891,10 @@ export class VaultUI {
     const vaultConfirmInput = document.getElementById('new-vault-confirm');
     const vaultConfirmMessage = document.getElementById('vault-confirm-message');
     vaultConfirmInput?.addEventListener('input', () => {
-      this.#validatePasswordMatch(vaultConfirmInput, vaultPasswordInput, vaultConfirmMessage);
+      validatePasswordMatch(vaultConfirmInput, vaultPasswordInput, vaultConfirmMessage);
     });
     vaultConfirmInput?.addEventListener('blur', () => {
-      this.#validatePasswordMatch(vaultConfirmInput, vaultPasswordInput, vaultConfirmMessage);
+      validatePasswordMatch(vaultConfirmInput, vaultPasswordInput, vaultConfirmMessage);
     });
 
     // Form submit
@@ -1458,115 +1460,14 @@ export class VaultUI {
   /** @type {Set<string>} Expanded folder IDs */
   #expandedFolders = new Set();
 
-  /**
-   * Build a hierarchical tree from flat folder list
-   * @returns {Array} Tree structure with children arrays
-   */
-  #buildFolderTree() {
-    const childMap = new Map(); // parentId -> children[]
-
-    // First pass: group by parentId
-    for (const folder of this.#folders) {
-      const parentId = folder.parentId || null;
-      if (!childMap.has(parentId)) {
-        childMap.set(parentId, []);
-      }
-      childMap.get(parentId).push(folder);
-    }
-
-    // Build tree recursively
-    const buildNode = (folder, depth = 0) => {
-      const children = childMap.get(folder.id) || [];
-      const entryCount = this.#entries.filter(e => e.folderId === folder.id).length;
-      const descendantCount = this.#getDescendantEntryCount(folder.id, childMap);
-
-      return {
-        ...folder,
-        depth,
-        entryCount,
-        totalCount: entryCount + descendantCount,
-        children: children.map(child => buildNode(child, depth + 1)),
-        hasChildren: children.length > 0
-      };
-    };
-
-    // Start with root folders (no parent)
-    const roots = childMap.get(null) || [];
-    return roots.map(folder => buildNode(folder, 0));
-  }
-
-  /**
-   * Get total entry count for all descendants of a folder
-   */
-  #getDescendantEntryCount(folderId, childMap) {
-    let count = 0;
-    const children = childMap.get(folderId) || [];
-    for (const child of children) {
-      count += this.#entries.filter(e => e.folderId === child.id).length;
-      count += this.#getDescendantEntryCount(child.id, childMap);
-    }
-    return count;
-  }
-
-  /**
-   * Render the folder tree as HTML
-   */
+  // Folder tree rendering moved to ./vault/views/folder-tree-renderer.js
   #renderFolderTree() {
-    if (this.#folders.length === 0) {
-      return '<div class="vault-nav-empty">No folders</div>';
-    }
-
-    const tree = this.#buildFolderTree();
-    return this.#renderFolderNodes(tree);
-  }
-
-  /**
-   * Render folder nodes recursively
-   * @param {Array} nodes
-   * @returns {string} HTML
-   */
-  #renderFolderNodes(nodes) {
-    return nodes.map(node => {
-      const isExpanded = this.#expandedFolders.has(node.id);
-      const isSelected = this.#selectedFolder === node.id;
-      const folderColor = getFolderColor(node.id);
-      const paddingLeft = node.depth * 16;
-
-      const expandIcon = node.hasChildren ? `
-        <button class="vault-folder-toggle ${isExpanded ? 'expanded' : ''}"
-                data-folder-toggle="${node.id}"
-                aria-expanded="${isExpanded}"
-                aria-label="${isExpanded ? 'Collapse' : 'Expand'} ${node.name}">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-      ` : '<span class="vault-folder-toggle-spacer"></span>';
-
-      const folderIcon = isExpanded && node.hasChildren ? '📂' : '📁';
-
-      let html = `
-        <div class="vault-folder-node" role="treeitem" aria-selected="${isSelected}" data-folder-depth="${node.depth}">
-          <button class="vault-nav-item vault-folder-item vault-nav-folder ${isSelected ? 'active' : ''}"
-                  data-folder="${node.id}"
-                  data-padding="${8 + paddingLeft}"
-                  aria-current="${isSelected ? 'true' : 'false'}"
-                  draggable="true">
-            ${expandIcon}
-            <span class="vault-nav-icon vault-folder-color" ${folderColor ? `data-folder-color="${folderColor}"` : ''} aria-hidden="true">${folderIcon}</span>
-            <span class="vault-nav-label">${escapeHtml(node.name)}</span>
-            <span class="vault-nav-count" title="${node.entryCount} in this folder, ${node.totalCount} total">${node.totalCount}</span>
-          </button>
-      `;
-
-      // Render children if expanded
-      if (node.hasChildren && isExpanded) {
-        html += `<div class="vault-folder-children" role="group">${this.#renderFolderNodes(node.children)}</div>`;
-      }
-
-      html += '</div>';
-      return html;
-    }).join('');
+    return renderFolderTree({
+      folders: this.#folders,
+      entries: this.#entries,
+      expandedFolders: this.#expandedFolders,
+      selectedFolder: this.#selectedFolder
+    });
   }
 
   /**
@@ -4899,7 +4800,7 @@ export class VaultUI {
     const titleInput = document.getElementById('entry-title');
     const titleMessage = document.getElementById('entry-title-message');
     titleInput?.addEventListener('input', () => {
-      this.#validateField(titleInput, titleMessage, {
+      validateField(titleInput, titleMessage, {
         required: true,
         minLength: 1,
         maxLength: 100,
@@ -4909,7 +4810,7 @@ export class VaultUI {
       });
     });
     titleInput?.addEventListener('blur', () => {
-      this.#validateField(titleInput, titleMessage, {
+      validateField(titleInput, titleMessage, {
         required: true,
         minLength: 1,
         requiredMessage: t('vault.form.titleRequired')
@@ -5313,7 +5214,7 @@ export class VaultUI {
       const urlInput = document.getElementById('entry-url');
       const urlMessage = document.getElementById('entry-url-message');
       urlInput?.addEventListener('input', () => {
-        this.#validateField(urlInput, urlMessage, {
+        validateField(urlInput, urlMessage, {
           url: true,
           urlMessage: t('vault.form.invalidUrl'),
           showSuccess: true,
@@ -5321,7 +5222,7 @@ export class VaultUI {
         });
       });
       urlInput?.addEventListener('blur', () => {
-        this.#validateField(urlInput, urlMessage, {
+        validateField(urlInput, urlMessage, {
           url: true,
           urlMessage: t('vault.form.invalidUrl')
         });
@@ -5353,7 +5254,7 @@ export class VaultUI {
       const emailInput = document.getElementById('entry-email');
       const emailMessage = document.getElementById('entry-email-message');
       emailInput?.addEventListener('input', () => {
-        this.#validateField(emailInput, emailMessage, {
+        validateField(emailInput, emailMessage, {
           email: true,
           emailMessage: t('vault.form.invalidEmail'),
           showSuccess: true,
@@ -5361,7 +5262,7 @@ export class VaultUI {
         });
       });
       emailInput?.addEventListener('blur', () => {
-        this.#validateField(emailInput, emailMessage, {
+        validateField(emailInput, emailMessage, {
           email: true,
           emailMessage: t('vault.form.invalidEmail')
         });
@@ -5861,155 +5762,7 @@ export class VaultUI {
   // Password generator moved to ./vault/components/password-generator.js
   // isValidUrl and isValidEmail moved to ./vault/utils/validators.js
   // calculatePasswordStrength moved to ./vault/utils/password-utils.js
-
-  /**
-   * Real-time field validation
-   * @param {HTMLInputElement} input - The input element
-   * @param {HTMLElement} messageEl - The message display element
-   * @param {Object} rules - Validation rules
-   */
-  #validateField(input, messageEl, rules = {}) {
-    if (!input || !messageEl) return true;
-
-    const value = input.value.trim();
-    let isValid = true;
-    let message = '';
-    let messageType = 'error';
-
-    // Required check
-    if (rules.required && !value) {
-      isValid = false;
-      message = rules.requiredMessage || t('vault.validation.fieldRequired');
-    }
-    // Min length check
-    else if (rules.minLength && value.length < rules.minLength) {
-      isValid = false;
-      message = rules.minLengthMessage || t('vault.validation.minLength', { count: rules.minLength });
-    }
-    // Max length check
-    else if (rules.maxLength && value.length > rules.maxLength) {
-      isValid = false;
-      message = rules.maxLengthMessage || t('vault.validation.maxLength', { count: rules.maxLength });
-    }
-    // Pattern check
-    else if (rules.pattern && !rules.pattern.test(value)) {
-      isValid = false;
-      message = rules.patternMessage || t('vault.validation.invalidFormat');
-    }
-    // URL check
-    else if (rules.url && value && !isValidUrl(value)) {
-      isValid = false;
-      message = rules.urlMessage || t('vault.validation.invalidUrl');
-    }
-    // Email check
-    else if (rules.email && value && !isValidEmail(value)) {
-      isValid = false;
-      message = rules.emailMessage || t('vault.validation.invalidEmail');
-    }
-    // Valid
-    else if (value && rules.showSuccess) {
-      message = rules.successMessage || '✓';
-      messageType = 'success';
-    }
-
-    // Update input classes and ARIA attributes
-    input.classList.remove('is-valid', 'is-invalid');
-    if (value) {
-      input.classList.add(isValid ? 'is-valid' : 'is-invalid');
-      input.setAttribute('aria-invalid', isValid ? 'false' : 'true');
-    } else {
-      input.removeAttribute('aria-invalid');
-    }
-
-    // Ensure message element has an ID for aria-describedby
-    if (!messageEl.id && input.id) {
-      messageEl.id = `${input.id}-message`;
-    }
-    if (messageEl.id) {
-      input.setAttribute('aria-describedby', messageEl.id);
-    }
-
-    // Update message
-    if (message) {
-      const icon = messageType === 'error'
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
-      messageEl.innerHTML = `${icon}<span>${message}</span>`;
-      messageEl.className = `vault-field-message visible ${messageType}`;
-      messageEl.setAttribute('role', 'alert');
-      messageEl.setAttribute('aria-live', messageType === 'error' ? 'assertive' : 'polite');
-    } else {
-      messageEl.className = 'vault-field-message';
-      messageEl.innerHTML = '';
-      messageEl.removeAttribute('role');
-      messageEl.removeAttribute('aria-live');
-    }
-
-    return isValid;
-  }
-
-  /**
-   * Validate password confirmation match
-   * @param {HTMLInputElement} confirmInput - The confirm input
-   * @param {HTMLInputElement} passwordInput - The password input
-   * @param {HTMLElement} messageEl - The message display element
-   * @returns {boolean}
-   */
-  #validatePasswordMatch(confirmInput, passwordInput, messageEl) {
-    if (!confirmInput || !passwordInput || !messageEl) return true;
-
-    const password = passwordInput.value;
-    const confirm = confirmInput.value.trim();
-    let isValid = true;
-    let message = '';
-    let messageType = 'error';
-
-    if (!confirm) {
-      // Empty - no message but invalid
-      isValid = false;
-    } else if (confirm !== password) {
-      isValid = false;
-      message = t('vault.validation.passwordsNoMatch');
-    } else {
-      message = t('vault.validation.passwordsMatch');
-      messageType = 'success';
-    }
-
-    // Update input classes and ARIA attributes
-    confirmInput.classList.remove('is-valid', 'is-invalid');
-    if (confirm) {
-      confirmInput.classList.add(isValid ? 'is-valid' : 'is-invalid');
-      confirmInput.setAttribute('aria-invalid', isValid ? 'false' : 'true');
-    } else {
-      confirmInput.removeAttribute('aria-invalid');
-    }
-
-    // Ensure message element has an ID for aria-describedby
-    if (!messageEl.id && confirmInput.id) {
-      messageEl.id = `${confirmInput.id}-message`;
-    }
-    if (messageEl.id) {
-      confirmInput.setAttribute('aria-describedby', messageEl.id);
-    }
-
-    // Update message
-    if (message) {
-      const icon = messageType === 'error'
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
-      messageEl.innerHTML = `${icon}<span>${message}</span>`;
-      messageEl.className = `vault-field-message visible ${messageType}`;
-      messageEl.setAttribute('role', 'alert');
-      messageEl.setAttribute('aria-live', messageType === 'error' ? 'assertive' : 'polite');
-    } else {
-      messageEl.className = 'vault-field-message';
-      messageEl.innerHTML = '';
-      messageEl.removeAttribute('role');
-      messageEl.removeAttribute('aria-live');
-    }
-
-    return isValid;
-  }
+  // validateField and validatePasswordMatch moved to ./vault/utils/form-validation.js
 
   async #lock() {
     try {
