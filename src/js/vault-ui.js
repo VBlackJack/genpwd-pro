@@ -75,6 +75,7 @@ import { showPasswordGenerator as showPwdGenerator } from './vault/components/pa
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 import { showColorPicker } from './vault/components/color-picker.js';
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
+import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -7573,6 +7574,7 @@ export class VaultUI {
   }
 
   // ==================== WINDOWS HELLO ====================
+  // UI components moved to ./vault/components/hello-settings.js
 
   /**
    * Initialize Windows Hello settings button
@@ -7596,13 +7598,13 @@ export class VaultUI {
 
       // Show button and add event listener
       helloBtn.hidden = false;
-      helloBtn.addEventListener('click', (e) => {
+      helloBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        this.#showHelloSettings();
+        await this.#showHelloSettings();
       });
 
       // Update button state (enabled/disabled indicator)
-      await this.#updateHelloButtonState();
+      await this.#refreshHelloButtonState();
     } catch (error) {
       safeLog('[VaultUI] Hello init error:', error);
       helloBtn.hidden = true;
@@ -7610,9 +7612,9 @@ export class VaultUI {
   }
 
   /**
-   * Update Windows Hello button state
+   * Update Windows Hello button state using imported function
    */
-  async #updateHelloButtonState() {
+  async #refreshHelloButtonState() {
     const helloBtn = document.getElementById('hello-settings');
     if (!helloBtn || !window.vault?.hello) return;
 
@@ -7621,20 +7623,16 @@ export class VaultUI {
       if (!state?.vaultId) return;
 
       const isEnabled = await window.vault.hello.isEnabled(state.vaultId);
-      helloBtn.classList.toggle('hello-enabled', isEnabled);
-      helloBtn.title = isEnabled ? 'Windows Hello (enabled)' : 'Windows Hello (disabled)';
+      updateHelloButtonState(helloBtn, isEnabled, t);
     } catch (error) {
       safeLog('[VaultUI] Hello state check error:', error);
     }
   }
 
   /**
-   * Show Windows Hello settings popover
+   * Show Windows Hello settings popover using imported component
    */
   async #showHelloSettings() {
-    // Remove existing popover
-    document.querySelector('.vault-hello-popover')?.remove();
-
     const helloBtn = document.getElementById('hello-settings');
     if (!helloBtn) return;
 
@@ -7644,91 +7642,14 @@ export class VaultUI {
 
       const isEnabled = await window.vault.hello.isEnabled(state.vaultId);
 
-      const popover = document.createElement('div');
-      popover.className = 'vault-hello-popover';
-      popover.innerHTML = `
-        <div class="vault-hello-header">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-            <circle cx="8.5" cy="10" r="1.5"/>
-            <circle cx="15.5" cy="10" r="1.5"/>
-            <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
-          </svg>
-          <span>Windows Hello</span>
-        </div>
-        <div class="vault-hello-body">
-          <p class="vault-hello-description">
-            ${isEnabled
-          ? 'Windows Hello is enabled for this vault. You can unlock with your fingerprint or face.'
-          : 'Enable Windows Hello to unlock this vault with your fingerprint or face.'
-        }
-          </p>
-          ${isEnabled ? `
-            <button class="vault-btn vault-btn-sm vault-btn-danger" id="hello-disable">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
-              Disable
-            </button>
-          ` : `
-            <button class="vault-btn vault-btn-sm vault-btn-primary" id="hello-enable">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-              Activer
-            </button>
-          `}
-        </div>
-      `;
-
-      // Attach to body for proper z-index stacking
-      document.body.appendChild(popover);
-
-      // Position popover with forced pointer-events
-      const btnRect = helloBtn.getBoundingClientRect();
-      Object.assign(popover.style, {
-        position: 'fixed',
-        top: `${btnRect.bottom + 8}px`,
-        right: `${window.innerWidth - btnRect.right}px`,
-        zIndex: '99999',
-        pointerEvents: 'auto'
+      showHelloSettingsPopover({
+        anchorElement: helloBtn,
+        isEnabled,
+        vaultId: state.vaultId,
+        onEnable: (vaultId) => this.#enableWindowsHello(vaultId),
+        onDisable: (vaultId) => this.#disableWindowsHello(vaultId),
+        t
       });
-
-      // Force pointer-events on the button too
-      const actionBtn = popover.querySelector('button');
-      if (actionBtn) {
-        actionBtn.style.pointerEvents = 'auto';
-        actionBtn.style.cursor = 'pointer';
-      }
-
-      // Event delegation on popover - capture phase
-      popover.addEventListener('click', (e) => {
-        const target = e.target.closest('button');
-        if (!target) return;
-
-        if (target.id === 'hello-enable') {
-          e.stopPropagation();
-          popover.remove();
-          this.#enableWindowsHello(state.vaultId);
-        } else if (target.id === 'hello-disable') {
-          e.stopPropagation();
-          popover.remove();
-          this.#disableWindowsHello(state.vaultId);
-        }
-      }, true); // Use capture phase
-
-      // Close on click outside
-      const closeHandler = (e) => {
-        if (!popover.contains(e.target) && !e.target.closest('#hello-settings')) {
-          popover.remove();
-          document.removeEventListener('click', closeHandler);
-        }
-      };
-      // Delay to avoid immediate close
-      setTimeout(() => document.addEventListener('click', closeHandler), 200);
     } catch (error) {
       safeLog('[VaultUI] Hello settings error:', error);
       this.#showToast(t('vault.windowsHello.error'), 'error');
@@ -7741,14 +7662,17 @@ export class VaultUI {
    */
   async #enableWindowsHello(vaultId) {
     // Need master password to enable Windows Hello
-    const password = await this.#promptPassword(t('vault.windowsHello.enterPassword'));
+    const password = await showPasswordPrompt({
+      message: t('vault.windowsHello.enterPassword'),
+      t
+    });
     if (!password) return;
 
     try {
       this.#showToast(t('vault.windowsHello.enabling'), 'info');
       await window.vault.hello.enable(vaultId, password);
       this.#showToast(t('vault.windowsHello.enableSuccess'), 'success');
-      await this.#updateHelloButtonState();
+      await this.#refreshHelloButtonState();
     } catch (error) {
       this.#showToast(error.message || t('vault.windowsHello.enableFailed'), 'error');
     }
@@ -7762,91 +7686,14 @@ export class VaultUI {
     try {
       await window.vault.hello.disable(vaultId);
       this.#showToast(t('vault.windowsHello.disableSuccess'), 'success');
-      await this.#updateHelloButtonState();
+      await this.#refreshHelloButtonState();
     } catch (error) {
       safeLog('[VaultUI] Hello disable error:', error);
       this.#showToast(error.message || t('vault.windowsHello.disableFailed'), 'error');
     }
   }
 
-  /**
-   * Prompt user for password (simple modal)
-   * @param {string} message - Prompt message
-   * @returns {Promise<string|null>} Password or null if cancelled
-   */
-  #promptPassword(message) {
-    return new Promise((resolve) => {
-      const modalId = 'password-prompt-modal';
-      const existingModal = document.getElementById(modalId);
-      if (existingModal) existingModal.remove();
-
-      const modal = document.createElement('div');
-      modal.id = modalId;
-      modal.className = 'vault-modal-overlay active';
-      modal.innerHTML = `
-        <div class="vault-modal vault-modal-sm">
-          <div class="vault-modal-header">
-            <h3>Verification required</h3>
-            <button type="button" class="vault-modal-close" data-close aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <form class="vault-modal-body" id="pwd-prompt-form">
-            <p class="vault-modal-message">${escapeHtml(message)}</p>
-            <div class="vault-form-group">
-              <div class="vault-input-group">
-                <input type="password" class="vault-input" id="pwd-prompt-input"
-                       placeholder="${t('vault.placeholders.password')}" autocomplete="current-password" required autofocus>
-                <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="pwd-prompt-input">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close>Cancel</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Confirmer</button>
-            </div>
-          </form>
-        </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      // Focus password input
-      setTimeout(() => modal.querySelector('#pwd-prompt-input')?.focus(), 100);
-
-      // Toggle password visibility
-      modal.querySelector('.toggle-pwd-visibility')?.addEventListener('click', () => {
-        const input = modal.querySelector('#pwd-prompt-input');
-        if (input) input.type = input.type === 'password' ? 'text' : 'password';
-      });
-
-      // Close handlers
-      const close = () => {
-        modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 200);
-        resolve(null);
-      };
-
-      modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
-      modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-
-      // Submit handler
-      modal.querySelector('#pwd-prompt-form')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const password = modal.querySelector('#pwd-prompt-input')?.value;
-        modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 200);
-        resolve(password || null);
-      });
-    });
-  }
+  // #promptPassword moved to ./vault/components/hello-settings.js as showPasswordPrompt
 
   #bindKeyboardShortcuts() {
     // Store handler for cleanup in destroy()

@@ -45,3 +45,11 @@ export {
   updateEntryPreviewPosition,
   hideEntryPreview
 } from './entry-preview.js';
+
+// Windows Hello settings
+export {
+  showHelloSettingsPopover,
+  closeHelloSettingsPopover,
+  updateHelloButtonState,
+  showPasswordPrompt
+} from './hello-settings.js';
