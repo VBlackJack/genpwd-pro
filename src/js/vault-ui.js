@@ -45,7 +45,7 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 // QR code generation moved to totp-qr-modal.js
 
 // Vault utility imports (Phase 6 modularization)
-import { escapeHtml, formatDate, formatDateTime } from './vault/utils/formatter.js';
+import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
 import { getPasswordStrength, isPasswordDuplicated } from './vault/utils/password-utils.js';
 
 // Vault modals imports (Phase 6 modularization)
@@ -2483,8 +2483,8 @@ export class VaultUI {
 
     const historyItems = history.map((h, idx) => {
       const date = new Date(h.changedAt);
-      const relativeTime = this.#getRelativeTime(date);
-      const maskedPwd = this.#maskHistoryPassword(h.password);
+      const relativeTime = getRelativeTime(date);
+      const maskedPwd = maskHistoryPassword(h.password);
 
       return `
         <div class="vault-history-item" data-index="${idx}">
@@ -2526,26 +2526,7 @@ export class VaultUI {
     `;
   }
 
-  #maskHistoryPassword(password) {
-    if (!password) return '';
-    if (password.length <= 4) return '••••';
-    return password.substring(0, 2) + '•'.repeat(Math.min(password.length - 4, 6)) + password.slice(-2);
-  }
-
-  #getRelativeTime(date) {
-    const now = new Date();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes} min ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    if (days < 30) return `${Math.floor(days / 7)} wk ago`;
-    return `${Math.floor(days / 30)} mo ago`;
-  }
+  // maskHistoryPassword and getRelativeTime moved to ./vault/utils/formatter.js
 
   #renderPasswordAge(entry) {
     // Only show for login entries with passwords
