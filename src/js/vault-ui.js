@@ -47,6 +47,7 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 // Vault utility imports (Phase 6 modularization)
 import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
 import { getPasswordStrength, isPasswordDuplicated } from './vault/utils/password-utils.js';
+import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
 
 // Vault modals imports (Phase 6 modularization)
 import { getTemplateById, renderTemplateGrid } from './vault/modals/entry-templates.js';
@@ -6491,7 +6492,7 @@ export class VaultUI {
       // Validation
       if (type === 'login') {
         const url = document.getElementById('entry-url')?.value;
-        if (url && !this.#isValidUrl(url)) {
+        if (url && !isValidUrl(url)) {
           this.#showToast(t('vault.form.invalidUrl'), 'warning');
           return;
         }
@@ -6499,7 +6500,7 @@ export class VaultUI {
 
       if (type === 'identity') {
         const email = document.getElementById('entry-email')?.value;
-        if (email && !this.#isValidEmail(email)) {
+        if (email && !isValidEmail(email)) {
           this.#showToast(t('vault.form.invalidEmail'), 'warning');
           return;
         }
@@ -7452,19 +7453,7 @@ export class VaultUI {
   }
 
   // Password generator moved to ./vault/components/password-generator.js
-
-  #isValidUrl(string) {
-    try {
-      const url = new URL(string);
-      return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  }
-
-  #isValidEmail(string) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(string);
-  }
+  // isValidUrl and isValidEmail moved to ./vault/utils/validators.js
 
   /**
    * Real-time field validation
@@ -7501,12 +7490,12 @@ export class VaultUI {
       message = rules.patternMessage || t('vault.validation.invalidFormat');
     }
     // URL check
-    else if (rules.url && value && !this.#isValidUrl(value)) {
+    else if (rules.url && value && !isValidUrl(value)) {
       isValid = false;
       message = rules.urlMessage || t('vault.validation.invalidUrl');
     }
     // Email check
-    else if (rules.email && value && !this.#isValidEmail(value)) {
+    else if (rules.email && value && !isValidEmail(value)) {
       isValid = false;
       message = rules.emailMessage || t('vault.validation.invalidEmail');
     }
