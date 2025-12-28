@@ -62,6 +62,7 @@ import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-
 import { showAutotypeModal } from './vault/modals/autotype-modal.js';
 import { showTOTPQRModal } from './vault/modals/totp-qr-modal.js';
 import { showSecureShareModal } from './vault/modals/secure-share-modal.js';
+import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.js';
 
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
@@ -2434,39 +2435,14 @@ export class VaultUI {
 
   async #generateTOTP(secret, options = {}) {
     // Use the dedicated TOTP service for RFC 6238 compliance
-    const { generateTOTP } = await import('./vault/totp-service.js');
-    const result = await generateTOTP(secret, options);
+    const result = await totpGenerate(secret, options);
     return {
       code: result.code,
       remaining: result.remainingSeconds,
       period: result.period
     };
   }
-
-  #parseOTPAuthURI(uri) {
-    if (!uri.startsWith('otpauth://totp/')) {
-      throw new Error('Invalid OTPAuth URI');
-    }
-    const url = new URL(uri);
-    const params = url.searchParams;
-    const secret = params.get('secret');
-    if (!secret) throw new Error('Missing secret');
-
-    let label = decodeURIComponent(url.pathname.replace('/totp/', ''));
-    let issuer = params.get('issuer') || '';
-    let account = label;
-    if (label.includes(':')) {
-      [issuer, account] = label.split(':');
-    }
-
-    return {
-      secret: secret.toUpperCase().replace(/\s/g, ''),
-      issuer,
-      account,
-      period: parseInt(params.get('period'), 10) || 30,
-      digits: parseInt(params.get('digits'), 10) || 6
-    };
-  }
+  // #parseOTPAuthURI moved to totp-service.js as parseOTPUri
 
   #renderPasswordStrength(password) {
     const strength = calculatePasswordStrength(password, t);
@@ -6097,11 +6073,8 @@ export class VaultUI {
           const totpInput = document.getElementById('edit-totp')?.value?.trim() || '';
           if (totpInput) {
             if (totpInput.startsWith('otpauth://')) {
-              try {
-                data.totp = this.#parseOTPAuthURI(totpInput).secret;
-              } catch {
-                data.totp = totpInput; // Keep as-is if parsing fails
-              }
+              const parsed = parseOTPUri(totpInput);
+              data.totp = parsed?.secret?.toUpperCase()?.replace(/\s/g, '') || totpInput;
             } else {
               data.totp = totpInput.toUpperCase().replace(/\s/g, '');
             }
@@ -6851,11 +6824,8 @@ export class VaultUI {
         const totpInput = get('entry-totp').trim();
         if (totpInput) {
           if (totpInput.startsWith('otpauth://')) {
-            try {
-              data.totp = this.#parseOTPAuthURI(totpInput).secret;
-            } catch {
-              data.totp = totpInput; // Keep as-is if parsing fails
-            }
+            const parsed = parseOTPUri(totpInput);
+            data.totp = parsed?.secret?.toUpperCase()?.replace(/\s/g, '') || totpInput;
           } else {
             data.totp = totpInput.toUpperCase().replace(/\s/g, '');
           }
