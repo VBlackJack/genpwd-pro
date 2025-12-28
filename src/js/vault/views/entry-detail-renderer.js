@@ -44,7 +44,7 @@ function renderDetailActions(entry) {
       </svg>
     </button>
     ${isLogin ? `
-    <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="${t('vault.actions.autoFill') || 'Auto-fill'} (Ctrl+Shift+U)" aria-label="${t('vault.actions.autoFill') || 'Auto-fill form'}">
+    <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="${t('vault.actions.autoFill')} (Ctrl+Shift+U)" aria-label="${t('vault.actions.autoFill')}">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
         <line x1="6" y1="8" x2="6" y2="8"></line>
@@ -115,15 +115,15 @@ function renderNoteContent(entry) {
   return `
     <div class="vault-field vault-notes-field">
       <div class="vault-field-label-row">
-        <label class="vault-field-label">${t('vault.fields.content') || 'Content'}</label>
+        <label class="vault-field-label">${t('vault.fields.content')}</label>
         <div class="vault-notes-toggle">
-          <button type="button" class="vault-notes-mode active" data-mode="preview" title="${t('vault.actions.preview') || 'Preview'}" aria-label="${t('vault.actions.previewMode') || 'Preview mode'}">
+          <button type="button" class="vault-notes-mode active" data-mode="preview" title="${t('vault.actions.preview')}" aria-label="${t('vault.actions.previewMode')}">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
           </button>
-          <button type="button" class="vault-notes-mode" data-mode="source" title="${t('vault.actions.sourceMarkdown') || 'Source Markdown'}" aria-label="${t('vault.actions.editSourceMode') || 'Edit source mode'}">
+          <button type="button" class="vault-notes-mode" data-mode="source" title="${t('vault.actions.sourceMarkdown')}" aria-label="${t('vault.actions.editSourceMode')}">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
@@ -165,7 +165,7 @@ export function renderEntryFields(entry) {
         ${renderField({ label: t('vault.labels.holder'), value: entry.data?.holder })}
         ${renderField({ label: t('vault.labels.cardNumber'), value: entry.data?.number, key: 'number', masked: true, copyable: true })}
         ${renderField({ label: t('vault.labels.expiration'), value: entry.data?.expiry })}
-        ${renderField({ label: t('vault.labels.cvv') || 'CVV', value: entry.data?.cvv, key: 'cvv', masked: true, copyable: true })}
+        ${renderField({ label: t('vault.labels.cvv'), value: entry.data?.cvv, key: 'cvv', masked: true, copyable: true })}
       `;
     case 'identity':
       return `
@@ -200,7 +200,7 @@ export function renderEntryDetail({ entry, tags }) {
         <span class="vault-detail-type">${type.label}</span>
         <div class="vault-detail-tags">${renderTagsInDetail({ entry, tags })}</div>
       </div>
-      <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions') || 'Entry actions'}">
+      <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions')}">
         ${renderDetailActions(entry)}
       </div>
     </div>

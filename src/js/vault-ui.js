@@ -106,11 +106,11 @@ const getCategories = () => [
 
 // Sort options - function to get translated labels
 const getSortOptions = () => [
-  { id: 'title-asc', label: t('vault.sort.titleAZ') || 'Title A-Z', icon: '↑' },
-  { id: 'title-desc', label: t('vault.sort.titleZA') || 'Title Z-A', icon: '↓' },
+  { id: 'title-asc', label: t('vault.sort.titleAZ'), icon: '↑' },
+  { id: 'title-desc', label: t('vault.sort.titleZA'), icon: '↓' },
   { id: 'modified-desc', label: t('vault.detail.recentlyModified'), icon: '🕐' },
-  { id: 'modified-asc', label: t('vault.sort.oldestFirst') || 'Oldest first', icon: '📅' },
-  { id: 'type', label: t('vault.sort.byType') || 'By type', icon: '📂' }
+  { id: 'modified-asc', label: t('vault.sort.oldestFirst'), icon: '📅' },
+  { id: 'type', label: t('vault.sort.byType'), icon: '📂' }
 ];
 
 /**
@@ -559,8 +559,8 @@ export class VaultUI {
           const vaultName = btn.closest('.vault-list-item')?.querySelector('.vault-list-name')?.textContent || vaultId;
 
           const confirmed = await showConfirm(t('vault.messages.forgetVaultConfirm', { name: vaultName }), {
-            title: t('vault.actions.forgetVault') || 'Forget Vault',
-            confirmLabel: t('common.forget') || 'Forget',
+            title: t('vault.actions.forgetVault'),
+            confirmLabel: t('common.forget'),
             danger: true
           });
           if (confirmed) {
@@ -1050,8 +1050,8 @@ export class VaultUI {
         <aside class="vault-sidebar" role="navigation" aria-label="Vault navigation">
           <!-- Sidebar Collapse Toggle -->
           <button class="vault-sidebar-collapse" id="sidebar-collapse-btn"
-                  aria-label="${t('vault.sidebar.collapse') || 'Toggle sidebar'}"
-                  title="${t('vault.sidebar.collapse') || 'Toggle sidebar'}">
+                  aria-label="${t('vault.sidebar.collapse')}"
+                  title="${t('vault.sidebar.collapse')}">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -1301,7 +1301,7 @@ export class VaultUI {
                     <line x1="4" y1="12" x2="16" y2="12"></line>
                     <line x1="4" y1="18" x2="12" y2="18"></line>
                   </svg>
-                  <span>${getSortOptions().find(s => s.id === this.#sortBy)?.label || 'Sort'}</span>
+                  <span>${getSortOptions().find(s => s.id === this.#sortBy)?.label || t('vault.sort.sort')}</span>
                 </button>
                 <div class="vault-sort-menu" id="sort-menu" role="listbox" hidden>
                   ${getSortOptions().map(opt => `
@@ -1635,8 +1635,8 @@ export class VaultUI {
       : t('vault.messages.deleteFolderConfirm', { name: folder.name });
 
     const confirmed = await showConfirm(message, {
-      title: t('vault.actions.deleteFolder') || 'Delete Folder',
-      confirmLabel: t('common.delete') || 'Delete',
+      title: t('vault.actions.deleteFolder'),
+      confirmLabel: t('common.delete'),
       danger: true
     });
     if (confirmed) {
@@ -3678,7 +3678,7 @@ export class VaultUI {
       case 'delete': {
         const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
           type: 'danger',
-          confirmLabel: t('common.delete') || 'Delete',
+          confirmLabel: t('common.delete'),
         });
         if (confirmed) this.#deleteEntryWithUndo(entry);
         break;
@@ -3771,7 +3771,7 @@ export class VaultUI {
     }
 
     if (sortBtnText) {
-      sortBtnText.textContent = getSortOptions().find(s => s.id === this.#sortBy)?.label || 'Sort';
+      sortBtnText.textContent = getSortOptions().find(s => s.id === this.#sortBy)?.label || t('vault.sort.sort');
     }
 
     container.innerHTML = filteredEntries.length === 0
@@ -3879,14 +3879,14 @@ export class VaultUI {
           btn.querySelector('.icon-show').hidden = true;
           btn.querySelector('.icon-hide').hidden = false;
           btn.setAttribute('aria-pressed', 'true');
-          btn.setAttribute('aria-label', window.i18n?.t('vault.aria.hideValue') || 'Hide value');
+          btn.setAttribute('aria-label', t('vault.aria.hideValue'));
         } else {
           textEl.textContent = '•'.repeat(Math.min(realValue.length, 24));
           textEl.classList.add('masked');
           btn.querySelector('.icon-show').hidden = false;
           btn.querySelector('.icon-hide').hidden = true;
           btn.setAttribute('aria-pressed', 'false');
-          btn.setAttribute('aria-label', window.i18n?.t('vault.aria.showValue') || 'Show value');
+          btn.setAttribute('aria-label', t('vault.aria.showValue'));
         }
       });
     });
@@ -4011,7 +4011,7 @@ export class VaultUI {
       if (!this.#selectedEntry) return;
       const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
         type: 'danger',
-        confirmLabel: t('common.delete') || 'Delete',
+        confirmLabel: t('common.delete'),
       });
       if (confirmed) {
         this.#deleteEntryWithUndo(this.#selectedEntry);
@@ -5960,7 +5960,7 @@ export class VaultUI {
         e.preventDefault();
         const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
           type: 'danger',
-          confirmLabel: t('common.delete') || 'Delete',
+          confirmLabel: t('common.delete'),
         });
         if (confirmed) this.#deleteEntryWithUndo(this.#selectedEntry);
       }

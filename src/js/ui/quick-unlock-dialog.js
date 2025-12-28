@@ -156,7 +156,7 @@ export class QuickUnlockDialog {
                   aria-required="true"
                   aria-invalid="false"
                   aria-describedby="quick-unlock-error"
-                  aria-label="${t('vault.labels.password') || 'Master password'}"
+                  aria-label="${t('vault.labels.password')}"
                 >
                 <button type="button" class="quick-unlock-toggle-pwd" id="quick-unlock-toggle-pwd" aria-label="${t('vault.quickUnlock.showPassword')}">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -170,7 +170,7 @@ export class QuickUnlockDialog {
             <div class="quick-unlock-error" id="quick-unlock-error" role="alert" aria-live="assertive" hidden>
               <span class="quick-unlock-error-text"></span>
               <button type="button" class="quick-unlock-retry-btn" id="quick-unlock-retry">
-                ${t('vault.quickUnlock.tryAgain') || 'Try again'}
+                ${t('vault.quickUnlock.tryAgain')}
               </button>
             </div>
 
@@ -179,7 +179,7 @@ export class QuickUnlockDialog {
               <div class="quick-unlock-divider">
                 <span>${t('vault.quickUnlock.or') || 'or'}</span>
               </div>
-              <button type="button" class="quick-unlock-btn quick-unlock-btn-hello" id="quick-unlock-hello-btn" aria-label="${t('vault.quickUnlock.unlockWithHello') || 'Unlock with Windows Hello'}">
+              <button type="button" class="quick-unlock-btn quick-unlock-btn-hello" id="quick-unlock-hello-btn" aria-label="${t('vault.quickUnlock.unlockWithHello')}">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                   <path d="M12 6c-2.21 0-4 1.79-4 4v2c0 2.21 1.79 4 4 4s4-1.79 4-4v-2c0-2.21-1.79-4-4-4z"/>
@@ -400,14 +400,14 @@ export class QuickUnlockDialog {
         <svg class="spinning" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
         </svg>
-        <span>${t('vault.actions.unlocking') || 'Unlocking...'}</span>
+        <span>${t('vault.actions.unlocking')}</span>
       `;
     }
 
     try {
       // Attempt Windows Hello unlock
       await window.vault.hello.unlock(vaultId);
-      showToast(t('vault.messages.unlockSuccess') || 'Vault unlocked', 'success');
+      showToast(t('toast.vaultUnlocked'), 'success');
       this.close(true);
     } catch (error) {
       safeLog('[QuickUnlockDialog] Windows Hello unlock failed:', error);
@@ -416,7 +416,7 @@ export class QuickUnlockDialog {
       if (errorEl) {
         const errorText = errorEl.querySelector('.quick-unlock-error-text');
         if (errorText) {
-          errorText.textContent = error.message || t('vault.misc.biometricFailed') || 'Windows Hello failed';
+          errorText.textContent = error.message || t('vault.misc.biometricFailed');
         }
         errorEl.hidden = false;
       }

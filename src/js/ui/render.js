@@ -40,13 +40,13 @@ export function renderResults(results, mask) {
       wrap.innerHTML = sanitizeHTML(`
         <div class="empty-state">
           <div class="empty-icon">🔐</div>
-          <p>${t('generator.emptyState') || 'No passwords generated yet'}</p>
+          <p>${t('generator.emptyState')}</p>
           <button type="button" class="btn btn-accent empty-state-cta" id="empty-generate-btn">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M12 3v3m0 12v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M3 12h3m12 0h3M4.22 19.78l2.12-2.12M18.36 6.34l2.12-2.12"/>
               <circle cx="12" cy="12" r="4"/>
             </svg>
-            ${t('actions.generateNow') || 'Generate Now'}
+            ${t('actions.generateNow')}
           </button>
         </div>`);
       // Attach click handler for the CTA button (with AbortController signal for proper cleanup)
@@ -126,13 +126,13 @@ function createPasswordCard(item, id, mask) {
     <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="${t('results.clickToCopyHint')}" role="button" tabindex="0" aria-label="${t('results.passwordAriaLabel', { id })}">
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
-        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton') || 'Check for breaches'}" aria-label="${t('breach.checkButton') || 'Check for breaches'}">
+        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton')}" aria-label="${t('breach.checkButton')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
         ${saveToVaultBtn}
-        <button class="action-btn copy-btn" type="button" title="${t('common.copy') || 'Copy'}" aria-label="${t('toast.copyPassword') || 'Copy password'}">
+        <button class="action-btn copy-btn" type="button" title="${t('common.copy')}" aria-label="${t('toast.copyPassword')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -351,8 +351,8 @@ function bindCopyButtons() {
           showToast(t('toast.passwordCopied'), 'success');
           btn.classList.add('copied');
           // Update aria-label for screen readers
-          const originalLabel = btn.getAttribute('aria-label') || t('common.copy') || 'Copy';
-          btn.setAttribute('aria-label', t('toast.passwordCopied') || 'Copied to clipboard');
+          const originalLabel = btn.getAttribute('aria-label') || t('common.copy');
+          btn.setAttribute('aria-label', t('toast.passwordCopied'));
           // WCAG recommends minimum 3 seconds for status messages
           setTimeout(() => {
             btn.classList.remove('copied');
@@ -393,7 +393,7 @@ function bindBreachCheckButtons() {
       btn.classList.add('checking');
       btn.disabled = true;
       btn.setAttribute('aria-busy', 'true');
-      btn.setAttribute('aria-label', t('breach.checking') || 'Checking if password was breached...');
+      btn.setAttribute('aria-label', t('breach.checking'));
       statusEl.hidden = false;
       statusEl.setAttribute('aria-live', 'polite'); // Set aria-live when visible for proper announcements
       statusEl.className = 'breach-status loading';
@@ -426,7 +426,7 @@ function bindBreachCheckButtons() {
         btn.classList.remove('checking');
         btn.disabled = false;
         btn.removeAttribute('aria-busy');
-        btn.setAttribute('aria-label', t('breach.checkButton') || 'Check if password was breached');
+        btn.setAttribute('aria-label', t('breach.checkButton'));
       }
     }, { signal: eventController.signal });
   });
@@ -446,22 +446,22 @@ function showContextMenu(e, password) {
   menu.className = 'pwd-context-menu';
   // ARIA: menu role for accessibility
   menu.setAttribute('role', 'menu');
-  menu.setAttribute('aria-label', t('contextMenu.title') || 'Password actions');
+  menu.setAttribute('aria-label', t('contextMenu.title'));
   menu.innerHTML = `
-    <button class="pwd-ctx-item" data-action="copy" role="menuitem" aria-label="${t('contextMenu.copy') || 'Copy password'}">
+    <button class="pwd-ctx-item" data-action="copy" role="menuitem" aria-label="${t('contextMenu.copy')}">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
       </svg>
-      <span>${t('common.copy') || 'Copy'}</span>
+      <span>${t('common.copy')}</span>
     </button>
     ${vaultAvailable ? `
-      <button class="pwd-ctx-item" data-action="save-vault" role="menuitem" aria-label="${t('contextMenu.saveToVault') || 'Save to vault'}">
+      <button class="pwd-ctx-item" data-action="save-vault" role="menuitem" aria-label="${t('contextMenu.saveToVault')}">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        <span>${t('vault.actions.saveToVault') || 'Save to vault'}</span>
+        <span>${t('vault.actions.saveToVault')}</span>
       </button>
     ` : ''}
   `;
@@ -611,13 +611,13 @@ export function renderEmptyState() {
     wrap.innerHTML = sanitizeHTML(`
       <div class="empty-state">
         <div class="empty-icon">🔐</div>
-        <p>${t('generator.emptyState') || 'No passwords generated yet'}</p>
+        <p>${t('generator.emptyState')}</p>
         <button type="button" class="btn btn-accent empty-state-cta" id="empty-generate-btn">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 3v3m0 12v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M3 12h3m12 0h3M4.22 19.78l2.12-2.12M18.36 6.34l2.12-2.12"/>
             <circle cx="12" cy="12" r="4"/>
           </svg>
-          ${t('actions.generateNow') || 'Generate Now'}
+          ${t('actions.generateNow')}
         </button>
       </div>`);
     // Attach click handler with AbortController signal for proper cleanup

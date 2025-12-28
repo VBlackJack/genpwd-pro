@@ -32,10 +32,16 @@
     "copyAll": "Copy All",
     "export": "Export",
     "clear": "Clear",
+    "clearAll": "Clear All",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "close": "Close",
+    "update": "Update",
+    "enable": "Enable",
+    "disable": "Disable",
+    "forget": "Forget",
+    "uninstall": "Uninstall",
     "tests": "Tests",
     "about": "About",
     "debug": "Debug",
@@ -358,7 +364,8 @@
       "showValue": "Show value",
       "toggleVisibility": "Show/Hide",
       "showQRCode": "Show QR Code",
-      "clickToCopy": "Click to copy"
+      "clickToCopy": "Click to copy",
+      "entryActions": "Entry actions"
     },
     "common": {
       "save": "Save",
@@ -375,7 +382,12 @@
       "copied": "Copied!",
       "error": "Error",
       "success": "Success",
-      "warning": "Warning"
+      "warning": "Warning",
+      "confirm": "Confirm",
+      "copy": "Copy"
+    },
+    "fields": {
+      "content": "Content"
     },
     "labels": {
       "username": "Username",
@@ -391,6 +403,7 @@
       "cvv": "CVV",
       "fullName": "Full name",
       "content": "Content",
+      "note": "Note",
       "title": "Title",
       "totp": "TOTP Key (2FA)",
       "usernameEmail": "Username / Email",
@@ -429,7 +442,18 @@
       "restore": "Restore",
       "copyValue": "Copy",
       "generateNow": "Generate Now",
-      "saveToVault": "Save to vault"
+      "saveToVault": "Save to vault",
+      "forgetVault": "Forget Vault",
+      "deleteFolder": "Delete Folder",
+      "delete": "Delete Entry",
+      "rename": "Rename",
+      "newSubfolder": "New subfolder",
+      "color": "Color",
+      "autoFill": "Auto-fill",
+      "preview": "Preview",
+      "sourceMarkdown": "Source Markdown",
+      "previewMode": "Preview mode",
+      "editSourceMode": "Edit source mode"
     },
     "form": {
       "required": "required"
@@ -735,6 +759,8 @@
       "configure": "Configure Windows Hello",
       "enabledMessage": "Windows Hello is enabled for this vault. You can unlock with your fingerprint or face.",
       "disabledMessage": "Enable Windows Hello to unlock this vault with your fingerprint or face.",
+      "enabledDescription": "Windows Hello is enabled for this vault. You can unlock with your fingerprint or face.",
+      "disabledDescription": "Enable Windows Hello to unlock this vault with your fingerprint or face.",
       "enable": "Enable",
       "disable": "Disable",
       "enabling": "Enabling Windows Hello...",
@@ -749,7 +775,8 @@
       "verificationFailed": "Windows Hello verification failed",
       "notEnabled": "Windows Hello is not enabled for this vault",
       "unlockVault": "GenPwd Pro - Unlock vault",
-      "keyNotFound": "Encrypted key not found"
+      "keyNotFound": "Encrypted key not found",
+      "verificationRequired": "Verification required"
     },
     "sync": {
       "cloudSync": "Cloud Sync",
@@ -771,7 +798,13 @@
       "invalidData": "Invalid password data",
       "clickToCycle": "Click to cycle (U → l → T → U)",
       "blocks": "Blocks:",
-      "manualChange": "Manual change"
+      "manualChange": "Manual change",
+      "outputLabel": "Generated password",
+      "copyLabel": "Copy password to clipboard",
+      "regenerate": "Regenerate",
+      "regenerateLabel": "Generate new password",
+      "length": "Length",
+      "usePassword": "Use this password"
     },
     "colors": {
       "default": "Default",
@@ -784,6 +817,14 @@
       "purple": "Purple",
       "pink": "Pink",
       "folderColor": "Folder color"
+    },
+    "folders": {
+      "color": "Folder color"
+    },
+    "autotype": {
+      "manualTitle": "Manual Auto-fill",
+      "requiresApp": "Automatic auto-fill requires the Electron application.",
+      "copyHint": "Copy the values below:"
     },
     "sort": {
       "sort": "Sort",
@@ -806,7 +847,8 @@
       "tooManyAttempts": "Too many attempts. Try again in {minutes} minute(s).",
       "unauthorizedAccess": "Unauthorized access",
       "systemEncryptionNotAvailable": "System encryption is not available",
-      "entryCount": "{count} entry/entries"
+      "entryCount": "{count} entry/entries",
+      "biometricFailed": "Windows Hello failed"
     },
     "fieldTypes": {
       "hidden": "Hidden",
@@ -1130,7 +1172,9 @@
     "emptyHint": "Generated passwords will appear here",
     "enableConfirm": "History is disabled. Enable now?",
     "deleteEntryConfirm": "Delete this entry?",
+    "deleteTitle": "Delete Entry",
     "clearAllConfirm": "Clear all history? This action is irreversible!",
+    "clearTitle": "Clear History",
     "favorite": "Toggle favorite",
     "stats": {
       "total": "Total",
@@ -1155,6 +1199,8 @@
     "update": "Update",
     "updated": "updated",
     "updateFailed": "Update failed",
+    "updateTitle": "Update Preset",
+    "deleteTitle": "Delete Preset",
     "replaceConfirm": "Replace \"{name}\" configuration with current settings?",
     "deleteConfirm": "Delete this preset?",
     "emptyState": "No presets yet",
@@ -1289,6 +1335,15 @@
     "error": "Error: {error}",
     "connectionError": "Connection error",
     "passwordBreached": "Password compromised! ({count})"
+  },
+  "contextMenu": {
+    "title": "Password actions",
+    "copy": "Copy password",
+    "saveToVault": "Save to vault"
+  },
+  "plugins": {
+    "uninstallTitle": "Uninstall Plugin",
+    "clearAllTitle": "Clear All Plugins"
   },
   "onboarding": {
     "buttons": {

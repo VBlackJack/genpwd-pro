@@ -41,23 +41,23 @@ export function showAutotypeModal(options = {}) {
   modal.innerHTML = `
     <div class="vault-modal vault-modal-sm">
       <div class="vault-modal-header">
-        <h3>${t('vault.autotype.manualTitle') || 'Auto-remplissage manuel'}</h3>
+        <h3>${t('vault.autotype.manualTitle')}</h3>
         ${renderCloseBtn(t)}
       </div>
       <div class="vault-modal-body">
-        <p class="vault-modal-hint">${t('vault.autotype.requiresApp') || 'Automatic auto-fill requires the Electron application.'}</p>
-        <p class="vault-modal-hint">${t('vault.autotype.copyHint') || 'Copy the values below:'}</p>
+        <p class="vault-modal-hint">${t('vault.autotype.requiresApp')}</p>
+        <p class="vault-modal-hint">${t('vault.autotype.copyHint')}</p>
         <div class="vault-autotype-steps">
           <div class="vault-autotype-step">
-            <span class="vault-autotype-label">1. ${t('vault.labels.username') || 'Username'}</span>
+            <span class="vault-autotype-label">1. ${t('vault.labels.username')}</span>
             <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-user">
-              ${t('vault.common.copy') || 'Copy'} "${escapeHtml(username.substring(0, 10))}${username.length > 10 ? '...' : ''}"
+              ${t('vault.common.copy')} "${escapeHtml(username.substring(0, 10))}${username.length > 10 ? '...' : ''}"
             </button>
           </div>
           <div class="vault-autotype-step">
-            <span class="vault-autotype-label">2. ${t('vault.labels.password') || 'Password'}</span>
+            <span class="vault-autotype-label">2. ${t('vault.labels.password')}</span>
             <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-pass">
-              ${t('vault.common.copy') || 'Copy'} ••••••••
+              ${t('vault.common.copy')} ••••••••
             </button>
           </div>
         </div>

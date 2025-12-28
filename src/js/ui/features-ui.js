@@ -533,15 +533,15 @@ export function initializePresetsUI() {
     <div class="section-content">
       <div class="row gap-8 items-center">
         <select id="preset-select" class="grow flex-1">
-          <option value="">${i18n.t('presets.select') || 'Select a preset...'}</option>
+          <option value="">${i18n.t('presets.select')}</option>
         </select>
-        <button class="btn-icon d-none" id="btn-clear-preset" title="${i18n.t('presets.clearSelection') || 'Clear selection'}" aria-label="${i18n.t('presets.clearSelection') || 'Clear selection'}">✕</button>
+        <button class="btn-icon d-none" id="btn-clear-preset" title="${i18n.t('presets.clearSelection')}" aria-label="${i18n.t('presets.clearSelection')}">✕</button>
       </div>
       <div class="row gap-8">
         <button class="btn flex-1" id="btn-save-preset">
           💾 ${i18n.t('presets.save')}
         </button>
-        <button class="btn px-12" id="btn-new-preset" title="${i18n.t('presets.createNew') || 'Create new preset'}" aria-label="${i18n.t('presets.createNew') || 'Create new preset'}">➕</button>
+        <button class="btn px-12" id="btn-new-preset" title="${i18n.t('presets.createNew')}" aria-label="${i18n.t('presets.createNew')}">➕</button>
       </div>
       <div class="row">
         <button class="btn full-width" id="btn-manage-presets">
@@ -621,12 +621,12 @@ function updateSaveButtonState() {
   if (currentLoadedPresetId) {
     const preset = presetManager.getPreset(currentLoadedPresetId);
     if (preset) {
-      btnSavePreset.innerHTML = `🔄 ${i18n.t('presets.update') || 'Update'} "${preset.name}"`;
+      btnSavePreset.innerHTML = `🔄 ${i18n.t('presets.update')} "${preset.name}"`;
       btnSavePreset.title = `Update preset "${preset.name}" with current settings`;
       return;
     }
   }
-  btnSavePreset.innerHTML = `💾 ${i18n.t('presets.save') || 'Save'}`;
+  btnSavePreset.innerHTML = `💾 ${i18n.t('presets.save')}`;
   btnSavePreset.title = 'Save current settings as new preset';
 }
 
@@ -649,9 +649,9 @@ function bindPresetEvents() {
           const currentConfig = getCurrentGeneratorConfig();
           const success = await presetManager.updatePreset(currentLoadedPresetId, { config: currentConfig });
           if (success) {
-            showToast(`"${preset.name}" ${i18n.t('presets.updated') || 'updated'}!`, 'success');
+            showToast(`"${preset.name}" ${i18n.t('presets.updated')}!`, 'success');
           } else {
-            showToast(i18n.t('presets.updateFailed') || 'Update failed (vault locked?)', 'error');
+            showToast(i18n.t('presets.updateFailed'), 'error');
           }
           return;
         }
@@ -1191,8 +1191,8 @@ function bindPresetModalEvents(modal) {
           const presetToUpdate = presetManager.getPreset(presetId);
           if (presetToUpdate) {
             const confirmed = await showConfirm(i18n.t('presets.replaceConfirm', { name: presetToUpdate.name }), {
-              title: i18n.t('presets.updateTitle') || 'Update Preset',
-              confirmLabel: i18n.t('common.update') || 'Update',
+              title: i18n.t('presets.updateTitle'),
+              confirmLabel: i18n.t('common.update'),
               danger: false
             });
             if (confirmed) {
@@ -1212,8 +1212,8 @@ function bindPresetModalEvents(modal) {
 
         case 'delete':
           const deleteConfirmed = await showConfirm(i18n.t('presets.deleteConfirm'), {
-            title: i18n.t('presets.deleteTitle') || 'Delete Preset',
-            confirmLabel: i18n.t('common.delete') || 'Delete',
+            title: i18n.t('presets.deleteTitle'),
+            confirmLabel: i18n.t('common.delete'),
             danger: true
           });
           if (deleteConfirmed) {
@@ -1437,8 +1437,8 @@ function showEditPresetModal(presetId) {
     if (!preset) return;
 
     const confirmed = await showConfirm(i18n.t('presets.replaceConfirm', { name: preset.name }), {
-      title: i18n.t('presets.updateTitle') || 'Update Configuration',
-      confirmLabel: i18n.t('common.update') || 'Update'
+      title: i18n.t('presets.updateTitle'),
+      confirmLabel: i18n.t('common.update')
     });
     if (confirmed) {
       const currentConfig = getCurrentGeneratorConfig();
@@ -1705,8 +1705,8 @@ async function loadVaultPresetsList(modal) {
         if (!entry) return;
 
         const confirmed = await showConfirm(i18n.t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
-          title: i18n.t('vault.actions.delete') || 'Delete Entry',
-          confirmLabel: i18n.t('common.delete') || 'Delete',
+          title: i18n.t('vault.actions.delete'),
+          confirmLabel: i18n.t('common.delete'),
           danger: true
         });
         if (confirmed) {
@@ -1770,8 +1770,8 @@ async function showHistoryModal() {
 
   if (!settings.enabled) {
     const confirmed = await showConfirm(i18n.t('history.enableConfirm'), {
-      title: i18n.t('history.title') || 'Enable History',
-      confirmLabel: i18n.t('common.enable') || 'Enable'
+      title: i18n.t('history.title'),
+      confirmLabel: i18n.t('common.enable')
     });
     if (confirmed) {
       historyManager.updateSettings({ enabled: true });
@@ -1900,7 +1900,7 @@ function bindHistoryModalEvents(modal) {
               await navigator.clipboard.writeText(entry.password);
               showToast(i18n.t('toast.historyCopied'), 'success');
             } catch (err) {
-              showToast(i18n.t('toast.copyFailed') || 'Copy failed', 'error');
+              showToast(i18n.t('toast.copyFailed'), 'error');
             }
           }
           break;
@@ -1913,9 +1913,9 @@ function bindHistoryModalEvents(modal) {
           break;
 
         case 'delete': {
-          const deleteConfirmed = await showConfirm(i18n.t('history.deleteEntryConfirm') || 'Delete this entry?', {
-            title: i18n.t('history.deleteTitle') || 'Delete Entry',
-            confirmLabel: i18n.t('common.delete') || 'Delete',
+          const deleteConfirmed = await showConfirm(i18n.t('history.deleteEntryConfirm'), {
+            title: i18n.t('history.deleteTitle'),
+            confirmLabel: i18n.t('common.delete'),
             danger: true
           });
           if (deleteConfirmed) {
@@ -1954,8 +1954,8 @@ function bindHistoryModalEvents(modal) {
   // Clear all button
   modal.querySelector('#btn-clear-history')?.addEventListener('click', async () => {
     const confirmed = await showConfirm(i18n.t('history.clearAllConfirm'), {
-      title: i18n.t('history.clearTitle') || 'Clear History',
-      confirmLabel: i18n.t('common.clearAll') || 'Clear All',
+      title: i18n.t('history.clearTitle'),
+      confirmLabel: i18n.t('common.clearAll'),
       danger: true
     });
     if (confirmed) {
@@ -2256,8 +2256,8 @@ function bindPluginModalEvents(modal) {
 
         case 'uninstall':
           const uninstallConfirmed = await showConfirm(i18n.t('vault.messages.uninstallPluginConfirm', { name: pluginName }), {
-            title: i18n.t('plugins.uninstallTitle') || 'Uninstall Plugin',
-            confirmLabel: i18n.t('common.uninstall') || 'Uninstall',
+            title: i18n.t('plugins.uninstallTitle'),
+            confirmLabel: i18n.t('common.uninstall'),
             danger: true
           });
           if (uninstallConfirmed) {
@@ -2301,8 +2301,8 @@ function bindPluginModalEvents(modal) {
   // Clear all plugins
   modal.querySelector('#btn-clear-all-plugins')?.addEventListener('click', async () => {
     const confirmed = await showConfirm(i18n.t('toast.clearPluginsConfirm'), {
-      title: i18n.t('plugins.clearAllTitle') || 'Clear All Plugins',
-      confirmLabel: i18n.t('common.clearAll') || 'Clear All',
+      title: i18n.t('plugins.clearAllTitle'),
+      confirmLabel: i18n.t('common.clearAll'),
       danger: true
     });
     if (confirmed) {
