@@ -61,6 +61,9 @@ import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/
 import { renderLockScreen } from './vault/views/lock-screen.js';
 import { renderEmptyState, renderNoSelection, renderEntrySkeleton, renderDetailSkeleton } from './vault/views/empty-states.js';
 
+// Vault components imports (Phase 6 modularization)
+import { showContextMenu } from './vault/components/context-menu.js';
+
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
 
@@ -5320,7 +5323,14 @@ export class VaultUI {
         e.preventDefault();
         const entry = this.#entries.find(en => en.id === row.dataset.entryId);
         if (entry) {
-          this.#showContextMenu(entry, e.clientX, e.clientY);
+          showContextMenu({
+            entry,
+            x: e.clientX,
+            y: e.clientY,
+            getEntryTypes,
+            t,
+            onAction: (action, entry) => this.#handleContextMenuAction(action, entry)
+          });
         }
       });
     });
@@ -5351,161 +5361,47 @@ export class VaultUI {
     });
   }
 
-  #showContextMenu(entry, x, y) {
-    // Remove existing context menu
-    document.querySelector('.vault-context-menu')?.remove();
-
-    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
-    const menu = document.createElement('div');
-    menu.className = 'vault-context-menu';
-    menu.innerHTML = `
-      <div class="vault-ctx-header">
-        <span class="vault-ctx-icon" data-type-color="${type.color}">${type.icon}</span>
-        <span class="vault-ctx-title">${escapeHtml(entry.title)}</span>
-      </div>
-      <div class="vault-ctx-divider"></div>
-      ${entry.type === 'login' && entry.data?.username ? `
-        <button class="vault-ctx-item" data-action="copy-username">
-          <span class="vault-ctx-item-icon">👤</span>
-          Copy username
-        </button>
-      ` : ''}
-      ${entry.type === 'login' && entry.data?.password ? `
-        <button class="vault-ctx-item" data-action="copy-password">
-          <span class="vault-ctx-item-icon">🔑</span>
-          Copy password
-        </button>
-      ` : ''}
-      ${entry.data?.url ? `
-        <button class="vault-ctx-item" data-action="open-url">
-          <span class="vault-ctx-item-icon">🔗</span>
-          Open website
-        </button>
-      ` : ''}
-      <div class="vault-ctx-divider"></div>
-      <button class="vault-ctx-item" data-action="edit">
-        <span class="vault-ctx-item-icon">✏️</span>
-        ${t('vault.common.edit')}
-      </button>
-      <button class="vault-ctx-item" data-action="duplicate">
-        <span class="vault-ctx-item-icon">📋</span>
-        ${t('vault.common.duplicate')}
-      </button>
-      <button class="vault-ctx-item" data-action="move">
-        <span class="vault-ctx-item-icon">📁</span>
-        ${t('vault.common.move')}
-      </button>
-      <button class="vault-ctx-item" data-action="toggle-favorite">
-        <span class="vault-ctx-item-icon">${entry.favorite ? '☆' : '★'}</span>
-        ${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}
-      </button>
-      <button class="vault-ctx-item" data-action="toggle-pin">
-        <span class="vault-ctx-item-icon">${entry.pinned ? '📍' : '📌'}</span>
-        ${entry.pinned ? t('vault.actions.unpin') : t('vault.actions.pinToTop')}
-      </button>
-      <div class="vault-ctx-divider"></div>
-      <button class="vault-ctx-item vault-ctx-danger" data-action="delete">
-        <span class="vault-ctx-item-icon">🗑️</span>
-        ${t('vault.common.delete')}
-      </button>
-    `;
-
-    // Position the menu
-    document.body.appendChild(menu);
-    const rect = menu.getBoundingClientRect();
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
-
-    // Adjust if menu goes off-screen
-    let posX = x;
-    let posY = y;
-    if (x + rect.width > viewportW) posX = viewportW - rect.width - 10;
-    if (y + rect.height > viewportH) posY = viewportH - rect.height - 10;
-
-    menu.style.left = `${posX}px`;
-    menu.style.top = `${posY}px`;
-
-    // Event handlers
-    const closeMenu = () => menu.remove();
-
-    menu.querySelectorAll('.vault-ctx-item').forEach(item => {
-      item.addEventListener('click', async () => {
-        const action = item.dataset.action;
-        closeMenu();
-
-        switch (action) {
-          case 'copy-username':
-            await this.#copyToClipboard(entry.data?.username, t('vault.messages.usernameCopied'));
-            break;
-          case 'copy-password':
-            await this.#copyToClipboard(entry.data?.password, t('vault.messages.passwordCopied'));
-            break;
-          case 'open-url':
-            if (entry.data?.url) window.open(entry.data.url, '_blank', 'noopener,noreferrer');
-            break;
-          case 'edit':
-            this.#selectedEntry = entry;
-            this.#updateDetailPanel();
-            this.#openEditModal(entry);
-            break;
-          case 'duplicate':
-            await this.#duplicateEntry(entry);
-            break;
-          case 'move':
-            this.#selectedEntries.clear();
-            this.#selectedEntries.add(entry.id);
-            document.getElementById('move-folder-modal').outerHTML = renderMoveFolderModal({ folders: this.#folders, t });
-            this.#openModal('move-folder-modal');
-            break;
-          case 'toggle-favorite':
-            await this.#toggleEntryFavorite(entry);
-            break;
-          case 'toggle-pin':
-            await this.#toggleEntryPin(entry);
-            break;
-          case 'delete': {
-            const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
-              type: 'danger',
-              confirmLabel: t('common.delete') || 'Delete',
-            });
-            if (confirmed) this.#deleteEntryWithUndo(entry);
-            break;
-          }
-        }
-      });
-    });
-
-    // Close on click outside or Escape - with safety check for removed elements
-    setTimeout(() => {
-      const cleanup = () => {
-        document.removeEventListener('click', handler);
-        document.removeEventListener('keydown', escHandler);
-      };
-      const handler = (e) => {
-        // Guard: if menu was already removed, just cleanup listeners
-        if (!document.body.contains(menu)) {
-          cleanup();
-          return;
-        }
-        if (!menu.contains(e.target)) {
-          closeMenu();
-          cleanup();
-        }
-      };
-      const escHandler = (e) => {
-        if (e.key === 'Escape') {
-          // Guard: if menu was already removed, just cleanup listeners
-          if (!document.body.contains(menu)) {
-            cleanup();
-            return;
-          }
-          closeMenu();
-          cleanup();
-        }
-      };
-      document.addEventListener('click', handler);
-      document.addEventListener('keydown', escHandler);
-    }, 0);
+  // Context menu moved to ./vault/components/context-menu.js
+  async #handleContextMenuAction(action, entry) {
+    switch (action) {
+      case 'copy-username':
+        await this.#copyToClipboard(entry.data?.username, t('vault.messages.usernameCopied'));
+        break;
+      case 'copy-password':
+        await this.#copyToClipboard(entry.data?.password, t('vault.messages.passwordCopied'));
+        break;
+      case 'open-url':
+        if (entry.data?.url) window.open(entry.data.url, '_blank', 'noopener,noreferrer');
+        break;
+      case 'edit':
+        this.#selectedEntry = entry;
+        this.#updateDetailPanel();
+        this.#openEditModal(entry);
+        break;
+      case 'duplicate':
+        await this.#duplicateEntry(entry);
+        break;
+      case 'move':
+        this.#selectedEntries.clear();
+        this.#selectedEntries.add(entry.id);
+        document.getElementById('move-folder-modal').outerHTML = renderMoveFolderModal({ folders: this.#folders, t });
+        this.#openModal('move-folder-modal');
+        break;
+      case 'toggle-favorite':
+        await this.#toggleEntryFavorite(entry);
+        break;
+      case 'toggle-pin':
+        await this.#toggleEntryPin(entry);
+        break;
+      case 'delete': {
+        const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
+          type: 'danger',
+          confirmLabel: t('common.delete') || 'Delete',
+        });
+        if (confirmed) this.#deleteEntryWithUndo(entry);
+        break;
+      }
+    }
   }
 
   async #toggleEntryFavorite(entry) {
