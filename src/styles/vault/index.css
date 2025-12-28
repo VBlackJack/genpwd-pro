@@ -1,0 +1,21 @@
+/* src/styles/vault/index.css - Vault Styles Entry Point */
+/*
+ * This file orchestrates the vault CSS modules.
+ *
+ * MIGRATION STATUS:
+ * Currently using _legacy.css for backward compatibility.
+ * Individual modules are ready and can be progressively enabled
+ * by uncommenting their imports and removing corresponding code from _legacy.css
+ *
+ * Module structure:
+ * - _variables.css      : CSS custom properties
+ * - _animations.css     : Keyframe animations
+ * - layout/             : Grid, sidebar, panels, modals
+ * - forms/              : Form inputs, custom fields
+ * - components/         : Buttons, toasts
+ * - states/             : Empty states, loading, errors
+ */
+
+/* ==================== LEGACY (full original file) ==================== */
+/* This contains all styles - uncomment modules above and remove from _legacy.css to migrate */
+@import '_legacy.css';

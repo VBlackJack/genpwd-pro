@@ -1,0 +1,30 @@
+/* src/styles/vault/layout/_grid.css - 3-Pane Glass Layout */
+
+.vault-app {
+  display: grid;
+  grid-template-columns: 280px minmax(300px, 400px) 1fr;
+  height: 100%;
+  width: 100%;
+  min-height: 0; /* Important for grid children to respect height */
+  /* Removed opaque background, handled by main keyframes/body */
+  gap: 0;
+  padding: 0;
+}
+
+.vault-app > * {
+  min-height: 0;
+}
+
+/* Vault Container */
+#vault-container {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 80px); /* Full viewport minus header */
+  min-height: 0;
+}
+
+/* Hidden by default */
+[hidden] {
+  display: none;
+}

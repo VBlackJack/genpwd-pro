@@ -1,0 +1,110 @@
+/* src/styles/vault/layout/_modals.css - Vault Modal Base Styles */
+
+/* ==================== MODALS ==================== */
+.vault-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--modal-backdrop-heavy, rgba(0, 0, 0, 0.7));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-smooth);
+  z-index: var(--z-modal-backdrop);
+}
+
+.vault-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.vault-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  background: var(--vault-bg-primary, #1a1d2e);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--vault-radius-lg);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vault-modal-overlay.active .vault-modal {
+  transform: scale(1) translateY(0);
+}
+
+.vault-modal-lg {
+  max-width: 520px;
+}
+
+.vault-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--vault-border);
+}
+
+.vault-modal-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--vault-text);
+}
+
+.vault-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: var(--vault-radius-sm);
+  color: var(--vault-text-muted);
+  cursor: pointer;
+  transition: all var(--vault-transition);
+}
+
+.vault-modal-close:hover {
+  background: var(--vault-surface-hover);
+  color: var(--vault-text);
+}
+
+.vault-modal-close:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
+}
+
+.vault-modal-body {
+  padding: 1.25rem;
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+}
+
+/* Ensure text inputs in vault modals are selectable */
+.vault-modal-body input[type="text"],
+.vault-modal-body input[type="password"],
+.vault-modal-body input[type="email"],
+.vault-modal-body input[type="url"],
+.vault-modal-body textarea,
+.vault-input {
+  user-select: text;
+}
+
+.vault-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--vault-border);
+}

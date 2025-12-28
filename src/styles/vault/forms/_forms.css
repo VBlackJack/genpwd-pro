@@ -1,0 +1,144 @@
+/* src/styles/vault/forms/_forms.css - Vault Form Styles */
+
+/* ==================== FORMS ==================== */
+.vault-form-group {
+  margin-bottom: 1rem;
+}
+
+/* Fieldset for radio groups - reset browser defaults */
+.vault-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vault-fieldset > legend.vault-label {
+  float: left;
+  width: 100%;
+}
+
+.vault-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.vault-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--vault-text);
+}
+
+.vault-label .required {
+  color: var(--vault-error);
+}
+
+.vault-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--vault-bg);
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-sm);
+  color: var(--vault-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all var(--transition-normal);
+}
+
+.vault-input:hover:not(:focus) {
+  border-color: var(--vault-border-light);
+}
+
+.vault-input:focus-visible {
+  outline: none;
+  border-color: var(--vault-primary);
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.15),
+    0 2px 8px rgba(59, 130, 246, 0.1);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.vault-input::placeholder {
+  color: var(--vault-text-dim);
+  transition: opacity var(--transition-normal);
+}
+
+.vault-input:focus::placeholder {
+  opacity: 0.5;
+}
+
+.vault-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.vault-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.vault-field-error {
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--vault-error);
+}
+
+/* Type Selector */
+.vault-type-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.vault-type-option {
+  cursor: pointer;
+}
+
+.vault-type-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vault-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 0.5rem;
+  background: var(--vault-bg);
+  border: 2px solid var(--vault-border);
+  border-radius: var(--vault-radius);
+  transition: all var(--vault-transition);
+}
+
+.vault-type-option:hover .vault-type-card {
+  border-color: var(--vault-border-light);
+}
+
+.vault-type-option input:checked+.vault-type-card {
+  border-color: var(--type-color, var(--vault-primary));
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.vault-type-option input:focus+.vault-type-card {
+  box-shadow: 0 0 0 2px var(--vault-primary);
+}
+
+.vault-type-icon {
+  font-size: 1.5rem;
+}
+
+.vault-type-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--vault-text-muted);
+  text-align: center;
+}

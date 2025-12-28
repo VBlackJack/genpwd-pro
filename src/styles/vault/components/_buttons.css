@@ -1,0 +1,113 @@
+/* src/styles/vault/components/_buttons.css - Vault Button Styles */
+
+/* ==================== BUTTONS ==================== */
+.vault-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--vault-surface-hover);
+  border: none;
+  border-radius: var(--vault-radius);
+  color: var(--vault-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.vault-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.vault-btn:hover::before {
+  width: 300%;
+  height: 300%;
+}
+
+.vault-btn:hover {
+  background: var(--vault-border);
+  transform: translateY(-1px);
+}
+
+.vault-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.vault-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vault-primary), 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.vault-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.vault-btn:disabled::before {
+  display: none;
+}
+
+/* Button spinner for loading states */
+.vault-btn .btn-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.vault-btn-primary {
+  background: linear-gradient(135deg, var(--vault-primary), var(--accent-blue-light));
+  color: white;
+  box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
+}
+
+.vault-btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent-blue-light), var(--accent-blue-darker));
+  box-shadow: 0 6px 20px -3px rgba(59, 130, 246, 0.5);
+}
+
+.vault-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--vault-border);
+}
+
+.vault-btn-secondary:hover {
+  background: var(--vault-surface-hover);
+  border-color: var(--vault-border-light);
+}
+
+.vault-btn-full {
+  width: 100%;
+}
+
+/* ==================== SPINNERS ==================== */
+.vault-spinner-lg {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--vault-border);
+  border-top-color: var(--vault-primary);
+  border-radius: var(--radius-full);
+  animation: spin var(--animation-spin);
+}
+
+.vault-spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--vault-border);
+  border-top-color: currentColor;
+  border-radius: var(--radius-full);
+  animation: spin var(--animation-spin);
+}
