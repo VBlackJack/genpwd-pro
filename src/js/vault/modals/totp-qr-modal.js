@@ -4,7 +4,7 @@
  */
 
 import { escapeHtml } from '../utils/formatter.js';
-import { generateQRCodeSVG } from '../../utils/totp.js';
+import { generateQRCodeSVG } from '../../utils/qrcode.js';
 
 /**
  * Build OTPAuth URI

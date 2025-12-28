@@ -83,18 +83,8 @@ import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } 
 import { performExport, downloadExport } from './vault/services/export-service.js';
 import { getTooltipManager, destroyTooltips } from './vault/services/tooltip-manager.js';
 
-// Entry type configuration - function to get translated labels
-const getEntryTypes = () => ({
-  login: { icon: '🔑', label: t('vault.detail.login'), color: '#60a5fa' },
-  note: { icon: '📝', label: t('vault.detail.secureNote'), color: '#fbbf24' },
-  card: { icon: '💳', label: t('vault.detail.creditCard'), color: '#f472b6' },
-  identity: { icon: '👤', label: t('vault.detail.identity'), color: '#a78bfa' },
-  ssh: { icon: '🔐', label: t('vault.detail.sshKey'), color: '#34d399' },
-  preset: { icon: '⚙️', label: t('vault.detail.preset'), color: '#94a3b8' }
-});
-
-// Alias for backward compatibility
-const ENTRY_TYPES = getEntryTypes();
+// Entry type configuration
+import { getEntryTypes, ENTRY_TYPES } from './config/entry-types.js';
 
 // Category filters - function to get translated labels
 const getCategories = () => [
