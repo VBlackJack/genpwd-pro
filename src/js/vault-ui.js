@@ -69,6 +69,8 @@ import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
 import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.js';
+import { renderEntryRow } from './vault/views/entry-row-renderer.js';
+import { renderField, renderCustomFieldsDisplay } from './vault/views/field-renderer.js';
 
 // Vault components imports (Phase 6 modularization)
 import { showContextMenu } from './vault/components/context-menu.js';
@@ -1781,87 +1783,16 @@ export class VaultUI {
     `;
   }
 
+  // Entry row rendering moved to ./vault/views/entry-row-renderer.js
   #renderEntryRow(entry, index) {
-    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
-    const subtitle = entry.data?.username || entry.data?.url || type.label;
-    const isSelected = this.#selectedEntry?.id === entry.id;
-    const isMultiSelected = this.#selectedEntries.has(entry.id);
-    const isFavorite = entry.favorite;
-    const isPinned = entry.pinned;
-    const strength = entry.type === 'login' && entry.data?.password
-      ? getPasswordStrength(entry.data.password)
-      : null;
-    const isDuplicate = entry.type === 'login' && entry.data?.password
-      ? isPasswordDuplicated(entry.data.password, entry.id, this.#entries)
-      : false;
-    const expiryStatus = getExpiryStatus(entry);
-
-    return `
-      <div class="vault-entry-row ${isSelected ? 'selected' : ''} ${isMultiSelected ? 'multi-selected' : ''} ${isPinned ? 'pinned' : ''}"
-           data-entry-id="${entry.id}"
-           data-entry-index="${index}"
-           role="option"
-           aria-selected="${isSelected || isMultiSelected}"
-           tabindex="${isSelected ? 0 : -1}"
-           draggable="true">
-        <label class="vault-checkbox-wrapper" title="Select">
-          <input type="checkbox" class="vault-checkbox" data-action="multi-select"
-                 ${isMultiSelected ? 'checked' : ''} aria-label="Select ${escapeHtml(entry.title)}">
-          <span class="vault-checkbox-mark"></span>
-        </label>
-        <button class="vault-fav-toggle ${isFavorite ? 'active' : ''}"
-                data-action="toggle-favorite"
-                title="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
-                aria-label="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
-                aria-pressed="${isFavorite}">
-          ${isFavorite ? '★' : '☆'}
-        </button>
-        <div class="vault-entry-icon" data-type-color="${type.color}" aria-hidden="true">
-          ${entry.data?.url ? renderFaviconImg(entry.data.url, 20) : type.icon}
-        </div>
-        <div class="vault-entry-content">
-          <div class="vault-entry-title">
-            ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.entryCard.pinned')}"><span aria-hidden="true">📌</span></span>` : ''}
-            ${escapeHtml(entry.title)}
-            ${strength ? `<span class="vault-strength-dot ${strength}" role="img" aria-label="${t('vault.entryCard.strengthPrefix')}: ${t('vault.filters.' + strength)}" title="${t('vault.entryCard.strengthTitle')}: ${t('vault.filters.' + strength)}"></span>` : ''}
-            ${isDuplicate ? `<span class="vault-duplicate-badge" role="img" aria-label="${t('vault.entryCard.reusedPassword')}" title="${t('vault.entryCard.reusedPassword')}"><span aria-hidden="true">🔁</span></span>` : ''}
-            ${expiryStatus.badge}
-          </div>
-          <div class="vault-entry-subtitle">${escapeHtml(subtitle)}</div>
-          ${renderTagsInRow({ entry, tags: this.#tags })}
-        </div>
-        <div class="vault-entry-actions" role="group" aria-label="Quick actions">
-          ${entry.type === 'login' && entry.data?.username ? `
-            <button class="vault-quick-btn copy-user" data-action="copy-username"
-                    title="${t('vault.actions.copyUsername')}" aria-label="${t('vault.actions.copyUsername')}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </button>
-          ` : ''}
-          ${entry.type === 'login' && entry.data?.password ? `
-            <button class="vault-quick-btn copy-pass" data-action="copy-password"
-                    title="${t('vault.actions.copyPassword')}" aria-label="${t('vault.actions.copyPassword')}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </button>
-          ` : ''}
-          ${entry.data?.url ? `
-            <button class="vault-quick-btn open-url" data-action="open-url"
-                    title="Open website" aria-label="Open website in new tab">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    `;
+    return renderEntryRow({
+      entry,
+      index,
+      isSelected: this.#selectedEntry?.id === entry.id,
+      isMultiSelected: this.#selectedEntries.has(entry.id),
+      entries: this.#entries,
+      tags: this.#tags
+    });
   }
 
   #renderEntryDetail() {
@@ -1932,7 +1863,7 @@ export class VaultUI {
 
       <div class="vault-detail-body">
         ${this.#renderEntryFields(entry)}
-        ${this.#renderCustomFieldsDisplay(entry)}
+        ${renderCustomFieldsDisplay(entry)}
         ${renderPasswordAge(entry)}
 
         <div class="vault-detail-meta">
@@ -1963,15 +1894,16 @@ export class VaultUI {
     `;
   }
 
+  // Entry fields rendering uses imported renderField from ./vault/views/field-renderer.js
   #renderEntryFields(entry) {
     switch (entry.type) {
       case 'login':
         return `
-          ${this.#renderField(t('vault.labels.username'), entry.data?.username, 'username', false, true)}
-          ${this.#renderField(t('vault.labels.password'), entry.data?.password, 'password', true, true)}
+          ${renderField({ label: t('vault.labels.username'), value: entry.data?.username, key: 'username', copyable: true })}
+          ${renderField({ label: t('vault.labels.password'), value: entry.data?.password, key: 'password', masked: true, copyable: true })}
           ${renderPasswordHistory(entry)}
           ${entry.data?.totp ? renderTOTPField(entry) : ''}
-          ${this.#renderField(t('vault.labels.url'), entry.data?.url, 'url', false, true, true)}
+          ${renderField({ label: t('vault.labels.url'), value: entry.data?.url, key: 'url', copyable: true, isUrl: true })}
           ${renderExpirationField(entry)}
           ${entry.notes ? renderNotesFieldHTML(entry.notes, t) : ''}
         `;
@@ -2005,168 +1937,23 @@ export class VaultUI {
         `;
       case 'card':
         return `
-          ${this.#renderField(t('vault.labels.holder'), entry.data?.holder)}
-          ${this.#renderField(t('vault.labels.cardNumber'), entry.data?.number, 'number', true, true)}
-          ${this.#renderField(t('vault.labels.expiration'), entry.data?.expiry)}
-          ${this.#renderField(t('vault.labels.cvv') || 'CVV', entry.data?.cvv, 'cvv', true, true)}
+          ${renderField({ label: t('vault.labels.holder'), value: entry.data?.holder })}
+          ${renderField({ label: t('vault.labels.cardNumber'), value: entry.data?.number, key: 'number', masked: true, copyable: true })}
+          ${renderField({ label: t('vault.labels.expiration'), value: entry.data?.expiry })}
+          ${renderField({ label: t('vault.labels.cvv') || 'CVV', value: entry.data?.cvv, key: 'cvv', masked: true, copyable: true })}
         `;
       case 'identity':
         return `
-          ${this.#renderField(t('vault.labels.fullName'), entry.data?.fullName)}
-          ${this.#renderField(t('vault.labels.email'), entry.data?.email, 'email', false, true)}
-          ${this.#renderField(t('vault.labels.phone'), entry.data?.phone, 'phone', false, true)}
+          ${renderField({ label: t('vault.labels.fullName'), value: entry.data?.fullName })}
+          ${renderField({ label: t('vault.labels.email'), value: entry.data?.email, key: 'email', copyable: true })}
+          ${renderField({ label: t('vault.labels.phone'), value: entry.data?.phone, key: 'phone', copyable: true })}
         `;
       default:
         return '';
     }
   }
 
-  /**
-   * Render custom fields for display in the detail view
-   * @param {Object} entry - The entry object
-   * @returns {string} HTML string
-   */
-  #renderCustomFieldsDisplay(entry) {
-    const fields = entry.data?.fields || entry.fields || [];
-    if (!fields || fields.length === 0) return '';
-
-    const fieldKindLabels = {
-      text: 'Text',
-      hidden: 'Hidden',
-      password: 'Password',
-      url: 'URL',
-      email: 'Email',
-      phone: 'Phone',
-      date: 'Date'
-    };
-
-    return `
-      <div class="vault-custom-fields-display">
-        <div class="vault-section-divider">
-          <span class="vault-section-divider-text">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="12" y1="8" x2="12" y2="16"></line>
-              <line x1="8" y1="12" x2="16" y2="12"></line>
-            </svg>
-            ${t('vault.labels.customFields')}
-          </span>
-        </div>
-        ${fields.map(field => {
-      const isMasked = field.isSecured || field.kind === 'hidden' || field.kind === 'password';
-      const isUrl = field.kind === 'url';
-      const isEmail = field.kind === 'email';
-      const isPhone = field.kind === 'phone';
-      const isDate = field.kind === 'date';
-
-      // Format value based on type
-      let displayValue = escapeHtml(field.value || '');
-      if (isUrl && field.value) {
-        displayValue = `<a href="${escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(field.value)}</a>`;
-      } else if (isEmail && field.value) {
-        displayValue = `<a href="mailto:${escapeHtml(field.value)}">${escapeHtml(field.value)}</a>`;
-      } else if (isPhone && field.value) {
-        displayValue = `<a href="tel:${escapeHtml(field.value)}">${escapeHtml(field.value)}</a>`;
-      } else if (isDate && field.value) {
-        try {
-          const date = new Date(field.value);
-          displayValue = date.toLocaleDateString('en-US');
-        } catch {
-          displayValue = escapeHtml(field.value);
-        }
-      }
-
-      const maskedValue = isMasked ? '•'.repeat(Math.min((field.value || '').length, 24)) : displayValue;
-
-      return `
-            <div class="vault-field vault-custom-field-display" data-field-id="${escapeHtml(field.id || '')}" data-masked="${isMasked}">
-              <div class="vault-field-label-row">
-                <label class="vault-field-label">${escapeHtml(field.label)}</label>
-                ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Secured</span>' : ''}
-                <span class="vault-field-kind-badge">${fieldKindLabels[field.kind] || field.kind}</span>
-              </div>
-              <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(field.value || '')}">
-                <span class="vault-field-text ${isMasked ? 'masked' : ''}" data-value="${escapeHtml(field.value || '')}">
-                  ${isMasked ? maskedValue : displayValue}
-                </span>
-                <span class="vault-field-revealed">${escapeHtml(field.value || '')}</span>
-                <div class="vault-field-actions">
-                  ${isMasked ? `
-                    <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
-                      <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                      <svg class="icon-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" hidden>
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                    </button>
-                  ` : ''}
-                  <button class="vault-field-btn copy-field" data-value="${escapeHtml(field.value || '')}" title="Copier" aria-label="Copier ${escapeHtml(field.label)}">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-    }).join('')}
-      </div>
-    `;
-  }
-
-  #renderField(label, value, key = '', masked = false, copyable = false, isUrl = false) {
-    if (!value) return '';
-
-    // Dynamic masking based on actual value length
-    const maskedValue = masked ? '•'.repeat(Math.min(value.length, 24)) : escapeHtml(value);
-    const strengthHtml = key === 'password' ? renderPasswordStrength(value) : '';
-    const breachHtml = key === 'password' ? '<div class="vault-breach-indicator" id="password-breach-indicator"></div>' : '';
-
-    return `
-      <div class="vault-field" data-key="${key}" data-masked="${masked}">
-        <div class="vault-field-label-row">
-          <label class="vault-field-label">${label}</label>
-          ${masked ? `<span class="vault-field-hint">${t('vault.detail.hoverToReveal')}</span>` : ''}
-          ${breachHtml}
-        </div>
-        <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(value)}">
-          <span class="vault-field-text ${masked ? 'masked' : ''}" data-value="${escapeHtml(value)}">
-            ${isUrl ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>` : maskedValue}
-          </span>
-          <span class="vault-field-revealed">${escapeHtml(value)}</span>
-          <div class="vault-field-actions">
-            ${masked ? `
-              <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
-                <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg class="icon-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" hidden>
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            ` : ''}
-            ${copyable ? `
-              <button class="vault-field-btn copy-field" data-value="${escapeHtml(value)}" title="Copier" aria-label="Copier ${label}">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            ` : ''}
-          </div>
-        </div>
-        ${strengthHtml}
-      </div>
-    `;
-  }
-
-  // Entry field renderers moved to ./vault/components/entry-fields.js
+  // renderField and renderCustomFieldsDisplay moved to ./vault/views/field-renderer.js
 
   #initTOTPFields() {
     // Clear existing timer
