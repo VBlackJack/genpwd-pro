@@ -69,6 +69,7 @@ import { showContextMenu } from './vault/components/context-menu.js';
 import { showFolderContextMenu, FOLDER_ACTIONS } from './vault/components/folder-context-menu.js';
 import { showPasswordGenerator as showPwdGenerator, generatePassword } from './vault/components/password-generator.js';
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
+import { showColorPicker } from './vault/components/color-picker.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -1659,7 +1660,17 @@ export class VaultUI {
           this.#showAddSubfolderModal(folderId);
           break;
         case FOLDER_ACTIONS.COLOR:
-          this.#showFolderColorPicker(folderId, x, y);
+          showColorPicker({
+            x,
+            y,
+            currentColor: this.#getFolderColor(folderId),
+            onColorSelected: (color) => {
+              this.#setFolderColor(folderId, color);
+              this.#render();
+              this.#showToast(t('vault.messages.colorUpdated'), 'success');
+            },
+            t
+          });
           break;
         case FOLDER_ACTIONS.DELETE:
           await this.#confirmDeleteFolder(folderId);
@@ -8013,79 +8024,6 @@ export class VaultUI {
     } catch {
       // Silently fail - folder colors are not critical
     }
-  }
-
-  #showFolderColorPicker(folderId, x, y) {
-    document.querySelector('.vault-color-picker')?.remove();
-
-    const folderColors = [
-      { color: null, label: 'Default' },
-      { color: '#ef4444', label: 'Red' },
-      { color: '#f97316', label: 'Orange' },
-      { color: '#eab308', label: 'Yellow' },
-      { color: '#22c55e', label: 'Green' },
-      { color: '#06b6d4', label: 'Cyan' },
-      { color: '#3b82f6', label: 'Blue' },
-      { color: '#8b5cf6', label: 'Purple' },
-      { color: '#ec4899', label: 'Pink' }
-    ];
-
-    const currentColor = this.#getFolderColor(folderId);
-
-    const picker = document.createElement('div');
-    picker.className = 'vault-color-picker';
-    picker.innerHTML = `
-      <div class="vault-color-picker-header">Folder color</div>
-      <div class="vault-color-picker-grid">
-        ${folderColors.map(c => `
-          <button class="vault-color-option ${c.color === currentColor || (!c.color && !currentColor) ? 'active' : ''}"
-                  data-color="${c.color || ''}"
-                  data-option-color="${c.color || ''}"
-                  title="${c.label}">
-            ${c.color === currentColor || (!c.color && !currentColor) ? '✓' : ''}
-          </button>
-        `).join('')}
-      </div>
-    `;
-
-    // Apply CSP-compliant styles via CSSOM
-    picker.querySelectorAll('[data-option-color]').forEach(btn => {
-      const color = btn.dataset.optionColor;
-      btn.style.setProperty('--option-color', color || 'var(--vault-text-muted)');
-    });
-
-    document.body.appendChild(picker);
-
-    // Position
-    const rect = picker.getBoundingClientRect();
-    let posX = x;
-    let posY = y;
-    if (x + rect.width > window.innerWidth) posX = window.innerWidth - rect.width - 10;
-    if (y + rect.height > window.innerHeight) posY = window.innerHeight - rect.height - 10;
-    picker.style.left = `${posX}px`;
-    picker.style.top = `${posY}px`;
-
-    // Event handlers
-    picker.querySelectorAll('.vault-color-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const color = btn.dataset.color || null;
-        this.#setFolderColor(folderId, color);
-        picker.remove();
-        this.#render();
-        this.#showToast(t('vault.messages.colorUpdated'), 'success');
-      });
-    });
-
-    // Close on click outside
-    setTimeout(() => {
-      const handler = (e) => {
-        if (!picker.contains(e.target)) {
-          picker.remove();
-          document.removeEventListener('click', handler);
-        }
-      };
-      document.addEventListener('click', handler);
-    }, 0);
   }
 
   // ==================== WINDOWS HELLO ====================

@@ -31,3 +31,10 @@ export {
   closeTimeoutSettings,
   TIMEOUT_OPTIONS
 } from './timeout-settings.js';
+
+// Color picker
+export {
+  showColorPicker,
+  closeColorPicker,
+  FOLDER_COLORS
+} from './color-picker.js';
