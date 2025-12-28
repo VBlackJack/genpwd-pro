@@ -27,8 +27,8 @@ export function showHelloSettingsPopover(options = {}) {
   const popover = document.createElement('div');
   popover.className = 'vault-hello-popover';
 
-  const enabledDesc = t('vault.windowsHello.enabledDescription') || 'Windows Hello is enabled for this vault. You can unlock with your fingerprint or face.';
-  const disabledDesc = t('vault.windowsHello.disabledDescription') || 'Enable Windows Hello to unlock this vault with your fingerprint or face.';
+  const enabledDesc = t('vault.windowsHello.enabledDescription');
+  const disabledDesc = t('vault.windowsHello.disabledDescription');
 
   popover.innerHTML = `
     <div class="vault-hello-header">
@@ -49,7 +49,7 @@ export function showHelloSettingsPopover(options = {}) {
             <line x1="15" y1="9" x2="9" y2="15"></line>
             <line x1="9" y1="9" x2="15" y2="15"></line>
           </svg>
-          ${t('vault.windowsHello.disable') || 'Disable'}
+          ${t('vault.windowsHello.disable')}
         </button>
       ` : `
         <button class="vault-btn vault-btn-sm vault-btn-primary" id="hello-enable">
@@ -57,7 +57,7 @@ export function showHelloSettingsPopover(options = {}) {
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
-          ${t('vault.windowsHello.enable') || 'Enable'}
+          ${t('vault.windowsHello.enable')}
         </button>
       `}
     </div>
@@ -129,8 +129,8 @@ export function updateHelloButtonState(button, isEnabled, t = (k) => k) {
   if (!button) return;
   button.classList.toggle('hello-enabled', isEnabled);
   button.title = isEnabled
-    ? (t('vault.windowsHello.enabled') || 'Windows Hello (enabled)')
-    : (t('vault.windowsHello.disabled') || 'Windows Hello (disabled)');
+    ? t('vault.windowsHello.enabled')
+    : t('vault.windowsHello.disabled');
 }
 
 /**
@@ -151,11 +151,11 @@ export function showPasswordPrompt(options = {}) {
     modal.id = modalId;
     modal.className = 'vault-modal-overlay active';
 
-    const title = t('vault.windowsHello.verificationRequired') || 'Verification required';
-    const closeLabel = t('vault.common.close') || 'Close';
-    const placeholder = t('vault.placeholders.password') || 'Enter password';
-    const cancelText = t('vault.common.cancel') || 'Cancel';
-    const confirmText = t('vault.common.confirm') || 'Confirm';
+    const title = t('vault.windowsHello.verificationRequired');
+    const closeLabel = t('vault.common.close');
+    const placeholder = t('vault.placeholders.password');
+    const cancelText = t('vault.common.cancel');
+    const confirmText = t('vault.common.confirm');
 
     modal.innerHTML = `
       <div class="vault-modal vault-modal-sm">

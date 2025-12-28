@@ -339,6 +339,7 @@
       "locked": "Locked"
     },
     "placeholders": {
+      "password": "Enter password",
       "searchCtrlF": "Search... (Ctrl+F)",
       "searchTemplate": "Search template...",
       "entryTitleExample": "E.g., Gmail, Amazon...",

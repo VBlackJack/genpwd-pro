@@ -37,7 +37,7 @@ export function showColorPicker(options = {}) {
   const picker = document.createElement('div');
   picker.className = 'vault-color-picker';
   picker.innerHTML = `
-    <div class="vault-color-picker-header">${t('vault.folders.color') || 'Folder color'}</div>
+    <div class="vault-color-picker-header">${t('vault.folders.color')}</div>
     <div class="vault-color-picker-grid">
       ${FOLDER_COLORS.map(c => `
         <button class="vault-color-option ${c.color === currentColor || (!c.color && !currentColor) ? 'active' : ''}"

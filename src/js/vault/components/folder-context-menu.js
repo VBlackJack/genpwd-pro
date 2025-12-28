@@ -26,7 +26,7 @@ function renderFolderContextMenuContent({ t = (k) => k } = {}) {
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
       </svg>
-      ${t('vault.actions.rename') || 'Renommer'}
+      ${t('vault.actions.rename')}
     </button>
     <button class="vault-ctx-item" data-action="${FOLDER_ACTIONS.ADD_SUBFOLDER}">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -34,7 +34,7 @@ function renderFolderContextMenuContent({ t = (k) => k } = {}) {
         <line x1="12" y1="11" x2="12" y2="17"></line>
         <line x1="9" y1="14" x2="15" y2="14"></line>
       </svg>
-      ${t('vault.actions.newSubfolder') || 'New subfolder'}
+      ${t('vault.actions.newSubfolder')}
     </button>
     <button class="vault-ctx-item" data-action="${FOLDER_ACTIONS.COLOR}">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -44,7 +44,7 @@ function renderFolderContextMenuContent({ t = (k) => k } = {}) {
         <circle cx="6.5" cy="12.5" r=".5"></circle>
         <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"></path>
       </svg>
-      ${t('vault.actions.color') || 'Couleur'}
+      ${t('vault.actions.color')}
     </button>
     <div class="vault-ctx-divider"></div>
     <button class="vault-ctx-item vault-ctx-danger" data-action="${FOLDER_ACTIONS.DELETE}">
@@ -52,7 +52,7 @@ function renderFolderContextMenuContent({ t = (k) => k } = {}) {
         <polyline points="3 6 5 6 21 6"></polyline>
         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
       </svg>
-      ${t('vault.common.delete') || 'Delete'}
+      ${t('vault.common.delete')}
     </button>
   `;
 }

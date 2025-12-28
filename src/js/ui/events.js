@@ -995,9 +995,9 @@ async function clearResults() {
   const results = getResults();
   // Only confirm if there are results to clear (skip during automated tests)
   if (results && results.length > 0 && !window._testMode) {
-    const confirmed = await showConfirm(t('toast.clearResultsConfirm') || 'Clear all generated passwords?', {
-      title: t('actions.clearResults') || 'Clear Results',
-      confirmLabel: t('common.clear') || 'Clear',
+    const confirmed = await showConfirm(t('toast.clearResultsConfirm'), {
+      title: t('actions.clearResults'),
+      confirmLabel: t('common.clear'),
       danger: true
     });
     if (!confirmed) return;

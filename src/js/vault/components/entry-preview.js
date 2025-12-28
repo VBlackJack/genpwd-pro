@@ -68,7 +68,7 @@ function buildPreviewFields(entry, t) {
       const masked = '**** **** **** ' + (entry.data.cardNumber.slice(-4) || '****');
       fieldsHtml += `
         <div class="vault-preview-field">
-          <span class="vault-preview-label">${t('vault.labels.cardNumber') || 'Card number'}</span>
+          <span class="vault-preview-label">${t('vault.labels.cardNumber')}</span>
           <span class="vault-preview-value">${masked}</span>
         </div>
       `;
@@ -76,7 +76,7 @@ function buildPreviewFields(entry, t) {
     if (entry.data?.expiry) {
       fieldsHtml += `
         <div class="vault-preview-field">
-          <span class="vault-preview-label">${t('vault.labels.expiration') || 'Expiration'}</span>
+          <span class="vault-preview-label">${t('vault.labels.expiration')}</span>
           <span class="vault-preview-value">${escapeHtml(entry.data.expiry)}</span>
         </div>
       `;
@@ -88,7 +88,7 @@ function buildPreviewFields(entry, t) {
         : entry.data.note;
       fieldsHtml += `
         <div class="vault-preview-field">
-          <span class="vault-preview-label">${t('vault.labels.note') || 'Note'}</span>
+          <span class="vault-preview-label">${t('vault.labels.note')}</span>
           <span class="vault-preview-value">${escapeHtml(truncated)}</span>
         </div>
       `;
@@ -97,7 +97,7 @@ function buildPreviewFields(entry, t) {
     if (entry.data?.fullName) {
       fieldsHtml += `
         <div class="vault-preview-field">
-          <span class="vault-preview-label">${t('vault.labels.fullName') || 'Name'}</span>
+          <span class="vault-preview-label">${t('vault.labels.fullName')}</span>
           <span class="vault-preview-value">${escapeHtml(entry.data.fullName)}</span>
         </div>
       `;
@@ -105,7 +105,7 @@ function buildPreviewFields(entry, t) {
     if (entry.data?.email) {
       fieldsHtml += `
         <div class="vault-preview-field">
-          <span class="vault-preview-label">${t('vault.labels.email') || 'Email'}</span>
+          <span class="vault-preview-label">${t('vault.labels.email')}</span>
           <span class="vault-preview-value">${escapeHtml(entry.data.email)}</span>
         </div>
       `;
@@ -119,7 +119,7 @@ function buildPreviewFields(entry, t) {
     });
     fieldsHtml += `
       <div class="vault-preview-field">
-        <span class="vault-preview-label">${t('vault.labels.modified') || 'Modified'}</span>
+        <span class="vault-preview-label">${t('vault.labels.modified')}</span>
         <span class="vault-preview-value">${modified}</span>
       </div>
     `;
