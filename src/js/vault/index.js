@@ -27,3 +27,8 @@ export * from './utils/index.js';
 // Extracted from vault-ui.js for better testability and reuse
 // import { createClipboardService } from './vault/services/index.js';
 export * from './services/index.js';
+
+// ==================== UI VIEWS ====================
+// View components, templates, icons, and filtering logic
+// import { applyFilters, getIcon } from './vault/views/index.js';
+export * from './views/index.js';
