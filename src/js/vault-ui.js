@@ -77,6 +77,8 @@ import { showPasswordGenerator as showPwdGenerator } from './vault/components/pa
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 import { showColorPicker, getFolderColor, setFolderColor } from './vault/components/color-picker.js';
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
+import { renderTagsList, renderTagPicker, renderTagsInRow, renderTagsInDetail, TAG_COLORS } from './vault/components/tags-display.js';
+import { renderExpirationField, renderTOTPField } from './vault/components/entry-fields.js';
 import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
 
 // Vault services imports (Phase 6 modularization)
@@ -1254,7 +1256,7 @@ export class VaultUI {
                   </svg>
                 </button>
               </div>
-              ${this.#renderTagsList()}
+              ${renderTagsList({ tags: this.#tags, entries: this.#entries, selectedTag: this.#selectedTag })}
             </div>
           </nav>
 
@@ -1824,7 +1826,7 @@ export class VaultUI {
             ${expiryStatus.badge}
           </div>
           <div class="vault-entry-subtitle">${escapeHtml(subtitle)}</div>
-          ${this.#renderTagsInRow(entry)}
+          ${renderTagsInRow({ entry, tags: this.#tags })}
         </div>
         <div class="vault-entry-actions" role="group" aria-label="Quick actions">
           ${entry.type === 'login' && entry.data?.username ? `
@@ -1874,7 +1876,7 @@ export class VaultUI {
         <div class="vault-detail-info">
           <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
           <span class="vault-detail-type">${type.label}</span>
-          <div class="vault-detail-tags">${this.#renderTagsInDetail(entry)}</div>
+          <div class="vault-detail-tags">${renderTagsInDetail({ entry, tags: this.#tags })}</div>
         </div>
         <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions') || 'Entry actions'}">
           <button class="vault-icon-btn ${entry.favorite ? 'active' : ''}" id="btn-toggle-favorite"
@@ -1966,9 +1968,9 @@ export class VaultUI {
           ${this.#renderField(t('vault.labels.username'), entry.data?.username, 'username', false, true)}
           ${this.#renderField(t('vault.labels.password'), entry.data?.password, 'password', true, true)}
           ${renderPasswordHistory(entry)}
-          ${entry.data?.totp ? this.#renderTOTPField(entry) : ''}
+          ${entry.data?.totp ? renderTOTPField(entry) : ''}
           ${this.#renderField(t('vault.labels.url'), entry.data?.url, 'url', false, true, true)}
-          ${this.#renderExpirationField(entry)}
+          ${renderExpirationField(entry)}
           ${entry.notes ? renderNotesFieldHTML(entry.notes, t) : ''}
         `;
       case 'note':
@@ -2162,99 +2164,7 @@ export class VaultUI {
     `;
   }
 
-  // ==================== EXPIRATION FIELD ====================
-
-  #renderExpirationField(entry) {
-    if (!entry.data?.expiresAt) return '';
-
-    const status = getExpiryStatus(entry);
-    const expiresDate = new Date(entry.data.expiresAt);
-    const formattedDate = expiresDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-
-    let statusClass = '';
-    let statusIcon = '📅';
-    switch (status.status) {
-      case 'expired':
-        statusClass = 'expired';
-        statusIcon = '⚠️';
-        break;
-      case 'today':
-        statusClass = 'today';
-        statusIcon = '⏰';
-        break;
-      case 'soon':
-        statusClass = 'soon';
-        statusIcon = '🕐';
-        break;
-      case 'warning':
-        statusClass = 'warning';
-        statusIcon = '📅';
-        break;
-      default:
-        statusClass = 'valid';
-        statusIcon = '✅';
-    }
-
-    return `
-      <div class="vault-field vault-expiry-field ${statusClass}">
-        <div class="vault-field-label-row">
-          <label class="vault-field-label">Password expiration</label>
-        </div>
-        <div class="vault-expiry-display ${statusClass}">
-          <span class="vault-expiry-icon">${statusIcon}</span>
-          <div class="vault-expiry-info">
-            <span class="vault-expiry-date">${formattedDate}</span>
-            <span class="vault-expiry-status">${status.label}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  #renderTOTPField(entry) {
-    const totpSecret = entry.data?.totp;
-    if (!totpSecret) return '';
-
-    return `
-      <div class="vault-field vault-totp-field" data-key="totp" data-entry-id="${entry.id}">
-        <div class="vault-field-label-row">
-          <label class="vault-field-label">Code 2FA (TOTP)</label>
-          <span class="vault-field-hint">(actualisation auto)</span>
-        </div>
-        <div class="vault-totp-display">
-          <div class="vault-totp-code" data-secret="${escapeHtml(totpSecret)}">
-            <span class="totp-digits">------</span>
-          </div>
-          <div class="vault-totp-timer">
-            <svg class="totp-timer-ring" viewBox="0 0 36 36">
-              <circle class="totp-timer-bg" cx="18" cy="18" r="16"></circle>
-              <circle class="totp-timer-progress" cx="18" cy="18" r="16"></circle>
-            </svg>
-            <span class="totp-timer-text">--</span>
-          </div>
-          <button class="vault-field-btn copy-totp" title="Copier le code 2FA" aria-label="Copier le code 2FA">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-          <button class="vault-field-btn show-totp-qr" data-secret="${escapeHtml(totpSecret)}" data-title="${escapeHtml(entry.title)}" data-account="${escapeHtml(entry.data?.username || '')}" title="${t('vault.aria.showQRCode')}" aria-label="${t('vault.aria.showQRCode')}">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `;
-  }
+  // Entry field renderers moved to ./vault/components/entry-fields.js
 
   #initTOTPFields() {
     // Clear existing timer
@@ -2385,104 +2295,7 @@ export class VaultUI {
     showToast(t('vault.messages.templateApplied', { name: template.name }), 'success');
   }
 
-  // ==================== TAGS SYSTEM ====================
-
-  #renderTagsList() {
-    if (this.#tags.length === 0) {
-      return `<div class="vault-nav-empty">${t('vault.sidebar.noTags')}</div>`;
-    }
-
-    return this.#tags.map(tag => {
-      const tagColor = tag.color || '#6b7280';
-      const count = this.#entries.filter(e => e.tags?.includes(tag.id)).length;
-      return `
-        <button class="vault-nav-item vault-tag-item ${this.#selectedTag === tag.id ? 'active' : ''}"
-                data-tag="${tag.id}"
-                aria-current="${this.#selectedTag === tag.id ? 'true' : 'false'}">
-          <span class="vault-tag-dot" data-tag-color="${tagColor}" aria-hidden="true"></span>
-          <span class="vault-nav-label">${escapeHtml(tag.name)}</span>
-          <span class="vault-nav-count">${count}</span>
-          <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${escapeHtml(tag.name)}">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </button>
-        </button>
-      `;
-    }).join('');
-  }
-
-  #renderTagPicker(selectedTags = []) {
-    const tagColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
-
-    return `
-      <div class="vault-tag-picker">
-        <div class="vault-tag-picker-list">
-          ${this.#tags.length === 0 ? '<div class="vault-tag-empty">No tags available</div>' :
-        this.#tags.map(tag => `
-              <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
-                <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
-                <span class="vault-tag-chip" data-tag-color="${tag.color || '#6b7280'}">
-                  ${escapeHtml(tag.name)}
-                </span>
-              </label>
-            `).join('')
-      }
-        </div>
-        <div class="vault-tag-picker-add">
-          <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="${t('vault.placeholders.newTag')}">
-          <div class="vault-tag-color-picker" id="tag-color-picker">
-            ${tagColors.map((color, i) => `
-              <button type="button" class="vault-color-btn vault-color-option ${i === 0 ? 'selected' : ''}"
-                      data-color="${color}"
-                      title="Color ${i + 1}" aria-label="Color ${color}"></button>
-            `).join('')}
-          </div>
-          <button type="button" class="vault-btn vault-btn-sm vault-btn-primary" id="btn-create-tag">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  #renderTagsInRow(entry) {
-    if (!entry.tags || entry.tags.length === 0) return '';
-
-    const entryTags = this.#tags.filter(t => entry.tags.includes(t.id));
-    if (entryTags.length === 0) return '';
-
-    return `
-      <div class="vault-entry-tags">
-        ${entryTags.slice(0, 3).map(tag => `
-          <span class="vault-mini-tag" data-tag-color="${tag.color || '#6b7280'}" title="${escapeHtml(tag.name)}">
-            ${escapeHtml(tag.name)}
-          </span>
-        `).join('')}
-        ${entryTags.length > 3 ? `<span class="vault-mini-tag vault-more-tags">+${entryTags.length - 3}</span>` : ''}
-      </div>
-    `;
-  }
-
-  #renderTagsInDetail(entry) {
-    if (!entry.tags || entry.tags.length === 0) return '';
-    const entryTags = this.#tags.filter(t => entry.tags.includes(t.id));
-    if (entryTags.length === 0) return '';
-
-    return entryTags.map(tag => `
-      <span class="vault-detail-tag" data-tag-color="${tag.color || '#6b7280'}">
-        ${escapeHtml(tag.name)}
-      </span>
-    `).join('');
-  }
-
-  // Helper for attachments in detail view
-  // See #renderAttachmentsUI definition below
-
+  // Tags rendering moved to ./vault/components/tags-display.js
   // Tag modals moved to ./vault/modals/folder-tag-modals.js
 
   /** @type {Object|null} Pending import data */
