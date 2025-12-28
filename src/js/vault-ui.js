@@ -54,7 +54,7 @@ import { renderCustomFieldsSection, createCustomFieldElement } from './vault/mod
 import { renderAddFolderModal, renderAddTagModal, renderEditTagModal, renderMoveFolderModal } from './vault/modals/folder-tag-modals.js';
 import { renderShortcutsModal } from './vault/modals/shortcuts-modal.js';
 import { renderHealthDashboardModal as renderHealthDashboard } from './vault/modals/health-dashboard-modal.js';
-import { renderImportModal } from './vault/modals/import-export-modal.js';
+import { renderImportModal, showExportFormatModal } from './vault/modals/import-export-modal.js';
 import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/vault-management.js';
 import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-form.js';
 
@@ -3685,91 +3685,14 @@ export class VaultUI {
 
     // Store entries for export and show format selection modal
     this.#pendingExportEntries = entries;
-    this.#showExportFormatModal();
+    showExportFormatModal({
+      count: entries.length,
+      onFormatSelected: (format) => this.#performExport(format),
+      t
+    });
   }
 
-  #showExportFormatModal() {
-    // Create modal if not exists
-    let modal = document.getElementById('export-format-modal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'export-format-modal';
-      modal.className = 'vault-modal-overlay';
-      modal.role = 'dialog';
-      modal.setAttribute('aria-modal', 'true');
-      document.body.appendChild(modal);
-    }
-
-    const count = this.#pendingExportEntries?.length || 0;
-    modal.innerHTML = `
-      <div class="vault-modal">
-        <div class="vault-modal-header">
-          <h3>Export ${count} entry(ies)</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="vault-modal-body">
-          <p class="vault-modal-hint">Choisissez le format d'export :</p>
-          <div class="vault-export-formats">
-            <button class="vault-export-format-btn" data-format="json">
-              <span class="vault-export-format-icon">📦</span>
-              <span class="vault-export-format-name">JSON (GenPwd)</span>
-              <span class="vault-export-format-desc">Native format with all data</span>
-            </button>
-            <button class="vault-export-format-btn" data-format="bitwarden">
-              <span class="vault-export-format-icon">🔐</span>
-              <span class="vault-export-format-name">Bitwarden CSV</span>
-              <span class="vault-export-format-desc">Compatible Bitwarden</span>
-            </button>
-            <button class="vault-export-format-btn" data-format="lastpass">
-              <span class="vault-export-format-icon">🔒</span>
-              <span class="vault-export-format-name">LastPass CSV</span>
-              <span class="vault-export-format-desc">Compatible LastPass</span>
-            </button>
-            <button class="vault-export-format-btn" data-format="1password">
-              <span class="vault-export-format-icon">🗝️</span>
-              <span class="vault-export-format-name">1Password CSV</span>
-              <span class="vault-export-format-desc">Compatible 1Password</span>
-            </button>
-            <button class="vault-export-format-btn" data-format="chrome">
-              <span class="vault-export-format-icon">🌐</span>
-              <span class="vault-export-format-name">Chrome / Edge CSV</span>
-              <span class="vault-export-format-desc">Compatible navigateurs</span>
-            </button>
-            <button class="vault-export-format-btn" data-format="keepass">
-              <span class="vault-export-format-icon">🔑</span>
-              <span class="vault-export-format-name">KeePass XML</span>
-              <span class="vault-export-format-desc">Compatible KeePass 2.x</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Bind events
-    modal.querySelector('[data-close-modal]')?.addEventListener('click', () => {
-      this.#closeModal('export-format-modal');
-    });
-
-    modal.querySelectorAll('.vault-export-format-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const format = btn.dataset.format;
-        this.#performExport(format);
-        this.#closeModal('export-format-modal');
-      });
-    });
-
-    // Close on overlay click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) this.#closeModal('export-format-modal');
-    });
-
-    this.#openModal('export-format-modal');
-  }
+  // Export format modal moved to ./vault/modals/import-export-modal.js
 
   #performExport(format) {
     const entries = this.#pendingExportEntries || [];
