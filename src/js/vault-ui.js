@@ -60,6 +60,7 @@ import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/
 import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-form.js';
 import { showAutotypeModal } from './vault/modals/autotype-modal.js';
 import { showTOTPQRModal } from './vault/modals/totp-qr-modal.js';
+import { showSecureShareModal } from './vault/modals/secure-share-modal.js';
 
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
@@ -5453,7 +5454,13 @@ export class VaultUI {
     // Share entry
     document.getElementById('btn-share-entry')?.addEventListener('click', () => {
       if (!this.#selectedEntry) return;
-      this.#showShareModal(this.#selectedEntry);
+      showSecureShareModal({
+        entry: this.#selectedEntry,
+        onCopy: (text, message) => this.#copyToClipboard(text, message),
+        onSuccess: (message) => this.#showToast(message, 'success'),
+        onError: (message) => this.#showToast(message, 'error'),
+        t
+      });
     });
 
     // Notes Markdown toggle (preview/source)
@@ -5646,243 +5653,7 @@ export class VaultUI {
   }
 
   // Autotype modal moved to ./vault/modals/autotype-modal.js
-
-  #showShareModal(entry) {
-    // Generate a random passphrase
-    const passphrase = this.#generateSharePassphrase();
-
-    const modal = document.createElement('div');
-    modal.className = 'vault-modal-overlay';
-    modal.id = 'share-modal';
-    modal.innerHTML = `
-      <div class="vault-modal">
-        <div class="vault-modal-header">
-          <h3>Partager "${escapeHtml(entry.title)}"</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="vault-modal-body">
-          <p class="vault-share-warning">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            Data will be encrypted with the passphrase below.
-          </p>
-
-          <div class="vault-form-group">
-            <label class="vault-label">Passphrase</label>
-            <div class="vault-share-passphrase">
-              <input type="text" class="vault-input" id="share-passphrase" value="${passphrase}" readonly>
-              <button type="button" class="vault-btn vault-btn-secondary" id="regenerate-passphrase" title="Regenerate">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="1 4 1 10 7 10"></polyline>
-                  <polyline points="23 20 23 14 17 14"></polyline>
-                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
-                </svg>
-              </button>
-              <button type="button" class="vault-btn vault-btn-secondary" id="copy-passphrase" title="Copier">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-            <p class="vault-share-hint">Share this phrase separately (e.g., by phone)</p>
-          </div>
-
-          <div class="vault-form-group">
-            <label class="vault-label">Expiration</label>
-            <select class="vault-input vault-select" id="share-expiry">
-              <option value="3600000">1 heure</option>
-              <option value="86400000" selected>24 heures</option>
-              <option value="604800000">7 days</option>
-              <option value="2592000000">30 days</option>
-            </select>
-          </div>
-
-          <div class="vault-form-group">
-            <label class="vault-checkbox-label">
-              <input type="checkbox" id="share-include-notes">
-              <span>Inclure les notes</span>
-            </label>
-          </div>
-
-          <div class="vault-share-result" id="share-result" hidden>
-            <label class="vault-label">Encrypted text to share</label>
-            <textarea class="vault-input vault-textarea" id="share-output" rows="4" readonly></textarea>
-            <button type="button" class="vault-btn vault-btn-primary" id="copy-share">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              Copy encrypted text
-            </button>
-          </div>
-
-          <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-            <button type="button" class="vault-btn vault-btn-primary" id="generate-share">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-              Generate share
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Bind events
-    modal.querySelector('[data-close-modal]').addEventListener('click', () => modal.remove());
-    modal.querySelectorAll('[data-close-modal]').forEach(btn => {
-      btn.addEventListener('click', () => modal.remove());
-    });
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
-    });
-
-    // Regenerate passphrase
-    modal.querySelector('#regenerate-passphrase').addEventListener('click', () => {
-      const input = modal.querySelector('#share-passphrase');
-      input.value = this.#generateSharePassphrase();
-    });
-
-    // Copy passphrase
-    modal.querySelector('#copy-passphrase').addEventListener('click', async () => {
-      const passphrase = modal.querySelector('#share-passphrase').value;
-      await this.#copyToClipboard(passphrase, t('vault.messages.passphraseCopied'));
-    });
-
-    // Generate share
-    modal.querySelector('#generate-share').addEventListener('click', async () => {
-      const passphrase = modal.querySelector('#share-passphrase').value;
-      const expiry = parseInt(modal.querySelector('#share-expiry').value, 10);
-      const includeNotes = modal.querySelector('#share-include-notes').checked;
-
-      try {
-        const shareText = await this.#createSecureShare(entry, passphrase, { expiresIn: expiry, includeNotes });
-        modal.querySelector('#share-output').value = shareText;
-        modal.querySelector('#share-result').hidden = false;
-        this.#showToast(t('vault.messages.shareGenerated'), 'success');
-      } catch (error) {
-        this.#showToast(t('vault.messages.generationError'), 'error');
-      }
-    });
-
-    // Copy share
-    modal.querySelector('#copy-share').addEventListener('click', async () => {
-      const shareText = modal.querySelector('#share-output').value;
-      await this.#copyToClipboard(shareText, t('vault.messages.encryptedTextCopied'));
-    });
-  }
-
-  #generateSharePassphrase() {
-    const words = [
-      'pomme', 'banane', 'cerise', 'dragon', 'eagle', 'foret', 'jardin', 'harbor',
-      'island', 'jungle', 'knight', 'citron', 'montagne', 'nature', 'ocean', 'palace',
-      'queen', 'river', 'storm', 'tigre', 'umbrella', 'valley', 'winter', 'xenon',
-      'yellow', 'zebre', 'alpha', 'brave', 'crystal', 'diamond', 'ember', 'falcon'
-    ];
-
-    // Use CSPRNG for secure word selection
-    const randomBytes = new Uint8Array(4);
-    crypto.getRandomValues(randomBytes);
-
-    const selected = [];
-    for (let i = 0; i < 4; i++) {
-      const idx = randomBytes[i] % words.length;
-      selected.push(words[idx]);
-    }
-
-    return selected.join('-');
-  }
-
-  async #createSecureShare(entry, passphrase, options = {}) {
-    const { expiresIn = 86400000, includeNotes = false } = options;
-
-    // Build shareable data
-    const shareData = {
-      v: 1,
-      type: entry.type,
-      title: entry.title,
-      data: {},
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + expiresIn).toISOString()
-    };
-
-    // Include relevant fields
-    switch (entry.type) {
-      case 'login':
-        shareData.data.username = entry.data?.username || '';
-        shareData.data.password = entry.data?.password || '';
-        shareData.data.url = entry.data?.url || '';
-        if (entry.data?.totp) shareData.data.totp = entry.data.totp;
-        break;
-      case 'card':
-        shareData.data.holder = entry.data?.holder || '';
-        shareData.data.number = entry.data?.number || '';
-        shareData.data.expiry = entry.data?.expiry || '';
-        shareData.data.cvv = entry.data?.cvv || '';
-        break;
-      case 'note':
-        shareData.data.content = entry.data?.content || '';
-        break;
-      case 'identity':
-        shareData.data.fullName = entry.data?.fullName || '';
-        shareData.data.email = entry.data?.email || '';
-        shareData.data.phone = entry.data?.phone || '';
-        break;
-    }
-
-    if (includeNotes && entry.notes) {
-      shareData.notes = entry.notes;
-    }
-
-    // Encrypt using Web Crypto API
-    const encoder = new TextEncoder();
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(passphrase),
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-
-    // Using PBKDF2.LEGACY_ITERATIONS (100000) for share compatibility
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, // PBKDF2.LEGACY_ITERATIONS
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt']
-    );
-
-    const ciphertext = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      encoder.encode(JSON.stringify(shareData))
-    );
-
-    // Combine and encode
-    const result = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
-    result.set(salt, 0);
-    result.set(iv, salt.length);
-    result.set(new Uint8Array(ciphertext), salt.length + iv.length);
-
-    return `GENPWD:1:${btoa(String.fromCharCode(...result))}`;
-  }
+  // Secure share modal moved to ./vault/modals/secure-share-modal.js
 
   #openEditModal(entry) {
     // Clone entry data for editing session
