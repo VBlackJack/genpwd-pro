@@ -56,6 +56,10 @@ import {
   searchTemplates
 } from './vault/modals/entry-templates.js';
 import {
+  renderCustomFieldsSection,
+  createCustomFieldElement
+} from './vault/modals/custom-fields.js';
+import {
   renderHealthDashboardModal as renderHealthDashboard,
   renderLegacyHealthModal,
   renderBreachResultsSafe,
@@ -65,6 +69,7 @@ import { renderImportModal } from './vault/modals/import-export-modal.js';
 
 // Vault services imports (Phase 6 modularization)
 import { getBreachCheckService, formatBreachCount } from './vault/services/breach-check-service.js';
+import { performExport, downloadExport } from './vault/services/export-service.js';
 
 // Entry type configuration - function to get translated labels
 const getEntryTypes = () => ({
@@ -4453,294 +4458,17 @@ export class VaultUI {
     const entries = this.#pendingExportEntries || [];
     if (entries.length === 0) return;
 
-    const date = new Date().toISOString().split('T')[0];
-    let content, filename, mimeType;
-
-    if (format === 'json') {
-      // Native JSON format
-      const exportData = {
-        version: '3.0.0',
-        exportedAt: new Date().toISOString(),
-        entries: entries.map(e => ({
-          type: e.type,
-          title: e.title,
-          data: e.data,
-          notes: e.notes,
-          favorite: e.favorite,
-          folderId: e.folderId,
-          createdAt: e.createdAt,
-          modifiedAt: e.modifiedAt
-        }))
-      };
-      content = JSON.stringify(exportData, null, 2);
-      filename = `vault-export-${date}.json`;
-      mimeType = 'application/json';
-    } else if (format === 'keepass') {
-      // KeePass 2.x XML format
-      content = this.#exportToKeePassXML(entries);
-      filename = `vault-export-${date}.xml`;
-      mimeType = 'application/xml;charset=utf-8';
-    } else {
-      // CSV formats
-      content = this.#exportToCSV(entries, format);
-      filename = `vault-export-${format}-${date}.csv`;
-      mimeType = 'text/csv;charset=utf-8';
-      // Add BOM for Excel compatibility
-      content = '\ufeff' + content;
+    try {
+      const { content, filename, mimeType } = performExport(entries, format, this.#folders);
+      downloadExport(content, filename, mimeType);
+      this.#showToast(t('vault.messages.entriesExported', { count: entries.length, format: format.toUpperCase() }), 'success');
+    } catch (err) {
+      this.#showToast(t('vault.messages.exportFailed'), 'error');
     }
-
-    // Download
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    this.#showToast(t('vault.messages.entriesExported', { count: entries.length, format: format.toUpperCase() }), 'success');
     this.#pendingExportEntries = null;
   }
 
-  #exportToCSV(entries, format) {
-    const escapeCSV = (val) => {
-      if (!val) return '';
-      const str = String(val);
-      if (str.includes(',') || str.includes('\n') || str.includes('"')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
-
-    const buildRow = (fields) => fields.map(escapeCSV).join(',');
-    const logins = entries.filter(e => e.type === 'login');
-
-    let headers, mapRow;
-
-    switch (format) {
-      case 'bitwarden':
-        headers = ['folder', 'favorite', 'type', 'name', 'notes', 'fields', 'reprompt', 'login_uri', 'login_username', 'login_password', 'login_totp'];
-        mapRow = (e) => ['', e.favorite ? '1' : '', 'login', e.title, e.notes || '', '', '0', e.data?.url || '', e.data?.username || '', e.data?.password || '', e.data?.totp || ''];
-        break;
-      case 'lastpass':
-        headers = ['url', 'username', 'password', 'totp', 'extra', 'name', 'grouping', 'fav'];
-        mapRow = (e) => [e.data?.url || '', e.data?.username || '', e.data?.password || '', e.data?.totp || '', e.notes || '', e.title, '', e.favorite ? '1' : '0'];
-        break;
-      case '1password':
-        headers = ['Title', 'Url', 'Username', 'Password', 'OTPAuth', 'Notes'];
-        mapRow = (e) => {
-          let otpauth = '';
-          if (e.data?.totp) {
-            const issuer = e.title || 'GenPwd';
-            const account = e.data?.username || 'user';
-            otpauth = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(account)}?secret=${e.data.totp}&issuer=${encodeURIComponent(issuer)}`;
-          }
-          return [e.title, e.data?.url || '', e.data?.username || '', e.data?.password || '', otpauth, e.notes || ''];
-        };
-        break;
-      case 'chrome':
-      default:
-        headers = ['name', 'url', 'username', 'password', 'note'];
-        mapRow = (e) => [e.title, e.data?.url || '', e.data?.username || '', e.data?.password || '', e.notes || ''];
-        break;
-    }
-
-    const rows = [buildRow(headers)];
-    for (const entry of logins) {
-      rows.push(buildRow(mapRow(entry)));
-    }
-
-    return rows.join('\r\n');
-  }
-
-  /**
-   * Export entries to KeePass 2.x XML format
-   * Compatible with KeePass 2.x import
-   */
-
-
-  #exportToKeePassXML(entries) {
-    const escapeXML = (str) => {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-    };
-
-
-
-    // Generate UUID v4 using CSPRNG
-    const generateUUID = () => {
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID().toUpperCase();
-      }
-      // Fallback using crypto.getRandomValues (CSPRNG)
-      const bytes = new Uint8Array(16);
-      crypto.getRandomValues(bytes);
-      bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
-      bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant
-      const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-      return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`.toUpperCase();
-    };
-
-    // Format date for KeePass XML (ISO format)
-    const formatDate = (dateStr) => {
-      if (!dateStr) return new Date().toISOString();
-      return new Date(dateStr).toISOString();
-    };
-
-    // Group entries by folder
-    const entriesByFolder = new Map();
-    entriesByFolder.set('', []); // Root entries
-
-    for (const entry of entries) {
-      const folderId = entry.folderId || '';
-      if (!entriesByFolder.has(folderId)) {
-        entriesByFolder.set(folderId, []);
-      }
-      entriesByFolder.get(folderId).push(entry);
-    }
-
-    // Build entry XML
-    const buildEntry = (entry) => {
-      const uuid = generateUUID();
-      const createdAt = formatDate(entry.createdAt);
-      const modifiedAt = formatDate(entry.modifiedAt);
-
-      // Build notes with extra info
-      let notes = entry.notes || '';
-      if (entry.type === 'card') {
-        notes = `Type: Bank card\n` +
-          `Holder: ${entry.data?.holder || ''}\n` +
-          `Number: ${entry.data?.number || ''}\n` +
-          `Expiry: ${entry.data?.expiry || ''}\n` +
-          `CVV: ${entry.data?.cvv || ''}\n` +
-          (notes ? `\n${notes}` : '');
-      } else if (entry.type === 'identity') {
-        notes = `Type: Identity\n` +
-          `Name: ${entry.data?.fullName || ''}\n` +
-          `Email: ${entry.data?.email || ''}\n` +
-          `Phone: ${entry.data?.phone || ''}\n` +
-          (notes ? `\n${notes}` : '');
-      } else if (entry.type === 'note') {
-        notes = entry.data?.content || notes;
-      }
-
-      // Add TOTP to notes if present (KeePass format: otpauth://)
-      if (entry.data?.totp) {
-        const issuer = escapeXML(entry.title || 'GenPwd');
-        const account = escapeXML(entry.data?.username || 'user');
-        const totpUri = `otpauth://totp/${issuer}:${account}?secret=${entry.data.totp}&issuer=${issuer}`;
-        notes += (notes ? '\n\n' : '') + `TOTP: ${totpUri}`;
-      }
-
-      return `
-			<Entry>
-				<UUID>${uuid}</UUID>
-				<IconID>0</IconID>
-				<ForegroundColor />
-				<BackgroundColor />
-				<OverrideURL />
-				<Tags>${entry.favorite ? 'Favori' : ''}</Tags>
-				<Times>
-					<CreationTime>${createdAt}</CreationTime>
-					<LastModificationTime>${modifiedAt}</LastModificationTime>
-					<LastAccessTime>${modifiedAt}</LastAccessTime>
-					<ExpiryTime>${entry.data?.expiresAt ? formatDate(entry.data.expiresAt) : modifiedAt}</ExpiryTime>
-					<Expires>${entry.data?.expiresAt ? 'True' : 'False'}</Expires>
-					<UsageCount>0</UsageCount>
-				</Times>
-				<String>
-					<Key>Title</Key>
-					<Value>${escapeXML(entry.title)}</Value>
-				</String>
-				<String>
-					<Key>UserName</Key>
-					<Value>${escapeXML(entry.data?.username || entry.data?.email || '')}</Value>
-				</String>
-				<String>
-					<Key>Password</Key>
-					<Value Protected="True">${escapeXML(entry.data?.password || '')}</Value>
-				</String>
-				<String>
-					<Key>URL</Key>
-					<Value>${escapeXML(entry.data?.url || '')}</Value>
-				</String>
-				<String>
-					<Key>Notes</Key>
-					<Value>${escapeXML(notes)}</Value>
-				</String>
-			</Entry>`;
-    };
-
-    // Build group (folder) XML
-    const buildGroup = (name, entries, isRoot = false) => {
-      const uuid = generateUUID();
-      const entriesXML = entries.map(buildEntry).join('');
-
-      return `
-		<Group>
-			<UUID>${uuid}</UUID>
-			<Name>${escapeXML(name)}</Name>
-			<Notes />
-			<IconID>${isRoot ? '48' : '0'}</IconID>
-			<IsExpanded>True</IsExpanded>
-			<DefaultAutoTypeSequence />
-			<EnableAutoType>null</EnableAutoType>
-			<EnableSearching>null</EnableSearching>
-			<LastTopVisibleEntry>AAAAAAAAAAAAAAAAAAAAAA==</LastTopVisibleEntry>
-			${entriesXML}
-		</Group>`;
-    };
-
-    // Build folder groups
-    let groupsXML = '';
-
-    // Root entries first
-    const rootEntries = entriesByFolder.get('') || [];
-
-    // Add folder groups
-    for (const [folderId, folderEntries] of entriesByFolder) {
-      if (folderId === '') continue; // Skip root, handled separately
-      const folder = this.#folders.find(f => f.id === folderId);
-      const folderName = folder?.name || 'Folder';
-      groupsXML += buildGroup(folderName, folderEntries);
-    }
-
-    // Build full XML
-    const now = new Date().toISOString();
-    const xml = `<?xml version="1.0" encoding="utf-8"?>
-<KeePassFile>
-	<Meta>
-		<Generator>GenPwd Pro</Generator>
-		<DatabaseName>GenPwd Pro Export</DatabaseName>
-		<DatabaseDescription>Exported from GenPwd Pro</DatabaseDescription>
-		<DefaultUserName />
-		<MaintenanceHistoryDays>365</MaintenanceHistoryDays>
-		<Color />
-		<MasterKeyChanged>${now}</MasterKeyChanged>
-		<RecycleBinEnabled>False</RecycleBinEnabled>
-	</Meta>
-	<Root>
-		<Group>
-			<UUID>${generateUUID()}</UUID>
-			<Name>GenPwd Pro</Name>
-			<Notes>Exported from GenPwd Pro - ${now}</Notes>
-			<IconID>48</IconID>
-			<IsExpanded>True</IsExpanded>
-			${rootEntries.map(buildEntry).join('')}
-			${groupsXML}
-		</Group>
-	</Root>
-</KeePassFile>`;
-
-    return xml;
-  }
+  // Export methods moved to vault/services/export-service.js
 
   #triggerImport() {
     // Open the import modal (new unified import UI)
@@ -7470,7 +7198,7 @@ export class VaultUI {
 
     // Add custom fields section
     const existingFields = entry.data?.fields || entry.fields || [];
-    fieldsHtml += this.#renderCustomFieldsSection(existingFields);
+    fieldsHtml += renderCustomFieldsSection({ existingFields, t });
 
     fieldsContainer.innerHTML = fieldsHtml;
     this.#hasDirtyForm = false;
@@ -8232,7 +7960,7 @@ export class VaultUI {
       `
     };
 
-    container.innerHTML = (fields[type] || '') + this.#renderCustomFieldsSection();
+    container.innerHTML = (fields[type] || '') + renderCustomFieldsSection({ t });
 
     // Attach events for custom fields
     this.#attachCustomFieldsEvents();
@@ -8356,123 +8084,6 @@ export class VaultUI {
   // ==================== CUSTOM FIELDS SECTION ====================
 
   /**
-   * Render the custom fields section for add/edit entry forms
-   * @param {Array} existingFields - Existing custom fields for edit mode
-   * @returns {string}
-   */
-  #renderCustomFieldsSection(existingFields = []) {
-    const fieldKindOptions = [
-      { value: 'text', label: 'Texte' },
-      { value: 'hidden', label: 'Hidden' },
-      { value: 'password', label: 'Password' },
-      { value: 'url', label: 'URL' },
-      { value: 'email', label: 'Email' },
-      { value: 'phone', label: 'Phone' },
-      { value: 'date', label: 'Date' }
-    ];
-
-    const existingFieldsHtml = existingFields.map((field, index) => `
-      <div class="vault-custom-field" data-field-index="${index}" data-field-id="${escapeHtml(field.id || '')}">
-        <div class="vault-custom-field-header">
-          <input type="text" class="vault-input vault-custom-field-label" placeholder="${t('vault.placeholders.fieldName')}" value="${escapeHtml(field.label || '')}" aria-label="${t('vault.placeholders.fieldName')}">
-          <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
-            ${fieldKindOptions.map(opt =>
-      `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
-    ).join('')}
-          </select>
-          <label class="vault-checkbox-inline vault-custom-field-secured">
-            <input type="checkbox" ${field.isSecured ? 'checked' : ''}>
-            <span>Secure</span>
-          </label>
-          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Delete" aria-label="Delete this field">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="vault-input-group">
-          <input type="${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? 'password' : 'text'}"
-                 class="vault-input vault-custom-field-value"
-                 placeholder="${t('vault.placeholders.fieldValue')}"
-                 value="${escapeHtml(field.value || '')}"
-                 aria-label="${t('vault.placeholders.fieldValue')}">
-          ${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? `
-            <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="${t('vault.aria.toggleVisibility')}">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    `).join('');
-
-    return `
-      <div class="vault-custom-fields-section">
-        <div class="vault-section-header">
-          <h4 class="vault-section-title">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="12" y1="8" x2="12" y2="16"></line>
-              <line x1="8" y1="12" x2="16" y2="12"></line>
-            </svg>
-            ${t('vault.labels.customFields')}
-          </h4>
-          <button type="button" class="vault-btn vault-btn-sm vault-btn-ghost" id="btn-add-custom-field">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            ${t('vault.labels.addField')}
-          </button>
-        </div>
-        <div id="custom-fields-container">
-          ${existingFieldsHtml}
-        </div>
-      </div>
-    `;
-  }
-
-  /**
-   * Create a new custom field element
-   * @param {number} index
-   * @returns {string}
-   */
-  #createCustomFieldElement(index) {
-    return `
-      <div class="vault-custom-field" data-field-index="${index}">
-        <div class="vault-custom-field-header">
-          <input type="text" class="vault-input vault-custom-field-label" placeholder="${t('vault.placeholders.fieldName')}" aria-label="${t('vault.placeholders.fieldName')}">
-          <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
-            <option value="text">Texte</option>
-            <option value="hidden">Hidden</option>
-            <option value="password">Password</option>
-            <option value="url">URL</option>
-            <option value="email">Email</option>
-            <option value="phone">Phone</option>
-            <option value="date">Date</option>
-          </select>
-          <label class="vault-checkbox-inline vault-custom-field-secured">
-            <input type="checkbox">
-            <span>Secure</span>
-          </label>
-          <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Delete" aria-label="Delete this field">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="vault-input-group">
-          <input type="text" class="vault-input vault-custom-field-value" placeholder="${t('vault.placeholders.fieldValue')}" aria-label="${t('vault.placeholders.fieldValue')}">
-        </div>
-      </div>
-    `;
-  }
-
-  /**
    * Attach event listeners for custom fields section
    */
   #attachCustomFieldsEvents() {
@@ -8485,7 +8096,7 @@ export class VaultUI {
     addBtn.addEventListener('click', () => {
       const fieldCount = container.querySelectorAll('.vault-custom-field').length;
       const newField = document.createElement('div');
-      newField.innerHTML = this.#createCustomFieldElement(fieldCount);
+      newField.innerHTML = createCustomFieldElement(fieldCount, t);
       const fieldEl = newField.firstElementChild;
       container.appendChild(fieldEl);
 
