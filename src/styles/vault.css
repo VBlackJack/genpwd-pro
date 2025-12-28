@@ -17,7 +17,7 @@
   --vault-radius-md: var(--radius-md, 12px);
   --vault-radius-lg: var(--radius-lg, 16px);
   /* Status colors - used throughout vault UI */
-  --vault-success: var(--accent-green, #22c55e);
+  --vault-success: var(--accent-green, #10b981);
   --vault-warning: var(--accent-yellow, #eab308);
   --vault-danger: var(--accent-red, #ef4444);
   --vault-error: var(--vault-danger);
@@ -734,7 +734,7 @@
 }
 
 .vault-list-forget:focus-visible {
-  outline: 2px solid var(--vault-primary, #3b82f6);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
 }
 
@@ -794,7 +794,7 @@
 }
 
 .vault-input-btn:focus-visible {
-  outline: 2px solid var(--vault-primary, #3b82f6);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
 }
 

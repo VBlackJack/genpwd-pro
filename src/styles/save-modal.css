@@ -175,8 +175,8 @@
 }
 
 .save-vault-copy-btn.copied {
-  background: var(--accent-green, #34d399);
-  border-color: var(--accent-green, #34d399);
+  background: var(--accent-green, #10b981);
+  border-color: var(--accent-green, #10b981);
   color: white;
 }
 
@@ -424,8 +424,8 @@
 }
 
 .pwd-ctx-item:focus-visible {
-  background: rgba(59, 130, 246, 0.2);
-  outline: 2px solid var(--accent-blue, #3b82f6);
+  background: rgba(0, 212, 255, 0.15);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: -2px;
 }
 
@@ -453,8 +453,8 @@
 }
 
 .pwd .actions .copy-btn.copied {
-  background: var(--accent-green, #34d399);
-  border-color: var(--accent-green, #34d399);
+  background: var(--accent-green, #10b981);
+  border-color: var(--accent-green, #10b981);
   color: white;
 }
 

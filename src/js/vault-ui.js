@@ -177,7 +177,7 @@ export class VaultUI {
       this.#render();
 
       // Check for breaches in background if enabled
-      const autoCheckBreaches = localStorage.getItem('vault-auto-breach-check') !== 'false';
+      const autoCheckBreaches = localStorage.getItem('genpwd-vault-auto-breach-check') !== 'false';
       if (autoCheckBreaches) {
         // Delay to not block UI
         setTimeout(() => this.#checkBreaches(true), 2000);
@@ -313,7 +313,7 @@ export class VaultUI {
    */
   #initVisualProtection() {
     // Load setting from localStorage
-    const saved = localStorage.getItem('vault-visual-protection');
+    const saved = localStorage.getItem('genpwd-vault-visual-protection');
     this.#visualProtectionEnabled = saved !== 'false'; // Default true
 
     if (window.electronAPI?.onWindowBlur) {
@@ -9605,7 +9605,7 @@ export class VaultUI {
   #startAutoLockTimer() {
     // Load saved timeout preference
     try {
-      const savedTimeout = localStorage.getItem('vault-autolock-timeout');
+      const savedTimeout = localStorage.getItem('genpwd-vault-autolock-timeout');
       if (savedTimeout) {
         this.#autoLockTimeout = parseInt(savedTimeout, 10);
       }
@@ -9688,7 +9688,7 @@ export class VaultUI {
 
   #initTheme() {
     try {
-      const savedTheme = localStorage.getItem('vault-theme') || 'dark';
+      const savedTheme = localStorage.getItem('genpwd-vault-theme') || 'dark';
       this.#theme = savedTheme;
     } catch {
       this.#theme = 'dark';
@@ -9699,7 +9699,7 @@ export class VaultUI {
   #toggleTheme() {
     this.#theme = this.#theme === 'dark' ? 'light' : 'dark';
     try {
-      localStorage.setItem('vault-theme', this.#theme);
+      localStorage.setItem('genpwd-vault-theme', this.#theme);
     } catch {
       // Storage not available
     }
@@ -9715,7 +9715,7 @@ export class VaultUI {
     if (sidebar) {
       const isCollapsed = sidebar.classList.toggle('collapsed');
       try {
-        localStorage.setItem('vault-sidebar-collapsed', isCollapsed);
+        localStorage.setItem('genpwd-vault-sidebar-collapsed', isCollapsed);
       } catch {
         // Storage not available
       }
@@ -9733,7 +9733,7 @@ export class VaultUI {
   #restoreSidebarState() {
     let isCollapsed = false;
     try {
-      isCollapsed = localStorage.getItem('vault-sidebar-collapsed') === 'true';
+      isCollapsed = localStorage.getItem('genpwd-vault-sidebar-collapsed') === 'true';
     } catch {
       // Storage not available
     }
@@ -9839,7 +9839,7 @@ export class VaultUI {
 
   #getFolderColor(folderId) {
     try {
-      const colors = JSON.parse(localStorage.getItem('vault-folder-colors') || '{}');
+      const colors = JSON.parse(localStorage.getItem('genpwd-vault-folder-colors') || '{}');
       return colors[folderId] || null;
     } catch {
       return null;
@@ -9848,13 +9848,13 @@ export class VaultUI {
 
   #setFolderColor(folderId, color) {
     try {
-      const colors = JSON.parse(localStorage.getItem('vault-folder-colors') || '{}');
+      const colors = JSON.parse(localStorage.getItem('genpwd-vault-folder-colors') || '{}');
       if (color) {
         colors[folderId] = color;
       } else {
         delete colors[folderId];
       }
-      localStorage.setItem('vault-folder-colors', JSON.stringify(colors));
+      localStorage.setItem('genpwd-vault-folder-colors', JSON.stringify(colors));
     } catch {
       // Silently fail - folder colors are not critical
     }
@@ -9974,7 +9974,7 @@ export class VaultUI {
         this.#autoLockTimeout = newTimeout;
         this.#autoLockSeconds = newTimeout;
         try {
-          localStorage.setItem('vault-autolock-timeout', newTimeout.toString());
+          localStorage.setItem('genpwd-vault-autolock-timeout', newTimeout.toString());
         } catch {
           // Storage not available
         }

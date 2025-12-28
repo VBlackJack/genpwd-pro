@@ -16,6 +16,8 @@
 
 // src/js/utils/validators.js - Centralized input validation utilities
 
+import { t } from './i18n.js';
+
 /**
  * Validates that a value is a non-empty string
  * @param {*} value - Value to validate
@@ -245,7 +247,7 @@ export function validatePasswordStrength(password) {
 
   return {
     valid: score >= 3, // Minimum acceptable strength
-    error: score < 3 ? 'Password is too weak' : null,
+    error: score < 3 ? t('validation.passwordTooWeak') : null,
     strength,
     score,
     checks
@@ -297,7 +299,7 @@ export function validateURL(url, allowedProtocols = ['http:', 'https:']) {
  * @returns {{valid: boolean, error: string|null}}
  */
 export function validateField(field, options = {}) {
-  if (!field) return { valid: false, error: 'Field not found' };
+  if (!field) return { valid: false, error: t('validation.fieldNotFound') };
 
   const value = field.value?.trim() ?? '';
   const {
@@ -313,19 +315,19 @@ export function validateField(field, options = {}) {
 
   // Required check
   if (required && value.length === 0) {
-    error = 'This field is required';
+    error = t('validation.required');
   }
   // Min length check
   else if (minLength !== undefined && value.length > 0 && value.length < minLength) {
-    error = `Must be at least ${minLength} characters`;
+    error = t('validation.minLength', { count: minLength });
   }
   // Max length check
   else if (maxLength !== undefined && value.length > maxLength) {
-    error = `Must be at most ${maxLength} characters`;
+    error = t('validation.maxLength', { count: maxLength });
   }
   // Pattern check
   else if (pattern && value.length > 0 && !pattern.test(value)) {
-    error = patternMessage || 'Invalid format';
+    error = patternMessage || t('validation.invalidFormat');
   }
   // Custom validator
   else if (customValidator && value.length > 0) {
@@ -361,7 +363,7 @@ export function validateField(field, options = {}) {
  * @returns {{valid: boolean, errors: Object}}
  */
 export function validateForm(form, fieldConfigs = {}) {
-  if (!form) return { valid: false, errors: { form: 'Form not found' } };
+  if (!form) return { valid: false, errors: { form: t('validation.formNotFound') } };
 
   const errors = {};
   let firstInvalid = null;

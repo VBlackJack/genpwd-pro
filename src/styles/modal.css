@@ -733,8 +733,8 @@ h2.modal-title {
 
 /* Copy button - success state with checkmark */
 .pwd .action-btn.copy-btn.copied {
-  background: var(--accent-green, #22c55e);
-  border-color: var(--accent-green, #22c55e);
+  background: var(--accent-green, #10b981);
+  border-color: var(--accent-green, #10b981);
   color: white;
   animation: copySuccess 0.3s ease;
 }

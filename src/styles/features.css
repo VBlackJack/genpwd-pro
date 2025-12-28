@@ -108,7 +108,7 @@
 /* Color utilities */
 .text-red { color: var(--accent-red, #ef4444) !important; }
 .text-yellow { color: var(--accent-yellow, #f59e0b) !important; }
-.text-green { color: var(--accent-green, #22c55e) !important; }
+.text-green { color: var(--accent-green, #10b981) !important; }
 .text-blue { color: var(--accent-blue, #3b82f6) !important; }
 .text-muted { color: var(--text-muted, #94a3b8) !important; }
 .text-secondary { color: var(--text-secondary, #6b7280) !important; }
@@ -134,7 +134,7 @@
 .border-blue-alpha { border: 1px solid rgba(59, 130, 246, 0.2) !important; }
 .border-yellow-alpha { border: 1px solid rgba(251, 191, 36, 0.3) !important; }
 .border-top { border-top: 1px solid rgba(255, 255, 255, 0.1) !important; }
-.border-left-green { border-left: 4px solid var(--accent-green, #4CAF50) !important; }
+.border-left-green { border-left: 4px solid var(--accent-green, #10b981) !important; }
 .rounded { border-radius: var(--radius-sm, 6px) !important; }
 .rounded-4 { border-radius: 4px !important; }
 .rounded-6 { border-radius: 6px !important; }
@@ -203,7 +203,7 @@
 }
 
 input:checked + .toggle-slider {
-  background-color: var(--accent-green, #4CAF50) !important;
+  background-color: var(--accent-green, #10b981) !important;
 }
 
 input:checked + .toggle-slider::before {
@@ -299,7 +299,7 @@ input:checked + .toggle-slider::before {
   font-weight: bold;
 }
 
-.plugin-stat-item.total .stat-value { color: var(--accent-green, #4CAF50); }
+.plugin-stat-item.total .stat-value { color: var(--accent-green, #10b981); }
 .plugin-stat-item.enabled .stat-value { color: var(--accent-blue, #2196F3); }
 .plugin-stat-item.hooks .stat-value { color: var(--accent-orange, #FF9800); }
 
@@ -1140,7 +1140,7 @@ input:checked + .toggle-slider::before {
 
 /* Button color variants */
 .btn-green {
-  background: var(--accent-green, #4CAF50) !important;
+  background: var(--accent-green, #10b981) !important;
   color: white !important;
 }
 

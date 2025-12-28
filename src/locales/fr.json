@@ -1361,5 +1361,14 @@
         "text": "Exportez en JSON, CSV ou KDBX. Importez depuis 1Password, LastPass, KeePass."
       }
     }
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "minLength": "Doit contenir au moins {count} caractères",
+    "maxLength": "Doit contenir au maximum {count} caractères",
+    "invalidFormat": "Format invalide",
+    "passwordTooWeak": "Le mot de passe est trop faible",
+    "fieldNotFound": "Champ introuvable",
+    "formNotFound": "Formulaire introuvable"
   }
 }

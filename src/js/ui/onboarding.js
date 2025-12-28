@@ -510,7 +510,7 @@ export class Onboarding {
    * @returns {boolean}
    */
   hasCompletedTour(tourName) {
-    const completed = localStorage.getItem(`onboarding_${tourName}_completed`);
+    const completed = localStorage.getItem(`genpwd-onboarding-${tourName}-completed`);
     return completed === 'true';
   }
 
@@ -519,7 +519,7 @@ export class Onboarding {
    * @param {string} tourName
    */
   markTourCompleted(tourName) {
-    localStorage.setItem(`onboarding_${tourName}_completed`, 'true');
+    localStorage.setItem(`genpwd-onboarding-${tourName}-completed`, 'true');
   }
 
   /**
@@ -528,7 +528,7 @@ export class Onboarding {
   resetTours() {
     const tours = this.getTours();
     Object.keys(tours).forEach((tourName) => {
-      localStorage.removeItem(`onboarding_${tourName}_completed`);
+      localStorage.removeItem(`genpwd-onboarding-${tourName}-completed`);
     });
   }
 }

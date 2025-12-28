@@ -37,22 +37,7 @@
   border-width: 0;
 }
 
-/* Display utilities */
-.u-display-none {
-  display: none !important;
-}
-
-.u-display-block {
-  display: block !important;
-}
-
-.u-display-flex {
-  display: flex !important;
-}
-
-.u-display-grid {
-  display: grid !important;
-}
+/* Display utilities - Use .d-none, .d-flex, .d-block from features.css */
 
 /* Color utilities for status */
 .u-color-success {
@@ -132,7 +117,7 @@
 }
 
 .toast-close:focus-visible {
-  outline: 2px solid var(--accent-blue);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
 }
 
@@ -155,7 +140,7 @@
 }
 
 .toast-action:focus-visible {
-  outline: 2px solid var(--accent-blue);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
 }
 
