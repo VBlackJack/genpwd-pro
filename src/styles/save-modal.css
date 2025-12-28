@@ -16,7 +16,7 @@
   -webkit-backdrop-filter: blur(8px);
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-smooth);
   z-index: var(--z-modal-backdrop);
 }
 
@@ -38,7 +38,7 @@
     0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   transform: scale(0.9) translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--transition-spring);
 }
 
 .save-vault-modal-overlay.active .save-vault-modal {
@@ -269,7 +269,7 @@
   user-select: none;
   list-style: none;
   border-radius: var(--radius-sm, 8px);
-  transition: background 0.2s ease, outline 0.2s ease;
+  transition: background var(--transition-normal), outline var(--transition-normal);
 }
 
 .save-vault-notes-toggle:hover {
@@ -287,7 +287,7 @@
 }
 
 .save-vault-notes-toggle svg {
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-normal);
 }
 
 .save-vault-notes-section[open] .save-vault-notes-toggle svg {
@@ -321,7 +321,7 @@
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-normal);
 }
 
 .save-vault-btn-secondary {
@@ -365,7 +365,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: var(--radius-full);
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--animation-spin);
 }
 
 /* ==================== CONTEXT MENU ==================== */
@@ -417,7 +417,7 @@
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s ease, outline 0.15s ease;
+  transition: background var(--transition-fast), outline var(--transition-fast);
 }
 
 .pwd-ctx-item:hover {
@@ -477,7 +477,7 @@
   -webkit-backdrop-filter: blur(12px);
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-smooth);
   z-index: var(--z-max);
 }
 
@@ -498,7 +498,7 @@
     0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   transform: scale(0.9) translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--transition-spring);
 }
 
 .quick-unlock-overlay.active .quick-unlock-modal {
@@ -670,7 +670,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-normal);
   white-space: nowrap;
 }
 
@@ -703,7 +703,7 @@
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-normal);
 }
 
 .quick-unlock-btn-secondary {
@@ -740,7 +740,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: var(--radius-full);
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--animation-spin);
 }
 
 /* ==================== WINDOWS HELLO SECTION ==================== */

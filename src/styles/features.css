@@ -136,9 +136,9 @@
 .border-top { border-top: 1px solid rgba(255, 255, 255, 0.1) !important; }
 .border-left-green { border-left: 4px solid var(--accent-green, #10b981) !important; }
 .rounded { border-radius: var(--radius-sm, 6px) !important; }
-.rounded-4 { border-radius: 4px !important; }
-.rounded-6 { border-radius: 6px !important; }
-.rounded-8 { border-radius: 8px !important; }
+.rounded-4 { border-radius: var(--radius-xs, 4px) !important; }
+.rounded-6 { border-radius: var(--radius-sm, 6px) !important; }
+.rounded-8 { border-radius: var(--radius-md, 8px) !important; }
 
 /* Overflow utilities */
 .overflow-auto { overflow: auto !important; }
