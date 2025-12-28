@@ -1,0 +1,105 @@
+/**
+ * @fileoverview Vault Formatter Utilities
+ * Pure functions for formatting data display
+ */
+
+/**
+ * Escape HTML special characters to prevent XSS
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+export function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/**
+ * Format date to localized date string
+ * @param {string|Date} dateStr - Date to format
+ * @param {string} locale - Locale code (default: 'en-US')
+ * @returns {string} Formatted date
+ */
+export function formatDate(dateStr, locale = 'en-US') {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString(locale);
+}
+
+/**
+ * Format date to localized datetime string
+ * @param {string|Date} dateStr - Date to format
+ * @param {string} locale - Locale code (default: 'fr-FR')
+ * @returns {string} Formatted datetime
+ */
+export function formatDateTime(dateStr, locale = 'fr-FR') {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleString(locale);
+}
+
+/**
+ * Mask a password for display in history
+ * Shows first 2 and last 2 characters with dots in between
+ * @param {string} password - Password to mask
+ * @returns {string} Masked password
+ */
+export function maskHistoryPassword(password) {
+  if (!password) return '';
+  if (password.length <= 4) return '••••';
+  return password.substring(0, 2) + '•'.repeat(Math.min(password.length - 4, 6)) + password.slice(-2);
+}
+
+/**
+ * Get relative time string (e.g., "5 min ago", "2d ago")
+ * @param {Date} date - Date to compare
+ * @returns {string} Relative time string
+ */
+export function getRelativeTime(date) {
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)} wk ago`;
+  return `${Math.floor(days / 30)} mo ago`;
+}
+
+/**
+ * Format time in MM:SS format
+ * @param {number} seconds - Seconds to format
+ * @returns {string} Formatted time
+ */
+export function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Format file size in human-readable format
+ * @param {number} bytes - Size in bytes
+ * @returns {string} Formatted size
+ */
+export function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+/**
+ * Format breach count for display
+ * @param {number} count - Breach count
+ * @returns {string} Formatted count
+ */
+export function formatBreachCount(count) {
+  if (count >= 1000000) return `${Math.floor(count / 1000000)}M+`;
+  if (count >= 1000) return `${Math.floor(count / 1000)}K+`;
+  return String(count);
+}
