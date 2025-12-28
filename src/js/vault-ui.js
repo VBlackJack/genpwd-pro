@@ -44,6 +44,10 @@ import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 import { generateQRCodeSVG } from './utils/qrcode.js';
 
+// Vault utility imports (Phase 6 modularization)
+import { escapeHtml, formatDate, formatDateTime } from './vault/utils/formatter.js';
+import { getPasswordStrength, isPasswordDuplicated } from './vault/utils/password-utils.js';
+
 // Entry type configuration - function to get translated labels
 const getEntryTypes = () => ({
   login: { icon: '🔑', label: t('vault.detail.login'), color: '#60a5fa' },
@@ -553,8 +557,8 @@ export class VaultUI {
                 </svg>
               </div>
               <div class="vault-list-info">
-                <div class="vault-list-name">${this.#escapeHtml(v.name || v.id.substring(0, 8))}</div>
-                <div class="vault-list-meta">${v.isMissing ? '⚠️ ' + t('vault.messages.fileNotFound') : this.#formatDate(v.modifiedAt)}</div>
+                <div class="vault-list-name">${escapeHtml(v.name || v.id.substring(0, 8))}</div>
+                <div class="vault-list-meta">${v.isMissing ? '⚠️ ' + t('vault.messages.fileNotFound') : formatDate(v.modifiedAt)}</div>
               </div>
               <button type="button" class="vault-list-forget" data-vault-id="${v.id}" title="${t('vault.messages.forgetVault')}" aria-label="${t('vault.messages.forgetVault')}">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -1252,7 +1256,7 @@ export class VaultUI {
                 </svg>
               </div>
               <div class="vault-current-info">
-                <span class="vault-current-name">${this.#escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
+                <span class="vault-current-name">${escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
                 <span class="vault-current-meta">${this.#entries.length} entry(ies)</span>
               </div>
               <svg class="vault-current-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -1269,7 +1273,7 @@ export class VaultUI {
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                   </div>
-                  <span class="vault-switcher-name">${this.#escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
+                  <span class="vault-switcher-name">${escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
                   <svg class="vault-switcher-check" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
@@ -1362,7 +1366,7 @@ export class VaultUI {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input type="search" class="vault-search-input" id="vault-search"
-                   placeholder="${t('vault.placeholders.searchCtrlF')}" value="${this.#escapeHtml(this.#searchQuery)}"
+                   placeholder="${t('vault.placeholders.searchCtrlF')}" value="${escapeHtml(this.#searchQuery)}"
                    aria-label="Search vault">
             <button class="vault-filter-btn ${this.#hasActiveFilters() ? 'active' : ''}" id="filter-btn"
                     title="Advanced filters" aria-haspopup="true" aria-expanded="false">
@@ -1741,7 +1745,7 @@ export class VaultUI {
                   draggable="true">
             ${expandIcon}
             <span class="vault-nav-icon vault-folder-color" ${folderColor ? `data-folder-color="${folderColor}"` : ''} aria-hidden="true">${folderIcon}</span>
-            <span class="vault-nav-label">${this.#escapeHtml(node.name)}</span>
+            <span class="vault-nav-label">${escapeHtml(node.name)}</span>
             <span class="vault-nav-count" title="${node.entryCount} in this folder, ${node.totalCount} total">${node.totalCount}</span>
           </button>
       `;
@@ -2025,7 +2029,7 @@ export class VaultUI {
           Vault
 </span>
         <span class="vault-breadcrumb-separator" aria-hidden="true">›</span>
-        <span class="vault-breadcrumb-item current">${this.#escapeHtml(label)}</span>
+        <span class="vault-breadcrumb-item current">${escapeHtml(label)}</span>
       </nav>
     `;
   }
@@ -2038,10 +2042,10 @@ export class VaultUI {
     const isFavorite = entry.favorite;
     const isPinned = entry.pinned;
     const strength = entry.type === 'login' && entry.data?.password
-      ? this.#getPasswordStrength(entry.data.password)
+      ? getPasswordStrength(entry.data.password)
       : null;
     const isDuplicate = entry.type === 'login' && entry.data?.password
-      ? this.#isPasswordDuplicated(entry.data.password, entry.id)
+      ? isPasswordDuplicated(entry.data.password, entry.id, this.#entries)
       : false;
     const expiryStatus = this.#getExpiryStatus(entry);
 
@@ -2055,7 +2059,7 @@ export class VaultUI {
            draggable="true">
         <label class="vault-checkbox-wrapper" title="Select">
           <input type="checkbox" class="vault-checkbox" data-action="multi-select"
-                 ${isMultiSelected ? 'checked' : ''} aria-label="Select ${this.#escapeHtml(entry.title)}">
+                 ${isMultiSelected ? 'checked' : ''} aria-label="Select ${escapeHtml(entry.title)}">
           <span class="vault-checkbox-mark"></span>
         </label>
         <button class="vault-fav-toggle ${isFavorite ? 'active' : ''}"
@@ -2071,12 +2075,12 @@ export class VaultUI {
         <div class="vault-entry-content">
           <div class="vault-entry-title">
             ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.entryCard.pinned')}"><span aria-hidden="true">📌</span></span>` : ''}
-            ${this.#escapeHtml(entry.title)}
+            ${escapeHtml(entry.title)}
             ${strength ? `<span class="vault-strength-dot ${strength}" role="img" aria-label="${t('vault.entryCard.strengthPrefix')}: ${t('vault.filters.' + strength)}" title="${t('vault.entryCard.strengthTitle')}: ${t('vault.filters.' + strength)}"></span>` : ''}
             ${isDuplicate ? `<span class="vault-duplicate-badge" role="img" aria-label="${t('vault.entryCard.reusedPassword')}" title="${t('vault.entryCard.reusedPassword')}"><span aria-hidden="true">🔁</span></span>` : ''}
             ${expiryStatus.badge}
           </div>
-          <div class="vault-entry-subtitle">${this.#escapeHtml(subtitle)}</div>
+          <div class="vault-entry-subtitle">${escapeHtml(subtitle)}</div>
           ${this.#renderTagsInRow(entry)}
         </div>
         <div class="vault-entry-actions" role="group" aria-label="Quick actions">
@@ -2125,7 +2129,7 @@ export class VaultUI {
           ${entry.data?.url ? this.#renderFaviconImg(entry.data.url, 32) : type.icon}
         </div>
         <div class="vault-detail-info">
-          <h3 class="vault-detail-title">${this.#escapeHtml(entry.title)}</h3>
+          <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
           <span class="vault-detail-type">${type.label}</span>
           <div class="vault-detail-tags">${this.#renderTagsInDetail(entry)}</div>
         </div>
@@ -2188,18 +2192,18 @@ export class VaultUI {
           <div class="vault-meta-row">
             <div class="vault-meta-item">
               <span class="vault-meta-label">${t('vault.detail.created')}</span>
-              <span class="vault-meta-value">${this.#formatDateTime(entry.createdAt || entry.metadata?.createdAt)}</span>
+              <span class="vault-meta-value">${formatDateTime(entry.createdAt || entry.metadata?.createdAt)}</span>
             </div>
             <div class="vault-meta-item">
               <span class="vault-meta-label">${t('vault.detail.modified')}</span>
-              <span class="vault-meta-value">${this.#formatDateTime(entry.modifiedAt || entry.metadata?.updatedAt)}</span>
+              <span class="vault-meta-value">${formatDateTime(entry.modifiedAt || entry.metadata?.updatedAt)}</span>
             </div>
           </div>
           ${entry.metadata?.lastUsedAt ? `
             <div class="vault-meta-row">
               <div class="vault-meta-item">
                 <span class="vault-meta-label">Last used</span>
-                <span class="vault-meta-value">${this.#formatDateTime(entry.metadata.lastUsedAt)}</span>
+                <span class="vault-meta-value">${formatDateTime(entry.metadata.lastUsedAt)}</span>
               </div>
               <div class="vault-meta-item">
                 <span class="vault-meta-label">Uses</span>
@@ -2248,7 +2252,7 @@ export class VaultUI {
               <div class="vault-notes-preview markdown-body" data-mode="preview">
                 ${this.#parseMarkdown(entry.data?.content || '')}
               </div>
-              <pre class="vault-notes-source" data-mode="source" hidden>${this.#escapeHtml(entry.data?.content || '')}</pre>
+              <pre class="vault-notes-source" data-mode="source" hidden>${escapeHtml(entry.data?.content || '')}</pre>
             </div>
           </div>
         `;
@@ -2309,36 +2313,36 @@ export class VaultUI {
       const isDate = field.kind === 'date';
 
       // Format value based on type
-      let displayValue = this.#escapeHtml(field.value || '');
+      let displayValue = escapeHtml(field.value || '');
       if (isUrl && field.value) {
-        displayValue = `<a href="${this.#escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${this.#escapeHtml(field.value)}</a>`;
+        displayValue = `<a href="${escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(field.value)}</a>`;
       } else if (isEmail && field.value) {
-        displayValue = `<a href="mailto:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
+        displayValue = `<a href="mailto:${escapeHtml(field.value)}">${escapeHtml(field.value)}</a>`;
       } else if (isPhone && field.value) {
-        displayValue = `<a href="tel:${this.#escapeHtml(field.value)}">${this.#escapeHtml(field.value)}</a>`;
+        displayValue = `<a href="tel:${escapeHtml(field.value)}">${escapeHtml(field.value)}</a>`;
       } else if (isDate && field.value) {
         try {
           const date = new Date(field.value);
           displayValue = date.toLocaleDateString('en-US');
         } catch {
-          displayValue = this.#escapeHtml(field.value);
+          displayValue = escapeHtml(field.value);
         }
       }
 
       const maskedValue = isMasked ? '•'.repeat(Math.min((field.value || '').length, 24)) : displayValue;
 
       return `
-            <div class="vault-field vault-custom-field-display" data-field-id="${this.#escapeHtml(field.id || '')}" data-masked="${isMasked}">
+            <div class="vault-field vault-custom-field-display" data-field-id="${escapeHtml(field.id || '')}" data-masked="${isMasked}">
               <div class="vault-field-label-row">
-                <label class="vault-field-label">${this.#escapeHtml(field.label)}</label>
+                <label class="vault-field-label">${escapeHtml(field.label)}</label>
                 ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Secured</span>' : ''}
                 <span class="vault-field-kind-badge">${fieldKindLabels[field.kind] || field.kind}</span>
               </div>
-              <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${this.#escapeHtml(field.value || '')}">
-                <span class="vault-field-text ${isMasked ? 'masked' : ''}" data-value="${this.#escapeHtml(field.value || '')}">
+              <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(field.value || '')}">
+                <span class="vault-field-text ${isMasked ? 'masked' : ''}" data-value="${escapeHtml(field.value || '')}">
                   ${isMasked ? maskedValue : displayValue}
                 </span>
-                <span class="vault-field-revealed">${this.#escapeHtml(field.value || '')}</span>
+                <span class="vault-field-revealed">${escapeHtml(field.value || '')}</span>
                 <div class="vault-field-actions">
                   ${isMasked ? `
                     <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
@@ -2352,7 +2356,7 @@ export class VaultUI {
                       </svg>
                     </button>
                   ` : ''}
-                  <button class="vault-field-btn copy-field" data-value="${this.#escapeHtml(field.value || '')}" title="Copier" aria-label="Copier ${this.#escapeHtml(field.label)}">
+                  <button class="vault-field-btn copy-field" data-value="${escapeHtml(field.value || '')}" title="Copier" aria-label="Copier ${escapeHtml(field.label)}">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -2371,7 +2375,7 @@ export class VaultUI {
     if (!value) return '';
 
     // Dynamic masking based on actual value length
-    const maskedValue = masked ? '•'.repeat(Math.min(value.length, 24)) : this.#escapeHtml(value);
+    const maskedValue = masked ? '•'.repeat(Math.min(value.length, 24)) : escapeHtml(value);
     const strengthHtml = key === 'password' ? this.#renderPasswordStrength(value) : '';
     const breachHtml = key === 'password' ? '<div class="vault-breach-indicator" id="password-breach-indicator"></div>' : '';
 
@@ -2382,11 +2386,11 @@ export class VaultUI {
           ${masked ? `<span class="vault-field-hint">${t('vault.detail.hoverToReveal')}</span>` : ''}
           ${breachHtml}
         </div>
-        <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}" data-real-value="${this.#escapeHtml(value)}">
-          <span class="vault-field-text ${masked ? 'masked' : ''}" data-value="${this.#escapeHtml(value)}">
-            ${isUrl ? `<a href="${this.#escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${this.#escapeHtml(value)}</a>` : maskedValue}
+        <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(value)}">
+          <span class="vault-field-text ${masked ? 'masked' : ''}" data-value="${escapeHtml(value)}">
+            ${isUrl ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>` : maskedValue}
           </span>
-          <span class="vault-field-revealed">${this.#escapeHtml(value)}</span>
+          <span class="vault-field-revealed">${escapeHtml(value)}</span>
           <div class="vault-field-actions">
             ${masked ? `
               <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
@@ -2401,7 +2405,7 @@ export class VaultUI {
               </button>
             ` : ''}
             ${copyable ? `
-              <button class="vault-field-btn copy-field" data-value="${this.#escapeHtml(value)}" title="Copier" aria-label="Copier ${label}">
+              <button class="vault-field-btn copy-field" data-value="${escapeHtml(value)}" title="Copier" aria-label="Copier ${label}">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -2497,7 +2501,7 @@ export class VaultUI {
           <div class="vault-notes-preview markdown-body" data-mode="preview">
             ${this.#parseMarkdown(notes)}
           </div>
-          <pre class="vault-notes-source" data-mode="source" hidden>${this.#escapeHtml(notes)}</pre>
+          <pre class="vault-notes-source" data-mode="source" hidden>${escapeHtml(notes)}</pre>
         </div>
       </div>
     `;
@@ -2506,7 +2510,7 @@ export class VaultUI {
   #parseMarkdown(text) {
     if (!text) return '';
 
-    let html = this.#escapeHtml(text);
+    let html = escapeHtml(text);
 
     // Code blocks (``` ... ```)
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
@@ -2584,7 +2588,7 @@ export class VaultUI {
           <span class="vault-field-hint">(actualisation auto)</span>
         </div>
         <div class="vault-totp-display">
-          <div class="vault-totp-code" data-secret="${this.#escapeHtml(totpSecret)}">
+          <div class="vault-totp-code" data-secret="${escapeHtml(totpSecret)}">
             <span class="totp-digits">------</span>
           </div>
           <div class="vault-totp-timer">
@@ -2600,7 +2604,7 @@ export class VaultUI {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="vault-field-btn show-totp-qr" data-secret="${this.#escapeHtml(totpSecret)}" data-title="${this.#escapeHtml(entry.title)}" data-account="${this.#escapeHtml(entry.data?.username || '')}" title="${t('vault.aria.showQRCode')}" aria-label="${t('vault.aria.showQRCode')}">
+          <button class="vault-field-btn show-totp-qr" data-secret="${escapeHtml(totpSecret)}" data-title="${escapeHtml(entry.title)}" data-account="${escapeHtml(entry.data?.username || '')}" title="${t('vault.aria.showQRCode')}" aria-label="${t('vault.aria.showQRCode')}">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
@@ -2739,10 +2743,10 @@ export class VaultUI {
           <div class="vault-history-info">
             <span class="vault-history-password" title="Click to reveal">${maskedPwd}</span>
             <span class="vault-history-date">${relativeTime}</span>
-            ${h.reason ? `<span class="vault-history-reason">${this.#escapeHtml(h.reason)}</span>` : ''}
+            ${h.reason ? `<span class="vault-history-reason">${escapeHtml(h.reason)}</span>` : ''}
           </div>
           <div class="vault-history-actions">
-            <button class="vault-field-btn copy-history-pwd" data-password="${this.#escapeHtml(h.password)}" title="Copier">
+            <button class="vault-field-btn copy-history-pwd" data-password="${escapeHtml(h.password)}" title="Copier">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -2868,7 +2872,7 @@ export class VaultUI {
             </svg>
           </div>
           <h3 class="vault-empty-title">${t('vault.messages.noResults')}</h3>
-          <p class="vault-empty-text">${t('vault.messages.noEntryMatches', { query: this.#escapeHtml(this.#searchQuery) })}</p>
+          <p class="vault-empty-text">${t('vault.messages.noEntryMatches', { query: escapeHtml(this.#searchQuery) })}</p>
           <div class="vault-empty-actions">
             <button class="vault-btn vault-btn-secondary" id="btn-clear-search">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -3054,7 +3058,7 @@ export class VaultUI {
               <label class="vault-label" for="entry-folder">${t('vault.labels.folder')}</label>
               <select class="vault-input vault-select" id="entry-folder">
                 <option value="">No folder</option>
-                ${this.#folders.map(f => `<option value="${f.id}">${this.#escapeHtml(f.name)}</option>`).join('')}
+                ${this.#folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('')}
               </select>
             </div>
 
@@ -3215,9 +3219,9 @@ export class VaultUI {
                 data-tag="${tag.id}"
                 aria-current="${this.#selectedTag === tag.id ? 'true' : 'false'}">
           <span class="vault-tag-dot" data-tag-color="${tagColor}" aria-hidden="true"></span>
-          <span class="vault-nav-label">${this.#escapeHtml(tag.name)}</span>
+          <span class="vault-nav-label">${escapeHtml(tag.name)}</span>
           <span class="vault-nav-count">${count}</span>
-          <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${this.#escapeHtml(tag.name)}">
+          <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${escapeHtml(tag.name)}">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -3239,7 +3243,7 @@ export class VaultUI {
               <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
                 <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
                 <span class="vault-tag-chip" data-tag-color="${tag.color || '#6b7280'}">
-                  ${this.#escapeHtml(tag.name)}
+                  ${escapeHtml(tag.name)}
                 </span>
               </label>
             `).join('')
@@ -3274,8 +3278,8 @@ export class VaultUI {
     return `
       <div class="vault-entry-tags">
         ${entryTags.slice(0, 3).map(tag => `
-          <span class="vault-mini-tag" data-tag-color="${tag.color || '#6b7280'}" title="${this.#escapeHtml(tag.name)}">
-            ${this.#escapeHtml(tag.name)}
+          <span class="vault-mini-tag" data-tag-color="${tag.color || '#6b7280'}" title="${escapeHtml(tag.name)}">
+            ${escapeHtml(tag.name)}
           </span>
         `).join('')}
         ${entryTags.length > 3 ? `<span class="vault-mini-tag vault-more-tags">+${entryTags.length - 3}</span>` : ''}
@@ -3290,7 +3294,7 @@ export class VaultUI {
 
     return entryTags.map(tag => `
       <span class="vault-detail-tag" data-tag-color="${tag.color || '#6b7280'}">
-        ${this.#escapeHtml(tag.name)}
+        ${escapeHtml(tag.name)}
       </span>
     `).join('');
   }
@@ -3520,7 +3524,7 @@ export class VaultUI {
           </div>
         </div>
         <div class="vault-import-file-info">
-          <span class="vault-import-filename">${this.#escapeHtml(file.name)}</span>
+          <span class="vault-import-filename">${escapeHtml(file.name)}</span>
           <span class="vault-import-filesize">${(file.size / 1024).toFixed(1)} Ko</span>
         </div>
       `;
@@ -3529,8 +3533,8 @@ export class VaultUI {
       if (result.warnings.length > 0 || result.errors.length > 0) {
         importWarnings.hidden = false;
         importWarnings.innerHTML = `
-          ${result.errors.map(e => `<div class="vault-import-error">❌ ${this.#escapeHtml(e)}</div>`).join('')}
-          ${result.warnings.map(w => `<div class="vault-import-warning">⚠️ ${this.#escapeHtml(w)}</div>`).join('')}
+          ${result.errors.map(e => `<div class="vault-import-error">❌ ${escapeHtml(e)}</div>`).join('')}
+          ${result.warnings.map(w => `<div class="vault-import-warning">⚠️ ${escapeHtml(w)}</div>`).join('')}
         `;
       }
 
@@ -3538,7 +3542,7 @@ export class VaultUI {
       confirmBtn.disabled = result.entries.length === 0;
 
     } catch (error) {
-      importSummary.innerHTML = `<div class="vault-import-error">❌ ${t('vault.common.error')}: ${this.#escapeHtml(error.message)}</div>`;
+      importSummary.innerHTML = `<div class="vault-import-error">❌ ${t('vault.common.error')}: ${escapeHtml(error.message)}</div>`;
       confirmBtn.disabled = true;
     }
   }
@@ -3747,7 +3751,7 @@ export class VaultUI {
                          ${tag.state === 'partial' ? 'data-indeterminate="true"' : ''}>
                   <span class="vault-checkbox-mark ${tag.state === 'partial' ? 'partial' : ''}"></span>
                   <span class="vault-bulk-tag-dot" data-tag-color="${tag.color || '#6b7280'}"></span>
-                  <span class="vault-bulk-tag-name">${this.#escapeHtml(tag.name)}</span>
+                  <span class="vault-bulk-tag-name">${escapeHtml(tag.name)}</span>
                   <span class="vault-bulk-tag-count">${tag.count}/${count}</span>
                 </label>
               `).join('')}
@@ -4265,7 +4269,7 @@ export class VaultUI {
     // Count by strength
     let strong = 0, weak = 0; // medium = 0
     logins.forEach(entry => {
-      const strength = this.#getPasswordStrength(entry.data.password);
+      const strength = getPasswordStrength(entry.data.password);
       if (strength === 'strong') strong++;
       else if (strength === 'medium') { /* medium++ */ }
       else weak++;
@@ -4494,7 +4498,7 @@ export class VaultUI {
         <ul class="vault-breach-list">
           ${compromised.map(({ entry, count }) => `
             <li class="vault-breach-item" data-entry-id="${entry.id}">
-              <span class="vault-breach-title">${this.#escapeHtml(entry.title)}</span>
+              <span class="vault-breach-title">${escapeHtml(entry.title)}</span>
               <span class="vault-breach-count">${this.#formatBreachCount(count)}</span>
             </li>
           `).join('')}
@@ -4591,8 +4595,8 @@ export class VaultUI {
             ${qrSvg}
           </div>
           <div class="vault-qr-info">
-            <div class="vault-qr-label">${this.#escapeHtml(issuer)}</div>
-            <div class="vault-qr-account">${this.#escapeHtml(account || 'user')}</div>
+            <div class="vault-qr-label">${escapeHtml(issuer)}</div>
+            <div class="vault-qr-account">${escapeHtml(account || 'user')}</div>
           </div>
           <p class="vault-qr-hint">Scannez avec votre application d'authentification (Google Authenticator, Authy, etc.)</p>
         </div>
@@ -4641,7 +4645,7 @@ export class VaultUI {
             ${this.#folders.map(f => `
               <button class="vault-folder-option" data-folder-id="${f.id}" role="option">
                 <span class="vault-folder-icon" aria-hidden="true">📂</span>
-                <span class="vault-folder-name">${this.#escapeHtml(f.name)}</span>
+                <span class="vault-folder-name">${escapeHtml(f.name)}</span>
               </button>
             `).join('')}
           </div>
@@ -6512,7 +6516,7 @@ export class VaultUI {
     menu.innerHTML = `
       <div class="vault-ctx-header">
         <span class="vault-ctx-icon" data-type-color="${type.color}">${type.icon}</span>
-        <span class="vault-ctx-title">${this.#escapeHtml(entry.title)}</span>
+        <span class="vault-ctx-title">${escapeHtml(entry.title)}</span>
       </div>
       <div class="vault-ctx-divider"></div>
       ${entry.type === 'login' && entry.data?.username ? `
@@ -6703,7 +6707,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-preview-field">
             <span class="vault-preview-label">${t('vault.labels.username')}</span>
-            <span class="vault-preview-value">${this.#escapeHtml(entry.data.username)}</span>
+            <span class="vault-preview-value">${escapeHtml(entry.data.username)}</span>
           </div>
         `;
       }
@@ -6719,7 +6723,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-preview-field">
             <span class="vault-preview-label">${t('vault.labels.url')}</span>
-            <span class="vault-preview-value">${this.#escapeHtml(entry.data.url)}</span>
+            <span class="vault-preview-value">${escapeHtml(entry.data.url)}</span>
           </div>
         `;
       }
@@ -6737,7 +6741,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-preview-field">
             <span class="vault-preview-label">Expiration</span>
-            <span class="vault-preview-value">${this.#escapeHtml(entry.data.expiry)}</span>
+            <span class="vault-preview-value">${escapeHtml(entry.data.expiry)}</span>
           </div>
         `;
       }
@@ -6749,7 +6753,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-preview-field">
             <span class="vault-preview-label">Note</span>
-            <span class="vault-preview-value">${this.#escapeHtml(truncated)}</span>
+            <span class="vault-preview-value">${escapeHtml(truncated)}</span>
           </div>
         `;
       }
@@ -6758,7 +6762,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-preview-field">
             <span class="vault-preview-label">Nom</span>
-            <span class="vault-preview-value">${this.#escapeHtml(entry.data.fullName)}</span>
+            <span class="vault-preview-value">${escapeHtml(entry.data.fullName)}</span>
           </div>
         `;
       }
@@ -6766,7 +6770,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-preview-field">
             <span class="vault-preview-label">Email</span>
-            <span class="vault-preview-value">${this.#escapeHtml(entry.data.email)}</span>
+            <span class="vault-preview-value">${escapeHtml(entry.data.email)}</span>
           </div>
         `;
       }
@@ -6790,7 +6794,7 @@ export class VaultUI {
         <div class="vault-preview-icon" data-type-color="${type.color}">
           ${type.icon}
         </div>
-        <span class="vault-preview-title">${this.#escapeHtml(entry.title)}</span>
+        <span class="vault-preview-title">${escapeHtml(entry.title)}</span>
       </div>
       <div class="vault-preview-fields">
         ${fieldsHtml}
@@ -7395,7 +7399,7 @@ export class VaultUI {
     modal.innerHTML = `
       <div class="vault-modal">
         <div class="vault-modal-header">
-          <h3>Partager "${this.#escapeHtml(entry.title)}"</h3>
+          <h3>Partager "${escapeHtml(entry.title)}"</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -7637,13 +7641,13 @@ export class VaultUI {
     let fieldsHtml = `
       <div class="vault-form-group">
         <label class="vault-label" for="edit-title">Titre <span class="required">*</span></label>
-        <input type="text" class="vault-input" id="edit-title" value="${this.#escapeHtml(entry.title)}" required aria-required="true" aria-invalid="false">
+        <input type="text" class="vault-input" id="edit-title" value="${escapeHtml(entry.title)}" required aria-required="true" aria-invalid="false">
       </div>
       <div class="vault-form-group">
         <label class="vault-label" for="edit-folder">${t('vault.labels.folder')}</label>
         <select class="vault-input vault-select" id="edit-folder">
           <option value="">No folder</option>
-          ${this.#folders.map(f => `<option value="${f.id}" ${entry.folderId === f.id ? 'selected' : ''}>${this.#escapeHtml(f.name)}</option>`).join('')}
+          ${this.#folders.map(f => `<option value="${f.id}" ${entry.folderId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
         </select>
       </div>
     `;
@@ -7653,12 +7657,12 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-form-group">
             <label class="vault-label" for="edit-username">Username / Email</label>
-            <input type="text" class="vault-input" id="edit-username" value="${this.#escapeHtml(entry.data?.username || '')}">
+            <input type="text" class="vault-input" id="edit-username" value="${escapeHtml(entry.data?.username || '')}">
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-password">${t('vault.labels.password')}</label>
             <div class="vault-input-group">
-              <input type="password" class="vault-input" id="edit-password" value="${this.#escapeHtml(entry.data?.password || '')}">
+              <input type="password" class="vault-input" id="edit-password" value="${escapeHtml(entry.data?.password || '')}">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="edit-password" aria-label="Show">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -7675,12 +7679,12 @@ export class VaultUI {
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-url">${t('vault.labels.url')}</label>
-            <input type="url" class="vault-input" id="edit-url" value="${this.#escapeHtml(entry.data?.url || '')}">
+            <input type="url" class="vault-input" id="edit-url" value="${escapeHtml(entry.data?.url || '')}">
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-totp">TOTP Key (2FA)</label>
             <div class="vault-input-group">
-              <input type="text" class="vault-input mono" id="edit-totp" value="${this.#escapeHtml(entry.data?.totp || '')}"
+              <input type="text" class="vault-input mono" id="edit-totp" value="${escapeHtml(entry.data?.totp || '')}"
                      placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
               <button type="button" class="vault-input-btn" id="edit-scan-totp" data-tooltip="Scanner QR" aria-label="Scanner QR ou coller otpauth://">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -7711,7 +7715,7 @@ export class VaultUI {
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-notes">${t('vault.labels.notes')}</label>
-            <textarea class="vault-input vault-textarea" id="edit-notes" rows="3">${this.#escapeHtml(entry.notes || '')}</textarea>
+            <textarea class="vault-input vault-textarea" id="edit-notes" rows="3">${escapeHtml(entry.notes || '')}</textarea>
           </div>
         `;
         break;
@@ -7719,7 +7723,7 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-form-group">
             <label class="vault-label" for="edit-content">Contenu</label>
-            <textarea class="vault-input vault-textarea" id="edit-content" rows="8">${this.#escapeHtml(entry.data?.content || '')}</textarea>
+            <textarea class="vault-input vault-textarea" id="edit-content" rows="8">${escapeHtml(entry.data?.content || '')}</textarea>
           </div>
         `;
         break;
@@ -7727,20 +7731,20 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-form-group">
             <label class="vault-label" for="edit-holder">Holder</label>
-            <input type="text" class="vault-input" id="edit-holder" value="${this.#escapeHtml(entry.data?.holder || '')}">
+            <input type="text" class="vault-input" id="edit-holder" value="${escapeHtml(entry.data?.holder || '')}">
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-cardnumber">Card number</label>
-            <input type="text" class="vault-input" id="edit-cardnumber" value="${this.#escapeHtml(entry.data?.number || '')}">
+            <input type="text" class="vault-input" id="edit-cardnumber" value="${escapeHtml(entry.data?.number || '')}">
           </div>
           <div class="vault-form-row">
             <div class="vault-form-group">
               <label class="vault-label" for="edit-expiry">Expiration</label>
-              <input type="text" class="vault-input" id="edit-expiry" value="${this.#escapeHtml(entry.data?.expiry || '')}" placeholder="${t('vault.placeholders.expiryFormat')}">
+              <input type="text" class="vault-input" id="edit-expiry" value="${escapeHtml(entry.data?.expiry || '')}" placeholder="${t('vault.placeholders.expiryFormat')}">
             </div>
             <div class="vault-form-group">
               <label class="vault-label" for="edit-cvv">CVV</label>
-              <input type="password" class="vault-input" id="edit-cvv" value="${this.#escapeHtml(entry.data?.cvv || '')}" maxlength="4">
+              <input type="password" class="vault-input" id="edit-cvv" value="${escapeHtml(entry.data?.cvv || '')}" maxlength="4">
             </div>
           </div>
         `;
@@ -7749,15 +7753,15 @@ export class VaultUI {
         fieldsHtml += `
           <div class="vault-form-group">
             <label class="vault-label" for="edit-fullname">Full name</label>
-            <input type="text" class="vault-input" id="edit-fullname" value="${this.#escapeHtml(entry.data?.fullName || '')}">
+            <input type="text" class="vault-input" id="edit-fullname" value="${escapeHtml(entry.data?.fullName || '')}">
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-email">Email</label>
-            <input type="email" class="vault-input" id="edit-email" value="${this.#escapeHtml(entry.data?.email || '')}">
+            <input type="email" class="vault-input" id="edit-email" value="${escapeHtml(entry.data?.email || '')}">
           </div>
           <div class="vault-form-group">
             <label class="vault-label" for="edit-phone">Phone</label>
-            <input type="tel" class="vault-input" id="edit-phone" value="${this.#escapeHtml(entry.data?.phone || '')}">
+            <input type="tel" class="vault-input" id="edit-phone" value="${escapeHtml(entry.data?.phone || '')}">
           </div>
         `;
         break;
@@ -7848,7 +7852,7 @@ export class VaultUI {
             <div class="vault-attachment-item">
               <div class="attachment-icon">${this.#getFileIcon(file.type)}</div>
               <div class="attachment-info">
-                <div class="attachment-name" title="${this.#escapeHtml(file.name)}">${this.#escapeHtml(file.name)}</div>
+                <div class="attachment-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
                 <div class="attachment-meta">${this.#formatFileSize(file.size)}</div>
               </div>
               <div class="attachment-actions">
@@ -8399,7 +8403,7 @@ export class VaultUI {
             <label class="vault-tag-option">
               <input type="checkbox" name="entry-tags" value="${tag.id}">
               <span class="vault-tag-chip" data-tag-color="${tag.color || '#6b7280'}">
-                ${this.#escapeHtml(tag.name)}
+                ${escapeHtml(tag.name)}
               </span>
             </label>
           `).join('');
@@ -8667,9 +8671,9 @@ export class VaultUI {
     ];
 
     const existingFieldsHtml = existingFields.map((field, index) => `
-      <div class="vault-custom-field" data-field-index="${index}" data-field-id="${this.#escapeHtml(field.id || '')}">
+      <div class="vault-custom-field" data-field-index="${index}" data-field-id="${escapeHtml(field.id || '')}">
         <div class="vault-custom-field-header">
-          <input type="text" class="vault-input vault-custom-field-label" placeholder="${t('vault.placeholders.fieldName')}" value="${this.#escapeHtml(field.label || '')}" aria-label="${t('vault.placeholders.fieldName')}">
+          <input type="text" class="vault-input vault-custom-field-label" placeholder="${t('vault.placeholders.fieldName')}" value="${escapeHtml(field.label || '')}" aria-label="${t('vault.placeholders.fieldName')}">
           <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
             ${fieldKindOptions.map(opt =>
       `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
@@ -8690,7 +8694,7 @@ export class VaultUI {
           <input type="${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? 'password' : 'text'}"
                  class="vault-input vault-custom-field-value"
                  placeholder="${t('vault.placeholders.fieldValue')}"
-                 value="${this.#escapeHtml(field.value || '')}"
+                 value="${escapeHtml(field.value || '')}"
                  aria-label="${t('vault.placeholders.fieldValue')}">
           ${field.kind === 'password' || field.kind === 'hidden' || field.isSecured ? `
             <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="${t('vault.aria.toggleVisibility')}">
@@ -9091,15 +9095,15 @@ export class VaultUI {
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
               </svg>
-              ${this.#escapeHtml(title)}
+              ${escapeHtml(title)}
             </h3>
           </div>
           <div class="vault-modal-body">
-            <p id="confirm-dialog-message" class="confirm-dialog-message">${this.#escapeHtml(message)}</p>
+            <p id="confirm-dialog-message" class="confirm-dialog-message">${escapeHtml(message)}</p>
           </div>
           <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="Cancel">${this.#escapeHtml(cancelText)}</button>
-            <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="Confirm">${this.#escapeHtml(confirmText)}</button>
+            <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="Cancel">${escapeHtml(cancelText)}</button>
+            <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="Confirm">${escapeHtml(confirmText)}</button>
           </div>
         </div>
       `;
@@ -9137,24 +9141,6 @@ export class VaultUI {
     return !!(this.#searchFilters.type || this.#searchFilters.strength || this.#searchFilters.age);
   }
 
-  #getPasswordStrength(password) {
-    if (!password) return null;
-    const len = password.length;
-    const hasLower = /[a-z]/.test(password);
-    const hasUpper = /[A-Z]/.test(password);
-    const hasDigit = /\d/.test(password);
-    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
-    const variety = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
-
-    // Minimum 12 chars + 3 char types = strong
-    // Minimum 12 chars + 2 char types = medium
-    // Below 12 chars = weak
-    if (len >= 16 && variety >= 3) return 'strong';
-    if (len >= 12 && variety >= 3) return 'strong';
-    if (len >= 12 && variety >= 2) return 'medium';
-    return 'weak';
-  }
-
   #getPasswordAgeDays(entry) {
     if (!entry.modifiedAt) return 0;
     const modified = new Date(entry.modifiedAt);
@@ -9189,7 +9175,7 @@ export class VaultUI {
     if (this.#searchFilters.strength) {
       entries = entries.filter(e => {
         if (e.type !== 'login' || !e.data?.password) return false;
-        return this.#getPasswordStrength(e.data.password) === this.#searchFilters.strength;
+        return getPasswordStrength(e.data.password) === this.#searchFilters.strength;
       });
     }
 
@@ -9763,16 +9749,6 @@ export class VaultUI {
     }
   }
 
-  #isPasswordDuplicated(password, currentEntryId) {
-    if (!password) return false;
-    const duplicates = this.#entries.filter(e =>
-      e.type === 'login' &&
-      e.data?.password === password &&
-      e.id !== currentEntryId
-    );
-    return duplicates.length > 0;
-  }
-
   /**
    * Get password expiration status
    * @param {Object} entry
@@ -10223,7 +10199,7 @@ export class VaultUI {
             </button>
           </div>
           <form class="vault-modal-body" id="pwd-prompt-form">
-            <p class="vault-modal-message">${this.#escapeHtml(message)}</p>
+            <p class="vault-modal-message">${escapeHtml(message)}</p>
             <div class="vault-form-group">
               <div class="vault-input-group">
                 <input type="password" class="vault-input" id="pwd-prompt-input"
@@ -10450,7 +10426,7 @@ export class VaultUI {
 
     toast.innerHTML = `
       ${icon}
-      <span class="toast-message">${this.#escapeHtml(message)}</span>
+      <span class="toast-message">${escapeHtml(message)}</span>
       <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
     `;
 
@@ -10489,8 +10465,8 @@ export class VaultUI {
         <line x1="9" y1="9" x2="15" y2="15"/>
       </svg>
       <div class="toast-content">
-        <span class="toast-title">${this.#escapeHtml(title)}</span>
-        <span class="toast-suggestion">${this.#escapeHtml(suggestion)}</span>
+        <span class="toast-title">${escapeHtml(title)}</span>
+        <span class="toast-suggestion">${escapeHtml(suggestion)}</span>
       </div>
       <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
     `;
@@ -10516,7 +10492,7 @@ export class VaultUI {
     toast.className = 'toast toast-warning toast-with-undo';
     toast.setAttribute('role', 'alert');
     toast.innerHTML = `
-      <span class="toast-message">${this.#escapeHtml(message)}</span>
+      <span class="toast-message">${escapeHtml(message)}</span>
       <button class="toast-undo-btn" aria-label="Undo">Undo</button>
       <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
       <div class="toast-progress"><div class="toast-progress-bar"></div></div>
@@ -10631,23 +10607,6 @@ export class VaultUI {
     }
     const index = Math.abs(hash) % VaultUI.#VAULT_COLORS.length;
     return VaultUI.#VAULT_COLORS[index];
-  }
-
-  #escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  #formatDate(dateStr) {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US');
-  }
-
-  #formatDateTime(dateStr) {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleString('fr-FR');
   }
 
   // ==================== FAVICON HELPERS ====================
