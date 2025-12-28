@@ -137,6 +137,17 @@
   --space-2xl: 2rem;    /* 32px */
   --space-3xl: 3rem;    /* 48px */
 
+  /* Button Tokens - Standardized sizing for WCAG 2.1 compliance */
+  --btn-min-height: 44px;        /* WCAG 2.1 touch target */
+  --btn-padding-sm: 0.5rem 0.875rem;
+  --btn-padding-md: 0.625rem 1.25rem;
+  --btn-padding-lg: 0.75rem 1.5rem;
+  --btn-font-sm: 0.8125rem;      /* 13px */
+  --btn-font-md: 0.9rem;         /* 14.4px */
+  --btn-font-lg: 1rem;           /* 16px */
+  --btn-gap: 0.5rem;
+  --btn-radius: var(--radius-sm);
+
   /* Typography Scale */
   --text-xs: 0.75rem;   /* 12px */
   --text-sm: 0.875rem;  /* 14px */

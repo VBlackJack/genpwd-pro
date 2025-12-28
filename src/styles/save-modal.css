@@ -92,7 +92,7 @@
   border-radius: var(--radius-sm);
   color: var(--text-muted, #d1d5db);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .save-vault-close:hover {
@@ -155,7 +155,7 @@
   border-radius: var(--radius-sm);
   color: var(--text-muted, #d1d5db);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   flex-shrink: 0;
 }
 
@@ -208,7 +208,7 @@
   color: var(--text-primary, #f5f7fa);
   font-size: 0.9rem;
   font-family: inherit;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .save-vault-input:hover,
@@ -515,7 +515,7 @@
   border-radius: var(--radius-sm);
   color: var(--text-muted, #d1d5db);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .quick-unlock-close:hover {
@@ -584,7 +584,7 @@
   color: var(--text-primary, #f5f7fa);
   font-size: 0.95rem;
   font-family: inherit;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .quick-unlock-input:focus {
@@ -618,7 +618,7 @@
   border-radius: var(--radius-sm);
   color: var(--text-muted, #d1d5db);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .quick-unlock-toggle-pwd:hover {
@@ -775,9 +775,8 @@
 }
 
 .quick-unlock-btn-hello:focus-visible {
-  outline: 3px solid var(--accent-cyan, #00d4ff);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
-  box-shadow: 0 0 0 6px rgba(0, 212, 255, 0.2);
 }
 
 .quick-unlock-btn-hello svg {

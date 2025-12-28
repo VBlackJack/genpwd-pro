@@ -97,8 +97,8 @@
 .font-500 { font-weight: 500 !important; }
 .font-600 { font-weight: 600 !important; }
 .text-xs { font-size: 0.75rem !important; }
-.text-sm { font-size: 0.85rem !important; }
-.text-base { font-size: 0.9rem !important; }
+.text-sm { font-size: var(--text-sm, 0.875rem) !important; }
+.text-base { font-size: var(--text-base, 1rem) !important; }
 .text-lg { font-size: 0.95rem !important; }
 .text-xl { font-size: 1em !important; }
 .text-2xl { font-size: 1.5em !important; }
@@ -300,8 +300,8 @@ input:checked + .toggle-slider::before {
 }
 
 .plugin-stat-item.total .stat-value { color: var(--accent-green, #10b981); }
-.plugin-stat-item.enabled .stat-value { color: var(--accent-blue, #2196F3); }
-.plugin-stat-item.hooks .stat-value { color: var(--accent-orange, #FF9800); }
+.plugin-stat-item.enabled .stat-value { color: var(--accent-blue, #3b82f6); }
+.plugin-stat-item.hooks .stat-value { color: var(--accent-orange, #f97316); }
 
 .plugin-stat-item .stat-label {
   font-size: 0.9em;
@@ -351,19 +351,19 @@ input:checked + .toggle-slider::before {
 
 .plugin-description {
   font-size: 0.95em;
-  color: #333;
+  color: var(--text-secondary);
   margin-bottom: 10px;
 }
 
 .plugin-hooks-list {
   font-size: 0.85em;
-  color: #666;
+  color: var(--text-muted);
   margin-bottom: 10px;
 }
 
 .hook-badge {
   display: inline-block;
-  background: #e3f2fd;
+  background: var(--bg-tertiary);
   padding: 2px 8px;
   border-radius: var(--radius-xs, 3px);
   margin: 2px;
@@ -371,8 +371,8 @@ input:checked + .toggle-slider::before {
 
 .plugin-meta-info {
   font-size: 0.8em;
-  color: #999;
-  border-top: 1px solid #eee;
+  color: var(--text-hint);
+  border-top: 1px solid var(--border-color);
   padding-top: 8px;
   margin-top: 8px;
 }
@@ -481,7 +481,7 @@ input:checked + .toggle-slider::before {
 }
 
 .vault-sync-stat.local .stat-value {
-  color: #3b82f6;
+  color: var(--accent-blue, #3b82f6);
 }
 
 .vault-sync-stat.vault {
@@ -667,7 +667,7 @@ input:checked + .toggle-slider::before {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-primary);
   transition: all 0.2s;
 }
@@ -730,7 +730,7 @@ input:checked + .toggle-slider::before {
   cursor: pointer;
   color: var(--text-primary);
   transition: background 0.2s;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .lang-option:hover {
@@ -836,7 +836,7 @@ input:checked + .toggle-slider::before {
 .history-search .input {
   width: 100%;
   padding: 12px;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .history-list {
@@ -1032,7 +1032,7 @@ input:checked + .toggle-slider::before {
   background: var(--bg-code);
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-family: 'Courier New', Courier, monospace;
   color: var(--text-primary);
 }
@@ -1048,7 +1048,7 @@ input:checked + .toggle-slider::before {
 }
 
 .hibp-result-message {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: 1.5;
 }
@@ -1061,7 +1061,7 @@ input:checked + .toggle-slider::before {
 .checking-status p {
   margin-top: 20px;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 /* HIBP checking spinner - larger variant of base .spinner from utilities.css */
@@ -1196,12 +1196,12 @@ input:checked + .toggle-slider::before {
 
 .result-entry-detail {
   font-size: 0.9em;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .result-entry-notes {
   font-size: 0.85em;
-  color: #999;
+  color: var(--text-hint);
   margin-top: 5px;
 }
 

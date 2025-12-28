@@ -244,8 +244,8 @@ h2.modal-title {
 .modal-body::-webkit-scrollbar-thumb {
   background: var(--accent-purple);
   border-radius: var(--radius-sm);
-  /* Minimum height for touch */
-  min-height: 40px;
+  /* WCAG 2.1 touch target compliance */
+  min-height: 44px;
   border: 2px solid var(--bg-tertiary);
   transition: background-color 0.2s ease;
 }
@@ -332,7 +332,7 @@ h2.modal-title {
   background: rgba(255, 255, 255, 0.02);
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .feature-list li:last-child {
@@ -489,7 +489,7 @@ h2.modal-title {
   color: white;
   padding: 6px 20px;
   border-radius: var(--radius-pill);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
   margin-bottom: 14px;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
@@ -535,7 +535,7 @@ h2.modal-title {
   font-size: 12px;
   color: var(--text-secondary);
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   overflow: hidden;
 }
 
@@ -696,7 +696,7 @@ h2.modal-title {
   cursor: pointer;
 
   /* Smooth transition */
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .pwd .action-btn:hover {
@@ -998,7 +998,7 @@ h2.modal-title {
    ============================================================================ */
 
 .modal.modal-sm {
-  max-width: 400px;
+  max-width: 450px;
 }
 
 .modal.modal-md {

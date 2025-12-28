@@ -114,7 +114,7 @@ header::before {
 }
 
 .logo-subtitle {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-weight: 500;
   opacity: 0.9;
@@ -243,7 +243,7 @@ header::before {
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   transition: all var(--transition-smooth);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   user-select: none;

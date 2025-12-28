@@ -18,9 +18,9 @@
   transition: top 0.3s ease;
 }
 
-.skip-link:focus {
+.skip-link:focus-visible {
   top: 0;
-  outline: 3px solid var(--accent-yellow);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
 }
 

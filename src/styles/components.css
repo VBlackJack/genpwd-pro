@@ -619,7 +619,7 @@ textarea.field-invalid {
 .id {
   color: var(--accent-blue);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .stat {
@@ -673,13 +673,25 @@ textarea.field-invalid {
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
+  min-height: 48px;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
   font-weight: 500;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: var(--text-on-accent, #fff);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.empty-state-cta:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
 }
 
 .empty-state-cta:focus-visible {
-  outline: 2px solid var(--accent-primary);
+  outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
 }
 
@@ -1134,7 +1146,7 @@ textarea.field-invalid {
   .cursor {
     width: 34px;
     height: 34px;
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
 
   .cursor.special .cursor-label,
@@ -1341,7 +1353,7 @@ textarea.field-invalid {
   background: rgba(0, 0, 0, 0.15);
   border-bottom: 1px solid var(--border);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-primary);
 }
 
@@ -1375,7 +1387,7 @@ textarea.field-invalid {
   border: 1px solid transparent;
   border-radius: var(--radius-sm, 8px);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-secondary);
   transition: all var(--transition-fast);
@@ -1464,7 +1476,7 @@ textarea.field-invalid {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
   border-radius: var(--radius-sm, 8px);
   transition: all var(--transition-normal);
@@ -1502,29 +1514,6 @@ textarea.field-invalid {
 .section-header[role="button"]:focus-visible {
   outline: 2px solid var(--accent-cyan, #00d4ff);
   outline-offset: 2px;
-}
-
-/* ============================================================================
-   EMPTY STATE CTA
-   ============================================================================ */
-
-.empty-state-cta {
-  min-height: 48px;
-  font-size: 1rem;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  color: var(--text-on-accent, #fff);
-  border: none;
-}
-
-.empty-state-cta:hover {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-}
-
-.empty-state-cta:focus-visible {
-  outline: 3px solid var(--accent-cyan, #00d4ff);
-  outline-offset: 3px;
 }
 
 /* ============================================================================
