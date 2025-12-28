@@ -85,6 +85,7 @@ import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } 
 import { performExport, downloadExport } from './vault/services/export-service.js';
 import { getTooltipManager, destroyTooltips } from './vault/services/tooltip-manager.js';
 import { parseKeePassXML, parseCSV } from './vault/services/import-parsers.js';
+import { calculateHealthStats, checkAllBreaches, getBreachCount, formatBreachCount, sha1 } from './vault/services/health-service.js';
 
 // Entry type configuration
 import { getEntryTypes, ENTRY_TYPES } from './config/entry-types.js';
@@ -2784,141 +2785,14 @@ export class VaultUI {
     }
   }
 
-  #calculateHealthStats() {
-    const logins = this.#entries.filter(e => e.type === 'login' && e.data?.password);
-    const total = logins.length;
-
-    if (total === 0) {
-      return {
-        score: 100,
-        scoreClass: 'excellent',
-        status: 'No username',
-        total: 0,
-        strong: 0,
-        weak: 0,
-        reused: 0,
-        old: 0,
-        expired: 0,
-        issues: []
-      };
-    }
-
-    // Count by strength
-    let strong = 0, weak = 0; // medium = 0
-    logins.forEach(entry => {
-      const strength = getPasswordStrength(entry.data.password);
-      if (strength === 'strong') strong++;
-      else if (strength === 'medium') { /* medium++ */ }
-      else weak++;
-    });
-
-    // Count reused passwords
-    const passwordCounts = {};
-    logins.forEach(entry => {
-      const pwd = entry.data.password;
-      passwordCounts[pwd] = (passwordCounts[pwd] || 0) + 1;
-    });
-    const reused = logins.filter(e => passwordCounts[e.data.password] > 1).length;
-
-    // Count old passwords (by age) and expiring passwords (by expiresAt date)
-    let old = 0, expired = 0, expiring = 0;
-    logins.forEach(entry => {
-      // Check expiration date first
-      const expiryStatus = getExpiryStatus(entry);
-      if (expiryStatus.status === 'expired') {
-        expired++;
-      } else if (['today', 'soon', 'warning'].includes(expiryStatus.status)) {
-        expiring++;
-      }
-
-      // Also check by password age
-      const days = getPasswordAgeDays(entry.modifiedAt);
-      if (days > 180) old++;
-    });
-
-    // Calculate score
-    let score = 100;
-    if (total > 0) {
-      score -= (weak / total) * 40;
-      score -= (reused / total) * 25;
-      score -= (expired / total) * 20;
-      score -= (expiring / total) * 10;
-      score -= (old / total) * 5;
-    }
-    score = Math.max(0, Math.round(score));
-
-    // Determine status
-    let status, scoreClass;
-    if (score >= 90) {
-      status = t('vault.health.excellent');
-      scoreClass = 'excellent';
-    } else if (score >= 70) {
-      status = t('vault.health.good');
-      scoreClass = 'good';
-    } else if (score >= 50) {
-      status = t('vault.health.needsImprovement');
-      scoreClass = 'medium';
-    } else {
-      status = t('vault.health.critical');
-      scoreClass = 'poor';
-    }
-
-    // Build issues list
-    const issues = [];
-    if (weak > 0) {
-      issues.push({
-        severity: 'high',
-        icon: '⚠️',
-        iconLabel: t('vault.health.iconWarning'),
-        message: t('vault.health.weakPasswords', { count: weak }),
-        count: weak
-      });
-    }
-    if (reused > 0) {
-      issues.push({
-        severity: 'high',
-        icon: '🔁',
-        iconLabel: t('vault.health.iconReused'),
-        message: t('vault.health.reusedPasswords', { count: reused }),
-        count: reused
-      });
-    }
-    if (expired > 0) {
-      issues.push({
-        severity: 'high',
-        icon: '⚠️',
-        iconLabel: t('vault.health.iconExpired'),
-        message: t('vault.health.expiredPasswords', { count: expired }),
-        count: expired
-      });
-    }
-    if (expiring > 0) {
-      issues.push({
-        severity: 'medium',
-        icon: '⏰',
-        iconLabel: t('vault.health.iconExpiring'),
-        message: t('vault.health.expiringPasswords', { count: expiring }),
-        count: expiring
-      });
-    }
-    if (old > 0) {
-      issues.push({
-        severity: 'low',
-        icon: '📅',
-        iconLabel: t('vault.health.iconOld'),
-        message: t('vault.health.oldPasswords', { count: old }),
-        count: old
-      });
-    }
-
-    return { score, scoreClass, status, total, strong, weak, reused, old, expired, expiring, issues };
-  }
+  // Health stats calculation moved to ./vault/services/health-service.js
 
   async #checkBreaches(silent = false) {
     const btn = document.getElementById('btn-check-breaches');
     const resultsDiv = document.getElementById('breach-results');
     const loadingDiv = document.getElementById('breach-loading');
     const listDiv = document.getElementById('breach-list');
+    const logins = this.#entries.filter(e => e.type === 'login' && e.data?.password);
 
     if (!silent && (!btn || !resultsDiv || !loadingDiv || !listDiv)) return;
 
@@ -2931,71 +2805,15 @@ export class VaultUI {
       listDiv.innerHTML = '';
     }
 
-    const logins = this.#entries.filter(e => e.type === 'login' && e.data?.password);
-    const compromised = [];
-    let checked = 0;
-    let newChecks = 0;
-
-    // Check each password
-    for (const entry of logins) {
-      try {
-        const hash = await this.#sha1(entry.data.password);
-
-        // Check cache first
-        if (this.#breachCache.has(hash)) {
-          const cachedCount = this.#breachCache.get(hash);
-          if (cachedCount > 0) {
-            compromised.push({ entry, count: cachedCount });
-          }
-          checked++;
-          continue;
+    // Use health service for breach checking
+    const compromised = await checkAllBreaches(this.#entries, this.#breachCache, {
+      onProgress: (checked, total) => {
+        if (!silent && loadingDiv) {
+          loadingDiv.innerHTML = `<span class="vault-spinner-small"></span> Checking ${checked}/${total}...`;
         }
-
-        const prefix = hash.substring(0, 5);
-        const suffix = hash.substring(5);
-
-        const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
-          headers: { 'Add-Padding': 'true' }
-        });
-
-        if (response.ok) {
-          const text = await response.text();
-          const lines = text.split('\r\n');
-          let found = false;
-
-          for (const line of lines) {
-            const [hashSuffix, countStr] = line.split(':');
-            if (hashSuffix === suffix) {
-              const count = parseInt(countStr, 10) || 0;
-              this.#breachCache.set(hash, count);
-              if (count > 0) {
-                compromised.push({ entry, count });
-              }
-              found = true;
-              break;
-            }
-          }
-
-          if (!found) {
-            this.#breachCache.set(hash, 0);
-          }
-        }
-        newChecks++;
-      } catch (err) {
-        safeLog(`[VaultUI] Breach check error for ${entry.id}:`, err);
-      }
-
-      checked++;
-
-      if (!silent && loadingDiv) {
-        loadingDiv.innerHTML = `<span class="vault-spinner-small"></span> Checking ${checked}/${logins.length}...`;
-      }
-
-      // Small delay to avoid rate limiting (only for new checks)
-      if (newChecks > 0 && checked < logins.length) {
-        await new Promise(r => setTimeout(r, 100));
-      }
-    }
+      },
+      delay: 100
+    });
 
     // Update last check timestamp
     this.#lastBreachCheck = Date.now();
@@ -3004,7 +2822,7 @@ export class VaultUI {
     if (silent) {
       if (compromised.length > 0) {
         showToast(t('vault.messages.compromisedDetected', { count: compromised.length }), 'warning', 5000);
-        this.#updateEntryList(); // Refresh to show badges
+        this.#updateEntryList();
       }
       return compromised.length;
     }
@@ -3036,7 +2854,7 @@ export class VaultUI {
           ${compromised.map(({ entry, count }) => `
             <li class="vault-breach-item" data-entry-id="${entry.id}">
               <span class="vault-breach-title">${escapeHtml(entry.title)}</span>
-              <span class="vault-breach-count">${this.#formatBreachCount(count)}</span>
+              <span class="vault-breach-count">${formatBreachCount(count)}</span>
             </li>
           `).join('')}
         </ul>
@@ -3061,40 +2879,7 @@ export class VaultUI {
     this.#updateEntryList();
   }
 
-  /**
-   * Check if an entry's password has been breached (from cache)
-   */
-  #isPasswordBreached(entry) {
-    if (entry.type !== 'login' || !entry.data?.password) return false;
-    // We need the hash, but we can't compute async here, so check synchronously
-    // This relies on cache being populated from previous check
-    return false; // Will be implemented via async check
-  }
-
-  /**
-   * Get breach count for an entry (async)
-   */
-  async #getBreachCount(entry) {
-    if (entry.type !== 'login' || !entry.data?.password) return 0;
-    const hash = await this.#sha1(entry.data.password);
-    return this.#breachCache.get(hash) || 0;
-  }
-
-  async #sha1(text) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-  }
-
-  #formatBreachCount(count) {
-    if (count < 10) return `${count} fois`;
-    if (count < 1000) return `${count}+ fois`;
-    if (count < 1000000) return `${Math.floor(count / 1000)}K+ fois`;
-    return `${Math.floor(count / 1000000)}M+ fois`;
-  }
-
+  // Breach check helpers moved to ./vault/services/health-service.js
   // TOTP QR modal moved to ./vault/modals/totp-qr-modal.js
 
   #openEntryList() {
@@ -4512,10 +4297,10 @@ export class VaultUI {
     const indicator = document.getElementById('password-breach-indicator');
     if (!indicator) return;
 
-    const breachCount = await this.#getBreachCount(entry);
+    const breachCount = await getBreachCount(entry, this.#breachCache);
     if (breachCount > 0) {
       indicator.innerHTML = `
-        <span class="vault-breach-badge" title="This password has been exposed in ${this.#formatBreachCount(breachCount)} data breaches">
+        <span class="vault-breach-badge" title="This password has been exposed in ${formatBreachCount(breachCount)} data breaches">
           🚨 Compromised
         </span>
       `;
