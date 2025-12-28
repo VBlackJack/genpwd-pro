@@ -79,6 +79,7 @@ import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } 
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
+import { getTooltipManager, destroyTooltips } from './vault/services/tooltip-manager.js';
 
 // Entry type configuration - function to get translated labels
 const getEntryTypes = () => ({
@@ -245,7 +246,7 @@ export class VaultUI {
     this.#bindKeyboardShortcuts();
 
     // Initialize JS-based tooltips (escapes overflow:hidden containers)
-    this.#initTooltips();
+    getTooltipManager().init(this.#container);
 
     // Visual protection on window blur (if enabled)
     this.#initVisualProtection();
@@ -412,11 +413,8 @@ export class VaultUI {
       this.#clipboardTimeout = null;
     }
 
-    // Clean up tooltip timeout
-    if (this.#tooltipTimeout) {
-      clearTimeout(this.#tooltipTimeout);
-      this.#tooltipTimeout = null;
-    }
+    // Clean up tooltip manager
+    destroyTooltips();
 
     // Clean up undo timeout
     if (this.#undoTimeout) {
@@ -8053,144 +8051,7 @@ export class VaultUI {
   }
 
   // Favicon helpers moved to ./vault/utils/favicon-manager.js
-
-  // ==================== TOOLTIP SYSTEM ====================
-
-  /** @type {HTMLElement|null} */
-  #tooltipElement = null;
-
-  /** @type {number|null} */
-  #tooltipTimeout = null;
-
-  /**
-   * Initialize JS-based tooltip system
-   * Tooltips are appended to body with position:fixed to escape overflow:hidden containers
-   */
-  #initTooltips() {
-    // Create tooltip element once
-    if (!this.#tooltipElement) {
-      this.#tooltipElement = document.createElement('div');
-      this.#tooltipElement.className = 'vault-tooltip-js';
-      this.#tooltipElement.setAttribute('role', 'tooltip');
-      this.#tooltipElement.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(this.#tooltipElement);
-    }
-
-    // Use event delegation on the container
-    this.#container.addEventListener('mouseenter', (e) => {
-      const target = e.target.closest('[data-tooltip]');
-      if (target) {
-        this.#showTooltip(target);
-      }
-    }, true);
-
-    this.#container.addEventListener('mouseleave', (e) => {
-      const target = e.target.closest('[data-tooltip]');
-      if (target) {
-        this.#hideTooltip();
-      }
-    }, true);
-
-    // Hide tooltip on scroll
-    this.#container.addEventListener('scroll', () => this.#hideTooltip(), true);
-  }
-
-  /**
-   * Show tooltip for target element
-   * @param {HTMLElement} target - Element with data-tooltip attribute
-   */
-  #showTooltip(target) {
-    const text = target.getAttribute('data-tooltip');
-    if (!text || !this.#tooltipElement) return;
-
-    // Clear any pending hide
-    if (this.#tooltipTimeout) {
-      clearTimeout(this.#tooltipTimeout);
-      this.#tooltipTimeout = null;
-    }
-
-    // Set content
-    this.#tooltipElement.textContent = text;
-
-    // Get target position
-    const rect = target.getBoundingClientRect();
-    const tooltipPos = target.getAttribute('data-tooltip-pos') || 'top';
-
-    // Make visible to measure
-    this.#tooltipElement.style.visibility = 'hidden';
-    this.#tooltipElement.style.display = 'block';
-
-    const tooltipRect = this.#tooltipElement.getBoundingClientRect();
-    const padding = 8;
-    const arrowSize = 6;
-
-    let top, left;
-
-    switch (tooltipPos) {
-      case 'bottom':
-        top = rect.bottom + arrowSize + 2;
-        left = rect.left + (rect.width - tooltipRect.width) / 2;
-        break;
-      case 'left':
-        top = rect.top + (rect.height - tooltipRect.height) / 2;
-        left = rect.left - tooltipRect.width - arrowSize - 2;
-        break;
-      case 'right':
-        top = rect.top + (rect.height - tooltipRect.height) / 2;
-        left = rect.right + arrowSize + 2;
-        break;
-      case 'top':
-      default:
-        top = rect.top - tooltipRect.height - arrowSize - 2;
-        left = rect.left + (rect.width - tooltipRect.width) / 2;
-        break;
-    }
-
-    // Viewport boundary checks
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // Horizontal bounds
-    if (left < padding) {
-      left = padding;
-    } else if (left + tooltipRect.width > viewportWidth - padding) {
-      left = viewportWidth - tooltipRect.width - padding;
-    }
-
-    // Vertical bounds - flip if needed
-    if (top < padding && tooltipPos === 'top') {
-      // Flip to bottom
-      top = rect.bottom + arrowSize + 2;
-      this.#tooltipElement.setAttribute('data-pos', 'bottom');
-    } else if (top + tooltipRect.height > viewportHeight - padding && tooltipPos === 'bottom') {
-      // Flip to top
-      top = rect.top - tooltipRect.height - arrowSize - 2;
-      this.#tooltipElement.setAttribute('data-pos', 'top');
-    } else {
-      this.#tooltipElement.setAttribute('data-pos', tooltipPos);
-    }
-
-    // Apply position
-    this.#tooltipElement.style.top = `${top}px`;
-    this.#tooltipElement.style.left = `${left}px`;
-    this.#tooltipElement.style.visibility = 'visible';
-    this.#tooltipElement.classList.add('visible');
-    this.#tooltipElement.setAttribute('aria-hidden', 'false');
-  }
-
-  /**
-   * Hide the tooltip
-   */
-  #hideTooltip() {
-    if (!this.#tooltipElement) return;
-
-    // Small delay to prevent flicker when moving between elements
-    this.#tooltipTimeout = setTimeout(() => {
-      this.#tooltipElement.classList.remove('visible');
-      this.#tooltipElement.setAttribute('aria-hidden', 'true');
-      this.#tooltipTimeout = null;
-    }, 50);
-  }
+  // Tooltip system moved to ./vault/services/tooltip-manager.js
 
   #initSyncStatus() {
     if (!window.vault) return;
