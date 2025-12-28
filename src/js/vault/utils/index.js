@@ -40,3 +40,9 @@ export {
   renderFaviconImg,
   preloadFavicons
 } from './favicon-manager.js';
+
+// Markdown utilities
+export {
+  parseMarkdown,
+  renderNotesFieldHTML
+} from './markdown-parser.js';

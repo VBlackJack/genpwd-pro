@@ -49,6 +49,7 @@ import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativ
 import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength, getPasswordAgeDays } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
 import { extractDomain, renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
+import { parseMarkdown, renderNotesFieldHTML } from './vault/utils/markdown-parser.js';
 
 // Vault modals imports (Phase 6 modularization)
 import { getTemplateById, renderTemplateGrid } from './vault/modals/entry-templates.js';
@@ -567,10 +568,10 @@ export class VaultUI {
           if (confirmed) {
             try {
               await window.vault.unregister(vaultId);
-              this.#showToast(t('vault.messages.vaultForgotten'), 'success');
+              showToast(t('vault.messages.vaultForgotten'), 'success');
               this.#loadVaultList();
             } catch (error) {
-              this.#showToast(error.message || t('vault.common.error'), 'error');
+              showToast(error.message || t('vault.common.error'), 'error');
             }
           }
         });
@@ -653,11 +654,11 @@ export class VaultUI {
       const password = document.getElementById('vault-password')?.value;
 
       if (!selected) {
-        this.#showToast(t('vault.messages.selectVault'), 'warning');
+        showToast(t('vault.messages.selectVault'), 'warning');
         return;
       }
       if (!password) {
-        this.#showToast(t('vault.messages.enterPassword'), 'warning');
+        showToast(t('vault.messages.enterPassword'), 'warning');
         document.getElementById('vault-password')?.focus();
         return;
       }
@@ -705,7 +706,7 @@ export class VaultUI {
     document.getElementById('btn-hello-unlock')?.addEventListener('click', async () => {
       const selected = document.querySelector('.vault-list-item.selected');
       if (!selected) {
-        this.#showToast(t('vault.messages.selectVault'), 'warning');
+        showToast(t('vault.messages.selectVault'), 'warning');
         return;
       }
 
@@ -718,7 +719,7 @@ export class VaultUI {
         await window.vault.hello.unlock(selected.dataset.vaultId);
         // Success - vault:unlocked event will handle view switch
       } catch (error) {
-        this.#showToast(error.message || t('vault.windowsHello.failed'), 'error');
+        showToast(error.message || t('vault.windowsHello.failed'), 'error');
         btn.disabled = false;
         btn.innerHTML = originalContent;
       }
@@ -742,7 +743,7 @@ export class VaultUI {
 
         document.getElementById('external-vault-password')?.focus();
       } catch (error) {
-        this.#showToast(error.message || t('vault.messages.errorSelectingFile'), 'error');
+        showToast(error.message || t('vault.messages.errorSelectingFile'), 'error');
       }
     });
 
@@ -814,7 +815,7 @@ export class VaultUI {
           }
         }
       } catch (error) {
-        this.#showToast(t('vault.messages.selectionError'), 'error');
+        showToast(t('vault.messages.selectionError'), 'error');
       }
     });
 
@@ -906,11 +907,11 @@ export class VaultUI {
       const enableHello = document.getElementById('new-vault-hello')?.checked;
 
       if (password !== confirm) {
-        this.#showToast(t('vault.messages.passwordsNoMatch'), 'error');
+        showToast(t('vault.messages.passwordsNoMatch'), 'error');
         return;
       }
       if (password.length < 12) {
-        this.#showToast(t('vault.messages.minCharactersRequired', { count: 12 }), 'error');
+        showToast(t('vault.messages.minCharactersRequired', { count: 12 }), 'error');
         return;
       }
 
@@ -927,20 +928,20 @@ export class VaultUI {
         if (enableHello && result.vaultId) {
           try {
             await window.vault.hello.enable(result.vaultId, password);
-            this.#showToast(t('vault.messages.vaultCreatedWithHello'), 'success');
+            showToast(t('vault.messages.vaultCreatedWithHello'), 'success');
           } catch (helloError) {
             safeLog('[VaultUI] Windows Hello enable failed:', helloError);
-            this.#showToast(t('vault.messages.vaultCreatedWithoutHello'), 'warning');
+            showToast(t('vault.messages.vaultCreatedWithoutHello'), 'warning');
           }
         } else {
-          this.#showToast(customPath ? t('vault.messages.vaultCreatedAt', { path: customPath }) : t('vault.messages.vaultCreatedSuccess'), 'success');
+          showToast(customPath ? t('vault.messages.vaultCreatedAt', { path: customPath }) : t('vault.messages.vaultCreatedSuccess'), 'success');
         }
 
         this.#closeModal('create-vault-modal');
         this.#pendingExternalPath = null; // Reset
         this.#loadVaultList();
       } catch (error) {
-        this.#showToast(error.message || t('vault.common.error'), 'error');
+        showToast(error.message || t('vault.common.error'), 'error');
         btn.disabled = false;
         btn.textContent = t('vault.actions.createVault');
       }
@@ -1013,12 +1014,12 @@ export class VaultUI {
       const password = document.getElementById('external-vault-password')?.value;
 
       if (!password) {
-        this.#showToast(t('vault.messages.enterPassword'), 'warning');
+        showToast(t('vault.messages.enterPassword'), 'warning');
         return;
       }
 
       if (!this.#pendingExternalPath) {
-        this.#showToast(t('vault.messages.noFileSelected'), 'error');
+        showToast(t('vault.messages.noFileSelected'), 'error');
         return;
       }
 
@@ -1030,9 +1031,9 @@ export class VaultUI {
         await window.vault.openFromPath(this.#pendingExternalPath, password);
         this.#closeModal('open-external-modal');
         this.#pendingExternalPath = null;
-        this.#showToast(t('vault.messages.vaultOpenedSuccess'), 'success');
+        showToast(t('vault.messages.vaultOpenedSuccess'), 'success');
       } catch (error) {
-        this.#showToast(error.message || t('vault.misc.incorrectPassword'), 'error');
+        showToast(error.message || t('vault.misc.incorrectPassword'), 'error');
         btn.disabled = false;
         btn.textContent = t('vault.actions.open');
         document.getElementById('external-vault-password')?.select();
@@ -1671,7 +1672,7 @@ export class VaultUI {
             onColorSelected: (color) => {
               this.#setFolderColor(folderId, color);
               this.#render();
-              this.#showToast(t('vault.messages.colorUpdated'), 'success');
+              showToast(t('vault.messages.colorUpdated'), 'success');
             },
             t
           });
@@ -1681,7 +1682,7 @@ export class VaultUI {
           break;
       }
     } catch (error) {
-      this.#showToast(error.message || t('vault.messages.operationFailed'), 'error');
+      showToast(error.message || t('vault.messages.operationFailed'), 'error');
     }
   }
 
@@ -1696,11 +1697,11 @@ export class VaultUI {
     if (newName && newName.trim() && newName !== folder.name) {
       try {
         await window.vault.folders.update(folderId, { name: newName.trim() });
-        this.#showToast(t('vault.messages.folderRenamed'), 'success');
+        showToast(t('vault.messages.folderRenamed'), 'success');
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
+        showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
       }
     }
   }
@@ -1715,11 +1716,11 @@ export class VaultUI {
         await window.vault.folders.add(name.trim(), parentId);
         // Auto-expand the parent
         this.#expandedFolders.add(parentId);
-        this.#showToast(t('vault.messages.subfolderCreated'), 'success');
+        showToast(t('vault.messages.subfolderCreated'), 'success');
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
+        showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
       }
     }
   }
@@ -1747,11 +1748,11 @@ export class VaultUI {
         if (this.#selectedFolder === folderId) {
           this.#selectedFolder = null;
         }
-        this.#showToast(t('vault.messages.folderDeleted'), 'success');
+        showToast(t('vault.messages.folderDeleted'), 'success');
         await this.#loadData();
         this.#render();
       } catch (e) {
-        this.#showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
+        showToast(`${t('vault.common.error')}: ${e.message}`, 'error');
       }
     }
   }
@@ -1977,7 +1978,7 @@ export class VaultUI {
           ${entry.data?.totp ? this.#renderTOTPField(entry) : ''}
           ${this.#renderField(t('vault.labels.url'), entry.data?.url, 'url', false, true, true)}
           ${this.#renderExpirationField(entry)}
-          ${entry.notes ? this.#renderNotesField(entry.notes) : ''}
+          ${entry.notes ? renderNotesFieldHTML(entry.notes, t) : ''}
         `;
       case 'note':
         return `
@@ -2001,7 +2002,7 @@ export class VaultUI {
             </div>
             <div class="vault-notes-content">
               <div class="vault-notes-preview markdown-body" data-mode="preview">
-                ${this.#parseMarkdown(entry.data?.content || '')}
+                ${parseMarkdown(entry.data?.content || '')}
               </div>
               <pre class="vault-notes-source" data-mode="source" hidden>${escapeHtml(entry.data?.content || '')}</pre>
             </div>
@@ -2222,110 +2223,6 @@ export class VaultUI {
         </div>
       </div>
     `;
-  }
-
-  // ==================== MARKDOWN SUPPORT ====================
-
-  #renderNotesField(notes) {
-    if (!notes) return '';
-
-    return `
-      <div class="vault-field vault-notes-field">
-        <div class="vault-field-label-row">
-          <label class="vault-field-label">${t('vault.labels.notes')}</label>
-          <div class="vault-notes-toggle">
-            <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-            <button type="button" class="vault-notes-mode" data-mode="source" title="Source Markdown">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="16 18 22 12 16 6"></polyline>
-                <polyline points="8 6 2 12 8 18"></polyline>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="vault-notes-content">
-          <div class="vault-notes-preview markdown-body" data-mode="preview">
-            ${this.#parseMarkdown(notes)}
-          </div>
-          <pre class="vault-notes-source" data-mode="source" hidden>${escapeHtml(notes)}</pre>
-        </div>
-      </div>
-    `;
-  }
-
-  #parseMarkdown(text) {
-    if (!text) return '';
-
-    let html = escapeHtml(text);
-
-    // Code blocks (``` ... ```)
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-      return `<pre class="md-code-block${lang ? ` language-${lang}` : ''}"><code>${code.trim()}</code></pre>`;
-    });
-
-    // Inline code (`code`)
-    html = html.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
-
-    // Headers (# ## ### #### ##### ######)
-    html = html.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
-    html = html.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
-    html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
-    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-
-    // Bold (**text** or __text__)
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-
-    // Italic (*text* or _text_)
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
-
-    // Strikethrough (~~text~~)
-    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
-
-    // Links [text](url)
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-    // Blockquotes (> text)
-    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
-    // Merge consecutive blockquotes
-    html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
-
-    // Unordered lists (- item or * item)
-    html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
-
-    // Ordered lists (1. item)
-    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-
-    // Horizontal rule (--- or ***)
-    html = html.replace(/^(---|\*\*\*)$/gm, '<hr>');
-
-    // Checkboxes (- [ ] or - [x])
-    html = html.replace(/\[ \]/g, '<input type="checkbox" disabled>');
-    html = html.replace(/\[x\]/gi, '<input type="checkbox" disabled checked>');
-
-    // Paragraphs (double newline)
-    html = html.replace(/\n\n+/g, '</p><p>');
-    // Single newlines become <br>
-    html = html.replace(/\n/g, '<br>');
-
-    // Wrap in paragraph
-    html = `<p>${html}</p>`;
-
-    // Clean up empty paragraphs
-    html = html.replace(/<p><\/p>/g, '');
-    html = html.replace(/<p>(<(?:h[1-6]|ul|ol|blockquote|pre|hr)[^>]*>)/g, '$1');
-    html = html.replace(/(<\/(?:h[1-6]|ul|ol|blockquote|pre|hr)>)<\/p>/g, '$1');
-
-    return html;
   }
 
   #renderTOTPField(entry) {
@@ -2616,7 +2513,7 @@ export class VaultUI {
     const selectedItem = document.querySelector(`.vault-template-item[data-template-id="${templateId}"]`);
     if (selectedItem) selectedItem.classList.add('selected');
 
-    this.#showToast(t('vault.messages.templateApplied', { name: template.name }), 'success');
+    showToast(t('vault.messages.templateApplied', { name: template.name }), 'success');
   }
 
   // ==================== TAGS SYSTEM ====================
@@ -2849,11 +2746,11 @@ export class VaultUI {
       this.#render();
 
       this.#closeModal('import-modal');
-      this.#showToast(t('vault.messages.entriesImported', { count: importedCount }), 'success');
+      showToast(t('vault.messages.entriesImported', { count: importedCount }), 'success');
       this.#pendingImport = null;
 
     } catch (error) {
-      this.#showToast(t('vault.messages.importError', { message: error.message }), 'error');
+      showToast(t('vault.messages.importError', { message: error.message }), 'error');
     } finally {
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `
@@ -2871,10 +2768,10 @@ export class VaultUI {
     try {
       await window.vault.tags.add({ name: name.trim(), color });
       await this.#loadData();
-      this.#showToast(t('vault.messages.tagCreated', { name }), 'success');
+      showToast(t('vault.messages.tagCreated', { name }), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || t('vault.messages.creationError'), 'error');
+      showToast(error.message || t('vault.messages.creationError'), 'error');
       return false;
     }
   }
@@ -2883,10 +2780,10 @@ export class VaultUI {
     try {
       await window.vault.tags.update(tagId, { name: name.trim(), color });
       await this.#loadData();
-      this.#showToast(t('vault.messages.tagModified'), 'success');
+      showToast(t('vault.messages.tagModified'), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || t('vault.messages.modificationError'), 'error');
+      showToast(error.message || t('vault.messages.modificationError'), 'error');
       return false;
     }
   }
@@ -2905,10 +2802,10 @@ export class VaultUI {
         this.#selectedTag = null;
       }
       await this.#loadData();
-      this.#showToast(t('vault.messages.tagDeleted'), 'success');
+      showToast(t('vault.messages.tagDeleted'), 'success');
       return true;
     } catch (error) {
-      this.#showToast(error.message || t('vault.messages.deleteError'), 'error');
+      showToast(error.message || t('vault.messages.deleteError'), 'error');
       return false;
     }
   }
@@ -3076,7 +2973,7 @@ export class VaultUI {
     this.#render();
 
     if (updated > 0) {
-      this.#showToast(t('vault.messages.tagsUpdated', { count: updated }), 'success');
+      showToast(t('vault.messages.tagsUpdated', { count: updated }), 'success');
     }
   }
 
@@ -3153,10 +3050,10 @@ export class VaultUI {
               this.#auditFilterIds = new Set(entryIds);
               this.#selectedCategory = 'all';
               this.#updateEntryList();
-              this.#showToast(t('vault.messages.entriesFiltered', { count: entryIds.length }), 'info');
+              showToast(t('vault.messages.entriesFiltered', { count: entryIds.length }), 'info');
             }
           } catch (error) {
-            this.#showToast(error.message || t('vault.messages.filterFailed'), 'error');
+            showToast(error.message || t('vault.messages.filterFailed'), 'error');
           }
         });
       });
@@ -3175,7 +3072,7 @@ export class VaultUI {
               this.#updateEntryList();
             }
           } catch (error) {
-            this.#showToast(error.message || t('vault.messages.filterFailed'), 'error');
+            showToast(error.message || t('vault.messages.filterFailed'), 'error');
           }
         });
       });
@@ -3423,7 +3320,7 @@ export class VaultUI {
     // Silent mode: just update entry list to show badges
     if (silent) {
       if (compromised.length > 0) {
-        this.#showToast(t('vault.messages.compromisedDetected', { count: compromised.length }), 'warning', 5000);
+        showToast(t('vault.messages.compromisedDetected', { count: compromised.length }), 'warning', 5000);
         this.#updateEntryList(); // Refresh to show badges
       }
       return compromised.length;
@@ -3526,7 +3423,7 @@ export class VaultUI {
 
   #exportEntries(entries) {
     if (entries.length === 0) {
-      this.#showToast(t('vault.messages.noEntriesToExport'), 'warning');
+      showToast(t('vault.messages.noEntriesToExport'), 'warning');
       return;
     }
 
@@ -3548,9 +3445,9 @@ export class VaultUI {
     try {
       const { content, filename, mimeType } = performExport(entries, format, this.#folders);
       downloadExport(content, filename, mimeType);
-      this.#showToast(t('vault.messages.entriesExported', { count: entries.length, format: format.toUpperCase() }), 'success');
+      showToast(t('vault.messages.entriesExported', { count: entries.length, format: format.toUpperCase() }), 'success');
     } catch (err) {
-      this.#showToast(t('vault.messages.exportFailed'), 'error');
+      showToast(t('vault.messages.exportFailed'), 'error');
     }
     this.#pendingExportEntries = null;
   }
@@ -3647,10 +3544,10 @@ export class VaultUI {
           imported = await this.#importKeePassXML(text);
           await this.#loadData();
           this.#render();
-          this.#showToast(t('vault.messages.keepassImported', { count: imported }), 'success', 4000);
+          showToast(t('vault.messages.keepassImported', { count: imported }), 'success', 4000);
           return;
         } else if (file.name.endsWith('.kdbx')) {
-          this.#showToast(t('vault.messages.kdbxNotSupported'), 'warning', 5000);
+          showToast(t('vault.messages.kdbxNotSupported'), 'warning', 5000);
           return;
         } else {
           // JSON import
@@ -3674,7 +3571,7 @@ export class VaultUI {
 
         await this.#loadData();
         this.#render();
-        this.#showToast(t('vault.messages.entriesImported', { count: imported }), 'success');
+        showToast(t('vault.messages.entriesImported', { count: imported }), 'success');
       } catch (error) {
         safeLog('[VaultUI] Import error:', error);
         this.#showDetailedError(
@@ -3794,19 +3691,19 @@ export class VaultUI {
 
     // Validation
     if (!password || password.length < 8) {
-      this.#showToast(t('vault.form.passwordMinLength'), 'warning');
+      showToast(t('vault.form.passwordMinLength'), 'warning');
       return;
     }
 
     if (password !== confirm) {
-      this.#showToast(t('vault.messages.passwordsNoMatch'), 'warning');
+      showToast(t('vault.messages.passwordsNoMatch'), 'warning');
       return;
     }
 
     try {
       // Check if vaultIO is available
       if (!window.vault?.io) {
-        this.#showToast(t('vault.messages.desktopOnlyFeature'), 'error');
+        showToast(t('vault.messages.desktopOnlyFeature'), 'error');
         return;
       }
 
@@ -3815,7 +3712,7 @@ export class VaultUI {
       const result = await window.vault.io.selectSaveLocation(`${vaultName}.gpdb`);
 
       if (!result.success) {
-        this.#showToast(result.error || t('vault.common.error'), 'error');
+        showToast(result.error || t('vault.common.error'), 'error');
         return;
       }
 
@@ -3852,10 +3749,10 @@ export class VaultUI {
       }
 
       this.#closeModal('save-vault-modal');
-      this.#showToast(t('vault.messages.vaultSaved', { fileName: result.fileName }), 'success');
+      showToast(t('vault.messages.vaultSaved', { fileName: result.fileName }), 'success');
     } catch (error) {
       safeLog('[VaultUI] Save vault error:', error);
-      this.#showToast(`${t('vault.common.error')}: ${error.message}`, 'error');
+      showToast(`${t('vault.common.error')}: ${error.message}`, 'error');
 
       // Reset button state
       const submitBtn = document.querySelector('#save-vault-form button[type="submit"]');
@@ -3925,7 +3822,7 @@ export class VaultUI {
     }
 
     // Show toast
-    this.#showToast(
+    showToast(
       compact ? 'Compact mode enabled (Always on Top)' : 'Normal mode',
       'info'
     );
@@ -4105,7 +4002,7 @@ export class VaultUI {
 
     // Show format info in toast
     const totpInfo = withTotp > 0 ? ` (${withTotp} with 2FA)` : '';
-    this.#showToast(t('vault.messages.formatImported', { format: formatNames[format], count: imported, totpInfo }), 'success', 4000);
+    showToast(t('vault.messages.formatImported', { format: formatNames[format], count: imported, totpInfo }), 'success', 4000);
 
     return imported;
   }
@@ -4356,7 +4253,7 @@ export class VaultUI {
           } catch {
             // Storage not available
           }
-          this.#showToast(t('vault.messages.timeoutSet', { value: label }), 'success');
+          showToast(t('vault.messages.timeoutSet', { value: label }), 'success');
         },
         t
       });
@@ -4737,9 +4634,9 @@ export class VaultUI {
             try {
               await this.#loadData();
               this.#updateEntryList();
-              this.#showToast(t('vault.messages.restored'), 'success');
+              showToast(t('vault.messages.restored'), 'success');
             } catch (error) {
-              this.#showToast(error.message || t('vault.messages.restoreError'), 'error');
+              showToast(error.message || t('vault.messages.restoreError'), 'error');
             }
           },
           async () => {
@@ -4749,12 +4646,12 @@ export class VaultUI {
                 await window.vault.entries.delete(id);
               }
             } catch (error) {
-              this.#showToast(error.message || t('vault.messages.deleteError'), 'error');
+              showToast(error.message || t('vault.messages.deleteError'), 'error');
             }
           }
         );
       } catch (error) {
-        this.#showToast(error.message || t('vault.messages.bulkDeleteFailed'), 'error');
+        showToast(error.message || t('vault.messages.bulkDeleteFailed'), 'error');
       }
     });
 
@@ -4911,7 +4808,7 @@ export class VaultUI {
           btn.title = newFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites');
           btn.setAttribute('aria-pressed', newFavorite);
 
-          this.#showToast(newFavorite ? t('vault.messages.addedToFavorites') : t('vault.messages.removedFromFavorites'), 'success');
+          showToast(newFavorite ? t('vault.messages.addedToFavorites') : t('vault.messages.removedFromFavorites'), 'success');
 
           // Update category counts
           const favCount = document.querySelector('[data-category="favorites"] .vault-nav-count');
@@ -4919,7 +4816,7 @@ export class VaultUI {
             favCount.textContent = this.#entries.filter(e => e.favorite).length;
           }
         } catch (error) {
-          this.#showToast(t('vault.messages.updateError'), 'error');
+          showToast(t('vault.messages.updateError'), 'error');
         }
       });
     });
@@ -5088,13 +4985,13 @@ export class VaultUI {
       const newFavorite = !entry.favorite;
       await window.vault.entries.update(entry.id, { favorite: newFavorite });
       entry.favorite = newFavorite;
-      this.#showToast(newFavorite ? t('vault.messages.addedToFavorites') : t('vault.messages.removedFromFavorites'), 'success');
+      showToast(newFavorite ? t('vault.messages.addedToFavorites') : t('vault.messages.removedFromFavorites'), 'success');
       this.#render();
       if (this.#selectedEntry?.id === entry.id) {
         this.#updateDetailPanel();
       }
     } catch (error) {
-      this.#showToast(t('vault.messages.updateError'), 'error');
+      showToast(t('vault.messages.updateError'), 'error');
     }
   }
 
@@ -5103,13 +5000,13 @@ export class VaultUI {
       const newPinned = !entry.pinned;
       await window.vault.entries.update(entry.id, { pinned: newPinned });
       entry.pinned = newPinned;
-      this.#showToast(newPinned ? t('vault.messages.pinnedToTop') : t('vault.messages.unpinned'), 'success');
+      showToast(newPinned ? t('vault.messages.pinnedToTop') : t('vault.messages.unpinned'), 'success');
       this.#render();
       if (this.#selectedEntry?.id === entry.id) {
         this.#updateDetailPanel();
       }
     } catch (error) {
-      this.#showToast(t('vault.messages.updateError'), 'error');
+      showToast(t('vault.messages.updateError'), 'error');
     }
   }
 
@@ -5147,10 +5044,10 @@ export class VaultUI {
         if (entry) entry.folderId = folderId || null;
       }
       this.#selectedEntries.clear();
-      this.#showToast(t('vault.messages.entriesMoved', { count: entryIds.length }), 'success');
+      showToast(t('vault.messages.entriesMoved', { count: entryIds.length }), 'success');
       this.#render();
     } catch (error) {
-      this.#showToast(t('vault.messages.moveError'), 'error');
+      showToast(t('vault.messages.moveError'), 'error');
     }
   }
 
@@ -5391,9 +5288,9 @@ export class VaultUI {
         await window.vault.entries.update(this.#selectedEntry.id, {
           favorite: !this.#selectedEntry.favorite
         });
-        this.#showToast(this.#selectedEntry.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
+        showToast(this.#selectedEntry.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
       } catch (error) {
-        this.#showToast(t('vault.common.error'), 'error');
+        showToast(t('vault.common.error'), 'error');
       }
     });
 
@@ -5433,8 +5330,8 @@ export class VaultUI {
       showSecureShareModal({
         entry: this.#selectedEntry,
         onCopy: (text, message) => this.#copyToClipboard(text, message),
-        onSuccess: (message) => this.#showToast(message, 'success'),
-        onError: (message) => this.#showToast(message, 'error'),
+        onSuccess: (message) => showToast(message, 'success'),
+        onError: (message) => showToast(message, 'error'),
         t
       });
     });
@@ -5486,7 +5383,7 @@ export class VaultUI {
           this.#entries.push(this.#pendingDelete);
           this.#pendingDelete = null;
           this.#updateEntryList();
-          this.#showToast(t('vault.messages.restored'), 'success');
+          showToast(t('vault.messages.restored'), 'success');
         }
       },
       async () => {
@@ -5501,7 +5398,7 @@ export class VaultUI {
             this.#pendingDelete = null;
             this.#updateEntryList();
           }
-          this.#showToast(t('vault.messages.deleteError'), 'error');
+          showToast(t('vault.messages.deleteError'), 'error');
         }
       }
     );
@@ -5516,9 +5413,9 @@ export class VaultUI {
         { ...newData, folderId: entry.folderId, notes: entry.notes, tags: entry.tags || [] }
       );
       this.#selectedEntry = newEntry;
-      this.#showToast(t('vault.messages.entryDuplicated'), 'success');
+      showToast(t('vault.messages.entryDuplicated'), 'success');
     } catch (error) {
-      this.#showToast(t('vault.messages.duplicationError'), 'error');
+      showToast(t('vault.messages.duplicationError'), 'error');
     }
   }
 
@@ -5529,7 +5426,7 @@ export class VaultUI {
     const history = entry.data?.passwordHistory || [];
 
     if (historyIndex < 0 || historyIndex >= history.length) {
-      this.#showToast(t('vault.messages.invalidIndex'), 'error');
+      showToast(t('vault.messages.invalidIndex'), 'error');
       return;
     }
 
@@ -5554,9 +5451,9 @@ export class VaultUI {
           passwordHistory: newHistory
         }
       });
-      this.#showToast(t('vault.messages.passwordRestored'), 'success');
+      showToast(t('vault.messages.passwordRestored'), 'success');
     } catch (error) {
-      this.#showToast(t('vault.messages.restoreError'), 'error');
+      showToast(t('vault.messages.restoreError'), 'error');
     }
   }
 
@@ -5585,14 +5482,14 @@ export class VaultUI {
     const url = entry.data?.url || '';
 
     if (!username && !password) {
-      this.#showToast(t('vault.messages.noDataToFill'), 'warning');
+      showToast(t('vault.messages.noDataToFill'), 'warning');
       return;
     }
 
     // Check if Electron auto-type is available (Phase 6 feature)
     if (window.electronAPI?.performAutoType) {
       try {
-        this.#showToast(t('vault.messages.autoFillProgress'), 'info');
+        showToast(t('vault.messages.autoFillProgress'), 'info');
 
         // Get default sequence or custom one from entry
         const sequence = entry.data?.autoTypeSequence ||
@@ -5608,14 +5505,14 @@ export class VaultUI {
         });
 
         if (result.success) {
-          this.#showToast(t('vault.messages.autoFillComplete'), 'success');
+          showToast(t('vault.messages.autoFillComplete'), 'success');
         } else {
           safeLog('[VaultUI] Auto-type failed:', result.error);
-          this.#showToast(`${t('vault.common.error')}: ${result.error}`, 'error');
+          showToast(`${t('vault.common.error')}: ${result.error}`, 'error');
         }
       } catch (error) {
         safeLog('[VaultUI] Auto-type error:', error);
-        this.#showToast(t('vault.messages.autoFillError'), 'error');
+        showToast(t('vault.messages.autoFillError'), 'error');
       }
     } else {
       // Fallback: Copy to clipboard with instructions
@@ -5806,7 +5703,7 @@ export class VaultUI {
           input.type = 'text';
           this.#updateEditPasswordStrength(pwd);
         },
-        onCopy: () => this.#showToast(t('vault.common.copied'), 'success'),
+        onCopy: () => showToast(t('vault.common.copied'), 'success'),
         t
       });
     });
@@ -5948,7 +5845,7 @@ export class VaultUI {
 
     for (const file of fileList) {
       if (file.size > MAX_SIZE) {
-        this.#showToast(t('vault.messages.fileTooLarge', { name: file.name }), 'error');
+        showToast(t('vault.messages.fileTooLarge', { name: file.name }), 'error');
         continue;
       }
 
@@ -5964,10 +5861,10 @@ export class VaultUI {
           id: crypto.randomUUID()
         });
 
-        this.#showToast(t('vault.messages.attachmentAdded', { name: file.name }), 'success');
+        showToast(t('vault.messages.attachmentAdded', { name: file.name }), 'success');
       } catch (err) {
         safeLog('[VaultUI] File read error:', err);
-        this.#showToast(t('vault.messages.fileReadError'), 'error');
+        showToast(t('vault.messages.fileReadError'), 'error');
       }
     }
     this.#renderEditModalContent();
@@ -5997,7 +5894,7 @@ export class VaultUI {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      this.#showToast(t('vault.messages.downloadError'), 'error');
+      showToast(t('vault.messages.downloadError'), 'error');
     }
   }
 
@@ -6056,7 +5953,7 @@ export class VaultUI {
       const folderId = document.getElementById('edit-folder')?.value || null;
 
       if (!title) {
-        this.#showToast(t('vault.messages.titleRequired'), 'warning');
+        showToast(t('vault.messages.titleRequired'), 'warning');
         return;
       }
 
@@ -6120,9 +6017,9 @@ export class VaultUI {
         await window.vault.entries.update(entry.id, { title, folderId, data, notes });
         this.#hasDirtyForm = false;
         this.#closeModal('edit-entry-modal');
-        this.#showToast(t('vault.messages.entryModified'), 'success');
+        showToast(t('vault.messages.entryModified'), 'success');
       } catch (error) {
-        this.#showToast(error.message || t('vault.common.error'), 'error');
+        showToast(error.message || t('vault.common.error'), 'error');
       }
     });
   }
@@ -6227,7 +6124,7 @@ export class VaultUI {
       const folderId = document.getElementById('entry-folder')?.value || null;
 
       if (!type || !title) {
-        this.#showToast(t('vault.messages.fillRequiredFields'), 'warning');
+        showToast(t('vault.messages.fillRequiredFields'), 'warning');
         return;
       }
 
@@ -6237,7 +6134,7 @@ export class VaultUI {
       if (type === 'login') {
         const url = document.getElementById('entry-url')?.value;
         if (url && !isValidUrl(url)) {
-          this.#showToast(t('vault.form.invalidUrl'), 'warning');
+          showToast(t('vault.form.invalidUrl'), 'warning');
           return;
         }
       }
@@ -6245,7 +6142,7 @@ export class VaultUI {
       if (type === 'identity') {
         const email = document.getElementById('entry-email')?.value;
         if (email && !isValidEmail(email)) {
-          this.#showToast(t('vault.form.invalidEmail'), 'warning');
+          showToast(t('vault.form.invalidEmail'), 'warning');
           return;
         }
       }
@@ -6262,11 +6159,11 @@ export class VaultUI {
         const newEntry = await window.vault.entries.add(type, title, { ...data, folderId, tags: selectedTags });
         this.#closeModal('add-entry-modal');
         this.#selectedEntry = newEntry;
-        this.#showToast(t('vault.messages.entryAdded'), 'success');
+        showToast(t('vault.messages.entryAdded'), 'success');
         // Reset form
         document.getElementById('add-entry-form')?.reset();
       } catch (error) {
-        this.#showToast(error.message || t('vault.common.error'), 'error');
+        showToast(error.message || t('vault.common.error'), 'error');
         btn.disabled = false;
         btn.textContent = t('vault.common.add');
       }
@@ -6286,17 +6183,17 @@ export class VaultUI {
       const name = document.getElementById('folder-name')?.value;
 
       if (!name) {
-        this.#showToast(t('vault.messages.nameRequired'), 'warning');
+        showToast(t('vault.messages.nameRequired'), 'warning');
         return;
       }
 
       try {
         await window.vault.folders.add(name);
         this.#closeModal('add-folder-modal');
-        this.#showToast(t('vault.messages.folderCreated'), 'success');
+        showToast(t('vault.messages.folderCreated'), 'success');
         document.getElementById('add-folder-form')?.reset();
       } catch (error) {
-        this.#showToast(error.message || t('vault.common.error'), 'error');
+        showToast(error.message || t('vault.common.error'), 'error');
       }
     });
   }
@@ -6328,7 +6225,7 @@ export class VaultUI {
         const color = document.getElementById('tag-color')?.value;
 
         if (!name) {
-          this.#showToast(t('vault.messages.nameRequired'), 'warning');
+          showToast(t('vault.messages.nameRequired'), 'warning');
           return;
         }
 
@@ -6385,7 +6282,7 @@ export class VaultUI {
         const color = document.getElementById('edit-tag-color')?.value;
 
         if (!name) {
-          this.#showToast(t('vault.messages.nameRequired'), 'warning');
+          showToast(t('vault.messages.nameRequired'), 'warning');
           return;
         }
 
@@ -6573,12 +6470,12 @@ export class VaultUI {
 
           btn.innerHTML = '<span class="icon">✅</span>';
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
-          this.#showToast(t('vault.messages.aliasGenerated'), 'success');
+          showToast(t('vault.messages.aliasGenerated'), 'success');
         } catch (err) {
           safeLog('[VaultUI] Alias generation error:', err);
           btn.innerHTML = '<span class="icon">❌</span>';
           setTimeout(() => btn.innerHTML = originalHtml, 2000);
-          this.#showToast(err.message || t('vault.messages.aliasError'), 'error');
+          showToast(err.message || t('vault.messages.aliasError'), 'error');
         } finally {
           btn.disabled = false;
         }
@@ -6602,7 +6499,7 @@ export class VaultUI {
             input.type = 'text';
             this.#updateAddPasswordStrength(pwd);
           },
-          onCopy: () => this.#showToast(t('vault.common.copied'), 'success'),
+          onCopy: () => showToast(t('vault.common.copied'), 'success'),
           t
         });
       });
@@ -7317,9 +7214,9 @@ export class VaultUI {
   async #lock() {
     try {
       await window.vault.lock();
-      this.#showToast(t('vault.messages.vaultLocked'), 'success');
+      showToast(t('vault.messages.vaultLocked'), 'success');
     } catch (error) {
-      this.#showToast(t('vault.common.error'), 'error');
+      showToast(t('vault.common.error'), 'error');
     }
   }
 
@@ -7425,7 +7322,7 @@ export class VaultUI {
       // Storage not available
     }
     this.#applyTheme();
-    this.#showToast(t('vault.messages.themeEnabled', { theme: this.#theme === 'dark' ? 'Dark' : 'Light' }), 'success');
+    showToast(t('vault.messages.themeEnabled', { theme: this.#theme === 'dark' ? 'Dark' : 'Light' }), 'success');
   }
 
   /**
@@ -7650,7 +7547,7 @@ export class VaultUI {
       });
     } catch (error) {
       safeLog('[VaultUI] Hello settings error:', error);
-      this.#showToast(t('vault.windowsHello.error'), 'error');
+      showToast(t('vault.windowsHello.error'), 'error');
     }
   }
 
@@ -7667,12 +7564,12 @@ export class VaultUI {
     if (!password) return;
 
     try {
-      this.#showToast(t('vault.windowsHello.enabling'), 'info');
+      showToast(t('vault.windowsHello.enabling'), 'info');
       await window.vault.hello.enable(vaultId, password);
-      this.#showToast(t('vault.windowsHello.enableSuccess'), 'success');
+      showToast(t('vault.windowsHello.enableSuccess'), 'success');
       await this.#refreshHelloButtonState();
     } catch (error) {
-      this.#showToast(error.message || t('vault.windowsHello.enableFailed'), 'error');
+      showToast(error.message || t('vault.windowsHello.enableFailed'), 'error');
     }
   }
 
@@ -7683,11 +7580,11 @@ export class VaultUI {
   async #disableWindowsHello(vaultId) {
     try {
       await window.vault.hello.disable(vaultId);
-      this.#showToast(t('vault.windowsHello.disableSuccess'), 'success');
+      showToast(t('vault.windowsHello.disableSuccess'), 'success');
       await this.#refreshHelloButtonState();
     } catch (error) {
       safeLog('[VaultUI] Hello disable error:', error);
-      this.#showToast(error.message || t('vault.windowsHello.disableFailed'), 'error');
+      showToast(error.message || t('vault.windowsHello.disableFailed'), 'error');
     }
   }
 
@@ -7825,7 +7722,7 @@ export class VaultUI {
       if (!this.#clipboardClearedCallbackSet) {
         secureClipboard.setOnCleared((reason) => {
           if (reason === 'manual' || reason === 'timeout') {
-            this.#showToast(t('vault.messages.clipboardCleared'), 'info');
+            showToast(t('vault.messages.clipboardCleared'), 'info');
           }
         });
         this.#clipboardClearedCallbackSet = true;
@@ -7838,56 +7735,17 @@ export class VaultUI {
       });
 
       if (success) {
-        this.#showToast(message, 'success');
+        showToast(message, 'success');
       } else {
-        this.#showToast(t('vault.common.error'), 'error');
+        showToast(t('vault.common.error'), 'error');
       }
     } catch {
-      this.#showToast(t('vault.common.error'), 'error');
+      showToast(t('vault.common.error'), 'error');
     }
   }
 
   /** @type {boolean} */
   #clipboardClearedCallbackSet = false;
-
-  #showToast(message, type = 'info') {
-    const container = document.getElementById('toasts') || document.body;
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.setAttribute('role', 'alert');
-
-    // For error type, add an icon
-    const icon = type === 'error'
-      ? '<svg class="toast-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-      : type === 'warning'
-        ? '<svg class="toast-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
-        : type === 'success'
-          ? '<svg class="toast-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
-          : '';
-
-    toast.innerHTML = `
-      ${icon}
-      <span class="toast-message">${escapeHtml(message)}</span>
-      <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
-    `;
-
-    container.appendChild(toast);
-
-    // Close button
-    toast.querySelector('.toast-close')?.addEventListener('click', () => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    });
-
-    requestAnimationFrame(() => toast.classList.add('show'));
-
-    // Errors stay longer
-    const duration = type === 'error' ? 5000 : 3000;
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, duration);
-  }
 
   /**
    * Show a detailed error toast with suggestion
