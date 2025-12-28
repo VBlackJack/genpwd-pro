@@ -2187,7 +2187,7 @@ kbd {
 .vault-field-badge {
   font-size: 0.7rem;
   padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill);
   font-weight: 500;
 }
 

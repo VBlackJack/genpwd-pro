@@ -358,10 +358,10 @@ select,
   transition: border-color var(--transition-fast, 0.15s ease), box-shadow var(--transition-fast, 0.15s ease), background-color var(--transition-fast, 0.15s ease);
 }
 
-.field-invalid:focus,
-input[aria-invalid="true"]:focus,
-textarea[aria-invalid="true"]:focus,
-select[aria-invalid="true"]:focus {
+.field-invalid:focus-visible,
+input[aria-invalid="true"]:focus-visible,
+textarea[aria-invalid="true"]:focus-visible,
+select[aria-invalid="true"]:focus-visible {
   border-color: var(--accent-red) !important;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
   outline: none;

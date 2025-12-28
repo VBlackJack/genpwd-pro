@@ -990,10 +990,10 @@ input:checked + .toggle-slider::before {
 
 .hibp-result-item.critical {
   border-left: 4px solid var(--accent-red-dark, #B71C1C);
-  animation: pulse-danger 2s infinite;
+  animation: pulse-danger-border 2s infinite;
 }
 
-@keyframes pulse-danger {
+@keyframes pulse-danger-border {
   0%, 100% {
     border-left-color: var(--accent-red-dark, #B71C1C);
   }
