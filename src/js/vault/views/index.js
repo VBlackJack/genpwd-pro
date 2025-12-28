@@ -22,9 +22,4 @@ export {
 export * from './icons.js';
 
 // Templates
-export {
-  renderLockScreen,
-  renderVaultList,
-  renderVaultListLoading,
-  renderVaultListError
-} from './templates/lock-screen.js';
+export * from './templates/index.js';
