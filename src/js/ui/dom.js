@@ -13,12 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/dom.js - Optimized DOM utilities
+/**
+ * @fileoverview Optimized DOM utilities
+ * Provides cached element access, event binding, and visibility helpers
+ */
 import { getCachedElement } from '../config/settings.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
 import { t } from '../utils/i18n.js';
 
+/**
+ * Gets a DOM element by selector with optional caching
+ * @param {string} selector - CSS selector (ID or query)
+ * @param {boolean} useCache - Whether to use cached element lookup
+ * @returns {HTMLElement|null} The found element or null
+ */
 export function getElement(selector, useCache = true) {
   if (!selector) return null;
   try {
@@ -36,6 +45,11 @@ export function getElement(selector, useCache = true) {
   }
 }
 
+/**
+ * Gets all DOM elements matching a selector
+ * @param {string} selector - CSS selector
+ * @returns {HTMLElement[]} Array of matching elements
+ */
 export function getAllElements(selector) {
   try {
     return Array.from(document.querySelectorAll(selector));
@@ -45,6 +59,14 @@ export function getAllElements(selector) {
   }
 }
 
+/**
+ * Safely adds an event listener to an element
+ * @param {HTMLElement} element - Target element
+ * @param {string} event - Event type (e.g., 'click')
+ * @param {Function} handler - Event handler function
+ * @param {Object} options - Event listener options
+ * @returns {boolean} True if listener was added successfully
+ */
 export function addEventListener(element, event, handler, options = {}) {
   if (!element || typeof handler !== 'function') return false;
   try {
@@ -56,6 +78,10 @@ export function addEventListener(element, event, handler, options = {}) {
   }
 }
 
+/**
+ * Updates a badge element with the input's current value
+ * @param {HTMLInputElement} input - The input element (typically range slider)
+ */
 export function updateBadgeForInput(input) {
   if (!input) return;
   try {
@@ -66,6 +92,10 @@ export function updateBadgeForInput(input) {
   }
 }
 
+/**
+ * Updates visibility of mode-specific option panels
+ * Shows/hides syllables, passphrase, and leet options based on mode selection
+ */
 export function updateVisibilityByMode() {
   const mode = getElement('#mode-select')?.value || 'syllables';
 
@@ -98,6 +128,10 @@ export function updateVisibilityByMode() {
   safeLog(`Display mode: ${mode}`);
 }
 
+/**
+ * Ensures block editor visibility matches case mode selection
+ * Shows blocks editor row when case mode is 'blocks'
+ */
 export function ensureBlockVisible() {
   try {
     const caseModeSelect = getElement('#case-mode-select');
@@ -120,6 +154,10 @@ export function ensureBlockVisible() {
   }
 }
 
+/**
+ * Toggles the debug panel visibility
+ * @returns {boolean} True if panel is now visible, false if hidden
+ */
 export function toggleDebugPanel() {
   const debugPanel = getElement('#debug-panel');
   if (!debugPanel) return;
@@ -145,6 +183,12 @@ export function toggleDebugPanel() {
   return isCurrentlyHidden;
 }
 
+/**
+ * Renders case pattern chips in a container
+ * @param {string} containerSelector - CSS selector for the container
+ * @param {string[]} blocks - Array of case tokens (U, l, T)
+ * @param {Function} onChipClick - Callback when a chip is clicked (receives index)
+ */
 export function renderChips(containerSelector, blocks, onChipClick) {
   const container = getElement(containerSelector);
   if (!container) return;
@@ -165,6 +209,11 @@ export function renderChips(containerSelector, blocks, onChipClick) {
   });
 }
 
+/**
+ * Updates the block size label with current count
+ * @param {string} labelSelector - CSS selector for the label element
+ * @param {number} blocksCount - Number of blocks to display
+ */
 export function updateBlockSizeLabel(labelSelector, blocksCount) {
   const label = getElement(labelSelector);
   if (label) {
@@ -172,6 +221,11 @@ export function updateBlockSizeLabel(labelSelector, blocksCount) {
   }
 }
 
+/**
+ * Initializes the DOM environment
+ * Validates critical elements exist and sets up initial visibility states
+ * @throws {Error} If critical elements are missing
+ */
 export async function initializeDOM() {
   try {
     const criticalElements = [

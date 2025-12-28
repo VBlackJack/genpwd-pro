@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/ui/modal.js - Modal and overlay management
+/**
+ * @fileoverview Modal and overlay management
+ * Handles the About modal dialog with accessibility support
+ */
 import { getElement, addEventListener } from './dom.js';
 import { safeLog } from '../utils/logger.js';
 
+/**
+ * Shows the About modal dialog
+ * Manages focus and prevents body scroll when open
+ */
 export function showAboutModal() {
   const modal = getElement('#about-modal');
   if (modal) {
@@ -33,6 +40,10 @@ export function showAboutModal() {
   }
 }
 
+/**
+ * Hides the About modal dialog
+ * Restores body scroll and returns focus to the trigger button
+ */
 export function hideAboutModal() {
   const modal = getElement('#about-modal');
   if (modal) {
@@ -49,6 +60,10 @@ export function hideAboutModal() {
   }
 }
 
+/**
+ * Binds all event handlers for the About modal
+ * Handles open, close (button, overlay, escape key)
+ */
 export function bindModalEvents() {
   // Open modal
   addEventListener(getElement('#btn-about'), 'click', showAboutModal);
