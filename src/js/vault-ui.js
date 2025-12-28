@@ -84,6 +84,7 @@ import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
 import { getTooltipManager, destroyTooltips } from './vault/services/tooltip-manager.js';
+import { parseKeePassXML, parseCSV } from './vault/services/import-parsers.js';
 
 // Entry type configuration
 import { getEntryTypes, ENTRY_TYPES } from './config/entry-types.js';
@@ -3216,14 +3217,47 @@ export class VaultUI {
         let imported = 0;
 
         if (file.name.endsWith('.csv')) {
-          // Parse CSV import (toast shown internally with format info)
-          await this.#importCSV(text);
+          // Parse CSV import
+          const csvResult = parseCSV(text);
+          for (const entry of csvResult.entries) {
+            await window.vault.entries.add('login', entry.title, {
+              username: entry.username || '',
+              password: entry.password || '',
+              url: entry.url || '',
+              totp: entry.totp || '',
+              notes: entry.notes || ''
+            });
+            imported++;
+          }
           await this.#loadData();
           this.#render();
+          const totpInfo = csvResult.withTotp > 0 ? ` (${csvResult.withTotp} with 2FA)` : '';
+          showToast(t('vault.messages.formatImported', { format: csvResult.formatName, count: imported, totpInfo }), 'success', 4000);
           return;
         } else if (file.name.endsWith('.xml')) {
           // KeePass XML import
-          imported = await this.#importKeePassXML(text);
+          const xmlResult = parseKeePassXML(text);
+          const createdFolders = new Map();
+          // Create folders first
+          for (const group of xmlResult.groups) {
+            try {
+              const folder = await window.vault.folders.add(group.name);
+              createdFolders.set(group.path, folder?.id);
+            } catch { /* Folder might already exist */ }
+          }
+          // Create entries
+          for (const entry of xmlResult.entries) {
+            const folderId = createdFolders.get(entry.groupPath) || null;
+            await window.vault.entries.add('login', entry.title, {
+              username: entry.username,
+              password: entry.password,
+              url: entry.url,
+              totp: entry.totp,
+              notes: entry.notes,
+              folderId: folderId
+            });
+            imported++;
+          }
           await this.#loadData();
           this.#render();
           showToast(t('vault.messages.keepassImported', { count: imported }), 'success', 4000);
@@ -3510,341 +3544,7 @@ export class VaultUI {
     );
   }
 
-  async #importKeePassXML(xmlText) {
-    // Parse KeePass 2.x XML format
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, 'application/xml');
-
-    // Check for parsing errors
-    const parseError = doc.querySelector('parsererror');
-    if (parseError) {
-      throw new Error(t('vault.messages.invalidXmlFormat'));
-    }
-
-    // Check if it's a KeePass file
-    const root = doc.querySelector('KeePassFile');
-    if (!root) {
-      throw new Error(t('vault.messages.notKeePassFile'));
-    }
-
-    let imported = 0;
-    const createdFolders = new Map(); // Map group path to folder ID
-
-    // Process all groups recursively
-    const processGroup = async (groupEl, parentPath = '') => {
-      const nameEl = groupEl.querySelector(':scope > Name');
-      const groupName = nameEl?.textContent || '';
-      const currentPath = parentPath ? `${parentPath}/${groupName}` : groupName;
-
-      // Skip Recycle Bin
-      if (groupName === 'Recycle Bin' || groupName === 'Corbeille') {
-        return;
-      }
-
-      // Create folder if it has a meaningful name and not root
-      let folderId = null;
-      if (groupName && groupName !== 'Root' && groupName !== 'Racine' && !createdFolders.has(currentPath)) {
-        try {
-          const folder = await window.vault.folders.add(groupName);
-          folderId = folder?.id;
-          createdFolders.set(currentPath, folderId);
-        } catch {
-          // Folder might already exist
-        }
-      } else if (createdFolders.has(currentPath)) {
-        folderId = createdFolders.get(currentPath);
-      }
-
-      // Process entries in this group
-      const entries = groupEl.querySelectorAll(':scope > Entry');
-      for (const entryEl of entries) {
-        const entry = this.#parseKeePassEntry(entryEl);
-        if (entry.title && (entry.username || entry.password || entry.url)) {
-          await window.vault.entries.add('login', entry.title, {
-            username: entry.username,
-            password: entry.password,
-            url: entry.url,
-            totp: entry.totp,
-            notes: entry.notes,
-            folderId: folderId
-          });
-          imported++;
-        }
-      }
-
-      // Process subgroups
-      const subGroups = groupEl.querySelectorAll(':scope > Group');
-      for (const subGroup of subGroups) {
-        await processGroup(subGroup, currentPath);
-      }
-    };
-
-    // Find root group(s)
-    const rootGroups = doc.querySelectorAll('Root > Group');
-    for (const rootGroup of rootGroups) {
-      await processGroup(rootGroup);
-    }
-
-    return imported;
-  }
-
-  #parseKeePassEntry(entryEl) {
-    const entry = {
-      title: '',
-      username: '',
-      password: '',
-      url: '',
-      notes: '',
-      totp: ''
-    };
-
-    // Parse String elements
-    const strings = entryEl.querySelectorAll('String');
-    for (const stringEl of strings) {
-      const key = stringEl.querySelector('Key')?.textContent || '';
-      const valueEl = stringEl.querySelector('Value');
-      const value = valueEl?.textContent || '';
-
-      switch (key) {
-        case 'Title':
-          entry.title = value;
-          break;
-        case 'UserName':
-          entry.username = value;
-          break;
-        case 'Password':
-          entry.password = value;
-          break;
-        case 'URL':
-          entry.url = value;
-          break;
-        case 'Notes':
-          entry.notes = value;
-          break;
-        case 'otp':
-        case 'TOTP Seed':
-        case 'TOTP':
-          entry.totp = value;
-          break;
-      }
-    }
-
-    // Try to extract TOTP from notes if it contains otpauth://
-    if (!entry.totp && entry.notes) {
-      const otpMatch = entry.notes.match(/otpauth:\/\/totp[^\s]+/);
-      if (otpMatch) {
-        try {
-          const url = new URL(otpMatch[0]);
-          entry.totp = url.searchParams.get('secret') || '';
-        } catch { /* Invalid otpauth URL - ignore */ }
-      }
-    }
-
-    return entry;
-  }
-
-  async #importCSV(csvText) {
-    const lines = csvText.split(/\r?\n/).filter(line => line.trim());
-    if (lines.length < 2) throw new Error(t('vault.messages.emptyCsvFile'));
-
-    const headers = this.#parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
-
-    // Detect CSV format based on headers
-    const format = this.#detectCSVFormat(headers);
-    const formatNames = {
-      keepass: 'KeePass',
-      bitwarden: 'Bitwarden',
-      lastpass: 'LastPass',
-      '1password': '1Password',
-      chrome: 'Chrome/Edge',
-      firefox: 'Firefox',
-      generic: 'Generic format'
-    };
-
-    let imported = 0;
-    let withTotp = 0;
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = this.#parseCSVLine(lines[i]);
-      if (values.length === 0) continue;
-
-      const entry = this.#mapCSVToEntry(headers, values, format);
-      if (entry && entry.title && entry.password) {
-        await window.vault.entries.add('login', entry.title, {
-          username: entry.username || '',
-          password: entry.password || '',
-          url: entry.url || '',
-          totp: entry.totp || '',
-          notes: entry.notes || ''
-        });
-        imported++;
-        if (entry.totp) withTotp++;
-      }
-    }
-
-    // Show format info in toast
-    const totpInfo = withTotp > 0 ? ` (${withTotp} with 2FA)` : '';
-    showToast(t('vault.messages.formatImported', { format: formatNames[format], count: imported, totpInfo }), 'success', 4000);
-
-    return imported;
-  }
-
-  #detectCSVFormat(headers) {
-    const headerStr = headers.join(',');
-
-    // KeePass format: Group,Title,Username,Password,URL,Notes,TOTP,Icon,Last Modified,Created
-    // or: "Group","Title","Username","Password","URL","Notes"
-    if (headerStr.includes('group') && headerStr.includes('title') &&
-      (headerStr.includes('username') || headerStr.includes('user name'))) {
-      return 'keepass';
-    }
-
-    // LastPass format: url,username,password,totp,extra,name,grouping,fav
-    if (headerStr.includes('grouping') || (headerStr.includes('extra') && headerStr.includes('totp'))) {
-      return 'lastpass';
-    }
-
-    // 1Password format: Title,Url,Username,Password,Notes,OTPAuth,Favorite,Archive
-    if (headerStr.includes('title') && (headerStr.includes('otpauth') || headerStr.includes('archive'))) {
-      return '1password';
-    }
-
-    // Bitwarden format: folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
-    if (headerStr.includes('login_uri') || headerStr.includes('login_username') || headerStr.includes('reprompt')) {
-      return 'bitwarden';
-    }
-
-    // Chrome format: name,url,username,password
-    if (headers.length === 4 && headerStr.includes('name') && headerStr.includes('url')) {
-      return 'chrome';
-    }
-
-    // Firefox format: url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged
-    if (headerStr.includes('httprealm') || headerStr.includes('formactionorigin')) {
-      return 'firefox';
-    }
-
-    return 'generic';
-  }
-
-  #mapCSVToEntry(headers, values, format) {
-    const row = {};
-    headers.forEach((h, i) => {
-      row[h] = values[i] || '';
-    });
-
-    switch (format) {
-      case 'keepass':
-        // KeePass CSV: Group,Title,Username,Password,URL,Notes,TOTP,Icon
-        // Also supports: "User Name" and "Password" headers
-        return {
-          title: row['title'] || row['entry'] || 'Import KeePass',
-          username: row['username'] || row['user name'] || row['login'] || '',
-          password: row['password'] || '',
-          url: row['url'] || row['web site'] || '',
-          totp: row['totp'] || row['otp'] || row['time-based one-time password'] || '',
-          notes: row['notes'] || row['comments'] || '',
-          folder: row['group'] || row['path'] || ''
-        };
-
-      case 'lastpass':
-        return {
-          title: row['name'] || row['url'] || 'Import LastPass',
-          username: row['username'] || '',
-          password: row['password'] || '',
-          url: row['url'] || '',
-          totp: row['totp'] || '',
-          notes: row['extra'] || ''
-        };
-
-      case '1password':
-        // Extract secret from otpauth:// URI
-        let otpSecret1 = row['otpauth'] || '';
-        if (otpSecret1.startsWith('otpauth://')) {
-          try {
-            const url = new URL(otpSecret1);
-            otpSecret1 = url.searchParams.get('secret') || '';
-          } catch { /* Invalid otpauth URL - ignore */ }
-        }
-        return {
-          title: row['title'] || row['url'] || 'Import 1Password',
-          username: row['username'] || '',
-          password: row['password'] || '',
-          url: row['url'] || '',
-          totp: otpSecret1,
-          notes: row['notes'] || ''
-        };
-
-      case 'bitwarden':
-        return {
-          title: row['name'] || row['login_uri'] || 'Import Bitwarden',
-          username: row['login_username'] || '',
-          password: row['login_password'] || '',
-          url: row['login_uri'] || '',
-          totp: row['login_totp'] || '',
-          notes: row['notes'] || ''
-        };
-
-      case 'chrome':
-        return {
-          title: row['name'] || row['url'] || 'Import Chrome',
-          username: row['username'] || '',
-          password: row['password'] || '',
-          url: row['url'] || '',
-          totp: '',
-          notes: row['note'] || ''
-        };
-
-      case 'firefox':
-        return {
-          title: extractDomain(row['url']) || 'Import Firefox',
-          username: row['username'] || '',
-          password: row['password'] || '',
-          url: row['url'] || '',
-          totp: '',
-          notes: ''
-        };
-
-      default:
-        // Generic - try common header names
-        return {
-          title: row['name'] || row['title'] || row['site'] || row['url'] || 'Import',
-          username: row['username'] || row['login'] || row['email'] || row['user'] || '',
-          password: row['password'] || row['pass'] || row['pwd'] || '',
-          url: row['url'] || row['website'] || row['site'] || row['uri'] || '',
-          totp: row['totp'] || row['otp'] || row['2fa'] || row['authenticator'] || '',
-          notes: row['notes'] || row['note'] || row['extra'] || row['comments'] || ''
-        };
-    }
-  }
-
-  #parseCSVLine(line) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && nextChar === '"') {
-          current += '"';
-          i++; // Skip next quote
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current);
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    result.push(current);
-
-    return result.map(v => v.trim());
-  }
+  // Import parsers moved to ./vault/services/import-parsers.js
 
   /**
    * Apply CSS custom properties from data attributes for CSP compliance
