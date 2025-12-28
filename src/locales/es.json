@@ -1289,5 +1289,77 @@
     "error": "Error: {error}",
     "connectionError": "Error de conexión",
     "passwordBreached": "¡Contraseña comprometida! ({count})"
+  },
+  "onboarding": {
+    "buttons": {
+      "skipTour": "Saltar tour",
+      "startTour": "Iniciar tour",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "finish": "Finalizar",
+      "skip": "Saltar",
+      "start": "Iniciar",
+      "startUsing": "Comenzar a usar GenPwd Pro"
+    },
+    "progress": {
+      "step": "Paso",
+      "of": "de"
+    },
+    "main": {
+      "welcome": {
+        "title": "👋 ¡Bienvenido a GenPwd Pro!",
+        "text": "Genera contraseñas seguras y memorables en segundos. ¡Déjame mostrarte!"
+      },
+      "generator": {
+        "title": "🔐 Generador de contraseñas",
+        "text": "Elige entre tres modos: <strong>Sílabas</strong> (pronunciable), <strong>Frase de contraseña</strong> (estilo Diceware), o <strong>Leet</strong> speak."
+      },
+      "length": {
+        "title": "📏 Personalizar longitud",
+        "text": "Ajusta la longitud de la contraseña o el número de palabras. Recomendamos <strong>16+ caracteres</strong> o <strong>5+ palabras</strong> para mayor seguridad."
+      },
+      "options": {
+        "title": "⚙️ Opciones de contraseña",
+        "text": "Añade <strong>números</strong>, <strong>caracteres especiales</strong>, o cambia mayúsculas/minúsculas. ¡Más complejidad = contraseña más fuerte!"
+      },
+      "generate": {
+        "title": "✨ ¡Generar!",
+        "text": "Haz clic en <strong>Generar</strong> para crear tu contraseña. Se copia automáticamente al portapapeles durante 30 segundos."
+      },
+      "results": {
+        "title": "📊 Fortaleza de la contraseña",
+        "text": "Verifica la <strong>entropía</strong> (aleatoriedad) de tu contraseña. ¡Cuanto más alta, mejor! Apunta a 60+ bits."
+      },
+      "vault": {
+        "title": "🗄️ Almacenamiento en bóveda",
+        "text": "Guarda contraseñas de forma segura en tu <strong>bóveda</strong> cifrada. Cifrado AES-256-GCM, derivación de clave Argon2id."
+      },
+      "about": {
+        "title": "⚙️ Configuración y funciones",
+        "text": "Explora más funciones: <strong>Sincronización en la nube</strong>, <strong>Importar/Exportar</strong>, <strong>TOTP 2FA</strong>, y <strong>Modo oscuro</strong>!"
+      },
+      "complete": {
+        "title": "🎉 ¡Todo listo!",
+        "text": "Estás listo para generar contraseñas seguras. ¿Necesitas ayuda? Consulta la sección <strong>Acerca de</strong> o visita nuestro <a href=\"https://github.com/VBlackJack/genpwd-pro\" target=\"_blank\">GitHub</a>."
+      }
+    },
+    "vault": {
+      "intro": {
+        "title": "🗄️ Tour de la bóveda",
+        "text": "Almacena contraseñas de forma segura en tu bóveda cifrada. ¡Exploremos!"
+      },
+      "addPassword": {
+        "title": "➕ Añadir contraseña",
+        "text": "Haz clic aquí para añadir una nueva entrada a tu bóveda."
+      },
+      "search": {
+        "title": "🔍 Buscar y filtrar",
+        "text": "Encuentra rápidamente contraseñas por nombre, sitio web o categoría."
+      },
+      "export": {
+        "title": "📤 Importar/Exportar",
+        "text": "Exporta a JSON, CSV o KDBX. Importa desde 1Password, LastPass, KeePass."
+      }
+    }
   }
 }

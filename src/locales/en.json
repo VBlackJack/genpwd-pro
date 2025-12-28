@@ -1289,5 +1289,77 @@
     "error": "Error: {error}",
     "connectionError": "Connection error",
     "passwordBreached": "Password compromised! ({count})"
+  },
+  "onboarding": {
+    "buttons": {
+      "skipTour": "Skip Tour",
+      "startTour": "Start Tour",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish",
+      "skip": "Skip",
+      "start": "Start",
+      "startUsing": "Start Using GenPwd Pro"
+    },
+    "progress": {
+      "step": "Step",
+      "of": "of"
+    },
+    "main": {
+      "welcome": {
+        "title": "👋 Welcome to GenPwd Pro!",
+        "text": "Generate secure, memorable passwords in seconds. Let me show you around!"
+      },
+      "generator": {
+        "title": "🔐 Password Generator",
+        "text": "Choose from three modes: <strong>Syllables</strong> (pronounceable), <strong>Passphrase</strong> (Diceware-style), or <strong>Leet</strong> speak."
+      },
+      "length": {
+        "title": "📏 Customize Length",
+        "text": "Adjust password length or word count. We recommend <strong>16+ characters</strong> or <strong>5+ words</strong> for strong security."
+      },
+      "options": {
+        "title": "⚙️ Password Options",
+        "text": "Add <strong>numbers</strong>, <strong>special characters</strong>, or change case. More complexity = stronger password!"
+      },
+      "generate": {
+        "title": "✨ Generate!",
+        "text": "Click <strong>Generate</strong> to create your password. It's automatically copied to clipboard for 30 seconds."
+      },
+      "results": {
+        "title": "📊 Password Strength",
+        "text": "Check your password's <strong>entropy</strong> (randomness). Higher is better! Aim for 60+ bits."
+      },
+      "vault": {
+        "title": "🗄️ Vault Storage",
+        "text": "Save passwords securely in your encrypted <strong>Vault</strong>. AES-256-GCM encryption, Argon2id key derivation."
+      },
+      "about": {
+        "title": "⚙️ Settings & Features",
+        "text": "Explore more features: <strong>Cloud Sync</strong>, <strong>Import/Export</strong>, <strong>TOTP 2FA</strong>, and <strong>Dark Mode</strong>!"
+      },
+      "complete": {
+        "title": "🎉 You're All Set!",
+        "text": "You're ready to generate secure passwords. Need help? Check the <strong>About</strong> section or visit our <a href=\"https://github.com/VBlackJack/genpwd-pro\" target=\"_blank\">GitHub</a>."
+      }
+    },
+    "vault": {
+      "intro": {
+        "title": "🗄️ Vault Tour",
+        "text": "Store passwords securely in your encrypted vault. Let's explore!"
+      },
+      "addPassword": {
+        "title": "➕ Add Password",
+        "text": "Click here to add a new password entry to your vault."
+      },
+      "search": {
+        "title": "🔍 Search & Filter",
+        "text": "Quickly find passwords by name, website, or category."
+      },
+      "export": {
+        "title": "📤 Import/Export",
+        "text": "Export to JSON, CSV, or KDBX. Import from 1Password, LastPass, KeePass."
+      }
+    }
   }
 }

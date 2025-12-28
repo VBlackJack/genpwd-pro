@@ -7,114 +7,125 @@
  */
 
 import { showConfirm } from './modal-manager.js';
+import { t } from '../utils/i18n.js';
 
 export class Onboarding {
   constructor() {
     this.currentStep = 0;
+    this.tours = null; // Initialized lazily to allow i18n loading
+  }
+
+  /**
+   * Get tours with translated content (lazy initialization)
+   * @returns {Object} Tours configuration
+   */
+  getTours() {
+    if (this.tours) return this.tours;
+
     this.tours = {
       main: [
         {
           id: 'welcome',
-          title: '👋 Welcome to GenPwd Pro!',
-          text: 'Generate secure, memorable passwords in seconds. Let me show you around!',
+          title: t('onboarding.main.welcome.title'),
+          text: t('onboarding.main.welcome.text'),
           attachTo: null,
           buttons: [
             {
-              text: 'Skip Tour',
+              text: t('onboarding.buttons.skipTour'),
               action: () => this.completeTour(),
               secondary: true
             },
             {
-              text: 'Start Tour',
+              text: t('onboarding.buttons.startTour'),
               action: () => this.next()
             }
           ]
         },
         {
           id: 'generator',
-          title: '🔐 Password Generator',
-          text: 'Choose from three modes: <strong>Syllables</strong> (pronounceable), <strong>Passphrase</strong> (Diceware-style), or <strong>Leet</strong> speak.',
+          title: t('onboarding.main.generator.title'),
+          text: t('onboarding.main.generator.text'),
           attachTo: '#mode-select',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
           id: 'length',
-          title: '📏 Customize Length',
-          text: 'Adjust password length or word count. We recommend <strong>16+ characters</strong> or <strong>5+ words</strong> for strong security.',
-          attachTo: '#length-slider',
+          title: t('onboarding.main.length.title'),
+          text: t('onboarding.main.length.text'),
+          attachTo: '#syll-len',
           position: 'top',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
           id: 'options',
-          title: '⚙️ Password Options',
-          text: 'Add <strong>numbers</strong>, <strong>special characters</strong>, or change case. More complexity = stronger password!',
-          attachTo: '#password-options',
+          title: t('onboarding.main.options.title'),
+          text: t('onboarding.main.options.text'),
+          attachTo: '#section-params-content',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
           id: 'generate',
-          title: '✨ Generate!',
-          text: 'Click <strong>Generate</strong> to create your password. It\'s automatically copied to clipboard for 30 seconds.',
-          attachTo: '#generate-button',
+          title: t('onboarding.main.generate.title'),
+          text: t('onboarding.main.generate.text'),
+          attachTo: '#btn-generate',
           position: 'top',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
-          id: 'entropy',
-          title: '📊 Password Strength',
-          text: 'Check your password\'s <strong>entropy</strong> (randomness). Higher is better! Aim for 60+ bits.',
-          attachTo: '#entropy-display',
+          id: 'results',
+          title: t('onboarding.main.results.title'),
+          text: t('onboarding.main.results.text'),
+          attachTo: '#results-list',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
           id: 'vault',
-          title: '🗄️ Vault Storage',
-          text: 'Save passwords securely in your encrypted <strong>Vault</strong>. AES-256-GCM encryption, Argon2id key derivation.',
-          attachTo: '#vault-button',
+          title: t('onboarding.main.vault.title'),
+          text: t('onboarding.main.vault.text'),
+          attachTo: '#vault-status-indicator',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
-          id: 'settings',
-          title: '⚙️ Settings & Features',
-          text: 'Explore more features: <strong>Cloud Sync</strong>, <strong>Import/Export</strong>, <strong>TOTP 2FA</strong>, and <strong>Dark Mode</strong>!',
-          attachTo: '#settings-button',
+          id: 'about',
+          title: t('onboarding.main.about.title'),
+          text: t('onboarding.main.about.text'),
+          attachTo: '#btn-about',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Finish', action: () => this.completeTour() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.finish'), action: () => this.completeTour() }
           ]
         },
         {
           id: 'complete',
-          title: '🎉 You\'re All Set!',
-          text: 'You\'re ready to generate secure passwords. Need help? Check the <strong>Help</strong> section or visit our <a href="https://github.com/VBlackJack/genpwd-pro" target="_blank">GitHub</a>.',
+          title: t('onboarding.main.complete.title'),
+          text: t('onboarding.main.complete.text'),
           attachTo: null,
           buttons: [
             {
-              text: 'Start Using GenPwd Pro',
+              text: t('onboarding.buttons.startUsing'),
               action: () => this.completeTour()
             }
           ]
@@ -123,53 +134,51 @@ export class Onboarding {
       vault: [
         {
           id: 'vault-intro',
-          title: '🗄️ Vault Tour',
-          text: 'Store passwords securely in your encrypted vault. Let\'s explore!',
+          title: t('onboarding.vault.intro.title'),
+          text: t('onboarding.vault.intro.text'),
           attachTo: null,
           buttons: [
-            { text: 'Skip', action: () => this.completeTour(), secondary: true },
-            { text: 'Start', action: () => this.next() }
+            { text: t('onboarding.buttons.skip'), action: () => this.completeTour(), secondary: true },
+            { text: t('onboarding.buttons.start'), action: () => this.next() }
           ]
         },
         {
           id: 'add-password',
-          title: '➕ Add Password',
-          text: 'Click here to add a new password entry to your vault.',
-          attachTo: '#add-password-button',
+          title: t('onboarding.vault.addPassword.title'),
+          text: t('onboarding.vault.addPassword.text'),
+          attachTo: '.vault-add-btn',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
           id: 'search',
-          title: '🔍 Search & Filter',
-          text: 'Quickly find passwords by name, website, or category.',
-          attachTo: '#vault-search',
+          title: t('onboarding.vault.search.title'),
+          text: t('onboarding.vault.search.text'),
+          attachTo: '.vault-search-input',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Next', action: () => this.next() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
           ]
         },
         {
           id: 'export',
-          title: '📤 Import/Export',
-          text: 'Export to JSON, CSV, or KDBX. Import from 1Password, LastPass, KeePass.',
-          attachTo: '#export-button',
+          title: t('onboarding.vault.export.title'),
+          text: t('onboarding.vault.export.text'),
+          attachTo: '.vault-import-btn',
           position: 'bottom',
           buttons: [
-            { text: 'Back', action: () => this.prev(), secondary: true },
-            { text: 'Finish', action: () => this.completeTour() }
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.finish'), action: () => this.completeTour() }
           ]
         }
       ]
     };
 
-    this.activeTour = null;
-    this.overlay = null;
-    this.tooltipElement = null;
+    return this.tours;
   }
 
   /**
@@ -184,6 +193,8 @@ export class Onboarding {
 
     this.activeTour = tourName;
     this.currentStep = 0;
+    this.overlay = null;
+    this.tooltipElement = null;
 
     // Create overlay and tooltip
     this.createOverlay();
@@ -197,7 +208,8 @@ export class Onboarding {
   showStep(stepIndex) {
     if (!this.activeTour) return;
 
-    const steps = this.tours[this.activeTour];
+    const tours = this.getTours();
+    const steps = tours[this.activeTour];
     if (stepIndex < 0 || stepIndex >= steps.length) return;
 
     this.currentStep = stepIndex;
@@ -401,8 +413,9 @@ export class Onboarding {
       color: #999;
       text-align: center;
     `;
-    progress.textContent = `Step ${this.currentStep + 1} of ${
-      this.tours[this.activeTour].length
+    const tours = this.getTours();
+    progress.textContent = `${t('onboarding.progress.step')} ${this.currentStep + 1} ${t('onboarding.progress.of')} ${
+      tours[this.activeTour].length
     }`;
 
     tooltip.appendChild(title);
@@ -513,7 +526,8 @@ export class Onboarding {
    * Reset all tours (for testing)
    */
   resetTours() {
-    Object.keys(this.tours).forEach((tourName) => {
+    const tours = this.getTours();
+    Object.keys(tours).forEach((tourName) => {
       localStorage.removeItem(`onboarding_${tourName}_completed`);
     });
   }

@@ -1250,21 +1250,43 @@ input:checked + .toggle-slider::before {
 
 .pwa-update-btn {
   background: white;
-  color: #4CAF50;
+  color: var(--accent-green, #10b981);
   border: none;
-  padding: 5px 10px;
-  border-radius: var(--radius-xs, 4px);
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   font-weight: 600;
+  transition: var(--transition-fast, 0.15s ease);
+}
+
+.pwa-update-btn:hover {
+  background: var(--bg-tertiary, #f3f4f6);
+}
+
+.pwa-update-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 .pwa-dismiss-btn {
   background: transparent;
   color: white;
   border: 1px solid white;
-  padding: 5px 10px;
-  border-radius: var(--radius-xs, 4px);
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
+  transition: var(--transition-fast, 0.15s ease);
+}
+
+.pwa-dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pwa-dismiss-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 /* PWA install banner */
@@ -1297,23 +1319,44 @@ input:checked + .toggle-slider::before {
 
 .pwa-install-btn {
   background: white;
-  color: #667eea;
+  color: var(--accent-purple, #8b5cf6);
   border: none;
-  padding: 8px 16px;
+  padding: 10px 16px;
+  min-height: 44px;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95em;
+  transition: var(--transition-fast, 0.15s ease);
+}
+
+.pwa-install-btn:hover {
+  background: var(--bg-tertiary, #f3f4f6);
+}
+
+.pwa-install-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 .pwa-install-dismiss-btn {
   background: transparent;
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.5);
-  padding: 8px 16px;
+  padding: 10px 16px;
+  min-height: 44px;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  font-size: 0.95em;
+  transition: var(--transition-fast, 0.15s ease);
+}
+
+.pwa-install-dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pwa-install-dismiss-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 /* ==================== REDUCED MOTION SUPPORT ==================== */

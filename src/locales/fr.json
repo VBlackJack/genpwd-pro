@@ -1289,5 +1289,77 @@
     "error": "Erreur : {error}",
     "connectionError": "Erreur de connexion",
     "passwordBreached": "Mot de passe compromis ! ({count})"
+  },
+  "onboarding": {
+    "buttons": {
+      "skipTour": "Passer la visite",
+      "startTour": "Démarrer la visite",
+      "back": "Retour",
+      "next": "Suivant",
+      "finish": "Terminer",
+      "skip": "Passer",
+      "start": "Démarrer",
+      "startUsing": "Commencer à utiliser GenPwd Pro"
+    },
+    "progress": {
+      "step": "Étape",
+      "of": "sur"
+    },
+    "main": {
+      "welcome": {
+        "title": "👋 Bienvenue sur GenPwd Pro !",
+        "text": "Générez des mots de passe sécurisés et mémorables en quelques secondes. Laissez-moi vous guider !"
+      },
+      "generator": {
+        "title": "🔐 Générateur de mots de passe",
+        "text": "Choisissez parmi trois modes : <strong>Syllabes</strong> (prononçable), <strong>Phrase de passe</strong> (style Diceware), ou <strong>Leet</strong> speak."
+      },
+      "length": {
+        "title": "📏 Personnaliser la longueur",
+        "text": "Ajustez la longueur du mot de passe ou le nombre de mots. Nous recommandons <strong>16+ caractères</strong> ou <strong>5+ mots</strong> pour une sécurité optimale."
+      },
+      "options": {
+        "title": "⚙️ Options du mot de passe",
+        "text": "Ajoutez des <strong>chiffres</strong>, des <strong>caractères spéciaux</strong>, ou changez la casse. Plus de complexité = mot de passe plus fort !"
+      },
+      "generate": {
+        "title": "✨ Générer !",
+        "text": "Cliquez sur <strong>Générer</strong> pour créer votre mot de passe. Il est automatiquement copié dans le presse-papiers pendant 30 secondes."
+      },
+      "results": {
+        "title": "📊 Force du mot de passe",
+        "text": "Vérifiez l'<strong>entropie</strong> (aléatoire) de votre mot de passe. Plus c'est élevé, mieux c'est ! Visez 60+ bits."
+      },
+      "vault": {
+        "title": "🗄️ Stockage dans le coffre",
+        "text": "Sauvegardez vos mots de passe en toute sécurité dans votre <strong>coffre</strong> chiffré. Chiffrement AES-256-GCM, dérivation de clé Argon2id."
+      },
+      "about": {
+        "title": "⚙️ Paramètres et fonctionnalités",
+        "text": "Explorez plus de fonctionnalités : <strong>Synchronisation cloud</strong>, <strong>Import/Export</strong>, <strong>TOTP 2FA</strong>, et <strong>Mode sombre</strong> !"
+      },
+      "complete": {
+        "title": "🎉 Vous êtes prêt !",
+        "text": "Vous êtes prêt à générer des mots de passe sécurisés. Besoin d'aide ? Consultez la section <strong>À propos</strong> ou visitez notre <a href=\"https://github.com/VBlackJack/genpwd-pro\" target=\"_blank\">GitHub</a>."
+      }
+    },
+    "vault": {
+      "intro": {
+        "title": "🗄️ Visite du coffre",
+        "text": "Stockez vos mots de passe en toute sécurité dans votre coffre chiffré. Explorons !"
+      },
+      "addPassword": {
+        "title": "➕ Ajouter un mot de passe",
+        "text": "Cliquez ici pour ajouter une nouvelle entrée à votre coffre."
+      },
+      "search": {
+        "title": "🔍 Recherche et filtres",
+        "text": "Trouvez rapidement vos mots de passe par nom, site web ou catégorie."
+      },
+      "export": {
+        "title": "📤 Import/Export",
+        "text": "Exportez en JSON, CSV ou KDBX. Importez depuis 1Password, LastPass, KeePass."
+      }
+    }
   }
 }
