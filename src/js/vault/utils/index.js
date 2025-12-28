@@ -47,3 +47,10 @@ export {
   parseMarkdown,
   renderNotesFieldHTML
 } from './markdown-parser.js';
+
+// Password display utilities
+export {
+  renderPasswordStrength,
+  renderPasswordHistory,
+  renderPasswordAge
+} from './password-display.js';
