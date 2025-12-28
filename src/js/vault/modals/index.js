@@ -69,3 +69,14 @@ export {
   renderEditEntryContent,
   collectEntryFormData
 } from './entry-form.js';
+
+// Import/Export modals
+export {
+  IMPORT_FORMATS,
+  EXPORT_FORMATS,
+  renderImportModal,
+  renderImportSummary,
+  renderImportWarnings,
+  renderExportModal,
+  showExportFormatModal
+} from './import-export-modal.js';

@@ -20,3 +20,13 @@ export {
   createModalService,
   getModalService
 } from './modal-service.js';
+
+// Export service
+export {
+  exportToJSON,
+  exportToCSV,
+  exportToKeePassXML,
+  performExport,
+  downloadExport,
+  createExportService
+} from './export-service.js';
