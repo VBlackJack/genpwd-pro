@@ -56,10 +56,11 @@ import { renderShortcutsModal } from './vault/modals/shortcuts-modal.js';
 import { renderHealthDashboardModal as renderHealthDashboard } from './vault/modals/health-dashboard-modal.js';
 import { renderImportModal } from './vault/modals/import-export-modal.js';
 import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/vault-management.js';
+import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-form.js';
 
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
-import { renderEmptyState, renderNoSelection, renderEntrySkeleton, renderDetailSkeleton } from './vault/views/empty-states.js';
+import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.js';
 
 // Vault components imports (Phase 6 modularization)
 import { showContextMenu } from './vault/components/context-menu.js';
@@ -1426,9 +1427,9 @@ export class VaultUI {
           ${this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection()}
         </aside>
       </div>
-      ${this.#renderAddEntryModal()}
+      ${renderAddEntryModal({ entryTypes: ENTRY_TYPES, folders: this.#folders, tags: this.#tags, templateGridHtml: renderTemplateGrid(), t })}
       ${renderAddFolderModal({ t })}
-      ${this.#renderEditEntryModal()}
+      ${renderEditEntryModal({ t })}
       ${renderShortcutsModal({ t })}
       ${renderHealthDashboard({ t })}
       ${renderMoveFolderModal({ folders: this.#folders, t })}
@@ -2660,85 +2661,7 @@ export class VaultUI {
   }
 
   // Empty states and skeletons moved to ./vault/views/empty-states.js
-
-  #renderAddEntryModal() {
-    return `
-      <div class="vault-modal-overlay" id="add-entry-modal" role="dialog" aria-modal="true" aria-labelledby="add-entry-title">
-        <div class="vault-modal vault-modal-lg">
-          <div class="vault-modal-header">
-            <h3 id="add-entry-title">${t('vault.dialogs.newEntry')}</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <form class="vault-modal-body" id="add-entry-form">
-            <!-- Template Selector -->
-            <div class="vault-template-section">
-              <button type="button" class="vault-template-toggle" id="toggle-templates" aria-expanded="false">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                Utiliser un template
-                <svg class="vault-template-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </button>
-              <div class="vault-template-picker" id="template-picker" hidden>
-                <input type="text" class="vault-input vault-template-search" id="template-search" placeholder="${t('vault.placeholders.searchTemplate')}">
-                <div class="vault-template-grid" id="template-grid">
-                  ${renderTemplateGrid()}
-                </div>
-              </div>
-            </div>
-
-            <div class="vault-type-selector" role="radiogroup" aria-label="Entry type">
-              ${Object.entries(ENTRY_TYPES).filter(([k]) => k !== 'preset' && k !== 'ssh').map(([key, type]) => `
-                <label class="vault-type-option">
-                  <input type="radio" name="entry-type" value="${key}" ${key === 'login' ? 'checked' : ''}>
-                  <span class="vault-type-card" data-type-color="${type.color}">
-                    <span class="vault-type-icon">${type.icon}</span>
-                    <span class="vault-type-label">${type.label}</span>
-                  </span>
-                </label>
-              `).join('')}
-            </div>
-
-            <div class="vault-form-group">
-              <label class="vault-label" for="entry-title">Titre <span class="required" aria-label="obligatoire">*</span></label>
-              <input type="text" class="vault-input" id="entry-title" placeholder="${t('vault.placeholders.entryTitleExample')}" required aria-required="true" aria-describedby="entry-title-message" aria-invalid="false">
-              <div class="vault-field-message" id="entry-title-message" role="alert" aria-live="polite"></div>
-            </div>
-
-            <div class="vault-form-group">
-              <label class="vault-label" for="entry-folder">${t('vault.labels.folder')}</label>
-              <select class="vault-input vault-select" id="entry-folder">
-                <option value="">No folder</option>
-                ${this.#folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('')}
-              </select>
-            </div>
-
-            <div class="vault-form-group">
-              <label class="vault-label">Tags</label>
-              ${this.#renderTagPicker([])}
-            </div>
-
-            <div id="entry-type-fields"></div>
-
-            <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-              <button type="submit" class="vault-btn vault-btn-primary">${t('vault.common.add')}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-  }
+  // Add entry modal moved to ./vault/modals/entry-form.js
 
   #applyTemplate(templateId) {
     const template = getTemplateById(templateId);
@@ -3252,32 +3175,7 @@ export class VaultUI {
   }
 
   // Add folder modal moved to ./vault/modals/folder-tag-modals.js
-
-  #renderEditEntryModal() {
-    return `
-      <div class="vault-modal-overlay" id="edit-entry-modal" role="dialog" aria-modal="true" aria-labelledby="edit-entry-title">
-        <div class="vault-modal vault-modal-lg">
-          <div class="vault-modal-header">
-            <h3 id="edit-entry-title">${t('vault.dialogs.editEntry')}</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <form class="vault-modal-body" id="edit-entry-form">
-            <div id="edit-entry-fields"></div>
-            <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-              <button type="submit" class="vault-btn vault-btn-primary">${t('vault.common.save')}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-  }
-
+  // Edit entry modal moved to ./vault/modals/entry-form.js
   // Shortcuts modal moved to ./vault/modals/shortcuts-modal.js
 
   /**
