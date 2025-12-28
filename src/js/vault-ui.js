@@ -46,7 +46,7 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 
 // Vault utility imports (Phase 6 modularization)
 import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
-import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength } from './vault/utils/password-utils.js';
+import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength, getPasswordAgeDays } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
 import { extractDomain, renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
 
@@ -3253,7 +3253,7 @@ export class VaultUI {
       }
 
       // Also check by password age
-      const days = this.#getPasswordAgeDays(entry);
+      const days = getPasswordAgeDays(entry.modifiedAt);
       if (days > 180) old++;
     });
 
@@ -7041,13 +7041,7 @@ export class VaultUI {
   #hasActiveFilters() {
     return !!(this.#searchFilters.type || this.#searchFilters.strength || this.#searchFilters.age);
   }
-
-  #getPasswordAgeDays(entry) {
-    if (!entry.modifiedAt) return 0;
-    const modified = new Date(entry.modifiedAt);
-    const now = new Date();
-    return Math.floor((now - modified) / (1000 * 60 * 60 * 24));
-  }
+  // #getPasswordAgeDays moved to password-utils.js
 
   #getFilteredEntries() {
     let entries = [...this.#entries];
@@ -7095,7 +7089,7 @@ export class VaultUI {
         }
 
         // Age-based filters (password age)
-        const days = this.#getPasswordAgeDays(e);
+        const days = getPasswordAgeDays(e.modifiedAt);
         switch (this.#searchFilters.age) {
           case 'recent': return days <= 30;
           case 'old': return days > 180;

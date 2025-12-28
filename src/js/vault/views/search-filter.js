@@ -3,7 +3,7 @@
  * Pure functions for filtering vault entries
  */
 
-import { getPasswordStrength } from '../utils/password-utils.js';
+import { getPasswordStrength, getPasswordAgeDays } from '../utils/password-utils.js';
 
 /**
  * Filter entries by search query
@@ -49,17 +49,7 @@ export function filterByStrength(entries, strength) {
   });
 }
 
-/**
- * Get password age in days
- * @param {Object} entry - Entry object
- * @returns {number} Age in days
- */
-function getPasswordAgeDays(entry) {
-  if (!entry.modifiedAt) return 0;
-  const modified = new Date(entry.modifiedAt);
-  const now = new Date();
-  return Math.floor((now - modified) / (1000 * 60 * 60 * 24));
-}
+// getPasswordAgeDays imported from password-utils.js
 
 /**
  * Get expiry status for an entry
@@ -105,7 +95,7 @@ export function filterByAge(entries, ageFilter) {
     }
 
     // Age-based filters
-    const days = getPasswordAgeDays(e);
+    const days = getPasswordAgeDays(e.modifiedAt);
     switch (ageFilter) {
       case 'recent': return days <= 30;
       case 'old': return days > 180;
