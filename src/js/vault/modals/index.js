@@ -36,3 +36,36 @@ export {
   renderShortcutsModal,
   getShortcutCategories
 } from './shortcuts-modal.js';
+
+// Form field templates
+export {
+  FIELD_KIND_OPTIONS,
+  renderPasswordField,
+  renderExpiryPicker,
+  renderLoginFields,
+  renderNoteFields,
+  renderCardFields,
+  renderIdentityFields,
+  renderTypeFields
+} from './form-fields.js';
+
+// Custom fields
+export {
+  renderCustomFieldsSection,
+  renderCustomField,
+  createCustomFieldElement,
+  collectCustomFieldsData,
+  createCustomFieldsController
+} from './custom-fields.js';
+
+// Entry form modals
+export {
+  ENTRY_TYPE_DEFS,
+  renderTypeSelector,
+  renderTagPicker,
+  renderFolderSelector,
+  renderAddEntryModal,
+  renderEditEntryModal,
+  renderEditEntryContent,
+  collectEntryFormData
+} from './entry-form.js';
