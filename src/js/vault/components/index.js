@@ -55,3 +55,18 @@ export {
   updateHelloButtonState,
   showPasswordPrompt
 } from './hello-settings.js';
+
+// Tags display
+export {
+  renderTagsList,
+  renderTagPicker,
+  renderTagsInRow,
+  renderTagsInDetail,
+  TAG_COLORS
+} from './tags-display.js';
+
+// Entry fields
+export {
+  renderExpirationField,
+  renderTOTPField
+} from './entry-fields.js';
