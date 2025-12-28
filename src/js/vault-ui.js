@@ -46,7 +46,7 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 
 // Vault utility imports (Phase 6 modularization)
 import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
-import { getPasswordStrength, isPasswordDuplicated } from './vault/utils/password-utils.js';
+import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
 
 // Vault modals imports (Phase 6 modularization)
@@ -857,7 +857,7 @@ export class VaultUI {
     const vaultPasswordMessage = document.getElementById('vault-password-message');
     vaultPasswordInput?.addEventListener('input', (e) => {
       // Strength indicator
-      const strength = this.#calculatePasswordStrength(e.target.value);
+      const strength = calculatePasswordStrength(e.target.value, t);
       const el = document.getElementById('new-password-strength');
       if (el) {
         el.innerHTML = `
@@ -2467,7 +2467,7 @@ export class VaultUI {
   }
 
   #renderPasswordStrength(password) {
-    const strength = this.#calculatePasswordStrength(password);
+    const strength = calculatePasswordStrength(password, t);
     return `
       <div class="vault-password-strength">
         <div class="vault-strength-bar">
@@ -6255,7 +6255,7 @@ export class VaultUI {
   }
 
   #updateEditPasswordStrength(password) {
-    const strength = this.#calculatePasswordStrength(password);
+    const strength = calculatePasswordStrength(password, t);
     const el = document.getElementById('edit-password-strength');
     if (el) {
       el.innerHTML = `
@@ -7051,7 +7051,7 @@ export class VaultUI {
   }
 
   #updateAddPasswordStrength(password) {
-    const strength = this.#calculatePasswordStrength(password);
+    const strength = calculatePasswordStrength(password, t);
     const el = document.getElementById('entry-password-strength');
     if (el) {
       el.innerHTML = `
@@ -7426,34 +7426,9 @@ export class VaultUI {
     return this.#entries.filter(e => e.type === categoryId).length;
   }
 
-  #calculatePasswordStrength(password) {
-    if (!password) return { level: 'none', label: '', percent: 0 };
-
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (password.length >= 16) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^a-zA-Z0-9]/.test(password)) score++;
-
-    const levels = [
-      { level: 'weak', label: t('vault.detail.weak'), percent: 25 },
-      { level: 'weak', label: t('vault.detail.weak'), percent: 25 },
-      { level: 'fair', label: t('vault.detail.fair'), percent: 50 },
-      { level: 'fair', label: t('vault.detail.fair'), percent: 50 },
-      { level: 'good', label: t('vault.detail.good'), percent: 75 },
-      { level: 'good', label: t('vault.detail.good'), percent: 75 },
-      { level: 'strong', label: t('vault.detail.good'), percent: 100 },
-      { level: 'strong', label: t('vault.detail.excellent'), percent: 100 }
-    ];
-
-    return levels[score] || levels[0];
-  }
-
   // Password generator moved to ./vault/components/password-generator.js
   // isValidUrl and isValidEmail moved to ./vault/utils/validators.js
+  // calculatePasswordStrength moved to ./vault/utils/password-utils.js
 
   /**
    * Real-time field validation

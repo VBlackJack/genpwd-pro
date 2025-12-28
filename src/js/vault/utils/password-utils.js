@@ -30,9 +30,10 @@ export function getPasswordStrength(password) {
 /**
  * Calculate detailed password strength
  * @param {string} password - Password to analyze
+ * @param {Function} t - Translation function (optional)
  * @returns {{level: string, label: string, percent: number}}
  */
-export function calculatePasswordStrength(password) {
+export function calculatePasswordStrength(password, t = null) {
   if (!password) return { level: 'none', label: '', percent: 0 };
 
   let score = 0;
@@ -44,15 +45,28 @@ export function calculatePasswordStrength(password) {
   if (/[0-9]/.test(password)) score++;
   if (/[^a-zA-Z0-9]/.test(password)) score++;
 
+  // Labels with i18n support
+  const labels = t ? {
+    weak: t('vault.detail.weak') || 'Weak',
+    fair: t('vault.detail.fair') || 'Fair',
+    good: t('vault.detail.good') || 'Good',
+    excellent: t('vault.detail.excellent') || 'Excellent'
+  } : {
+    weak: 'Weak',
+    fair: 'Fair',
+    good: 'Good',
+    excellent: 'Excellent'
+  };
+
   const levels = [
-    { level: 'weak', label: 'Weak', percent: 25 },
-    { level: 'weak', label: 'Weak', percent: 25 },
-    { level: 'fair', label: 'Fair', percent: 50 },
-    { level: 'fair', label: 'Fair', percent: 50 },
-    { level: 'good', label: 'Good', percent: 75 },
-    { level: 'good', label: 'Good', percent: 75 },
-    { level: 'strong', label: 'Strong', percent: 100 },
-    { level: 'strong', label: 'Excellent', percent: 100 }
+    { level: 'weak', label: labels.weak, percent: 25 },
+    { level: 'weak', label: labels.weak, percent: 25 },
+    { level: 'fair', label: labels.fair, percent: 50 },
+    { level: 'fair', label: labels.fair, percent: 50 },
+    { level: 'good', label: labels.good, percent: 75 },
+    { level: 'good', label: labels.good, percent: 75 },
+    { level: 'strong', label: labels.good, percent: 100 },
+    { level: 'strong', label: labels.excellent, percent: 100 }
   ];
 
   return levels[score] || levels[0];
