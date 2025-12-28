@@ -30,3 +30,10 @@ export {
   downloadExport,
   createExportService
 } from './export-service.js';
+
+// Breach check service
+export {
+  formatBreachCount,
+  createBreachCheckService,
+  getBreachCheckService
+} from './breach-check-service.js';

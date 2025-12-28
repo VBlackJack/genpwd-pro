@@ -80,3 +80,19 @@ export {
   renderExportModal,
   showExportFormatModal
 } from './import-export-modal.js';
+
+// Health Dashboard modal
+export {
+  HEALTH_CARDS,
+  renderScoreGauge,
+  renderHealthCard,
+  renderHealthGrid,
+  renderRecommendation,
+  renderRecommendations,
+  renderBreachSection,
+  renderBreachResultsSafe,
+  renderBreachResultsCompromised,
+  renderHealthDashboardModal,
+  renderEmptyHealthModal,
+  renderLegacyHealthModal
+} from './health-dashboard-modal.js';
