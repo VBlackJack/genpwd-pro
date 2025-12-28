@@ -1,4 +1,5 @@
 import { KEYSET_ENVELOPE } from '../config/crypto-constants.js';
+import { Result } from '../utils/result.js';
 
 const KEYSET_ENVELOPE_VERSION = KEYSET_ENVELOPE.VERSION;
 const KEYSET_ENVELOPE_IV_BYTES = KEYSET_ENVELOPE.IV_BYTES;
@@ -212,6 +213,64 @@ export class TinkAeadCryptoEngine extends CryptoEngine {
   async decrypt(ciphertext, associatedData = new Uint8Array()) {
     const primitive = await this.primitivePromise;
     return primitive.decrypt(toUint8Array(ciphertext), toUint8Array(associatedData));
+  }
+
+  // ============================================================
+  // Result-based methods for safer error handling
+  // ============================================================
+
+  /**
+   * Safely encrypts data, returning Result instead of throwing
+   * @param {Uint8Array|string} plaintext - Data to encrypt
+   * @param {Uint8Array} associatedData - Associated data for AEAD
+   * @returns {Promise<Result<Uint8Array, Error>>}
+   */
+  async safeEncrypt(plaintext, associatedData = new Uint8Array()) {
+    return Result.fromTryAsync(() => this.encrypt(plaintext, associatedData));
+  }
+
+  /**
+   * Safely decrypts data, returning Result instead of throwing
+   * @param {Uint8Array} ciphertext - Data to decrypt
+   * @param {Uint8Array} associatedData - Associated data for AEAD
+   * @returns {Promise<Result<Uint8Array, Error>>}
+   */
+  async safeDecrypt(ciphertext, associatedData = new Uint8Array()) {
+    return Result.fromTryAsync(() => this.decrypt(ciphertext, associatedData));
+  }
+
+  /**
+   * Safely serializes keyset, returning Result instead of throwing
+   * @param {Uint8Array} keyEncryptionKey - Key to encrypt the keyset
+   * @param {Uint8Array} associatedData - Associated data
+   * @returns {Promise<Result<Uint8Array, Error>>}
+   */
+  async safeSerializeKeyset(keyEncryptionKey, associatedData = new Uint8Array()) {
+    return Result.fromTryAsync(() => this.serializeKeyset(keyEncryptionKey, associatedData));
+  }
+
+  /**
+   * Safely generates a new keyset, returning Result instead of throwing
+   * @param {Object} options
+   * @param {Uint8Array} options.keyEncryptionKey - Key to encrypt the keyset
+   * @param {Uint8Array} options.associatedData - Associated data
+   * @returns {Promise<Result<{keysetHandle: any, encryptedKeyset: Uint8Array}, Error>>}
+   */
+  static async safeGenerateKeyset(options) {
+    return Result.fromTryAsync(() => TinkAeadCryptoEngine.generateKeyset(options));
+  }
+
+  /**
+   * Safely creates engine from encrypted keyset, returning Result instead of throwing
+   * @param {Uint8Array} encryptedKeyset - Encrypted keyset
+   * @param {Uint8Array} keyEncryptionKey - Key to decrypt the keyset
+   * @param {Uint8Array} associatedData - Associated data
+   * @returns {Promise<Result<TinkAeadCryptoEngine, Error>>}
+   */
+  static async safeFromEncryptedKeyset(encryptedKeyset, keyEncryptionKey, associatedData = new Uint8Array()) {
+    return Result.fromTryAsync(() =>
+      TinkAeadCryptoEngine.fromEncryptedKeyset(encryptedKeyset, keyEncryptionKey, associatedData)
+    );
   }
 }
 

@@ -1,4 +1,5 @@
 import { SessionManager } from './interfaces.js';
+import { Result } from '../utils/result.js';
 
 function cloneKey(key) {
   return new Uint8Array(key);
@@ -15,9 +16,16 @@ export class InMemorySessionManager extends SessionManager {
     this.biometricGate = null;
   }
 
+  /**
+   * Stores the master key in memory
+   * @param {Uint8Array} key - The master key
+   * @param {number} ttlMs - Time to live in milliseconds
+   * @param {boolean} isDuress - Whether this is a duress key
+   * @returns {Promise<Result<void, Error>>}
+   */
   async storeKey(key, ttlMs = this.defaultTtlMs, isDuress = false) {
     if (!(key instanceof Uint8Array)) {
-      throw new TypeError('Master key must be a Uint8Array');
+      return Result.err(new TypeError('Master key must be a Uint8Array'));
     }
 
     if (isDuress) {
@@ -31,6 +39,7 @@ export class InMemorySessionManager extends SessionManager {
     }
 
     this.expiresAt = Date.now() + ttlMs;
+    return Result.ok(undefined);
   }
 
   async getKey() {
@@ -65,11 +74,17 @@ export class InMemorySessionManager extends SessionManager {
     this.expiresAt = 0;
   }
 
+  /**
+   * Extends the session TTL
+   * @param {number} ttlMs - New time to live in milliseconds
+   * @returns {Promise<Result<void, Error>>}
+   */
   async extend(ttlMs = this.defaultTtlMs) {
     if (!this.masterKey && !this.duressKey) {
-      throw new Error('Session is not unlocked');
+      return Result.err(new Error('Session is not unlocked'));
     }
     this.expiresAt = Date.now() + ttlMs;
+    return Result.ok(undefined);
   }
 
   isUnlocked() {
@@ -83,10 +98,16 @@ export class InMemorySessionManager extends SessionManager {
     return Date.now() > this.expiresAt;
   }
 
+  /**
+   * Registers a biometric gate function
+   * @param {Function|null} gate - Gate function or null to disable
+   * @returns {Result<void, Error>}
+   */
   registerBiometricGate(gate) {
     if (gate != null && typeof gate !== 'function') {
-      throw new TypeError('Biometric gate must be a function or null');
+      return Result.err(new TypeError('Biometric gate must be a function or null'));
     }
     this.biometricGate = gate;
+    return Result.ok(undefined);
   }
 }

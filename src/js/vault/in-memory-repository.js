@@ -1,6 +1,7 @@
 import { VaultRepository } from './interfaces.js';
 import { VaultEntry, VaultGroup } from './models.js';
 import { safeLog } from '../utils/logger.js';
+import { Result } from '../utils/result.js';
 
 /**
  * Deep clone a VaultEntry with all its properties
@@ -426,5 +427,82 @@ export class InMemoryVaultRepository extends VaultRepository {
     }
 
     return { entriesImported, groupsImported };
+  }
+
+  // ============================================================
+  // Result-based methods for safer error handling
+  // These wrap the throwing methods with Result pattern
+  // ============================================================
+
+  /**
+   * Safely creates a group, returning Result instead of throwing
+   * @param {VaultGroup} group - Group to create
+   * @returns {Promise<Result<VaultGroup, Error>>}
+   */
+  async safeCreateGroup(group) {
+    return Result.fromTryAsync(() => this.createGroup(group));
+  }
+
+  /**
+   * Safely updates a group, returning Result instead of throwing
+   * @param {VaultGroup} group - Group to update
+   * @returns {Promise<Result<VaultGroup, Error>>}
+   */
+  async safeUpdateGroup(group) {
+    return Result.fromTryAsync(() => this.updateGroup(group));
+  }
+
+  /**
+   * Safely creates an entry, returning Result instead of throwing
+   * @param {VaultEntry} entry - Entry to create
+   * @returns {Promise<Result<VaultEntry, Error>>}
+   */
+  async safeCreateEntry(entry) {
+    return Result.fromTryAsync(() => this.createEntry(entry));
+  }
+
+  /**
+   * Safely updates an entry, returning Result instead of throwing
+   * @param {VaultEntry} entry - Entry to update
+   * @returns {Promise<Result<VaultEntry, Error>>}
+   */
+  async safeUpdateEntry(entry) {
+    return Result.fromTryAsync(() => this.updateEntry(entry));
+  }
+
+  /**
+   * Safely moves a group, returning Result instead of throwing
+   * @param {string} groupId - Group to move
+   * @param {string|null} newParentId - New parent group ID
+   * @returns {Promise<Result<void, Error>>}
+   */
+  async safeMoveGroup(groupId, newParentId) {
+    return Result.fromTryAsync(() => this.moveGroup(groupId, newParentId));
+  }
+
+  /**
+   * Gets an entry with Result, returning Err if not found
+   * @param {string} entryId - Entry ID to find
+   * @returns {Promise<Result<VaultEntry, Error>>}
+   */
+  async getEntryByIdResult(entryId) {
+    const entry = await this.getEntryById(entryId);
+    if (!entry) {
+      return Result.err(new Error(`Entry ${entryId} not found`));
+    }
+    return Result.ok(entry);
+  }
+
+  /**
+   * Gets a group with Result, returning Err if not found
+   * @param {string} groupId - Group ID to find
+   * @returns {Promise<Result<VaultGroup, Error>>}
+   */
+  async getGroupByIdResult(groupId) {
+    const group = await this.getGroupById(groupId);
+    if (!group) {
+      return Result.err(new Error(`Group ${groupId} not found`));
+    }
+    return Result.ok(group);
   }
 }
