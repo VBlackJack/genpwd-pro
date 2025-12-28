@@ -96,3 +96,18 @@ export {
   renderEmptyHealthModal,
   renderLegacyHealthModal
 } from './health-dashboard-modal.js';
+
+// Entry Templates
+export {
+  TEMPLATE_CATEGORIES,
+  ENTRY_TEMPLATES,
+  getTemplates,
+  getTemplateById,
+  getTemplatesByCategory,
+  searchTemplates,
+  renderTemplateItem,
+  renderTemplateCategory,
+  renderTemplateGrid,
+  renderTemplatePicker,
+  createTemplatePickerController
+} from './entry-templates.js';
