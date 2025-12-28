@@ -70,3 +70,14 @@ export {
   renderExpirationField,
   renderTOTPField
 } from './entry-fields.js';
+
+// Attachments handling
+export {
+  getFileIcon,
+  formatFileSize,
+  readFileAsBase64,
+  renderAttachmentsUI,
+  downloadAttachment,
+  MAX_ATTACHMENT_SIZE,
+  isValidAttachmentSize
+} from './attachments-handler.js';

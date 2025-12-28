@@ -45,10 +45,10 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 // QR code generation moved to totp-qr-modal.js
 
 // Vault utility imports (Phase 6 modularization)
-import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
+import { escapeHtml, formatDate, formatDateTime } from './vault/utils/formatter.js';
 import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength, getPasswordAgeDays, getExpiryStatus } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
-import { extractDomain, renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
+import { renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
 import { parseMarkdown, renderNotesFieldHTML } from './vault/utils/markdown-parser.js';
 import { renderPasswordStrength, renderPasswordHistory, renderPasswordAge } from './vault/utils/password-display.js';
 
@@ -77,7 +77,7 @@ import { showPasswordGenerator as showPwdGenerator } from './vault/components/pa
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 import { showColorPicker, getFolderColor, setFolderColor } from './vault/components/color-picker.js';
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
-import { renderTagsList, renderTagPicker, renderTagsInRow, renderTagsInDetail, TAG_COLORS } from './vault/components/tags-display.js';
+import { renderTagsList, renderTagsInRow, renderTagsInDetail } from './vault/components/tags-display.js';
 import { renderExpirationField, renderTOTPField } from './vault/components/entry-fields.js';
 import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
 
@@ -85,7 +85,7 @@ import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } 
 import { performExport, downloadExport } from './vault/services/export-service.js';
 import { getTooltipManager, destroyTooltips } from './vault/services/tooltip-manager.js';
 import { parseKeePassXML, parseCSV } from './vault/services/import-parsers.js';
-import { calculateHealthStats, checkAllBreaches, getBreachCount, formatBreachCount, sha1 } from './vault/services/health-service.js';
+import { checkAllBreaches, getBreachCount, formatBreachCount } from './vault/services/health-service.js';
 
 // Entry type configuration
 import { getEntryTypes, ENTRY_TYPES } from './config/entry-types.js';
@@ -4908,162 +4908,8 @@ export class VaultUI {
     document.getElementById('edit-title')?.focus();
   }
 
-  #renderAttachmentsUI(entry) {
-    const attachments = entry.attachments || [];
-
-    return `
-      <div class="vault-detail-section">
-        <div class="vault-detail-header">
-           <h3 class="vault-detail-subtitle">Attachments (${attachments.length})</h3>
-           ${this.#isEditing ? `
-             <div class="vault-file-drop-zone" id="file-drop-zone">
-               <span class="drop-icon">📎</span>
-               <span class="drop-text">Drop your files here or <button type="button" class="link-btn" id="btn-browse-files">browse</button></span>
-               <input type="file" id="file-input" multiple class="vault-file-input-hidden">
-             </div>
-           ` : ''}
-        </div>
-        
-        <div class="vault-attachments-list">
-          ${attachments.length === 0 ? '<div class="empty-text">No attachments</div>' : ''}
-          ${attachments.map((file, index) => `
-            <div class="vault-attachment-item">
-              <div class="attachment-icon">${this.#getFileIcon(file.type)}</div>
-              <div class="attachment-info">
-                <div class="attachment-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
-                <div class="attachment-meta">${this.#formatFileSize(file.size)}</div>
-              </div>
-              <div class="attachment-actions">
-                ${this.#isEditing ? `
-                  <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="Delete">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
-                ` : `
-                  <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="Download">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                  </button>
-                `}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  #getFileIcon(mimeType) {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('text')) return '📝';
-    return '📎';
-  }
-
-  #formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  }
-
-  #initAttachmentsEvents() {
-    const dropZone = document.getElementById('file-drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const browseBtn = document.getElementById('btn-browse-files');
-
-    if (dropZone) {
-      dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-over');
-      });
-      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-over');
-        this.#handleFiles(e.dataTransfer.files);
-      });
-    }
-
-    if (browseBtn && fileInput) {
-      browseBtn.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', () => this.#handleFiles(fileInput.files));
-    }
-
-    // Delete handling
-    this.#container.querySelectorAll('[data-delete-attachment]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.deleteAttachment, 10);
-        this.#editingData.attachments.splice(index, 1);
-        this.#renderEditModalContent(); // Re-render to update list
-      });
-    });
-
-    // Download handling
-    this.#container.querySelectorAll('[data-download-attachment]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.downloadAttachment, 10);
-        this.#downloadAttachment(index);
-      });
-    });
-  }
-
-  async #handleFiles(fileList) {
-    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB limit for JSON perf
-
-    for (const file of fileList) {
-      if (file.size > MAX_SIZE) {
-        showToast(t('vault.messages.fileTooLarge', { name: file.name }), 'error');
-        continue;
-      }
-
-      try {
-        const base64 = await this.#readFileAsBase64(file);
-        if (!this.#editingData.attachments) this.#editingData.attachments = [];
-
-        this.#editingData.attachments.push({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          data: base64,
-          id: crypto.randomUUID()
-        });
-
-        showToast(t('vault.messages.attachmentAdded', { name: file.name }), 'success');
-      } catch (err) {
-        safeLog('[VaultUI] File read error:', err);
-        showToast(t('vault.messages.fileReadError'), 'error');
-      }
-    }
-    this.#renderEditModalContent();
-  }
-
-  #readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result); // Returns data:mime;base64,...
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  #downloadAttachment(index) {
-    const entry = this.#selectedEntry;
-    if (!entry || !entry.attachments) return;
-
-    const file = entry.attachments[index];
-    if (!file) return;
-
-    try {
-      const link = document.createElement('a');
-      link.href = file.data;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      showToast(t('vault.messages.downloadError'), 'error');
-    }
-  }
+  // Attachments handling moved to ./vault/components/attachments-handler.js
+  // (Ready for future integration)
 
   #updateEditPasswordStrength(password) {
     const strength = calculatePasswordStrength(password, t);
