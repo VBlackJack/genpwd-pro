@@ -10,7 +10,7 @@ import { showToast } from '../utils/toast.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { QuickUnlockDialog } from './quick-unlock-dialog.js';
 import { t } from '../utils/i18n.js';
-import { setMainContentInert } from './events.js';
+import { setMainContentInert } from './a11y-utils.js';
 
 /**
  * SaveToVaultModal - Manages the save-to-vault modal overlay

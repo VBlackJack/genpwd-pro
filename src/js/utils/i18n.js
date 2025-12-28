@@ -379,6 +379,97 @@ class I18n {
       }
     }
   }
+
+  /**
+   * Extract all keys from a nested object
+   * @private
+   * @param {Object} obj - Object to extract keys from
+   * @param {string} prefix - Key prefix for recursion
+   * @returns {Set<string>} Set of dot-notation keys
+   */
+  _extractKeys(obj, prefix = '') {
+    const keys = new Set();
+    for (const [key, value] of Object.entries(obj)) {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        for (const subKey of this._extractKeys(value, fullKey)) {
+          keys.add(subKey);
+        }
+      } else {
+        keys.add(fullKey);
+      }
+    }
+    return keys;
+  }
+
+  /**
+   * Validate translations between locales
+   * Checks for missing keys compared to a reference locale
+   * @param {string} referenceLocale - Reference locale (usually default)
+   * @returns {{valid: boolean, missing: Object, extra: Object}}
+   */
+  validateTranslations(referenceLocale = this.config.defaultLocale) {
+    const refTranslations = this.translations.get(referenceLocale);
+    if (!refTranslations) {
+      safeLog(`[i18n] Reference locale not loaded: ${referenceLocale}`);
+      return { valid: false, missing: {}, extra: {} };
+    }
+
+    const refKeys = this._extractKeys(refTranslations);
+    const missing = {};
+    const extra = {};
+    let hasIssues = false;
+
+    for (const locale of this.loadedLocales) {
+      if (locale === referenceLocale) continue;
+
+      const translations = this.translations.get(locale);
+      const localeKeys = this._extractKeys(translations);
+
+      // Find missing keys
+      const missingKeys = [];
+      for (const key of refKeys) {
+        if (!localeKeys.has(key)) {
+          missingKeys.push(key);
+        }
+      }
+      if (missingKeys.length > 0) {
+        missing[locale] = missingKeys;
+        hasIssues = true;
+        safeLog(`[i18n] ${locale}: ${missingKeys.length} missing keys`);
+      }
+
+      // Find extra keys (in locale but not in reference)
+      const extraKeys = [];
+      for (const key of localeKeys) {
+        if (!refKeys.has(key)) {
+          extraKeys.push(key);
+        }
+      }
+      if (extraKeys.length > 0) {
+        extra[locale] = extraKeys;
+        safeLog(`[i18n] ${locale}: ${extraKeys.length} extra keys`);
+      }
+    }
+
+    return {
+      valid: !hasIssues,
+      missing,
+      extra,
+      referenceKeyCount: refKeys.size
+    };
+  }
+
+  /**
+   * Get all translation keys for current locale
+   * Useful for debugging and validation
+   * @returns {string[]} Array of all translation keys
+   */
+  getAllKeys() {
+    const translations = this.translations.get(this.currentLocale);
+    if (!translations) return [];
+    return Array.from(this._extractKeys(translations)).sort();
+  }
 }
 
 // Create singleton instance

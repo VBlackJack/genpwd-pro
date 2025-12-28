@@ -318,29 +318,10 @@ function bindCaseAndBlocks() {
   });
 }
 
-/**
- * Set inert attribute on main content when modal is open
- * This prevents focus from escaping the modal for accessibility
- * @param {boolean} inert - Whether to set inert attribute
- * @export
- */
-export function setMainContentInert(inert) {
-  const mainContent = getElement('.main');
-  const header = getElement('#app-header');
-  const debugPanel = getElement('#debug-panel');
-
-  [mainContent, header, debugPanel].forEach(el => {
-    if (el) {
-      if (inert) {
-        el.setAttribute('inert', '');
-        el.setAttribute('aria-hidden', 'true');
-      } else {
-        el.removeAttribute('inert');
-        el.removeAttribute('aria-hidden');
-      }
-    }
-  });
-}
+// Import from a11y-utils to avoid circular dependency
+// Re-export for backward compatibility
+import { setMainContentInert } from './a11y-utils.js';
+export { setMainContentInert };
 
 // Track previously focused element for about-modal focus restoration
 let aboutModalPreviousFocus = null;

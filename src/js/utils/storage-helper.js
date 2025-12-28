@@ -18,8 +18,9 @@
 
 import { safeLog } from './logger.js';
 import { SIZE_LIMITS } from '../config/ui-constants.js';
-import { showToast } from './toast.js';
-import { t } from './i18n.js';
+
+// Note: toast/i18n imports removed to avoid circular dependency
+// Quota errors are logged and returned as false - caller should handle UI feedback
 
 /**
  * Estimates the size of data in bytes (approximation)
@@ -140,13 +141,11 @@ export function safeSetItem(key, value) {
           return true;
         } catch (retryError) {
           safeLog(`Failed to store ${key} even after freeing space: ${retryError.message}`);
-          showToast(t('toast.storageQuotaExceeded'), 'error');
           return false;
         }
       }
 
       safeLog(`Unable to free enough space for ${key}`);
-      showToast(t('toast.storageQuotaExceeded'), 'error');
       return false;
     }
 

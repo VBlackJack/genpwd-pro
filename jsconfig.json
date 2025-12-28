@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@js/*": ["src/js/*"],
+      "@utils/*": ["src/js/utils/*"],
+      "@config/*": ["src/js/config/*"],
+      "@ui/*": ["src/js/ui/*"],
+      "@vault/*": ["src/js/vault/*"],
+      "@components/*": ["src/js/vault/components/*"],
+      "@services/*": ["src/js/vault/services/*"],
+      "@views/*": ["src/js/vault/views/*"],
+      "@modals/*": ["src/js/vault/modals/*"],
+      "@desktop/*": ["src/desktop/*"],
+      "@styles/*": ["src/styles/*"],
+      "@locales/*": ["src/locales/*"],
+      "@tests/*": ["src/tests/*"]
+    },
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*.js",
+    "tools/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "release",
+    "dist"
+  ]
+}
