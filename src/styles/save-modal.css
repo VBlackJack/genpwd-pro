@@ -134,7 +134,7 @@
   padding: 0.625rem 0.875rem;
   background: var(--bg-tertiary, #2a2f4a);
   border-radius: var(--radius-sm);
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   color: var(--accent-cyan, #00e5ff);
   word-break: break-all;

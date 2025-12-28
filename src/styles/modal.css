@@ -627,7 +627,7 @@ h2.modal-title {
   direction: ltr;
   unicode-bidi: plaintext;
   /* Monospace for password readability */
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: 0.95em;
   letter-spacing: 0.5px;
 }

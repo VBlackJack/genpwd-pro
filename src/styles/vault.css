@@ -1593,7 +1593,7 @@ kbd {
 
 /* Password-specific styling for monospace display */
 .vault-field-text.password {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0.5px;
 }
 
@@ -3165,8 +3165,9 @@ kbd {
   font-size: 0.875rem;
 }
 
-.vault-search-input:focus {
-  outline: none;
+.vault-search-input:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 .vault-search-input::placeholder {
@@ -3830,7 +3831,7 @@ kbd {
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius-sm);
   color: var(--vault-text);
-  font-family: 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
 }
 
@@ -4086,7 +4087,7 @@ kbd {
 .vault-preview-value {
   font-size: 0.8125rem;
   color: var(--vault-text);
-  font-family: 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4698,7 +4699,7 @@ kbd {
 
 .vault-field-revealed {
   display: none;
-  font-family: 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   color: var(--vault-primary);
   word-break: break-all;
 }
@@ -4962,7 +4963,7 @@ kbd {
 }
 
 .vault-totp-code .totp-digits {
-  font-family: "JetBrains Mono", Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: 0.15em;

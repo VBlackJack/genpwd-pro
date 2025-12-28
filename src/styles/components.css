@@ -392,15 +392,16 @@ textarea.field-invalid {
 .btn-mini {
   /* WCAG 2.1 compliant touch target */
   min-height: 44px;
-  padding: 0 0.75rem;
+  min-width: 44px;
+  padding: var(--btn-padding-sm, 0.5rem 0.875rem);
   border-radius: var(--radius-sm);
-  font-weight: 700;
-  font-size: 12px;
-  background: var(--bg-secondary, #1e2440);
-  color: var(--text-primary, #d5ddff);
-  border: 1px solid var(--border, #333344);
+  font-weight: 600;
+  font-size: var(--btn-font-sm, 0.8125rem);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
 }
 
 .btn-mini:hover {

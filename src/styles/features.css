@@ -224,10 +224,10 @@ input:checked + .toggle-slider::before {
   color: var(--text-primary, #e5e7eb);
 }
 
-.input-field:focus {
-  outline: none;
+.input-field:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
   border-color: var(--accent-blue, #3b82f6);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* Error message component */
@@ -617,22 +617,7 @@ input:checked + .toggle-slider::before {
   flex-shrink: 0;
 }
 
-.btn-mini {
-  padding: 6px 10px;
-  font-size: 0.85rem;
-  border: none;
-  background: var(--bg-secondary, #374151);
-  color: var(--text-primary, #e5e7eb);
-  border-radius: var(--radius-xs, 4px);
-  cursor: pointer;
-  transition: background var(--transition-fast, 0.2s);
-  min-height: 44px;
-  min-width: 44px;
-}
-
-.btn-mini:hover {
-  background: var(--bg-hover, #4b5563);
-}
+/* .btn-mini base styles are in components.css */
 
 .btn-mini.danger {
   background: rgba(239, 68, 68, 0.2);
@@ -858,7 +843,7 @@ input:checked + .toggle-slider::before {
 }
 
 .history-password {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-mono);
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
@@ -1033,7 +1018,7 @@ input:checked + .toggle-slider::before {
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-mono);
   color: var(--text-primary);
 }
 

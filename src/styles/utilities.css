@@ -271,7 +271,7 @@
 
 /* Monospace font utility */
 .mono {
-  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Consolas', monospace);
+  font-family: var(--font-mono);
 }
 
 /* Hint text styling */
@@ -670,7 +670,7 @@ kbd {
   min-width: 28px;
   height: 26px;
   padding: 0 8px;
-  font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-primary);
