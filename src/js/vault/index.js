@@ -32,3 +32,8 @@ export * from './services/index.js';
 // View components, templates, icons, and filtering logic
 // import { applyFilters, getIcon } from './vault/views/index.js';
 export * from './views/index.js';
+
+// ==================== UI MODALS ====================
+// Modal components and dialogs
+// import { showConfirmDialog, renderShortcutsModal } from './vault/modals/index.js';
+export * from './modals/index.js';
