@@ -2213,7 +2213,8 @@ kbd {
   flex: 1;
 }
 
-/* Small button variant for sections */
+/* Small button variant - base definition
+   Note: Context-specific overrides exist in Filter and Tags sections for cascade */
 .vault-btn-sm {
   padding: 0.375rem 0.75rem;
   font-size: 0.8rem;
@@ -2371,14 +2372,7 @@ kbd {
 }
 
 /* ==================== SPINNERS ==================== */
-.vault-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-/* Note: .vault-spinner is defined once at line ~795 */
+/* Note: .vault-loading is defined in Lock Screen section (~line 884) */
 /* Use .vault-spinner-lg for larger sizes */
 
 .vault-spinner-lg {
@@ -3920,14 +3914,7 @@ kbd {
   cursor: pointer;
 }
 
-.vault-btn-full {
-  width: 100%;
-}
-
-.vault-btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
+/* Note: .vault-btn-full and .vault-btn-sm are defined in BUTTONS section */
 
 /* ==================== CONTEXT MENU ==================== */
 .vault-context-menu {

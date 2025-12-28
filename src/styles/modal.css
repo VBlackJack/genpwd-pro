@@ -493,10 +493,10 @@ h2.modal-title {
   font-weight: 600;
   margin-bottom: 14px;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
-  animation: breathe 3s ease-in-out infinite;
+  animation: breathe-glow 3s ease-in-out infinite;
 }
 
-@keyframes breathe {
+@keyframes breathe-glow {
   0%, 100% { box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3); }
   50% { box-shadow: 0 4px 24px rgba(99, 102, 241, 0.5); }
 }

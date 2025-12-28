@@ -157,6 +157,11 @@ textarea.field-invalid {
   box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.12);
 }
 
+.slider:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
 /* Slider Thumb - Webkit (Chrome, Edge, Electron) */
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;

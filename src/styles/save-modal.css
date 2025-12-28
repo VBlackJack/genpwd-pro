@@ -220,9 +220,15 @@
 .save-vault-input:focus,
 .save-vault-select:focus,
 .save-vault-textarea:focus {
-  outline: none;
   border-color: var(--accent-primary, #3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.save-vault-input:focus-visible,
+.save-vault-select:focus-visible,
+.save-vault-textarea:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 .save-vault-input::placeholder,
@@ -588,9 +594,13 @@
 }
 
 .quick-unlock-input:focus {
-  outline: none;
   border-color: var(--accent-primary, #3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.quick-unlock-input:focus-visible {
+  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline-offset: 2px;
 }
 
 .quick-unlock-password-wrap {

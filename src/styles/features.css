@@ -654,7 +654,7 @@ input:checked + .toggle-slider::before {
   cursor: pointer;
   font-size: var(--text-sm);
   color: var(--text-primary);
-  transition: all 0.2s;
+  transition: all var(--transition-fast, 0.15s ease);
 }
 
 .lang-btn:hover {
@@ -714,7 +714,7 @@ input:checked + .toggle-slider::before {
   border: none;
   cursor: pointer;
   color: var(--text-primary);
-  transition: background 0.2s;
+  transition: background var(--transition-fast, 0.15s ease);
   font-size: var(--text-sm);
 }
 
@@ -743,7 +743,7 @@ input:checked + .toggle-slider::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.2s;
+  transition: all var(--transition-fast, 0.15s ease);
 }
 
 .preset-item:hover {
@@ -835,7 +835,7 @@ input:checked + .toggle-slider::before {
   border-radius: var(--radius-sm);
   padding: 15px;
   margin-bottom: 10px;
-  transition: all 0.2s;
+  transition: all var(--transition-fast, 0.15s ease);
 }
 
 .history-item:hover {
@@ -942,7 +942,7 @@ input:checked + .toggle-slider::before {
   border-radius: var(--radius-sm);
   background: var(--bg-primary);
   border: 2px solid transparent;
-  transition: all 0.3s;
+  transition: all var(--transition-normal, 0.2s ease);
 }
 
 .summary-stat.safe {
@@ -964,7 +964,7 @@ input:checked + .toggle-slider::before {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 15px;
-  transition: all 0.2s;
+  transition: all var(--transition-fast, 0.15s ease);
 }
 
 .hibp-result-item:hover {
