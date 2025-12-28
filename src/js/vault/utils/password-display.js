@@ -33,7 +33,7 @@ export function renderPasswordStrength(password, t = (k) => k) {
  * @param {Function} t - Translation function
  * @returns {string} HTML string
  */
-export function renderPasswordHistory(entry, t = (k) => k) {
+export function renderPasswordHistory(entry, _t = (k) => k) {
   const history = entry.data?.passwordHistory || [];
   if (history.length === 0) return '';
 

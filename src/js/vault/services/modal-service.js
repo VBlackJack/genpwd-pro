@@ -108,7 +108,7 @@ export function createModalService() {
    * @param {Function} options.onClose - Close callback
    * @returns {HTMLElement|null} Modal element
    */
-  function open(modalId, options = {}) {
+  function open(modalId, _options = {}) {
     const modal = document.getElementById(modalId);
     if (!modal) return null;
 

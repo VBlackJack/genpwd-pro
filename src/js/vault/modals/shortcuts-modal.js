@@ -4,7 +4,6 @@
  */
 
 import { renderModal } from './base-modal.js';
-import { SHORTCUTS } from '../services/keyboard-service.js';
 
 /**
  * Shortcut categories

@@ -3,7 +3,7 @@
  * HTML templates for the vault lock screen
  */
 
-import { getIcon, ICON_LOCK, ICON_UNLOCK, ICON_PLUS, ICON_FOLDER, ICON_HELLO, ICON_CLOSE, ICON_CHECK } from '../icons.js';
+import { ICON_LOCK, ICON_UNLOCK, ICON_PLUS, ICON_FOLDER, ICON_HELLO, ICON_CLOSE, ICON_CHECK } from '../icons.js';
 
 /**
  * Escape HTML special characters

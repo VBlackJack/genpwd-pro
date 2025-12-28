@@ -67,7 +67,6 @@ export class ShareService {
         await fs.writeFile(filePath, JSON.stringify(payload, null, 2));
 
         // 4b. Upload to Cloud (if enabled)
-        let cloudUrl = null;
         if (this.#fileManager) {
             const cloud = this.#fileManager.getCloudManager();
             if (cloud && cloud.config && cloud.config.provider === 'webdav') {
@@ -78,7 +77,8 @@ export class ShareService {
                     // Construct WebDAV URL (Best guess)
                     // If url ends with /, we append filename
                     const baseUrl = cloud.config.url.endsWith('/') ? cloud.config.url : cloud.config.url + '/';
-                    cloudUrl = baseUrl + filename;
+                    // cloudUrl would be used for cloud-based sharing
+                    void (baseUrl + filename);
                 }
             }
         }
@@ -98,8 +98,8 @@ export class ShareService {
     /**
      * Get share status (without decryption)
      */
-    async getShareStatus(id) {
-        // Logic to check if file exists and return cleartext metadata
+    async getShareStatus(_id) {
+        // TODO: Logic to check if file exists and return cleartext metadata
     }
 
     #calculateExpiry(type) {

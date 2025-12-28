@@ -46,10 +46,9 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 
 // Vault utility imports (Phase 6 modularization)
 import { escapeHtml, formatDate } from './vault/utils/formatter.js';
-import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength, getPasswordAgeDays, getExpiryStatus } from './vault/utils/password-utils.js';
+import { getPasswordStrength, calculatePasswordStrength, getPasswordAgeDays, getExpiryStatus } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
-import { renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
-import { renderPasswordStrength } from './vault/utils/password-display.js';
+import { preloadFavicons } from './vault/utils/favicon-manager.js';
 import { validateField, validatePasswordMatch } from './vault/utils/form-validation.js';
 
 // Vault modals imports (Phase 6 modularization)
@@ -70,8 +69,7 @@ import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.
 import { renderLockScreen } from './vault/views/lock-screen.js';
 import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.js';
 import { renderEntryRow } from './vault/views/entry-row-renderer.js';
-import { renderField, renderCustomFieldsDisplay } from './vault/views/field-renderer.js';
-import { buildFolderTree, renderFolderTree, renderFolderNodes } from './vault/views/folder-tree-renderer.js';
+import { renderFolderTree } from './vault/views/folder-tree-renderer.js';
 import { renderEntryDetail, renderEntryFields } from './vault/views/entry-detail-renderer.js';
 
 // Vault components imports (Phase 6 modularization)
@@ -81,7 +79,7 @@ import { showPasswordGenerator as showPwdGenerator } from './vault/components/pa
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 import { showColorPicker, getFolderColor, setFolderColor } from './vault/components/color-picker.js';
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
-import { renderTagsList, renderTagsInRow } from './vault/components/tags-display.js';
+import { renderTagsList } from './vault/components/tags-display.js';
 import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
 
 // Vault services imports (Phase 6 modularization)

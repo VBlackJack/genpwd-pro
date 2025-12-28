@@ -29,8 +29,8 @@ process.stdin.on('end', () => {
     process.exit(0);
 });
 
-// Send message to extension
-function sendMessage(msg) {
+// Send message to extension (reserved for future use)
+function _sendMessage(msg) {
     const buffer = Buffer.from(JSON.stringify(msg));
     const header = Buffer.alloc(4);
     header.writeUInt32LE(buffer.length, 0);

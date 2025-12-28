@@ -3,7 +3,7 @@
  * HTML templates for vault entry list rows
  */
 
-import { ICON_LOCK, ICON_IDENTITY } from '../icons.js';
+// Icons are defined locally in ENTRY_TYPES
 import { escapeHtml } from '../../utils/formatter.js';
 import { getPasswordStrength } from '../../utils/password-utils.js';
 import { renderFaviconImg } from '../../utils/favicon-manager.js';

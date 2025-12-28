@@ -74,7 +74,7 @@ export function renderExpiryPicker(options = {}) {
   const {
     idPrefix = 'entry',
     currentValue = '',
-    t = (k) => k
+    t: _t = (k) => k
   } = options;
 
   const hasCustomDate = !!currentValue;

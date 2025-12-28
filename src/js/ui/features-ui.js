@@ -323,9 +323,9 @@ function updateInterfaceLanguage() {
 }
 
 /**
- * Update section headers
+ * Update section headers (reserved for dynamic i18n)
  */
-function updateSectionHeaders() {
+function _updateSectionHeaders() {
   const sections = document.querySelectorAll('.section');
   sections.forEach(section => {
     const header = section.querySelector('.section-header strong');
@@ -347,9 +347,9 @@ function updateSectionHeaders() {
 }
 
 /**
- * Update labels
+ * Update labels (reserved for dynamic i18n)
  */
-function updateLabels() {
+function _updateLabels() {
   // Mode select label
   const modeLabel = document.querySelector('label[for="mode-select"]');
   if (modeLabel) {
@@ -450,9 +450,9 @@ function updateLabels() {
 }
 
 /**
- * Update select options
+ * Update select options (reserved for dynamic i18n)
  */
-function updateSelectOptions() {
+function _updateSelectOptions() {
   // Mode select options
   const modeSelect = document.getElementById('mode-select');
   if (modeSelect) {
