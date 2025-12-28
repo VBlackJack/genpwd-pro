@@ -100,3 +100,38 @@ export function showColorPicker(options = {}) {
 export function closeColorPicker() {
   document.querySelector('.vault-color-picker')?.remove();
 }
+
+const STORAGE_KEY = 'genpwd-vault-folder-colors';
+
+/**
+ * Get folder color from localStorage
+ * @param {string} folderId - Folder ID
+ * @returns {string|null} Color hex or null
+ */
+export function getFolderColor(folderId) {
+  try {
+    const colors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    return colors[folderId] || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Set folder color in localStorage
+ * @param {string} folderId - Folder ID
+ * @param {string|null} color - Color hex or null to remove
+ */
+export function setFolderColor(folderId, color) {
+  try {
+    const colors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (color) {
+      colors[folderId] = color;
+    } else {
+      delete colors[folderId];
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(colors));
+  } catch {
+    // Silently fail - folder colors are not critical
+  }
+}

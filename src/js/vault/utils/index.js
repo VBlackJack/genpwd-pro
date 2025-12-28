@@ -29,7 +29,8 @@ export {
   calculatePasswordStrength,
   generatePassword,
   getPasswordAgeDays,
-  isPasswordDuplicated
+  isPasswordDuplicated,
+  getExpiryStatus
 } from './password-utils.js';
 
 // Favicon utilities

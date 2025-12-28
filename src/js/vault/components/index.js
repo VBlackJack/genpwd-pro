@@ -36,6 +36,8 @@ export {
 export {
   showColorPicker,
   closeColorPicker,
+  getFolderColor,
+  setFolderColor,
   FOLDER_COLORS
 } from './color-picker.js';
 

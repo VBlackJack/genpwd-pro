@@ -46,7 +46,7 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 
 // Vault utility imports (Phase 6 modularization)
 import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
-import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength, getPasswordAgeDays } from './vault/utils/password-utils.js';
+import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength, getPasswordAgeDays, getExpiryStatus } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
 import { extractDomain, renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
 import { parseMarkdown, renderNotesFieldHTML } from './vault/utils/markdown-parser.js';
@@ -74,7 +74,7 @@ import { showContextMenu } from './vault/components/context-menu.js';
 import { showFolderContextMenu, FOLDER_ACTIONS } from './vault/components/folder-context-menu.js';
 import { showPasswordGenerator as showPwdGenerator } from './vault/components/password-generator.js';
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
-import { showColorPicker } from './vault/components/color-picker.js';
+import { showColorPicker, getFolderColor, setFolderColor } from './vault/components/color-picker.js';
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
 import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
 
@@ -1532,7 +1532,7 @@ export class VaultUI {
     return nodes.map(node => {
       const isExpanded = this.#expandedFolders.has(node.id);
       const isSelected = this.#selectedFolder === node.id;
-      const folderColor = this.#getFolderColor(node.id);
+      const folderColor = getFolderColor(node.id);
       const paddingLeft = node.depth * 16;
 
       const expandIcon = node.hasChildren ? `
@@ -1668,9 +1668,9 @@ export class VaultUI {
           showColorPicker({
             x,
             y,
-            currentColor: this.#getFolderColor(folderId),
+            currentColor: getFolderColor(folderId),
             onColorSelected: (color) => {
-              this.#setFolderColor(folderId, color);
+              setFolderColor(folderId, color);
               this.#render();
               showToast(t('vault.messages.colorUpdated'), 'success');
             },
@@ -1799,7 +1799,7 @@ export class VaultUI {
     const isDuplicate = entry.type === 'login' && entry.data?.password
       ? isPasswordDuplicated(entry.data.password, entry.id, this.#entries)
       : false;
-    const expiryStatus = this.#getExpiryStatus(entry);
+    const expiryStatus = getExpiryStatus(entry);
 
     return `
       <div class="vault-entry-row ${isSelected ? 'selected' : ''} ${isMultiSelected ? 'multi-selected' : ''} ${isPinned ? 'pinned' : ''}"
@@ -2176,7 +2176,7 @@ export class VaultUI {
   #renderExpirationField(entry) {
     if (!entry.data?.expiresAt) return '';
 
-    const status = this.#getExpiryStatus(entry);
+    const status = getExpiryStatus(entry);
     const expiresDate = new Date(entry.data.expiresAt);
     const formattedDate = expiresDate.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -3141,7 +3141,7 @@ export class VaultUI {
     let old = 0, expired = 0, expiring = 0;
     logins.forEach(entry => {
       // Check expiration date first
-      const expiryStatus = this.#getExpiryStatus(entry);
+      const expiryStatus = getExpiryStatus(entry);
       if (expiryStatus.status === 'expired') {
         expired++;
       } else if (['today', 'soon', 'warning'].includes(expiryStatus.status)) {
@@ -6976,7 +6976,7 @@ export class VaultUI {
 
         // Expiration-based filters
         if (this.#searchFilters.age === 'expiring' || this.#searchFilters.age === 'expired') {
-          const expiryStatus = this.#getExpiryStatus(e);
+          const expiryStatus = getExpiryStatus(e);
           if (this.#searchFilters.age === 'expired') {
             return expiryStatus.status === 'expired';
           } else if (this.#searchFilters.age === 'expiring') {
@@ -7381,92 +7381,8 @@ export class VaultUI {
     }
   }
 
-  /**
-   * Get password expiration status
-   * @param {Object} entry
-   * @returns {{status: string, badge: string, daysLeft: number|null, label: string}}
-   */
-  #getExpiryStatus(entry) {
-    const noExpiry = { status: 'none', badge: '', daysLeft: null, label: '' };
-
-    if (entry.type !== 'login' || !entry.data?.expiresAt) {
-      return noExpiry;
-    }
-
-    const expiresAt = new Date(entry.data.expiresAt);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    expiresAt.setHours(0, 0, 0, 0);
-
-    const diffMs = expiresAt - now;
-    const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-    if (daysLeft < 0) {
-      // Expired
-      const daysAgo = Math.abs(daysLeft);
-      return {
-        status: 'expired',
-        badge: `<span class="vault-expiry-badge expired" title="Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago" role="img" aria-label="Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago"><span aria-hidden="true">⚠️</span></span>`,
-        daysLeft,
-        label: `Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`
-      };
-    } else if (daysLeft === 0) {
-      // Expires today
-      return {
-        status: 'today',
-        badge: '<span class="vault-expiry-badge today" title="Expires today" role="img" aria-label="Expires today"><span aria-hidden="true">⏰</span></span>',
-        daysLeft: 0,
-        label: "Expires today"
-      };
-    } else if (daysLeft <= 7) {
-      // Expires within a week
-      return {
-        status: 'soon',
-        badge: `<span class="vault-expiry-badge soon" title="Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}" role="img" aria-label="Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}"><span aria-hidden="true">🕐</span></span>`,
-        daysLeft,
-        label: `Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`
-      };
-    } else if (daysLeft <= 30) {
-      // Expires within a month
-      return {
-        status: 'warning',
-        badge: `<span class="vault-expiry-badge warning" title="Expires in ${daysLeft} days" role="img" aria-label="Expires in ${daysLeft} days"><span aria-hidden="true">📅</span></span>`,
-        daysLeft,
-        label: `Expires in ${daysLeft} days`
-      };
-    }
-
-    // Valid, not expiring soon
-    return {
-      status: 'valid',
-      badge: '',
-      daysLeft,
-      label: `Expires on ${expiresAt.toLocaleDateString('en-US')}`
-    };
-  }
-
-  #getFolderColor(folderId) {
-    try {
-      const colors = JSON.parse(localStorage.getItem('genpwd-vault-folder-colors') || '{}');
-      return colors[folderId] || null;
-    } catch {
-      return null;
-    }
-  }
-
-  #setFolderColor(folderId, color) {
-    try {
-      const colors = JSON.parse(localStorage.getItem('genpwd-vault-folder-colors') || '{}');
-      if (color) {
-        colors[folderId] = color;
-      } else {
-        delete colors[folderId];
-      }
-      localStorage.setItem('genpwd-vault-folder-colors', JSON.stringify(colors));
-    } catch {
-      // Silently fail - folder colors are not critical
-    }
-  }
+  // #getExpiryStatus moved to password-utils.js
+  // #getFolderColor, #setFolderColor moved to color-picker.js
 
   // ==================== WINDOWS HELLO ====================
   // UI components moved to ./vault/components/hello-settings.js

@@ -131,3 +131,67 @@ export function isPasswordDuplicated(password, currentEntryId, entries) {
     e.data?.password === password
   );
 }
+
+/**
+ * Get password expiration status
+ * @param {Object} entry - Entry to check
+ * @returns {{status: string, badge: string, daysLeft: number|null, label: string}}
+ */
+export function getExpiryStatus(entry) {
+  const noExpiry = { status: 'none', badge: '', daysLeft: null, label: '' };
+
+  if (entry.type !== 'login' || !entry.data?.expiresAt) {
+    return noExpiry;
+  }
+
+  const expiresAt = new Date(entry.data.expiresAt);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  expiresAt.setHours(0, 0, 0, 0);
+
+  const diffMs = expiresAt - now;
+  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) {
+    // Expired
+    const daysAgo = Math.abs(daysLeft);
+    return {
+      status: 'expired',
+      badge: `<span class="vault-expiry-badge expired" title="Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago" role="img" aria-label="Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago"><span aria-hidden="true">⚠️</span></span>`,
+      daysLeft,
+      label: `Expired ${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`
+    };
+  } else if (daysLeft === 0) {
+    // Expires today
+    return {
+      status: 'today',
+      badge: '<span class="vault-expiry-badge today" title="Expires today" role="img" aria-label="Expires today"><span aria-hidden="true">⏰</span></span>',
+      daysLeft: 0,
+      label: "Expires today"
+    };
+  } else if (daysLeft <= 7) {
+    // Expires within a week
+    return {
+      status: 'soon',
+      badge: `<span class="vault-expiry-badge soon" title="Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}" role="img" aria-label="Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}"><span aria-hidden="true">🕐</span></span>`,
+      daysLeft,
+      label: `Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`
+    };
+  } else if (daysLeft <= 30) {
+    // Expires within a month
+    return {
+      status: 'warning',
+      badge: `<span class="vault-expiry-badge warning" title="Expires in ${daysLeft} days" role="img" aria-label="Expires in ${daysLeft} days"><span aria-hidden="true">📅</span></span>`,
+      daysLeft,
+      label: `Expires in ${daysLeft} days`
+    };
+  }
+
+  // Valid, not expiring soon
+  return {
+    status: 'valid',
+    badge: '',
+    daysLeft,
+    label: `Expires on ${expiresAt.toLocaleDateString('en-US')}`
+  };
+}
