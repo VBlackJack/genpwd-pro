@@ -1,12 +1,12 @@
 /**
  * @fileoverview Favicon Manager
- * Handles favicon fetching and caching for URLs
+ * Handles favicon fetching, caching, and rendering
  */
 
 /**
  * Extract domain from URL
  * @param {string} url - URL to extract domain from
- * @returns {string|null} Domain or null
+ * @returns {string|null} Domain or null if invalid
  */
 export function extractDomain(url) {
   if (!url) return null;
@@ -23,7 +23,7 @@ export function extractDomain(url) {
 }
 
 /**
- * Get favicon URL for a domain using Google's favicon service
+ * Get favicon URL from Google's favicon service
  * @param {string} domain - Domain to get favicon for
  * @returns {string} Favicon URL
  */
@@ -32,7 +32,7 @@ export function getFaviconUrl(domain) {
 }
 
 /**
- * Get default favicon SVG placeholder
+ * Get default placeholder SVG for missing favicons
  * @returns {string} SVG markup
  */
 export function getDefaultFaviconSvg() {
@@ -44,10 +44,10 @@ export function getDefaultFaviconSvg() {
 }
 
 /**
- * Render favicon image HTML with fallback
+ * Render favicon HTML with fallback placeholder
  * @param {string} url - URL to get favicon for
- * @param {number} size - Icon size (default: 20)
- * @returns {string} HTML markup
+ * @param {number} size - Size in pixels (default: 20)
+ * @returns {string} HTML string
  */
 export function renderFaviconImg(url, size = 20) {
   const domain = extractDomain(url);
@@ -65,40 +65,23 @@ export function renderFaviconImg(url, size = 20) {
 }
 
 /**
- * Create a favicon cache manager
- * @returns {Object} Cache manager with preload method
+ * Preload favicons for entries with URLs
+ * @param {Array} entries - Vault entries
+ * @param {Map} cache - Cache map to track loaded favicons
  */
-export function createFaviconCache() {
-  const cache = new Map();
+export function preloadFavicons(entries, cache) {
+  const urls = entries
+    .filter(e => e.data?.url)
+    .map(e => e.data.url);
 
-  return {
-    /**
-     * Preload favicons for a list of entries
-     * @param {Array} entries - Entries with data.url
-     */
-    preload(entries) {
-      const urls = entries
-        .filter(e => e.data?.url)
-        .map(e => e.data.url);
+  const uniqueDomains = [...new Set(urls.map(u => extractDomain(u)).filter(Boolean))];
 
-      const uniqueDomains = [...new Set(urls.map(u => extractDomain(u)).filter(Boolean))];
-
-      for (const domain of uniqueDomains) {
-        if (!cache.has(domain)) {
-          const img = new Image();
-          img.src = getFaviconUrl(domain);
-          cache.set(domain, true);
-        }
-      }
-    },
-
-    /**
-     * Check if domain is cached
-     * @param {string} domain - Domain to check
-     * @returns {boolean}
-     */
-    has(domain) {
-      return cache.has(domain);
+  // Preload images (browser will cache them)
+  for (const domain of uniqueDomains) {
+    if (!cache.has(domain)) {
+      const img = new Image();
+      img.src = getFaviconUrl(domain);
+      cache.set(domain, true);
     }
-  };
+  }
 }

@@ -48,6 +48,7 @@ import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 import { escapeHtml, formatDate, formatDateTime, maskHistoryPassword, getRelativeTime } from './vault/utils/formatter.js';
 import { getPasswordStrength, isPasswordDuplicated, calculatePasswordStrength } from './vault/utils/password-utils.js';
 import { isValidUrl, isValidEmail } from './vault/utils/validators.js';
+import { extractDomain, renderFaviconImg, preloadFavicons } from './vault/utils/favicon-manager.js';
 
 // Vault modals imports (Phase 6 modularization)
 import { getTemplateById, renderTemplateGrid } from './vault/modals/entry-templates.js';
@@ -442,7 +443,7 @@ export class VaultUI {
       this.#vaultMetadata = metadata || null;
 
       // Preload favicons in background
-      this.#preloadFavicons();
+      preloadFavicons(this.#entries, this.#faviconCache);
     } catch (error) {
       safeLog('[VaultUI] Load error:', error);
     }
@@ -1820,7 +1821,7 @@ export class VaultUI {
           ${isFavorite ? '★' : '☆'}
         </button>
         <div class="vault-entry-icon" data-type-color="${type.color}" aria-hidden="true">
-          ${entry.data?.url ? this.#renderFaviconImg(entry.data.url, 20) : type.icon}
+          ${entry.data?.url ? renderFaviconImg(entry.data.url, 20) : type.icon}
         </div>
         <div class="vault-entry-content">
           <div class="vault-entry-title">
@@ -1876,7 +1877,7 @@ export class VaultUI {
     return `
       <div class="vault-detail-header">
         <div class="vault-detail-icon" data-type-color="${type.color}" aria-hidden="true">
-          ${entry.data?.url ? this.#renderFaviconImg(entry.data.url, 32) : type.icon}
+          ${entry.data?.url ? renderFaviconImg(entry.data.url, 32) : type.icon}
         </div>
         <div class="vault-detail-info">
           <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
@@ -4242,7 +4243,7 @@ export class VaultUI {
 
       case 'firefox':
         return {
-          title: this.#extractDomain(row['url']) || 'Import Firefox',
+          title: extractDomain(row['url']) || 'Import Firefox',
           username: row['username'] || '',
           password: row['password'] || '',
           url: row['url'] || '',
@@ -8240,66 +8241,7 @@ export class VaultUI {
     return VaultUI.#VAULT_COLORS[index];
   }
 
-  // ==================== FAVICON HELPERS ====================
-
-  #extractDomain(url) {
-    if (!url) return null;
-    try {
-      let fullUrl = url;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        fullUrl = `https://${url}`;
-      }
-      return new URL(fullUrl).hostname;
-    } catch (e) {
-      const match = url.match(/^(?:https?:\/\/)?([^\/\s:]+)/i);
-      return match ? match[1] : null;
-    }
-  }
-
-  #getFaviconUrl(domain) {
-    // Google favicon service - most reliable
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-  }
-
-  #getDefaultFaviconSvg() {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="2" y1="12" x2="22" y2="12"/>
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-    </svg>`;
-  }
-
-  #renderFaviconImg(url, size = 20) {
-    const domain = this.#extractDomain(url);
-    if (!domain) {
-      return `<span class="vault-favicon-placeholder" data-favicon-size="${size}">${this.#getDefaultFaviconSvg()}</span>`;
-    }
-    const faviconUrl = this.#getFaviconUrl(domain);
-    return `<img src="${faviconUrl}"
-                 class="vault-favicon"
-                 data-favicon-size="${size}"
-                 alt=""
-                 loading="lazy"
-                 onerror="this.classList.add('vault-favicon-hidden');this.nextElementSibling.classList.add('vault-favicon-visible')">
-            <span class="vault-favicon-placeholder vault-favicon-hidden" data-favicon-size="${size}">${this.#getDefaultFaviconSvg()}</span>`;
-  }
-
-  async #preloadFavicons() {
-    const urls = this.#entries
-      .filter(e => e.data?.url)
-      .map(e => e.data.url);
-
-    const uniqueDomains = [...new Set(urls.map(u => this.#extractDomain(u)).filter(Boolean))];
-
-    // Preload images (browser will cache them)
-    for (const domain of uniqueDomains) {
-      if (!this.#faviconCache.has(domain)) {
-        const img = new Image();
-        img.src = this.#getFaviconUrl(domain);
-        this.#faviconCache.set(domain, true);
-      }
-    }
-  }
+  // Favicon helpers moved to ./vault/utils/favicon-manager.js
 
   // ==================== TOOLTIP SYSTEM ====================
 
