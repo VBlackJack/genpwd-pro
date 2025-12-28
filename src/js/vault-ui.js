@@ -70,6 +70,7 @@ import { showFolderContextMenu, FOLDER_ACTIONS } from './vault/components/folder
 import { showPasswordGenerator as showPwdGenerator, generatePassword } from './vault/components/password-generator.js';
 import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 import { showColorPicker } from './vault/components/color-picker.js';
+import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -5064,21 +5065,18 @@ export class VaultUI {
         hoverTimeout = setTimeout(() => {
           const entry = this.#entries.find(en => en.id === row.dataset.entryId);
           if (entry) {
-            this.#showEntryPreview(entry, e.clientX, e.clientY);
+            showEntryPreview({ entry, x: e.clientX, y: e.clientY, t });
           }
         }, 500); // 500ms delay
       });
 
       row.addEventListener('mouseleave', () => {
         clearTimeout(hoverTimeout);
-        this.#hideEntryPreview();
+        hideEntryPreview();
       });
 
       row.addEventListener('mousemove', (e) => {
-        const preview = document.querySelector('.vault-entry-preview');
-        if (preview) {
-          this.#positionPreview(preview, e.clientX, e.clientY);
-        }
+        updateEntryPreviewPosition(e.clientX, e.clientY);
       });
     });
   }
@@ -5154,139 +5152,6 @@ export class VaultUI {
     } catch (error) {
       this.#showToast(t('vault.messages.updateError'), 'error');
     }
-  }
-
-  #showEntryPreview(entry, x, y) {
-    this.#hideEntryPreview();
-
-    const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
-    const preview = document.createElement('div');
-    preview.className = 'vault-entry-preview';
-
-    let fieldsHtml = '';
-
-    if (entry.type === 'login') {
-      if (entry.data?.username) {
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">${t('vault.labels.username')}</span>
-            <span class="vault-preview-value">${escapeHtml(entry.data.username)}</span>
-          </div>
-        `;
-      }
-      if (entry.data?.password) {
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">${t('vault.labels.password')}</span>
-            <span class="vault-preview-value vault-preview-password">••••••••••••</span>
-          </div>
-        `;
-      }
-      if (entry.data?.url) {
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">${t('vault.labels.url')}</span>
-            <span class="vault-preview-value">${escapeHtml(entry.data.url)}</span>
-          </div>
-        `;
-      }
-    } else if (entry.type === 'card') {
-      if (entry.data?.cardNumber) {
-        const masked = '**** **** **** ' + (entry.data.cardNumber.slice(-4) || '****');
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">Card number</span>
-            <span class="vault-preview-value">${masked}</span>
-          </div>
-        `;
-      }
-      if (entry.data?.expiry) {
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">Expiration</span>
-            <span class="vault-preview-value">${escapeHtml(entry.data.expiry)}</span>
-          </div>
-        `;
-      }
-    } else if (entry.type === 'note') {
-      if (entry.data?.note) {
-        const truncated = entry.data.note.length > 100
-          ? entry.data.note.slice(0, 100) + '...'
-          : entry.data.note;
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">Note</span>
-            <span class="vault-preview-value">${escapeHtml(truncated)}</span>
-          </div>
-        `;
-      }
-    } else if (entry.type === 'identity') {
-      if (entry.data?.fullName) {
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">Nom</span>
-            <span class="vault-preview-value">${escapeHtml(entry.data.fullName)}</span>
-          </div>
-        `;
-      }
-      if (entry.data?.email) {
-        fieldsHtml += `
-          <div class="vault-preview-field">
-            <span class="vault-preview-label">Email</span>
-            <span class="vault-preview-value">${escapeHtml(entry.data.email)}</span>
-          </div>
-        `;
-      }
-    }
-
-    // Add modified date
-    if (entry.modifiedAt) {
-      const modified = new Date(entry.modifiedAt).toLocaleDateString('en-US', {
-        day: 'numeric', month: 'short', year: 'numeric'
-      });
-      fieldsHtml += `
-        <div class="vault-preview-field">
-          <span class="vault-preview-label">Modified</span>
-          <span class="vault-preview-value">${modified}</span>
-        </div>
-      `;
-    }
-
-    preview.innerHTML = `
-      <div class="vault-preview-header">
-        <div class="vault-preview-icon" data-type-color="${type.color}">
-          ${type.icon}
-        </div>
-        <span class="vault-preview-title">${escapeHtml(entry.title)}</span>
-      </div>
-      <div class="vault-preview-fields">
-        ${fieldsHtml}
-      </div>
-    `;
-
-    document.body.appendChild(preview);
-    this.#positionPreview(preview, x, y);
-  }
-
-  #hideEntryPreview() {
-    document.querySelector('.vault-entry-preview')?.remove();
-  }
-
-  #positionPreview(preview, x, y) {
-    const rect = preview.getBoundingClientRect();
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
-
-    let posX = x + 15;
-    let posY = y + 15;
-
-    if (posX + rect.width > viewportW) posX = x - rect.width - 15;
-    if (posY + rect.height > viewportH) posY = y - rect.height - 15;
-    if (posX < 0) posX = 10;
-    if (posY < 0) posY = 10;
-
-    preview.style.left = `${posX}px`;
-    preview.style.top = `${posY}px`;
   }
 
   #updateBulkActionsUI() {

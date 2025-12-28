@@ -38,3 +38,10 @@ export {
   closeColorPicker,
   FOLDER_COLORS
 } from './color-picker.js';
+
+// Entry preview
+export {
+  showEntryPreview,
+  updateEntryPreviewPosition,
+  hideEntryPreview
+} from './entry-preview.js';
