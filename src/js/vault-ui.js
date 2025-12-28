@@ -68,6 +68,7 @@ import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.
 import { showContextMenu } from './vault/components/context-menu.js';
 import { showFolderContextMenu, FOLDER_ACTIONS } from './vault/components/folder-context-menu.js';
 import { showPasswordGenerator as showPwdGenerator, generatePassword } from './vault/components/password-generator.js';
+import { showTimeoutSettings } from './vault/components/timeout-settings.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -4373,7 +4374,21 @@ export class VaultUI {
     // Timer settings button
     document.getElementById('timer-settings')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.#showTimeoutSettings();
+      showTimeoutSettings({
+        targetElement: document.getElementById('lock-timer'),
+        currentTimeout: this.#autoLockTimeout,
+        onTimeoutSelected: (newTimeout, label) => {
+          this.#autoLockTimeout = newTimeout;
+          this.#autoLockSeconds = newTimeout;
+          try {
+            localStorage.setItem('genpwd-vault-autolock-timeout', newTimeout.toString());
+          } catch {
+            // Storage not available
+          }
+          this.#showToast(t('vault.messages.timeoutSet', { value: label }), 'success');
+        },
+        t
+      });
     }, { signal });
 
     // Theme toggle button
@@ -8066,73 +8081,6 @@ export class VaultUI {
       const handler = (e) => {
         if (!picker.contains(e.target)) {
           picker.remove();
-          document.removeEventListener('click', handler);
-        }
-      };
-      document.addEventListener('click', handler);
-    }, 0);
-  }
-
-  #showTimeoutSettings() {
-    // Remove existing popover
-    document.querySelector('.vault-timeout-settings')?.remove();
-
-    const timerEl = document.getElementById('lock-timer');
-    if (!timerEl) return;
-
-    const timeoutOptions = [
-      { value: 60, label: '1 minute' },
-      { value: 120, label: '2 minutes' },
-      { value: 300, label: '5 minutes' },
-      { value: 600, label: '10 minutes' },
-      { value: 900, label: '15 minutes' },
-      { value: 1800, label: '30 minutes' }
-    ];
-
-    const popover = document.createElement('div');
-    popover.className = 'vault-timeout-settings';
-    popover.innerHTML = `
-      <div class="vault-timeout-header">
-        <span>Lock timeout</span>
-      </div>
-      <div class="vault-timeout-options">
-        ${timeoutOptions.map(opt => `
-          <button class="vault-timeout-option ${opt.value === this.#autoLockTimeout ? 'active' : ''}"
-                  data-timeout="${opt.value}">
-            ${opt.label}
-          </button>
-        `).join('')}
-      </div>
-    `;
-
-    timerEl.appendChild(popover);
-
-    // Event handlers
-    popover.querySelectorAll('.vault-timeout-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const newTimeout = parseInt(btn.dataset.timeout, 10);
-        this.#autoLockTimeout = newTimeout;
-        this.#autoLockSeconds = newTimeout;
-        try {
-          localStorage.setItem('genpwd-vault-autolock-timeout', newTimeout.toString());
-        } catch {
-          // Storage not available
-        }
-
-        // Update UI
-        popover.querySelectorAll('.vault-timeout-option').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        this.#showToast(t('vault.messages.timeoutSet', { value: btn.textContent.trim() }), 'success');
-        popover.remove();
-      });
-    });
-
-    // Close on click outside
-    setTimeout(() => {
-      const handler = (e) => {
-        if (!popover.contains(e.target) && e.target.id !== 'timer-settings') {
-          popover.remove();
           document.removeEventListener('click', handler);
         }
       };

@@ -24,3 +24,10 @@ export {
   generatePassword,
   DEFAULT_OPTIONS as PASSWORD_DEFAULTS
 } from './password-generator.js';
+
+// Timeout settings
+export {
+  showTimeoutSettings,
+  closeTimeoutSettings,
+  TIMEOUT_OPTIONS
+} from './timeout-settings.js';
