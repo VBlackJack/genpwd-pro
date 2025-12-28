@@ -57,6 +57,7 @@ import { renderHealthDashboardModal as renderHealthDashboard } from './vault/mod
 import { renderImportModal, showExportFormatModal } from './vault/modals/import-export-modal.js';
 import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/vault-management.js';
 import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-form.js';
+import { showAutotypeModal } from './vault/modals/autotype-modal.js';
 
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
@@ -5888,68 +5889,16 @@ export class VaultUI {
       }
     } else {
       // Fallback: Copy to clipboard with instructions
-      this.#showAutotypeModal(entry);
+      showAutotypeModal({
+        entry,
+        onCopyUsername: async (u) => await this.#copyToClipboard(u, t('vault.messages.usernameCopied')),
+        onCopyPassword: async (p) => await this.#copyToClipboard(p, t('vault.messages.passwordCopied')),
+        t
+      });
     }
   }
 
-  #showAutotypeModal(entry) {
-    const username = entry.data?.username || '';
-    const password = entry.data?.password || '';
-
-    const modal = document.createElement('div');
-    modal.className = 'vault-modal-overlay';
-    modal.id = 'autotype-modal';
-    modal.innerHTML = `
-      <div class="vault-modal vault-modal-sm">
-        <div class="vault-modal-header">
-          <h3>Auto-remplissage manuel</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="vault-modal-body">
-          <p class="vault-modal-hint">Automatic auto-fill requires the Electron application.</p>
-          <p class="vault-modal-hint">Copy the values below:</p>
-          <div class="vault-autotype-steps">
-            <div class="vault-autotype-step">
-              <span class="vault-autotype-label">1. Username</span>
-              <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-user">
-                Copy "${username.substring(0, 10)}${username.length > 10 ? '...' : ''}"
-              </button>
-            </div>
-            <div class="vault-autotype-step">
-              <span class="vault-autotype-label">2. Password</span>
-              <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-pass">
-                Copy ••••••••
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Bind events
-    modal.querySelector('[data-close-modal]').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
-    });
-
-    modal.querySelector('#copy-autotype-user').addEventListener('click', async () => {
-      await this.#copyToClipboard(username, t('vault.messages.usernameCopied'));
-    });
-
-    modal.querySelector('#copy-autotype-pass').addEventListener('click', async () => {
-      await this.#copyToClipboard(password, t('vault.messages.passwordCopied'));
-    });
-
-    // Auto-focus modal
-    modal.querySelector('button').focus();
-  }
+  // Autotype modal moved to ./vault/modals/autotype-modal.js
 
   #showShareModal(entry) {
     // Generate a random passphrase
