@@ -58,6 +58,7 @@ import { renderImportModal, showExportFormatModal } from './vault/modals/import-
 import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/vault-management.js';
 import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-form.js';
 import { showAutotypeModal } from './vault/modals/autotype-modal.js';
+import { showTOTPQRModal } from './vault/modals/totp-qr-modal.js';
 
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
@@ -3610,66 +3611,7 @@ export class VaultUI {
     return `${Math.floor(count / 1000000)}M+ fois`;
   }
 
-  #showTOTPQRModal(secret, issuer, account) {
-    // Build otpauth URI
-    const label = issuer
-      ? `${encodeURIComponent(issuer)}:${encodeURIComponent(account || 'user')}`
-      : encodeURIComponent(account || 'user');
-    const uri = `otpauth://totp/${label}?secret=${secret.toUpperCase().replace(/\s/g, '')}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
-
-    // Generate QR code SVG
-    const qrSvg = this.#generateQRCode(uri);
-
-    // Create modal
-    let modal = document.getElementById('totp-qr-modal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'totp-qr-modal';
-      modal.className = 'vault-modal-overlay';
-      modal.role = 'dialog';
-      modal.setAttribute('aria-modal', 'true');
-      document.body.appendChild(modal);
-    }
-
-    modal.innerHTML = `
-      <div class="vault-modal vault-modal-sm">
-        <div class="vault-modal-header">
-          <h3>QR Code TOTP</h3>
-          <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="vault-modal-body vault-qr-body">
-          <div class="vault-qr-container">
-            ${qrSvg}
-          </div>
-          <div class="vault-qr-info">
-            <div class="vault-qr-label">${escapeHtml(issuer)}</div>
-            <div class="vault-qr-account">${escapeHtml(account || 'user')}</div>
-          </div>
-          <p class="vault-qr-hint">Scannez avec votre application d'authentification (Google Authenticator, Authy, etc.)</p>
-        </div>
-      </div>
-    `;
-
-    // Bind close events
-    modal.querySelector('[data-close-modal]')?.addEventListener('click', () => {
-      this.#closeModal('totp-qr-modal');
-    });
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) this.#closeModal('totp-qr-modal');
-    });
-
-    this.#openModal('totp-qr-modal');
-  }
-
-  #generateQRCode(data) {
-    // Delegate to centralized QR code utility
-    return generateQRCodeSVG(data, { size: 200 });
-  }
+  // TOTP QR modal moved to ./vault/modals/totp-qr-modal.js
 
   #openEntryList() {
     this.#currentView = 'main';
@@ -5611,10 +5553,10 @@ export class VaultUI {
     document.querySelectorAll('.show-totp-qr').forEach(btn => {
       btn.addEventListener('click', () => {
         const secret = btn.dataset.secret;
-        const title = btn.dataset.title || 'GenPwd';
+        const issuer = btn.dataset.title || 'GenPwd';
         const account = btn.dataset.account || '';
         if (secret) {
-          this.#showTOTPQRModal(secret, title, account);
+          showTOTPQRModal({ secret, issuer, account, t });
         }
       });
     });
