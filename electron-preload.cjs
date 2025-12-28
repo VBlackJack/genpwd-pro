@@ -327,11 +327,13 @@ contextBridge.exposeInMainWorld('vault', {
   }
 });
 
-// Debug log
-console.log('GenPwd Pro - Preload script loaded');
-console.log('Platform:', process.platform);
-console.log('Electron version:', process.versions.electron);
-console.log('APIs enabled: Vault, SecureStorage, Clipboard, DeepLink, Tray, AutoType, CompactMode, GlobalHotkey');
+// Debug log (development only - no sensitive data exposed)
+if (process.env.NODE_ENV === 'development') {
+  console.log('GenPwd Pro - Preload script loaded');
+  console.log('Platform:', process.platform);
+  console.log('Electron version:', process.versions.electron);
+  console.log('APIs enabled: Vault, SecureStorage, Clipboard, DeepLink, Tray, AutoType, CompactMode, GlobalHotkey');
+}
 
 // Note: Vault events are handled via the vault.on() API exposed above.
 // Components should use window.vault.on('unlocked', callback) instead of

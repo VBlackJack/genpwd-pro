@@ -7,6 +7,26 @@
  * - Center: Entry list with quick actions
  * - Right: Entry detail panel
  *
+ * SECURITY POLICY - localStorage Usage:
+ * =====================================
+ * localStorage is used ONLY for non-sensitive UI preferences:
+ * - genpwd-vault-theme: UI theme preference (string)
+ * - genpwd-vault-sidebar-collapsed: Sidebar state (boolean)
+ * - genpwd-vault-autolock-timeout: Lock timeout in ms (integer)
+ * - genpwd-vault-visual-protection: Blur on focus loss (boolean)
+ * - genpwd-vault-auto-breach-check: Auto breach check flag (boolean)
+ *
+ * NEVER store in localStorage:
+ * - Passwords, master keys, or encryption keys
+ * - Authentication tokens or session data
+ * - Decrypted vault data or entries
+ * - Any personally identifiable information (PII)
+ *
+ * Sensitive data must use:
+ * - Electron safeStorage API (DPAPI/Keychain)
+ * - In-memory storage with proper wiping
+ * - Encrypted vault files on disk
+ *
  * v2.6.8 - Security Hardening:
  * - Inactivity manager with global event tracking
  * - Secure clipboard with content verification before clear

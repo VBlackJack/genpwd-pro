@@ -350,8 +350,10 @@ export class WindowsHelloAuth {
 
     try {
       // Use cmdkey to delete credential (simpler and more reliable)
+      // SECURITY: Wrap in PowerShell with Base64 encoding for defense-in-depth
+      const psScript = `cmdkey /delete:"${target}"`;
       await execAsync(
-        `cmdkey /delete:"${target}"`,
+        `powershell -NoProfile -EncodedCommand ${Buffer.from(psScript, 'utf16le').toString('base64')}`,
         { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
