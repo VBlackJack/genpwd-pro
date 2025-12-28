@@ -49,26 +49,14 @@ import { escapeHtml, formatDate, formatDateTime } from './vault/utils/formatter.
 import { getPasswordStrength, isPasswordDuplicated } from './vault/utils/password-utils.js';
 
 // Vault modals imports (Phase 6 modularization)
-import {
-  getTemplates,
-  getTemplateById,
-  renderTemplateGrid,
-  searchTemplates
-} from './vault/modals/entry-templates.js';
-import {
-  renderCustomFieldsSection,
-  createCustomFieldElement
-} from './vault/modals/custom-fields.js';
-import {
-  renderHealthDashboardModal as renderHealthDashboard,
-  renderLegacyHealthModal,
-  renderBreachResultsSafe,
-  renderBreachResultsCompromised
-} from './vault/modals/health-dashboard-modal.js';
+import { getTemplateById, renderTemplateGrid } from './vault/modals/entry-templates.js';
+import { renderCustomFieldsSection, createCustomFieldElement } from './vault/modals/custom-fields.js';
+import { renderAddFolderModal, renderAddTagModal, renderEditTagModal, renderMoveFolderModal } from './vault/modals/folder-tag-modals.js';
+import { renderShortcutsModal } from './vault/modals/shortcuts-modal.js';
+import { renderHealthDashboardModal as renderHealthDashboard } from './vault/modals/health-dashboard-modal.js';
 import { renderImportModal } from './vault/modals/import-export-modal.js';
 
 // Vault services imports (Phase 6 modularization)
-import { getBreachCheckService, formatBreachCount } from './vault/services/breach-check-service.js';
 import { performExport, downloadExport } from './vault/services/export-service.js';
 
 // Entry type configuration - function to get translated labels
@@ -1650,13 +1638,13 @@ export class VaultUI {
         </aside>
       </div>
       ${this.#renderAddEntryModal()}
-      ${this.#renderAddFolderModal()}
+      ${renderAddFolderModal({ t })}
       ${this.#renderEditEntryModal()}
-      ${this.#renderShortcutsModal()}
+      ${renderShortcutsModal({ t })}
       ${renderHealthDashboard({ t })}
-      ${this.#renderMoveFolderModal()}
-      ${this.#renderAddTagModal()}
-      ${this.#renderEditTagModal()}
+      ${renderMoveFolderModal({ folders: this.#folders, t })}
+      ${renderAddTagModal({ t })}
+      ${renderEditTagModal({ t })}
       ${renderImportModal({ t })}
     `;
 
@@ -3250,97 +3238,7 @@ export class VaultUI {
   // Helper for attachments in detail view
   // See #renderAttachmentsUI definition below
 
-  #renderAddTagModal() {
-    const tagColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
-
-    return `
-      <div class="vault-modal-overlay" id="add-tag-modal" role="dialog" aria-modal="true" aria-labelledby="add-tag-title">
-        <div class="vault-modal">
-          <div class="vault-modal-header">
-            <h3 id="add-tag-title">New tag</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <form class="vault-modal-body" id="add-tag-form">
-            <div class="vault-form-group">
-              <label class="vault-label" for="tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="tag-name" placeholder="${t('vault.placeholders.tagExample')}" required aria-required="true" maxlength="30" aria-invalid="false">
-            </div>
-            <div class="vault-form-group">
-              <label class="vault-label">Color</label>
-              <div class="vault-color-grid" id="add-tag-colors">
-                ${tagColors.map((color, i) => `
-                  <button type="button" class="vault-color-option ${i === 0 ? 'selected' : ''}"
-                          data-color="${color}">
-                    ${i === 0 ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
-                  </button>
-                `).join('')}
-              </div>
-              <input type="hidden" id="tag-color" value="${tagColors[0]}">
-            </div>
-            <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Create</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-  }
-
-  #renderEditTagModal() {
-    const tagColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
-
-    return `
-      <div class="vault-modal-overlay" id="edit-tag-modal" role="dialog" aria-modal="true" aria-labelledby="edit-tag-title">
-        <div class="vault-modal">
-          <div class="vault-modal-header">
-            <h3 id="edit-tag-title">Edit tag</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <form class="vault-modal-body" id="edit-tag-form">
-            <input type="hidden" id="edit-tag-id">
-            <div class="vault-form-group">
-              <label class="vault-label" for="edit-tag-name">Tag name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="edit-tag-name" required aria-required="true" maxlength="30" aria-invalid="false">
-            </div>
-            <div class="vault-form-group">
-              <label class="vault-label">Color</label>
-              <div class="vault-color-grid" id="edit-tag-colors">
-                ${tagColors.map(color => `
-                  <button type="button" class="vault-color-option" data-color="${color}" aria-label="Select color ${color}"></button>
-                `).join('')}
-              </div>
-              <input type="hidden" id="edit-tag-color">
-            </div>
-            <div class="vault-modal-actions vault-modal-actions-split">
-              <button type="button" class="vault-btn vault-btn-danger" id="btn-delete-tag">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                Delete
-              </button>
-              <div class="vault-modal-actions-right">
-                <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-                <button type="submit" class="vault-btn vault-btn-primary">${t('vault.common.save')}</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-  }
-
+  // Tag modals moved to ./vault/modals/folder-tag-modals.js
 
   /** @type {Object|null} Pending import data */
   #pendingImport = null;
@@ -3703,33 +3601,7 @@ export class VaultUI {
     }
   }
 
-  #renderAddFolderModal() {
-    return `
-      <div class="vault-modal-overlay" id="add-folder-modal" role="dialog" aria-modal="true" aria-labelledby="add-folder-title">
-        <div class="vault-modal">
-          <div class="vault-modal-header">
-            <h3 id="add-folder-title">${t('vault.dialogs.newFolder')}</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <form class="vault-modal-body" id="add-folder-form">
-            <div class="vault-form-group">
-              <label class="vault-label" for="folder-name">Folder name <span class="required">*</span></label>
-              <input type="text" class="vault-input" id="folder-name" placeholder="${t('vault.placeholders.folderExample')}" required aria-required="true" aria-invalid="false">
-            </div>
-            <div class="vault-modal-actions">
-              <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-              <button type="submit" class="vault-btn vault-btn-primary">Create</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-  }
+  // Add folder modal moved to ./vault/modals/folder-tag-modals.js
 
   #renderEditEntryModal() {
     return `
@@ -3756,82 +3628,7 @@ export class VaultUI {
     `;
   }
 
-  #renderShortcutsModal() {
-    return `
-      <div class="vault-modal-overlay" id="shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
-        <div class="vault-modal vault-modal-shortcuts">
-          <div class="vault-modal-header">
-            <h3 id="shortcuts-title">Keyboard shortcuts</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <div class="vault-modal-body vault-shortcuts-body">
-            <div class="vault-shortcuts-section">
-              <h4>Navigation</h4>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>↑</kbd> <kbd>↓</kbd></span>
-                <span class="vault-shortcut-desc">Navigate list</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Enter</kbd></span>
-                <span class="vault-shortcut-desc">Select entry</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>F</kbd></span>
-                <span class="vault-shortcut-desc">Search</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Esc</kbd></span>
-                <span class="vault-shortcut-desc">Close modal / Deselect</span>
-              </div>
-            </div>
-            <div class="vault-shortcuts-section">
-              <h4>Actions</h4>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>N</kbd></span>
-                <span class="vault-shortcut-desc">New entry</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>E</kbd></span>
-                <span class="vault-shortcut-desc">Edit entry</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>D</kbd></span>
-                <span class="vault-shortcut-desc">Duplicate entry</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Delete</kbd></span>
-                <span class="vault-shortcut-desc">Delete entry</span>
-              </div>
-            </div>
-            <div class="vault-shortcuts-section">
-              <h4>Quick copy</h4>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>U</kbd></span>
-                <span class="vault-shortcut-desc">Copy username</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>P</kbd></span>
-                <span class="vault-shortcut-desc">Copy password</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>L</kbd></span>
-                <span class="vault-shortcut-desc">Lock vault</span>
-              </div>
-              <div class="vault-shortcut-row">
-                <span class="vault-shortcut-keys"><kbd>?</kbd></span>
-                <span class="vault-shortcut-desc">Show this help</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  // Shortcuts modal moved to ./vault/modals/shortcuts-modal.js
 
   /**
    * Open health dashboard modal with fresh stats
@@ -4330,35 +4127,7 @@ export class VaultUI {
     this.#render();
   }
 
-  #renderMoveFolderModal() {
-    return `
-      <div class="vault-modal-overlay" id="move-folder-modal" role="dialog" aria-modal="true" aria-labelledby="move-folder-title">
-        <div class="vault-modal">
-          <div class="vault-modal-header">
-            <h3 id="move-folder-title">Move to folder</h3>
-            <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <div class="vault-modal-body vault-folder-list" role="listbox" aria-label="Select folder">
-            <button class="vault-folder-option" data-folder-id="" role="option">
-              <span class="vault-folder-icon" aria-hidden="true">📁</span>
-              <span class="vault-folder-name">No folder (root)</span>
-            </button>
-            ${this.#folders.map(f => `
-              <button class="vault-folder-option" data-folder-id="${f.id}" role="option">
-                <span class="vault-folder-icon" aria-hidden="true">📂</span>
-                <span class="vault-folder-name">${escapeHtml(f.name)}</span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  // Move folder modal moved to ./vault/modals/folder-tag-modals.js
 
   #exportEntries(entries) {
     if (entries.length === 0) {
@@ -6038,7 +5807,7 @@ export class VaultUI {
           case 'move':
             this.#selectedEntries.clear();
             this.#selectedEntries.add(entry.id);
-            this.#renderMoveFolderModal();
+            document.getElementById('move-folder-modal').outerHTML = renderMoveFolderModal({ folders: this.#folders, t });
             this.#openModal('move-folder-modal');
             break;
           case 'toggle-favorite':
