@@ -51,12 +51,14 @@ class I18n {
       return stored;
     }
 
-    // 2. Check browser language
-    const browserLang = navigator.language || navigator.userLanguage;
-    const langCode = browserLang.split('-')[0]; // 'en-US' -> 'en'
+    // 2. Check browser language (only in browser environment)
+    if (typeof navigator !== 'undefined') {
+      const browserLang = navigator.language || navigator.userLanguage;
+      const langCode = browserLang.split('-')[0]; // 'en-US' -> 'en'
 
-    if (this.config.supportedLocales.includes(langCode)) {
-      return langCode;
+      if (this.config.supportedLocales.includes(langCode)) {
+        return langCode;
+      }
     }
 
     // 3. Fall back to default
