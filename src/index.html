@@ -11,9 +11,10 @@
        - Required for vault-ui.js dynamic styles (colors, tags, folder padding)
        - CSSOM API (.style.setProperty) is blocked by strict CSP without unsafe-inline
        - Acceptable for Electron app where all code is self-controlled -->
+  <!-- SECURITY: 'wasm-unsafe-eval' added for hash-wasm WASM crypto operations -->
   <!-- Note: frame-ancestors removed - only works via HTTP headers, not meta tags (causes console warning) -->
   <!-- In Electron, frame embedding is controlled by webPreferences in BrowserWindow -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self'; child-src 'none'; upgrade-insecure-requests">
 
   <title>GenPwd Pro – Secure Password Generator</title>
   <meta name="author" content="Julien Bombled">

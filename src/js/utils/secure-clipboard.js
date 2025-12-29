@@ -352,11 +352,13 @@ class SecureClipboard {
 
   /**
    * Store reference to copied text for verification
+   * SECURITY: Only store hash and length, not the actual text
    * @private
    * @param {string} text
    */
   async #storeReference(text) {
-    this.#copiedText = text;
+    // SECURITY: Don't store the full text in memory - only hash and length for verification
+    this.#copiedText = null;
     this.#copiedLength = text.length;
     this.#copiedHash = await this.#hashText(text);
   }

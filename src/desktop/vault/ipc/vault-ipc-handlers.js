@@ -18,6 +18,29 @@ import { VaultFileManager } from '../storage/vault-file-manager.js';
 import { WindowsHelloAuth } from '../auth/windows-hello.js';
 import { ShareService } from '../services/share-service.js';
 
+// SECURITY: Only log in development mode to prevent information disclosure
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+/**
+ * Safe logging wrapper - only logs in development mode
+ * @param  {...any} args - Arguments to log
+ */
+function devLog(...args) {
+  if (IS_DEV) {
+    console.log(...args);
+  }
+}
+
+/**
+ * Safe warning logging wrapper - only logs in development mode
+ * @param  {...any} args - Arguments to log
+ */
+function devWarn(...args) {
+  if (IS_DEV) {
+    console.warn(...args);
+  }
+}
+
 /** @type {VaultSessionManager} */
 let session;
 
@@ -198,7 +221,7 @@ const unlockRateLimiter = {
       record.lockoutCount++;
       this.attempts.set(vaultId, record);
       const lockoutSeconds = Math.ceil(lockoutDuration / 1000);
-      console.log(`[RateLimiter] Lockout #${record.lockoutCount} for ${vaultId}: ${lockoutSeconds}s`);
+      devLog(`[RateLimiter] Lockout #${record.lockoutCount} applied: ${lockoutSeconds}s`);
       return { allowed: false, lockoutSeconds };
     }
 
@@ -218,6 +241,75 @@ const unlockRateLimiter = {
     this.attempts.delete(vaultId);
   }
 };
+
+// ==================== GLOBAL IPC RATE LIMITER ====================
+
+/**
+ * Global IPC rate limiter to prevent DoS attacks
+ * Limits the total number of IPC requests per second
+ */
+const globalIPCRateLimiter = {
+  /** @type {Map<string, { count: number, windowStart: number }>} */
+  requests: new Map(),
+
+  /** Max requests per window (per sender) */
+  MAX_REQUESTS: 100,
+
+  /** Time window in ms */
+  WINDOW_MS: 1000,
+
+  /** Channels exempt from rate limiting (high-frequency legitimate operations) */
+  EXEMPT_CHANNELS: new Set([
+    'vault:resetActivity',  // Called on every user interaction
+    'vault:getState'        // Called frequently for UI state
+  ]),
+
+  /**
+   * Check if request is allowed
+   * @param {string} senderId - Unique sender identifier
+   * @param {string} channel - IPC channel name
+   * @returns {boolean} - True if allowed
+   */
+  checkRequest(senderId, channel) {
+    // Exempt certain high-frequency channels
+    if (this.EXEMPT_CHANNELS.has(channel)) {
+      return true;
+    }
+
+    const now = Date.now();
+    let record = this.requests.get(senderId);
+
+    // Initialize or reset window
+    if (!record || (now - record.windowStart) > this.WINDOW_MS) {
+      record = { count: 0, windowStart: now };
+    }
+
+    record.count++;
+    this.requests.set(senderId, record);
+
+    if (record.count > this.MAX_REQUESTS) {
+      devWarn(`[IPCRateLimiter] Rate limit exceeded for sender`);
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Clean up old entries periodically
+   */
+  cleanup() {
+    const now = Date.now();
+    for (const [key, record] of this.requests.entries()) {
+      if ((now - record.windowStart) > this.WINDOW_MS * 2) {
+        this.requests.delete(key);
+      }
+    }
+  }
+};
+
+// Cleanup old rate limit entries every minute
+setInterval(() => globalIPCRateLimiter.cleanup(), 60000);
 
 // ==================== SAFE HANDLER WRAPPER ====================
 
@@ -282,11 +374,21 @@ function sanitizeErrorMessage(message) {
 function safeHandler(handler, name) {
   return async (event, ...args) => {
     try {
+      // SECURITY: Validate origin first
       validateOrigin(event);
+
+      // SECURITY: Apply global rate limiting
+      const senderId = event.sender?.id?.toString() || 'unknown';
+      if (!globalIPCRateLimiter.checkRequest(senderId, `vault:${name}`)) {
+        throw new Error('Too many requests. Please slow down.');
+      }
+
       return await handler(event, ...args);
     } catch (error) {
-      // Log the full error for debugging (server-side only)
-      console.error(`[IPC:${name}] Error:`, error.message, error.stack);
+      // Log the full error for debugging (server-side only, dev mode)
+      if (IS_DEV) {
+        console.error(`[IPC:${name}] Error:`, error.message, error.stack);
+      }
 
       // Re-throw with sanitized message (no stack trace, no internal paths)
       const safeMessage = sanitizeErrorMessage(error.message);
@@ -318,7 +420,7 @@ export function registerVaultIPC(ipcMain) {
         const decrypted = safeStorage.decryptString(encrypted);
         const config = JSON.parse(decrypted);
         fileManager.setCloudConfig(config);
-        console.log('[Vault] Cloud config loaded on startup');
+        devLog('[Vault] Cloud config loaded on startup');
       } catch (e) {
         // Ignore if file doesn't exist
       }
@@ -813,7 +915,7 @@ export function registerVaultIPC(ipcMain) {
     const encryptedKey = await fileManager.getVaultHelloKey(vaultId);
     if (!encryptedKey) {
       // Credential exists but vault doesn't have the key - cleanup orphan credential
-      console.warn(`[WindowsHello] Orphan credential found for vault ${vaultId}, cleaning up...`);
+      devWarn('[WindowsHello] Orphan credential found, cleaning up...');
       await WindowsHelloAuth.deleteCredential(vaultId);
       return false;
     }
@@ -890,7 +992,7 @@ export function registerVaultIPC(ipcMain) {
     // Remove encrypted key from vault metadata
     await fileManager.removeVaultHelloKey(vaultId);
 
-    console.log(`[WindowsHello] Disabled for vault: ${vaultId}`);
+    devLog('[WindowsHello] Disabled successfully');
     return { success: true };
   }, 'hello:disable'));
 
@@ -1027,7 +1129,7 @@ export function registerVaultIPC(ipcMain) {
     return { success: true };
   }, 'duress:setup'));
 
-  console.log('[Vault] IPC handlers registered');
+  devLog('[Vault] IPC handlers registered');
 }
 
 // ==================== HELPERS ====================
@@ -1192,7 +1294,7 @@ function validateEntryData(type, data) {
     }
   }
 
-  // Validate field types
+  // Validate field types and lengths
   for (const [key, value] of Object.entries(data)) {
     if (value === null || value === undefined) continue;
 
@@ -1203,12 +1305,24 @@ function validateEntryData(type, data) {
       if (!value.every(id => typeof id === 'string')) {
         throw new Error('tagIds must contain only strings');
       }
+      // Limit number of tags per entry
+      if (value.length > 50) {
+        throw new Error('Maximum 50 tags per entry');
+      }
     } else if (key === 'favorite') {
       if (typeof value !== 'boolean') {
         throw new Error('favorite must be a boolean');
       }
     } else if (typeof value !== 'string') {
       throw new Error(`Field "${key}" must be a string`);
+    } else {
+      // SECURITY: Validate string field length to prevent memory exhaustion
+      const maxLength = (key === 'notes' || key === 'content')
+        ? INPUT_LIMITS.CONTENT_MAX
+        : INPUT_LIMITS.NAME_MAX;
+      if (value.length > maxLength) {
+        throw new Error(`Field "${key}" exceeds maximum length of ${maxLength} characters`);
+      }
     }
   }
 }

@@ -15,6 +15,29 @@ import { WINDOWS_HELLO } from '../../../js/config/crypto-constants.js';
 
 const execAsync = promisify(exec);
 
+// SECURITY: Only log in development mode to prevent information disclosure
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+/**
+ * Safe logging wrapper - only logs in development mode
+ * @param  {...any} args - Arguments to log
+ */
+function devLog(...args) {
+  if (IS_DEV) {
+    console.log(...args);
+  }
+}
+
+/**
+ * Safe error logging wrapper - only logs in development mode
+ * @param  {...any} args - Arguments to log
+ */
+function devError(...args) {
+  if (IS_DEV) {
+    console.error(...args);
+  }
+}
+
 // Credential target prefix for GenPwd vaults
 const CREDENTIAL_PREFIX = 'GenPwdPro_Vault_';
 
@@ -116,10 +139,10 @@ export class WindowsHelloAuth {
       );
 
       const result = stdout.trim().toLowerCase() === 'true';
-      console.log(`[WindowsHello] Availability check: ${result}`);
+      devLog(`[WindowsHello] Availability check: ${result}`);
       return result;
     } catch (error) {
-      console.error('[WindowsHello] Availability check failed:', error.message);
+      devError('[WindowsHello] Availability check failed:', error.message);
       // Fallback: check if WinBio service exists (can start on demand)
       try {
         const { stdout: fallback } = await execAsync(
@@ -195,10 +218,10 @@ export class WindowsHelloAuth {
       return stdout.trim() === 'verified';
     } catch (error) {
       if (error.killed) {
-        console.error('[WindowsHello] Verification timed out');
+        devError('[WindowsHello] Verification timed out');
         return false;
       }
-      console.error('[WindowsHello] Verification error:', error.message);
+      devError('[WindowsHello] Verification error:', error.message);
       return false;
     }
   }
@@ -222,12 +245,16 @@ export class WindowsHelloAuth {
 
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
+    // SECURITY: Encode all parameters as Base64 to prevent PowerShell injection
+    const targetBase64 = Buffer.from(target, 'utf8').toString('base64');
+    const keyBase64 = Buffer.from(encryptedKey, 'utf8').toString('base64');
+
     try {
-      // Use PowerShell with proper escaping to store credential safely
-      // This avoids shell metacharacter injection via encryptedKey
+      // Use PowerShell with Base64-encoded parameters for defense-in-depth
       const psScript = `
-        $target = '${target}'
-        $keyBytes = [System.Convert]::FromBase64String('${encryptedKey}')
+        $target = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${targetBase64}'))
+        $encKey = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${keyBase64}'))
+        $keyBytes = [System.Convert]::FromBase64String($encKey)
         $keyString = [System.Text.Encoding]::UTF8.GetString($keyBytes)
 
         # Re-encode to ensure clean Base64 for storage
@@ -242,10 +269,10 @@ export class WindowsHelloAuth {
         { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
-      console.log(`[WindowsHello] Credential stored for vault: ${vaultId}`);
+      devLog('[WindowsHello] Credential stored successfully');
       return true;
     } catch (error) {
-      console.error('[WindowsHello] Failed to store credential:', error.message);
+      devError('[WindowsHello] Failed to store credential:', error.message);
       return false;
     }
   }
@@ -265,10 +292,13 @@ export class WindowsHelloAuth {
 
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
+    // SECURITY: Encode target as Base64 to prevent PowerShell injection
+    const targetBase64 = Buffer.from(target, 'utf8').toString('base64');
+
     try {
       // Use PowerShell to read credential via CredRead API
       const psScript = `
-        $target = '${target}'
+        $target = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${targetBase64}'))
 
         Add-Type -TypeDefinition @"
         using System;
@@ -323,12 +353,12 @@ export class WindowsHelloAuth {
 
       const credential = stdout.trim();
       if (credential) {
-        console.log(`[WindowsHello] Credential retrieved for vault: ${vaultId}`);
+        devLog('[WindowsHello] Credential retrieved successfully');
         return credential;
       }
       return null;
     } catch (error) {
-      console.error('[WindowsHello] Failed to retrieve credential:', error.message);
+      devError('[WindowsHello] Failed to retrieve credential:', error.message);
       return null;
     }
   }
@@ -348,24 +378,27 @@ export class WindowsHelloAuth {
 
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
+    // SECURITY: Encode target as Base64 to prevent PowerShell injection
+    const targetBase64 = Buffer.from(target, 'utf8').toString('base64');
+
     try {
       // Use cmdkey to delete credential (simpler and more reliable)
-      // SECURITY: Wrap in PowerShell with Base64 encoding for defense-in-depth
-      const psScript = `cmdkey /delete:"${target}"`;
+      // SECURITY: Wrap in PowerShell with Base64-encoded parameter for defense-in-depth
+      const psScript = `$t = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${targetBase64}')); cmdkey /delete:$t`;
       await execAsync(
         `powershell -NoProfile -EncodedCommand ${Buffer.from(psScript, 'utf16le').toString('base64')}`,
         { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
-      console.log(`[WindowsHello] Credential deleted for vault: ${vaultId}`);
+      devLog('[WindowsHello] Credential deleted successfully');
       return true;
     } catch (error) {
       // cmdkey returns error if credential doesn't exist, but that's OK
       if (error.message && error.message.includes('not found')) {
-        console.log(`[WindowsHello] Credential already deleted for vault: ${vaultId}`);
+        devLog('[WindowsHello] Credential already deleted');
         return true;
       }
-      console.error('[WindowsHello] Failed to delete credential:', error.message);
+      devError('[WindowsHello] Failed to delete credential:', error.message);
       return false;
     }
   }
@@ -443,12 +476,25 @@ export class WindowsHelloAuth {
       decipher.final()
     ]);
 
-    // Wipe sensitive buffers from memory
+    // SECURITY: Wipe all sensitive buffers from memory immediately
     // Note: decrypted key is returned to caller who must wipe it after use
     wrapper.fill(0);
     data.fill(0);
+    iv.fill(0);
+    authTag.fill(0);
+    encrypted.fill(0);
 
     return decrypted;
+  }
+
+  /**
+   * Securely wipe a buffer or string from memory
+   * @param {Buffer|Uint8Array} buffer - Buffer to wipe
+   */
+  static wipeBuffer(buffer) {
+    if (buffer && typeof buffer.fill === 'function') {
+      buffer.fill(0);
+    }
   }
 }
 
