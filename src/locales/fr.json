@@ -790,7 +790,8 @@
     "hints": {
       "expiryReminder": "Rappel visuel pour renouveler le mot de passe",
       "totpSecretEdit": "Secret Base32 ou URI otpauth://",
-      "totpSecretAdd": "Optionnel - Secret Base32 ou URI otpauth://"
+      "totpSecretAdd": "Optionnel - Secret Base32 ou URI otpauth://",
+      "totpRecommended": "Recommandé pour ce service"
     },
     "filters": {
       "type": "Type",

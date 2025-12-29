@@ -709,7 +709,8 @@
     "hints": {
       "expiryReminder": "Visual reminder to renew the password",
       "totpSecretEdit": "Base32 secret or otpauth:// URI",
-      "totpSecretAdd": "Optional - Base32 secret or otpauth:// URI"
+      "totpSecretAdd": "Optional - Base32 secret or otpauth:// URI",
+      "totpRecommended": "Recommended for this service"
     },
     "filters": {
       "type": "Type",

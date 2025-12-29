@@ -685,7 +685,8 @@
     "hints": {
       "expiryReminder": "Recordatorio visual para renovar la contraseña",
       "totpSecretEdit": "Secreto Base32 o URI otpauth://",
-      "totpSecretAdd": "Opcional - Secreto Base32 o URI otpauth://"
+      "totpSecretAdd": "Opcional - Secreto Base32 o URI otpauth://",
+      "totpRecommended": "Recomendado para este servicio"
     },
     "filters": {
       "type": "Tipo",

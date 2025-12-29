@@ -206,7 +206,7 @@ export function renderTemplatePicker(options = {}) {
           <rect x="14" y="14" width="7" height="7"></rect>
           <rect x="3" y="14" width="7" height="7"></rect>
         </svg>
-        Utiliser un template
+        ${t('vault.labels.useTemplate')}
         <svg class="vault-template-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -226,10 +226,11 @@ export function renderTemplatePicker(options = {}) {
  * @param {Object} options
  * @param {Function} options.onTemplateSelected - Callback when template is selected
  * @param {Function} options.onTypeChange - Callback to update entry type
+ * @param {Function} options.t - Translation function
  * @returns {Object} Controller with attach/detach methods
  */
 export function createTemplatePickerController(options = {}) {
-  const { onTemplateSelected, onTypeChange } = options;
+  const { onTemplateSelected, onTypeChange, t = (k) => k } = options;
 
   let isAttached = false;
 
@@ -303,7 +304,7 @@ export function createTemplatePickerController(options = {}) {
       if (template.suggestTotp) {
         const totpField = document.getElementById('entry-totp');
         if (totpField) {
-          totpField.placeholder = 'Recommended for this service';
+          totpField.placeholder = t('vault.hints.totpRecommended');
         }
       }
     }, 50);
