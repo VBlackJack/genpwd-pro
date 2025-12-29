@@ -15,6 +15,9 @@ import { WINDOWS_HELLO } from '../../../js/config/crypto-constants.js';
 
 const execAsync = promisify(exec);
 
+// Credential envelope version for TTL support
+const CREDENTIAL_ENVELOPE_VERSION = 1;
+
 // SECURITY: Only log in development mode to prevent information disclosure
 const IS_DEV = process.env.NODE_ENV === 'development';
 
@@ -228,6 +231,7 @@ export class WindowsHelloAuth {
 
   /**
    * Store a credential in Windows Credential Manager
+   * Wraps the encrypted key in an envelope with creation timestamp for TTL
    * @param {string} vaultId - Vault identifier
    * @param {string} encryptedKey - Base64 encoded encrypted key
    * @returns {Promise<boolean>}
@@ -243,11 +247,21 @@ export class WindowsHelloAuth {
     // SECURITY: Validate encryptedKey is Base64 to prevent command injection
     validateEncryptedKey(encryptedKey);
 
+    // Create envelope with version and timestamp for TTL support
+    const envelope = {
+      v: CREDENTIAL_ENVELOPE_VERSION,
+      t: Date.now(), // Creation timestamp
+      k: encryptedKey // Encrypted key
+    };
+    const envelopeJson = JSON.stringify(envelope);
+    const envelopeB64 = Buffer.from(envelopeJson, 'utf8').toString('base64');
+
     const target = `${CREDENTIAL_PREFIX}${vaultId}`;
 
     // SECURITY: Encode all parameters as Base64 to prevent PowerShell injection
     const targetBase64 = Buffer.from(target, 'utf8').toString('base64');
-    const keyBase64 = Buffer.from(encryptedKey, 'utf8').toString('base64');
+    // Store the envelope (which includes TTL timestamp) instead of raw key
+    const keyBase64 = Buffer.from(envelopeB64, 'utf8').toString('base64');
 
     try {
       // Use PowerShell with Base64-encoded parameters for defense-in-depth
@@ -352,11 +366,37 @@ export class WindowsHelloAuth {
       );
 
       const credential = stdout.trim();
-      if (credential) {
-        devLog('[WindowsHello] Credential retrieved successfully');
-        return credential;
+      if (!credential) {
+        return null;
       }
-      return null;
+
+      // Try to parse as envelope (v1+) or treat as legacy raw key
+      try {
+        const envelopeJson = Buffer.from(credential, 'base64').toString('utf8');
+        const envelope = JSON.parse(envelopeJson);
+
+        // Check envelope version
+        if (envelope.v === CREDENTIAL_ENVELOPE_VERSION) {
+          // Check TTL expiration
+          const age = Date.now() - envelope.t;
+          if (age > WINDOWS_HELLO.CREDENTIAL_TTL_MS) {
+            devLog('[WindowsHello] Credential expired, deleting...');
+            // Delete expired credential
+            await this.deleteCredential(vaultId);
+            return null;
+          }
+
+          devLog('[WindowsHello] Credential retrieved successfully (TTL valid)');
+          return envelope.k; // Return the encrypted key
+        }
+      } catch {
+        // Not a valid envelope - treat as legacy raw credential
+        devLog('[WindowsHello] Legacy credential format detected');
+      }
+
+      // Legacy format: return as-is (no TTL enforcement for old credentials)
+      devLog('[WindowsHello] Credential retrieved successfully');
+      return credential;
     } catch (error) {
       devError('[WindowsHello] Failed to retrieve credential:', error.message);
       return null;

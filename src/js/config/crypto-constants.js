@@ -156,7 +156,11 @@ export const WINDOWS_HELLO = Object.freeze({
   VERIFICATION_TIMEOUT: 60000,
 
   // Timeout for credential storage operations (ms)
-  CREDENTIAL_TIMEOUT: 10000
+  CREDENTIAL_TIMEOUT: 10000,
+
+  // Credential TTL in milliseconds (30 days)
+  // After this period, user must re-authenticate with master password
+  CREDENTIAL_TTL_MS: 30 * 24 * 60 * 60 * 1000
 });
 
 /**

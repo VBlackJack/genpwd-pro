@@ -19,6 +19,37 @@ import { EventEmitter } from 'node:events';
 // Security constant: matches SECURITY_TIMEOUTS.AUTO_LOCK_DEFAULT_MS in ui-constants.js (300000ms = 5 minutes)
 const DEFAULT_AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
+// Warning before auto-lock (30 seconds before)
+const AUTO_LOCK_WARNING_MS = 30 * 1000;
+
+/**
+ * Sanitize error messages to prevent information disclosure
+ * Maps internal error patterns to user-friendly messages
+ * @param {string} message - Raw error message
+ * @returns {string} Sanitized message safe for display
+ */
+function sanitizeErrorMessage(message) {
+  if (!message) return 'An error occurred';
+
+  const errorMappings = [
+    { pattern: /ENOENT|no such file/i, message: 'File not found. Check the file path or restore from backup.' },
+    { pattern: /EACCES|permission denied/i, message: 'Access denied. Check folder permissions.' },
+    { pattern: /crypto|decrypt|cipher|authentication/i, message: 'Encryption error. Verify your password is correct.' },
+    { pattern: /password|incorrect/i, message: 'Incorrect password. Please try again.' },
+    { pattern: /timeout|timed out/i, message: 'Operation timed out. Please try again.' },
+    { pattern: /locked/i, message: 'Vault is locked. Please unlock first.' },
+  ];
+
+  for (const mapping of errorMappings) {
+    if (mapping.pattern.test(message)) {
+      return mapping.message;
+    }
+  }
+
+  // Generic message for unknown errors (don't expose internals)
+  return 'An error occurred. Please try again.';
+}
+
 /**
  * @typedef {Object} SessionState
  * @property {'locked'|'unlocked'|'unlocking'} status
@@ -49,6 +80,9 @@ export class VaultSessionManager extends EventEmitter {
   /** @type {NodeJS.Timeout|null} */
   #autoLockTimer;
 
+  /** @type {NodeJS.Timeout|null} */
+  #autoLockWarningTimer;
+
   /** @type {number} */
   #autoLockMs;
 
@@ -66,6 +100,7 @@ export class VaultSessionManager extends EventEmitter {
     this.#key = null;
     this.#vaultId = null;
     this.#autoLockTimer = null;
+    this.#autoLockWarningTimer = null;
     this.#autoLockMs = DEFAULT_AUTO_LOCK_MS;
     this.#isDirty = false;
   }
@@ -168,7 +203,7 @@ export class VaultSessionManager extends EventEmitter {
 
       this.emit('unlocked', { vaultId, name: vaultData.metadata.name, isDecoy: activeSlot === 1 });
     } catch (error) {
-      this.emit('error', { action: 'unlock', error: error.message });
+      this.emit('error', { action: 'unlock', error: sanitizeErrorMessage(error.message) });
       throw error;
     }
   }
@@ -215,7 +250,7 @@ export class VaultSessionManager extends EventEmitter {
         this.emit('changed', {});
       }
     } catch (error) {
-      this.emit('error', { action: 'save', error: error.message });
+      this.emit('error', { action: 'save', error: sanitizeErrorMessage(error.message) });
       throw error;
     }
   }
@@ -540,20 +575,36 @@ export class VaultSessionManager extends EventEmitter {
       await this.#fileManager.saveVault(this.#vaultId, this.#vaultData, this.#key, this.#activeSlot);
       this.#isDirty = false;
     } catch (error) {
-      this.emit('error', { type: 'save', message: error.message });
+      this.emit('error', { type: 'save', message: sanitizeErrorMessage(error.message) });
     }
   }
 
   /**
    * Reset auto-lock timer
+   * Emits 'autoLockWarning' event 30 seconds before locking
    * @private
    */
   #resetAutoLockTimer() {
+    // Clear existing timers
     if (this.#autoLockTimer) {
       clearTimeout(this.#autoLockTimer);
+      this.#autoLockTimer = null;
+    }
+    if (this.#autoLockWarningTimer) {
+      clearTimeout(this.#autoLockWarningTimer);
+      this.#autoLockWarningTimer = null;
     }
 
     if (this.#autoLockMs > 0) {
+      // Set warning timer (30 seconds before lock)
+      const warningDelay = Math.max(0, this.#autoLockMs - AUTO_LOCK_WARNING_MS);
+      if (warningDelay > 0 && this.#autoLockMs > AUTO_LOCK_WARNING_MS) {
+        this.#autoLockWarningTimer = setTimeout(() => {
+          this.emit('autoLockWarning', { secondsRemaining: AUTO_LOCK_WARNING_MS / 1000 });
+        }, warningDelay);
+      }
+
+      // Set lock timer
       this.#autoLockTimer = setTimeout(() => {
         this.lock();
       }, this.#autoLockMs);
@@ -596,7 +647,7 @@ export class VaultSessionManager extends EventEmitter {
       const { key } = await this.#fileManager.openVault(vaultId, password);
       return key;
     } catch (error) {
-      console.error('[VaultSession] getDerivedKey error:', error.message);
+      // Don't log error details - could contain sensitive path info
       return null;
     }
   }
@@ -631,7 +682,7 @@ export class VaultSessionManager extends EventEmitter {
 
       this.emit('unlocked', { vaultId, name: vaultData.metadata.name });
     } catch (error) {
-      this.emit('error', { type: 'unlock', message: error.message });
+      this.emit('error', { type: 'unlock', message: sanitizeErrorMessage(error.message) });
       throw error;
     }
   }
@@ -661,13 +712,17 @@ export class VaultSessionManager extends EventEmitter {
   }
 
   /**
-   * Stop auto-lock timer
+   * Stop auto-lock timer and warning timer
    * @private
    */
   #stopAutoLockTimer() {
     if (this.#autoLockTimer) {
       clearTimeout(this.#autoLockTimer);
       this.#autoLockTimer = null;
+    }
+    if (this.#autoLockWarningTimer) {
+      clearTimeout(this.#autoLockWarningTimer);
+      this.#autoLockWarningTimer = null;
     }
   }
   /**

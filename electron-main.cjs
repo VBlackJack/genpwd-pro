@@ -379,6 +379,28 @@ function isRunningAsAdmin() {
   }
 }
 
+// ==================== DEVELOPMENT LOGGING ====================
+/**
+ * Safe logging wrapper - only logs in development/unpackaged builds
+ * Prevents information disclosure in production builds
+ * @param  {...any} args - Arguments to log
+ */
+function devLog(...args) {
+  if (!app.isPackaged || process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+}
+
+/**
+ * Safe error logging wrapper - only logs in development/unpackaged builds
+ * @param  {...any} args - Arguments to log
+ */
+function devError(...args) {
+  if (!app.isPackaged || process.env.NODE_ENV === 'development') {
+    console.error(...args);
+  }
+}
+
 /**
  * Initialize crash reporter for debugging
  */
@@ -391,10 +413,10 @@ function initCrashReporter() {
       uploadToServer: false,
       ignoreSystemCrashHandler: false
     });
-    console.log('[GenPwd Pro] Crash reporter initialized');
-    console.log('[GenPwd Pro] Crash dumps location:', app.getPath('crashDumps'));
+    devLog('[GenPwd Pro] Crash reporter initialized');
+    devLog('[GenPwd Pro] Crash dumps location:', app.getPath('crashDumps'));
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to initialize crash reporter:', error.message);
+    devError('[GenPwd Pro] Failed to initialize crash reporter:', error.message);
   }
 }
 
@@ -408,7 +430,7 @@ function getAutoStartEnabled() {
     const settings = app.getLoginItemSettings();
     return settings.openAtLogin;
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to get auto-start settings:', error);
+    devError('[GenPwd Pro] Failed to get auto-start settings:', error);
     return false;
   }
 }
@@ -439,7 +461,7 @@ function setAutoStartEnabled(enable) {
     console.log(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'} (verified)`);
     return { success: true, verified: true };
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to set auto-start:', error);
+    devError('[GenPwd Pro] Failed to set auto-start:', error);
     return { success: false, verified: false, error: error.message };
   }
 }
@@ -454,7 +476,7 @@ function loadWindowState() {
       return JSON.parse(data);
     }
   } catch (err) {
-    console.log('[GenPwd Pro] Could not load window state:', err.message);
+    devLog('[GenPwd Pro] Could not load window state:', err.message);
   }
   return null;
 }
@@ -473,7 +495,7 @@ function saveWindowState(win) {
     };
     fs.writeFileSync(WINDOW_STATE_FILE, JSON.stringify(state, null, 2));
   } catch (err) {
-    console.log('[GenPwd Pro] Could not save window state:', err.message);
+    devLog('[GenPwd Pro] Could not save window state:', err.message);
   }
 }
 
@@ -481,7 +503,7 @@ function saveWindowState(win) {
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  console.log('[GenPwd Pro] Another instance is running. Exiting.');
+  devLog('[GenPwd Pro] Another instance is running. Exiting.');
   app.quit();
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
@@ -500,7 +522,7 @@ if (!gotTheLock) {
       // Check for .gpdb vault file in command line (file association)
       const vaultFile = commandLine.find(arg => arg.endsWith('.gpdb'));
       if (vaultFile && fs.existsSync(vaultFile)) {
-        console.log('[GenPwd Pro] Opening vault from file association:', vaultFile);
+        devLog('[GenPwd Pro] Opening vault from file association:', vaultFile);
         mainWindow.webContents.send('vault:open-file', vaultFile);
       }
     }
@@ -519,7 +541,7 @@ if (process.defaultApp) {
 
 // Handle deep link URLs
 function handleDeepLink(url) {
-  console.log('[GenPwd Pro] Deep link received:', url);
+  devLog('[GenPwd Pro] Deep link received:', url);
 
   // Validate deep link URL
   if (!url || typeof url !== 'string') {
@@ -813,7 +835,7 @@ function createWindow() {
       windowOptions.x = savedState.x;
       windowOptions.y = savedState.y;
     } else {
-      console.log('[GenPwd Pro] Saved window position off-screen, centering window');
+      devLog('[GenPwd Pro] Saved window position off-screen, centering window');
     }
   }
 
@@ -876,7 +898,7 @@ function createWindow() {
       closeBehavior = prefs.behavior || 'ask';
     }
   } catch (e) {
-    console.log('[GenPwd Pro] No saved close behavior preference');
+    devLog('[GenPwd Pro] No saved close behavior preference');
   }
 
   mainWindow.on('close', async (event) => {
@@ -922,9 +944,9 @@ function createWindow() {
           const prefsPath = path.join(app.getPath('userData'), 'close-behavior.json');
           fs.writeFileSync(prefsPath, JSON.stringify({ behavior: 'minimize' }), 'utf8');
           closeBehavior = 'minimize';
-          console.log('[GenPwd Pro] Saved close behavior: always minimize');
+          devLog('[GenPwd Pro] Saved close behavior: always minimize');
         } catch (e) {
-          console.error('[GenPwd Pro] Failed to save close behavior:', e.message);
+          devError('[GenPwd Pro] Failed to save close behavior:', e.message);
         }
       }
 
@@ -1007,9 +1029,9 @@ function initThumbnailToolbar() {
     ];
 
     mainWindow.setThumbnailToolbar(buttons);
-    console.log('[GenPwd Pro] Taskbar thumbnail toolbar initialized');
+    devLog('[GenPwd Pro] Taskbar thumbnail toolbar initialized');
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to set thumbnail toolbar:', error.message);
+    devError('[GenPwd Pro] Failed to set thumbnail toolbar:', error.message);
   }
 }
 
@@ -1053,9 +1075,9 @@ function initJumpList() {
         ]
       }
     ]);
-    console.log('[GenPwd Pro] Windows Jump List initialized');
+    devLog('[GenPwd Pro] Windows Jump List initialized');
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to set Jump List:', error.message);
+    devError('[GenPwd Pro] Failed to set Jump List:', error.message);
   }
 }
 
@@ -1100,7 +1122,7 @@ function updateJumpListRecentVaults(recentVaults) {
       }
     ]);
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to update Jump List:', error.message);
+    devError('[GenPwd Pro] Failed to update Jump List:', error.message);
   }
 }
 
@@ -1115,7 +1137,7 @@ function createTray() {
     // Resize for tray (16x16 on Windows)
     trayIcon = trayIcon.resize({ width: 16, height: 16 });
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to load tray icon:', error);
+    devError('[GenPwd Pro] Failed to load tray icon:', error);
     // Create a simple fallback icon
     trayIcon = nativeImage.createEmpty();
   }
@@ -1148,7 +1170,7 @@ function createTray() {
           const current = clipboard.readText();
           if (current === password) {
             clipboard.clear();
-            console.log('[GenPwd Pro] Tray: Clipboard auto-cleared');
+            devLog('[GenPwd Pro] Tray: Clipboard auto-cleared');
           }
         }, 30000);
 
@@ -1162,7 +1184,7 @@ function createTray() {
           }).show();
         }
 
-        console.log('[GenPwd Pro] Tray: Password generated and copied');
+        devLog('[GenPwd Pro] Tray: Password generated and copied');
       }
     },
     {
@@ -1211,7 +1233,7 @@ function createTray() {
     }
   });
 
-  console.log('[GenPwd Pro] System tray created');
+  devLog('[GenPwd Pro] System tray created');
 }
 
 // Create the application menu
@@ -1386,7 +1408,7 @@ ipcMain.handle('auth:encrypt-secret', (event, text) => {
     // Return as base64 for easy storage
     return { success: true, data: encrypted.toString('base64') };
   } catch (error) {
-    console.error('[GenPwd Pro] auth:encrypt-secret error:', error.message);
+    devError('[GenPwd Pro] auth:encrypt-secret error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1417,7 +1439,7 @@ ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
     rateLimiter.reset('auth:decrypt');
     return { success: true, data: decrypted };
   } catch (error) {
-    console.error('[GenPwd Pro] auth:decrypt-secret error:', error.message);
+    devError('[GenPwd Pro] auth:decrypt-secret error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1470,7 +1492,7 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
       const currentContent = clipboard.readText();
       if (currentContent === text) {
         clipboard.clear();
-        console.log('[GenPwd Pro] Clipboard auto-cleared after timeout');
+        devLog('[GenPwd Pro] Clipboard auto-cleared after timeout');
 
         // Notify renderer with clear message for toast
         if (mainWindow && mainWindow.webContents) {
@@ -1485,7 +1507,7 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
 
     return { success: true, opId, ttlMs };
   } catch (error) {
-    console.error('[GenPwd Pro] clipboard:copy-secure error:', error.message);
+    devError('[GenPwd Pro] clipboard:copy-secure error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1503,7 +1525,7 @@ ipcMain.handle('clipboard:clear', (event) => {
     clipboard.clear();
     return { success: true };
   } catch (error) {
-    console.error('[GenPwd Pro] clipboard:clear error:', error.message);
+    devError('[GenPwd Pro] clipboard:clear error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1626,7 +1648,7 @@ ipcMain.handle('window:toggle-compact', (event) => {
 
     isCompactMode = true;
     mainWindow.webContents.send('window:compact-mode-changed', { compact: true });
-    console.log('[GenPwd Pro] Entered compact mode');
+    devLog('[GenPwd Pro] Entered compact mode');
   } else {
     // Exit compact mode
     mainWindow.setAlwaysOnTop(false);
@@ -1642,7 +1664,7 @@ ipcMain.handle('window:toggle-compact', (event) => {
 
     isCompactMode = false;
     mainWindow.webContents.send('window:compact-mode-changed', { compact: false });
-    console.log('[GenPwd Pro] Exited compact mode');
+    devLog('[GenPwd Pro] Exited compact mode');
   }
 
   return { success: true, compact: isCompactMode };
@@ -1676,7 +1698,7 @@ ipcMain.handle('fs:read-binary', async (event, filePath) => {
     const buffer = await fs.promises.readFile(filePath);
     return { success: true, data: buffer };
   } catch (error) {
-    console.error('[GenPwd Pro] fs:read-binary error:', error.message);
+    devError('[GenPwd Pro] fs:read-binary error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1717,7 +1739,7 @@ ipcMain.handle('fs:show-open-dialog', async (event, options = {}) => {
 
     return { success: true, canceled: false, filePath: result.filePaths[0] };
   } catch (error) {
-    console.error('[GenPwd Pro] fs:show-open-dialog error:', error.message);
+    devError('[GenPwd Pro] fs:show-open-dialog error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1837,7 +1859,7 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
     console.log(`[GenPwd Pro] vaultIO:save - Saved to ${filePath}`);
     return { success: true, filePath };
   } catch (error) {
-    console.error('[GenPwd Pro] vaultIO:save error:', error.message);
+    devError('[GenPwd Pro] vaultIO:save error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1884,7 +1906,7 @@ ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
     if (error.code === 'ENOENT') {
       return { success: false, error: 'File not found' };
     }
-    console.error('[GenPwd Pro] vaultIO:load error:', error.message);
+    devError('[GenPwd Pro] vaultIO:load error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1921,7 +1943,7 @@ ipcMain.handle('vaultIO:selectFile', async (event) => {
       size: stats.size
     };
   } catch (error) {
-    console.error('[GenPwd Pro] vaultIO:selectFile error:', error.message);
+    devError('[GenPwd Pro] vaultIO:selectFile error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1959,7 +1981,7 @@ ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
       fileName: path.basename(filePath)
     };
   } catch (error) {
-    console.error('[GenPwd Pro] vaultIO:selectSaveLocation error:', error.message);
+    devError('[GenPwd Pro] vaultIO:selectSaveLocation error:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -2197,7 +2219,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
       };
     }
 
-    console.log('[GenPwd Pro] Auto-type target verified:', foregroundTitle);
+    devLog('[GenPwd Pro] Auto-type target verified:', foregroundTitle);
 
     // Build and execute PowerShell script using Base64 encoding for security
     // This prevents command injection attacks by encoding the entire script
@@ -2225,16 +2247,16 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
         safeRestore();
 
         if (code === 0) {
-          console.log('[GenPwd Pro] Auto-type completed successfully');
+          devLog('[GenPwd Pro] Auto-type completed successfully');
           resolve({ success: true });
         } else {
-          console.error('[GenPwd Pro] Auto-type failed:', stderr);
+          devError('[GenPwd Pro] Auto-type failed:', stderr);
           resolve({ success: false, error: stderr || `Process exited with code ${code}` });
         }
       });
 
       ps.on('error', (error) => {
-        console.error('[GenPwd Pro] Auto-type spawn error:', error.message);
+        devError('[GenPwd Pro] Auto-type spawn error:', error.message);
         safeRestore();
         resolve({ success: false, error: error.message });
       });
@@ -2247,7 +2269,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
       }, 30000);
     });
   } catch (error) {
-    console.error('[GenPwd Pro] automation:perform-auto-type error:', error.message);
+    devError('[GenPwd Pro] automation:perform-auto-type error:', error.message);
     // Can't use safeRestore here as it's defined inside the try block
     if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
       mainWindow.restore();
@@ -2288,9 +2310,9 @@ app.whenReady().then(async () => {
   try {
     vaultModule = await import('./src/desktop/vault/index.js');
     vaultModule.registerVaultIPC(ipcMain);
-    console.log('[GenPwd Pro] Vault IPC handlers registered');
+    devLog('[GenPwd Pro] Vault IPC handlers registered');
   } catch (error) {
-    console.error('[GenPwd Pro] Failed to load vault module:', error);
+    devError('[GenPwd Pro] Failed to load vault module:', error);
   }
 
   createWindow();
@@ -2302,7 +2324,7 @@ app.whenReady().then(async () => {
   // Handle hidden startup (auto-start)
   if (startHidden && mainWindow) {
     mainWindow.hide();
-    console.log('[GenPwd Pro] Started hidden (auto-start mode)');
+    devLog('[GenPwd Pro] Started hidden (auto-start mode)');
   }
 
   // Send Windows accent color to renderer after window is ready
@@ -2311,7 +2333,7 @@ app.whenReady().then(async () => {
       const colors = await getWindowsAccentColor();
       if (colors) {
         mainWindow.webContents.send('system:accent-color', colors);
-        console.log('[GenPwd Pro] Sent Windows accent color:', colors.accent);
+        devLog('[GenPwd Pro] Sent Windows accent color:', colors.accent);
       }
     });
   }
@@ -2324,11 +2346,11 @@ app.whenReady().then(async () => {
 
       if (mainWindow.isVisible()) {
         mainWindow.hide();
-        console.log('[GenPwd Pro] Boss Key: Window hidden');
+        devLog('[GenPwd Pro] Boss Key: Window hidden');
       } else {
         mainWindow.show();
         mainWindow.focus();
-        console.log('[GenPwd Pro] Boss Key: Window shown');
+        devLog('[GenPwd Pro] Boss Key: Window shown');
       }
     });
 
@@ -2338,7 +2360,7 @@ app.whenReady().then(async () => {
       console.error(`[GenPwd Pro] Failed to register global hotkey: ${GLOBAL_HOTKEY}`);
     }
   } catch (error) {
-    console.error('[GenPwd Pro] Global hotkey registration error:', error.message);
+    devError('[GenPwd Pro] Global hotkey registration error:', error.message);
   }
 
   // ==================== GLOBAL AUTO-TYPE (KeePass Killer) ====================
@@ -2346,7 +2368,7 @@ app.whenReady().then(async () => {
 
   try {
     globalShortcut.register(GLOBAL_AUTOTYPE, async () => {
-      console.log('[GenPwd Pro] Global Auto-Type triggered');
+      devLog('[GenPwd Pro] Global Auto-Type triggered');
 
       // Get Active Window Title
       const title = await getActiveWindowTitle();
@@ -2361,13 +2383,13 @@ app.whenReady().then(async () => {
     });
     console.log(`[GenPwd Pro] Global Auto-Type registered: ${GLOBAL_AUTOTYPE}`);
   } catch (error) {
-    console.error('[GenPwd Pro] Auto-Type registration error:', error);
+    devError('[GenPwd Pro] Auto-Type registration error:', error);
   }
 
   // ==================== POWER MANAGEMENT (Security) ====================
   // Lock vault on system sleep/lock to require re-authentication
   powerMonitor.on('lock-screen', async () => {
-    console.log('[GenPwd Pro] Screen locked - locking vault');
+    devLog('[GenPwd Pro] Screen locked - locking vault');
     if (vaultModule) {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
@@ -2390,7 +2412,7 @@ app.whenReady().then(async () => {
   });
 
   powerMonitor.on('suspend', async () => {
-    console.log('[GenPwd Pro] System suspending - locking vault');
+    devLog('[GenPwd Pro] System suspending - locking vault');
     if (vaultModule) {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
@@ -2413,7 +2435,7 @@ app.whenReady().then(async () => {
   });
 
   powerMonitor.on('resume', () => {
-    console.log('[GenPwd Pro] System resumed from sleep');
+    devLog('[GenPwd Pro] System resumed from sleep');
     // Vault already locked on suspend, notify renderer to show unlock screen
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.send('vault:require-reauth', { reason: 'resume' });
@@ -2422,7 +2444,7 @@ app.whenReady().then(async () => {
 
   // Handle system shutdown - lock vault before quitting
   powerMonitor.on('shutdown', async () => {
-    console.log('[GenPwd Pro] System shutting down - locking vault');
+    devLog('[GenPwd Pro] System shutting down - locking vault');
     if (vaultModule) {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
@@ -2436,7 +2458,7 @@ app.whenReady().then(async () => {
     if (vaultModule) {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
-        console.log('[GenPwd Pro] App quitting - locking vault');
+        devLog('[GenPwd Pro] App quitting - locking vault');
         event.preventDefault();
         await session.lock();
         app.quit();
@@ -2495,7 +2517,7 @@ app.on('before-quit', () => {
 app.on('will-quit', () => {
   // Unregister all global shortcuts
   globalShortcut.unregisterAll();
-  console.log('[GenPwd Pro] Global shortcuts unregistered');
+  devLog('[GenPwd Pro] Global shortcuts unregistered');
 
   if (tray) {
     tray.destroy();

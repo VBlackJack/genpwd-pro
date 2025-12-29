@@ -7,12 +7,20 @@
   <!-- Content Security Policy for Enhanced Security -->
   <!-- Updated for Phase 3: Cloud Sync (Google Drive API) -->
   <!-- Note: Add https://*.ingest.sentry.io to connect-src when Sentry is enabled -->
-  <!-- SECURITY: 'unsafe-inline' added to style-src for dynamic CSS variables
-       - Required for vault-ui.js dynamic styles (colors, tags, folder padding)
-       - CSSOM API (.style.setProperty) is blocked by strict CSP without unsafe-inline
-       - Acceptable for Electron app where all code is self-controlled -->
-  <!-- SECURITY: 'wasm-unsafe-eval' added for hash-wasm WASM crypto operations -->
-  <!-- Note: frame-ancestors removed - only works via HTTP headers, not meta tags (causes console warning) -->
+  <!--
+    SECURITY AUDIT NOTE (2025-01):
+    - 'unsafe-inline' in style-src: ACCEPTED RISK
+      * Required for CSSOM API (.style.setProperty) used in vault-ui.js
+      * Risk: CSS injection attacks (CSS exfiltration)
+      * Mitigation: Electron app with no user-controlled HTML, all code is self-signed
+      * Attack vector: Would require XSS first, which is prevented by other CSP directives
+      * Decision: Accept risk vs breaking dynamic styling functionality
+
+    - 'wasm-unsafe-eval' in script-src: REQUIRED
+      * Needed for hash-wasm WASM crypto operations (Argon2id KDF)
+      * No alternative: WASM execution requires this directive
+  -->
+  <!-- Note: frame-ancestors removed - only works via HTTP headers, not meta tags -->
   <!-- In Electron, frame embedding is controlled by webPreferences in BrowserWindow -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self'; child-src 'none'; upgrade-insecure-requests">
 
