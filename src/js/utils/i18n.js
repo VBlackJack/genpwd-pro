@@ -243,6 +243,7 @@ class I18n {
    * - data-i18n-aria-label="key" -> sets aria-label attribute
    * - data-i18n-title="key" -> sets title attribute
    * - data-i18n-value="key" -> sets value attribute (for inputs)
+   * - data-i18n-href="key" -> sets href attribute (for links)
    *
    * @param {Element} [root=document] - Root element to search within
    * @returns {number} Number of elements translated
@@ -324,6 +325,19 @@ class I18n {
         const translation = this.t(key);
         if (translation !== key) {
           el.setAttribute('value', translation);
+          count++;
+        }
+      }
+    }
+
+    // Translate href attributes (for links)
+    const hrefElements = root.querySelectorAll('[data-i18n-href]');
+    for (const el of hrefElements) {
+      const key = el.getAttribute('data-i18n-href');
+      if (key) {
+        const translation = this.t(key);
+        if (translation !== key) {
+          el.setAttribute('href', translation);
           count++;
         }
       }

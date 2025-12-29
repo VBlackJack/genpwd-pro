@@ -622,12 +622,12 @@ function updateSaveButtonState() {
     const preset = presetManager.getPreset(currentLoadedPresetId);
     if (preset) {
       btnSavePreset.innerHTML = `🔄 ${i18n.t('presets.update')} "${preset.name}"`;
-      btnSavePreset.title = `Update preset "${preset.name}" with current settings`;
+      btnSavePreset.title = i18n.t('presets.updateTooltip', { name: preset.name });
       return;
     }
   }
   btnSavePreset.innerHTML = `💾 ${i18n.t('presets.save')}`;
-  btnSavePreset.title = 'Save current settings as new preset';
+  btnSavePreset.title = i18n.t('presets.saveTooltip');
 }
 
 /**
@@ -2792,7 +2792,7 @@ export function initializeHIBPUI() {
   const hibpBtn = document.createElement('button');
   hibpBtn.className = 'btn';
   hibpBtn.id = 'btn-hibp-check';
-  hibpBtn.setAttribute('aria-label', 'Check passwords against breach database');
+  hibpBtn.setAttribute('aria-label', i18n.t('aria.checkBreaches'));
   hibpBtn.innerHTML = sanitizeHTML('🔍 Check Breaches');
 
   // Insert after Export button

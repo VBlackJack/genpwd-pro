@@ -1864,7 +1864,7 @@ export class VaultUI {
       if (template.suggestTotp) {
         const totpField = document.getElementById('entry-totp');
         if (totpField) {
-          totpField.placeholder = 'Recommended for this service';
+          totpField.placeholder = t('vault.hints.totpRecommended');
         }
       }
     }, 50);
@@ -4539,9 +4539,9 @@ export class VaultUI {
       btn.addEventListener('click', async () => {
         if (this.#hasDirtyForm) {
           const confirmed = await this.#showConfirmDialog(
-            'Unsaved changes',
-            'You have unsaved changes. Do you really want to close without saving?',
-            { confirmText: 'Close without saving', confirmClass: 'vault-btn-danger' }
+            t('vault.dialogs.unsavedChanges'),
+            t('vault.dialogs.unsavedChangesMessage'),
+            { confirmText: t('vault.dialogs.closeWithoutSaving'), confirmClass: 'vault-btn-danger' }
           );
           if (!confirmed) return;
         }
@@ -4642,8 +4642,9 @@ export class VaultUI {
     if (isDirty && !indicator) {
       indicator = document.createElement('span');
       indicator.className = 'dirty-indicator';
-      indicator.setAttribute('aria-label', 'Unsaved changes');
-      indicator.title = 'Unsaved changes';
+      const unsavedText = t('aria.unsavedChanges');
+      indicator.setAttribute('aria-label', unsavedText);
+      indicator.title = unsavedText;
       indicator.textContent = ' •';
       title.appendChild(indicator);
     } else if (!isDirty && indicator) {

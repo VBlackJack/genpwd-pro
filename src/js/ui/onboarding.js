@@ -121,7 +121,7 @@ export class Onboarding {
         {
           id: 'complete',
           title: t('onboarding.main.complete.title'),
-          text: t('onboarding.main.complete.text'),
+          text: t('onboarding.main.complete.text', { githubUrl: t('links.github') }),
           attachTo: null,
           buttons: [
             {
@@ -292,10 +292,10 @@ export class Onboarding {
 
     // Click overlay to skip tour
     this.overlay.addEventListener('click', async () => {
-      const confirmed = await showConfirm('Skip the tour?', {
-        title: 'Skip Tour',
-        confirmLabel: 'Skip',
-        cancelLabel: 'Continue'
+      const confirmed = await showConfirm(t('vault.dialogs.skipTour'), {
+        title: t('onboarding.buttons.skipTour'),
+        confirmLabel: t('vault.dialogs.skip'),
+        cancelLabel: t('vault.dialogs.continue')
       });
       if (confirmed) {
         this.completeTour();

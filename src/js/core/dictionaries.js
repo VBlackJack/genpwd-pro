@@ -19,6 +19,7 @@ import { DICTIONARY } from '../config/crypto-constants.js';
 import { safeLog } from '../utils/logger.js';
 import { validateDictionary } from '../utils/integrity.js';
 import { validateString, validateArray } from '../utils/validators.js';
+import { t } from '../utils/i18n.js';
 
 const REMOTE_PROTOCOL_REGEX = /^https?:\/\//i;
 const DICTIONARY_LOAD_TIMEOUT = DICTIONARY.LOAD_TIMEOUT;
@@ -382,7 +383,7 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
     infoEl.textContent = `${count} words • ${version} • Source: ${source}`;
     infoEl.classList.add('dict-info-success');
   } else {
-    infoEl.textContent = 'No words available';
+    infoEl.textContent = t('dictionaries.noWordsAvailable');
     infoEl.classList.add('dict-info-warning');
   }
 }

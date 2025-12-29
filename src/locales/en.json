@@ -112,6 +112,7 @@
     "leet": "Word → Leet"
   },
   "settings": {
+    "themeLabel": "Theme:",
     "length": "Length",
     "lengthRange": "Length (6–64)",
     "quantity": "Quantity",
@@ -159,7 +160,8 @@
     "french": "🇫🇷 French",
     "english": "🇬🇧 English",
     "latin": "🏛️ Latin",
-    "loading": "Loading dictionary..."
+    "loading": "Loading dictionary...",
+    "noWordsAvailable": "No words available"
   },
   "passphrase": {
     "wordCount": "Word count (2–8)",
@@ -331,7 +333,11 @@
     "showAbout": "Show information about GenPwd Pro",
     "generatorTab": "Password Generator Tab",
     "vaultTab": "Password Vault Tab",
-    "mainNavigation": "Main navigation"
+    "mainNavigation": "Main navigation",
+    "showTestResults": "Show test results",
+    "showTestConsole": "Show test console",
+    "checkBreaches": "Check passwords against breach database",
+    "unsavedChanges": "Unsaved changes"
   },
   "vault": {
     "status": {
@@ -1413,6 +1419,8 @@
   "presets": {
     "title": "Presets",
     "save": "Save Configuration",
+    "saveTooltip": "Save current settings as new preset",
+    "updateTooltip": "Update preset \"{name}\" with current settings",
     "manage": "Manage Presets",
     "quickSave": "Quick save preset",
     "refreshFromVault": "Refresh presets from vault",
@@ -1617,7 +1625,7 @@
       },
       "complete": {
         "title": "🎉 You're All Set!",
-        "text": "You're ready to generate secure passwords. Need help? Check the <strong>About</strong> section or visit our <a href=\"https://github.com/VBlackJack/genpwd-pro\" target=\"_blank\">GitHub</a>."
+        "text": "You're ready to generate secure passwords. Need help? Check the <strong>About</strong> section or visit our <a href=\"{githubUrl}\" target=\"_blank\">GitHub</a>."
       }
     },
     "vault": {
@@ -1775,5 +1783,8 @@
       "vaultMustBeUnlocked": "Vault must be unlocked to enable Duress Mode",
       "populateDecoyMustBeBoolean": "populateDecoy must be a boolean"
     }
+  },
+  "links": {
+    "github": "https://github.com/VBlackJack/genpwd-pro"
   }
 }

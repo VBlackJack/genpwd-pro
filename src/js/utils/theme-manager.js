@@ -18,6 +18,7 @@
 
 import { safeLog } from './logger.js';
 import { safeGetItem, safeSetItem } from './storage-helper.js';
+import { i18n } from './i18n.js';
 
 /**
  * Available themes with their CSS variables
@@ -342,7 +343,7 @@ export function createThemeSelector(containerId) {
   wrapper.className = 'theme-selector';
 
   const label = document.createElement('span');
-  label.textContent = 'Theme:';
+  label.textContent = i18n.t('settings.themeLabel');
   label.className = 'theme-selector-label';
   wrapper.appendChild(label);
 

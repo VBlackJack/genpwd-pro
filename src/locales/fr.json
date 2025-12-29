@@ -82,6 +82,7 @@
     "appLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé",
     "caseManagement": "Mode de gestion majuscules/minuscules",
     "characterPolicy": "Politique de caractères",
+    "checkBreaches": "__TRANSLATE__ Check passwords against breach database",
     "configPanel": "Panneau de configuration",
     "customSpecialsDesc": "Entrez les caractères spéciaux que vous souhaitez inclure dans les mots de passe générés",
     "debugPanel": "Panneau de debug",
@@ -108,7 +109,10 @@
     "setAllTitle": "Mettre tous les blocs en Titre",
     "setAllUpper": "Mettre tous les blocs en majuscules",
     "showAbout": "Afficher les informations sur GenPwd Pro",
+    "showTestConsole": "__TRANSLATE__ Show test console",
+    "showTestResults": "__TRANSLATE__ Show test results",
     "specialsPlacement": "Placement des caractères spéciaux",
+    "unsavedChanges": "__TRANSLATE__ Unsaved changes",
     "vaultTab": "Onglet Coffre",
     "wordSeparator": "Séparateur de mots"
   },
@@ -220,7 +224,8 @@
     "english": "🇬🇧 Anglais",
     "french": "🇫🇷 Français",
     "latin": "🏛️ Latin",
-    "loading": "Chargement du dictionnaire..."
+    "loading": "Chargement du dictionnaire...",
+    "noWordsAvailable": "__TRANSLATE__ No words available"
   },
   "errors": {
     "auth": {
@@ -475,6 +480,9 @@
   "leet": {
     "wordToTransform": "Mot à transformer"
   },
+  "links": {
+    "github": "__TRANSLATE__ https://github.com/VBlackJack/genpwd-pro"
+  },
   "modal": {
     "closeEsc": "Fermer (Échap)",
     "confirm": "Confirmer",
@@ -503,7 +511,7 @@
         "title": "⚙️ Paramètres et fonctionnalités"
       },
       "complete": {
-        "text": "Vous êtes prêt à générer des mots de passe sécurisés. Besoin d'aide ? Consultez la section <strong>À propos</strong> ou visitez notre <a href=\"https://github.com/VBlackJack/genpwd-pro\" target=\"_blank\">GitHub</a>.",
+        "text": "Vous êtes prêt à générer des mots de passe sécurisés. Besoin d'aide ? Consultez la section <strong>À propos</strong> ou visitez notre <a href=\"{githubUrl}\" target=\"_blank\">GitHub</a>.",
         "title": "🎉 Vous êtes prêt !"
       },
       "generate": {
@@ -652,11 +660,13 @@
     "refreshFromVault": "Actualiser les préréglages depuis le coffre-fort",
     "replaceConfirm": "Remplacer la configuration « {name} » par les paramètres actuels ?",
     "save": "Sauvegarder la configuration",
+    "saveTooltip": "__TRANSLATE__ Save current settings as new preset",
     "select": "-- Sélectionner --",
     "title": "Préréglages",
     "update": "Mettre à jour",
     "updateFailed": "Échec de la mise à jour",
     "updateTitle": "__TRANSLATE__ Update Preset",
+    "updateTooltip": "__TRANSLATE__ Update preset \"{name}\" with current settings",
     "updated": "mis à jour",
     "vaultSync": {
       "deleteFromVault": "Supprimer du coffre",
@@ -722,7 +732,8 @@
     "quantity": "Nombre",
     "quantityRange": "Nombre (1–20)",
     "specials": "Spéciaux",
-    "specialsRange": "Spéciaux (0–6)"
+    "specialsRange": "Spéciaux (0–6)",
+    "themeLabel": "__TRANSLATE__ Theme:"
   },
   "settingsModal": {
     "categories": "Catégories de paramètres",
