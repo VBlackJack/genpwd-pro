@@ -290,7 +290,7 @@ export function parseKeePassXML(xmlText) {
     // Add group if it has a meaningful name and not root
     let groupId = null;
     if (groupName && groupName !== 'Root' && groupName !== 'Racine') {
-      groupId = `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      groupId = `group-${Date.now()}-${crypto.randomUUID().slice(0, 9)}`;
       groups.push({
         id: groupId,
         name: groupName,

@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.data.services
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -61,15 +61,15 @@ class HaveIBeenPwnedService @Inject constructor() {
                 val breachCount = findSuffixInResponse(suffix, response)
 
                 if (breachCount > 0) {
-                    Log.w(TAG, "Password found in breaches (count: $breachCount)")
+                    SafeLog.w(TAG, "Password found in breaches (count: $breachCount)")
                     BreachCheckResult.Breached(breachCount)
                 } else {
-                    Log.d(TAG, "Password not found in breaches")
+                    SafeLog.d(TAG, "Password not found in breaches")
                     BreachCheckResult.Safe
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Error checking password", e)
+                SafeLog.e(TAG, "Error checking password", e)
                 BreachCheckResult.Error(e.message ?: "Unknown error")
             }
         }

@@ -2,7 +2,7 @@ package com.julien.genpwdpro.data.crypto
 
 import android.app.ActivityManager
 import android.content.Context
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -71,7 +71,7 @@ class Argon2ParamsCalculator @Inject constructor() {
         val deviceClass = classifyDevice(context)
         val cpuCores = Runtime.getRuntime().availableProcessors()
 
-        Log.i(TAG, "Device classification: $deviceClass, CPU cores: $cpuCores")
+        SafeLog.i(TAG, "Device classification: $deviceClass, CPU cores: $cpuCores")
 
         // Calculate parameters based on device class
         val params = when (deviceClass) {
@@ -116,7 +116,7 @@ class Argon2ParamsCalculator @Inject constructor() {
             }
         }
 
-        Log.i(TAG, "Calculated params: $params")
+        SafeLog.i(TAG, "Calculated params: $params")
         return params
     }
 
@@ -136,7 +136,7 @@ class Argon2ParamsCalculator @Inject constructor() {
         val totalRamMB = memInfo.totalMem / (1024 * 1024)
         val cpuCores = Runtime.getRuntime().availableProcessors()
 
-        Log.d(TAG, "Device specs: RAM=${totalRamMB}MB, CPU cores=$cpuCores")
+        SafeLog.d(TAG, "Device specs: RAM=${totalRamMB}MB, CPU cores=$cpuCores")
 
         // Classify based on RAM (primary) and CPU cores (secondary)
         return when {
@@ -147,7 +147,7 @@ class Argon2ParamsCalculator @Inject constructor() {
         }.also { deviceClass ->
             // Downgrade if CPU is weak (< 4 cores on mid/high-end device)
             if (deviceClass >= DeviceClass.MID_RANGE && cpuCores < 4) {
-                Log.w(TAG, "Downgrading device class due to low CPU core count")
+                SafeLog.w(TAG, "Downgrading device class due to low CPU core count")
                 return DeviceClass.LOW_END
             }
         }
@@ -192,7 +192,7 @@ class Argon2ParamsCalculator @Inject constructor() {
      * @return Fast (insecure) parameters for testing
      */
     fun getTestParams(): Argon2Params {
-        Log.w(TAG, "⚠️ Using INSECURE test parameters! FOR TESTING ONLY!")
+        SafeLog.w(TAG, "Using INSECURE test parameters! FOR TESTING ONLY!")
         return Argon2Params(
             iterations = 1,
             memory = 8192,  // 8 MB

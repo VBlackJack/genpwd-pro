@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.domain.security
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -56,11 +56,11 @@ class UnlockRateLimiter @Inject constructor() {
         lockoutUntil[vaultId]?.let { until ->
             if (now < until) {
                 val remainingSeconds = (until - now) / 1000
-                Log.w(TAG, "Vault $vaultId is locked out for $remainingSeconds more seconds")
+                SafeLog.w(TAG, "Vault ${SafeLog.redact(vaultId)} is locked out for $remainingSeconds more seconds")
                 return RateLimitResult.LockedOut(remainingSeconds)
             } else {
                 // Lockout expired - reset
-                Log.i(TAG, "Lockout expired for vault $vaultId")
+                SafeLog.i(TAG, "Lockout expired for vault ${SafeLog.redact(vaultId)}")
                 failedAttempts.remove(vaultId)
                 lockoutUntil.remove(vaultId)
             }
@@ -85,7 +85,7 @@ class UnlockRateLimiter @Inject constructor() {
             lockoutUntil[vaultId] = lockoutEnd
             val remainingSeconds = lockoutDuration / 1000
 
-            Log.w(TAG, "Vault $vaultId locked out after $attempts attempts for $remainingSeconds seconds")
+            SafeLog.w(TAG, "Vault ${SafeLog.redact(vaultId)} locked out after $attempts attempts for $remainingSeconds seconds")
 
             return RateLimitResult.LockedOut(remainingSeconds)
         }
@@ -94,7 +94,7 @@ class UnlockRateLimiter @Inject constructor() {
         failedAttempts[vaultId] = attempts + 1
         val attemptsRemaining = MAX_ATTEMPTS - attempts - 1
 
-        Log.d(TAG, "Failed attempt recorded for vault $vaultId. Attempts remaining: $attemptsRemaining")
+        SafeLog.d(TAG, "Failed attempt recorded for vault ${SafeLog.redact(vaultId)}. Attempts remaining: $attemptsRemaining")
 
         return RateLimitResult.Allowed(attemptsRemaining)
     }
@@ -107,7 +107,7 @@ class UnlockRateLimiter @Inject constructor() {
     suspend fun recordSuccess(vaultId: String) = mutex.withLock {
         val attempts = failedAttempts[vaultId] ?: 0
         if (attempts > 0) {
-            Log.i(TAG, "Successful unlock for vault $vaultId after $attempts failed attempts")
+            SafeLog.i(TAG, "Successful unlock for vault ${SafeLog.redact(vaultId)} after $attempts failed attempts")
         }
 
         failedAttempts.remove(vaultId)
@@ -150,7 +150,7 @@ class UnlockRateLimiter @Inject constructor() {
      * @param vaultId ID of vault to reset
      */
     suspend fun resetLockout(vaultId: String) = mutex.withLock {
-        Log.w(TAG, "Manually resetting lockout for vault $vaultId")
+        SafeLog.w(TAG, "Manually resetting lockout for vault ${SafeLog.redact(vaultId)}")
         failedAttempts.remove(vaultId)
         lockoutUntil.remove(vaultId)
     }
@@ -159,7 +159,7 @@ class UnlockRateLimiter @Inject constructor() {
      * Clear all lockouts (app reset/logout)
      */
     suspend fun clearAll() = mutex.withLock {
-        Log.i(TAG, "Clearing all rate limiting data")
+        SafeLog.i(TAG, "Clearing all rate limiting data")
         failedAttempts.clear()
         lockoutUntil.clear()
     }

@@ -2,7 +2,7 @@ package com.julien.genpwdpro.presentation.qrscanner
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
@@ -303,7 +303,7 @@ private fun CameraPreview(
                         imageAnalysis
                     )
                 } catch (exc: Exception) {
-                    Log.e("QRScanner", "Use case binding failed", exc)
+                    SafeLog.e("QRScanner", "Use case binding failed", exc)
                 }
 
             }, ContextCompat.getMainExecutor(ctx))

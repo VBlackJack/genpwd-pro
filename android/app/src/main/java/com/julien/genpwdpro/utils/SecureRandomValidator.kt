@@ -1,6 +1,6 @@
 package com.julien.genpwdpro.utils
 
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import java.security.SecureRandom
 
 /**
@@ -43,14 +43,14 @@ object SecureRandomValidator {
 
             // Test 2: Check not all zeros (would indicate failure)
             if (testBytes.all { it == 0.toByte() }) {
-                Log.e(TAG, "SecureRandom generated all zeros!")
+                SafeLog.e(TAG, "SecureRandom generated all zeros!")
                 return false
             }
 
             // Test 3: Check not all same value
             val firstByte = testBytes[0]
             if (testBytes.all { it == firstByte }) {
-                Log.e(TAG, "SecureRandom generated all same values!")
+                SafeLog.e(TAG, "SecureRandom generated all same values!")
                 return false
             }
 
@@ -61,7 +61,7 @@ object SecureRandomValidator {
             random.nextBytes(bytes2)
 
             if (bytes1.contentEquals(bytes2)) {
-                Log.e(TAG, "SecureRandom generated identical sequences!")
+                SafeLog.e(TAG, "SecureRandom generated identical sequences!")
                 return false
             }
 
@@ -73,16 +73,16 @@ object SecureRandomValidator {
             val uniqueBytes = largeSequence.distinct().size
             if (uniqueBytes < 100) {
                 // Less than 100 unique bytes in 256 samples is suspicious
-                Log.w(TAG, "SecureRandom has low entropy: only $uniqueBytes unique bytes in 256 samples")
+                SafeLog.w(TAG, "SecureRandom has low entropy: only $uniqueBytes unique bytes in 256 samples")
                 return false
             }
 
             // All tests passed
-            Log.i(TAG, "SecureRandom validation passed (uniqueBytes=$uniqueBytes/256)")
+            SafeLog.i(TAG, "SecureRandom validation passed (uniqueBytes=$uniqueBytes/256)")
             true
 
         } catch (e: Exception) {
-            Log.e(TAG, "SecureRandom validation failed with exception", e)
+            SafeLog.e(TAG, "SecureRandom validation failed with exception", e)
             false
         }
     }

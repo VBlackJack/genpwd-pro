@@ -1,7 +1,7 @@
 package com.julien.genpwdpro.presentation.sync
 
 import androidx.lifecycle.ViewModel
-import android.util.Log
+import com.julien.genpwdpro.core.log.SafeLog
 import androidx.lifecycle.viewModelScope
 import com.genpwd.corevault.ProviderKind
 import com.genpwd.corevault.VaultMeta
@@ -69,17 +69,17 @@ class CloudAccountsViewModel @Inject constructor(
     fun addAccount(kind: ProviderKind) {
         viewModelScope.launch {
             try {
-                Log.d("CloudAccountsVM", "addAccount called for provider: $kind")
+                SafeLog.d("CloudAccountsVM", "addAccount called for provider: $kind")
 
                 // Get the cloud provider from registry
                 val provider = providerRegistry.get(kind)
-                Log.d("CloudAccountsVM", "Provider found: ${provider::class.simpleName}")
+                SafeLog.d("CloudAccountsVM", "Provider found: ${provider::class.simpleName}")
 
                 // Start OAuth flow - this will trigger the provider's authenticate method
                 // which should open the browser for OAuth providers
                 try {
                     val account = provider.authenticate()
-                    Log.d("CloudAccountsVM", "Authentication successful, account: ${account.id}")
+                    SafeLog.d("CloudAccountsVM", "Authentication successful, account: ${SafeLog.redact(account.id)}")
 
                     // Save the account to repository
                     cloudAccountRepository.saveAccount(
@@ -93,7 +93,7 @@ class CloudAccountsViewModel @Inject constructor(
 
                     _events.emit(CloudAccountsEvent.AccountAdded)
                 } catch (e: Exception) {
-                    Log.e("CloudAccountsVM", "Authentication failed", e)
+                    SafeLog.e("CloudAccountsVM", "Authentication failed", e)
                     _events.emit(
                         CloudAccountsEvent.ShowError(
                             "Authentication failed: ${e.message}\n\n" +
@@ -103,7 +103,7 @@ class CloudAccountsViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("CloudAccountsVM", "Failed to get provider", e)
+                SafeLog.e("CloudAccountsVM", "Failed to get provider", e)
                 _events.emit(
                     CloudAccountsEvent.ShowError(
                         "Failed to start authentication: ${e.message}"
