@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { EventEmitter } from 'node:events';
-import { t } from '../utils/i18n-node.js';
+import { t } from '../../utils/i18n-node.js';
 
 /**
  * Cloud Sync Manager
