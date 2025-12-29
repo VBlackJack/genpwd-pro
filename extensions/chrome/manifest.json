@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "GenPwd Pro",
+  "name": "__MSG_extensionName__",
   "version": "3.0.0",
-  "description": "Générateur de mots de passe sécurisés - Extension Chrome",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "author": "Julien Bombled",
   "icons": {
     "16": "icons/icon16.png",
@@ -18,13 +19,14 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "GenPwd Pro - Générateur de mots de passe"
+    "default_title": "__MSG_extensionTitle__"
   },
   "permissions": [
     "storage",
     "activeTab",
     "clipboardWrite",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "optional_host_permissions": [
     "http://*/*",

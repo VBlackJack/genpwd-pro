@@ -6,6 +6,7 @@
  */
 
 import { pick, randInt, insertWithPlacement, calculateEntropy } from './helpers.js';
+import { STRENGTH } from './strings.js';
 
 // Syllable patterns for pronounceable passwords
 const CONSONANTS = 'bcdfghjklmnprstvwxz'.split('');
@@ -297,9 +298,9 @@ export function calculatePasswordEntropy(password) {
 export function strengthMeter(password) {
   const entropy = calculatePasswordEntropy(password);
 
-  if (entropy < 40) return 'Weak';
-  if (entropy < 60) return 'Medium';
-  if (entropy < 80) return 'Strong';
-  if (entropy < 100) return 'Very Strong';
-  return 'Excellent';
+  if (entropy < 40) return STRENGTH.WEAK;
+  if (entropy < 60) return STRENGTH.MEDIUM;
+  if (entropy < 80) return STRENGTH.STRONG;
+  if (entropy < 100) return STRENGTH.VERY_STRONG;
+  return STRENGTH.EXCELLENT;
 }

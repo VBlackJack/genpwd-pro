@@ -32,14 +32,15 @@ const MAX_CLIPBOARD_LENGTH = 100000; // 100KB
 
 /**
  * Available timeout options (in seconds)
+ * labelKey is an i18n key that should be resolved via t() at render time
  */
 export const CLIPBOARD_TIMEOUT_OPTIONS = Object.freeze([
-  { value: 0, label: 'Disabled', ms: 0 },
-  { value: 10, label: '10 seconds', ms: 10 * 1000 },
-  { value: 30, label: '30 seconds', ms: 30 * 1000 },
-  { value: 60, label: '1 minute', ms: 60 * 1000 },
-  { value: 120, label: '2 minutes', ms: 2 * 60 * 1000 },
-  { value: 300, label: '5 minutes', ms: 5 * 60 * 1000 }
+  { value: 0, labelKey: 'settings.time.disabled', ms: 0 },
+  { value: 10, labelKey: 'settings.time.seconds10', ms: 10 * 1000 },
+  { value: 30, labelKey: 'settings.time.seconds30', ms: 30 * 1000 },
+  { value: 60, labelKey: 'settings.time.minute1', ms: 60 * 1000 },
+  { value: 120, labelKey: 'settings.time.minutes2', ms: 2 * 60 * 1000 },
+  { value: 300, labelKey: 'settings.time.minutes5', ms: 5 * 60 * 1000 }
 ]);
 
 // ============================================================================

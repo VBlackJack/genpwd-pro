@@ -26,15 +26,16 @@ const THROTTLE_MS = 1000; // Throttle activity events to 1/second
 
 /**
  * Available timeout options (in seconds)
+ * labelKey is an i18n key that should be resolved via t() at render time
  */
 export const AUTO_LOCK_OPTIONS = Object.freeze([
-  { value: 0, label: 'Disabled', ms: 0 },
-  { value: 60, label: '1 minute', ms: 60 * 1000 },
-  { value: 120, label: '2 minutes', ms: 2 * 60 * 1000 },
-  { value: 300, label: '5 minutes', ms: 5 * 60 * 1000 },
-  { value: 600, label: '10 minutes', ms: 10 * 60 * 1000 },
-  { value: 900, label: '15 minutes', ms: 15 * 60 * 1000 },
-  { value: 1800, label: '30 minutes', ms: 30 * 60 * 1000 }
+  { value: 0, labelKey: 'settings.time.disabled', ms: 0 },
+  { value: 60, labelKey: 'settings.time.minute1', ms: 60 * 1000 },
+  { value: 120, labelKey: 'settings.time.minutes2', ms: 2 * 60 * 1000 },
+  { value: 300, labelKey: 'settings.time.minutes5', ms: 5 * 60 * 1000 },
+  { value: 600, labelKey: 'settings.time.minutes10', ms: 10 * 60 * 1000 },
+  { value: 900, labelKey: 'settings.time.minutes15', ms: 15 * 60 * 1000 },
+  { value: 1800, labelKey: 'settings.time.minutes30', ms: 30 * 60 * 1000 }
 ]);
 
 // ============================================================================

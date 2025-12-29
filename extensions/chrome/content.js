@@ -69,7 +69,7 @@ function enhancePasswordFields() {
       font-size: 16px;
       user-select: none;
     `;
-    icon.title = 'Générer un mot de passe sécurisé';
+    icon.title = chrome.i18n.getMessage('iconTooltip');
 
     icon.addEventListener('click', () => {
       field.focus();

@@ -4,6 +4,7 @@
  */
 
 import { webcrypto } from 'node:crypto';
+import { ERRORS, STRENGTH } from './strings.js';
 const crypto = webcrypto;
 
 /**
@@ -11,7 +12,7 @@ const crypto = webcrypto;
  */
 export function randInt(min, max) {
   if (typeof min !== 'number' || typeof max !== 'number' || min > max) {
-    throw new Error(`randInt: paramètres invalides (${min}, ${max})`);
+    throw new Error(ERRORS.INVALID_PARAMS(min, max));
   }
 
   const range = max - min + 1;
@@ -37,7 +38,7 @@ export function randInt(min, max) {
  */
 export function pick(arr) {
   if (!Array.isArray(arr) || arr.length === 0) {
-    throw new Error('pick: tableau vide ou invalide');
+    throw new Error(ERRORS.EMPTY_ARRAY);
   }
   return arr[randInt(0, arr.length - 1)];
 }
@@ -47,7 +48,7 @@ export function pick(arr) {
  */
 export function shuffle(arr) {
   if (!Array.isArray(arr)) {
-    throw new Error('shuffle: paramètre doit être un tableau');
+    throw new Error(ERRORS.NOT_ARRAY);
   }
 
   const shuffled = [...arr];
@@ -63,7 +64,7 @@ export function shuffle(arr) {
  */
 export function insertWithPlacement(base, items, placement) {
   if (!Array.isArray(base) || !Array.isArray(items)) {
-    throw new Error('insertWithPlacement: paramètres doivent être des tableaux');
+    throw new Error(ERRORS.PARAMS_NOT_ARRAYS);
   }
 
   if (items.length === 0) return base;
@@ -105,8 +106,8 @@ export function calculateEntropy(length, charsetSize) {
  * Get strength level from entropy
  */
 export function getStrengthLevel(entropy) {
-  if (entropy < 40) return 'Faible';
-  if (entropy < 60) return 'Moyen';
-  if (entropy < 80) return 'Fort';
-  return 'Très Fort';
+  if (entropy < 40) return STRENGTH.WEAK;
+  if (entropy < 60) return STRENGTH.MEDIUM;
+  if (entropy < 80) return STRENGTH.STRONG;
+  return STRENGTH.VERY_STRONG;
 }

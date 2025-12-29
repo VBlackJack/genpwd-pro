@@ -76,17 +76,17 @@ export function showPasswordGenerator(options = {}) {
   popover.className = 'vault-password-generator';
   popover.innerHTML = `
     <div class="vault-gen-header">
-      <span>${t('vault.generator.title') || 'Password generator'}</span>
-      <button class="vault-gen-close" aria-label="${t('vault.common.close')}">&times;</button>
+      <span>${t('vault.generator.title')}</span>
+      <button class="vault-gen-close" aria-label="${t('common.close')}">&times;</button>
     </div>
     <div class="vault-gen-preview">
-      <input type="text" class="vault-gen-output" id="gen-output" readonly aria-label="${t('vault.generator.outputLabel') || 'Generated password'}">
-      <button class="vault-gen-copy" title="${t('vault.common.copy') || 'Copier'}" aria-label="${t('vault.generator.copyLabel') || 'Copy password to clipboard'}">📋</button>
-      <button class="vault-gen-refresh" title="${t('vault.generator.regenerate') || 'Regenerate'}" aria-label="${t('vault.generator.regenerateLabel') || 'Generate new password'}">🔄</button>
+      <input type="text" class="vault-gen-output" id="gen-output" readonly aria-label="${t('vault.generator.outputLabel')}">
+      <button class="vault-gen-copy" title="${t('common.copy')}" aria-label="${t('vault.generator.copyLabel')}">📋</button>
+      <button class="vault-gen-refresh" title="${t('vault.generator.regenerate')}" aria-label="${t('vault.generator.regenerateLabel')}">🔄</button>
     </div>
     <div class="vault-gen-options">
       <div class="vault-gen-length">
-        <label>${t('vault.generator.length') || 'Longueur'}: <span id="gen-length-value">${DEFAULT_OPTIONS.length}</span></label>
+        <label>${t('vault.generator.length')}: <span id="gen-length-value">${DEFAULT_OPTIONS.length}</span></label>
         <input type="range" id="gen-length" min="8" max="64" value="${DEFAULT_OPTIONS.length}">
       </div>
       <div class="vault-gen-checkboxes">
@@ -97,7 +97,7 @@ export function showPasswordGenerator(options = {}) {
       </div>
     </div>
     <button class="vault-btn vault-btn-primary vault-btn-sm vault-btn-full" id="gen-use">
-      ${t('vault.generator.usePassword') || 'Use this password'}
+      ${t('vault.generator.usePassword')}
     </button>
   `;
 

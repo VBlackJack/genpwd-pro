@@ -7,14 +7,15 @@ import { escapeHtml } from '../utils/formatter.js';
 
 /**
  * Health stat card definitions
+ * Note: labelKey values are i18n keys resolved at render time via t()
  */
 export const HEALTH_CARDS = [
-  { id: 'total', icon: '📊', labelKey: 'Total entries', cssClass: 'vault-health-total' },
-  { id: 'strong', icon: '✅', labelKey: 'Mots de passe forts', cssClass: 'vault-health-strong', filter: 'strong' },
-  { id: 'weak', icon: '⚠️', labelKey: 'Mots de passe faibles', cssClass: 'vault-health-weak', filter: 'weak' },
-  { id: 'reused', icon: '🔄', labelKey: 'Reused', cssClass: 'vault-health-reused', filter: 'reused' },
-  { id: 'old', icon: '📅', labelKey: 'Anciens (>1 an)', cssClass: 'vault-health-old', filter: 'old' },
-  { id: '2fa', icon: '🛡️', labelKey: 'Avec 2FA', cssClass: 'vault-health-2fa' }
+  { id: 'total', icon: '📊', labelKey: 'vault.health.totalEntries', cssClass: 'vault-health-total' },
+  { id: 'strong', icon: '✅', labelKey: 'vault.health.strongPasswords', cssClass: 'vault-health-strong', filter: 'strong' },
+  { id: 'weak', icon: '⚠️', labelKey: 'vault.health.weakPasswords', cssClass: 'vault-health-weak', filter: 'weak' },
+  { id: 'reused', icon: '🔄', labelKey: 'vault.health.reusedPasswords', cssClass: 'vault-health-reused', filter: 'reused' },
+  { id: 'old', icon: '📅', labelKey: 'vault.health.oldPasswords', cssClass: 'vault-health-old', filter: 'old' },
+  { id: '2fa', icon: '🛡️', labelKey: 'vault.health.with2FA', cssClass: 'vault-health-2fa' }
 ];
 
 /**

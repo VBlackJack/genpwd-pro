@@ -36,7 +36,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'generate-password',
-    title: 'Générer un mot de passe',
+    title: chrome.i18n.getMessage('contextMenuGenerate'),
     contexts: ['editable']
   });
 });

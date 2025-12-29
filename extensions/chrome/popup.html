@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,36 +9,36 @@
 <body>
   <div class="container">
     <header>
-      <h1>🔐 GenPwd Pro</h1>
-      <p class="tagline">Générateur de mots de passe sécurisés</p>
+      <h1>🔐 <span data-i18n="extensionName">GenPwd Pro</span></h1>
+      <p class="tagline" data-i18n="tagline">Secure password generator</p>
     </header>
 
     <main>
       <!-- Mode Selection -->
       <section class="mode-section">
-        <label for="mode">Mode de génération</label>
+        <label for="mode" data-i18n="modeLabel">Generation mode</label>
         <select id="mode" class="input-field">
-          <option value="syllables">Syllabes (recommandé)</option>
-          <option value="passphrase">Passphrase</option>
-          <option value="leet">Leet Speak</option>
+          <option value="syllables" data-i18n="modeSyllables">Syllables (recommended)</option>
+          <option value="passphrase" data-i18n="modePassphrase">Passphrase</option>
+          <option value="leet" data-i18n="modeLeet">Leet Speak</option>
         </select>
       </section>
 
       <!-- Syllables Mode Options -->
       <div id="syllables-options" class="mode-options">
         <div class="option-group">
-          <label for="length">Longueur</label>
+          <label for="length" data-i18n="lengthLabel">Length</label>
           <input type="number" id="length" class="input-field" value="20" min="6" max="64" aria-describedby="length-help">
-          <span id="length-help" class="visually-hidden">Entre 6 et 64 caractères</span>
+          <span id="length-help" class="visually-hidden" data-i18n="lengthHelp">Between 6 and 64 characters</span>
         </div>
 
         <div class="option-group">
-          <label for="policy">Politique</label>
+          <label for="policy" data-i18n="policyLabel">Policy</label>
           <select id="policy" class="input-field">
-            <option value="standard">Standard</option>
-            <option value="standard-layout">Standard Layout</option>
-            <option value="alphanumerique">Alphanumérique</option>
-            <option value="alphanumerique-layout">Alphanumérique Layout</option>
+            <option value="standard" data-i18n="policyStandard">Standard</option>
+            <option value="standard-layout" data-i18n="policyStandardLayout">Standard Layout</option>
+            <option value="alphanumerique" data-i18n="policyAlphanumeric">Alphanumeric</option>
+            <option value="alphanumerique-layout" data-i18n="policyAlphanumericLayout">Alphanumeric Layout</option>
           </select>
         </div>
       </div>
@@ -46,23 +46,23 @@
       <!-- Passphrase Mode Options -->
       <div id="passphrase-options" class="mode-options hidden">
         <div class="option-group">
-          <label for="wordCount">Nombre de mots</label>
+          <label for="wordCount" data-i18n="wordCountLabel">Word count</label>
           <input type="number" id="wordCount" class="input-field" value="5" min="2" max="8" aria-describedby="wordCount-help">
-          <span id="wordCount-help" class="visually-hidden">Entre 2 et 8 mots</span>
+          <span id="wordCount-help" class="visually-hidden" data-i18n="wordCountHelp">Between 2 and 8 words</span>
         </div>
 
         <div class="option-group">
-          <label for="separator">Séparateur</label>
+          <label for="separator" data-i18n="separatorLabel">Separator</label>
           <input type="text" id="separator" class="input-field" value="-" maxlength="3" aria-describedby="separator-help">
-          <span id="separator-help" class="visually-hidden">Maximum 3 caractères</span>
+          <span id="separator-help" class="visually-hidden" data-i18n="separatorHelp">Maximum 3 characters</span>
         </div>
 
         <div class="option-group">
-          <label for="dictionary">Dictionnaire</label>
+          <label for="dictionary" data-i18n="dictionaryLabel">Dictionary</label>
           <select id="dictionary" class="input-field">
-            <option value="french">Français</option>
-            <option value="english">English</option>
-            <option value="latin">Latin</option>
+            <option value="french" data-i18n="dictionaryFrench">French</option>
+            <option value="english" data-i18n="dictionaryEnglish">English</option>
+            <option value="latin" data-i18n="dictionaryLatin">Latin</option>
           </select>
         </div>
       </div>
@@ -70,9 +70,9 @@
       <!-- Leet Mode Options -->
       <div id="leet-options" class="mode-options hidden">
         <div class="option-group">
-          <label for="leetWord">Mot à transformer</label>
+          <label for="leetWord" data-i18n="leetWordLabel">Word to transform</label>
           <input type="text" id="leetWord" class="input-field" value="password" aria-describedby="leetWord-help">
-          <span id="leetWord-help" class="visually-hidden">Mot à convertir en leet speak</span>
+          <span id="leetWord-help" class="visually-hidden" data-i18n="leetWordHelp">Word to convert to leet speak</span>
         </div>
       </div>
 
@@ -80,40 +80,40 @@
       <section class="common-options">
         <div class="option-row">
           <div class="option-group">
-            <label for="digits">Chiffres</label>
+            <label for="digits" data-i18n="digitsLabel">Digits</label>
             <input type="number" id="digits" class="input-field" value="2" min="0" max="6" aria-describedby="digits-help">
-            <span id="digits-help" class="visually-hidden">Entre 0 et 6 chiffres</span>
+            <span id="digits-help" class="visually-hidden" data-i18n="digitsHelp">Between 0 and 6 digits</span>
           </div>
 
           <div class="option-group">
-            <label for="specials">Spéciaux</label>
+            <label for="specials" data-i18n="specialsLabel">Specials</label>
             <input type="number" id="specials" class="input-field" value="2" min="0" max="6" aria-describedby="specials-help">
-            <span id="specials-help" class="visually-hidden">Entre 0 et 6 caractères spéciaux</span>
+            <span id="specials-help" class="visually-hidden" data-i18n="specialsHelp">Between 0 and 6 special characters</span>
           </div>
         </div>
 
         <div class="option-group">
-          <label for="caseMode">Casse</label>
+          <label for="caseMode" data-i18n="caseModeLabel">Case</label>
           <select id="caseMode" class="input-field">
-            <option value="mixte">Mixte</option>
-            <option value="minuscule">Minuscule</option>
-            <option value="majuscule">Majuscule</option>
-            <option value="title">Title Case</option>
+            <option value="mixte" data-i18n="caseMixed">Mixed</option>
+            <option value="minuscule" data-i18n="caseLower">Lowercase</option>
+            <option value="majuscule" data-i18n="caseUpper">Uppercase</option>
+            <option value="title" data-i18n="caseTitle">Title Case</option>
           </select>
         </div>
 
         <div class="option-group">
-          <label for="quantity">Quantité</label>
+          <label for="quantity" data-i18n="quantityLabel">Quantity</label>
           <input type="number" id="quantity" class="input-field" value="5" min="1" max="20">
         </div>
       </section>
 
       <!-- Generate Button -->
-      <button id="generate-btn" class="btn-primary">🎲 Générer</button>
+      <button id="generate-btn" class="btn-primary">🎲 <span data-i18n="generateButton">Generate</span></button>
 
       <!-- Results Section -->
       <section id="results-section" class="results-section hidden">
-        <h2>Résultats</h2>
+        <h2 data-i18n="resultsTitle">Results</h2>
         <div id="results-container" class="results-container"></div>
       </section>
     </main>

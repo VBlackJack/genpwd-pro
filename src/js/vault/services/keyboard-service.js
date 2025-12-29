@@ -3,25 +3,44 @@
  * Centralized keyboard shortcut handling for the vault
  */
 
+import { i18n } from '../../utils/i18n.js';
+
 /**
- * Keyboard shortcut definitions
- * @type {Array<{key: string, ctrl?: boolean, shift?: boolean, action: string, description: string}>}
+ * Keyboard shortcut definitions (without descriptions - use getShortcutDescriptions for i18n)
+ * @type {Array<{key: string, ctrl?: boolean, shift?: boolean, action: string}>}
  */
-export const SHORTCUTS = [
-  { key: 'l', ctrl: true, action: 'lock', description: 'Lock vault' },
-  { key: 'f', ctrl: true, action: 'search', description: 'Focus search' },
-  { key: 'n', ctrl: true, action: 'newEntry', description: 'New entry' },
-  { key: 'e', ctrl: true, action: 'editEntry', description: 'Edit selected entry' },
-  { key: 'd', ctrl: true, action: 'duplicateEntry', description: 'Duplicate entry' },
-  { key: 'Delete', action: 'deleteEntry', description: 'Delete selected entry' },
-  { key: '?', action: 'showShortcuts', description: 'Show keyboard shortcuts' },
-  { key: 'u', ctrl: true, action: 'copyUsername', description: 'Copy username' },
-  { key: 'p', ctrl: true, action: 'copyPassword', description: 'Copy password' },
-  { key: 'U', ctrl: true, shift: true, action: 'autoType', description: 'Auto-fill form' },
-  { key: 'ArrowDown', action: 'nextEntry', description: 'Select next entry' },
-  { key: 'ArrowUp', action: 'prevEntry', description: 'Select previous entry' },
-  { key: 'Escape', action: 'closeModal', description: 'Close modal' }
+const SHORTCUT_DEFINITIONS = [
+  { key: 'l', ctrl: true, action: 'lock' },
+  { key: 'f', ctrl: true, action: 'search' },
+  { key: 'n', ctrl: true, action: 'newEntry' },
+  { key: 'e', ctrl: true, action: 'editEntry' },
+  { key: 'd', ctrl: true, action: 'duplicateEntry' },
+  { key: 'Delete', action: 'deleteEntry' },
+  { key: '?', action: 'showShortcuts' },
+  { key: 'u', ctrl: true, action: 'copyUsername' },
+  { key: 'p', ctrl: true, action: 'copyPassword' },
+  { key: 'U', ctrl: true, shift: true, action: 'autoType' },
+  { key: 'ArrowDown', action: 'nextEntry' },
+  { key: 'ArrowUp', action: 'prevEntry' },
+  { key: 'Escape', action: 'closeModal' }
 ];
+
+/**
+ * Get keyboard shortcuts with i18n descriptions
+ * @returns {Array<{key: string, ctrl?: boolean, shift?: boolean, action: string, description: string}>}
+ */
+export function getShortcuts() {
+  return SHORTCUT_DEFINITIONS.map(shortcut => ({
+    ...shortcut,
+    description: i18n.t(`shortcuts.descriptions.${shortcut.action}`)
+  }));
+}
+
+/**
+ * Legacy export for backwards compatibility
+ * @deprecated Use getShortcuts() instead
+ */
+export const SHORTCUTS = SHORTCUT_DEFINITIONS;
 
 /**
  * Check if event target is an input element
@@ -205,16 +224,16 @@ export function createKeyboardService(handlers = {}) {
   }
 
   /**
-   * Get all shortcut definitions for help display
-   * @returns {Array} Shortcut definitions
+   * Get all shortcut definitions for help display (with i18n descriptions)
+   * @returns {Array} Shortcut definitions with translated descriptions
    */
-  function getShortcuts() {
-    return SHORTCUTS;
+  function getShortcutsWithDescriptions() {
+    return getShortcuts();
   }
 
   return {
     start,
     stop,
-    getShortcuts
+    getShortcuts: getShortcutsWithDescriptions
   };
 }

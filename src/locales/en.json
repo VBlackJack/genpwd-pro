@@ -13,6 +13,23 @@
     "exportingResults": "Exporting results",
     "modalClosed": "Modal closed"
   },
+  "shortcuts": {
+    "descriptions": {
+      "lock": "Lock vault",
+      "search": "Focus search",
+      "newEntry": "New entry",
+      "editEntry": "Edit selected entry",
+      "duplicateEntry": "Duplicate entry",
+      "deleteEntry": "Delete selected entry",
+      "showShortcuts": "Show keyboard shortcuts",
+      "copyUsername": "Copy username",
+      "copyPassword": "Copy password",
+      "autoType": "Auto-fill form",
+      "nextEntry": "Select next entry",
+      "prevEntry": "Select previous entry",
+      "closeModal": "Close modal"
+    }
+  },
   "passwordHealth": {
     "noPassword": "No password",
     "tooShort": "Too short (< 8 characters)",
@@ -58,7 +75,9 @@
     "skipToMain": "Skip to main content",
     "confirm": "Confirm",
     "confirmation": "Confirmation",
-    "apply": "Apply"
+    "apply": "Apply",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "header": {
     "generatorTab": "Generator",
@@ -143,6 +162,17 @@
       "quickUnlock": "Quick unlock (Windows Hello)",
       "quickUnlockDesc": "Uses biometrics to unlock vault faster",
       "quickUnlockWarning": "Security tradeoff: Stores encrypted password locally for convenience"
+    },
+    "time": {
+      "disabled": "Disabled",
+      "seconds10": "10 seconds",
+      "seconds30": "30 seconds",
+      "minute1": "1 minute",
+      "minutes2": "2 minutes",
+      "minutes5": "5 minutes",
+      "minutes10": "10 minutes",
+      "minutes15": "15 minutes",
+      "minutes30": "30 minutes"
     }
   },
   "policy": {
@@ -451,6 +481,15 @@
       "keyboardShortcuts": "Keyboard shortcuts (?)",
       "saveAs": "Save as...",
       "compactMode": "Compact mode (floating widget)"
+    },
+    "import": {
+      "button": "Import"
+    },
+    "view": {
+      "exitCompact": "Exit compact mode",
+      "compactWidget": "Compact mode (floating widget)",
+      "comfortable": "Comfortable view",
+      "compact": "Compact view"
     },
     "bulk": {
       "selected": "{count} selected",
@@ -1586,7 +1625,24 @@
   "import": {
     "title": "📥 Advanced Import",
     "description": "Import passwords from popular password managers",
-    "failed": "Import failed: {error}"
+    "failed": "Import failed: {error}",
+    "selectFormat": "Select Import Format:",
+    "formatInfo": "Format Information:",
+    "selectFormatDetails": "Select a format to see details",
+    "passwordManagers": "Password Managers",
+    "genericFormats": "Generic Formats",
+    "selectFile": "Select File",
+    "preview": "Preview",
+    "importPasswords": "Import Passwords",
+    "formats": {
+      "keepassXml": "Import from KeePass XML export. Supports full metadata including groups, timestamps, and custom fields.",
+      "keepassCsv": "Import from KeePass CSV export. Basic fields: Account, Login Name, Password, Web Site, Comments.",
+      "bitwardenJson": "Import from Bitwarden JSON export. Full-featured with folders and timestamps.",
+      "lastpassCsv": "Import from LastPass CSV export. Fields: url, username, password, extra, name, grouping.",
+      "onepasswordCsv": "Import from 1Password CSV export. Fields: Title, URL, Username, Password, Notes.",
+      "genericJson": "Import from GenPwd Pro or other generic JSON formats.",
+      "genericCsv": "Import from generic CSV with fields: title, username, password, url, notes."
+    }
   },
   "breach": {
     "checkButton": "Check for breaches",
@@ -1630,7 +1686,23 @@
     },
     "emptyState": "No plugins installed. Click \"Load Demo Plugins\" to get started!",
     "noSettings": "This plugin does not have configurable settings.",
-    "configTitle": "Plugin Configuration:"
+    "configTitle": "Plugin Configuration:",
+    "managePlugins": "Manage Plugins",
+    "loadDemoPlugins": "Load Demo Plugins",
+    "statusLabel": "Status:",
+    "pluginsInstalled": "{count} plugin(s) installed",
+    "hooksLabel": "Hooks:",
+    "activeHooksCount": "{count} active hook(s)",
+    "none": "None",
+    "loadedAt": "Loaded: {date}",
+    "settings": "Settings",
+    "export": "Export",
+    "installFromFile": "Install from File",
+    "clearAll": "Clear All",
+    "settingsTitle": "{name} Settings",
+    "renderError": "Error rendering plugin settings: {error}",
+    "selectFormat": "Select a format to see details",
+    "selectedFile": "Selected: {name} ({size} KB)"
   },
   "pwa": {
     "installTitle": "Install GenPwd Pro",

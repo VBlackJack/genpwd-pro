@@ -5,6 +5,7 @@
 
 import { generateSyllables, generatePassphrase, generateLeet } from './generators.js';
 import { getStrengthLevel } from './helpers.js';
+import { ERRORS } from './strings.js';
 
 export async function generatePassword(config) {
   const results = [];
@@ -55,7 +56,7 @@ export async function generatePassword(config) {
         break;
 
       default:
-        throw new Error(`Mode inconnu: ${config.mode}`);
+        throw new Error(ERRORS.UNKNOWN_MODE(config.mode));
     }
 
     // Add strength information

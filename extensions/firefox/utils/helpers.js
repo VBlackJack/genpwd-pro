@@ -102,8 +102,8 @@ export function calculateEntropy(length, charsetSize) {
  * Get strength description from entropy
  */
 export function getStrengthLevel(entropy) {
-  if (entropy < 40) return { level: 'weak', label: 'Faible', class: 'entropy-weak' };
-  if (entropy < 60) return { level: 'medium', label: 'Moyen', class: 'entropy-medium' };
-  if (entropy < 80) return { level: 'strong', label: 'Fort', class: 'entropy-strong' };
-  return { level: 'very-strong', label: 'Très Fort', class: 'entropy-very-strong' };
+  if (entropy < 40) return { level: 'weak', label: browser.i18n.getMessage('strengthWeak'), class: 'entropy-weak' };
+  if (entropy < 60) return { level: 'medium', label: browser.i18n.getMessage('strengthMedium'), class: 'entropy-medium' };
+  if (entropy < 80) return { level: 'strong', label: browser.i18n.getMessage('strengthStrong'), class: 'entropy-strong' };
+  return { level: 'very-strong', label: browser.i18n.getMessage('strengthVeryStrong'), class: 'entropy-very-strong' };
 }

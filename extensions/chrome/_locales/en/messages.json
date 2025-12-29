@@ -1,0 +1,212 @@
+{
+  "extensionName": {
+    "message": "GenPwd Pro",
+    "description": "The name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Secure password generator - Chrome Extension",
+    "description": "The description of the extension"
+  },
+  "extensionTitle": {
+    "message": "GenPwd Pro - Secure Password Generator",
+    "description": "The title shown in the browser action"
+  },
+  "tagline": {
+    "message": "Secure password generator",
+    "description": "Tagline shown in popup header"
+  },
+  "modeLabel": {
+    "message": "Generation mode",
+    "description": "Label for mode selection"
+  },
+  "modeSyllables": {
+    "message": "Syllables (recommended)",
+    "description": "Syllables generation mode"
+  },
+  "modePassphrase": {
+    "message": "Passphrase",
+    "description": "Passphrase generation mode"
+  },
+  "modeLeet": {
+    "message": "Leet Speak",
+    "description": "Leet speak generation mode"
+  },
+  "lengthLabel": {
+    "message": "Length",
+    "description": "Label for password length"
+  },
+  "lengthHelp": {
+    "message": "Between 6 and 64 characters",
+    "description": "Help text for length input"
+  },
+  "policyLabel": {
+    "message": "Policy",
+    "description": "Label for character policy"
+  },
+  "policyStandard": {
+    "message": "Standard",
+    "description": "Standard policy option"
+  },
+  "policyStandardLayout": {
+    "message": "Standard Layout",
+    "description": "Standard layout-safe policy"
+  },
+  "policyAlphanumeric": {
+    "message": "Alphanumeric",
+    "description": "Alphanumeric policy"
+  },
+  "policyAlphanumericLayout": {
+    "message": "Alphanumeric Layout",
+    "description": "Alphanumeric layout-safe policy"
+  },
+  "wordCountLabel": {
+    "message": "Word count",
+    "description": "Label for word count"
+  },
+  "wordCountHelp": {
+    "message": "Between 2 and 8 words",
+    "description": "Help text for word count"
+  },
+  "separatorLabel": {
+    "message": "Separator",
+    "description": "Label for word separator"
+  },
+  "separatorHelp": {
+    "message": "Maximum 3 characters",
+    "description": "Help text for separator"
+  },
+  "dictionaryLabel": {
+    "message": "Dictionary",
+    "description": "Label for dictionary selection"
+  },
+  "dictionaryFrench": {
+    "message": "French",
+    "description": "French dictionary option"
+  },
+  "dictionaryEnglish": {
+    "message": "English",
+    "description": "English dictionary option"
+  },
+  "dictionaryLatin": {
+    "message": "Latin",
+    "description": "Latin dictionary option"
+  },
+  "leetWordLabel": {
+    "message": "Word to transform",
+    "description": "Label for leet word input"
+  },
+  "leetWordHelp": {
+    "message": "Word to convert to leet speak",
+    "description": "Help text for leet word"
+  },
+  "digitsLabel": {
+    "message": "Digits",
+    "description": "Label for digit count"
+  },
+  "digitsHelp": {
+    "message": "Between 0 and 6 digits",
+    "description": "Help text for digits"
+  },
+  "specialsLabel": {
+    "message": "Specials",
+    "description": "Label for special characters count"
+  },
+  "specialsHelp": {
+    "message": "Between 0 and 6 special characters",
+    "description": "Help text for specials"
+  },
+  "caseModeLabel": {
+    "message": "Case",
+    "description": "Label for case mode"
+  },
+  "caseMixed": {
+    "message": "Mixed",
+    "description": "Mixed case option"
+  },
+  "caseLower": {
+    "message": "Lowercase",
+    "description": "Lowercase option"
+  },
+  "caseUpper": {
+    "message": "Uppercase",
+    "description": "Uppercase option"
+  },
+  "caseTitle": {
+    "message": "Title Case",
+    "description": "Title case option"
+  },
+  "quantityLabel": {
+    "message": "Quantity",
+    "description": "Label for password quantity"
+  },
+  "generateButton": {
+    "message": "Generate",
+    "description": "Generate button text"
+  },
+  "generatingButton": {
+    "message": "Generating...",
+    "description": "Generate button text while generating"
+  },
+  "resultsTitle": {
+    "message": "Results",
+    "description": "Results section title"
+  },
+  "copyButton": {
+    "message": "Copy",
+    "description": "Copy button text"
+  },
+  "copiedButton": {
+    "message": "Copied!",
+    "description": "Copy button text after copying"
+  },
+  "errorUnknownMode": {
+    "message": "Unknown mode: $MODE$",
+    "description": "Error for unknown generation mode",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "invalid"
+      }
+    }
+  },
+  "errorCopy": {
+    "message": "Error copying to clipboard",
+    "description": "Error message when copy fails"
+  },
+  "contextMenuGenerate": {
+    "message": "Generate a password",
+    "description": "Context menu item text"
+  },
+  "iconTooltip": {
+    "message": "Generate a secure password",
+    "description": "Tooltip for password field icon"
+  },
+  "strengthWeak": {
+    "message": "Weak",
+    "description": "Weak password strength"
+  },
+  "strengthMedium": {
+    "message": "Medium",
+    "description": "Medium password strength"
+  },
+  "strengthStrong": {
+    "message": "Strong",
+    "description": "Strong password strength"
+  },
+  "strengthVeryStrong": {
+    "message": "Very Strong",
+    "description": "Very strong password strength"
+  },
+  "errorInvalidParams": {
+    "message": "Invalid parameters",
+    "description": "Error for invalid function parameters"
+  },
+  "errorEmptyArray": {
+    "message": "Empty or invalid array",
+    "description": "Error for empty array parameter"
+  },
+  "errorNotArray": {
+    "message": "Parameter must be an array",
+    "description": "Error for non-array parameter"
+  }
+}

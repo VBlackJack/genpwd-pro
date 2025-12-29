@@ -1,0 +1,212 @@
+{
+  "extensionName": {
+    "message": "GenPwd Pro",
+    "description": "The name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Générateur de mots de passe sécurisés - Extension Firefox",
+    "description": "The description of the extension"
+  },
+  "extensionTitle": {
+    "message": "GenPwd Pro - Générateur de mots de passe",
+    "description": "The title shown in the browser action"
+  },
+  "tagline": {
+    "message": "Générateur de mots de passe sécurisés",
+    "description": "Tagline shown in popup header"
+  },
+  "modeLabel": {
+    "message": "Mode de génération",
+    "description": "Label for mode selection"
+  },
+  "modeSyllables": {
+    "message": "Syllabes (recommandé)",
+    "description": "Syllables generation mode"
+  },
+  "modePassphrase": {
+    "message": "Passphrase",
+    "description": "Passphrase generation mode"
+  },
+  "modeLeet": {
+    "message": "Leet Speak",
+    "description": "Leet speak generation mode"
+  },
+  "lengthLabel": {
+    "message": "Longueur",
+    "description": "Label for password length"
+  },
+  "lengthHelp": {
+    "message": "Entre 6 et 64 caractères",
+    "description": "Help text for length input"
+  },
+  "policyLabel": {
+    "message": "Politique",
+    "description": "Label for character policy"
+  },
+  "policyStandard": {
+    "message": "Standard",
+    "description": "Standard policy option"
+  },
+  "policyStandardLayout": {
+    "message": "Standard Layout",
+    "description": "Standard layout-safe policy"
+  },
+  "policyAlphanumeric": {
+    "message": "Alphanumérique",
+    "description": "Alphanumeric policy"
+  },
+  "policyAlphanumericLayout": {
+    "message": "Alphanumérique Layout",
+    "description": "Alphanumeric layout-safe policy"
+  },
+  "wordCountLabel": {
+    "message": "Nombre de mots",
+    "description": "Label for word count"
+  },
+  "wordCountHelp": {
+    "message": "Entre 2 et 8 mots",
+    "description": "Help text for word count"
+  },
+  "separatorLabel": {
+    "message": "Séparateur",
+    "description": "Label for word separator"
+  },
+  "separatorHelp": {
+    "message": "Maximum 3 caractères",
+    "description": "Help text for separator"
+  },
+  "dictionaryLabel": {
+    "message": "Dictionnaire",
+    "description": "Label for dictionary selection"
+  },
+  "dictionaryFrench": {
+    "message": "Français",
+    "description": "French dictionary option"
+  },
+  "dictionaryEnglish": {
+    "message": "English",
+    "description": "English dictionary option"
+  },
+  "dictionaryLatin": {
+    "message": "Latin",
+    "description": "Latin dictionary option"
+  },
+  "leetWordLabel": {
+    "message": "Mot à transformer",
+    "description": "Label for leet word input"
+  },
+  "leetWordHelp": {
+    "message": "Mot à convertir en leet speak",
+    "description": "Help text for leet word"
+  },
+  "digitsLabel": {
+    "message": "Chiffres",
+    "description": "Label for digit count"
+  },
+  "digitsHelp": {
+    "message": "Entre 0 et 6 chiffres",
+    "description": "Help text for digits"
+  },
+  "specialsLabel": {
+    "message": "Spéciaux",
+    "description": "Label for special characters count"
+  },
+  "specialsHelp": {
+    "message": "Entre 0 et 6 caractères spéciaux",
+    "description": "Help text for specials"
+  },
+  "caseModeLabel": {
+    "message": "Casse",
+    "description": "Label for case mode"
+  },
+  "caseMixed": {
+    "message": "Mixte",
+    "description": "Mixed case option"
+  },
+  "caseLower": {
+    "message": "Minuscule",
+    "description": "Lowercase option"
+  },
+  "caseUpper": {
+    "message": "Majuscule",
+    "description": "Uppercase option"
+  },
+  "caseTitle": {
+    "message": "Title Case",
+    "description": "Title case option"
+  },
+  "quantityLabel": {
+    "message": "Quantité",
+    "description": "Label for password quantity"
+  },
+  "generateButton": {
+    "message": "Générer",
+    "description": "Generate button text"
+  },
+  "generatingButton": {
+    "message": "Génération...",
+    "description": "Generate button text while generating"
+  },
+  "resultsTitle": {
+    "message": "Résultats",
+    "description": "Results section title"
+  },
+  "copyButton": {
+    "message": "Copier",
+    "description": "Copy button text"
+  },
+  "copiedButton": {
+    "message": "Copié!",
+    "description": "Copy button text after copying"
+  },
+  "errorUnknownMode": {
+    "message": "Mode inconnu: $MODE$",
+    "description": "Error for unknown generation mode",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "invalid"
+      }
+    }
+  },
+  "errorCopy": {
+    "message": "Erreur lors de la copie",
+    "description": "Error message when copy fails"
+  },
+  "contextMenuGenerate": {
+    "message": "Générer un mot de passe",
+    "description": "Context menu item text"
+  },
+  "iconTooltip": {
+    "message": "Générer un mot de passe sécurisé",
+    "description": "Tooltip for password field icon"
+  },
+  "strengthWeak": {
+    "message": "Faible",
+    "description": "Weak password strength"
+  },
+  "strengthMedium": {
+    "message": "Moyen",
+    "description": "Medium password strength"
+  },
+  "strengthStrong": {
+    "message": "Fort",
+    "description": "Strong password strength"
+  },
+  "strengthVeryStrong": {
+    "message": "Très Fort",
+    "description": "Very strong password strength"
+  },
+  "errorInvalidParams": {
+    "message": "Paramètres invalides",
+    "description": "Error for invalid function parameters"
+  },
+  "errorEmptyArray": {
+    "message": "Tableau vide ou invalide",
+    "description": "Error for empty array parameter"
+  },
+  "errorNotArray": {
+    "message": "Le paramètre doit être un tableau",
+    "description": "Error for non-array parameter"
+  }
+}

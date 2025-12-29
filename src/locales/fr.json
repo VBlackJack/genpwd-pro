@@ -165,6 +165,7 @@
     "clear": "Effacer",
     "clearAll": "__TRANSLATE__ Clear All",
     "close": "Fermer",
+    "collapse": "__TRANSLATE__ Collapse",
     "confirm": "Confirmer",
     "confirmation": "Confirmation",
     "console": "Console",
@@ -175,6 +176,7 @@
     "delete": "Supprimer",
     "disable": "__TRANSLATE__ Disable",
     "enable": "__TRANSLATE__ Enable",
+    "expand": "__TRANSLATE__ Expand",
     "export": "Exporter",
     "forget": "__TRANSLATE__ Forget",
     "generate": "Générer",
@@ -505,6 +507,23 @@
   "import": {
     "description": "Importer des mots de passe depuis des gestionnaires populaires",
     "failed": "Échec de l'import : {error}",
+    "formatInfo": "__TRANSLATE__ Format Information:",
+    "formats": {
+      "bitwardenJson": "__TRANSLATE__ Import from Bitwarden JSON export. Full-featured with folders and timestamps.",
+      "genericCsv": "__TRANSLATE__ Import from generic CSV with fields: title, username, password, url, notes.",
+      "genericJson": "__TRANSLATE__ Import from GenPwd Pro or other generic JSON formats.",
+      "keepassCsv": "__TRANSLATE__ Import from KeePass CSV export. Basic fields: Account, Login Name, Password, Web Site, Comments.",
+      "keepassXml": "__TRANSLATE__ Import from KeePass XML export. Supports full metadata including groups, timestamps, and custom fields.",
+      "lastpassCsv": "__TRANSLATE__ Import from LastPass CSV export. Fields: url, username, password, extra, name, grouping.",
+      "onepasswordCsv": "__TRANSLATE__ Import from 1Password CSV export. Fields: Title, URL, Username, Password, Notes."
+    },
+    "genericFormats": "__TRANSLATE__ Generic Formats",
+    "importPasswords": "__TRANSLATE__ Import Passwords",
+    "passwordManagers": "__TRANSLATE__ Password Managers",
+    "preview": "__TRANSLATE__ Preview",
+    "selectFile": "__TRANSLATE__ Select File",
+    "selectFormat": "__TRANSLATE__ Select Import Format:",
+    "selectFormatDetails": "__TRANSLATE__ Select a format to see details",
     "title": "📥 Import avancé"
   },
   "keyboard": {
@@ -629,15 +648,31 @@
     "visual": "🎯 Visuel"
   },
   "plugins": {
+    "activeHooksCount": "__TRANSLATE__ {count} active hook(s)",
+    "clearAll": "__TRANSLATE__ Clear All",
     "clearAllTitle": "__TRANSLATE__ Clear All Plugins",
     "configTitle": "__TRANSLATE__ Plugin Configuration:",
     "emptyState": "__TRANSLATE__ No plugins installed. Click \"Load Demo Plugins\" to get started!",
+    "export": "__TRANSLATE__ Export",
+    "hooksLabel": "__TRANSLATE__ Hooks:",
+    "installFromFile": "__TRANSLATE__ Install from File",
+    "loadDemoPlugins": "__TRANSLATE__ Load Demo Plugins",
+    "loadedAt": "__TRANSLATE__ Loaded: {date}",
+    "managePlugins": "__TRANSLATE__ Manage Plugins",
     "noSettings": "__TRANSLATE__ This plugin does not have configurable settings.",
+    "none": "__TRANSLATE__ None",
+    "pluginsInstalled": "__TRANSLATE__ {count} plugin(s) installed",
+    "renderError": "__TRANSLATE__ Error rendering plugin settings: {error}",
+    "selectFormat": "__TRANSLATE__ Select a format to see details",
+    "selectedFile": "__TRANSLATE__ Selected: {name} ({size} KB)",
+    "settings": "__TRANSLATE__ Settings",
+    "settingsTitle": "__TRANSLATE__ {name} Settings",
     "stats": {
       "activeHooks": "__TRANSLATE__ Active Hooks",
       "enabled": "__TRANSLATE__ Enabled",
       "totalPlugins": "__TRANSLATE__ Total Plugins"
     },
+    "statusLabel": "__TRANSLATE__ Status:",
     "uninstallTitle": "__TRANSLATE__ Uninstall Plugin"
   },
   "policy": {
@@ -798,7 +833,18 @@
     "quantityRange": "Nombre (1–20)",
     "specials": "Spéciaux",
     "specialsRange": "Spéciaux (0–6)",
-    "themeLabel": "__TRANSLATE__ Theme:"
+    "themeLabel": "__TRANSLATE__ Theme:",
+    "time": {
+      "disabled": "__TRANSLATE__ Disabled",
+      "minute1": "__TRANSLATE__ 1 minute",
+      "minutes10": "__TRANSLATE__ 10 minutes",
+      "minutes15": "__TRANSLATE__ 15 minutes",
+      "minutes2": "__TRANSLATE__ 2 minutes",
+      "minutes30": "__TRANSLATE__ 30 minutes",
+      "minutes5": "__TRANSLATE__ 5 minutes",
+      "seconds10": "__TRANSLATE__ 10 seconds",
+      "seconds30": "__TRANSLATE__ 30 seconds"
+    }
   },
   "settingsModal": {
     "categories": "Catégories de paramètres",
@@ -875,6 +921,23 @@
     "stepResult": "Étape 2 : Résultat",
     "title": "Partage sécurisé (GenPwd Send)",
     "warningText": "Ce lien donne accès au secret. Ne le partagez qu'avec le destinataire prévu."
+  },
+  "shortcuts": {
+    "descriptions": {
+      "autoType": "__TRANSLATE__ Auto-fill form",
+      "closeModal": "__TRANSLATE__ Close modal",
+      "copyPassword": "__TRANSLATE__ Copy password",
+      "copyUsername": "__TRANSLATE__ Copy username",
+      "deleteEntry": "__TRANSLATE__ Delete selected entry",
+      "duplicateEntry": "__TRANSLATE__ Duplicate entry",
+      "editEntry": "__TRANSLATE__ Edit selected entry",
+      "lock": "__TRANSLATE__ Lock vault",
+      "newEntry": "__TRANSLATE__ New entry",
+      "nextEntry": "__TRANSLATE__ Select next entry",
+      "prevEntry": "__TRANSLATE__ Select previous entry",
+      "search": "__TRANSLATE__ Focus search",
+      "showShortcuts": "__TRANSLATE__ Show keyboard shortcuts"
+    }
   },
   "sync": {
     "status": {
@@ -1836,6 +1899,12 @@
       "minLength": "Minimum {count} caractères",
       "passwordsNoMatch": "Les mots de passe ne correspondent pas",
       "tooWeak": "Mot de passe trop faible"
+    },
+    "view": {
+      "comfortable": "__TRANSLATE__ Comfortable view",
+      "compact": "__TRANSLATE__ Compact view",
+      "compactWidget": "__TRANSLATE__ Compact mode (floating widget)",
+      "exitCompact": "__TRANSLATE__ Exit compact mode"
     },
     "welcome": {
       "createFirst": "Créer ma première entrée",

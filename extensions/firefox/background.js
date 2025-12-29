@@ -1,15 +1,15 @@
 /*
- * GenPwd Pro - Chrome Extension Background Service Worker
+ * GenPwd Pro - Firefox Extension Background Script
  * Copyright 2025 Julien Bombled
  */
 
 // Installation handler
-chrome.runtime.onInstalled.addListener((details) => {
+browser.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     console.log('GenPwd Pro installed');
 
     // Set default settings
-    chrome.storage.sync.set({
+    browser.storage.sync.set({
       settings: {
         mode: 'syllables',
         length: 20,
@@ -26,26 +26,26 @@ chrome.runtime.onInstalled.addListener((details) => {
     });
 
     // Open welcome page (optional)
-    // chrome.tabs.create({ url: 'https://github.com/VBlackJack/genpwd-pro' });
+    // browser.tabs.create({ url: 'https://github.com/VBlackJack/genpwd-pro' });
   } else if (details.reason === 'update') {
-    console.log('GenPwd Pro updated to version', chrome.runtime.getManifest().version);
+    console.log('GenPwd Pro updated to version', browser.runtime.getManifest().version);
   }
 });
 
 // Context menu for password generation in input fields
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
+browser.runtime.onInstalled.addListener(() => {
+  browser.contextMenus.create({
     id: 'generate-password',
-    title: 'Générer un mot de passe',
+    title: browser.i18n.getMessage('contextMenuGenerate'),
     contexts: ['editable']
   });
 });
 
 // Handle context menu click
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+browser.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'generate-password') {
     // Send message to content script to fill the field
-    chrome.tabs.sendMessage(tab.id, {
+    browser.tabs.sendMessage(tab.id, {
       action: 'fillPassword',
       target: info.editable
     });
@@ -53,43 +53,38 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Message handler
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // SECURITY: Validate message origin - must come from our own extension
-  if (!sender || !sender.id || sender.id !== chrome.runtime.id) {
+  if (!sender || !sender.id || sender.id !== browser.runtime.id) {
     console.warn('GenPwd Pro: Rejected message from unauthorized sender:', sender);
-    sendResponse({ success: false, error: 'Unauthorized' });
-    return false;
+    return Promise.resolve({ success: false, error: 'Unauthorized' });
   }
 
   // SECURITY: Validate that sender is from a tab (not external)
   if (!sender.tab && !sender.url) {
     console.warn('GenPwd Pro: Rejected message from non-tab context');
-    sendResponse({ success: false, error: 'Invalid context' });
-    return false;
+    return Promise.resolve({ success: false, error: 'Invalid context' });
   }
 
   // SECURITY: Validate request structure
   if (!request || typeof request !== 'object' || typeof request.action !== 'string') {
     console.warn('GenPwd Pro: Rejected malformed message');
-    sendResponse({ success: false, error: 'Malformed request' });
-    return false;
+    return Promise.resolve({ success: false, error: 'Malformed request' });
   }
 
   if (request.action === 'generatePassword') {
     // Generate password using stored settings
-    chrome.storage.sync.get(['settings'], (data) => {
+    return browser.storage.sync.get(['settings']).then((data) => {
       const settings = data.settings || {};
-
-      // Here you would call the generator
-      // For now, return a simple password
-      sendResponse({
+      return {
         success: true,
         password: generateSimplePassword(settings)
-      });
+      };
     });
-
-    return true; // Keep the message channel open for async response
   }
+
+  // Unknown action
+  return Promise.resolve({ success: false, error: 'Unknown action' });
 });
 
 function generateSimplePassword(settings) {
@@ -107,4 +102,4 @@ function generateSimplePassword(settings) {
   return password;
 }
 
-console.log('GenPwd Pro background service worker loaded');
+console.log('GenPwd Pro background script loaded');

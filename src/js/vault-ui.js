@@ -2032,7 +2032,7 @@ export class VaultUI {
           <polyline points="17 8 12 3 7 8"></polyline>
           <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
-        Importer
+        ${t('vault.import.button')}
       `;
     }
   }
@@ -2896,7 +2896,7 @@ export class VaultUI {
     if (btn) {
       btn.classList.toggle('active', compact);
       btn.setAttribute('aria-pressed', String(compact));
-      btn.setAttribute('data-tooltip', compact ? 'Quitter le mode compact' : 'Mode compact (widget flottant)');
+      btn.setAttribute('data-tooltip', compact ? t('vault.view.exitCompact') : t('vault.view.compactWidget'));
 
       // Change icon
       btn.innerHTML = compact
@@ -3308,7 +3308,7 @@ export class VaultUI {
       const list = document.getElementById('vault-entries');
       if (btn) {
         btn.classList.toggle('compact', this.#viewMode === 'compact');
-        btn.title = this.#viewMode === 'compact' ? 'Vue confortable' : 'Vue compacte';
+        btn.title = this.#viewMode === 'compact' ? t('vault.view.comfortable') : t('vault.view.compact');
         btn.setAttribute('aria-pressed', String(this.#viewMode === 'compact'));
       }
       if (list) {
@@ -4044,7 +4044,7 @@ export class VaultUI {
         await window.vault.entries.update(this.#selectedEntry.id, {
           favorite: !this.#selectedEntry.favorite
         });
-        showToast(this.#selectedEntry.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
+        showToast(this.#selectedEntry.favorite ? t('vault.toast.removedFromFavorites') : t('vault.toast.addedToFavorites'), 'success');
       } catch (error) {
         showToast(t('vault.common.error'), 'error');
       }

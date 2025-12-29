@@ -1279,13 +1279,13 @@ function bindPresetModalEvents(modal) {
  */
 function formatCaseModeLabel(caseMode, blocks) {
   const labels = {
-    'mixte': 'Mixed (random)',
-    'upper': 'UPPERCASE',
-    'lower': 'lowercase',
-    'title': 'Title Case',
-    'blocks': blocks ? `Blocks (${blocks.join('-')})` : 'Blocks'
+    'mixte': i18n.t('case.mixed'),
+    'upper': i18n.t('case.upper'),
+    'lower': i18n.t('case.lower'),
+    'title': i18n.t('case.title'),
+    'blocks': blocks ? `${i18n.t('case.blocks')} (${blocks.join('-')})` : i18n.t('case.blocks')
   };
-  return labels[caseMode] || caseMode || 'Mixed';
+  return labels[caseMode] || caseMode || i18n.t('case.mixed');
 }
 
 /**
@@ -1293,12 +1293,12 @@ function formatCaseModeLabel(caseMode, blocks) {
  */
 function formatPlacementLabel(placement) {
   const labels = {
-    'aleatoire': 'Random',
-    'debut': 'At start',
-    'fin': 'At end',
-    'milieu': 'In middle'
+    'aleatoire': i18n.t('placement.random'),
+    'debut': i18n.t('placement.start'),
+    'fin': i18n.t('placement.end'),
+    'milieu': i18n.t('placement.middle')
   };
-  return labels[placement] || placement || 'Random';
+  return labels[placement] || placement || i18n.t('placement.random');
 }
 
 /**
@@ -2002,17 +2002,17 @@ export function initializePluginsUI() {
     <div class="section-content">
       <div class="row">
         <button class="btn full-width" id="btn-manage-plugins">
-          🔌 Manage Plugins
+          🔌 ${i18n.t('plugins.managePlugins')}
         </button>
       </div>
       <div class="row">
         <button class="btn full-width" id="btn-load-demo-plugins">
-          🎨 Load Demo Plugins
+          🎨 ${i18n.t('plugins.loadDemoPlugins')}
         </button>
       </div>
       <div class="plugin-status plugin-status-box">
-        <div><strong>Status:</strong> ${pluginStats.totalPlugins} plugin(s) installed</div>
-        <div><strong>Hooks:</strong> ${pluginStats.totalHooks} active hook(s)</div>
+        <div><strong>${i18n.t('plugins.statusLabel')}</strong> ${i18n.t('plugins.pluginsInstalled', { count: pluginStats.totalPlugins })}</div>
+        <div><strong>${i18n.t('plugins.hooksLabel')}</strong> ${i18n.t('plugins.activeHooksCount', { count: pluginStats.totalHooks })}</div>
       </div>
     </div>
   `);
@@ -2095,8 +2095,8 @@ function updatePluginStatus() {
   if (statusDiv) {
     const stats = pluginManager.getStats();
     statusDiv.innerHTML = sanitizeHTML(`
-      <div><strong>Status:</strong> ${stats.totalPlugins} plugin(s) installed</div>
-      <div><strong>Hooks:</strong> ${stats.totalHooks} active hook(s)</div>
+      <div><strong>${i18n.t('plugins.statusLabel')}</strong> ${i18n.t('plugins.pluginsInstalled', { count: stats.totalPlugins })}</div>
+      <div><strong>${i18n.t('plugins.hooksLabel')}</strong> ${i18n.t('plugins.activeHooksCount', { count: stats.totalHooks })}</div>
     `);
   }
 
@@ -2178,18 +2178,18 @@ function showPluginManagerModal() {
                 </div>
 
                 <div class="plugin-hooks plugin-hooks-list">
-                  <strong>Hooks:</strong>
-                  ${plugin.hooks ? Object.keys(plugin.hooks).map(h => `<span class="hook-badge">${h}</span>`).join('') : '<span>None</span>'}
+                  <strong>${i18n.t('plugins.hooksLabel')}</strong>
+                  ${plugin.hooks ? Object.keys(plugin.hooks).map(h => `<span class="hook-badge">${h}</span>`).join('') : `<span>${i18n.t('plugins.none')}</span>`}
                 </div>
 
                 <div class="plugin-meta plugin-meta-info">
-                  ${plugin._loadedAt ? `Loaded: ${new Date(plugin._loadedAt).toLocaleString()}` : ''}
+                  ${plugin._loadedAt ? i18n.t('plugins.loadedAt', { date: new Date(plugin._loadedAt).toLocaleString() }) : ''}
                 </div>
 
                 <div class="plugin-actions">
-                  <button class="btn-mini" data-action="settings" data-plugin-name="${plugin.name}">⚙️ Settings</button>
-                  <button class="btn-mini" data-action="export" data-plugin-name="${plugin.name}">📤 Export</button>
-                  <button class="btn-mini danger" data-action="uninstall" data-plugin-name="${plugin.name}">🗑️ Uninstall</button>
+                  <button class="btn-mini" data-action="settings" data-plugin-name="${plugin.name}">⚙️ ${i18n.t('plugins.settings')}</button>
+                  <button class="btn-mini" data-action="export" data-plugin-name="${plugin.name}">📤 ${i18n.t('plugins.export')}</button>
+                  <button class="btn-mini danger" data-action="uninstall" data-plugin-name="${plugin.name}">🗑️ ${i18n.t('common.uninstall')}</button>
                 </div>
               </div>
             `).join('')
@@ -2197,8 +2197,8 @@ function showPluginManagerModal() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-install-plugin-file">📁 Install from File</button>
-        <button class="btn btn-red" id="btn-clear-all-plugins">🗑️ Clear All</button>
+        <button class="btn" id="btn-install-plugin-file">📁 ${i18n.t('plugins.installFromFile')}</button>
+        <button class="btn btn-red" id="btn-clear-all-plugins">🗑️ ${i18n.t('plugins.clearAll')}</button>
         <button class="btn" id="close-plugins-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
@@ -2334,7 +2334,7 @@ function showPluginSettingsModal(pluginName) {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">⚙️ ${escapeHtml(plugin.name)} Settings</div>
+        <div class="modal-title">⚙️ ${i18n.t('plugins.settingsTitle', { name: escapeHtml(plugin.name) })}</div>
         <button class="modal-close" id="close-plugin-settings-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -2359,7 +2359,7 @@ function showPluginSettingsModal(pluginName) {
     try {
       plugin.hooks.onUIRender(container);
     } catch (error) {
-      container.innerHTML = sanitizeHTML(`<p class="text-red">Error rendering plugin settings: ${escapeHtml(error.message)}</p>`);
+      container.innerHTML = sanitizeHTML(`<p class="text-red">${i18n.t('plugins.renderError', { error: escapeHtml(error.message) })}</p>`);
     }
   } else {
     container.innerHTML = sanitizeHTML(`
@@ -2589,22 +2589,22 @@ function showAdvancedImportModal() {
       </div>
       <div class="modal-body">
         <p class="mb-20 text-secondary">
-          Import passwords from popular password managers
+          ${i18n.t('import.description')}
         </p>
 
         <div class="form-group mb-20">
           <label for="import-format" class="form-label">
-            Select Import Format:
+            ${i18n.t('import.selectFormat')}
           </label>
           <select id="import-format" class="input-field format-select">
-            <optgroup label="Password Managers">
+            <optgroup label="${i18n.t('import.passwordManagers')}">
               <option value="keepass-xml">KeePass (XML)</option>
               <option value="keepass-csv">KeePass (CSV)</option>
               <option value="bitwarden-json">Bitwarden (JSON)</option>
               <option value="lastpass-csv">LastPass (CSV)</option>
               <option value="1password-csv">1Password (CSV)</option>
             </optgroup>
-            <optgroup label="Generic Formats">
+            <optgroup label="${i18n.t('import.genericFormats')}">
               <option value="generic-json">Generic JSON</option>
               <option value="generic-csv">Generic CSV</option>
             </optgroup>
@@ -2612,30 +2612,30 @@ function showAdvancedImportModal() {
         </div>
 
         <div class="format-info format-info-box">
-          <strong>Format Information:</strong>
+          <strong>${i18n.t('import.formatInfo')}</strong>
           <div id="import-format-description" class="form-description">
-            Select a format to see details
+            ${i18n.t('import.selectFormatDetails')}
           </div>
         </div>
 
         <div class="file-upload mb-20">
           <input type="file" id="import-file-input" accept=".xml,.csv,.json" class="file-input-hidden">
           <button class="btn full-width btn-blue" id="btn-select-file">
-            📁 Select File
+            📁 ${i18n.t('import.selectFile')}
           </button>
           <div id="selected-file-name" class="file-name-display"></div>
         </div>
 
         <div id="import-preview" class="import-preview-box">
-          <strong>Preview:</strong>
+          <strong>${i18n.t('import.preview')}:</strong>
           <div id="import-preview-content" class="form-description"></div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-green" id="btn-import-execute" disabled>
-          ✅ Import Passwords
+          ✅ ${i18n.t('import.importPasswords')}
         </button>
-        <button class="btn" id="close-import-modal-footer">Cancel</button>
+        <button class="btn" id="close-import-modal-footer">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -2649,18 +2649,19 @@ function showAdvancedImportModal() {
   const formatDescription = modal.querySelector('#import-format-description');
 
   const formatDescriptions = {
-    'keepass-xml': 'Import from KeePass XML export. Supports full metadata including groups, timestamps, and custom fields.',
-    'keepass-csv': 'Import from KeePass CSV export. Basic fields: Account, Login Name, Password, Web Site, Comments.',
-    'bitwarden-json': 'Import from Bitwarden JSON export. Full-featured with folders and timestamps.',
-    'lastpass-csv': 'Import from LastPass CSV export. Fields: url, username, password, extra, name, grouping.',
-    '1password-csv': 'Import from 1Password CSV export. Fields: Title, URL, Username, Password, Notes.',
-    'generic-json': 'Import from GenPwd Pro or other generic JSON formats.',
-    'generic-csv': 'Import from generic CSV with fields: title, username, password, url, notes.'
+    'keepass-xml': () => i18n.t('import.formats.keepassXml'),
+    'keepass-csv': () => i18n.t('import.formats.keepassCsv'),
+    'bitwarden-json': () => i18n.t('import.formats.bitwardenJson'),
+    'lastpass-csv': () => i18n.t('import.formats.lastpassCsv'),
+    '1password-csv': () => i18n.t('import.formats.onepasswordCsv'),
+    'generic-json': () => i18n.t('import.formats.genericJson'),
+    'generic-csv': () => i18n.t('import.formats.genericCsv')
   };
 
   formatSelect.addEventListener('change', () => {
     const format = formatSelect.value;
-    formatDescription.textContent = formatDescriptions[format] || 'Select a format to see details';
+    const getDescription = formatDescriptions[format];
+    formatDescription.textContent = getDescription ? getDescription() : i18n.t('plugins.selectFormat');
   });
 
   // Trigger initial description
@@ -2682,7 +2683,7 @@ function showAdvancedImportModal() {
     const file = e.target.files[0];
     if (!file) return;
 
-    selectedFileName.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+    selectedFileName.textContent = i18n.t('plugins.selectedFile', { name: file.name, size: (file.size / 1024).toFixed(2) });
 
     try {
       const content = await file.text();

@@ -1,29 +1,28 @@
 /*
- * GenPwd Pro - Chrome Extension Content Script
+ * GenPwd Pro - Firefox Extension Content Script
  * Copyright 2025 Julien Bombled
  */
 
 // Listen for messages from the background script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender) => {
   // SECURITY: Validate message origin
-  if (!sender || !sender.id || sender.id !== chrome.runtime.id) {
+  if (!sender || !sender.id || sender.id !== browser.runtime.id) {
     console.warn('GenPwd Pro: Rejected message from unauthorized sender');
-    return false;
+    return Promise.resolve(false);
   }
 
   // SECURITY: Validate request structure
   if (!request || typeof request !== 'object' || typeof request.action !== 'string') {
     console.warn('GenPwd Pro: Rejected malformed message');
-    return false;
+    return Promise.resolve(false);
   }
 
   if (request.action === 'fillPassword') {
     fillActiveElement();
-    sendResponse({ success: true });
-    return true; // Keep channel open for async response
+    return Promise.resolve({ success: true });
   }
 
-  return false;
+  return Promise.resolve(false);
 });
 
 function fillActiveElement() {
@@ -31,7 +30,7 @@ function fillActiveElement() {
 
   if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
     // Request password generation from background
-    chrome.runtime.sendMessage({ action: 'generatePassword' }, (response) => {
+    browser.runtime.sendMessage({ action: 'generatePassword' }).then((response) => {
       if (response && response.success) {
         activeElement.value = response.password;
 
@@ -69,7 +68,7 @@ function enhancePasswordFields() {
       font-size: 16px;
       user-select: none;
     `;
-    icon.title = 'Générer un mot de passe sécurisé';
+    icon.title = browser.i18n.getMessage('iconTooltip');
 
     icon.addEventListener('click', () => {
       field.focus();

@@ -5,6 +5,7 @@
 
 import { generateSyllables, generatePassphrase, generateLeet } from './core/generators.js';
 import { getStrengthLevel, calculateEntropy } from './utils/helpers.js';
+import { initializeI18n, t } from './utils/i18n-helper.js';
 
 // XSS Protection: Escape HTML entities
 function escapeHTML(str) {
@@ -16,13 +17,16 @@ function escapeHTML(str) {
 // DOM Elements
 let modeSelect, lengthInput, policySelect, wordCountInput, separatorInput, dictionarySelect;
 let leetWordInput, digitsInput, specialsInput, caseModeSelect, quantityInput;
-let generateBtn, resultsSection, resultsContainer;
+let generateBtn, generateBtnText, resultsSection, resultsContainer;
 let syllablesOptions, passphraseOptions, leetOptions;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
+  // Initialize i18n for HTML elements
+  initializeI18n();
+
   // Get all DOM elements
   modeSelect = document.getElementById('mode');
   lengthInput = document.getElementById('length');
@@ -36,6 +40,7 @@ function init() {
   caseModeSelect = document.getElementById('caseMode');
   quantityInput = document.getElementById('quantity');
   generateBtn = document.getElementById('generate-btn');
+  generateBtnText = generateBtn.querySelector('[data-i18n="generateButton"]');
   resultsSection = document.getElementById('results-section');
   resultsContainer = document.getElementById('results-container');
 
@@ -79,7 +84,9 @@ function handleModeChange() {
 async function handleGenerate() {
   try {
     generateBtn.disabled = true;
-    generateBtn.textContent = '⏳ Génération...';
+    if (generateBtnText) {
+      generateBtnText.textContent = t('generatingButton');
+    }
 
     const mode = modeSelect.value;
     const quantity = parseInt(quantityInput.value) || 5;
@@ -99,7 +106,7 @@ async function handleGenerate() {
           result = await generateLeetPassword();
           break;
         default:
-          throw new Error(`Mode inconnu: ${mode}`);
+          throw new Error(t('errorUnknownMode', mode));
       }
 
       results.push(result);
@@ -109,11 +116,13 @@ async function handleGenerate() {
     saveSettings();
 
   } catch (error) {
-    console.error('Erreur génération:', error);
-    alert(`Erreur: ${error.message}`);
+    console.error('Generation error:', error);
+    alert(`${t('errorUnknownMode', error.message)}`);
   } finally {
     generateBtn.disabled = false;
-    generateBtn.textContent = '🎲 Générer';
+    if (generateBtnText) {
+      generateBtnText.textContent = t('generateButton');
+    }
   }
 }
 
@@ -192,7 +201,7 @@ function createPasswordItem(result, index) {
       <span class="entropy-badge ${escapeHTML(strength.class)}">
         ${result.entropy.toFixed(1)} bits - ${escapeHTML(strength.label)}
       </span>
-      <button class="copy-btn" data-index="${index}">📋 Copier</button>
+      <button class="copy-btn" data-index="${index}">📋 ${t('copyButton')}</button>
     </div>
   `;
 
@@ -207,7 +216,7 @@ async function copyPassword(password, button) {
     await navigator.clipboard.writeText(password);
 
     const originalText = button.textContent;
-    button.textContent = '✓ Copié!';
+    button.textContent = `✓ ${t('copiedButton')}`;
     button.classList.add('copied');
 
     setTimeout(() => {
@@ -216,8 +225,8 @@ async function copyPassword(password, button) {
     }, 2000);
 
   } catch (error) {
-    console.error('Erreur copie:', error);
-    alert('Erreur lors de la copie');
+    console.error('Copy error:', error);
+    alert(t('errorCopy'));
   }
 }
 
@@ -237,7 +246,7 @@ function saveSettings() {
   };
 
   chrome.storage.sync.set({ settings }, () => {
-    console.log('Paramètres sauvegardés');
+    console.log('Settings saved');
   });
 }
 
