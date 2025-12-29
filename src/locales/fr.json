@@ -499,7 +499,9 @@
       "edit": "Modifier",
       "add": "Ajouter",
       "search": "Rechercher",
+      "select": "Sélectionner",
       "duplicate": "Dupliquer",
+      "copy": "Copier",
       "move": "Déplacer vers...",
       "export": "Exporter",
       "import": "Importer",
@@ -782,7 +784,26 @@
       "pinned": "Épinglé",
       "reusedPassword": "Mot de passe réutilisé",
       "strengthPrefix": "Force du mot de passe",
-      "strengthTitle": "Force"
+      "strengthTitle": "Force",
+      "expired": "Expiré",
+      "expiresToday": "Expire aujourd'hui",
+      "expiresSoon": "Expire bientôt"
+    },
+    "entryTypes": {
+      "login": "Identifiant",
+      "note": "Note",
+      "card": "Carte",
+      "identity": "Identité"
+    },
+    "fieldKinds": {
+      "text": "Texte",
+      "hidden": "Masqué",
+      "password": "Mot de passe",
+      "url": "URL",
+      "email": "Email",
+      "phone": "Téléphone",
+      "date": "Date",
+      "secured": "Sécurisé"
     },
     "age": {
       "label": "Âge du mot de passe",
@@ -973,6 +994,8 @@
       "days": "jour(s)",
       "created": "CRÉÉ",
       "modified": "MODIFIÉ",
+      "lastUsed": "Dernière utilisation",
+      "usageCount": "Utilisations",
       "excellent": "EXCELLENT",
       "good": "BON",
       "fair": "MOYEN",

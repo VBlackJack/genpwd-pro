@@ -3,7 +3,7 @@
  * HTML templates for vault entry detail panel
  */
 
-import { ENTRY_TYPES } from './entry-list.js';
+import { ENTRY_TYPES, getTypeLabel } from './entry-list.js';
 import { escapeHtml, formatDateTime } from '../../utils/formatter.js';
 import { renderFaviconImg } from '../../utils/favicon-manager.js';
 
@@ -48,7 +48,7 @@ export function renderDetailHeader(entry, options = {}) {
       </div>
       <div class="vault-detail-info">
         <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
-        <span class="vault-detail-type">${type.label}</span>
+        <span class="vault-detail-type">${getTypeLabel(type, t)}</span>
         <div class="vault-detail-tags">${renderTagsInDetail(entry, allTags)}</div>
       </div>
       <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions') || 'Entry actions'}">
@@ -138,14 +138,14 @@ export function renderField(label, value, options = {}) {
         ${copyable ? `
           <div class="vault-field-actions">
             ${masked ? `
-              <button class="vault-field-btn toggle-reveal" title="Show/Hide" aria-label="Toggle visibility">
+              <button class="vault-field-btn toggle-reveal" title="${options.t?.('vault.aria.toggleVisibility') || 'Show/Hide'}" aria-label="${options.t?.('vault.aria.toggleVisibility') || 'Toggle visibility'}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
               </button>
             ` : ''}
-            <button class="vault-field-btn copy-field" data-value="${escapeHtml(value)}" title="Copy" aria-label="Copy ${escapeHtml(label)}">
+            <button class="vault-field-btn copy-field" data-value="${escapeHtml(value)}" title="${options.t?.('vault.common.copy') || 'Copy'}" aria-label="${options.t?.('vault.common.copy') || 'Copy'} ${escapeHtml(label)}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -183,11 +183,11 @@ export function renderEntryMeta(entry, options = {}) {
       ${entry.metadata?.lastUsedAt ? `
         <div class="vault-meta-row">
           <div class="vault-meta-item">
-            <span class="vault-meta-label">Last used</span>
+            <span class="vault-meta-label">${t('vault.detail.lastUsed')}</span>
             <span class="vault-meta-value">${formatDateTime(entry.metadata.lastUsedAt)}</span>
           </div>
           <div class="vault-meta-item">
-            <span class="vault-meta-label">Uses</span>
+            <span class="vault-meta-label">${t('vault.detail.usageCount')}</span>
             <span class="vault-meta-value">${entry.metadata.usageCount || 0}</span>
           </div>
         </div>
@@ -262,17 +262,28 @@ export function renderNotesField(notes, options = {}) {
 }
 
 /**
- * Custom field type labels
+ * Custom field type label keys for translation
  */
-const FIELD_KIND_LABELS = {
-  text: 'Text',
-  hidden: 'Hidden',
-  password: 'Password',
-  url: 'URL',
-  email: 'Email',
-  phone: 'Phone',
-  date: 'Date'
+const FIELD_KIND_KEYS = {
+  text: 'vault.fieldKinds.text',
+  hidden: 'vault.fieldKinds.hidden',
+  password: 'vault.fieldKinds.password',
+  url: 'vault.fieldKinds.url',
+  email: 'vault.fieldKinds.email',
+  phone: 'vault.fieldKinds.phone',
+  date: 'vault.fieldKinds.date'
 };
+
+/**
+ * Get translated field kind label
+ * @param {string} kind - Field kind
+ * @param {Function} t - Translation function
+ * @returns {string} Translated label
+ */
+function getFieldKindLabel(kind, t) {
+  const key = FIELD_KIND_KEYS[kind];
+  return key ? (t(key) || kind) : kind;
+}
 
 /**
  * Render custom fields section
@@ -319,8 +330,8 @@ export function renderCustomFields(fields, options = {}) {
           <div class="vault-field vault-custom-field-display" data-field-id="${escapeHtml(field.id || '')}" data-masked="${isMasked}">
             <div class="vault-field-label-row">
               <label class="vault-field-label">${escapeHtml(field.label)}</label>
-              ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Secured</span>' : ''}
-              <span class="vault-field-kind-badge">${FIELD_KIND_LABELS[field.kind] || field.kind}</span>
+              ${field.isSecured ? `<span class="vault-field-badge secure">🔒 ${t('vault.fieldKinds.secured')}</span>` : ''}
+              <span class="vault-field-kind-badge">${getFieldKindLabel(field.kind, t)}</span>
             </div>
             <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(field.value || '')}">
               <span class="vault-field-text ${isMasked ? 'masked' : ''}" data-value="${escapeHtml(field.value || '')}">
@@ -329,14 +340,14 @@ export function renderCustomFields(fields, options = {}) {
               ${isMasked ? `<span class="vault-field-revealed">${displayValue}</span>` : ''}
               <div class="vault-field-actions">
                 ${isMasked ? `
-                  <button class="vault-field-btn toggle-reveal" title="Show/Hide" aria-label="Toggle visibility">
+                  <button class="vault-field-btn toggle-reveal" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}">
                     <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                       <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                   </button>
                 ` : ''}
-                <button class="vault-field-btn copy-field" data-value="${escapeHtml(field.value || '')}" title="Copy" aria-label="Copy ${escapeHtml(field.label)}">
+                <button class="vault-field-btn copy-field" data-value="${escapeHtml(field.value || '')}" title="${t('vault.common.copy')}" aria-label="${t('vault.common.copy')} ${escapeHtml(field.label)}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>

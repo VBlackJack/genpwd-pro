@@ -10,29 +10,40 @@ import { renderFaviconImg } from '../../utils/favicon-manager.js';
 
 /**
  * Entry type definitions
+ * Note: labels are translation keys, resolved at render time with t()
  */
 export const ENTRY_TYPES = {
   login: {
     icon: `<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`,
-    label: 'Login',
+    labelKey: 'vault.entryTypes.login',
     color: '#3b82f6'
   },
   note: {
     icon: `<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
-    label: 'Note',
+    labelKey: 'vault.entryTypes.note',
     color: '#10b981'
   },
   card: {
     icon: `<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
-    label: 'Card',
+    labelKey: 'vault.entryTypes.card',
     color: '#f59e0b'
   },
   identity: {
     icon: `<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-    label: 'Identity',
+    labelKey: 'vault.entryTypes.identity',
     color: '#8b5cf6'
   }
 };
+
+/**
+ * Get translated label for entry type
+ * @param {Object} type - Entry type object
+ * @param {Function} t - Translation function
+ * @returns {string} Translated label
+ */
+export function getTypeLabel(type, t) {
+  return t(type.labelKey) || type.labelKey.split('.').pop();
+}
 
 /**
  * Check if password is duplicated across entries
@@ -140,7 +151,8 @@ export function renderEntryRow(entry, options = {}) {
   } = options;
 
   const type = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
-  const subtitle = entry.data?.username || entry.data?.url || type.label;
+  const typeLabel = getTypeLabel(type, t);
+  const subtitle = entry.data?.username || entry.data?.url || typeLabel;
   const isFavorite = entry.favorite;
   const isPinned = entry.pinned;
 
@@ -162,7 +174,7 @@ export function renderEntryRow(entry, options = {}) {
          aria-selected="${isSelected || isMultiSelected}"
          tabindex="${isSelected ? 0 : -1}"
          draggable="true">
-      <label class="vault-checkbox-wrapper" title="Select">
+      <label class="vault-checkbox-wrapper" title="${t('vault.common.select') || 'Select'}">
         <input type="checkbox" class="vault-checkbox" data-action="multi-select"
                ${isMultiSelected ? 'checked' : ''} aria-label="Select ${escapeHtml(entry.title)}">
         <span class="vault-checkbox-mark"></span>
@@ -209,7 +221,7 @@ export function renderEntryRow(entry, options = {}) {
         ` : ''}
         ${entry.data?.url ? `
           <button class="vault-quick-btn open-url" data-action="open-url"
-                  title="Open website" aria-label="Open website in new tab">
+                  title="${t('vault.actions.openWebsite')}" aria-label="${t('vault.actions.openWebsite')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>

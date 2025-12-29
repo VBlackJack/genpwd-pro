@@ -36,6 +36,7 @@
   --glass-border-light: rgba(255, 255, 255, 0.15);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   --glass-blur: blur(12px);
+  --bg-surface-alpha: rgba(13, 16, 28, 0.8);
 
   /* Text Colors - WCAG AAA compliant (7:1 contrast ratio target) */
   --text-primary: rgba(255, 255, 255, 0.95);
@@ -115,6 +116,9 @@
   --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --shadow-primary: 0 4px 12px rgba(var(--rgb-primary), 0.4);
+  --shadow-windows-hello: 0 4px 8px rgba(0, 120, 212, 0.4);
+  --shadow-windows-hello-sm: 0 2px 4px rgba(0, 120, 212, 0.3);
 
   /* Focus ring shadow */
   --focus-ring-shadow: 0 0 0 3px rgba(var(--rgb-primary), 0.15);

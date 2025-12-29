@@ -55,9 +55,9 @@
   outline: none;
   border-color: var(--vault-primary);
   box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.15),
-    0 2px 8px rgba(59, 130, 246, 0.1);
-  background: rgba(15, 23, 42, 0.8);
+    0 0 0 3px rgba(var(--rgb-primary), 0.15),
+    0 2px 8px rgba(var(--rgb-primary), 0.1);
+  background: var(--input-bg-focus);
 }
 
 .vault-input::placeholder {
@@ -125,7 +125,7 @@
 
 .vault-type-option input:checked+.vault-type-card {
   border-color: var(--type-color, var(--vault-primary));
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(var(--rgb-primary), 0.1);
 }
 
 .vault-type-option input:focus+.vault-type-card {

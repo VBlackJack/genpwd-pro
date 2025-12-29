@@ -394,7 +394,9 @@
       "edit": "Editar",
       "add": "Añadir",
       "search": "Buscar",
+      "select": "Seleccionar",
       "duplicate": "Duplicar",
+      "copy": "Copiar",
       "move": "Mover a...",
       "export": "Exportar",
       "import": "Importar",
@@ -677,7 +679,26 @@
       "pinned": "Fijado",
       "reusedPassword": "Contraseña reutilizada",
       "strengthPrefix": "Fuerza de la contraseña",
-      "strengthTitle": "Fuerza"
+      "strengthTitle": "Fuerza",
+      "expired": "Vencido",
+      "expiresToday": "Vence hoy",
+      "expiresSoon": "Vence pronto"
+    },
+    "entryTypes": {
+      "login": "Inicio de sesión",
+      "note": "Nota",
+      "card": "Tarjeta",
+      "identity": "Identidad"
+    },
+    "fieldKinds": {
+      "text": "Texto",
+      "hidden": "Oculto",
+      "password": "Contraseña",
+      "url": "URL",
+      "email": "Email",
+      "phone": "Teléfono",
+      "date": "Fecha",
+      "secured": "Protegido"
     },
     "age": {
       "label": "Antigüedad de la contraseña",
@@ -868,6 +889,8 @@
       "days": "día(s)",
       "created": "CREADO",
       "modified": "MODIFICADO",
+      "lastUsed": "Último uso",
+      "usageCount": "Usos",
       "excellent": "EXCELENTE",
       "good": "BUENO",
       "fair": "REGULAR",

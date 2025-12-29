@@ -52,7 +52,7 @@
 
 .vault-error {
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(var(--rgb-danger), 0.1);
   border-radius: var(--vault-radius);
   color: var(--vault-error);
   font-size: 0.85rem;

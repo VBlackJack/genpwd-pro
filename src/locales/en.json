@@ -402,6 +402,7 @@
       "edit": "Edit",
       "add": "Add",
       "search": "Search",
+      "select": "Select",
       "duplicate": "Duplicate",
       "move": "Move to...",
       "export": "Export",
@@ -702,7 +703,26 @@
       "pinned": "Pinned",
       "reusedPassword": "Reused password",
       "strengthPrefix": "Password strength",
-      "strengthTitle": "Strength"
+      "strengthTitle": "Strength",
+      "expired": "Expired",
+      "expiresToday": "Expires today",
+      "expiresSoon": "Expires soon"
+    },
+    "entryTypes": {
+      "login": "Login",
+      "note": "Note",
+      "card": "Card",
+      "identity": "Identity"
+    },
+    "fieldKinds": {
+      "text": "Text",
+      "hidden": "Hidden",
+      "password": "Password",
+      "url": "URL",
+      "email": "Email",
+      "phone": "Phone",
+      "date": "Date",
+      "secured": "Secured"
     },
     "age": {
       "label": "Password age",
@@ -911,6 +931,8 @@
       "days": "day(s)",
       "created": "CREATED",
       "modified": "MODIFIED",
+      "lastUsed": "Last used",
+      "usageCount": "Uses",
       "excellent": "EXCELLENT",
       "good": "GOOD",
       "fair": "FAIR",

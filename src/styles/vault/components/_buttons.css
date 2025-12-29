@@ -27,10 +27,10 @@
   left: 50%;
   width: 0;
   height: 0;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-medium);
   border-radius: var(--radius-full);
   transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
+  transition: width var(--transition-smooth), height var(--transition-smooth);
 }
 
 .vault-btn:hover::before {
@@ -49,7 +49,7 @@
 
 .vault-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--vault-primary), 0 0 0 4px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px var(--vault-primary), 0 0 0 4px rgba(var(--rgb-primary), 0.2);
 }
 
 .vault-btn:disabled {
@@ -71,12 +71,12 @@
 .vault-btn-primary {
   background: linear-gradient(135deg, var(--vault-primary), var(--accent-blue-light));
   color: white;
-  box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 15px -3px rgba(var(--rgb-primary), 0.4);
 }
 
 .vault-btn-primary:hover {
   background: linear-gradient(135deg, var(--accent-blue-light), var(--accent-blue-darker));
-  box-shadow: 0 6px 20px -3px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 20px -3px rgba(var(--rgb-primary), 0.5);
 }
 
 .vault-btn-secondary {
