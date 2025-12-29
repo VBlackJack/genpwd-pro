@@ -13,6 +13,7 @@
 
 import { VaultEntry, VaultGroup, ENTRY_TYPES, FIELD_KINDS, generateUUID } from './models.js';
 import { safeLog } from '../utils/logger.js';
+import i18n from '../utils/i18n.js';
 
 // ============================================================================
 // CONSTANTS
@@ -790,15 +791,16 @@ export function parseBitwardenJSON(jsonContent) {
             uri = login.uris?.[0]?.uri || '';
           } else if (type === ENTRY_TYPES.CREDIT_CARD) {
             // Store card data in custom fields
-            if (card.cardholderName) customFields.push({ id: generateUUID(), label: 'Cardholder', value: card.cardholderName, kind: FIELD_KINDS.TEXT, isSecured: false });
-            if (card.number) customFields.push({ id: generateUUID(), label: 'Card Number', value: card.number, kind: FIELD_KINDS.PASSWORD, isSecured: true });
-            if (card.expMonth && card.expYear) customFields.push({ id: generateUUID(), label: 'Expiry', value: `${card.expMonth}/${card.expYear}`, kind: FIELD_KINDS.TEXT, isSecured: false });
-            if (card.code) customFields.push({ id: generateUUID(), label: 'CVV', value: card.code, kind: FIELD_KINDS.PASSWORD, isSecured: true });
+            const t = i18n.t.bind(i18n);
+            if (card.cardholderName) customFields.push({ id: generateUUID(), label: t('vault.labels.cardholder'), value: card.cardholderName, kind: FIELD_KINDS.TEXT, isSecured: false });
+            if (card.number) customFields.push({ id: generateUUID(), label: t('vault.labels.cardNumber'), value: card.number, kind: FIELD_KINDS.PASSWORD, isSecured: true });
+            if (card.expMonth && card.expYear) customFields.push({ id: generateUUID(), label: t('vault.labels.expiry'), value: `${card.expMonth}/${card.expYear}`, kind: FIELD_KINDS.TEXT, isSecured: false });
+            if (card.code) customFields.push({ id: generateUUID(), label: t('vault.labels.cvv'), value: card.code, kind: FIELD_KINDS.PASSWORD, isSecured: true });
           }
 
           const entry = new VaultEntry({
             id: generateUUID(),
-            title: item.name || 'Untitled',
+            title: item.name || i18n.t('vault.labels.untitled'),
             type,
             username,
             secret: password ? [password] : [],

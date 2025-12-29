@@ -4,7 +4,8 @@
     "subtitle": "Secure Password Manager",
     "description": "Professional password manager with encrypted vault",
     "version": "Version {version}",
-    "ariaLabel": "GenPwd Pro - Secure Password Manager"
+    "ariaLabel": "GenPwd Pro - Secure Password Manager",
+    "loaded": "GenPwd Pro v{version} loaded successfully"
   },
   "keyboard": {
     "generatingPasswords": "Generating passwords",
@@ -27,7 +28,11 @@
       "autoType": "Auto-fill form",
       "nextEntry": "Select next entry",
       "prevEntry": "Select previous entry",
-      "closeModal": "Close modal"
+      "closeModal": "Close modal",
+      "generate": "Generate passwords",
+      "copyAll": "Copy all passwords",
+      "runTests": "Run tests",
+      "exportResults": "Export results"
     }
   },
   "passwordHealth": {
@@ -173,6 +178,14 @@
       "minutes10": "10 minutes",
       "minutes15": "15 minutes",
       "minutes30": "30 minutes"
+    },
+    "timeout": {
+      "1min": "1 minute",
+      "2min": "2 minutes",
+      "5min": "5 minutes",
+      "10min": "10 minutes",
+      "15min": "15 minutes",
+      "30min": "30 minutes"
     }
   },
   "policy": {
@@ -541,8 +554,11 @@
       "cardNumber": "Card number",
       "cardHolder": "Holder",
       "holder": "Holder",
+      "cardholder": "Cardholder",
       "expiration": "Expiration",
+      "expiry": "Expiry",
       "cvv": "CVV",
+      "untitled": "Untitled",
       "fullName": "Full name",
       "content": "Content",
       "note": "Note",
@@ -665,6 +681,9 @@
       "vaultSaved": "Vault saved: {fileName}",
       "forgetVaultConfirm": "Forget vault \"{name}\"?\n\nThe file will not be deleted, but the vault will be removed from the list.",
       "vaultForgotten": "Vault removed from list",
+      "savedWithTitle": "Saved to vault: {title}",
+      "autoTypePerforming": "Auto-Type: {title}",
+      "matchesFound": "{count} matches found",
       "deleteFolderConfirm": "Delete folder \"{name}\"?",
       "deleteFolderWithEntriesConfirm": "Delete folder \"{name}\" and move its {count} entries to root?",
       "deleteEntryConfirm": "Delete \"{title}\" from vault?",
@@ -1362,6 +1381,8 @@
     "clearResultsConfirm": "Are you sure you want to clear all results?",
     "passwordCopied": "Password copied!",
     "copyFailed": "Copy failed",
+    "authError": "Authentication error: {error}",
+    "copiedAutoClear": "Copied (auto-clear in {seconds}s)",
     "criticalStartupError": "Critical startup error",
     "incompatibleEnvironment": "Incompatible environment",
     "corruptedCharsets": "Corrupted character sets data",
@@ -1613,6 +1634,13 @@
     "download": "📥 Download Export",
     "success": "Exported {count} passwords to {format}",
     "failed": "Export failed: {error}",
+    "formatLabels": {
+      "bitwarden": "Bitwarden",
+      "lastpass": "LastPass",
+      "1password": "1Password",
+      "chrome": "Chrome / Edge",
+      "generic": "Generic Format"
+    },
     "formats": {
       "keepassCsv": "CSV format compatible with KeePass password manager. Fields: Account, Login Name, Password, Web Site, Comments.",
       "bitwardenJson": "JSON format for Bitwarden. Full-featured with folders, favorites, and timestamps.",
@@ -1702,7 +1730,15 @@
     "settingsTitle": "{name} Settings",
     "renderError": "Error rendering plugin settings: {error}",
     "selectFormat": "Select a format to see details",
-    "selectedFile": "Selected: {name} ({size} KB)"
+    "selectedFile": "Selected: {name} ({size} KB)",
+    "toast": {
+      "validationFailed": "Plugin validation failed: {error}",
+      "alreadyExists": "Plugin \"{name}\" already exists",
+      "loaded": "Plugin \"{name}\" loaded",
+      "unloaded": "Plugin \"{name}\" unloaded",
+      "enabled": "Plugin \"{name}\" enabled",
+      "disabled": "Plugin \"{name}\" disabled"
+    }
   },
   "pwa": {
     "installTitle": "Install GenPwd Pro",
@@ -1795,7 +1831,8 @@
     "generic": {
       "occurred": "An error occurred",
       "tryAgain": "An error occurred. Please try again.",
-      "unexpected": "An unexpected error occurred"
+      "unexpected": "An unexpected error occurred",
+      "unknown": "An error occurred"
     },
     "sync": {
       "locked": "SyncService is locked. Call unlock() first.",

@@ -208,5 +208,9 @@
   "errorNotArray": {
     "message": "Parameter must be an array",
     "description": "Error for non-array parameter"
+  },
+  "errorInvalidContext": {
+    "message": "Invalid context",
+    "description": "Error when message comes from non-tab context"
   }
 }

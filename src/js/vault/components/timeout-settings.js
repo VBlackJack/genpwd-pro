@@ -5,14 +5,15 @@
 
 /**
  * Default timeout options
+ * Uses labelKey for i18n - translate at render time with t(opt.labelKey)
  */
 export const TIMEOUT_OPTIONS = [
-  { value: 60, label: '1 minute' },
-  { value: 120, label: '2 minutes' },
-  { value: 300, label: '5 minutes' },
-  { value: 600, label: '10 minutes' },
-  { value: 900, label: '15 minutes' },
-  { value: 1800, label: '30 minutes' }
+  { value: 60, labelKey: 'settings.timeout.1min' },
+  { value: 120, labelKey: 'settings.timeout.2min' },
+  { value: 300, labelKey: 'settings.timeout.5min' },
+  { value: 600, labelKey: 'settings.timeout.10min' },
+  { value: 900, labelKey: 'settings.timeout.15min' },
+  { value: 1800, labelKey: 'settings.timeout.30min' }
 ];
 
 /**
@@ -42,7 +43,7 @@ export function showTimeoutSettings(options = {}) {
       ${TIMEOUT_OPTIONS.map(opt => `
         <button class="vault-timeout-option ${opt.value === currentTimeout ? 'active' : ''}"
                 data-timeout="${opt.value}">
-          ${opt.label}
+          ${t(opt.labelKey)}
         </button>
       `).join('')}
     </div>

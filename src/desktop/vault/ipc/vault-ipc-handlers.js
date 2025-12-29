@@ -329,29 +329,29 @@ setInterval(() => globalIPCRateLimiter.cleanup(), 60000);
  * @returns {string} Sanitized message safe for client
  */
 function sanitizeErrorMessage(message) {
-  if (!message) return 'An error occurred';
+  if (!message) return t('errors.generic.unknown');
 
-  // Map of internal error patterns to user-friendly actionable messages
+  // Map of internal error patterns to user-friendly actionable messages (i18n keys)
   const errorMappings = [
-    { pattern: /ENOENT|no such file/i, message: 'File not found. Check the file path or restore from backup.' },
-    { pattern: /EACCES|permission denied/i, message: 'Access denied. Run as administrator or check folder permissions.' },
-    { pattern: /EEXIST|already exists/i, message: 'File already exists. Choose a different name or location.' },
-    { pattern: /ENOSPC|no space/i, message: 'Not enough disk space. Free up space and try again.' },
-    { pattern: /SQLITE_BUSY|SQLITE_LOCKED/i, message: 'Database busy. Close other apps using the vault and retry.' },
-    { pattern: /SQLITE_CORRUPT/i, message: 'Database corrupted. Restore from backup or create a new vault.' },
-    { pattern: /SQLITE_/i, message: 'Database error. Try restarting the application.' },
-    { pattern: /crypto|decrypt|cipher/i, message: 'Encryption error. Verify your password is correct.' },
-    { pattern: /password|incorrect/i, message: 'Incorrect password. Please try again.' },
-    { pattern: /timeout|timed out/i, message: 'Operation timed out. Check your connection and retry.' },
-    { pattern: /network|ECONNREFUSED|ETIMEDOUT/i, message: 'Network error. Check your internet connection.' },
-    { pattern: /EPERM|operation not permitted/i, message: 'Operation not permitted. Check file permissions.' },
-    { pattern: /EBUSY|resource busy/i, message: 'File is in use. Close other applications and retry.' },
+    { pattern: /ENOENT|no such file/i, messageKey: 'errors.file.notFound' },
+    { pattern: /EACCES|permission denied/i, messageKey: 'errors.file.accessDenied' },
+    { pattern: /EEXIST|already exists/i, messageKey: 'errors.file.alreadyExists' },
+    { pattern: /ENOSPC|no space/i, messageKey: 'errors.file.noSpace' },
+    { pattern: /SQLITE_BUSY|SQLITE_LOCKED/i, messageKey: 'errors.database.busy' },
+    { pattern: /SQLITE_CORRUPT/i, messageKey: 'errors.database.corrupted' },
+    { pattern: /SQLITE_/i, messageKey: 'errors.database.error' },
+    { pattern: /crypto|decrypt|cipher/i, messageKey: 'errors.crypto.encryptionError' },
+    { pattern: /password|incorrect/i, messageKey: 'errors.auth.incorrectPassword' },
+    { pattern: /timeout|timed out/i, messageKey: 'errors.network.timeout' },
+    { pattern: /network|ECONNREFUSED|ETIMEDOUT/i, messageKey: 'errors.network.error' },
+    { pattern: /EPERM|operation not permitted/i, messageKey: 'errors.file.operationNotPermitted' },
+    { pattern: /EBUSY|resource busy/i, messageKey: 'errors.file.inUse' },
   ];
 
   // Check for known error patterns
-  for (const { pattern, message: safeMsg } of errorMappings) {
+  for (const { pattern, messageKey } of errorMappings) {
     if (pattern.test(message)) {
-      return safeMsg;
+      return t(messageKey);
     }
   }
 
@@ -369,7 +369,7 @@ function sanitizeErrorMessage(message) {
     sanitized = sanitized.substring(0, 100) + '...';
   }
 
-  return sanitized || 'An error occurred';
+  return sanitized || t('errors.generic.unknown');
 }
 
 function safeHandler(handler, name) {

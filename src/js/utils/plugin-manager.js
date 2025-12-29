@@ -179,14 +179,14 @@ class PluginManager {
       const validation = this.validatePlugin(plugin);
       if (!validation.valid) {
         safeLog(`Plugin validation failed: ${validation.errors.join(', ')}`);
-        showToast(`Plugin validation failed: ${validation.errors[0]}`, 'error');
+        showToast(i18n.t('plugins.toast.validationFailed', { error: validation.errors[0] }), 'error');
         return false;
       }
 
       // Check if plugin already exists
       if (this.plugins.has(plugin.name)) {
         safeLog(`Plugin "${plugin.name}" already registered. Use updatePlugin() to update.`);
-        showToast(`Plugin "${plugin.name}" already exists`, 'error');
+        showToast(i18n.t('plugins.toast.alreadyExists', { name: plugin.name }), 'error');
         return false;
       }
 
@@ -230,7 +230,7 @@ class PluginManager {
       this.savePluginRegistry();
 
       safeLog(`Plugin "${plugin.name}" v${plugin.version} registered successfully`);
-      showToast(`Plugin "${plugin.name}" loaded`, 'success');
+      showToast(i18n.t('plugins.toast.loaded', { name: plugin.name }), 'success');
 
       return true;
     } catch (error) {
@@ -275,7 +275,7 @@ class PluginManager {
       this.savePluginRegistry();
 
       safeLog(`Plugin "${name}" unregistered successfully`);
-      showToast(`Plugin "${name}" unloaded`, 'success');
+      showToast(i18n.t('plugins.toast.unloaded', { name }), 'success');
 
       return true;
     } catch (error) {
@@ -339,7 +339,7 @@ class PluginManager {
 
       this.savePluginRegistry();
       safeLog(`Plugin "${name}" enabled`);
-      showToast(`Plugin "${name}" enabled`, 'success');
+      showToast(i18n.t('plugins.toast.enabled', { name }), 'success');
     }
 
     return true;
@@ -364,7 +364,7 @@ class PluginManager {
 
       this.savePluginRegistry();
       safeLog(`Plugin "${name}" disabled`);
-      showToast(`Plugin "${name}" disabled`, 'success');
+      showToast(i18n.t('plugins.toast.disabled', { name }), 'success');
     }
 
     return true;

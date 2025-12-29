@@ -135,7 +135,7 @@ function handleOAuthCallback(params) {
 
     showToast(i18n.t('toast.authSuccess'), 'success');
   } else if (params.error) {
-    showToast(`Authentication error: ${params.error}`, 'error');
+    showToast(i18n.t('toast.authError', { error: params.error }), 'error');
   }
 }
 
@@ -325,7 +325,7 @@ function overrideCopyBehavior(signal) {
         const result = await window.electronAPI.copyToClipboardSecure(password, settings.clipboardTTL);
         if (result.success) {
           const seconds = Math.round(settings.clipboardTTL / 1000);
-          showToast(`Copied (auto-clear in ${seconds}s)`, 'success', 2000);
+          showToast(i18n.t('toast.copiedAutoClear', { seconds }), 'success', 2000);
         } else {
           throw new Error(result.error || 'Secure copy failed');
         }

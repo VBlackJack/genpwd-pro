@@ -319,7 +319,7 @@ export class VaultUI {
           const entry = matches[0];
           const fullEntry = await window.vault.entries.get(entry.id); // Ensure full data (pwd)
 
-          showToast(`Auto-Type: ${entry.title}`, 'info');
+          showToast(t('vault.messages.autoTypePerforming', { title: entry.title }), 'info');
 
           const sequence = '{USERNAME}{TAB}{PASSWORD}{ENTER}';
           await window.electronAPI.performAutoType(sequence, {
@@ -344,7 +344,7 @@ export class VaultUI {
           this.#filterEntries();
 
           if (matches.length > 1) {
-            showToast(`${matches.length} matches found`, 'info');
+            showToast(t('vault.messages.matchesFound', { count: matches.length }), 'info');
           } else {
             showToast(t('vault.messages.noAutoMatchFound'), 'warning');
           }

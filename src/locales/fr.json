@@ -74,6 +74,7 @@
   "app": {
     "ariaLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé",
     "description": "Gestionnaire de mots de passe professionnel avec coffre chiffré",
+    "loaded": "__TRANSLATE__ GenPwd Pro v{version} loaded successfully",
     "subtitle": "Générateur de mots de passe sécurisés",
     "title": "GenPwd Pro",
     "version": "Version {version}"
@@ -298,7 +299,8 @@
     "generic": {
       "occurred": "__TRANSLATE__ An error occurred",
       "tryAgain": "__TRANSLATE__ An error occurred. Please try again.",
-      "unexpected": "__TRANSLATE__ An unexpected error occurred"
+      "unexpected": "__TRANSLATE__ An unexpected error occurred",
+      "unknown": "__TRANSLATE__ An error occurred"
     },
     "network": {
       "conflict": "__TRANSLATE__ Conflict detected. Remote file was modified.",
@@ -385,6 +387,13 @@
     "download": "📥 Télécharger l'export",
     "failed": "Échec de l'export : {error}",
     "formatInfo": "Informations sur le format :",
+    "formatLabels": {
+      "1password": "__TRANSLATE__ 1Password",
+      "bitwarden": "__TRANSLATE__ Bitwarden",
+      "chrome": "__TRANSLATE__ Chrome / Edge",
+      "generic": "__TRANSLATE__ Generic Format",
+      "lastpass": "__TRANSLATE__ LastPass"
+    },
     "formats": {
       "bitwardenJson": "Format JSON pour Bitwarden. Complet avec dossiers, favoris et horodatages.",
       "genericCsv": "Format CSV simple avec les champs de base : title, username, password, url, notes.",
@@ -673,6 +682,14 @@
       "totalPlugins": "__TRANSLATE__ Total Plugins"
     },
     "statusLabel": "__TRANSLATE__ Status:",
+    "toast": {
+      "alreadyExists": "__TRANSLATE__ Plugin \"{name}\" already exists",
+      "disabled": "__TRANSLATE__ Plugin \"{name}\" disabled",
+      "enabled": "__TRANSLATE__ Plugin \"{name}\" enabled",
+      "loaded": "__TRANSLATE__ Plugin \"{name}\" loaded",
+      "unloaded": "__TRANSLATE__ Plugin \"{name}\" unloaded",
+      "validationFailed": "__TRANSLATE__ Plugin validation failed: {error}"
+    },
     "uninstallTitle": "__TRANSLATE__ Uninstall Plugin"
   },
   "policy": {
@@ -844,6 +861,14 @@
       "minutes5": "__TRANSLATE__ 5 minutes",
       "seconds10": "__TRANSLATE__ 10 seconds",
       "seconds30": "__TRANSLATE__ 30 seconds"
+    },
+    "timeout": {
+      "10min": "__TRANSLATE__ 10 minutes",
+      "15min": "__TRANSLATE__ 15 minutes",
+      "1min": "__TRANSLATE__ 1 minute",
+      "2min": "__TRANSLATE__ 2 minutes",
+      "30min": "__TRANSLATE__ 30 minutes",
+      "5min": "__TRANSLATE__ 5 minutes"
     }
   },
   "settingsModal": {
@@ -926,15 +951,19 @@
     "descriptions": {
       "autoType": "__TRANSLATE__ Auto-fill form",
       "closeModal": "__TRANSLATE__ Close modal",
+      "copyAll": "__TRANSLATE__ Copy all passwords",
       "copyPassword": "__TRANSLATE__ Copy password",
       "copyUsername": "__TRANSLATE__ Copy username",
       "deleteEntry": "__TRANSLATE__ Delete selected entry",
       "duplicateEntry": "__TRANSLATE__ Duplicate entry",
       "editEntry": "__TRANSLATE__ Edit selected entry",
+      "exportResults": "__TRANSLATE__ Export results",
+      "generate": "__TRANSLATE__ Generate passwords",
       "lock": "__TRANSLATE__ Lock vault",
       "newEntry": "__TRANSLATE__ New entry",
       "nextEntry": "__TRANSLATE__ Select next entry",
       "prevEntry": "__TRANSLATE__ Select previous entry",
+      "runTests": "__TRANSLATE__ Run tests",
       "search": "__TRANSLATE__ Focus search",
       "showShortcuts": "__TRANSLATE__ Show keyboard shortcuts"
     }
@@ -984,6 +1013,7 @@
     "allPresetsExported": "Tous les préréglages exportés !",
     "appInstalled": "GenPwd Pro installé avec succès !",
     "appUpdated": "Application mise à jour - Dernière version utilisée",
+    "authError": "__TRANSLATE__ Authentication error: {error}",
     "authSuccess": "Authentification réussie",
     "autoClearDisabled": "Effacement auto désactivé",
     "autoClearEnabled": "Effacement auto : {time}",
@@ -997,6 +1027,7 @@
     "clearResultsConfirm": "Voulez-vous vraiment effacer tous les résultats ?",
     "clipboardAutoCleared": "Presse-papier effacé automatiquement",
     "configurationUpdated": "Configuration mise à jour !",
+    "copiedAutoClear": "__TRANSLATE__ Copied (auto-clear in {seconds}s)",
     "copiedToClipboard": "Copié dans le presse-papier",
     "copyFailed": "Échec de la copie",
     "copyPassword": "Copier le mot de passe",
@@ -1555,12 +1586,14 @@
       "attachments": "Pièces jointes",
       "cardHolder": "Titulaire",
       "cardNumber": "Numéro de carte",
+      "cardholder": "__TRANSLATE__ Cardholder",
       "color": "Couleur",
       "content": "Contenu",
       "customFields": "Champs personnalisés",
       "cvv": "CVV",
       "email": "Email",
       "expiration": "Expiration",
+      "expiry": "__TRANSLATE__ Expiry",
       "fieldType": "Type de champ",
       "folder": "Dossier",
       "folderName": "Nom du dossier",
@@ -1583,6 +1616,7 @@
       "totp": "Clé TOTP (2FA)",
       "totp2FA": "Code 2FA (TOTP)",
       "totpKey": "Clé TOTP (2FA)",
+      "untitled": "__TRANSLATE__ Untitled",
       "url": "URL",
       "useTemplate": "Utiliser un modèle",
       "username": "Identifiant",
@@ -1613,6 +1647,7 @@
       "autoFillError": "Erreur auto-remplissage",
       "autoFillProgress": "Auto-remplissage en cours...",
       "autoLockWarning": "Verrouillage automatique dans 1 minute",
+      "autoTypePerforming": "__TRANSLATE__ Auto-Type: {title}",
       "bulkDeleteFailed": "Échec de la suppression en masse",
       "checkFileFormat": "Vérifiez le format du fichier (CSV ou JSON requis)",
       "clearSearch": "Effacer la recherche",
@@ -1664,6 +1699,7 @@
       "invalidXmlFormat": "Format XML invalide",
       "kdbxNotSupported": "Les fichiers .kdbx ne sont pas supportés. Exportez en XML depuis KeePass.",
       "keepassImported": "KeePass XML : {count} entrée(s) importée(s)",
+      "matchesFound": "__TRANSLATE__ {count} matches found",
       "minCharactersRequired": "Minimum {count} caractères requis",
       "modificationError": "Erreur de modification",
       "moveError": "Erreur de déplacement",
@@ -1691,6 +1727,7 @@
       "removedFromFavorites": "Retiré des favoris",
       "restoreError": "Erreur de restauration",
       "restored": "Restauré",
+      "savedWithTitle": "__TRANSLATE__ Saved to vault: {title}",
       "searchTip": "Essayez des termes plus courts ou vérifiez l'orthographe",
       "selectTagsForEntries": "Sélectionnez les étiquettes à appliquer à {count} entrées sélectionnées.",
       "selectVault": "Sélectionnez un coffre",

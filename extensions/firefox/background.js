@@ -63,7 +63,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // SECURITY: Validate that sender is from a tab (not external)
   if (!sender.tab && !sender.url) {
     console.warn('GenPwd Pro: Rejected message from non-tab context');
-    return Promise.resolve({ success: false, error: 'Invalid context' });
+    return Promise.resolve({ success: false, error: browser.i18n.getMessage('errorInvalidContext') });
   }
 
   // SECURITY: Validate request structure

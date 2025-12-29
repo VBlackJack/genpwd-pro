@@ -2715,7 +2715,7 @@ function showAdvancedImportModal() {
       importButton.disabled = false;
       showToast(i18n.t('toast.foundPasswordEntries', { count: importedData.length }), 'success');
     } catch (error) {
-      showToast(`Import failed: ${error.message}`, 'error');
+      showToast(i18n.t('import.failed', { error: error.message }), 'error');
       safeLog(`Import error: ${error.message}`);
       importPreview.classList.remove('visible');
       importButton.disabled = true;

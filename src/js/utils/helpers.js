@@ -36,7 +36,7 @@ const crypto = globalThis.crypto;
  */
 export function randInt(min, max) {
   if (typeof min !== 'number' || typeof max !== 'number' || min > max) {
-    throw new Error(`randInt: paramètres invalides (${min}, ${max})`);
+    throw new Error(`randInt: invalid parameters (${min}, ${max})`);
   }
 
   const range = max - min + 1;

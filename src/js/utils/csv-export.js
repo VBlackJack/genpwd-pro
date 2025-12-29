@@ -190,11 +190,11 @@ export function exportToGeneric(entries) {
  * Export formats available
  */
 export const EXPORT_FORMATS = [
-  { id: 'bitwarden', label: 'Bitwarden', extension: 'csv' },
-  { id: 'lastpass', label: 'LastPass', extension: 'csv' },
-  { id: '1password', label: '1Password', extension: 'csv' },
-  { id: 'chrome', label: 'Chrome / Edge', extension: 'csv' },
-  { id: 'generic', label: 'Format générique', extension: 'csv' }
+  { id: 'bitwarden', labelKey: 'export.formatLabels.bitwarden', extension: 'csv' },
+  { id: 'lastpass', labelKey: 'export.formatLabels.lastpass', extension: 'csv' },
+  { id: '1password', labelKey: 'export.formatLabels.1password', extension: 'csv' },
+  { id: 'chrome', labelKey: 'export.formatLabels.chrome', extension: 'csv' },
+  { id: 'generic', labelKey: 'export.formatLabels.generic', extension: 'csv' }
 ];
 
 /**

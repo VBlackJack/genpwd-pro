@@ -226,7 +226,7 @@ export class VaultBridge {
       );
 
       if (result?.id) {
-        showToast(`Saved to vault: ${metadata.title}`, 'success');
+        showToast(i18n.t('vault.messages.savedWithTitle', { title: metadata.title }), 'success');
         return { success: true, entryId: result.id };
       } else {
         return { success: false, error: 'Save failed' };

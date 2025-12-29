@@ -181,15 +181,16 @@ function announceAction(message) {
 
 /**
  * Get list of all keyboard shortcuts
+ * @param {Function} t - Translation function
  * @returns {Array<{key: string, description: string}>} List of shortcuts
  */
-export function getKeyboardShortcuts() {
+export function getKeyboardShortcuts(t = (k) => k) {
   return [
-    { key: 'Alt+G', description: 'Generate passwords' },
-    { key: 'Alt+C', description: 'Copy all passwords' },
-    { key: 'Alt+R', description: 'Run tests' },
-    { key: 'Alt+S', description: 'Export results' },
-    { key: 'Escape', description: 'Close modals' }
+    { key: 'Alt+G', description: t('shortcuts.descriptions.generate') },
+    { key: 'Alt+C', description: t('shortcuts.descriptions.copyAll') },
+    { key: 'Alt+R', description: t('shortcuts.descriptions.runTests') },
+    { key: 'Alt+S', description: t('shortcuts.descriptions.exportResults') },
+    { key: 'Escape', description: t('shortcuts.descriptions.closeModal') }
   ];
 }
 

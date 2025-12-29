@@ -74,6 +74,7 @@
   "app": {
     "ariaLabel": "GenPwd Pro - Gestor de Contraseñas Seguro",
     "description": "Gestor de contraseñas profesional con bóveda cifrada",
+    "loaded": "__TRANSLATE__ GenPwd Pro v{version} loaded successfully",
     "subtitle": "Gestor de Contraseñas Seguro",
     "title": "GenPwd Pro",
     "version": "Versión {version}"
@@ -298,7 +299,8 @@
     "generic": {
       "occurred": "__TRANSLATE__ An error occurred",
       "tryAgain": "__TRANSLATE__ An error occurred. Please try again.",
-      "unexpected": "__TRANSLATE__ An unexpected error occurred"
+      "unexpected": "__TRANSLATE__ An unexpected error occurred",
+      "unknown": "__TRANSLATE__ An error occurred"
     },
     "network": {
       "conflict": "__TRANSLATE__ Conflict detected. Remote file was modified.",
@@ -385,6 +387,13 @@
     "download": "📥 Descargar exportación",
     "failed": "Error de exportación: {error}",
     "formatInfo": "Información del formato:",
+    "formatLabels": {
+      "1password": "__TRANSLATE__ 1Password",
+      "bitwarden": "__TRANSLATE__ Bitwarden",
+      "chrome": "__TRANSLATE__ Chrome / Edge",
+      "generic": "__TRANSLATE__ Generic Format",
+      "lastpass": "__TRANSLATE__ LastPass"
+    },
     "formats": {
       "bitwardenJson": "Formato JSON para Bitwarden. Completo con carpetas, favoritos y marcas de tiempo.",
       "genericCsv": "Formato CSV simple con campos básicos: title, username, password, url, notes.",
@@ -673,6 +682,14 @@
       "totalPlugins": "__TRANSLATE__ Total Plugins"
     },
     "statusLabel": "__TRANSLATE__ Status:",
+    "toast": {
+      "alreadyExists": "__TRANSLATE__ Plugin \"{name}\" already exists",
+      "disabled": "__TRANSLATE__ Plugin \"{name}\" disabled",
+      "enabled": "__TRANSLATE__ Plugin \"{name}\" enabled",
+      "loaded": "__TRANSLATE__ Plugin \"{name}\" loaded",
+      "unloaded": "__TRANSLATE__ Plugin \"{name}\" unloaded",
+      "validationFailed": "__TRANSLATE__ Plugin validation failed: {error}"
+    },
     "uninstallTitle": "__TRANSLATE__ Uninstall Plugin"
   },
   "policy": {
@@ -844,6 +861,14 @@
       "minutes5": "__TRANSLATE__ 5 minutes",
       "seconds10": "__TRANSLATE__ 10 seconds",
       "seconds30": "__TRANSLATE__ 30 seconds"
+    },
+    "timeout": {
+      "10min": "__TRANSLATE__ 10 minutes",
+      "15min": "__TRANSLATE__ 15 minutes",
+      "1min": "__TRANSLATE__ 1 minute",
+      "2min": "__TRANSLATE__ 2 minutes",
+      "30min": "__TRANSLATE__ 30 minutes",
+      "5min": "__TRANSLATE__ 5 minutes"
     }
   },
   "settingsModal": {
@@ -926,15 +951,19 @@
     "descriptions": {
       "autoType": "__TRANSLATE__ Auto-fill form",
       "closeModal": "__TRANSLATE__ Close modal",
+      "copyAll": "__TRANSLATE__ Copy all passwords",
       "copyPassword": "__TRANSLATE__ Copy password",
       "copyUsername": "__TRANSLATE__ Copy username",
       "deleteEntry": "__TRANSLATE__ Delete selected entry",
       "duplicateEntry": "__TRANSLATE__ Duplicate entry",
       "editEntry": "__TRANSLATE__ Edit selected entry",
+      "exportResults": "__TRANSLATE__ Export results",
+      "generate": "__TRANSLATE__ Generate passwords",
       "lock": "__TRANSLATE__ Lock vault",
       "newEntry": "__TRANSLATE__ New entry",
       "nextEntry": "__TRANSLATE__ Select next entry",
       "prevEntry": "__TRANSLATE__ Select previous entry",
+      "runTests": "__TRANSLATE__ Run tests",
       "search": "__TRANSLATE__ Focus search",
       "showShortcuts": "__TRANSLATE__ Show keyboard shortcuts"
     }
@@ -984,6 +1013,7 @@
     "allPresetsExported": "¡Todos los presets exportados!",
     "appInstalled": "¡GenPwd Pro instalado con éxito!",
     "appUpdated": "Aplicación actualizada - Usando la última versión",
+    "authError": "__TRANSLATE__ Authentication error: {error}",
     "authSuccess": "Autenticación exitosa",
     "autoClearDisabled": "Auto-borrado desactivado",
     "autoClearEnabled": "Auto-borrado: {time}",
@@ -997,6 +1027,7 @@
     "clearResultsConfirm": "¿Está seguro de que desea borrar todos los resultados?",
     "clipboardAutoCleared": "Portapapeles borrado automáticamente",
     "configurationUpdated": "¡Configuración actualizada!",
+    "copiedAutoClear": "__TRANSLATE__ Copied (auto-clear in {seconds}s)",
     "copiedToClipboard": "Copiado al portapapeles",
     "copyFailed": "Error al copiar",
     "copyPassword": "Copiar contraseña",
@@ -1555,12 +1586,14 @@
       "attachments": "Adjuntos",
       "cardHolder": "Titular",
       "cardNumber": "Número de tarjeta",
+      "cardholder": "__TRANSLATE__ Cardholder",
       "color": "Color",
       "content": "Contenido",
       "customFields": "Campos personalizados",
       "cvv": "CVV",
       "email": "Email",
       "expiration": "Vencimiento",
+      "expiry": "__TRANSLATE__ Expiry",
       "fieldType": "Tipo de campo",
       "folder": "Carpeta",
       "folderName": "Nombre de carpeta",
@@ -1583,6 +1616,7 @@
       "totp": "Clave TOTP (2FA)",
       "totp2FA": "Código 2FA (TOTP)",
       "totpKey": "Clave TOTP (2FA)",
+      "untitled": "__TRANSLATE__ Untitled",
       "url": "URL",
       "useTemplate": "Usar plantilla",
       "username": "Usuario",
@@ -1613,6 +1647,7 @@
       "autoFillError": "Error de auto-relleno",
       "autoFillProgress": "Auto-relleno en progreso...",
       "autoLockWarning": "Bloqueo automático en 1 minuto",
+      "autoTypePerforming": "__TRANSLATE__ Auto-Type: {title}",
       "bulkDeleteFailed": "Error de eliminación masiva",
       "checkFileFormat": "Verifique el formato del archivo (CSV o JSON requerido)",
       "clearSearch": "Borrar búsqueda",
@@ -1664,6 +1699,7 @@
       "invalidXmlFormat": "Formato XML inválido",
       "kdbxNotSupported": "Los archivos .kdbx no son compatibles. Exporte como XML desde KeePass.",
       "keepassImported": "KeePass XML: {count} entrada(s) importada(s)",
+      "matchesFound": "__TRANSLATE__ {count} matches found",
       "minCharactersRequired": "Mínimo {count} caracteres requeridos",
       "modificationError": "Error de modificación",
       "moveError": "Error al mover",
@@ -1691,6 +1727,7 @@
       "removedFromFavorites": "Eliminado de favoritos",
       "restoreError": "Error de restauración",
       "restored": "Restaurado",
+      "savedWithTitle": "__TRANSLATE__ Saved to vault: {title}",
       "searchTip": "Pruebe términos más cortos o verifique la ortografía",
       "selectTagsForEntries": "Seleccione etiquetas para aplicar a {count} entradas seleccionadas.",
       "selectVault": "Seleccione una bóveda",
