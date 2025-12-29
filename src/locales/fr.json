@@ -437,6 +437,20 @@
       "unlocked": "Déverrouillé",
       "locked": "Verrouillé"
     },
+    "welcome": {
+      "title": "Bienvenue dans votre coffre",
+      "subtitle": "Votre coffre est prêt. Importez vos mots de passe ou créez votre première entrée.",
+      "createFirst": "Créer ma première entrée",
+      "import": "Importer depuis un fichier"
+    },
+    "tips": {
+      "quickAdd": "Utilisez <kbd>Ctrl</kbd>+<kbd>N</kbd> pour ajouter rapidement",
+      "autoFill": "Astuce : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> remplit vos formulaires"
+    },
+    "shortcuts": {
+      "navigate": "Naviguer",
+      "newEntry": "Nouvelle entrée"
+    },
     "placeholders": {
       "searchCtrlF": "Rechercher... (Ctrl+F)",
       "searchTemplate": "Rechercher un modèle...",
@@ -939,6 +953,7 @@
       "collapse": "Réduire le panneau"
     },
     "detail": {
+      "selectEntry": "Sélectionnez une entrée pour voir les détails",
       "password": "MOT DE PASSE",
       "hoverToReveal": "(survoler pour révéler)",
       "passwordAge": "ÂGE DU MOT DE PASSE",

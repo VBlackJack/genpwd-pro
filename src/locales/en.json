@@ -338,6 +338,20 @@
       "unlocked": "Unlocked",
       "locked": "Locked"
     },
+    "welcome": {
+      "title": "Welcome to your vault",
+      "subtitle": "Your vault is ready. Import your passwords or create your first entry.",
+      "createFirst": "Create my first entry",
+      "import": "Import from file"
+    },
+    "tips": {
+      "quickAdd": "Use <kbd>Ctrl</kbd>+<kbd>N</kbd> to quickly add",
+      "autoFill": "Tip: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> auto-fills your forms"
+    },
+    "shortcuts": {
+      "navigate": "Navigate",
+      "newEntry": "New entry"
+    },
     "placeholders": {
       "password": "Enter password",
       "searchCtrlF": "Search... (Ctrl+F)",
@@ -877,6 +891,7 @@
       "collapse": "Toggle sidebar"
     },
     "detail": {
+      "selectEntry": "Select an entry to see details",
       "password": "PASSWORD",
       "hoverToReveal": "(hover to reveal)",
       "passwordAge": "PASSWORD AGE",

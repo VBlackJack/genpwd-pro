@@ -250,9 +250,24 @@
   transition: all var(--transition-fast, 0.2s);
 }
 
-.vault-btn-hello:hover {
+.vault-btn-hello:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--windows-hello-blue-hover) 0%, var(--windows-hello-blue-active) 100%);
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 120, 212, 0.4);
+}
+
+.vault-btn-hello:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 120, 212, 0.3);
+}
+
+.vault-btn-hello:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vault-btn-hello svg {
+  flex-shrink: 0;
 }
 
 /* Lock screen actions */

@@ -53,15 +53,15 @@ export function renderEmptyState({ searchQuery = '', t = (k) => k } = {}) {
           <path d="M45 70 L60 60 L75 70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
         </svg>
       </div>
-      <h3 class="vault-empty-title">Welcome to your vault</h3>
-      <p class="vault-empty-text">Your vault is ready. Import your passwords or create your first entry.</p>
+      <h3 class="vault-empty-title">${t('vault.welcome.title')}</h3>
+      <p class="vault-empty-text">${t('vault.welcome.subtitle')}</p>
       <div class="vault-empty-actions vault-welcome-layout">
         <button class="vault-btn vault-btn-primary vault-full-width" id="btn-welcome-create">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          Create my first entry
+          ${t('vault.welcome.createFirst')}
         </button>
         <button class="vault-btn vault-btn-outline vault-full-width" id="btn-welcome-import">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -69,12 +69,12 @@ export function renderEmptyState({ searchQuery = '', t = (k) => k } = {}) {
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          Import from file
+          ${t('vault.welcome.import')}
         </button>
       </div>
       <div class="vault-empty-tips">
-        <span class="vault-empty-tip">Use <kbd>Ctrl</kbd>+<kbd>N</kbd> to quickly add</span>
-        <span class="vault-empty-tip">Tip: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> auto-fills your forms</span>
+        <span class="vault-empty-tip">${t('vault.tips.quickAdd')}</span>
+        <span class="vault-empty-tip">${t('vault.tips.autoFill')}</span>
       </div>
     </div>
   `;
@@ -82,9 +82,11 @@ export function renderEmptyState({ searchQuery = '', t = (k) => k } = {}) {
 
 /**
  * Render no selection placeholder for detail panel
+ * @param {Object} options
+ * @param {Function} options.t - Translation function
  * @returns {string} Placeholder HTML
  */
-export function renderNoSelection() {
+export function renderNoSelection({ t = (k) => k } = {}) {
   return `
     <div class="vault-detail-placeholder">
       <div class="vault-detail-placeholder-icon" aria-hidden="true">
@@ -93,13 +95,13 @@ export function renderNoSelection() {
           <polyline points="14 2 14 8 20 8"></polyline>
         </svg>
       </div>
-      <p>Select an entry to see details</p>
+      <p>${t('vault.detail.selectEntry')}</p>
       <div class="vault-shortcut-hints">
         <div class="vault-shortcut-hint">
-          <kbd>↑</kbd><kbd>↓</kbd> Navigate
+          <kbd>↑</kbd><kbd>↓</kbd> ${t('vault.shortcuts.navigate')}
         </div>
         <div class="vault-shortcut-hint">
-          <kbd>Ctrl</kbd>+<kbd>N</kbd> New entry
+          <kbd>Ctrl</kbd>+<kbd>N</kbd> ${t('vault.shortcuts.newEntry')}
         </div>
       </div>
     </div>

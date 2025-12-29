@@ -216,14 +216,14 @@
   }
 }
 
-/* Toast container */
+/* Toast container - bottom-right for less intrusion */
 #toasts {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   z-index: var(--z-toast);
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 8px;
 }
 

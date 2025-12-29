@@ -332,6 +332,20 @@
       "unlocked": "Desbloqueado",
       "locked": "Bloqueado"
     },
+    "welcome": {
+      "title": "Bienvenido a tu bóveda",
+      "subtitle": "Tu bóveda está lista. Importa tus contraseñas o crea tu primera entrada.",
+      "createFirst": "Crear mi primera entrada",
+      "import": "Importar desde archivo"
+    },
+    "tips": {
+      "quickAdd": "Usa <kbd>Ctrl</kbd>+<kbd>N</kbd> para añadir rápidamente",
+      "autoFill": "Consejo: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> rellena tus formularios"
+    },
+    "shortcuts": {
+      "navigate": "Navegar",
+      "newEntry": "Nueva entrada"
+    },
     "placeholders": {
       "searchCtrlF": "Buscar... (Ctrl+F)",
       "searchTemplate": "Buscar plantilla...",
@@ -834,6 +848,7 @@
       "collapse": "Alternar panel lateral"
     },
     "detail": {
+      "selectEntry": "Selecciona una entrada para ver los detalles",
       "password": "CONTRASEÑA",
       "hoverToReveal": "(pasar para revelar)",
       "passwordAge": "ANTIGÜEDAD DE CONTRASEÑA",
