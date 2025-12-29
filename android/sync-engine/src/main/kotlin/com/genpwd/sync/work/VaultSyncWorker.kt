@@ -1,12 +1,13 @@
 package com.genpwd.sync.work
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
-import android.util.Log
 import com.genpwd.corevault.ProviderKind
+import com.genpwd.sync.BuildConfig
 import com.genpwd.corevault.VaultId
 import com.genpwd.sync.MasterPasswordProvider
 import com.genpwd.sync.VaultSyncManager
@@ -46,7 +47,10 @@ class VaultSyncWorker @AssistedInject constructor(
                 is SyncOutcome.Error -> Result.retry()
             }
         } catch (error: Exception) {
-            Log.e(TAG, "Sync failed for ${vaultId.remotePath}", error)
+            // SECURITY: Only log in debug builds, and don't expose vault path
+            if (BuildConfig.DEBUG) {
+                Log.e(TAG, "Sync failed", error)
+            }
             Result.retry()
         } finally {
             masterPassword.fill('*')
