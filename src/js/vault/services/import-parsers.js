@@ -182,7 +182,7 @@ export function mapCSVToEntry(headers, values, format) {
     default:
       // Generic - try common header names
       return {
-        title: row['name'] || row['title'] || row['site'] || row['url'] || 'Import',
+        title: row['name'] || row['title'] || row['site'] || row['url'] || t('import.defaults.untitled'),
         username: row['username'] || row['login'] || row['email'] || row['user'] || '',
         password: row['password'] || row['pass'] || row['pwd'] || '',
         url: row['url'] || row['website'] || row['site'] || row['uri'] || '',

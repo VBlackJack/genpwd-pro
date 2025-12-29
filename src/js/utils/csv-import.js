@@ -6,6 +6,7 @@
  */
 
 import { safeLog } from './logger.js';
+import i18n from './i18n.js';
 
 /**
  * CSV Parser - handles quoted fields and escapes
@@ -131,7 +132,7 @@ function parseBitwarden(rows, headers) {
 
     entries.push({
       type: 'login',
-      title: row[nameIdx] || 'Untitled',
+      title: row[nameIdx] || i18n.t('import.defaults.untitled'),
       folder: row[folderIdx] || null,
       data: {
         username: row[usernameIdx] || '',
@@ -169,7 +170,7 @@ function parseLastPass(rows, headers) {
   for (const row of rows) {
     entries.push({
       type: 'login',
-      title: row[nameIdx] || row[urlIdx] || 'Sans titre',
+      title: row[nameIdx] || row[urlIdx] || i18n.t('import.defaults.untitled'),
       folder: row[groupIdx] || null,
       data: {
         username: row[usernameIdx] || '',
@@ -215,7 +216,7 @@ function parse1Password(rows, headers) {
 
     entries.push({
       type: 'login',
-      title: row[titleIdx] || 'Untitled',
+      title: row[titleIdx] || i18n.t('import.defaults.untitled'),
       folder: null,
       data: {
         username: row[usernameIdx] || '',
@@ -251,7 +252,7 @@ function parseChrome(rows, headers) {
   for (const row of rows) {
     entries.push({
       type: 'login',
-      title: row[nameIdx] || new URL(row[urlIdx] || 'https://unknown').hostname || 'Untitled',
+      title: row[nameIdx] || new URL(row[urlIdx] || 'https://unknown').hostname || i18n.t('import.defaults.untitled'),
       folder: null,
       data: {
         username: row[usernameIdx] || '',
@@ -282,7 +283,7 @@ function parseFirefox(rows, headers) {
   const passwordIdx = idx('password');
 
   for (const row of rows) {
-    let title = 'Untitled';
+    let title = i18n.t('import.defaults.untitled');
     try {
       title = new URL(row[urlIdx] || '').hostname;
     } catch { /* Invalid URL - use default title */ }
@@ -343,7 +344,7 @@ function parseGeneric(rows, headers) {
 
     entries.push({
       type: 'login',
-      title: title || 'Untitled',
+      title: title || i18n.t('import.defaults.untitled'),
       folder: null,
       data: {
         username: usernameIdx !== -1 ? row[usernameIdx] || '' : '',

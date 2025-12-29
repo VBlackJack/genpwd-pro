@@ -17,6 +17,7 @@
 // src/js/services/import-export-service.js - Advanced Import/Export Service
 
 import { safeLog } from '../utils/logger.js';
+import i18n from '../utils/i18n.js';
 
 // kdbxweb is loaded dynamically only when needed (Electron context only)
 // This avoids the "Failed to resolve module specifier" error in browser context
@@ -657,7 +658,7 @@ class ImportExportService {
         organizationId: null,
         folderId: null,
         type: 1, // Login
-        name: entry.title || 'Untitled',
+        name: entry.title || i18n.t('import.defaults.untitled'),
         notes: entry.notes || null,
         favorite: false,
         login: {
@@ -778,7 +779,7 @@ class ImportExportService {
       'Username': entry.username || '',
       'Password': entry.password || '',
       'Notes': entry.notes || '',
-      'Category': entry.folder || 'Login'
+      'Category': entry.folder || i18n.t('vault.entryTypes.login')
     }));
 
     return this.toCSV(rows, headers);
@@ -948,14 +949,14 @@ class ImportExportService {
    */
   getFormatInfo(format) {
     const formats = {
-      'kdbx': { name: 'KeePass KDBX', extension: '.kdbx', type: 'import', binary: true },
-      'keepass-xml': { name: 'KeePass XML', extension: '.xml', type: 'import' },
-      'keepass-csv': { name: 'KeePass CSV', extension: '.csv', type: 'both' },
-      'bitwarden-json': { name: 'Bitwarden JSON', extension: '.json', type: 'both' },
-      'lastpass-csv': { name: 'LastPass CSV', extension: '.csv', type: 'both' },
-      '1password-csv': { name: '1Password CSV', extension: '.csv', type: 'both' },
-      'generic-json': { name: 'Generic JSON', extension: '.json', type: 'both' },
-      'generic-csv': { name: 'Generic CSV', extension: '.csv', type: 'both' }
+      'kdbx': { name: i18n.t('import.formatNames.kdbx'), extension: '.kdbx', type: 'import', binary: true },
+      'keepass-xml': { name: i18n.t('import.formatNames.keepassXml'), extension: '.xml', type: 'import' },
+      'keepass-csv': { name: i18n.t('import.formatNames.keepassCsv'), extension: '.csv', type: 'both' },
+      'bitwarden-json': { name: i18n.t('import.formatNames.bitwardenJson'), extension: '.json', type: 'both' },
+      'lastpass-csv': { name: i18n.t('import.formatNames.lastpassCsv'), extension: '.csv', type: 'both' },
+      '1password-csv': { name: i18n.t('import.formatNames.onepasswordCsv'), extension: '.csv', type: 'both' },
+      'generic-json': { name: i18n.t('import.formatNames.genericJson'), extension: '.json', type: 'both' },
+      'generic-csv': { name: i18n.t('import.formatNames.genericCsv'), extension: '.csv', type: 'both' }
     };
 
     return formats[format] || null;

@@ -375,12 +375,12 @@ function updateDictionaryInfo(dictKey, count, metadata = null, error = null) {
   infoEl.classList.remove('dict-info-error', 'dict-info-success', 'dict-info-warning');
 
   if (error) {
-    infoEl.textContent = `Error: ${error}`;
+    infoEl.textContent = t('dictionaries.info.error', { error });
     infoEl.classList.add('dict-info-error');
   } else if (count > 0) {
     const version = metadata?.version || 'v1.0';
     const source = metadata?.source || 'unknown';
-    infoEl.textContent = `${count} words • ${version} • Source: ${source}`;
+    infoEl.textContent = t('dictionaries.info.wordsInfo', { count, version, source });
     infoEl.classList.add('dict-info-success');
   } else {
     infoEl.textContent = t('dictionaries.noWordsAvailable');

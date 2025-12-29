@@ -3,6 +3,8 @@
  * Handles exporting vault entries to various formats
  */
 
+import i18n from '../../utils/i18n.js';
+
 /**
  * Escape CSV special characters
  * @param {*} val - Value to escape
@@ -269,7 +271,7 @@ export function exportToKeePassXML(entries, folders = []) {
   for (const [folderId, folderEntries] of entriesByFolder) {
     if (folderId === '') continue; // Skip root
     const folder = folders.find(f => f.id === folderId);
-    const folderName = folder?.name || 'Folder';
+    const folderName = folder?.name || i18n.t('import.defaults.folder');
     groupsXML += buildKeePassGroup(folderName, folderEntries);
   }
 

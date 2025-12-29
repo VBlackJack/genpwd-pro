@@ -290,7 +290,7 @@ export function parseKeePassXML(xmlContent) {
       const nameEl = groupElement.querySelector(':scope > Name');
       const uuidEl = groupElement.querySelector(':scope > UUID');
 
-      const name = sanitizeXmlText(nameEl?.textContent) || 'Untitled Group';
+      const name = sanitizeXmlText(nameEl?.textContent) || i18n.t('import.defaults.untitledGroup');
       const uuid = sanitizeXmlText(uuidEl?.textContent) || generateUUID();
       const path = pathPrefix ? `${pathPrefix}/${name}` : name;
 
@@ -351,7 +351,7 @@ export function parseKeePassXML(xmlContent) {
           fieldMap.set(key, { value, isProtected });
         }
 
-        const title = fieldMap.get('Title')?.value || 'Untitled Entry';
+        const title = fieldMap.get('Title')?.value || i18n.t('import.defaults.untitledEntry');
         const username = fieldMap.get('UserName')?.value || '';
         const password = fieldMap.get('Password')?.value || '';
         const url = fieldMap.get('URL')?.value || '';
@@ -574,7 +574,7 @@ export function parseGenericCSV(csvContent, options = {}) {
           } else if (username) {
             title = username;
           } else {
-            title = `Import ${result.stats.totalEntries}`;
+            title = i18n.t('import.defaults.importEntry', { count: result.stats.totalEntries });
           }
         }
 
@@ -726,7 +726,7 @@ export function parseBitwardenJSON(jsonContent) {
 
         result.groups.push(new VaultGroup({
           id: groupId,
-          name: folder.name || 'Folder',
+          name: folder.name || i18n.t('import.defaults.folder'),
           parentId: null,
           icon: null,
           color: null
@@ -760,7 +760,7 @@ export function parseBitwardenJSON(jsonContent) {
               result.stats.customFieldsCount++;
               customFields.push({
                 id: generateUUID(),
-                label: field.name || 'Custom Field',
+                label: field.name || i18n.t('import.defaults.customField'),
                 value: field.value || '',
                 kind: field.type === 1 ? FIELD_KINDS.HIDDEN : FIELD_KINDS.TEXT,
                 isSecured: field.type === 1

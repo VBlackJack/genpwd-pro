@@ -847,7 +847,7 @@ export class VaultUI {
     // Browse button for custom location
     document.getElementById('btn-choose-location')?.addEventListener('click', async () => {
       const nameInput = document.getElementById('new-vault-name');
-      const defaultName = nameInput?.value?.trim() || 'My Vault';
+      const defaultName = nameInput?.value?.trim() || t('vault.defaults.myVault');
 
       try {
         const result = await window.vault.showSaveDialog(defaultName);
@@ -1116,7 +1116,7 @@ export class VaultUI {
                 </svg>
               </div>
               <div class="vault-current-info">
-                <span class="vault-current-name">${escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
+                <span class="vault-current-name">${escapeHtml(this.#vaultMetadata?.name || t('vault.defaults.vault'))}</span>
                 <span class="vault-current-meta">${t('vault.misc.entryCount', { count: this.#entries.length })}</span>
               </div>
               <svg class="vault-current-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -1133,7 +1133,7 @@ export class VaultUI {
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                   </div>
-                  <span class="vault-switcher-name">${escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
+                  <span class="vault-switcher-name">${escapeHtml(this.#vaultMetadata?.name || t('vault.defaults.vault'))}</span>
                   <svg class="vault-switcher-check" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
@@ -1709,13 +1709,13 @@ export class VaultUI {
 
     if (this.#selectedTag) {
       const tag = this.#tags.find(t => t.id === this.#selectedTag);
-      label = tag ? `🏷️ ${tag.name}` : 'Tag';
+      label = tag ? `🏷️ ${tag.name}` : t('vault.defaults.tag');
     } else if (this.#selectedFolder) {
       const folder = this.#folders.find(f => f.id === this.#selectedFolder);
-      label = folder ? folder.name : 'Folder';
+      label = folder ? folder.name : t('vault.defaults.folder');
     } else if (this.#selectedCategory !== 'all') {
       const cat = getCategories().find(c => c.id === this.#selectedCategory);
-      label = cat?.label || 'Category';
+      label = cat?.label || t('vault.defaults.category');
     }
 
     return `
@@ -1725,7 +1725,7 @@ export class VaultUI {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          Vault
+          ${t('vault.defaults.vault')}
 </span>
         <span class="vault-breadcrumb-separator" aria-hidden="true">›</span>
         <span class="vault-breadcrumb-item current">${escapeHtml(label)}</span>
@@ -3776,7 +3776,7 @@ export class VaultUI {
       bulkBar.classList.toggle('visible', this.#selectedEntries.size > 0);
     }
     if (countEl) {
-      countEl.textContent = `${this.#selectedEntries.size} selected`;
+      countEl.textContent = t('vault.selectedCount', { count: this.#selectedEntries.size });
     }
     if (selectAllCheckbox) {
       selectAllCheckbox.checked = this.#selectedEntries.size === filteredEntries.length && filteredEntries.length > 0;
@@ -3817,7 +3817,7 @@ export class VaultUI {
     const filteredEntries = this.#getFilteredEntries();
 
     if (countEl) {
-      countEl.textContent = `${filteredEntries.length} entry/entries`;
+      countEl.textContent = t('vault.entryCount', { count: filteredEntries.length });
     }
 
     if (sortBtnText) {

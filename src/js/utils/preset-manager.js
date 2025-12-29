@@ -17,6 +17,7 @@
 // src/js/utils/preset-manager.js - Configuration preset management
 
 import { safeLog } from './logger.js';
+import i18n from './i18n.js';
 // import { safeSetItem, safeGetItem } from './storage-helper.js';
 
 /**
@@ -233,8 +234,8 @@ class PresetManager {
     if (!this.presets.has(DEFAULT_PRESET_ID)) {
       const defaultPreset = {
         id: DEFAULT_PRESET_ID,
-        name: 'Default',
-        description: 'Default recommended configuration',
+        name: i18n.t('presets.defaults.name'),
+        description: i18n.t('presets.defaults.description'),
         config: {
           mode: 'syllables',
           length: 20,
