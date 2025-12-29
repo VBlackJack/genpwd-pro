@@ -155,7 +155,7 @@ function bindModeAndSettings() {
     safeLog('Masking ' + (masked ? 'enabled' : 'disabled'));
   });
   
-  // Dictionnaire
+  // Dictionary
   addEventListener(getElement('#dict-select'), 'change', async (e) => {
     const newDict = e.target.value;
     setCurrentDictionary(newDict);

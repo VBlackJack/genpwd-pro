@@ -406,6 +406,16 @@
       "unlocked": "Unlocked",
       "locked": "Locked"
     },
+    "errors": {
+      "vaultNotAvailable": "Vault not available",
+      "vaultLocked": "Vault locked",
+      "titleRequired": "Title required",
+      "saveFailed": "Save failed",
+      "unknownError": "Unknown error",
+      "presetNotFound": "Preset not found",
+      "vaultUnavailableOrLocked": "Vault unavailable or locked",
+      "exportFailed": "Export failed"
+    },
     "welcome": {
       "title": "Welcome to your vault",
       "subtitle": "Your vault is ready. Import your passwords or create your first entry.",
@@ -524,7 +534,13 @@
       "vault": "Vault",
       "folder": "Folder",
       "category": "Category",
-      "tag": "Tag"
+      "tag": "Tag",
+      "entryTitle": "GenPwd Entry",
+      "totpIssuer": "GenPwd"
+    },
+    "totp": {
+      "qrTitle": "TOTP QR Code",
+      "scanHint": "Scan with your authenticator app (Google Authenticator, Authy, etc.)"
     },
     "entryCount": "{count} entries",
     "selectedCount": "{count} selected",
@@ -673,6 +689,7 @@
       "invalidUrl": "Invalid URL",
       "invalidEmail": "Invalid email address",
       "passwordsNoMatch": "Passwords do not match",
+      "passwordsMatch": "Passwords match",
       "tooWeak": "Password is too weak"
     },
     "messages": {
@@ -1212,7 +1229,25 @@
       "dragOrBrowse": "Drag a file here or {browse}",
       "browseFiles": "Browse files",
       "includeFolders": "Import folders/groups",
-      "mergeDuplicates": "Merge duplicates (by title)"
+      "mergeDuplicates": "Merge duplicates (by title)",
+      "errors": {
+        "kdbxDesktopRequired": "KDBX import requires the desktop application. Please use the Electron app for KeePass imports.",
+        "kdbxDesktopOnly": "KDBX/KeePass import is only available in the desktop application. Please use CSV or JSON export from KeePass instead.",
+        "xmlTooLarge": "XML file too large (max 10MB)",
+        "xmlForbiddenPatterns": "XML contains forbidden patterns (potential security risk)",
+        "invalidXml": "Invalid XML format",
+        "kdbxElectronRequired": "KDBX import requires Electron desktop app",
+        "invalidPassword": "Invalid password or key file",
+        "unsupportedImportFormat": "Unsupported import format: {format}",
+        "unsupportedExportFormat": "Unsupported export format: {format}",
+        "kdbxMethodRequired": "KDBX format requires importKDBX(dbData, password, keyFileData) method",
+        "invalidGpdbFormat": "Invalid file format. Expected GPDB vault file.",
+        "invalidVersion": "Invalid file version.",
+        "missingEncryption": "Missing encryption data.",
+        "invalidPasswordOrCorrupted": "Invalid password or corrupted data.",
+        "invalidV1Format": "Invalid V1 format: missing header/encryptedData structure.",
+        "importFailed": "Failed to import vault."
+      }
     },
     "export": {
       "title": "Export {count} entry(ies)",
@@ -1394,6 +1429,8 @@
     "clearResultsConfirm": "Are you sure you want to clear all results?",
     "passwordCopied": "Password copied!",
     "copyFailed": "Copy failed",
+    "secureCopyFailed": "Secure copy failed",
+    "autoTypeBlocked": "Auto-type blocked for security",
     "authError": "Authentication error: {error}",
     "copiedAutoClear": "Copied (auto-clear in {seconds}s)",
     "criticalStartupError": "Critical startup error",
@@ -1552,6 +1589,7 @@
     "deleteConfirm": "Delete this preset?",
     "emptyState": "No presets yet",
     "emptyHint": "Save your favorite settings as presets for quick access",
+    "copyOf": "Copy of {name}",
     "clearSelection": "Clear selection",
     "createNew": "Create new preset",
     "defaults": {
@@ -1697,7 +1735,15 @@
       "untitledEntry": "Untitled Entry",
       "folder": "Folder",
       "customField": "Custom Field",
-      "importEntry": "Import {count}"
+      "importEntry": "Import {count}",
+      "keepass": "Import KeePass",
+      "lastpass": "Import LastPass",
+      "onepassword": "Import 1Password",
+      "bitwarden": "Import Bitwarden",
+      "chrome": "Import Chrome",
+      "firefox": "Import Firefox",
+      "importedEntry": "Imported Entry",
+      "importedFolder": "Imported Folder"
     },
     "formatNames": {
       "kdbx": "KeePass KDBX",
@@ -1904,6 +1950,10 @@
       "corrupted": "Database corrupted. Restore from backup or create a new vault.",
       "error": "Database error. Try restarting the application."
     },
+    "session": {
+      "timeout": "Operation timed out. Please try again.",
+      "locked": "Vault is locked. Please unlock first."
+    },
     "crypto": {
       "encryptionError": "Encryption error. Verify your password is correct.",
       "decryptionFailed": "Decryption failed: Invalid key or corrupted data",
@@ -1921,6 +1971,11 @@
       "invalidVerifier": "Invalid keyData.verifier: must be a base64 string",
       "verifierInvalidSize": "Invalid verifier: must be 32 bytes (SHA-256)",
       "secureStorageFailed": "Secure storage required but failed - cannot store OAuth tokens"
+    },
+    "generation": {
+      "unknownMode": "Unknown generation mode: {mode}",
+      "invalidResult": "Generation failed - invalid result",
+      "allFailed": "All generations failed"
     },
     "network": {
       "error": "Network error. Check your internet connection.",

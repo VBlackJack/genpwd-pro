@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// tools/dev-server.js - Serveur HTTP minimal pour développement modulaire
+// tools/dev-server.js - Minimal HTTP server for modular development
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -46,23 +46,23 @@ class DevServer {
     });
 
     server.listen(this.port, () => {
-      console.log(`[DEV] GenPwd Pro serveur sur http://localhost:${this.port}`);
-      console.log(`[DEV] Mode développement modulaire ES6 activé`);
+      console.log(`[DEV] GenPwd Pro server on http://localhost:${this.port}`);
+      console.log(`[DEV] Modular ES6 development mode enabled`);
       console.log(`[DEV] Source: ./${this.sourceDir}/`);
-      console.log(`[DEV] Dictionnaires: ./dictionaries/`);
-      console.log(`[DEV] Ctrl+C pour arrêter`);
-      
-      // Auto-ouverture navigateur selon la plateforme
+      console.log(`[DEV] Dictionaries: ./dictionaries/`);
+      console.log(`[DEV] Ctrl+C to stop`);
+
+      // Auto-open browser based on platform
       if (this.options.autoOpen) {
         this.openBrowser();
       } else if (!this.options.quiet) {
-        console.log('[DEV] Ouverture automatique désactivée');
+        console.log('[DEV] Auto-open disabled');
       }
     });
 
-    // Gestion arrêt propre
+    // Graceful shutdown
     process.on('SIGINT', () => {
-      console.log('\n[DEV] Arrêt du serveur de développement');
+      console.log('\n[DEV] Stopping development server');
       server.close(() => {
         process.exit(0);
       });
@@ -84,7 +84,7 @@ class DevServer {
         spawn('xdg-open', [url], { stdio: 'ignore' });
       }
     } catch (error) {
-      console.log(`[DEV] Ouverture navigateur manuelle : ${url}`);
+      console.log(`[DEV] Manual browser opening: ${url}`);
     }
   }
 
@@ -92,12 +92,12 @@ class DevServer {
     const parsedUrl = url.parse(req.url, true);
     let pathname = parsedUrl.pathname;
 
-    // Route par défaut
+    // Default route
     if (pathname === '/') {
       pathname = '/index.html';
     }
 
-    // Sécurité : empêcher l'accès aux répertoires parents
+    // Security: prevent access to parent directories
     const normalizedPath = path.posix.normalize(pathname);
     const isDictionaryRequest = normalizedPath.startsWith('/dictionaries/');
     const baseDir = isDictionaryRequest
@@ -110,29 +110,29 @@ class DevServer {
 
     const baseDirWithSep = baseDir.endsWith(path.sep) ? baseDir : baseDir + path.sep;
     if (!candidatePath.startsWith(baseDirWithSep)) {
-      console.warn(`[DEV] Tentative d'accès hors racine bloquée: ${pathname}`);
+      console.warn(`[DEV] Access attempt outside root blocked: ${pathname}`);
       this.send404(res, pathname);
       return;
     }
 
     const filePath = candidatePath;
     if (isDictionaryRequest) {
-      console.log(`[DEV] Demande dictionnaire: ${filePath}`);
+      console.log(`[DEV] Dictionary request: ${filePath}`);
     }
 
-    // Vérification existence fichier
+    // Check file existence
     fs.access(filePath, fs.constants.F_OK, (err) => {
       if (err) {
-        console.log(`[DEV] Fichier non trouvé: ${filePath}`);
+        console.log(`[DEV] File not found: ${filePath}`);
         this.send404(res, pathname);
         return;
       }
 
-      // Détermination MIME type
+      // Determine MIME type
       const ext = path.extname(filePath).toLowerCase();
       const mimeType = this.mimeTypes[ext] || 'application/octet-stream';
 
-      // Headers pour modules ES6 et CORS
+      // Headers for ES6 modules and CORS
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -155,20 +155,20 @@ class DevServer {
         "upgrade-insecure-requests;"
       );
 
-      // Gestion OPTIONS pour CORS
+      // Handle OPTIONS for CORS
       if (req.method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
         return;
       }
 
-      // Streaming du fichier
+      // Stream the file
       const stream = fs.createReadStream(filePath);
       res.writeHead(200);
       stream.pipe(res);
 
       stream.on('error', (streamErr) => {
-        console.error(`[ERROR] Lecture fichier ${filePath}:`, streamErr.message);
+        console.error(`[ERROR] File read ${filePath}:`, streamErr.message);
         if (!res.headersSent) {
           this.send500(res);
         }
@@ -200,9 +200,9 @@ class DevServer {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>404 - Fichier non trouvé</title>
+        <title>404 - File not found</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                  max-width: 600px; margin: 100px auto; padding: 20px; }
           h1 { color: #e74c3c; }
           code { background: #f8f9fa; padding: 2px 8px; border-radius: 4px; }
@@ -211,11 +211,11 @@ class DevServer {
         </style>
       </head>
       <body>
-        <h1>404 - Fichier non trouvé</h1>
-        <p>Le fichier <code>${pathname}</code> n'existe pas dans le répertoire source.</p>
-        <p><a href="/">← Retour à l'accueil</a></p>
+        <h1>404 - File not found</h1>
+        <p>The file <code>${pathname}</code> does not exist in the source directory.</p>
+        <p><a href="/">← Back to home</a></p>
         <hr>
-        <small>GenPwd Pro - Serveur de développement</small>
+        <small>GenPwd Pro - Development Server</small>
       </body>
       </html>
     `);
@@ -223,22 +223,22 @@ class DevServer {
 
   send500(res) {
     if (res.headersSent) return;
-    
+
     res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
       <!DOCTYPE html>
       <html>
       <body>
-        <h1>500 - Erreur serveur</h1>
-        <p>Une erreur s'est produite lors de la lecture du fichier.</p>
-        <p><a href="/">← Retour à l'accueil</a></p>
+        <h1>500 - Server error</h1>
+        <p>An error occurred while reading the file.</p>
+        <p><a href="/">← Back to home</a></p>
       </body>
       </html>
     `);
   }
 }
 
-// Démarrage si exécuté directement
+// Start if executed directly
 if (require.main === module) {
   const port = process.env.PORT || 3000;
   const sourceDir = process.argv[2] || 'src';

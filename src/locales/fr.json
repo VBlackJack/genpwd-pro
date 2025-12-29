@@ -300,6 +300,11 @@
       "notFound": "__TRANSLATE__ File not found. Check the file path or restore from backup.",
       "operationNotPermitted": "__TRANSLATE__ Operation not permitted. Check file permissions."
     },
+    "generation": {
+      "allFailed": "__TRANSLATE__ All generations failed",
+      "invalidResult": "__TRANSLATE__ Generation failed - invalid result",
+      "unknownMode": "__TRANSLATE__ Unknown generation mode: {mode}"
+    },
     "generic": {
       "occurred": "__TRANSLATE__ An error occurred",
       "tryAgain": "__TRANSLATE__ An error occurred. Please try again.",
@@ -314,6 +319,10 @@
       "rateLimited": "__TRANSLATE__ Too many requests. Please try again later.",
       "rateLimitedShort": "__TRANSLATE__ Too many requests. Please slow down.",
       "timeout": "__TRANSLATE__ Operation timed out. Check your connection and retry."
+    },
+    "session": {
+      "locked": "__TRANSLATE__ Vault is locked. Please unlock first.",
+      "timeout": "__TRANSLATE__ Operation timed out. Please try again."
     },
     "sync": {
       "conflictDetected": "__TRANSLATE__ Conflict detected. User decision required.",
@@ -522,9 +531,17 @@
   },
   "import": {
     "defaults": {
+      "bitwarden": "__TRANSLATE__ Import Bitwarden",
+      "chrome": "__TRANSLATE__ Import Chrome",
       "customField": "__TRANSLATE__ Custom Field",
+      "firefox": "__TRANSLATE__ Import Firefox",
       "folder": "__TRANSLATE__ Folder",
       "importEntry": "__TRANSLATE__ Import {count}",
+      "importedEntry": "__TRANSLATE__ Imported Entry",
+      "importedFolder": "__TRANSLATE__ Imported Folder",
+      "keepass": "__TRANSLATE__ Import KeePass",
+      "lastpass": "__TRANSLATE__ Import LastPass",
+      "onepassword": "__TRANSLATE__ Import 1Password",
       "untitled": "__TRANSLATE__ Untitled",
       "untitledEntry": "__TRANSLATE__ Untitled Entry",
       "untitledGroup": "__TRANSLATE__ Untitled Group"
@@ -748,6 +765,7 @@
       "undefined": "Non défini",
       "unknownMode": "Mode inconnu"
     },
+    "copyOf": "__TRANSLATE__ Copy of {name}",
     "createNew": "Créer un nouveau préréglage",
     "defaults": {
       "description": "__TRANSLATE__ Default recommended configuration",
@@ -1046,6 +1064,7 @@
     "authSuccess": "Authentification réussie",
     "autoClearDisabled": "Effacement auto désactivé",
     "autoClearEnabled": "Effacement auto : {time}",
+    "autoTypeBlocked": "__TRANSLATE__ Auto-type blocked for security",
     "backOnline": "De retour en ligne",
     "blockAdded": "Bloc ajouté",
     "blockMaxReached": "Nombre maximum de blocs atteint",
@@ -1134,6 +1153,7 @@
     "presetsLoaded": "{count} préréglage(s) chargé(s) depuis le coffre",
     "presetsSkipped": "{count} préréglage(s) ignoré(s) (existent déjà)",
     "resultsCleared": "Résultats effacés",
+    "secureCopyFailed": "__TRANSLATE__ Secure copy failed",
     "storageQuotaExceeded": "Stockage plein. Certaines données n'ont pas pu être enregistrées.",
     "syncConfigError": "Erreur de sauvegarde",
     "syncConfigSaved": "Configuration sauvegardée",
@@ -1322,9 +1342,11 @@
     },
     "defaults": {
       "category": "__TRANSLATE__ Category",
+      "entryTitle": "__TRANSLATE__ GenPwd Entry",
       "folder": "__TRANSLATE__ Folder",
       "myVault": "__TRANSLATE__ My Vault",
       "tag": "__TRANSLATE__ Tag",
+      "totpIssuer": "__TRANSLATE__ GenPwd",
       "vault": "__TRANSLATE__ Vault"
     },
     "detail": {
@@ -1412,6 +1434,16 @@
       "identity": "Identité",
       "login": "Identifiant",
       "note": "Note"
+    },
+    "errors": {
+      "exportFailed": "__TRANSLATE__ Export failed",
+      "presetNotFound": "__TRANSLATE__ Preset not found",
+      "saveFailed": "__TRANSLATE__ Save failed",
+      "titleRequired": "__TRANSLATE__ Title required",
+      "unknownError": "__TRANSLATE__ Unknown error",
+      "vaultLocked": "__TRANSLATE__ Vault locked",
+      "vaultNotAvailable": "__TRANSLATE__ Vault not available",
+      "vaultUnavailableOrLocked": "__TRANSLATE__ Vault unavailable or locked"
     },
     "expiry": {
       "1year": "1 an",
@@ -1610,6 +1642,24 @@
       "browseFiles": "Parcourir les fichiers",
       "dragOrBrowse": "Glissez un fichier ici ou {browse}",
       "entries": "Entrées",
+      "errors": {
+        "importFailed": "__TRANSLATE__ Failed to import vault.",
+        "invalidGpdbFormat": "__TRANSLATE__ Invalid file format. Expected GPDB vault file.",
+        "invalidPassword": "__TRANSLATE__ Invalid password or key file",
+        "invalidPasswordOrCorrupted": "__TRANSLATE__ Invalid password or corrupted data.",
+        "invalidV1Format": "__TRANSLATE__ Invalid V1 format: missing header/encryptedData structure.",
+        "invalidVersion": "__TRANSLATE__ Invalid file version.",
+        "invalidXml": "__TRANSLATE__ Invalid XML format",
+        "kdbxDesktopOnly": "__TRANSLATE__ KDBX/KeePass import is only available in the desktop application. Please use CSV or JSON export from KeePass instead.",
+        "kdbxDesktopRequired": "__TRANSLATE__ KDBX import requires the desktop application. Please use the Electron app for KeePass imports.",
+        "kdbxElectronRequired": "__TRANSLATE__ KDBX import requires Electron desktop app",
+        "kdbxMethodRequired": "__TRANSLATE__ KDBX format requires importKDBX(dbData, password, keyFileData) method",
+        "missingEncryption": "__TRANSLATE__ Missing encryption data.",
+        "unsupportedExportFormat": "__TRANSLATE__ Unsupported export format: {format}",
+        "unsupportedImportFormat": "__TRANSLATE__ Unsupported import format: {format}",
+        "xmlForbiddenPatterns": "__TRANSLATE__ XML contains forbidden patterns (potential security risk)",
+        "xmlTooLarge": "__TRANSLATE__ XML file too large (max 10MB)"
+      },
       "fields": "Champs",
       "folders": "__TRANSLATE__ Folders",
       "formatsHint": "Formats : XML, JSON, CSV",
@@ -1965,6 +2015,10 @@
       "saveAs": "Sauvegarder sous...",
       "switchTheme": "Changer de thème"
     },
+    "totp": {
+      "qrTitle": "__TRANSLATE__ TOTP QR Code",
+      "scanHint": "__TRANSLATE__ Scan with your authenticator app (Google Authenticator, Authy, etc.)"
+    },
     "validation": {
       "fieldRequired": "Ce champ est requis",
       "invalidEmail": "Adresse email invalide",
@@ -1972,6 +2026,7 @@
       "invalidUrl": "URL invalide",
       "maxLength": "Maximum {count} caractères",
       "minLength": "Minimum {count} caractères",
+      "passwordsMatch": "__TRANSLATE__ Passwords match",
       "passwordsNoMatch": "Les mots de passe ne correspondent pas",
       "tooWeak": "Mot de passe trop faible"
     },

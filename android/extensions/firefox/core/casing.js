@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/core/casing.js - Gestion de la casse et système de blocs
+// src/js/core/casing.js - Case management and block system
 import { pick } from '../utils/helpers.js';
 
 /**

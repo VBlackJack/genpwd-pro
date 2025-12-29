@@ -79,19 +79,19 @@ function getExpiryStatus(entry, t) {
   if (daysUntil < 0) {
     return {
       status: 'expired',
-      badge: `<span class="vault-expiry-badge expired" role="img" aria-label="${t('vault.entryCard.expired') || 'Expired'}" title="${t('vault.entryCard.expired') || 'Password expired'}"><span aria-hidden="true">⚠️</span></span>`
+      badge: `<span class="vault-expiry-badge expired" role="img" aria-label="${t('vault.entryCard.expired')}" title="${t('vault.entryCard.expired')}"><span aria-hidden="true">⚠️</span></span>`
     };
   }
   if (daysUntil === 0) {
     return {
       status: 'today',
-      badge: `<span class="vault-expiry-badge today" role="img" aria-label="${t('vault.entryCard.expiresToday') || 'Expires today'}" title="${t('vault.entryCard.expiresToday') || 'Expires today'}"><span aria-hidden="true">⏰</span></span>`
+      badge: `<span class="vault-expiry-badge today" role="img" aria-label="${t('vault.entryCard.expiresToday')}" title="${t('vault.entryCard.expiresToday')}"><span aria-hidden="true">⏰</span></span>`
     };
   }
   if (daysUntil <= 7) {
     return {
       status: 'soon',
-      badge: `<span class="vault-expiry-badge soon" role="img" aria-label="${t('vault.entryCard.expiresSoon') || 'Expires soon'}" title="${t('vault.entryCard.expiresSoon') || 'Expires in ' + daysUntil + ' days'}"><span aria-hidden="true">⏰</span></span>`
+      badge: `<span class="vault-expiry-badge soon" role="img" aria-label="${t('vault.entryCard.expiresSoon')}" title="${t('vault.entryCard.expiresSoon')}"><span aria-hidden="true">⏰</span></span>`
     };
   }
 
@@ -174,7 +174,7 @@ export function renderEntryRow(entry, options = {}) {
          aria-selected="${isSelected || isMultiSelected}"
          tabindex="${isSelected ? 0 : -1}"
          draggable="true">
-      <label class="vault-checkbox-wrapper" title="${t('vault.common.select') || 'Select'}">
+      <label class="vault-checkbox-wrapper" title="${t('vault.common.select')}">
         <input type="checkbox" class="vault-checkbox" data-action="multi-select"
                ${isMultiSelected ? 'checked' : ''} aria-label="${t('vault.common.select')} ${escapeHtml(entry.title)}">
         <span class="vault-checkbox-mark"></span>

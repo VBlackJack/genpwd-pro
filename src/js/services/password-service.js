@@ -18,6 +18,7 @@
 
 import { generateSyllables, generatePassphrase, generateLeet } from '../core/generators.js';
 import { safeLog } from '../utils/logger.js';
+import { t } from '../utils/i18n.js';
 
 /**
  * Password Generation Service
@@ -67,11 +68,11 @@ export class PasswordService {
           break;
 
         default:
-          throw new Error(`Unknown generation mode: ${mode}`);
+          throw new Error(t('errors.generation.unknownMode', { mode }));
       }
 
       if (!result || !result.value || result.value.startsWith('error-')) {
-        throw new Error('Generation failed - invalid result');
+        throw new Error(t('errors.generation.invalidResult'));
       }
 
       this.onSuccess(result);
@@ -105,7 +106,7 @@ export class PasswordService {
       const validResults = results.filter(r => r && r.value && !r.value.startsWith('error-'));
 
       if (validResults.length === 0) {
-        throw new Error('All generations failed');
+        throw new Error(t('errors.generation.allFailed'));
       }
 
       safeLog(`PasswordService: Generated ${validResults.length}/${quantity} passwords successfully`);

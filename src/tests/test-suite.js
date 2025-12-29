@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// tools/test-suite.js - Suite de tests complète pour GenPwd Pro v3.0.0
-// Usage: Inclure dans index.html ou exécuter via console
+// tools/test-suite.js - Complete test suite for GenPwd Pro v3.0.0
+// Usage: Include in index.html or run via console
 
 class GenPwdTestSuite {
   constructor() {
@@ -35,7 +35,7 @@ class GenPwdTestSuite {
     const logMessage = `[${timestamp}] ${prefix} ${message}`;
     console.log(logMessage);
     
-    // Stockage pour affichage dans l'UI
+    // Store for UI display
     if (!this.consoleOutput) this.consoleOutput = [];
     this.consoleOutput.push(logMessage);
   }
@@ -108,37 +108,37 @@ class GenPwdTestSuite {
       this.clickButton('btn-clear');
       await this.wait(300);
       
-      // Configuration avec mapping correct
+      // Configuration with correct mapping
       const elementMapping = {
         'syll-policy': 'policy-select',
         'qty-range': 'qty'
       };
-      
+
       let configErrors = 0;
       for (const [key, value] of Object.entries(config.settings)) {
         const actualKey = elementMapping[key] || key;
         if (!this.setElement(actualKey, value)) {
-          this.log(`⚠️  Élément ${actualKey} non trouvé`);
+          this.log(`⚠️  Element ${actualKey} not found`);
           configErrors++;
         }
       }
 
       await this.wait(800);
 
-      // Génération
+      // Generation
       if (!this.clickButton('btn-generate')) {
-        throw new Error('Bouton génération non trouvé');
+        throw new Error('Generate button not found');
       }
 
       await this.wait(1500);
 
-      // Vérification
+      // Verification
       const passwords = this.getResults();
       if (passwords.length === 0) {
-        throw new Error('Aucun mot de passe généré');
+        throw new Error('No passwords generated');
       }
 
-      // Validation spécifique
+      // Specific validation
       if (config.validation) {
         config.validation(passwords);
       }
@@ -153,9 +153,9 @@ class GenPwdTestSuite {
         configErrors
       });
 
-      this.log(`✅ ${config.name} - ${passwords.length} mots générés`, 'success');
+      this.log(`✅ ${config.name} - ${passwords.length} passwords generated`, 'success');
       if (passwords[0]) {
-        this.log(`   Exemple: "${passwords[0].password}" (${passwords[0].entropy})`);
+        this.log(`   Example: "${passwords[0].password}" (${passwords[0].entropy})`);
       }
 
     } catch (error) {
@@ -165,7 +165,7 @@ class GenPwdTestSuite {
         error: error.message,
         settings: config.settings
       });
-      this.log(`❌ ${config.name} - Erreur: ${error.message}`, 'error');
+      this.log(`❌ ${config.name} - Error: ${error.message}`, 'error');
     }
   }
 
@@ -184,8 +184,8 @@ class GenPwdTestSuite {
           'case-mode-select': 'mixte'
         },
         validation: (passwords) => {
-          if (passwords[0].password.length < 15) throw new Error('Mot de passe trop court');
-          if (!/\d/.test(passwords[0].password)) throw new Error('Chiffre manquant');
+          if (passwords[0].password.length < 15) throw new Error('Password too short');
+          if (!/\d/.test(passwords[0].password)) throw new Error('Missing digit');
         }
       },
       
@@ -201,7 +201,7 @@ class GenPwdTestSuite {
         validation: (passwords) => {
           const pwd = passwords[0].password;
           const digitCount = (pwd.match(/\d/g) || []).length;
-          if (digitCount < 2) throw new Error(`${digitCount} chiffre(s) au lieu de 2`);
+          if (digitCount < 2) throw new Error(`${digitCount} digit(s) instead of 2`);
         }
       },
 
@@ -218,9 +218,9 @@ class GenPwdTestSuite {
         },
         validation: (passwords) => {
           const pwd = passwords[0].password;
-          if (!pwd.includes('-')) throw new Error('Séparateur manquant');
+          if (!pwd.includes('-')) throw new Error('Missing separator');
           const parts = pwd.split('-');
-          if (parts.length < 3) throw new Error(`${parts.length} mots au lieu de 3`);
+          if (parts.length < 3) throw new Error(`${parts.length} words instead of 3`);
         }
       },
 
@@ -236,7 +236,7 @@ class GenPwdTestSuite {
         validation: (passwords) => {
           const pwd = passwords[0].password;
           if (!/[a-z]/.test(pwd) || !/[A-Z]/.test(pwd)) {
-            throw new Error('Blocs de casse non appliqués');
+            throw new Error('Case blocks not applied');
           }
         }
       },
@@ -282,7 +282,7 @@ class GenPwdTestSuite {
         validation: (passwords) => {
           const pwd = passwords[0].password;
           if (!/^[\d\W]/.test(pwd)) {
-            throw new Error('Placement début non respecté');
+            throw new Error('Start placement not respected');
           }
         }
       },
@@ -300,7 +300,7 @@ class GenPwdTestSuite {
         validation: (passwords) => {
           const pwd = passwords[0].password;
           if (!/[\d\W]$/.test(pwd)) {
-            throw new Error('Placement fin non respecté');
+            throw new Error('End placement not respected');
           }
         }
       },
@@ -340,10 +340,10 @@ class GenPwdTestSuite {
         validation: (passwords) => {
           const pwd = passwords[0].password;
           if (!/@|#|%/.test(pwd)) {
-            throw new Error('Caractères personnalisés non utilisés');
+            throw new Error('Custom characters not used');
           }
           if (pwd.includes('$')) {
-            throw new Error('Caractère dangereux "$" détecté');
+            throw new Error('Dangerous character "$" detected');
           }
         }
       },
@@ -357,7 +357,7 @@ class GenPwdTestSuite {
         },
         validation: (passwords) => {
           if (passwords.length < 7) {
-            throw new Error(`${passwords.length} mots au lieu de 8+`);
+            throw new Error(`${passwords.length} passwords instead of 8+`);
           }
         }
       }
@@ -365,20 +365,20 @@ class GenPwdTestSuite {
   }
 
   async testSpecialFeatures() {
-    this.log('🔧 Test des fonctionnalités spéciales');
+    this.log('🔧 Testing special features');
 
     try {
       let featuresWorking = 0;
 
-      // Test masquage
+      // Test masking
       if (this.setElement('mask-toggle', true)) {
         await this.wait(300);
-        this.log('✅ Masquage fonctionnel');
+        this.log('✅ Masking functional');
         this.setElement('mask-toggle', false);
         featuresWorking++;
       }
 
-      // Test blocs de casse
+      // Test case blocks
       this.setElement('mode-select', 'syllables');
       this.setElement('case-mode-select', 'blocks');
       await this.wait(500);
@@ -393,12 +393,12 @@ class GenPwdTestSuite {
         }
       }
       
-      this.log(`✅ ${workingButtons}/${blockButtons.length} boutons blocs`);
+      this.log(`✅ ${workingButtons}/${blockButtons.length} block buttons`);
       if (workingButtons > 0) featuresWorking++;
 
-      // Test placement visuel
+      // Test visual placement
       if (this.clickButton('btn-placement-toggle')) {
-        this.log('✅ Mode placement visuel');
+        this.log('✅ Visual placement mode');
         await this.wait(500);
         
         if (this.clickButton('btn-placement-auto')) {
@@ -412,10 +412,10 @@ class GenPwdTestSuite {
         featuresWorking++;
       }
 
-      // Test copie et export (si résultats présents)
+      // Test copy and export (if results present)
       if (this.getResults().length > 0) {
         if (this.clickButton('btn-copy-all')) {
-          this.log('✅ Copie tout');
+          this.log('✅ Copy all');
           featuresWorking++;
         }
         if (this.clickButton('btn-export')) {
@@ -425,21 +425,21 @@ class GenPwdTestSuite {
       }
 
       this.results.passed++;
-      this.log(`✅ ${featuresWorking} fonctionnalités spéciales testées`);
+      this.log(`✅ ${featuresWorking} special features tested`);
       
     } catch (error) {
       this.results.failed++;
       this.results.errors.push({
-        test: 'Fonctionnalités spéciales',
+        test: 'Special features',
         error: error.message
       });
-      this.log(`❌ Erreur fonctionnalités: ${error.message}`, 'error');
+      this.log(`❌ Features error: ${error.message}`, 'error');
     }
   }
 
   async runAllTests() {
     if (this.isRunning) {
-      this.log('❌ Tests déjà en cours');
+      this.log('❌ Tests already running');
       return this.results;
     }
 
@@ -450,7 +450,7 @@ class GenPwdTestSuite {
     this.results = { passed: 0, failed: 0, errors: [], details: [], startTime: new Date(), endTime: null };
     this.consoleOutput = [];
 
-    this.log('🚀 DÉBUT DES TESTS - GenPwd Pro v3.0.0');
+    this.log('🚀 STARTING TESTS - GenPwd Pro v3.0.0');
     this.log('='.repeat(50));
 
     try {
@@ -481,33 +481,33 @@ class GenPwdTestSuite {
     const duration = this.results.endTime - this.results.startTime;
     
     this.log('='.repeat(50));
-    this.log('📊 RAPPORT FINAL');
+    this.log('📊 FINAL REPORT');
     this.log('='.repeat(50));
-    this.log(`✅ Tests réussis: ${this.results.passed}`);
-    this.log(`❌ Tests échoués: ${this.results.failed}`);
+    this.log(`✅ Passed tests: ${this.results.passed}`);
+    this.log(`❌ Failed tests: ${this.results.failed}`);
     const total = this.results.passed + this.results.failed;
     const score = Math.round((this.results.passed / total) * 100);
-    this.log(`📈 Score: ${score}% en ${Math.round(duration/1000)}s`);
+    this.log(`📈 Score: ${score}% in ${Math.round(duration/1000)}s`);
 
     if (this.results.errors.length > 0) {
       this.log('');
-      this.log('🚨 ERREURS:');
+      this.log('🚨 ERRORS:');
       this.results.errors.forEach((err, i) => {
         this.log(`${i + 1}. ${err.test}: ${err.error}`);
       });
     }
 
     this.log('');
-    this.log('📋 SUCCÈS:');
+    this.log('📋 SUCCESS:');
     this.results.details.forEach((detail, i) => {
-      this.log(`${i + 1}. ${detail.test} - ${detail.count} mots`);
+      this.log(`${i + 1}. ${detail.test} - ${detail.count} passwords`);
       if (detail.passwords[0]) {
         this.log(`   "${detail.passwords[0].password}" (${detail.passwords[0].entropy})`);
       }
     });
 
     this.log('');
-    this.log(`🏁 TERMINÉ - Score: ${score}%`);
+    this.log(`🏁 COMPLETED - Score: ${score}%`);
   }
 
   async runSingleTest(testName) {
@@ -515,9 +515,9 @@ class GenPwdTestSuite {
     const config = configs.find(c => c.name === testName);
     
     if (!config) {
-      this.log(`❌ Test "${testName}" introuvable`);
+      this.log(`❌ Test "${testName}" not found`);
       const available = configs.map(c => c.name).join(', ');
-      this.log(`Tests disponibles: ${available}`);
+      this.log(`Available tests: ${available}`);
       return;
     }
 
@@ -535,7 +535,7 @@ class GenPwdTestSuite {
   }
 }
 
-// API globale
+// Global API
 if (typeof window !== 'undefined') {
   window.GenPwdTestSuite = GenPwdTestSuite;
   window.testSuite = new GenPwdTestSuite();
@@ -543,7 +543,7 @@ if (typeof window !== 'undefined') {
   window.runTest = (name) => window.testSuite.runSingleTest(name);
 }
 
-// Export module
+// Module export
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = GenPwdTestSuite;
 }

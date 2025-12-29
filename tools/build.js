@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// tools/build.js - Build système intelligent pour GenPwd Pro
+// tools/build.js - Intelligent build system for GenPwd Pro
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -51,7 +51,7 @@ class GenPwdBuilder {
   }
 
   async build() {
-    console.log('🔨 GenPwd Pro - Build hybride en cours...');
+    console.log('🔨 GenPwd Pro - Hybrid build in progress...');
     
     try {
       this.ensureDistDir();
@@ -62,12 +62,12 @@ class GenPwdBuilder {
       
       await this.copyAssets();
       
-      console.log('✅ Build terminé avec succès');
-      console.log(`📦 Sortie: ${this.distDir}/index.html (${Math.round(finalHTML.length / 1024)}KB)`);
-      console.log('🎯 Version monolithe prête - Compatible file://');
-      
+      console.log('✅ Build completed successfully');
+      console.log(`📦 Output: ${this.distDir}/index.html (${Math.round(finalHTML.length / 1024)}KB)`);
+      console.log('🎯 Monolithic version ready - Compatible file://');
+
     } catch (error) {
-      console.error('❌ Erreur de build:', error);
+      console.error('❌ Build error:', error);
       process.exit(1);
     }
   }
@@ -79,7 +79,7 @@ class GenPwdBuilder {
   }
 
   async buildJavaScript() {
-    console.log('📦 Consolidation JavaScript...');
+    console.log('📦 Consolidating JavaScript...');
     
     let output = `// GenPwd Pro v3.0.0 - Build automatique ${new Date().toISOString()}
 (function() {
@@ -89,7 +89,7 @@ class GenPwdBuilder {
 // MODULES CONSOLIDÉS (${this.moduleOrder.length} fichiers)
 // ============================================================================
 
-// Variables globales pour remplacer les imports/exports
+// Global variables to replace imports/exports
 const GenPwdModules = {};
 `;
 
@@ -98,7 +98,7 @@ const GenPwdModules = {};
       const fullPath = path.join(this.sourceDir, modulePath);
       
       if (!fs.existsSync(fullPath)) {
-        console.warn(`⚠️  Module manquant: ${modulePath}`);
+        console.warn(`⚠️  Missing module: ${modulePath}`);
         continue;
       }
       
@@ -122,14 +122,14 @@ function initGenPwdApp() {
       window.genPwdApp = new GenPwdApp();
       window.genPwdApp.init();
     } else {
-      console.error('GenPwdApp non trouvé');
+      console.error('GenPwdApp not found');
     }
   } catch (error) {
-    console.error('Erreur initialisation:', error);
+    console.error('Initialization error:', error);
   }
 }
 
-// Démarrage automatique
+// Automatic startup
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initGenPwdApp);
 } else {
@@ -143,7 +143,7 @@ if (document.readyState === 'loading') {
     const bundlePath = path.join(this.distDir, 'genpwd-bundle.js');
     fs.writeFileSync(bundlePath, output);
     
-    console.log(`✅ JavaScript consolidé (${Math.round(output.length / 1024)}KB)`);
+    console.log(`✅ JavaScript consolidated (${Math.round(output.length / 1024)}KB)`);
     return output;
   }
 
@@ -181,7 +181,7 @@ if (document.readyState === 'loading') {
   }
 
   async buildCSS() {
-    console.log('🎨 Consolidation CSS...');
+    console.log('🎨 Consolidating CSS...');
     
     let consolidatedCSS = '/* GenPwd Pro v3.0.0 - Styles consolidés */\n\n';
     
@@ -193,16 +193,16 @@ if (document.readyState === 'loading') {
         consolidatedCSS += `/* === ${cssFile} === */\n`;
         consolidatedCSS += content + '\n\n';
       } else {
-        console.warn(`⚠️  CSS manquant: ${cssFile}`);
+        console.warn(`⚠️  Missing CSS: ${cssFile}`);
       }
     }
     
-    console.log(`✅ CSS consolidé (${Math.round(consolidatedCSS.length / 1024)}KB)`);
+    console.log(`✅ CSS consolidated (${Math.round(consolidatedCSS.length / 1024)}KB)`);
     return consolidatedCSS;
   }
 
   async buildHTML(css, js) {
-    console.log('🏗️  Construction HTML final...');
+    console.log('🏗️  Building final HTML...');
     
     const sourceHTML = path.join(this.sourceDir, 'index.html');
     let htmlContent = fs.readFileSync(sourceHTML, 'utf8');
@@ -225,29 +225,29 @@ if (document.readyState === 'loading') {
     const outputPath = path.join(this.distDir, 'index.html');
     fs.writeFileSync(outputPath, htmlContent);
     
-    console.log(`✅ HTML final généré (${Math.round(htmlContent.length / 1024)}KB)`);
+    console.log(`✅ Final HTML generated (${Math.round(htmlContent.length / 1024)}KB)`);
     return htmlContent;
   }
 
   async copyAssets() {
-    console.log('📋 Copie des assets...');
+    console.log('📋 Copying assets...');
 
-    // Copier dictionnaires
+    // Copy dictionaries
     const dictSource = path.join(this.projectRoot, 'dictionaries');
     const dictDest = path.join(this.distDir, 'dictionaries');
 
     if (fs.existsSync(dictSource)) {
       this.copyRecursive(dictSource, dictDest);
-      console.log('✅ Dictionnaires copiés');
+      console.log('✅ Dictionaries copied');
     }
 
-    // Copier assets Electron si présents
+    // Copy Electron assets if present
     const assetsSource = path.join(this.projectRoot, 'assets');
     const assetsDest = path.join(this.distDir, 'assets');
 
     if (fs.existsSync(assetsSource)) {
       this.copyRecursive(assetsSource, assetsDest);
-      console.log('✅ Assets copiés');
+      console.log('✅ Assets copied');
     }
   }
 

@@ -92,7 +92,7 @@ function triggerGenerate() {
   const btn = document.getElementById('btn-generate');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction(t('keyboard.generatingPasswords') || 'Generating passwords');
+    announceAction(t('keyboard.generatingPasswords'));
   }
 }
 
@@ -103,7 +103,7 @@ function triggerCopyAll() {
   const btn = document.getElementById('btn-copy-all');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction(t('keyboard.copyingPasswords') || 'Copying all passwords');
+    announceAction(t('keyboard.copyingPasswords'));
   }
 }
 
@@ -114,7 +114,7 @@ function triggerRunTests() {
   const btn = document.getElementById('btn-run-tests');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction(t('keyboard.runningTests') || 'Running tests');
+    announceAction(t('keyboard.runningTests'));
   }
 }
 
@@ -125,7 +125,7 @@ function triggerExport() {
   const btn = document.getElementById('btn-export');
   if (btn && !btn.disabled) {
     btn.click();
-    announceAction(t('keyboard.exportingResults') || 'Exporting results');
+    announceAction(t('keyboard.exportingResults'));
   }
 }
 
@@ -143,7 +143,7 @@ function handleEscapeKey() {
 
     if (closeBtn) {
       closeBtn.click();
-      announceAction(t('keyboard.modalClosed') || 'Modal closed');
+      announceAction(t('keyboard.modalClosed'));
     } else {
       // Fallback: hide modal directly
       lastModal.classList.add('hidden');

@@ -395,7 +395,7 @@ class PresetManager {
     const newId = this.generateId();
     const duplicatedPreset = {
       id: newId,
-      name: `Copy of ${preset.name}`,
+      name: i18n.t('presets.copyOf', { name: preset.name }),
       description: preset.description,
       config: { ...preset.config },
       createdAt: new Date(),
@@ -648,11 +648,11 @@ class PresetManager {
   async exportToVault(id) {
     const preset = this.presets.get(id);
     if (!preset) {
-      return { success: false, error: 'Preset not found' };
+      return { success: false, error: i18n.t('vault.errors.presetNotFound') };
     }
 
     if (!await this.isVaultReady()) {
-      return { success: false, error: 'Vault unavailable or locked' };
+      return { success: false, error: i18n.t('vault.errors.vaultUnavailableOrLocked') };
     }
 
     try {
@@ -674,7 +674,7 @@ class PresetManager {
         safeLog(`[PresetManager] Exported preset to vault: ${preset.name}`);
         return { success: true, entryId: result.id };
       }
-      return { success: false, error: 'Export failed' };
+      return { success: false, error: i18n.t('vault.errors.exportFailed') };
     } catch (error) {
       safeLog(`[PresetManager] Vault export error: ${error.message}`);
       return { success: false, error: error.message };

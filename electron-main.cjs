@@ -122,7 +122,25 @@ const translations = {
     // Jump List / Thumbnail
     generateSecurePassword: 'Generate a new secure password',
     openPasswordVault: 'Open password vault',
-    lockVaultImmediately: 'Lock the vault immediately'
+    lockVaultImmediately: 'Lock the vault immediately',
+    // Error messages
+    errorAutoStartFailed: 'Setting was not applied. Check permissions or antivirus.',
+    errorSecureStorageUnavailable: 'Secure storage not available',
+    errorTooManyAttempts: 'Too many attempts. Try again in {seconds}s',
+    errorNoMainWindow: 'No main window',
+    errorInvalidFilePath: 'Invalid file path',
+    errorNullBytes: 'Invalid path: contains null bytes',
+    errorDirectoryTraversal: 'Invalid path: directory traversal not allowed',
+    errorMustBeAbsolute: 'Invalid path: must be absolute',
+    errorNotInAllowedDir: 'Invalid path: not in allowed directory',
+    errorInvalidExtension: 'Invalid file extension. Allowed: {extensions}',
+    errorPathNotFile: 'Path is not a file',
+    errorFileNotFound: 'File not found',
+    errorAutoTypeWindows: 'Auto-type currently only supported on Windows',
+    errorMissingSequence: 'Missing sequence or data',
+    errorAutoTypeWindowDetect: 'Could not detect target window. Auto-type cancelled for security.',
+    errorAutoTypeTimeout: 'Auto-type timed out',
+    clipboardAutoCleared: 'Clipboard auto-cleared for security'
   },
   fr: {
     // Tray menu
@@ -206,7 +224,25 @@ const translations = {
     // Jump List / Thumbnail
     generateSecurePassword: 'Générer un nouveau mot de passe sécurisé',
     openPasswordVault: 'Ouvrir le coffre de mots de passe',
-    lockVaultImmediately: 'Verrouiller le coffre immédiatement'
+    lockVaultImmediately: 'Verrouiller le coffre immédiatement',
+    // Error messages
+    errorAutoStartFailed: 'Paramètre non appliqué. Vérifiez les permissions ou l\'antivirus.',
+    errorSecureStorageUnavailable: 'Stockage sécurisé non disponible',
+    errorTooManyAttempts: 'Trop de tentatives. Réessayez dans {seconds}s',
+    errorNoMainWindow: 'Pas de fenêtre principale',
+    errorInvalidFilePath: 'Chemin de fichier invalide',
+    errorNullBytes: 'Chemin invalide : contient des octets nuls',
+    errorDirectoryTraversal: 'Chemin invalide : traversée de répertoire non autorisée',
+    errorMustBeAbsolute: 'Chemin invalide : doit être absolu',
+    errorNotInAllowedDir: 'Chemin invalide : pas dans le répertoire autorisé',
+    errorInvalidExtension: 'Extension de fichier invalide. Autorisées : {extensions}',
+    errorPathNotFile: 'Le chemin n\'est pas un fichier',
+    errorFileNotFound: 'Fichier non trouvé',
+    errorAutoTypeWindows: 'Saisie automatique uniquement supportée sur Windows actuellement',
+    errorMissingSequence: 'Séquence ou données manquantes',
+    errorAutoTypeWindowDetect: 'Impossible de détecter la fenêtre cible. Saisie automatique annulée par sécurité.',
+    errorAutoTypeTimeout: 'Délai de saisie automatique expiré',
+    clipboardAutoCleared: 'Presse-papiers effacé automatiquement par sécurité'
   },
   es: {
     // Tray menu
@@ -290,7 +326,25 @@ const translations = {
     // Jump List / Thumbnail
     generateSecurePassword: 'Generar una nueva contraseña segura',
     openPasswordVault: 'Abrir bóveda de contraseñas',
-    lockVaultImmediately: 'Bloquear la bóveda inmediatamente'
+    lockVaultImmediately: 'Bloquear la bóveda inmediatamente',
+    // Error messages
+    errorAutoStartFailed: 'Configuración no aplicada. Verifique permisos o antivirus.',
+    errorSecureStorageUnavailable: 'Almacenamiento seguro no disponible',
+    errorTooManyAttempts: 'Demasiados intentos. Reintente en {seconds}s',
+    errorNoMainWindow: 'Sin ventana principal',
+    errorInvalidFilePath: 'Ruta de archivo inválida',
+    errorNullBytes: 'Ruta inválida: contiene bytes nulos',
+    errorDirectoryTraversal: 'Ruta inválida: traversal de directorios no permitido',
+    errorMustBeAbsolute: 'Ruta inválida: debe ser absoluta',
+    errorNotInAllowedDir: 'Ruta inválida: no está en directorio permitido',
+    errorInvalidExtension: 'Extensión de archivo inválida. Permitidas: {extensions}',
+    errorPathNotFile: 'La ruta no es un archivo',
+    errorFileNotFound: 'Archivo no encontrado',
+    errorAutoTypeWindows: 'Escritura automática solo soportada en Windows actualmente',
+    errorMissingSequence: 'Secuencia o datos faltantes',
+    errorAutoTypeWindowDetect: 'No se pudo detectar ventana objetivo. Escritura automática cancelada por seguridad.',
+    errorAutoTypeTimeout: 'Tiempo de escritura automática agotado',
+    clipboardAutoCleared: 'Portapapeles limpiado automáticamente por seguridad'
   }
 };
 
@@ -455,7 +509,8 @@ function setAutoStartEnabled(enable) {
 
     if (!verified) {
       console.warn(`[GenPwd Pro] Auto-start verification failed: expected ${enable}, got ${settings.openAtLogin}`);
-      return { success: false, verified: false, error: 'Setting was not applied. Check permissions or antivirus.' };
+      const t = getMainTranslations();
+      return { success: false, verified: false, error: t.errorAutoStartFailed };
     }
 
     console.log(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'} (verified)`);
@@ -958,11 +1013,12 @@ function createWindow() {
         mainWindow._trayNotificationCount = 0;
       }
       if (mainWindow._trayNotificationCount < 3 && Notification.isSupported()) {
+        const t = getMainTranslations();
         new Notification({
           title: 'GenPwd Pro',
           body: mainWindow._trayNotificationCount === 0
-            ? 'App minimized to tray. Click the tray icon to restore, or right-click for options.'
-            : 'Running in background. Right-click tray icon to quit.',
+            ? t.trayNotifyFirst
+            : t.trayNotifyRepeat,
           icon: path.join(__dirname, 'assets', 'icon.ico'),
           silent: true
         }).show();
@@ -999,10 +1055,11 @@ function initThumbnailToolbar() {
   if (process.platform !== 'win32' || !mainWindow) return;
 
   try {
+    const t = getMainTranslations();
     // Create thumbnail toolbar buttons
     const buttons = [
       {
-        tooltip: 'Generate Password',
+        tooltip: t.generatePassword,
         icon: nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.ico')).resize({ width: 16, height: 16 }),
         click: () => {
           if (mainWindow && mainWindow.webContents) {
@@ -1012,7 +1069,7 @@ function initThumbnailToolbar() {
         }
       },
       {
-        tooltip: 'Lock Vault',
+        tooltip: t.lockVault,
         icon: nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.ico')).resize({ width: 16, height: 16 }),
         click: async () => {
           if (vaultModule) {
@@ -1041,14 +1098,15 @@ function initJumpList() {
   if (process.platform !== 'win32') return;
 
   try {
+    const t = getMainTranslations();
     app.setJumpList([
       {
         type: 'tasks',
         items: [
           {
             type: 'task',
-            title: 'Generate Password',
-            description: 'Generate a new secure password',
+            title: t.generatePassword,
+            description: t.generateSecurePassword,
             program: process.execPath,
             args: '--generate',
             iconPath: process.execPath,
@@ -1056,8 +1114,8 @@ function initJumpList() {
           },
           {
             type: 'task',
-            title: 'Open Vault',
-            description: 'Open password vault',
+            title: t.openVault,
+            description: t.openPasswordVault,
             program: process.execPath,
             args: '--vault',
             iconPath: process.execPath,
@@ -1065,8 +1123,8 @@ function initJumpList() {
           },
           {
             type: 'task',
-            title: 'Lock Vault',
-            description: 'Lock the vault immediately',
+            title: t.lockVault,
+            description: t.lockVaultImmediately,
             program: process.execPath,
             args: '--lock',
             iconPath: process.execPath,
@@ -1086,6 +1144,7 @@ function updateJumpListRecentVaults(recentVaults) {
   if (process.platform !== 'win32') return;
 
   try {
+    const t = getMainTranslations();
     const recentItems = recentVaults.slice(0, 5).map(vault => ({
       type: 'file',
       path: vault.path,
@@ -1102,8 +1161,8 @@ function updateJumpListRecentVaults(recentVaults) {
         items: [
           {
             type: 'task',
-            title: 'Generate Password',
-            description: 'Generate a new secure password',
+            title: t.generatePassword,
+            description: t.generateSecurePassword,
             program: process.execPath,
             args: '--generate',
             iconPath: process.execPath,
@@ -1111,8 +1170,8 @@ function updateJumpListRecentVaults(recentVaults) {
           },
           {
             type: 'task',
-            title: 'Lock Vault',
-            description: 'Lock the vault immediately',
+            title: t.lockVault,
+            description: t.lockVaultImmediately,
             program: process.execPath,
             args: '--lock',
             iconPath: process.execPath,
@@ -1400,8 +1459,9 @@ ipcMain.handle('auth:is-available', (event) => {
 ipcMain.handle('auth:encrypt-secret', (event, text) => {
   validateOrigin(event);
   try {
+    const t = getMainTranslations();
     if (!safeStorage.isEncryptionAvailable()) {
-      return { success: false, error: 'Secure storage not available' };
+      return { success: false, error: t.errorSecureStorageUnavailable };
     }
 
     const encrypted = safeStorage.encryptString(text);
@@ -1417,20 +1477,21 @@ ipcMain.handle('auth:encrypt-secret', (event, text) => {
 // Rate-limited to prevent brute force attacks
 ipcMain.handle('auth:decrypt-secret', (event, base64Data) => {
   validateOrigin(event);
+  const t = getMainTranslations();
 
   // Check rate limit before processing
   const rateCheck = rateLimiter.check('auth:decrypt');
   if (!rateCheck.allowed) {
     return {
       success: false,
-      error: `Too many attempts. Try again in ${rateCheck.lockoutSeconds}s`,
+      error: t.errorTooManyAttempts.replace('{seconds}', rateCheck.lockoutSeconds),
       rateLimited: true
     };
   }
 
   try {
     if (!safeStorage.isEncryptionAvailable()) {
-      return { success: false, error: 'Secure storage not available' };
+      return { success: false, error: t.errorSecureStorageUnavailable };
     }
 
     const buffer = Buffer.from(base64Data, 'base64');
@@ -1496,7 +1557,8 @@ ipcMain.handle('clipboard:copy-secure', (event, text, ttlMs = 30000) => {
 
         // Notify renderer with clear message for toast
         if (mainWindow && mainWindow.webContents) {
-          mainWindow.webContents.send('clipboard:cleared', { opId, message: 'Clipboard auto-cleared for security' });
+          const t = getMainTranslations();
+          mainWindow.webContents.send('clipboard:cleared', { opId, message: t.clipboardAutoCleared });
         }
       }
       clipboardTimers.delete('secure');
@@ -1549,7 +1611,8 @@ ipcMain.handle('window:minimize-to-tray', (event) => {
     mainWindow.hide();
     return { success: true };
   }
-  return { success: false, error: 'No main window' };
+  const t = getMainTranslations();
+  return { success: false, error: t.errorNoMainWindow };
 });
 
 // Show window
@@ -1560,7 +1623,8 @@ ipcMain.handle('window:show', (event) => {
     mainWindow.focus();
     return { success: true };
   }
-  return { success: false, error: 'No main window' };
+  const t = getMainTranslations();
+  return { success: false, error: t.errorNoMainWindow };
 });
 
 // Check if window is visible
@@ -1707,13 +1771,14 @@ ipcMain.handle('fs:read-binary', async (event, filePath) => {
 ipcMain.handle('fs:show-open-dialog', async (event, options = {}) => {
   validateOrigin(event);
   try {
+    const t = getMainTranslations();
     // Validate options
     const safeTitle = typeof options.title === 'string'
       ? options.title.slice(0, 255)
-      : 'Ouvrir un fichier';
+      : t.openFile;
 
     // Validate filters array structure
-    let safeFilters = [{ name: 'Tous les fichiers', extensions: ['*'] }];
+    let safeFilters = [{ name: t.allFiles, extensions: ['*'] }];
     if (Array.isArray(options.filters) && options.filters.length > 0) {
       safeFilters = options.filters
         .filter(f => f && typeof f.name === 'string' && Array.isArray(f.extensions))
@@ -1723,7 +1788,7 @@ ipcMain.handle('fs:show-open-dialog', async (event, options = {}) => {
           extensions: f.extensions.filter(e => typeof e === 'string').slice(0, 20)
         }));
       if (safeFilters.length === 0) {
-        safeFilters = [{ name: 'Tous les fichiers', extensions: ['*'] }];
+        safeFilters = [{ name: t.allFiles, extensions: ['*'] }];
       }
     }
 
@@ -1769,11 +1834,11 @@ function validateVaultExtension(filePath) {
 /**
  * Validate file path for security (prevent directory traversal)
  * @param {string} filePath - Path to validate
- * @returns {{valid: boolean, error?: string}}
+ * @returns {{valid: boolean, errorKey?: string}}
  */
 function validateVaultPath(filePath) {
   if (!filePath || typeof filePath !== 'string') {
-    return { valid: false, error: 'Invalid file path' };
+    return { valid: false, errorKey: 'errorInvalidFilePath' };
   }
 
   // Normalize the path to resolve any .. or .
@@ -1781,17 +1846,17 @@ function validateVaultPath(filePath) {
 
   // Check for null bytes (path injection attack)
   if (normalizedPath.includes('\0')) {
-    return { valid: false, error: 'Invalid path: contains null bytes' };
+    return { valid: false, errorKey: 'errorNullBytes' };
   }
 
   // Check for path traversal attempts (after normalization, .. shouldn't appear)
   if (normalizedPath.includes('..')) {
-    return { valid: false, error: 'Invalid path: directory traversal not allowed' };
+    return { valid: false, errorKey: 'errorDirectoryTraversal' };
   }
 
   // Must be an absolute path
   if (!path.isAbsolute(normalizedPath)) {
-    return { valid: false, error: 'Invalid path: must be absolute' };
+    return { valid: false, errorKey: 'errorMustBeAbsolute' };
   }
 
   // Check if path is within allowed directories
@@ -1801,7 +1866,7 @@ function validateVaultPath(filePath) {
   });
 
   if (!isAllowed) {
-    return { valid: false, error: 'Invalid path: not in allowed directory' };
+    return { valid: false, errorKey: 'errorNotInAllowedDir' };
   }
 
   return { valid: true };
@@ -1813,16 +1878,17 @@ function validateVaultPath(filePath) {
  */
 ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
   validateOrigin(event);
+  const t = getMainTranslations();
   try {
     // Validate path for security (directory traversal protection)
     const pathValidation = validateVaultPath(filePath);
     if (!pathValidation.valid) {
-      return { success: false, error: pathValidation.error };
+      return { success: false, error: t[pathValidation.errorKey] };
     }
 
     // Validate extension
     if (!validateVaultExtension(filePath)) {
-      return { success: false, error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
+      return { success: false, error: t.errorInvalidExtension.replace('{extensions}', ALLOWED_EXTENSIONS.join(', ')) };
     }
 
     // Ensure directory exists (path is already validated as safe)
@@ -1870,22 +1936,23 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
  */
 ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
   validateOrigin(event);
+  const t = getMainTranslations();
   try {
     // Validate path for security (directory traversal protection)
     const pathValidation = validateVaultPath(filePath);
     if (!pathValidation.valid) {
-      return { success: false, error: pathValidation.error };
+      return { success: false, error: t[pathValidation.errorKey] };
     }
 
     // Validate extension
     if (!validateVaultExtension(filePath)) {
-      return { success: false, error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
+      return { success: false, error: t.errorInvalidExtension.replace('{extensions}', ALLOWED_EXTENSIONS.join(', ')) };
     }
 
     // Check file exists
     const stats = await fs.promises.stat(filePath);
     if (!stats.isFile()) {
-      return { success: false, error: 'Path is not a file' };
+      return { success: false, error: t.errorPathNotFile };
     }
 
     // Read file
@@ -1904,7 +1971,7 @@ ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
     }
   } catch (error) {
     if (error.code === 'ENOENT') {
-      return { success: false, error: 'File not found' };
+      return { success: false, error: t.errorFileNotFound };
     }
     devError('[GenPwd Pro] vaultIO:load error:', error.message);
     return { success: false, error: error.message };
@@ -1991,11 +2058,12 @@ ipcMain.handle('vaultIO:selectSaveLocation', async (event, { defaultName }) => {
  */
 ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
   validateOrigin(event);
+  const t = getMainTranslations();
   try {
     // Validate path for security (directory traversal protection)
     const pathValidation = validateVaultPath(filePath);
     if (!pathValidation.valid) {
-      return { success: false, error: pathValidation.error };
+      return { success: false, error: t[pathValidation.errorKey] };
     }
 
     await fs.promises.access(filePath, fs.constants.F_OK);
@@ -2010,11 +2078,12 @@ ipcMain.handle('vaultIO:exists', async (event, { filePath }) => {
  */
 ipcMain.handle('vaultIO:getFileInfo', async (event, { filePath }) => {
   validateOrigin(event);
+  const t = getMainTranslations();
   try {
     // Validate path for security (directory traversal protection)
     const pathValidation = validateVaultPath(filePath);
     if (!pathValidation.valid) {
-      return { success: false, error: pathValidation.error };
+      return { success: false, error: t[pathValidation.errorKey] };
     }
 
     const stats = await fs.promises.stat(filePath);
@@ -2119,15 +2188,16 @@ function buildAutoTypePowerShell(actions) {
 // Perform auto-type operation
 ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, targetWindowTitle }) => {
   validateOrigin(event);
+  const t = getMainTranslations();
   try {
     // Only supported on Windows currently
     if (process.platform !== 'win32') {
-      return { success: false, error: 'Auto-type currently only supported on Windows' };
+      return { success: false, error: t.errorAutoTypeWindows };
     }
 
     // Validate inputs
     if (!sequence || !data) {
-      return { success: false, error: 'Missing sequence or data' };
+      return { success: false, error: t.errorMissingSequence };
     }
 
     // Parse the sequence
@@ -2167,7 +2237,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
     const foregroundTitle = await getActiveWindowTitle();
     if (!foregroundTitle) {
       safeRestore();
-      return { success: false, error: 'Could not detect target window. Auto-type cancelled for security.' };
+      return { success: false, error: t.errorAutoTypeWindowDetect };
     }
 
     // Check for dangerous target windows (command prompts, terminals, etc.)
@@ -2265,7 +2335,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
       setTimeout(() => {
         ps.kill();
         safeRestore();
-        resolve({ success: false, error: 'Auto-type timed out' });
+        resolve({ success: false, error: t.errorAutoTypeTimeout });
       }, 30000);
     });
   } catch (error) {
@@ -2599,11 +2669,11 @@ app.on('web-contents-created', (event, contents) => {
   });
 });
 
-// Logging des erreurs
+// Error logging
 process.on('uncaughtException', (error) => {
-  console.error('Erreur non gérée:', error);
+  console.error('[GenPwd Pro] Uncaught exception:', error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promise rejetée non gérée:', reason);
+  console.error('[GenPwd Pro] Unhandled rejection:', reason);
 });

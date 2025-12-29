@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// tools/watch.js - Auto-rebuild pour développement
+// tools/watch.js - Auto-rebuild for development
 const chokidar = require('chokidar');
 const GenPwdBuilder = require('./build');
 const path = require('path');
@@ -27,12 +27,12 @@ class WatchBuilder {
   }
 
   async start() {
-    console.log('🔍 Surveillance des fichiers sources démarrée...');
+    console.log('🔍 Source file watching started...');
     
-    // Build initial
-    await this.build('Initialisation');
+    // Initial build
+    await this.build('Initialization');
 
-    // Surveilller les fichiers sources
+    // Watch source files
     const watcher = chokidar.watch([
       'src/**/*.js',
       'src/**/*.css',
@@ -47,24 +47,24 @@ class WatchBuilder {
     });
 
     watcher
-      .on('change', (filePath) => this.handleFileChange(filePath, 'modifié'))
-      .on('add', (filePath) => this.handleFileChange(filePath, 'ajouté'))
-      .on('unlink', (filePath) => this.handleFileChange(filePath, 'supprimé'))
-      .on('error', (error) => console.error('Erreur watcher:', error));
+      .on('change', (filePath) => this.handleFileChange(filePath, 'modified'))
+      .on('add', (filePath) => this.handleFileChange(filePath, 'added'))
+      .on('unlink', (filePath) => this.handleFileChange(filePath, 'deleted'))
+      .on('error', (error) => console.error('Watcher error:', error));
 
-    // Gestion arrêt propre
+    // Graceful shutdown
     process.on('SIGINT', () => {
-      console.log('\n🛑 Arrêt de la surveillance...');
+      console.log('\n🛑 Stopping file watcher...');
       watcher.close();
       process.exit(0);
     });
 
-    console.log('✅ Surveillance active - Modifiez vos fichiers sources...');
-    console.log('📁 Dossiers surveillés:');
+    console.log('✅ Watching active - Modify your source files...');
+    console.log('📁 Watched directories:');
     console.log('   - src/js/**/*.js');
     console.log('   - src/styles/**/*.css');
     console.log('   - src/index.html');
-    console.log('\n💡 Ctrl+C pour arrêter');
+    console.log('\n💡 Ctrl+C to stop');
   }
 
   handleFileChange(filePath, action) {
@@ -73,13 +73,13 @@ class WatchBuilder {
     
     console.log(`[${timestamp}] ${relativePath} ${action}`);
 
-    // Ajouter à la queue de build
+    // Add to build queue
     this.buildQueue.push({ filePath: relativePath, action, timestamp });
     this.debouncedBuild();
   }
 
   debouncedBuild() {
-    // Debounce les builds multiples
+    // Debounce multiple builds
     if (this.buildTimer) {
       clearTimeout(this.buildTimer);
     }
@@ -96,9 +96,9 @@ class WatchBuilder {
 
     const changes = this.buildQueue.splice(0);
     const changeCount = changes.length;
-    const reason = changeCount === 1 ? 
+    const reason = changeCount === 1 ?
       `${changes[0].filePath} ${changes[0].action}` :
-      `${changeCount} fichiers modifiés`;
+      `${changeCount} files modified`;
 
     await this.build(reason);
   }
@@ -114,27 +114,27 @@ class WatchBuilder {
       await this.builder.build();
       
       const buildTime = Date.now() - startTime;
-      console.log(`✅ Build terminé en ${buildTime}ms`);
-      console.log('🌐 Version mise à jour: http://localhost:3000/dist/index.html');
+      console.log(`✅ Build completed in ${buildTime}ms`);
+      console.log('🌐 Version updated: http://localhost:3000/dist/index.html');
       
     } catch (error) {
-      console.error('❌ Erreur de build:', error.message);
+      console.error('❌ Build error:', error.message);
     } finally {
       this.isBuilding = false;
     }
   }
 
-  // Mode build continu (alternative)
+  // Continuous build mode (alternative)
   async startContinuous() {
-    console.log('🔄 Mode build continu activé...');
+    console.log('🔄 Continuous build mode activated...');
 
     this.continuous = true;
     while (this.continuous) {
       try {
-        await this.build('Build périodique');
-        await this.sleep(5000); // Build toutes les 5 secondes
+        await this.build('Periodic build');
+        await this.sleep(5000); // Build every 5 seconds
       } catch (error) {
-        console.error('Erreur build continu:', error);
+        console.error('Continuous build error:', error);
         await this.sleep(10000);
       }
     }
@@ -156,7 +156,7 @@ if (require.main === module) {
 
   if (args.includes('--continuous')) {
     process.on('SIGINT', () => {
-      console.log('\n🛑 Arrêt du mode continu...');
+      console.log('\n🛑 Stopping continuous mode...');
       watchBuilder.stopContinuous();
       process.exit(0);
     });

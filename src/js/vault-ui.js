@@ -2835,7 +2835,7 @@ export class VaultUI {
       const saveResult = await window.vault.io.save(encryptedJSON, result.filePath);
 
       if (!saveResult.success) {
-        throw new Error(saveResult.error || 'Error saving vault');
+        throw new Error(saveResult.error || t('vault.errors.saveFailed'));
       }
 
       this.#closeModal('save-vault-modal');
@@ -3944,7 +3944,7 @@ export class VaultUI {
     // Copy field
     document.querySelectorAll('.copy-field').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const label = btn.closest('.vault-field')?.querySelector('.vault-field-label')?.textContent || 'Value';
+        const label = btn.closest('.vault-field')?.querySelector('.vault-field-label')?.textContent || t('vault.placeholders.fieldValue');
         await this.#copyToClipboard(btn.dataset.value, `${label} copied`);
       });
     });
@@ -3988,7 +3988,7 @@ export class VaultUI {
     document.querySelectorAll('.show-totp-qr').forEach(btn => {
       btn.addEventListener('click', () => {
         const secret = btn.dataset.secret;
-        const issuer = btn.dataset.title || 'GenPwd';
+        const issuer = btn.dataset.title || t('vault.defaults.totpIssuer');
         const account = btn.dataset.account || '';
         if (secret) {
           showTOTPQRModal({ secret, issuer, account, t });
@@ -5070,7 +5070,7 @@ export class VaultUI {
         btn.disabled = true;
 
         try {
-          const alias = await this.#aliasService.generateAlias(document.getElementById('entry-title').value || 'GenPwd Entry');
+          const alias = await this.#aliasService.generateAlias(document.getElementById('entry-title').value || t('vault.defaults.entryTitle'));
           input.value = alias;
           input.dispatchEvent(new Event('input', { bubbles: true }));
 

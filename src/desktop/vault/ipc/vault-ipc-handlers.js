@@ -1201,10 +1201,10 @@ function sendToRenderer(channel, data) {
  */
 function validateString(value, name, maxLength) {
   if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`Invalid parameter: ${name} must be a non-empty string`);
+    throw new Error(t('errors.validation.invalidParameter', { name }));
   }
   if (maxLength && value.length > maxLength) {
-    throw new Error(`Invalid parameter: ${name} exceeds maximum length of ${maxLength} characters`);
+    throw new Error(t('errors.validation.parameterTooLong', { name, maxLength }));
   }
 }
 
@@ -1237,7 +1237,7 @@ function validatePath(value, name = 'path') {
   validateString(value, name, INPUT_LIMITS.PATH_MAX);
   // Block null bytes and relative path escape attempts
   if (value.includes('\0') || value.includes('..')) {
-    throw new Error(`Invalid ${name}: contains forbidden characters`);
+    throw new Error(t('errors.validation.forbiddenCharacters', { name }));
   }
 }
 
@@ -1249,7 +1249,7 @@ function validatePath(value, name = 'path') {
  */
 function validateObject(value, name) {
   if (typeof value !== 'object' || value === null) {
-    throw new Error(`Invalid parameter: ${name} must be an object`);
+    throw new Error(t('errors.validation.mustBeObject', { name }));
   }
 }
 
@@ -1277,7 +1277,7 @@ const ALLOWED_ENTRY_FIELDS = {
 function validateEntryData(type, data) {
   // Validate type
   if (!VALID_ENTRY_TYPES.includes(type)) {
-    throw new Error(`Invalid entry type: ${type}. Must be one of: ${VALID_ENTRY_TYPES.join(', ')}`);
+    throw new Error(t('errors.validation.invalidEntryType', { type, validTypes: VALID_ENTRY_TYPES.join(', ') }));
   }
 
   // Validate data is object
@@ -1291,7 +1291,7 @@ function validateEntryData(type, data) {
 
   for (const field of dataFields) {
     if (!allowedFields.includes(field)) {
-      throw new Error(`Invalid field "${field}" for entry type "${type}"`);
+      throw new Error(t('errors.validation.invalidFieldForType', { field, type }));
     }
   }
 
@@ -1315,14 +1315,14 @@ function validateEntryData(type, data) {
         throw new Error(t('errors.validation.favoriteMustBeBoolean'));
       }
     } else if (typeof value !== 'string') {
-      throw new Error(`Field "${key}" must be a string`);
+      throw new Error(t('errors.validation.mustBeString', { field: key }));
     } else {
       // SECURITY: Validate string field length to prevent memory exhaustion
       const maxLength = (key === 'notes' || key === 'content')
         ? INPUT_LIMITS.CONTENT_MAX
         : INPUT_LIMITS.NAME_MAX;
       if (value.length > maxLength) {
-        throw new Error(`Field "${key}" exceeds maximum length of ${maxLength} characters`);
+        throw new Error(t('errors.validation.fieldTooLong', { field: key, maxLength }));
       }
     }
   }

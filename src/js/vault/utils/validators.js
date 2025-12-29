@@ -3,6 +3,8 @@
  * Pure validation functions
  */
 
+import { t } from '../../utils/i18n.js';
+
 /**
  * Check if a string is a valid URL
  * @param {string} string - String to validate
@@ -41,32 +43,32 @@ export function validateFieldValue(value, rules = {}) {
   // Required check
   if (rules.required && !trimmedValue) {
     isValid = false;
-    message = rules.requiredMessage || 'This field is required';
+    message = rules.requiredMessage || t('vault.validation.fieldRequired');
   }
   // Min length check
   else if (rules.minLength && trimmedValue.length < rules.minLength) {
     isValid = false;
-    message = rules.minLengthMessage || `Minimum ${rules.minLength} characters`;
+    message = rules.minLengthMessage || t('vault.validation.minLength', { count: rules.minLength });
   }
   // Max length check
   else if (rules.maxLength && trimmedValue.length > rules.maxLength) {
     isValid = false;
-    message = rules.maxLengthMessage || `Maximum ${rules.maxLength} characters`;
+    message = rules.maxLengthMessage || t('vault.validation.maxLength', { count: rules.maxLength });
   }
   // Pattern check
   else if (rules.pattern && !rules.pattern.test(trimmedValue)) {
     isValid = false;
-    message = rules.patternMessage || 'Invalid format';
+    message = rules.patternMessage || t('vault.validation.invalidFormat');
   }
   // URL check
   else if (rules.url && trimmedValue && !isValidUrl(trimmedValue)) {
     isValid = false;
-    message = rules.urlMessage || 'Invalid URL';
+    message = rules.urlMessage || t('vault.validation.invalidUrl');
   }
   // Email check
   else if (rules.email && trimmedValue && !isValidEmail(trimmedValue)) {
     isValid = false;
-    message = rules.emailMessage || 'Invalid email';
+    message = rules.emailMessage || t('vault.validation.invalidEmail');
   }
   // Valid with success message
   else if (trimmedValue && rules.showSuccess) {
@@ -93,9 +95,9 @@ export function validatePasswordMatch(password, confirm) {
     isValid = false;
   } else if (trimmedConfirm !== password) {
     isValid = false;
-    message = 'Passwords do not match';
+    message = t('vault.validation.passwordsNoMatch');
   } else {
-    message = 'Passwords match';
+    message = t('vault.validation.passwordsMatch');
     messageType = 'success';
   }
 

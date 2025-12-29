@@ -132,31 +132,31 @@ export const LIMITS = Object.freeze({
   MAX_SPECIALS: 6
 });
 
-// Validation automatique des constantes
+// Automatic validation of constants
 export function validateCharSets() {
   for (const [key, policy] of Object.entries(CHAR_SETS)) {
     if (!Array.isArray(policy.consonants) || policy.consonants.length === 0) {
-      console.error(`CHAR_SETS.${key}.consonants invalide`);
+      console.error(`CHAR_SETS.${key}.consonants invalid`);
       return false;
     }
     if (!Array.isArray(policy.vowels) || policy.vowels.length === 0) {
-      console.error(`CHAR_SETS.${key}.vowels invalide`);
+      console.error(`CHAR_SETS.${key}.vowels invalid`);
       return false;
     }
   }
-  
-  // Vérification Cross-Layout
+
+  // Cross-Layout verification
   const standardLayout = CHAR_SETS['standard-layout'];
   if (standardLayout.vowels.includes('a')) {
-    console.error('"a" présent dans standard-layout - devrait être exclu');
+    console.error('"a" present in standard-layout - should be excluded');
     return false;
   }
   
-  console.log('CHAR_SETS validé avec CLI-Safe + Cross-Layout');
+  console.log('CHAR_SETS validated with CLI-Safe + Cross-Layout');
   return true;
 }
 
-// Validation au chargement du module
+// Validation on module load
 if (!validateCharSets()) {
-  throw new Error('Données CHAR_SETS corrompues');
+  throw new Error('CHAR_SETS data corrupted');
 }

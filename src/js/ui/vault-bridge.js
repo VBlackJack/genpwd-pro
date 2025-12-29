@@ -192,18 +192,18 @@ export class VaultBridge {
    */
   static async savePassword(password, metadata) {
     if (!this.isAvailable()) {
-      return { success: false, error: 'Vault not available' };
+      return { success: false, error: i18n.t('vault.errors.vaultNotAvailable') };
     }
 
     // Check if unlocked
     const isUnlocked = await this.isUnlocked();
     if (!isUnlocked) {
-      return { success: false, error: 'Vault locked' };
+      return { success: false, error: i18n.t('vault.errors.vaultLocked') };
     }
 
     // Validate required fields
     if (!metadata?.title?.trim()) {
-      return { success: false, error: 'Title required' };
+      return { success: false, error: i18n.t('vault.errors.titleRequired') };
     }
 
     try {
@@ -229,11 +229,11 @@ export class VaultBridge {
         showToast(i18n.t('vault.messages.savedWithTitle', { title: metadata.title }), 'success');
         return { success: true, entryId: result.id };
       } else {
-        return { success: false, error: 'Save failed' };
+        return { success: false, error: i18n.t('vault.errors.saveFailed') };
       }
     } catch (error) {
       safeLog(`[VaultBridge] Save error: ${error.message}`);
-      return { success: false, error: error.message || 'Unknown error' };
+      return { success: false, error: error.message || i18n.t('vault.errors.unknownError') };
     }
   }
 

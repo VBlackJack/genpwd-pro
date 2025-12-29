@@ -30,25 +30,25 @@ const AUTO_LOCK_WARNING_MS = 30 * 1000;
  * @returns {string} Sanitized message safe for display
  */
 function sanitizeErrorMessage(message) {
-  if (!message) return 'An error occurred';
+  if (!message) return t('errors.generic.occurred');
 
   const errorMappings = [
-    { pattern: /ENOENT|no such file/i, message: 'File not found. Check the file path or restore from backup.' },
-    { pattern: /EACCES|permission denied/i, message: 'Access denied. Check folder permissions.' },
-    { pattern: /crypto|decrypt|cipher|authentication/i, message: 'Encryption error. Verify your password is correct.' },
-    { pattern: /password|incorrect/i, message: 'Incorrect password. Please try again.' },
-    { pattern: /timeout|timed out/i, message: 'Operation timed out. Please try again.' },
-    { pattern: /locked/i, message: 'Vault is locked. Please unlock first.' },
+    { pattern: /ENOENT|no such file/i, key: 'errors.file.notFound' },
+    { pattern: /EACCES|permission denied/i, key: 'errors.file.accessDenied' },
+    { pattern: /crypto|decrypt|cipher|authentication/i, key: 'errors.crypto.encryptionError' },
+    { pattern: /password|incorrect/i, key: 'errors.auth.incorrectPassword' },
+    { pattern: /timeout|timed out/i, key: 'errors.session.timeout' },
+    { pattern: /locked/i, key: 'errors.session.locked' },
   ];
 
   for (const mapping of errorMappings) {
     if (mapping.pattern.test(message)) {
-      return mapping.message;
+      return t(mapping.key);
     }
   }
 
   // Generic message for unknown errors (don't expose internals)
-  return 'An error occurred. Please try again.';
+  return t('errors.generic.tryAgain');
 }
 
 /**

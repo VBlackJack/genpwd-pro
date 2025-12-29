@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// src/js/app.js - Point d'entrée principal de l'application
+// src/js/app.js - Main application entry point
 import { validateCharSets } from './config/constants.js';
 import { initializeDictionaries } from './core/dictionaries.js';
 import { initializeDOM } from './ui/dom.js';
@@ -33,7 +33,7 @@ class GenPwdApp {
 
   async init() {
     try {
-      safeLog(`Démarrage GenPwd Pro v${this.version} - Architecture modulaire`);
+      safeLog(`Starting GenPwd Pro v${this.version} - Modular architecture`);
       
       // 1. Environment validation
       if (!this.validateEnvironment()) {
@@ -45,29 +45,29 @@ class GenPwdApp {
         throw new Error(t('toast.corruptedCharsets') || 'Corrupted character sets');
       }
 
-      // 3. Initialisation DOM
+      // 3. Initialize DOM
       await initializeDOM();
-      safeLog('DOM initialisé');
+      safeLog('DOM initialized');
 
-      // 4. Initialisation dictionnaires
+      // 4. Initialize dictionaries
       initializeDictionaries();
-      safeLog('Système dictionnaires initialisé');
+      safeLog('Dictionary system initialized');
 
-      // 5. Configuration initiale des blocs
+      // 5. Initial block configuration
       const initialBlocks = defaultBlocksForMode('syllables');
       setBlocks(initialBlocks);
-      safeLog(`Blocs initialisés: ${initialBlocks.join('-')}`);
+      safeLog(`Blocks initialized: ${initialBlocks.join('-')}`);
 
-      // 6. Binding des événements
+      // 6. Bind event handlers
       bindEventHandlers();
       bindModalEvents();
-      safeLog('Événements bindés');
+      safeLog('Events bound');
 
-      // 7. Génération initiale après un délai
+      // 7. Initial generation after delay
       setTimeout(() => this.generateInitial(), 300);
 
       this.initialized = true;
-      safeLog('Application initialisée avec succès');
+      safeLog('Application initialized successfully');
       
     } catch (error) {
       console.error('Critical initialization error:', error);
@@ -77,7 +77,7 @@ class GenPwdApp {
   }
 
   validateEnvironment() {
-    // Vérifier APIs requises
+    // Check required APIs
     const required = [
       'fetch', 'Promise', 'Map', 'Set', 'Object.assign',
       'JSON', 'addEventListener', 'querySelector'
@@ -85,12 +85,12 @@ class GenPwdApp {
 
     for (const api of required) {
       if (typeof window[api] === 'undefined') {
-        safeLog(`API manquante: ${api}`);
+        safeLog(`Missing API: ${api}`);
         return false;
       }
     }
 
-    // Vérifier support CSS Grid
+    // Check CSS Grid support
     const testEl = document.createElement('div');
     testEl.style.display = 'grid';
     if (testEl.style.display !== 'grid') {
@@ -103,19 +103,19 @@ class GenPwdApp {
 
   async generateInitial() {
     try {
-      safeLog('Lancement génération automatique...');
+      safeLog('Starting automatic generation...');
       
-      // Import dynamique pour éviter les dépendances circulaires
+      // Dynamic import to avoid circular dependencies
       const { generatePasswords } = await import('./ui/events.js');
       
-      // Simuler clic sur le bouton générer
+      // Simulate click on generate button
       const generateBtn = document.getElementById('btn-generate');
       if (generateBtn) {
         generateBtn.click();
       }
       
     } catch (error) {
-      safeLog(`Erreur génération initiale: ${error.message}`);
+      safeLog(`Initial generation error: ${error.message}`);
     }
   }
 
@@ -132,13 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
   window.genPwdApp.init();
 });
 
-// Gestion erreurs globales
+// Global error handling
 window.addEventListener('error', (e) => {
-  safeLog(`Erreur JS globale: ${e.message} - ${e.filename}:${e.lineno}`);
+  safeLog(`Global JS error: ${e.message} - ${e.filename}:${e.lineno}`);
 });
 
 window.addEventListener('unhandledrejection', (e) => {
-  safeLog(`Promise rejetée: ${e.reason}`);
+  safeLog(`Rejected Promise: ${e.reason}`);
   e.preventDefault();
 });
 

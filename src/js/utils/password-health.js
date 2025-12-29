@@ -15,7 +15,7 @@ import { t } from './i18n.js';
  * @returns {{score: number, level: string, issues: string[]}}
  */
 export function analyzePasswordStrength(password) {
-  if (!password) return { score: 0, level: 'none', issues: [t('passwordHealth.noPassword') || 'No password'] };
+  if (!password) return { score: 0, level: 'none', issues: [t('passwordHealth.noPassword')] };
 
   const issues = [];
   let score = 0;
@@ -27,8 +27,8 @@ export function analyzePasswordStrength(password) {
   else if (len >= 8) score += 15;
   else if (len >= 6) score += 5;
 
-  if (len < 8) issues.push(t('passwordHealth.tooShort') || 'Too short (< 8 characters)');
-  if (len < 12) issues.push(t('passwordHealth.recommendedLength') || 'Recommended length: 12+ characters');
+  if (len < 8) issues.push(t('passwordHealth.tooShort'));
+  if (len < 12) issues.push(t('passwordHealth.recommendedLength'));
 
   // Character variety (max 40 points)
   const hasLower = /[a-z]/.test(password);
@@ -41,33 +41,33 @@ export function analyzePasswordStrength(password) {
   if (hasDigit) score += 10;
   if (hasSpecial) score += 10;
 
-  if (!hasLower || !hasUpper) issues.push(t('passwordHealth.mixCase') || 'Mix uppercase and lowercase');
-  if (!hasDigit) issues.push(t('passwordHealth.addDigits') || 'Add digits');
-  if (!hasSpecial) issues.push(t('passwordHealth.addSpecials') || 'Add special characters');
+  if (!hasLower || !hasUpper) issues.push(t('passwordHealth.mixCase'));
+  if (!hasDigit) issues.push(t('passwordHealth.addDigits'));
+  if (!hasSpecial) issues.push(t('passwordHealth.addSpecials'));
 
   // Entropy bonus (max 20 points)
   const uniqueChars = new Set(password).size;
   const uniqueRatio = uniqueChars / len;
   score += Math.min(20, Math.round(uniqueRatio * 25));
 
-  if (uniqueRatio < 0.5) issues.push(t('passwordHealth.tooManyRepeated') || 'Too many repeated characters');
+  if (uniqueRatio < 0.5) issues.push(t('passwordHealth.tooManyRepeated'));
 
   // Pattern penalties
   if (/^[a-z]+$/i.test(password)) {
     score -= 10;
-    issues.push(t('passwordHealth.onlyLetters') || 'Only letters');
+    issues.push(t('passwordHealth.onlyLetters'));
   }
   if (/^[0-9]+$/.test(password)) {
     score -= 20;
-    issues.push(t('passwordHealth.onlyDigits') || 'Only digits');
+    issues.push(t('passwordHealth.onlyDigits'));
   }
   if (/(.)\1{2,}/.test(password)) {
     score -= 5;
-    issues.push(t('passwordHealth.repetitiveSequences') || 'Repetitive sequences');
+    issues.push(t('passwordHealth.repetitiveSequences'));
   }
   if (/^(123|abc|qwerty|azerty|password|motdepasse)/i.test(password)) {
     score -= 30;
-    issues.push(t('passwordHealth.commonPattern') || 'Common pattern detected');
+    issues.push(t('passwordHealth.commonPattern'));
   }
 
   // Clamp score

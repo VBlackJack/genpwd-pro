@@ -39,6 +39,7 @@
 import { VaultEntry, ENTRY_TYPES, FIELD_KINDS, generateUUID } from './models.js';
 import { safeLog } from '../utils/logger.js';
 import { PBKDF2 } from '../config/crypto-constants.js';
+import { t } from '../utils/i18n.js';
 
 // ============================================================================
 // CONSTANTS
@@ -420,11 +421,11 @@ export async function importVaultFromBuffer(fileData, password) {
 
     // Validate format
     if (parsed.format !== GPDB_FORMAT) {
-      return { success: false, error: 'Invalid file format. Expected GPDB vault file.' };
+      return { success: false, error: t('vault.import.errors.invalidGpdbFormat') };
     }
 
     if (!parsed.version || parsed.version < 1) {
-      return { success: false, error: 'Invalid file version.' };
+      return { success: false, error: t('vault.import.errors.invalidVersion') };
     }
 
     // Handle version differences
@@ -434,7 +435,7 @@ export async function importVaultFromBuffer(fileData, password) {
 
     // Version 2+
     if (!parsed.kdf || !parsed.encrypted) {
-      return { success: false, error: 'Missing encryption data.' };
+      return { success: false, error: t('vault.import.errors.missingEncryption') };
     }
 
     // Extract salt
@@ -448,7 +449,7 @@ export async function importVaultFromBuffer(fileData, password) {
     try {
       plaintext = await decryptData(parsed.encrypted, key);
     } catch (e) {
-      return { success: false, error: 'Invalid password or corrupted data.' };
+      return { success: false, error: t('vault.import.errors.invalidPasswordOrCorrupted') };
     }
 
     // Parse decrypted data
@@ -469,7 +470,7 @@ export async function importVaultFromBuffer(fileData, password) {
     };
   } catch (error) {
     safeLog(`[io-service] Import error: ${error.message}`);
-    return { success: false, error: error.message || 'Failed to import vault.' };
+    return { success: false, error: error.message || t('vault.import.errors.importFailed') };
   }
 }
 
@@ -494,7 +495,7 @@ export async function importVaultFromBuffer(fileData, password) {
 async function importV1Vault(parsed, password) {
   // Validate V1 structure
   if (!parsed.header?.keyData || !parsed.encryptedData) {
-    return { success: false, error: 'Invalid V1 format: missing header/encryptedData structure.' };
+    return { success: false, error: t('vault.import.errors.invalidV1Format') };
   }
 
   try {
@@ -568,7 +569,7 @@ function migrateV1ToV2(v1Data) {
   const entries = (v1Data.entries || []).map(entry => ({
     id: entry.id || generateUUID(),
     type: entry.type || 'login',
-    title: entry.title || 'Imported Entry',
+    title: entry.title || t('import.defaults.importedEntry'),
     // V1 stored data differently
     username: entry.username || entry.data?.username || '',
     secret: entry.password ? [entry.password] : (entry.data?.password ? [entry.data.password] : []),
@@ -591,7 +592,7 @@ function migrateV1ToV2(v1Data) {
 
   const folders = (v1Data.groups || v1Data.folders || []).map(group => ({
     id: group.id || generateUUID(),
-    name: group.name || 'Imported Folder',
+    name: group.name || t('import.defaults.importedFolder'),
     parentId: group.parentId || null,
     icon: group.icon || null,
     color: group.color || null

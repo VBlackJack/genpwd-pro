@@ -52,7 +52,7 @@ export function showTOTPQRModal(options = {}) {
   modal.innerHTML = `
     <div class="vault-modal vault-modal-sm">
       <div class="vault-modal-header">
-        <h3>${t('vault.totp.qrTitle') || 'QR Code TOTP'}</h3>
+        <h3>${t('vault.totp.qrTitle') || 'TOTP QR Code'}</h3>
         <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -68,7 +68,7 @@ export function showTOTPQRModal(options = {}) {
           <div class="vault-qr-label">${escapeHtml(issuer)}</div>
           <div class="vault-qr-account">${escapeHtml(account || 'user')}</div>
         </div>
-        <p class="vault-qr-hint">${t('vault.totp.scanHint') || 'Scannez avec votre application d\'authentification (Google Authenticator, Authy, etc.)'}</p>
+        <p class="vault-qr-hint">${t('vault.totp.scanHint') || 'Scan with your authenticator app (Google Authenticator, Authy, etc.)'}</p>
       </div>
     </div>
   `;

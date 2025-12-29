@@ -320,7 +320,7 @@ export class VaultFileManager extends EventEmitter {
       fileContent = await fs.readFile(vaultPath, 'utf-8');
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error(`Vault file not found: ${vaultPath}`);
+        throw new Error(t('errors.vault.fileNotFound', { path: vaultPath }));
       }
       throw error;
     }
@@ -330,7 +330,7 @@ export class VaultFileManager extends EventEmitter {
     try {
       vaultFile = JSON.parse(fileContent);
     } catch (parseError) {
-      throw new Error(`Invalid vault file: JSON parse error - ${parseError.message}`);
+      throw new Error(t('errors.vault.jsonParseError', { message: parseError.message }));
     }
 
     // Detect format version
@@ -355,7 +355,7 @@ export class VaultFileManager extends EventEmitter {
         if (!vaultFile.slots) issues.push('missing slots array');
         else if (vaultFile.slots.length < 2) issues.push(`slots has ${vaultFile.slots.length} items (need 2)`);
         if (!vaultFile.payloads) issues.push('missing payloads array');
-        throw new Error(`Invalid vault file format (V3): ${issues.join(', ')}`);
+        throw new Error(t('errors.vault.invalidFormatV3', { issues: issues.join(', ') }));
       }
 
       let activeSlot = -1;
@@ -428,7 +428,7 @@ export class VaultFileManager extends EventEmitter {
       if (!vaultFile.header) missing.push('header');
       else if (!vaultFile.header.vaultId) missing.push('header.vaultId');
       if (!vaultFile.encryptedData) missing.push('encryptedData');
-      throw new Error(`Invalid vault file format: missing ${missing.join(', ')}. File keys: [${Object.keys(vaultFile).join(', ')}]`);
+      throw new Error(t('errors.vault.missingFields', { fields: missing.join(', '), keys: Object.keys(vaultFile).join(', ') }));
     }
 
     const vaultId = vaultFile.header.vaultId;
@@ -512,7 +512,7 @@ export class VaultFileManager extends EventEmitter {
       console.log('[VaultFileManager] File read successfully, size:', fileContent.length);
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error(`Vault not found: ${vaultId}`);
+        throw new Error(t('errors.vault.notFound', { vaultId }));
       }
       throw error;
     }
@@ -1058,7 +1058,7 @@ export class VaultFileManager extends EventEmitter {
       fileContent = await fs.readFile(vaultPath, 'utf-8');
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error(`Vault not found: ${vaultId}`);
+        throw new Error(t('errors.vault.notFound', { vaultId }));
       }
       throw error;
     }

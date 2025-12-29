@@ -111,7 +111,7 @@ export function mapCSVToEntry(headers, values, format) {
   switch (format) {
     case 'keepass':
       return {
-        title: row['title'] || row['entry'] || 'Import KeePass',
+        title: row['title'] || row['entry'] || t('import.defaults.keepass'),
         username: row['username'] || row['user name'] || row['login'] || '',
         password: row['password'] || '',
         url: row['url'] || row['web site'] || '',
@@ -122,7 +122,7 @@ export function mapCSVToEntry(headers, values, format) {
 
     case 'lastpass':
       return {
-        title: row['name'] || row['url'] || 'Import LastPass',
+        title: row['name'] || row['url'] || t('import.defaults.lastpass'),
         username: row['username'] || '',
         password: row['password'] || '',
         url: row['url'] || '',
@@ -140,7 +140,7 @@ export function mapCSVToEntry(headers, values, format) {
         } catch { /* Invalid otpauth URL - ignore */ }
       }
       return {
-        title: row['title'] || row['url'] || 'Import 1Password',
+        title: row['title'] || row['url'] || t('import.defaults.onepassword'),
         username: row['username'] || '',
         password: row['password'] || '',
         url: row['url'] || '',
@@ -151,7 +151,7 @@ export function mapCSVToEntry(headers, values, format) {
 
     case 'bitwarden':
       return {
-        title: row['name'] || row['login_uri'] || 'Import Bitwarden',
+        title: row['name'] || row['login_uri'] || t('import.defaults.bitwarden'),
         username: row['login_username'] || '',
         password: row['login_password'] || '',
         url: row['login_uri'] || '',
@@ -161,7 +161,7 @@ export function mapCSVToEntry(headers, values, format) {
 
     case 'chrome':
       return {
-        title: row['name'] || row['url'] || 'Import Chrome',
+        title: row['name'] || row['url'] || t('import.defaults.chrome'),
         username: row['username'] || '',
         password: row['password'] || '',
         url: row['url'] || '',
@@ -171,7 +171,7 @@ export function mapCSVToEntry(headers, values, format) {
 
     case 'firefox':
       return {
-        title: extractDomainFromUrl(row['url']) || 'Import Firefox',
+        title: extractDomainFromUrl(row['url']) || t('import.defaults.firefox'),
         username: row['username'] || '',
         password: row['password'] || '',
         url: row['url'] || '',

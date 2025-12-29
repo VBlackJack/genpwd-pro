@@ -138,7 +138,7 @@ export function generateSyllables(config) {
     };
 
   } catch (error) {
-    safeLog(`Erreur generateSyllables: ${error.message}`);
+    safeLog(`[generateSyllables] Error: ${error.message}`);
     return {
       value: `error-syllables-${Date.now()}`,
       entropy: 10,
@@ -260,7 +260,7 @@ export async function generatePassphrase(config) {
     };
 
   } catch (error) {
-    safeLog(`Erreur generatePassphrase: ${error.message}`);
+    safeLog(`[generatePassphrase] Error: ${error.message}`);
     return {
       value: `error-passphrase-${Date.now()}`,
       entropy: 15,
@@ -333,7 +333,7 @@ export function generateLeet(config) {
     };
 
   } catch (error) {
-    safeLog(`Erreur generateLeet: ${error.message}`);
+    safeLog(`[generateLeet] Error: ${error.message}`);
     return {
       value: `error-leet-${Date.now()}`,
       entropy: 8,

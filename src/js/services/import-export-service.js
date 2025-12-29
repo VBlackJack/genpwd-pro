@@ -34,11 +34,11 @@ async function loadKdbxweb() {
       safeLog('kdbxweb loaded successfully');
     } catch (error) {
       safeLog(`kdbxweb not available: ${error.message}`);
-      throw new Error('KDBX import requires the desktop application. Please use the Electron app for KeePass imports.');
+      throw new Error(i18n.t('vault.import.errors.kdbxDesktopRequired'));
     }
   } else {
     // Web mode - KDBX not supported
-    throw new Error('KDBX/KeePass import is only available in the desktop application. Please use CSV or JSON export from KeePass instead.');
+    throw new Error(i18n.t('vault.import.errors.kdbxDesktopOnly'));
   }
   return kdbxweb;
 }
@@ -272,7 +272,7 @@ class ImportExportService {
       // SECURITY: Validate XML size (limit to 10MB)
       const MAX_XML_SIZE = 10 * 1024 * 1024; // 10MB
       if (xmlContent.length > MAX_XML_SIZE) {
-        throw new Error('XML file too large (max 10MB)');
+        throw new Error(i18n.t('vault.import.errors.xmlTooLarge'));
       }
 
       // SECURITY: Check for dangerous XML patterns (XXE, billion laughs, etc.)
@@ -285,7 +285,7 @@ class ImportExportService {
 
       for (const pattern of dangerousPatterns) {
         if (pattern.test(xmlContent)) {
-          throw new Error('XML contains forbidden patterns (potential XXE attack)');
+          throw new Error(i18n.t('vault.import.errors.xmlForbiddenPatterns'));
         }
       }
 
@@ -297,7 +297,7 @@ class ImportExportService {
 
       const parseError = xmlDoc.querySelector('parsererror');
       if (parseError) {
-        throw new Error('Invalid XML format: ' + parseError.textContent);
+        throw new Error(i18n.t('vault.import.errors.invalidXml') + ': ' + parseError.textContent);
       }
 
       // SECURITY: Validate root element
@@ -454,7 +454,7 @@ class ImportExportService {
       // Load kdbxweb dynamically (only available in Electron)
       const kdbx = await loadKdbxweb();
       if (!kdbx) {
-        throw new Error('KDBX import requires Electron desktop app');
+        throw new Error(i18n.t('vault.import.errors.kdbxElectronRequired'));
       }
 
       // Create credentials
@@ -505,7 +505,7 @@ class ImportExportService {
     } catch (error) {
       const kdbx = await loadKdbxweb();
       if (kdbx && error.code === kdbx.Consts?.ErrorCodes?.InvalidKey) {
-        throw new Error('Invalid password or key file');
+        throw new Error(i18n.t('vault.import.errors.invalidPassword'));
       }
       safeLog(`Error importing KDBX: ${error.message}`);
       throw error;
@@ -897,7 +897,7 @@ class ImportExportService {
   import(content, format) {
     switch (format) {
       case 'kdbx':
-        throw new Error('KDBX format requires importKDBX(dbData, password, keyFileData) method');
+        throw new Error(i18n.t('vault.import.errors.kdbxMethodRequired'));
       case 'keepass-xml':
         return this.importKeePassXML(content);
       case 'keepass-csv':
@@ -913,7 +913,7 @@ class ImportExportService {
       case 'generic-csv':
         return this.importGenericCSV(content);
       default:
-        throw new Error(`Unsupported import format: ${format}`);
+        throw new Error(i18n.t('vault.import.errors.unsupportedImportFormat', { format }));
     }
   }
 
@@ -938,7 +938,7 @@ class ImportExportService {
       case 'generic-csv':
         return this.exportGenericCSV(entries);
       default:
-        throw new Error(`Unsupported export format: ${format}`);
+        throw new Error(i18n.t('vault.import.errors.unsupportedExportFormat', { format }));
     }
   }
 

@@ -51,7 +51,7 @@ export function renderDetailHeader(entry, options = {}) {
         <span class="vault-detail-type">${getTypeLabel(type, t)}</span>
         <div class="vault-detail-tags">${renderTagsInDetail(entry, allTags)}</div>
       </div>
-      <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions') || 'Entry actions'}">
+      <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions')}">
         <button class="vault-icon-btn ${entry.favorite ? 'active' : ''}" id="btn-toggle-favorite"
                 data-tooltip="${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
                 aria-label="${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
@@ -73,7 +73,7 @@ export function renderDetailHeader(entry, options = {}) {
           </svg>
         </button>
         ${entry.type === 'login' ? `
-        <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="${t('vault.actions.autoFill') || 'Auto-fill'} (Ctrl+Shift+U)" aria-label="${t('vault.actions.autoFill') || 'Auto-fill form'}">
+        <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="${t('vault.actions.autoFill')} (Ctrl+Shift+U)" aria-label="${t('vault.actions.autoFill')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
             <line x1="6" y1="8" x2="6" y2="8"></line>
@@ -138,14 +138,14 @@ export function renderField(label, value, options = {}) {
         ${copyable ? `
           <div class="vault-field-actions">
             ${masked ? `
-              <button class="vault-field-btn toggle-reveal" title="${options.t?.('vault.aria.toggleVisibility') || 'Show/Hide'}" aria-label="${options.t?.('vault.aria.toggleVisibility') || 'Toggle visibility'}">
+              <button class="vault-field-btn toggle-reveal" title="${options.t?.('vault.aria.toggleVisibility')}" aria-label="${options.t?.('vault.aria.toggleVisibility')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
               </button>
             ` : ''}
-            <button class="vault-field-btn copy-field" data-value="${escapeHtml(value)}" title="${options.t?.('vault.common.copy') || 'Copy'}" aria-label="${options.t?.('vault.common.copy') || 'Copy'} ${escapeHtml(label)}">
+            <button class="vault-field-btn copy-field" data-value="${escapeHtml(value)}" title="${options.t?.('vault.common.copy')}" aria-label="${options.t?.('vault.common.copy')} ${escapeHtml(label)}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -235,7 +235,7 @@ export function renderNotesField(notes, options = {}) {
   return `
     <div class="vault-field vault-notes-field">
       <div class="vault-field-label-row">
-        <label class="vault-field-label">${t('vault.labels.notes') || 'Notes'}</label>
+        <label class="vault-field-label">${t('vault.labels.notes')}</label>
         <div class="vault-notes-toggle">
           <button type="button" class="vault-notes-mode active" data-mode="preview" title="${t('vault.actions.preview')}" aria-label="${t('vault.actions.previewMode')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">

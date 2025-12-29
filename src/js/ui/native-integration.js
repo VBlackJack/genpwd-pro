@@ -236,7 +236,7 @@ function initAutoTypeNotifications() {
 
   // Listen for auto-type blocked events
   window.electronAPI.onAutoTypeBlocked((data) => {
-    const message = data?.message || 'Auto-type blocked for security';
+    const message = data?.message || i18n.t('toast.autoTypeBlocked');
     showToast(message, 'warning', 5000);
     safeLog(`Auto-type blocked: ${data?.windowTitle || 'unknown window'}`);
   });
@@ -327,7 +327,7 @@ function overrideCopyBehavior(signal) {
           const seconds = Math.round(settings.clipboardTTL / 1000);
           showToast(i18n.t('toast.copiedAutoClear', { seconds }), 'success', 2000);
         } else {
-          throw new Error(result.error || 'Secure copy failed');
+          throw new Error(result.error || i18n.t('toast.secureCopyFailed'));
         }
       } else {
         // Fallback to standard clipboard

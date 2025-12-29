@@ -34,7 +34,7 @@ export function randInt(min, max) {
  */
 export function pick(arr) {
   if (!Array.isArray(arr) || arr.length === 0) {
-    throw new Error('pick: tableau vide ou invalide');
+    throw new Error('pick: empty or invalid array');
   }
   return arr[randInt(0, arr.length - 1)];
 }
@@ -44,7 +44,7 @@ export function pick(arr) {
  */
 export function shuffle(arr) {
   if (!Array.isArray(arr)) {
-    throw new Error('shuffle: paramètre doit être un tableau');
+    throw new Error('shuffle: parameter must be an array');
   }
 
   const shuffled = [...arr];
@@ -60,7 +60,7 @@ export function shuffle(arr) {
  */
 export function insertWithPlacement(base, items, placement) {
   if (!Array.isArray(base) || !Array.isArray(items)) {
-    throw new Error('insertWithPlacement: paramètres doivent être des tableaux');
+    throw new Error('insertWithPlacement: parameters must be arrays');
   }
 
   if (items.length === 0) return base;
