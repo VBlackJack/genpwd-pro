@@ -46,8 +46,8 @@ export function renderConfirmDialog(options = {}) {
         <p id="confirm-dialog-message" class="confirm-dialog-message">${escapeHtml(message)}</p>
       </div>
       <div class="vault-modal-actions">
-        <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="Cancel">${escapeHtml(cancelText)}</button>
-        <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="Confirm">${escapeHtml(confirmText)}</button>
+        <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="${escapeHtml(cancelText)}">${escapeHtml(cancelText)}</button>
+        <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="${escapeHtml(confirmText)}">${escapeHtml(confirmText)}</button>
       </div>
     </div>
   `;

@@ -493,7 +493,12 @@
       "show": "Afficher",
       "generatePassword": "Générer un mot de passe",
       "scanQROrPaste": "Scanner QR ou coller otpauth://",
-      "required": "requis"
+      "required": "requis",
+      "deleteField": "Supprimer ce champ"
+    },
+    "attachments": {
+      "none": "Aucune pièce jointe",
+      "dropOrBrowse": "Déposez vos fichiers ici ou {browse}"
     },
     "common": {
       "save": "Sauvegarder",
@@ -547,7 +552,9 @@
       "color": "Couleur",
       "noFolder": "Aucun dossier",
       "noFolderRoot": "Aucun dossier (racine)",
-      "useTemplate": "Utiliser un modèle"
+      "useTemplate": "Utiliser un modèle",
+      "fieldType": "Type de champ",
+      "secure": "Sécurisé"
     },
     "actions": {
       "copyUsername": "Copier l'identifiant",

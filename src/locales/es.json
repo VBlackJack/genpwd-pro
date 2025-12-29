@@ -388,7 +388,12 @@
       "show": "Mostrar",
       "generatePassword": "Generar contraseña",
       "scanQROrPaste": "Escanear QR o pegar otpauth://",
-      "required": "requerido"
+      "required": "requerido",
+      "deleteField": "Eliminar este campo"
+    },
+    "attachments": {
+      "none": "Sin adjuntos",
+      "dropOrBrowse": "Suelte sus archivos aquí o {browse}"
     },
     "common": {
       "save": "Guardar",
@@ -442,7 +447,9 @@
       "color": "Color",
       "noFolder": "Sin carpeta",
       "noFolderRoot": "Sin carpeta (raíz)",
-      "useTemplate": "Usar plantilla"
+      "useTemplate": "Usar plantilla",
+      "fieldType": "Tipo de campo",
+      "secure": "Seguro"
     },
     "actions": {
       "copyUsername": "Copiar usuario",

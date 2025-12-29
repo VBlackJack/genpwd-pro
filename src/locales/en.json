@@ -396,7 +396,12 @@
       "show": "Show",
       "generatePassword": "Generate password",
       "scanQROrPaste": "Scan QR or paste otpauth://",
-      "required": "required"
+      "required": "required",
+      "deleteField": "Delete this field"
+    },
+    "attachments": {
+      "none": "No attachments",
+      "dropOrBrowse": "Drop your files here or {browse}"
     },
     "common": {
       "save": "Save",
@@ -450,6 +455,8 @@
       "noFolder": "No folder",
       "noFolderRoot": "No folder (root)",
       "useTemplate": "Use a template",
+      "fieldType": "Field type",
+      "secure": "Secure",
       "passwordAge": "Password age",
       "attachments": "Attachments",
       "modified": "Modified",

@@ -50,26 +50,27 @@ export function readFileAsBase64(file) {
  * @param {Object} options
  * @param {Object} options.entry - Entry with attachments
  * @param {boolean} options.isEditing - Whether in edit mode
+ * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
-export function renderAttachmentsUI({ entry, isEditing }) {
+export function renderAttachmentsUI({ entry, isEditing, t = (k) => k }) {
   const attachments = entry.attachments || [];
 
   return `
     <div class="vault-detail-section">
       <div class="vault-detail-header">
-         <h3 class="vault-detail-subtitle">Attachments (${attachments.length})</h3>
+         <h3 class="vault-detail-subtitle">${t('vault.labels.attachments')} (${attachments.length})</h3>
          ${isEditing ? `
            <div class="vault-file-drop-zone" id="file-drop-zone">
              <span class="drop-icon">📎</span>
-             <span class="drop-text">Drop your files here or <button type="button" class="link-btn" id="btn-browse-files">browse</button></span>
+             <span class="drop-text">${t('vault.attachments.dropOrBrowse').replace('{browse}', `<button type="button" class="link-btn" id="btn-browse-files">${t('vault.actions.browse')}</button>`)}</span>
              <input type="file" id="file-input" multiple class="vault-file-input-hidden">
            </div>
          ` : ''}
       </div>
 
       <div class="vault-attachments-list">
-        ${attachments.length === 0 ? '<div class="empty-text">No attachments</div>' : ''}
+        ${attachments.length === 0 ? `<div class="empty-text">${t('vault.attachments.none')}</div>` : ''}
         ${attachments.map((file, index) => `
           <div class="vault-attachment-item">
             <div class="attachment-icon">${getFileIcon(file.type)}</div>
@@ -79,11 +80,11 @@ export function renderAttachmentsUI({ entry, isEditing }) {
             </div>
             <div class="attachment-actions">
               ${isEditing ? `
-                <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="Delete">
+                <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="${t('vault.common.delete')}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
               ` : `
-                <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="Download">
+                <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="${t('vault.actions.download')}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 </button>
               `}

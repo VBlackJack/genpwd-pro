@@ -4,7 +4,7 @@
  */
 
 import { escapeHtml } from '../utils/formatter.js';
-import { FIELD_KIND_OPTIONS } from './form-fields.js';
+import { FIELD_KIND_OPTIONS, getFieldKindLabel } from './form-fields.js';
 
 /**
  * Render the custom fields section header and container
@@ -67,16 +67,16 @@ export function renderCustomField(options = {}) {
                placeholder="${t('vault.placeholders.fieldName')}"
                value="${escapeHtml(field.label || '')}"
                aria-label="${t('vault.placeholders.fieldName')}">
-        <select class="vault-input vault-custom-field-kind" aria-label="Type de champ">
+        <select class="vault-input vault-custom-field-kind" aria-label="${t('vault.labels.fieldType')}">
           ${FIELD_KIND_OPTIONS.map(opt =>
-            `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${opt.label}</option>`
+            `<option value="${opt.value}" ${field.kind === opt.value ? 'selected' : ''}>${getFieldKindLabel(opt, t)}</option>`
           ).join('')}
         </select>
         <label class="vault-checkbox-inline vault-custom-field-secured">
           <input type="checkbox" ${field.isSecured ? 'checked' : ''}>
-          <span>Secure</span>
+          <span>${t('vault.labels.secure')}</span>
         </label>
-        <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Delete" aria-label="Delete this field">
+        <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="${t('vault.common.delete')}" aria-label="${t('vault.aria.deleteField')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
