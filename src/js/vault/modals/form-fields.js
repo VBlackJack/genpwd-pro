@@ -7,16 +7,27 @@ import { escapeHtml } from '../utils/formatter.js';
 
 /**
  * Field type options for custom fields
+ * Uses labelKey for i18n support
  */
 export const FIELD_KIND_OPTIONS = [
-  { value: 'text', label: 'Texte' },
-  { value: 'hidden', label: 'Hidden' },
-  { value: 'password', label: 'Password' },
-  { value: 'url', label: 'URL' },
-  { value: 'email', label: 'Email' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'date', label: 'Date' }
+  { value: 'text', labelKey: 'vault.fieldKinds.text' },
+  { value: 'hidden', labelKey: 'vault.fieldKinds.hidden' },
+  { value: 'password', labelKey: 'vault.fieldKinds.password' },
+  { value: 'url', labelKey: 'vault.fieldKinds.url' },
+  { value: 'email', labelKey: 'vault.fieldKinds.email' },
+  { value: 'phone', labelKey: 'vault.fieldKinds.phone' },
+  { value: 'date', labelKey: 'vault.fieldKinds.date' }
 ];
+
+/**
+ * Get translated label for field kind
+ * @param {Object} option - Field kind option
+ * @param {Function} t - Translation function
+ * @returns {string} Translated label
+ */
+export function getFieldKindLabel(option, t) {
+  return t ? t(option.labelKey) || option.value : option.value;
+}
 
 /**
  * Render password input group with visibility toggle and generator
@@ -43,14 +54,14 @@ export function renderPasswordField(options = {}) {
       <div class="vault-input-group">
         <input type="password" class="vault-input" id="${id}"
                value="${escapeHtml(value)}" placeholder="${placeholder}" autocomplete="new-password">
-        <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="${id}" aria-label="Show">
+        <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="${id}" aria-label="${t('vault.aria.show')}"
           <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
             <circle cx="12" cy="12" r="3"></circle>
           </svg>
         </button>
         ${showGenerator ? `
-          <button type="button" class="vault-input-btn" id="${id}-generate" data-tooltip="Generate" aria-label="Generate password">
+          <button type="button" class="vault-input-btn" id="${id}-generate" data-tooltip="${t('vault.actions.generate')}" aria-label="${t('vault.aria.generatePassword')}"
             <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
             </svg>
@@ -79,23 +90,26 @@ export function renderExpiryPicker(options = {}) {
 
   const hasCustomDate = !!currentValue;
 
+  // Get translation function with fallback
+  const t = _t || ((k) => k);
+
   return `
     <div class="vault-form-group">
-      <label class="vault-label" for="${idPrefix}-expires">Password expiration</label>
+      <label class="vault-label" for="${idPrefix}-expires">${t('vault.labels.passwordExpiration')}</label>
       <div class="vault-expiry-picker">
         <select class="vault-input vault-select" id="${idPrefix}-expires-preset">
-          <option value="">Jamais</option>
-          <option value="30">30 days</option>
-          <option value="60">60 days</option>
-          <option value="90">90 days</option>
-          <option value="180">6 months</option>
-          <option value="365">1 an</option>
-          <option value="custom" ${hasCustomDate ? 'selected' : ''}>Custom date...</option>
+          <option value="">${t('vault.expiry.never')}</option>
+          <option value="30">${t('vault.expiry.30days')}</option>
+          <option value="60">${t('vault.expiry.60days')}</option>
+          <option value="90">${t('vault.expiry.90days')}</option>
+          <option value="180">${t('vault.expiry.6months')}</option>
+          <option value="365">${t('vault.expiry.1year')}</option>
+          <option value="custom" ${hasCustomDate ? 'selected' : ''}>${t('vault.expiry.custom')}</option>
         </select>
         <input type="date" class="vault-input" id="${idPrefix}-expires"
                value="${currentValue}" ${hasCustomDate ? '' : 'hidden'}>
       </div>
-      <span class="vault-field-hint">Visual reminder to renew the password</span>
+      <span class="vault-field-hint">${t('vault.hints.expiryReminder')}</span>
     </div>
   `;
 }
@@ -114,13 +128,13 @@ export function renderLoginFields(options = {}) {
 
   return `
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-username">Username / Email</label>
+      <label class="vault-label" for="${prefix}-username">${t('vault.labels.usernameEmail')}</label>
       ${isEdit ? `
         <input type="text" class="vault-input" id="${prefix}-username" value="${escapeHtml(data.username || '')}">
       ` : `
         <div class="input-with-action">
           <input type="text" class="vault-input" id="${prefix}-username" placeholder="${t('vault.form.userPlaceholder')}" autocomplete="username">
-          <button type="button" class="vault-btn-icon" id="btn-create-alias" title="Generate Email Alias (Hide-My-Email)">
+          <button type="button" class="vault-btn-icon" id="btn-create-alias" title="${t('vault.actions.generateAlias')}">
             <span class="icon">🕵️</span>
           </button>
         </div>
@@ -141,13 +155,13 @@ export function renderLoginFields(options = {}) {
       <div class="vault-field-message" id="${prefix}-url-message" role="alert" aria-live="polite"></div>
     </div>
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-totp">TOTP Key (2FA)</label>
+      <label class="vault-label" for="${prefix}-totp">${t('vault.labels.totpKey')}</label>
       <div class="vault-input-group">
         <input type="text" class="vault-input mono" id="${prefix}-totp"
                value="${escapeHtml(data.totp || '')}"
                placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
         ${isEdit ? `
-          <button type="button" class="vault-input-btn" id="${prefix}-scan-totp" data-tooltip="Scanner QR" aria-label="Scanner QR ou coller otpauth://">
+          <button type="button" class="vault-input-btn" id="${prefix}-scan-totp" data-tooltip="${t('vault.actions.scanQR')}" aria-label="${t('vault.aria.scanQROrPaste')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
@@ -157,7 +171,7 @@ export function renderLoginFields(options = {}) {
           </button>
         ` : ''}
       </div>
-      <span class="vault-field-hint">${isEdit ? 'Secret Base32 ou URI otpauth://' : 'Optionnel - Secret Base32 ou URI otpauth://'}</span>
+      <span class="vault-field-hint">${isEdit ? t('vault.hints.totpSecretEdit') : t('vault.hints.totpSecretAdd')}</span>
     </div>
     ${renderExpiryPicker({
       idPrefix: prefix,
@@ -186,7 +200,7 @@ export function renderNoteFields(options = {}) {
 
   return `
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-content">Content ${isEdit ? '' : '<span class="required">*</span>'}</label>
+      <label class="vault-label" for="${prefix}-content">${t('vault.labels.content')} ${isEdit ? '' : '<span class="required">*</span>'}</label>
       <textarea class="vault-input vault-textarea" id="${prefix}-content" rows="8"
                 placeholder="${isEdit ? '' : t('vault.form.secureNote')}"
                 ${isEdit ? '' : 'required'}>${escapeHtml(data.content || '')}</textarea>
@@ -208,20 +222,20 @@ export function renderCardFields(options = {}) {
 
   return `
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-holder">Holder</label>
+      <label class="vault-label" for="${prefix}-holder">${t('vault.labels.cardHolder')}</label>
       <input type="text" class="vault-input" id="${prefix}-holder"
              value="${escapeHtml(data.holder || '')}"
              placeholder="${isEdit ? '' : t('vault.placeholders.holderExample')}" autocomplete="cc-name">
     </div>
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-cardnumber">Card number</label>
+      <label class="vault-label" for="${prefix}-cardnumber">${t('vault.labels.cardNumber')}</label>
       <input type="text" class="vault-input" id="${prefix}-cardnumber"
              value="${escapeHtml(data.number || '')}"
              placeholder="${isEdit ? '' : t('vault.placeholders.cardNumberExample')}" autocomplete="cc-number">
     </div>
     <div class="vault-form-row">
       <div class="vault-form-group">
-        <label class="vault-label" for="${prefix}-expiry">Expiration</label>
+        <label class="vault-label" for="${prefix}-expiry">${t('vault.labels.expiration')}</label>
         <input type="text" class="vault-input" id="${prefix}-expiry"
                value="${escapeHtml(data.expiry || '')}"
                placeholder="${t('vault.placeholders.expiryFormat')}" autocomplete="cc-exp">
@@ -250,13 +264,13 @@ export function renderIdentityFields(options = {}) {
 
   return `
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-fullname">Full name</label>
+      <label class="vault-label" for="${prefix}-fullname">${t('vault.labels.fullName')}</label>
       <input type="text" class="vault-input" id="${prefix}-fullname"
              value="${escapeHtml(data.fullName || '')}"
              placeholder="${isEdit ? '' : t('vault.placeholders.fullNameExample')}" autocomplete="name">
     </div>
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-email">Email</label>
+      <label class="vault-label" for="${prefix}-email">${t('vault.labels.email')}</label>
       <input type="email" class="vault-input" id="${prefix}-email"
              value="${escapeHtml(data.email || '')}"
              placeholder="${isEdit ? '' : t('vault.placeholders.emailExample')}"
@@ -264,7 +278,7 @@ export function renderIdentityFields(options = {}) {
       <div class="vault-field-message" id="${prefix}-email-message" role="alert" aria-live="polite"></div>
     </div>
     <div class="vault-form-group">
-      <label class="vault-label" for="${prefix}-phone">Phone</label>
+      <label class="vault-label" for="${prefix}-phone">${t('vault.labels.phone')}</label>
       <input type="tel" class="vault-input" id="${prefix}-phone"
              value="${escapeHtml(data.phone || '')}"
              placeholder="${isEdit ? '' : t('vault.placeholders.phoneExample')}" autocomplete="tel">

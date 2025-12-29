@@ -24,12 +24,12 @@ export function renderAddFolderModal(options = {}) {
     <form class="vault-modal-body" id="add-folder-form">
       ${renderFormInput({
         id: 'folder-name',
-        label: 'Folder name',
+        label: t('vault.labels.folderName'),
         placeholder: t('vault.placeholders.folderExample'),
         required: true
       })}
       ${renderModalActions({
-        submitText: 'Create',
+        submitText: t('vault.common.create'),
         t
       })}
     </form>
@@ -56,13 +56,13 @@ export function renderAddTagModal(options = {}) {
     <form class="vault-modal-body" id="add-tag-form">
       ${renderFormInput({
         id: 'tag-name',
-        label: 'Tag name',
+        label: t('vault.labels.tagName'),
         placeholder: t('vault.placeholders.tagExample'),
         required: true,
         maxLength: 30
       })}
       <div class="vault-form-group">
-        <label class="vault-label">Color</label>
+        <label class="vault-label">${t('vault.labels.color')}</label>
         ${renderColorPicker({
           id: 'add-tag-colors',
           selectedColor: TAG_COLORS[0],
@@ -70,7 +70,7 @@ export function renderAddTagModal(options = {}) {
         })}
       </div>
       ${renderModalActions({
-        submitText: 'Create',
+        submitText: t('vault.common.create'),
         t
       })}
     </form>
@@ -78,7 +78,7 @@ export function renderAddTagModal(options = {}) {
 
   return renderModal({
     id: 'add-tag-modal',
-    title: 'New tag',
+    title: t('vault.dialogs.newTag'),
     content,
     t
   });
@@ -98,12 +98,12 @@ export function renderEditTagModal(options = {}) {
       <input type="hidden" id="edit-tag-id">
       ${renderFormInput({
         id: 'edit-tag-name',
-        label: 'Tag name',
+        label: t('vault.labels.tagName'),
         required: true,
         maxLength: 30
       })}
       <div class="vault-form-group">
-        <label class="vault-label">Color</label>
+        <label class="vault-label">${t('vault.labels.color')}</label>
         ${renderColorPicker({
           id: 'edit-tag-colors',
           inputId: 'edit-tag-color'
@@ -111,7 +111,7 @@ export function renderEditTagModal(options = {}) {
       </div>
       ${renderModalActions({
         showDelete: true,
-        deleteText: 'Delete',
+        deleteText: t('vault.common.delete'),
         t
       })}
     </form>
@@ -119,7 +119,7 @@ export function renderEditTagModal(options = {}) {
 
   return renderModal({
     id: 'edit-tag-modal',
-    title: 'Edit tag',
+    title: t('vault.dialogs.editTag'),
     content,
     t
   });
@@ -144,7 +144,7 @@ export function renderMoveFolderModal(options = {}) {
             <path d="M3 3h18v18H3z"></path>
             <line x1="9" y1="3" x2="9" y2="21"></line>
           </svg>
-          <span>No folder (root)</span>
+          <span>${t('vault.labels.noFolderRoot')}</span>
         </button>
         ${folders.map(f => `
           <button type="button" class="vault-folder-option ${f.id === currentFolderId ? 'selected' : ''}" data-folder-id="${f.id}">
@@ -185,11 +185,11 @@ export function renderBulkTagModal(options = {}) {
   const content = `
     <div class="vault-modal-body">
       <p class="vault-bulk-tag-info">
-        Select tags to apply to <strong>${entryCount}</strong> selected entries.
+        ${t('vault.messages.selectTagsForEntries').replace('{count}', `<strong>${entryCount}</strong>`)}
       </p>
       <div class="vault-bulk-tag-list" id="bulk-tag-list">
         ${tags.length === 0 ? `
-          <p class="vault-empty-tags">No tags available. Create tags first.</p>
+          <p class="vault-empty-tags">${t('vault.messages.noTagsCreate')}</p>
         ` : tags.map(tag => `
           <label class="vault-bulk-tag-item">
             <input type="checkbox" class="vault-checkbox" data-tag-id="${tag.id}"

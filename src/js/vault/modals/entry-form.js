@@ -57,7 +57,7 @@ export function renderTagPicker(options = {}) {
   const { tags = [], selectedTagIds = [] } = options;
 
   if (tags.length === 0) {
-    return `<div class="vault-tag-picker-empty">No tags available</div>`;
+    return `<div class="vault-tag-picker-empty">${options.t ? options.t('vault.messages.noTags') : 'No tags available'}</div>`;
   }
 
   return `
@@ -91,7 +91,7 @@ export function renderFolderSelector(options = {}) {
     <div class="vault-form-group">
       <label class="vault-label" for="${id}">${t('vault.labels.folder')}</label>
       <select class="vault-input vault-select" id="${id}">
-        <option value="">No folder</option>
+        <option value="">${t('vault.labels.noFolder')}</option>
         ${folders.map(f => `
           <option value="${f.id}" ${f.id === selectedFolderId ? 'selected' : ''}>
             ${escapeHtml(f.name)}
@@ -154,7 +154,7 @@ export function renderAddEntryModal(options = {}) {
                 <rect x="14" y="14" width="7" height="7"></rect>
                 <rect x="3" y="14" width="7" height="7"></rect>
               </svg>
-              Utiliser un template
+              ${t('vault.labels.useTemplate')}
               <svg class="vault-template-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -170,7 +170,7 @@ export function renderAddEntryModal(options = {}) {
           ${renderTypeSelector({ entryTypes, selectedType: 'login' })}
 
           <div class="vault-form-group">
-            <label class="vault-label" for="entry-title">Titre <span class="required" aria-label="obligatoire">*</span></label>
+            <label class="vault-label" for="entry-title">${t('vault.labels.title')} <span class="required" aria-label="${t('vault.aria.required')}">*</span></label>
             <input type="text" class="vault-input" id="entry-title"
                    placeholder="${t('vault.placeholders.entryTitleExample')}"
                    required aria-required="true" aria-describedby="entry-title-message" aria-invalid="false">
@@ -180,7 +180,7 @@ export function renderAddEntryModal(options = {}) {
           ${renderFolderSelector({ folders, id: 'entry-folder', t })}
 
           <div class="vault-form-group">
-            <label class="vault-label">Tags</label>
+            <label class="vault-label">${t('vault.labels.tags')}</label>
             ${renderTagPicker({ tags, selectedTagIds: [] })}
           </div>
 
@@ -237,7 +237,7 @@ export function renderEditEntryContent(options = {}) {
 
   const titleField = `
     <div class="vault-form-group">
-      <label class="vault-label" for="edit-title">Titre <span class="required">*</span></label>
+      <label class="vault-label" for="edit-title">${t('vault.labels.title')} <span class="required">*</span></label>
       <input type="text" class="vault-input" id="edit-title"
              value="${escapeHtml(entry.title)}"
              required aria-required="true" aria-invalid="false">
