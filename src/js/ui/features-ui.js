@@ -2139,20 +2139,20 @@ function showPluginManagerModal() {
         <div class="plugin-stats plugin-stats-grid">
           <div class="plugin-stat-item total">
             <div class="stat-value">${stats.totalPlugins}</div>
-            <div class="stat-label">Total Plugins</div>
+            <div class="stat-label">${i18n.t('plugins.stats.totalPlugins')}</div>
           </div>
           <div class="plugin-stat-item enabled">
             <div class="stat-value">${stats.enabledPlugins}</div>
-            <div class="stat-label">Enabled</div>
+            <div class="stat-label">${i18n.t('plugins.stats.enabled')}</div>
           </div>
           <div class="plugin-stat-item hooks">
             <div class="stat-value">${stats.totalHooks}</div>
-            <div class="stat-label">Active Hooks</div>
+            <div class="stat-label">${i18n.t('plugins.stats.activeHooks')}</div>
           </div>
         </div>
 
         <div class="plugins-list">
-          ${plugins.length === 0 ? '<p class="empty-state empty-state-msg">No plugins installed. Click "Load Demo Plugins" to get started!</p>' :
+          ${plugins.length === 0 ? `<p class="empty-state empty-state-msg">${i18n.t('plugins.emptyState')}</p>` :
             plugins.map(plugin => `
               <div class="plugin-item plugin-card ${plugin.enabled ? 'enabled' : 'disabled'}" data-plugin-name="${plugin.name}">
                 <div class="plugin-header">
@@ -2199,7 +2199,7 @@ function showPluginManagerModal() {
       <div class="modal-footer">
         <button class="btn" id="btn-install-plugin-file">📁 Install from File</button>
         <button class="btn btn-red" id="btn-clear-all-plugins">🗑️ Clear All</button>
-        <button class="btn" id="close-plugins-modal-footer">Close</button>
+        <button class="btn" id="close-plugins-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2364,9 +2364,9 @@ function showPluginSettingsModal(pluginName) {
   } else {
     container.innerHTML = sanitizeHTML(`
       <div class="p-20 text-center text-secondary">
-        <p>This plugin does not have configurable settings.</p>
+        <p>${i18n.t('plugins.noSettings')}</p>
         <div class="format-info-box mt-20 text-left">
-          <strong>Plugin Configuration:</strong>
+          <strong>${i18n.t('plugins.configTitle')}</strong>
           <pre class="config-pre">${JSON.stringify(plugin.config || {}, null, 2)}</pre>
         </div>
       </div>
@@ -2940,11 +2940,11 @@ function renderHIBPResults(results, container) {
     <div class="hibp-summary">
       <div class="summary-stat ${safeCount > 0 ? 'safe' : ''}">
         <div class="stat-value">${safeCount}</div>
-        <div class="stat-label">Safe</div>
+        <div class="stat-label">${i18n.t('breach.stats.safe')}</div>
       </div>
       <div class="summary-stat ${pwnedCount > 0 ? 'danger' : ''}">
         <div class="stat-value">${pwnedCount}</div>
-        <div class="stat-label">Breached</div>
+        <div class="stat-label">${i18n.t('breach.stats.breached')}</div>
       </div>
     </div>
   `;
@@ -2964,7 +2964,7 @@ function renderHIBPResults(results, container) {
             <code>${escapeHtml(result.password.substring(0, 20))}${result.password.length > 20 ? '...' : ''}</code>
           </div>
           <div class="hibp-badge" data-hibp-color="${color}">
-            ${result.isPwned ? `${result.count.toLocaleString()} breaches` : 'Safe'}
+            ${result.isPwned ? i18n.t('breach.breachesCount', { count: result.count.toLocaleString() }) : i18n.t('breach.stats.safe')}
           </div>
         </div>
         <div class="hibp-result-message">

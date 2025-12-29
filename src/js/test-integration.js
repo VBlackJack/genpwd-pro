@@ -18,6 +18,7 @@
 /* global GenPwdTestSuite */
 
 import { sanitizeHTML } from './utils/dom-sanitizer.js';
+import { t } from './utils/i18n.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof GenPwdTestSuite === 'undefined') {
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
       runTestsBtn.disabled = true;
       const originalText = runTestsBtn.textContent;
       runTestsBtn.textContent = '⏳ Tests...';
-      testStatus.textContent = 'Running...';
+      testStatus.textContent = t('tests.running');
       testStatus.className = 'test-status-running';
 
       try {
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
         testStatus.className = score === 100 ? 'test-status-success' : score >= 80 ? 'test-status-warning' : 'test-status-error';
 
       } catch (error) {
-        testStatus.textContent = 'Error';
+        testStatus.textContent = t('tests.error');
         testStatus.className = 'test-status-error';
         console.error('Test error:', error);
       } finally {

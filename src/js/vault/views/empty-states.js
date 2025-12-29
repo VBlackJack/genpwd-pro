@@ -4,6 +4,7 @@
  */
 
 import { escapeHtml } from '../utils/formatter.js';
+import { i18n } from '../../utils/i18n.js';
 
 /**
  * Render empty state for search results or welcome screen
@@ -115,7 +116,7 @@ export function renderNoSelection({ t = (k) => k } = {}) {
  */
 export function renderEntrySkeleton(count = 5) {
   return `
-    <div class="vault-skeleton-list" aria-hidden="true" role="status" aria-label="Loading entries">
+    <div class="vault-skeleton-list" aria-hidden="true" role="status" aria-label="${i18n.t('vault.aria.loadingEntries')}">
       ${Array(count).fill('').map(() => `
         <div class="vault-skeleton-entry">
           <div class="vault-skeleton vault-skeleton-icon"></div>
@@ -135,7 +136,7 @@ export function renderEntrySkeleton(count = 5) {
  */
 export function renderDetailSkeleton() {
   return `
-    <div class="vault-skeleton-detail" aria-hidden="true" role="status" aria-label="Loading details">
+    <div class="vault-skeleton-detail" aria-hidden="true" role="status" aria-label="${i18n.t('vault.aria.loadingDetails')}">
       <div class="vault-skeleton-detail-header">
         <div class="vault-skeleton vault-skeleton-icon-lg"></div>
         <div class="vault-skeleton-info">

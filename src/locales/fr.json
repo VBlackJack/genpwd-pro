@@ -117,6 +117,7 @@
     "wordSeparator": "Séparateur de mots"
   },
   "breach": {
+    "breachesCount": "__TRANSLATE__ {count} breaches",
     "checkButton": "Vérifier les fuites",
     "checkResults": "Résultats de vérification",
     "checking": "Vérification des fuites de données...",
@@ -136,7 +137,11 @@
     "privacyDescription": "Cette vérification utilise le <strong>k-anonymat</strong> pour préserver votre vie privée. Seuls les 5 premiers caractères du hash du mot de passe sont envoyés à l'API HIBP. Votre mot de passe ne quitte jamais votre appareil.",
     "privacyTitle": "🛡️ Vérification préservant la confidentialité",
     "pwnedWarning": "⚠️ {count} mot(s) de passe trouvé(s) dans les fuites",
-    "safeMessage": "✅ Tous les {count} mot(s) de passe sont sûrs"
+    "safeMessage": "✅ Tous les {count} mot(s) de passe sont sûrs",
+    "stats": {
+      "breached": "__TRANSLATE__ Breached",
+      "safe": "__TRANSLATE__ Safe"
+    }
   },
   "case": {
     "blocks": "Blocs (M/T/m)",
@@ -154,6 +159,7 @@
   "common": {
     "about": "À propos",
     "analyzing": "Analyse...",
+    "apply": "__TRANSLATE__ Apply",
     "cancel": "Annuler",
     "checking": "Vérification...",
     "clear": "Effacer",
@@ -219,6 +225,15 @@
   },
   "debug": {
     "waitingInit": "[--:--:--] En attente de l'initialisation..."
+  },
+  "desktop": {
+    "dialogs": {
+      "createVaultTitle": "__TRANSLATE__ Create vault at...",
+      "helloEnablePrompt": "__TRANSLATE__ GenPwd Pro - Enable Windows Hello",
+      "helloUnlockPrompt": "__TRANSLATE__ GenPwd Pro - Unlock Vault",
+      "openVaultTitle": "__TRANSLATE__ Open vault...",
+      "vaultFileFilter": "__TRANSLATE__ GenPwd Vault"
+    }
   },
   "dictionaries": {
     "english": "🇬🇧 Anglais",
@@ -425,6 +440,9 @@
     "vaultTab": "Coffre",
     "vaultUnlocked": "Déverrouillé"
   },
+  "health": {
+    "checkingProgress": "__TRANSLATE__ Checking {checked}/{total}..."
+  },
   "help": {
     "builtInTests": "Tests intégrés",
     "builtInTestsContent": "Utilisez le bouton \"Tests\" pour valider les fonctionnalités (score 100% attendu). Console disponible :",
@@ -458,6 +476,25 @@
     "modalTitle": "📜 Historique des mots de passe",
     "search": "Rechercher",
     "searchPlaceholder": "Rechercher...",
+    "securityWarning": {
+      "accessWarning": "__TRANSLATE__ Anyone with access to your computer can see them",
+      "cancelDisable": "__TRANSLATE__ Cancel and Disable",
+      "clearRegularly": "__TRANSLATE__ Clear history regularly",
+      "extensionRisk": "__TRANSLATE__ Malicious extensions could access them",
+      "futureNote": "__TRANSLATE__ Note: A future version may include history encryption with a master key.",
+      "important": "__TRANSLATE__ Important:",
+      "noCritical": "__TRANSLATE__ Don't store passwords for critical accounts",
+      "noSync": "__TRANSLATE__ Passwords are not synced between devices",
+      "plainText": "__TRANSLATE__ Passwords are stored in plain text on your device",
+      "recommendationsTitle": "__TRANSLATE__ Recommendations",
+      "secureDevice": "__TRANSLATE__ Only enable this feature on a secure personal device",
+      "storageWarning": "__TRANSLATE__ Password history is stored in your browser's localStorage without encryption.",
+      "thisMeans": "__TRANSLATE__ This means:",
+      "title": "__TRANSLATE__ Security Warning",
+      "understand": "__TRANSLATE__ I Understand",
+      "unencryptedTitle": "__TRANSLATE__ Unencrypted Storage",
+      "useManager": "__TRANSLATE__ Use a dedicated password manager for long-term storage"
+    },
     "stats": {
       "avgEntropy": "Entropie Moy.",
       "favorites": "Favoris",
@@ -593,6 +630,14 @@
   },
   "plugins": {
     "clearAllTitle": "__TRANSLATE__ Clear All Plugins",
+    "configTitle": "__TRANSLATE__ Plugin Configuration:",
+    "emptyState": "__TRANSLATE__ No plugins installed. Click \"Load Demo Plugins\" to get started!",
+    "noSettings": "__TRANSLATE__ This plugin does not have configurable settings.",
+    "stats": {
+      "activeHooks": "__TRANSLATE__ Active Hooks",
+      "enabled": "__TRANSLATE__ Enabled",
+      "totalPlugins": "__TRANSLATE__ Total Plugins"
+    },
     "uninstallTitle": "__TRANSLATE__ Uninstall Plugin"
   },
   "policy": {
@@ -686,6 +731,12 @@
       "vaultPresets": "Préréglages du coffre"
     }
   },
+  "pwa": {
+    "install": "__TRANSLATE__ Install",
+    "installSubtitle": "__TRANSLATE__ Add to home screen for offline access",
+    "installTitle": "__TRANSLATE__ Install GenPwd Pro",
+    "notNow": "__TRANSLATE__ Not now"
+  },
   "results": {
     "allCopied": "Tous les mots de passe copiés !",
     "clickToCopyHint": "Cliquer pour copier • Double-clic pour afficher/masquer",
@@ -726,6 +777,20 @@
     "length": "Longueur",
     "lengthRange": "Longueur (6–64)",
     "maskDisplay": "Masquer l'affichage",
+    "native": {
+      "clipboardAutoClear": "__TRANSLATE__ Automatic clipboard clearing",
+      "clipboardDelay": "__TRANSLATE__ Delay:",
+      "minimizeToTray": "__TRANSLATE__ Minimize to system tray",
+      "minimizeToTrayDesc": "__TRANSLATE__ Application stays active in background",
+      "minute1": "__TRANSLATE__ 1 minute",
+      "minutes2": "__TRANSLATE__ 2 minutes",
+      "quickUnlock": "__TRANSLATE__ Quick unlock (Windows Hello)",
+      "quickUnlockDesc": "__TRANSLATE__ Uses biometrics to unlock vault faster",
+      "quickUnlockWarning": "__TRANSLATE__ Security tradeoff: Stores encrypted password locally for convenience",
+      "seconds15": "__TRANSLATE__ 15 seconds",
+      "seconds30": "__TRANSLATE__ 30 seconds",
+      "title": "__TRANSLATE__ System Integration"
+    },
     "placementDigits": "Placement chiffres",
     "placementSpecials": "Placement spéciaux",
     "policy": "Politique",
@@ -811,6 +876,14 @@
     "title": "Partage sécurisé (GenPwd Send)",
     "warningText": "Ce lien donne accès au secret. Ne le partagez qu'avec le destinataire prévu."
   },
+  "sync": {
+    "status": {
+      "syncError": "__TRANSLATE__ Sync error",
+      "synced": "__TRANSLATE__ Synced",
+      "uploadError": "__TRANSLATE__ Upload error",
+      "uploading": "__TRANSLATE__ Uploading to cloud..."
+    }
+  },
   "syncModal": {
     "chooseProvider": "Choisissez où synchroniser votre coffre",
     "cloudProvider": "Fournisseur cloud",
@@ -838,6 +911,10 @@
     "exportJson": "Exporter les résultats en JSON",
     "rerunTests": "Relancer tous les tests",
     "title": "📊 Résultats des Tests - GenPwd Pro v{version}"
+  },
+  "tests": {
+    "error": "__TRANSLATE__ Error",
+    "running": "__TRANSLATE__ Running..."
   },
   "toast": {
     "allPluginsCleared": "Tous les plugins supprimés",
@@ -1062,9 +1139,13 @@
       "requiresApp": "__TRANSLATE__ Automatic auto-fill requires the Electron application."
     },
     "bulk": {
+      "checkHint": "__TRANSLATE__ Check to add, uncheck to remove",
       "deleteSelection": "Supprimer la sélection",
+      "entries": "__TRANSLATE__ entries",
+      "entry": "__TRANSLATE__ entry",
       "exportSelection": "Exporter la sélection",
       "manageTags": "Gérer les étiquettes",
+      "manageTagsCount": "__TRANSLATE__ Manage tags ({count} {entries})",
       "moveToFolder": "Déplacer vers un dossier",
       "selected": "{count} sélectionné(s)"
     },
@@ -1399,6 +1480,7 @@
       "dragOrBrowse": "Glissez un fichier ici ou {browse}",
       "entries": "Entrées",
       "fields": "Champs",
+      "folders": "__TRANSLATE__ Folders",
       "formatsHint": "Formats : XML, JSON, CSV",
       "includeFolders": "Importer les dossiers/groupes",
       "kb": "Ko",
@@ -1532,6 +1614,8 @@
       "noResults": "Aucun résultat",
       "noTags": "Aucune étiquette disponible",
       "noTagsCreate": "Aucune étiquette disponible. Créez d'abord des étiquettes.",
+      "noTagsSidebar": "__TRANSLATE__ No tags available. Create a tag from the sidebar.",
+      "noVaultFound": "__TRANSLATE__ No vault found. Create one to get started.",
       "normalMode": "Mode normal",
       "notKeePassFile": "Ce fichier n'est pas un export KeePass XML",
       "oldPasswordCopied": "Ancien mot de passe copié",
@@ -1564,13 +1648,16 @@
       "unpinned": "Désépinglé",
       "updateError": "Erreur de mise à jour",
       "usernameCopied": "Identifiant copié",
+      "vaultApiNotAvailable": "__TRANSLATE__ The vault API is not available in this context.",
       "vaultCreatedAt": "Coffre créé à l'emplacement {path}",
       "vaultCreatedSuccess": "Coffre créé avec succès",
       "vaultCreatedWithHello": "Coffre créé avec Windows Hello activé",
       "vaultCreatedWithoutHello": "Coffre créé (Windows Hello non activé)",
       "vaultForgotten": "Coffre retiré de la liste",
       "vaultLocked": "Coffre verrouillé",
+      "vaultNotAvailable": "__TRANSLATE__ Vault not available",
       "vaultOpenedSuccess": "Coffre ouvert avec succès",
+      "vaultRequiresElectron": "__TRANSLATE__ The vault requires the Electron application to work.",
       "vaultSaved": "Coffre sauvegardé : {fileName}"
     },
     "misc": {
@@ -1782,5 +1869,8 @@
       "verificationFailed": "Vérification Windows Hello échouée",
       "verificationRequired": "__TRANSLATE__ Verification required"
     }
+  },
+  "windowsHello": {
+    "verificationRequired": "__TRANSLATE__ GenPwd Pro - Verification required"
   }
 }

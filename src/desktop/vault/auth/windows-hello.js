@@ -166,17 +166,20 @@ export class WindowsHelloAuth {
    * @param {string} reason - Message to display in the prompt
    * @returns {Promise<boolean>} - True if verification succeeded
    */
-  static async requestVerification(reason = 'GenPwd Pro - Vérification requise') {
+  static async requestVerification(reason = null) {
     if (!this.isWindows()) {
       throw new Error(t('errors.windowsHello.windowsOnly'));
     }
 
+    // Use translated default if no reason provided
+    const defaultReason = t('windowsHello.verificationRequired');
+
     try {
       // Sanitize reason: remove any characters that could cause issues
       // Use a safe default message to prevent any injection attacks
-      const safeReason = reason
+      const safeReason = (reason || defaultReason)
         .replace(/[`$"'\\\r\n]/g, '') // Remove dangerous chars
-        .substring(0, 100) || 'GenPwd Pro - Verification'; // Limit length
+        .substring(0, 100) || defaultReason; // Limit length
 
       // Pass reason as Base64-encoded parameter to avoid injection
       const reasonBase64 = Buffer.from(safeReason, 'utf8').toString('base64');

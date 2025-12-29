@@ -57,7 +57,8 @@
     "checking": "Checking...",
     "skipToMain": "Skip to main content",
     "confirm": "Confirm",
-    "confirmation": "Confirmation"
+    "confirmation": "Confirmation",
+    "apply": "Apply"
   },
   "header": {
     "generatorTab": "Generator",
@@ -128,7 +129,21 @@
     "maskDisplay": "Hide display",
     "blurPasswords": "Blur passwords",
     "language": "Language",
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "native": {
+      "title": "System Integration",
+      "minimizeToTray": "Minimize to system tray",
+      "minimizeToTrayDesc": "Application stays active in background",
+      "clipboardAutoClear": "Automatic clipboard clearing",
+      "clipboardDelay": "Delay:",
+      "seconds15": "15 seconds",
+      "seconds30": "30 seconds",
+      "minute1": "1 minute",
+      "minutes2": "2 minutes",
+      "quickUnlock": "Quick unlock (Windows Hello)",
+      "quickUnlockDesc": "Uses biometrics to unlock vault faster",
+      "quickUnlockWarning": "Security tradeoff: Stores encrypted password locally for convenience"
+    }
   },
   "policy": {
     "standard": "Standard (all characters)",
@@ -442,7 +457,11 @@
       "moveToFolder": "Move to folder",
       "exportSelection": "Export selection",
       "manageTags": "Manage tags",
-      "deleteSelection": "Delete selection"
+      "manageTagsCount": "Manage tags ({count} {entries})",
+      "checkHint": "Check to add, uncheck to remove",
+      "deleteSelection": "Delete selection",
+      "entry": "entry",
+      "entries": "entries"
     },
     "attachments": {
       "none": "No attachments",
@@ -592,6 +611,11 @@
       "fileNotFound": "File not found",
       "noTags": "No tags available",
       "noTagsCreate": "No tags available. Create tags first.",
+      "noTagsSidebar": "No tags available. Create a tag from the sidebar.",
+      "noVaultFound": "No vault found. Create one to get started.",
+      "vaultNotAvailable": "Vault not available",
+      "vaultApiNotAvailable": "The vault API is not available in this context.",
+      "vaultRequiresElectron": "The vault requires the Electron application to work.",
       "selectTagsForEntries": "Select tags to apply to {count} selected entries.",
       "forgetVault": "Forget this vault",
       "invalidXmlFormat": "Invalid XML format",
@@ -1111,6 +1135,7 @@
       "supportedFormats": "Supported formats",
       "formatsHint": "Formats: XML, JSON, CSV",
       "entries": "Entries",
+      "folders": "Folders",
       "fields": "Fields",
       "kb": "KB",
       "dragOrBrowse": "Drag a file here or {browse}",
@@ -1414,7 +1439,26 @@
       "entropy": "Entropy"
     },
     "export": "📤 Export",
-    "clearAll": "🗑️ Clear All"
+    "clearAll": "🗑️ Clear All",
+    "securityWarning": {
+      "title": "Security Warning",
+      "unencryptedTitle": "Unencrypted Storage",
+      "important": "Important:",
+      "storageWarning": "Password history is stored in your browser's localStorage without encryption.",
+      "thisMeans": "This means:",
+      "plainText": "Passwords are stored in plain text on your device",
+      "accessWarning": "Anyone with access to your computer can see them",
+      "extensionRisk": "Malicious extensions could access them",
+      "noSync": "Passwords are not synced between devices",
+      "recommendationsTitle": "Recommendations",
+      "secureDevice": "Only enable this feature on a secure personal device",
+      "clearRegularly": "Clear history regularly",
+      "noCritical": "Don't store passwords for critical accounts",
+      "useManager": "Use a dedicated password manager for long-term storage",
+      "futureNote": "Note: A future version may include history encryption with a master key.",
+      "understand": "I Understand",
+      "cancelDisable": "Cancel and Disable"
+    }
   },
   "presets": {
     "title": "Presets",
@@ -1548,6 +1592,11 @@
     "checkButton": "Check for breaches",
     "checkResults": "Check results",
     "modalTitle": "🔍 HIBP Breach Check",
+    "stats": {
+      "safe": "Safe",
+      "breached": "Breached"
+    },
+    "breachesCount": "{count} breaches",
     "privacyTitle": "🛡️ Privacy-Preserving Check",
     "privacyDescription": "This check uses <strong>k-anonymity</strong> to preserve your privacy. Only the first 5 characters of the password hash are sent to the HIBP API. Your actual password never leaves your device.",
     "checkingStatus": "Checking {count} password(s) against breach database...",
@@ -1573,7 +1622,21 @@
   },
   "plugins": {
     "uninstallTitle": "Uninstall Plugin",
-    "clearAllTitle": "Clear All Plugins"
+    "clearAllTitle": "Clear All Plugins",
+    "stats": {
+      "totalPlugins": "Total Plugins",
+      "enabled": "Enabled",
+      "activeHooks": "Active Hooks"
+    },
+    "emptyState": "No plugins installed. Click \"Load Demo Plugins\" to get started!",
+    "noSettings": "This plugin does not have configurable settings.",
+    "configTitle": "Plugin Configuration:"
+  },
+  "pwa": {
+    "installTitle": "Install GenPwd Pro",
+    "installSubtitle": "Add to home screen for offline access",
+    "install": "Install",
+    "notNow": "Not now"
   },
   "onboarding": {
     "buttons": {
@@ -1786,5 +1849,32 @@
   },
   "links": {
     "github": "https://github.com/VBlackJack/genpwd-pro"
+  },
+  "tests": {
+    "running": "Running...",
+    "error": "Error"
+  },
+  "sync": {
+    "status": {
+      "uploading": "Uploading to cloud...",
+      "synced": "Synced",
+      "syncError": "Sync error",
+      "uploadError": "Upload error"
+    }
+  },
+  "health": {
+    "checkingProgress": "Checking {checked}/{total}..."
+  },
+  "windowsHello": {
+    "verificationRequired": "GenPwd Pro - Verification required"
+  },
+  "desktop": {
+    "dialogs": {
+      "createVaultTitle": "Create vault at...",
+      "openVaultTitle": "Open vault...",
+      "vaultFileFilter": "GenPwd Vault",
+      "helloEnablePrompt": "GenPwd Pro - Enable Windows Hello",
+      "helloUnlockPrompt": "GenPwd Pro - Unlock Vault"
+    }
   }
 }

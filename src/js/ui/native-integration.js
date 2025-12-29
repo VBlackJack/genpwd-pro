@@ -441,33 +441,34 @@ function initTrayRestoreBehavior(signal) {
  */
 export function createNativeSettingsUI() {
   const settings = getSettings();
+  const t = (key) => i18n.t(key);
 
   return `
     <div class="settings-section native-settings">
-      <h3>System Integration</h3>
+      <h3>${t('settings.native.title')}</h3>
 
       <div class="setting-item">
         <label class="toggle-label">
           <input type="checkbox" id="setting-minimize-tray"
                  ${settings.minimizeToTray ? 'checked' : ''}>
-          <span>Minimize to system tray</span>
+          <span>${t('settings.native.minimizeToTray')}</span>
         </label>
-        <p class="setting-description">Application stays active in background</p>
+        <p class="setting-description">${t('settings.native.minimizeToTrayDesc')}</p>
       </div>
 
       <div class="setting-item">
         <label class="toggle-label">
           <input type="checkbox" id="setting-clipboard-autoclear"
                  ${settings.clipboardAutoClear ? 'checked' : ''}>
-          <span>Automatic clipboard clearing</span>
+          <span>${t('settings.native.clipboardAutoClear')}</span>
         </label>
         <div class="setting-sub">
-          <label>Delay:
+          <label>${t('settings.native.clipboardDelay')}
             <select id="setting-clipboard-ttl">
-              <option value="15000" ${settings.clipboardTTL === 15000 ? 'selected' : ''}>15 seconds</option>
-              <option value="30000" ${settings.clipboardTTL === 30000 ? 'selected' : ''}>30 seconds</option>
-              <option value="60000" ${settings.clipboardTTL === 60000 ? 'selected' : ''}>1 minute</option>
-              <option value="120000" ${settings.clipboardTTL === 120000 ? 'selected' : ''}>2 minutes</option>
+              <option value="15000" ${settings.clipboardTTL === 15000 ? 'selected' : ''}>${t('settings.native.seconds15')}</option>
+              <option value="30000" ${settings.clipboardTTL === 30000 ? 'selected' : ''}>${t('settings.native.seconds30')}</option>
+              <option value="60000" ${settings.clipboardTTL === 60000 ? 'selected' : ''}>${t('settings.native.minute1')}</option>
+              <option value="120000" ${settings.clipboardTTL === 120000 ? 'selected' : ''}>${t('settings.native.minutes2')}</option>
             </select>
           </label>
         </div>
@@ -477,11 +478,11 @@ export function createNativeSettingsUI() {
         <label class="toggle-label">
           <input type="checkbox" id="setting-quick-unlock"
                  ${settings.quickUnlockEnabled ? 'checked' : ''}>
-          <span>Quick unlock (Windows Hello)</span>
+          <span>${t('settings.native.quickUnlock')}</span>
         </label>
-        <p class="setting-description">Uses biometrics to unlock vault faster</p>
+        <p class="setting-description">${t('settings.native.quickUnlockDesc')}</p>
         <p class="setting-warning" style="color: var(--warning-color, #f59e0b); font-size: 0.8em; margin-top: 4px;">
-          ⚠️ Security tradeoff: Stores encrypted password locally for convenience
+          ⚠️ ${t('settings.native.quickUnlockWarning')}
         </p>
       </div>
     </div>

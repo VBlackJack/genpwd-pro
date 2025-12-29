@@ -524,10 +524,10 @@ export function registerVaultIPC(ipcMain) {
     }
 
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'Create vault at...',
+      title: t('desktop.dialogs.createVaultTitle'),
       defaultPath: defaultName || 'MyVault.gpd',
       filters: [
-        { name: 'GenPwd Vault', extensions: ['gpd'] }
+        { name: t('desktop.dialogs.vaultFileFilter'), extensions: ['gpd'] }
       ],
       properties: ['createDirectory', 'showOverwriteConfirmation']
     });
@@ -544,9 +544,9 @@ export function registerVaultIPC(ipcMain) {
    */
   ipcMain.handle('vault:showOpenDialog', safeHandler(async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Open vault...',
+      title: t('desktop.dialogs.openVaultTitle'),
       filters: [
-        { name: 'GenPwd Vault', extensions: ['gpd'] }
+        { name: t('desktop.dialogs.vaultFileFilter'), extensions: ['gpd'] }
       ],
       properties: ['openFile']
     });
@@ -948,7 +948,7 @@ export function registerVaultIPC(ipcMain) {
 
       // Request Windows Hello verification
       const verified = await WindowsHelloAuth.requestVerification(
-        'GenPwd Pro - Enable Windows Hello'
+        t('desktop.dialogs.helloEnablePrompt')
       );
       if (!verified) {
         throw new Error(t('errors.windowsHello.verificationFailed'));
@@ -1027,7 +1027,7 @@ export function registerVaultIPC(ipcMain) {
 
       // Request Windows Hello verification
       const verified = await WindowsHelloAuth.requestVerification(
-        'GenPwd Pro - Unlock Vault'
+        t('desktop.dialogs.helloUnlockPrompt')
       );
       if (!verified) {
         throw new Error(t('errors.windowsHello.verificationCancelled'));

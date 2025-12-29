@@ -506,7 +506,7 @@ export class VaultUI {
       if (vaults.length === 0) {
         container.innerHTML = `
           <div class="vault-empty-small">
-            <p>No vault found. Create one to get started.</p>
+            <p>${t('vault.messages.noVaultFound')}</p>
           </div>
         `;
         return;
@@ -1925,20 +1925,20 @@ export class VaultUI {
         <div class="vault-import-stats">
           <div class="vault-import-stat">
             <span class="vault-import-stat-value">${result.stats.importedEntries}</span>
-            <span class="vault-import-stat-label">Entries</span>
+            <span class="vault-import-stat-label">${t('vault.import.entries')}</span>
           </div>
           <div class="vault-import-stat">
             <span class="vault-import-stat-value">${result.stats.importedGroups}</span>
-            <span class="vault-import-stat-label">Folders</span>
+            <span class="vault-import-stat-label">${t('vault.import.folders')}</span>
           </div>
           <div class="vault-import-stat">
             <span class="vault-import-stat-value">${result.stats.customFieldsCount}</span>
-            <span class="vault-import-stat-label">Fields</span>
+            <span class="vault-import-stat-label">${t('vault.import.fields')}</span>
           </div>
         </div>
         <div class="vault-import-file-info">
           <span class="vault-import-filename">${escapeHtml(file.name)}</span>
-          <span class="vault-import-filesize">${(file.size / 1024).toFixed(1)} Ko</span>
+          <span class="vault-import-filesize">${(file.size / 1024).toFixed(1)} ${t('vault.import.kb')}</span>
         </div>
       `;
 
@@ -2142,7 +2142,7 @@ export class VaultUI {
     modal.innerHTML = `
       <div class="vault-modal">
         <div class="vault-modal-header">
-          <h3>Manage tags (${count} entr${count > 1 ? 'ies' : 'y'})</h3>
+          <h3>${t('vault.bulk.manageTagsCount', { count, entries: count > 1 ? t('vault.bulk.entries') : t('vault.bulk.entry') })}</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -2152,9 +2152,9 @@ export class VaultUI {
         </div>
         <div class="vault-modal-body">
           ${this.#tags.length === 0 ? `
-            <p class="vault-modal-empty">No tags available. Create a tag from the sidebar.</p>
+            <p class="vault-modal-empty">${t('vault.messages.noTagsSidebar')}</p>
           ` : `
-            <p class="vault-modal-hint">Check to add, uncheck to remove</p>
+            <p class="vault-modal-hint">${t('vault.bulk.checkHint')}</p>
             <div class="vault-bulk-tag-list">
               ${tagStates.map(tag => `
                 <label class="vault-bulk-tag-item">
@@ -2172,7 +2172,7 @@ export class VaultUI {
           `}
           <div class="vault-modal-actions">
             <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
-            <button type="button" class="vault-btn vault-btn-primary" id="bulk-tag-apply" ${this.#tags.length === 0 ? 'disabled' : ''}>Appliquer</button>
+            <button type="button" class="vault-btn vault-btn-primary" id="bulk-tag-apply" ${this.#tags.length === 0 ? 'disabled' : ''}>${t('common.apply')}</button>
           </div>
         </div>
       </div>
@@ -2398,7 +2398,7 @@ export class VaultUI {
     const compromised = await checkAllBreaches(this.#entries, this.#breachCache, {
       onProgress: (checked, total) => {
         if (!silent && loadingDiv) {
-          loadingDiv.innerHTML = `<span class="vault-spinner-small"></span> Checking ${checked}/${total}...`;
+          loadingDiv.innerHTML = `<span class="vault-spinner-small"></span> ${t('health.checkingProgress', { checked, total })}`;
         }
       },
       delay: 100
@@ -4298,13 +4298,13 @@ export class VaultUI {
 
     let fieldsHtml = `
       <div class="vault-form-group">
-        <label class="vault-label" for="edit-title">Titre <span class="required">*</span></label>
+        <label class="vault-label" for="edit-title">${t('vault.labels.title')} <span class="required">*</span></label>
         <input type="text" class="vault-input" id="edit-title" value="${escapeHtml(entry.title)}" required aria-required="true" aria-invalid="false">
       </div>
       <div class="vault-form-group">
         <label class="vault-label" for="edit-folder">${t('vault.labels.folder')}</label>
         <select class="vault-input vault-select" id="edit-folder">
-          <option value="">No folder</option>
+          <option value="">${t('vault.labels.noFolder')}</option>
           ${this.#folders.map(f => `<option value="${f.id}" ${entry.folderId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
         </select>
       </div>
@@ -4314,7 +4314,7 @@ export class VaultUI {
       case 'login':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-username">Username / Email</label>
+            <label class="vault-label" for="edit-username">${t('vault.labels.usernameEmail')}</label>
             <input type="text" class="vault-input" id="edit-username" value="${escapeHtml(entry.data?.username || '')}">
           </div>
           <div class="vault-form-group">
@@ -4340,7 +4340,7 @@ export class VaultUI {
             <input type="url" class="vault-input" id="edit-url" value="${escapeHtml(entry.data?.url || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-totp">TOTP Key (2FA)</label>
+            <label class="vault-label" for="edit-totp">${t('vault.labels.totpKey')}</label>
             <div class="vault-input-group">
               <input type="text" class="vault-input mono" id="edit-totp" value="${escapeHtml(entry.data?.totp || '')}"
                      placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
@@ -4353,19 +4353,19 @@ export class VaultUI {
                 </svg>
               </button>
             </div>
-            <span class="vault-field-hint">Secret Base32 ou URI otpauth://</span>
+            <span class="vault-field-hint">${t('vault.hints.totpSecretEdit')}</span>
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-expires">Password expiration</label>
+            <label class="vault-label" for="edit-expires">${t('vault.labels.passwordExpiration')}</label>
             <div class="vault-expiry-picker">
               <select class="vault-input vault-select" id="edit-expires-preset">
-                <option value="">Jamais</option>
-                <option value="30">30 days</option>
-                <option value="60">60 days</option>
-                <option value="90">90 days</option>
-                <option value="180">6 months</option>
-                <option value="365">1 an</option>
-                <option value="custom" ${entry.data?.expiresAt ? 'selected' : ''}>Custom date...</option>
+                <option value="">${t('vault.expiry.never')}</option>
+                <option value="30">${t('vault.expiry.days30')}</option>
+                <option value="60">${t('vault.expiry.days60')}</option>
+                <option value="90">${t('vault.expiry.days90')}</option>
+                <option value="180">${t('vault.expiry.months6')}</option>
+                <option value="365">${t('vault.expiry.1year')}</option>
+                <option value="custom" ${entry.data?.expiresAt ? 'selected' : ''}>${t('vault.expiry.custom')}</option>
               </select>
               <input type="date" class="vault-input" id="edit-expires"
                      value="${entry.data?.expiresAt || ''}" ${entry.data?.expiresAt ? '' : 'hidden'}>
@@ -4380,7 +4380,7 @@ export class VaultUI {
       case 'note':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-content">Contenu</label>
+            <label class="vault-label" for="edit-content">${t('vault.labels.content')}</label>
             <textarea class="vault-input vault-textarea" id="edit-content" rows="8">${escapeHtml(entry.data?.content || '')}</textarea>
           </div>
         `;
@@ -4388,20 +4388,20 @@ export class VaultUI {
       case 'card':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-holder">Holder</label>
+            <label class="vault-label" for="edit-holder">${t('vault.labels.holder')}</label>
             <input type="text" class="vault-input" id="edit-holder" value="${escapeHtml(entry.data?.holder || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-cardnumber">Card number</label>
+            <label class="vault-label" for="edit-cardnumber">${t('vault.labels.cardNumber')}</label>
             <input type="text" class="vault-input" id="edit-cardnumber" value="${escapeHtml(entry.data?.number || '')}">
           </div>
           <div class="vault-form-row">
             <div class="vault-form-group">
-              <label class="vault-label" for="edit-expiry">Expiration</label>
+              <label class="vault-label" for="edit-expiry">${t('vault.labels.expiration')}</label>
               <input type="text" class="vault-input" id="edit-expiry" value="${escapeHtml(entry.data?.expiry || '')}" placeholder="${t('vault.placeholders.expiryFormat')}">
             </div>
             <div class="vault-form-group">
-              <label class="vault-label" for="edit-cvv">CVV</label>
+              <label class="vault-label" for="edit-cvv">${t('vault.labels.cvv')}</label>
               <input type="password" class="vault-input" id="edit-cvv" value="${escapeHtml(entry.data?.cvv || '')}" maxlength="4">
             </div>
           </div>
@@ -4410,15 +4410,15 @@ export class VaultUI {
       case 'identity':
         fieldsHtml += `
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-fullname">Full name</label>
+            <label class="vault-label" for="edit-fullname">${t('vault.labels.fullName')}</label>
             <input type="text" class="vault-input" id="edit-fullname" value="${escapeHtml(entry.data?.fullName || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-email">Email</label>
+            <label class="vault-label" for="edit-email">${t('vault.labels.email')}</label>
             <input type="email" class="vault-input" id="edit-email" value="${escapeHtml(entry.data?.email || '')}">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="edit-phone">Phone</label>
+            <label class="vault-label" for="edit-phone">${t('vault.labels.phone')}</label>
             <input type="tel" class="vault-input" id="edit-phone" value="${escapeHtml(entry.data?.phone || '')}">
           </div>
         `;
@@ -4945,7 +4945,7 @@ export class VaultUI {
     const fields = {
       login: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-username">Username / Email</label>
+          <label class="vault-label" for="entry-username">${t('vault.labels.usernameEmail')}</label>
           <div class="input-with-action">
             <input type="text" class="vault-input" id="entry-username" placeholder="${t('vault.form.userPlaceholder')}" autocomplete="username">
             <button type="button" class="vault-btn-icon" id="btn-create-alias" title="${t('vault.actions.generateAlias')}">
@@ -4977,25 +4977,25 @@ export class VaultUI {
           <div class="vault-field-message" id="entry-url-message" role="alert" aria-live="polite"></div>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-totp">TOTP Key (2FA)</label>
+          <label class="vault-label" for="entry-totp">${t('vault.labels.totpKey')}</label>
           <input type="text" class="vault-input mono" id="entry-totp" placeholder="${t('vault.placeholders.totpSecretExample')}" autocomplete="off" spellcheck="false">
-          <span class="vault-field-hint">Optionnel - Secret Base32 ou URI otpauth://</span>
+          <span class="vault-field-hint">${t('vault.hints.totpSecretAdd')}</span>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-expires">Password expiration</label>
+          <label class="vault-label" for="entry-expires">${t('vault.labels.passwordExpiration')}</label>
           <div class="vault-expiry-picker">
             <select class="vault-input vault-select" id="entry-expires-preset">
-              <option value="">Jamais</option>
-              <option value="30">30 days</option>
-              <option value="60">60 days</option>
-              <option value="90">90 days</option>
-              <option value="180">6 months</option>
-              <option value="365">1 an</option>
-              <option value="custom">Custom date...</option>
+              <option value="">${t('vault.expiry.never')}</option>
+              <option value="30">${t('vault.expiry.days30')}</option>
+              <option value="60">${t('vault.expiry.days60')}</option>
+              <option value="90">${t('vault.expiry.days90')}</option>
+              <option value="180">${t('vault.expiry.months6')}</option>
+              <option value="365">${t('vault.expiry.1year')}</option>
+              <option value="custom">${t('vault.expiry.custom')}</option>
             </select>
             <input type="date" class="vault-input" id="entry-expires" hidden>
           </div>
-          <span class="vault-field-hint">Visual reminder to renew the password</span>
+          <span class="vault-field-hint">${t('vault.hints.expiryReminder')}</span>
         </div>
         <div class="vault-form-group">
           <label class="vault-label" for="entry-notes">${t('vault.labels.notes')}</label>
@@ -5004,42 +5004,42 @@ export class VaultUI {
       `,
       note: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-content">Content <span class="required">*</span></label>
+          <label class="vault-label" for="entry-content">${t('vault.labels.content')} <span class="required">*</span></label>
           <textarea class="vault-input vault-textarea" id="entry-content" rows="8" placeholder="${t('vault.form.secureNote')}" required></textarea>
         </div>
       `,
       card: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-holder">Holder</label>
+          <label class="vault-label" for="entry-holder">${t('vault.labels.holder')}</label>
           <input type="text" class="vault-input" id="entry-holder" placeholder="${t('vault.placeholders.holderExample')}" autocomplete="cc-name">
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-cardnumber">Card number</label>
+          <label class="vault-label" for="entry-cardnumber">${t('vault.labels.cardNumber')}</label>
           <input type="text" class="vault-input" id="entry-cardnumber" placeholder="${t('vault.placeholders.cardNumberExample')}" autocomplete="cc-number">
         </div>
         <div class="vault-form-row">
           <div class="vault-form-group">
-            <label class="vault-label" for="entry-expiry">Expiration</label>
+            <label class="vault-label" for="entry-expiry">${t('vault.labels.expiration')}</label>
             <input type="text" class="vault-input" id="entry-expiry" placeholder="${t('vault.placeholders.expiryFormat')}" autocomplete="cc-exp">
           </div>
           <div class="vault-form-group">
-            <label class="vault-label" for="entry-cvv">CVV</label>
+            <label class="vault-label" for="entry-cvv">${t('vault.labels.cvv')}</label>
             <input type="password" class="vault-input" id="entry-cvv" placeholder="${t('vault.placeholders.cvvExample')}" maxlength="4" autocomplete="cc-csc">
           </div>
         </div>
       `,
       identity: `
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-fullname">Full name</label>
+          <label class="vault-label" for="entry-fullname">${t('vault.labels.fullName')}</label>
           <input type="text" class="vault-input" id="entry-fullname" placeholder="${t('vault.placeholders.fullNameExample')}" autocomplete="name">
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-email">Email</label>
+          <label class="vault-label" for="entry-email">${t('vault.labels.email')}</label>
           <input type="email" class="vault-input" id="entry-email" placeholder="${t('vault.placeholders.emailExample')}" autocomplete="email" aria-describedby="entry-email-message">
           <div class="vault-field-message" id="entry-email-message" role="alert" aria-live="polite"></div>
         </div>
         <div class="vault-form-group">
-          <label class="vault-label" for="entry-phone">Phone</label>
+          <label class="vault-label" for="entry-phone">${t('vault.labels.phone')}</label>
           <input type="tel" class="vault-input" id="entry-phone" placeholder="${t('vault.placeholders.phoneExample')}" autocomplete="tel">
         </div>
       `
@@ -6339,9 +6339,9 @@ export class VaultUI {
     this.#container.innerHTML = `
       <div class="vault-empty">
         <div class="vault-empty-icon">⚠️</div>
-        <h3>Vault not available</h3>
-        <p>The vault API is not available in this context.</p>
-        <p class="vault-help-text">The vault requires the Electron application to work.</p>
+        <h3>${t('vault.messages.vaultNotAvailable')}</h3>
+        <p>${t('vault.messages.vaultApiNotAvailable')}</p>
+        <p class="vault-help-text">${t('vault.messages.vaultRequiresElectron')}</p>
       </div>
     `;
   }

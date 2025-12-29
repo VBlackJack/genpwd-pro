@@ -255,15 +255,15 @@ class PWAManager {
     installBanner.innerHTML = sanitizeHTML(`
       <div class="pwa-install-content">
         <div class="pwa-install-info">
-          <div class="pwa-install-title">📱 Install GenPwd Pro</div>
-          <div class="pwa-install-subtitle">Add to home screen for offline access</div>
+          <div class="pwa-install-title">📱 ${i18n.t('pwa.installTitle')}</div>
+          <div class="pwa-install-subtitle">${i18n.t('pwa.installSubtitle')}</div>
         </div>
         <div class="pwa-install-actions">
           <button id="pwa-install-btn" class="pwa-install-btn">
-            Install
+            ${i18n.t('pwa.install')}
           </button>
           <button id="pwa-dismiss-btn" class="pwa-install-dismiss-btn">
-            Not now
+            ${i18n.t('pwa.notNow')}
           </button>
         </div>
       </div>

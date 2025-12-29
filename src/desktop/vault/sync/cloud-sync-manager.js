@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { EventEmitter } from 'node:events';
+import { t } from '../utils/i18n-node.js';
 
 /**
  * Cloud Sync Manager
@@ -29,7 +30,7 @@ export class CloudSyncManager extends EventEmitter {
     async uploadVault(localPath, vaultId) {
         if (!this.config || this.config.provider !== 'webdav') return false;
 
-        this.emit('status', { vaultId, status: 'syncing', message: 'Envoi vers le cloud...' });
+        this.emit('status', { vaultId, status: 'syncing', message: t('sync.status.uploading') });
 
         try {
             const stats = await fs.promises.stat(localPath);
@@ -41,16 +42,16 @@ export class CloudSyncManager extends EventEmitter {
             const success = await this.#webdavPut(remoteFilename, content);
             if (success) {
                 console.log(`[CloudSync] Upload successful. Size: ${stats.size}`);
-                this.emit('status', { vaultId, status: 'synced', message: 'Synced', timestamp: new Date() });
+                this.emit('status', { vaultId, status: 'synced', message: t('sync.status.synced'), timestamp: new Date() });
                 return true;
             }
         } catch (error) {
             console.error('[CloudSync] Upload failed:', error.message);
-            this.emit('status', { vaultId, status: 'error', message: 'Sync error' });
+            this.emit('status', { vaultId, status: 'error', message: t('sync.status.syncError') });
         }
 
         // If we reached here without returning true, it failed
-        this.emit('status', { vaultId, status: 'error', message: 'Upload error' });
+        this.emit('status', { vaultId, status: 'error', message: t('sync.status.uploadError') });
         return false;
     }
 

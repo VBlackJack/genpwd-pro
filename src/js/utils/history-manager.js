@@ -130,41 +130,42 @@ class HistoryManager {
     modal.setAttribute('aria-labelledby', 'security-warning-title');
     modal.setAttribute('aria-modal', 'true');
 
+    const t = (key) => i18n.t(key);
     modal.innerHTML = sanitizeHTML(`
       <div class="modal">
         <div class="modal-header">
-          <h2 id="security-warning-title">⚠️ Security Warning</h2>
+          <h2 id="security-warning-title">⚠️ ${t('history.securityWarning.title')}</h2>
         </div>
         <div class="modal-body">
           <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin-top: 0; color: #856404;">Unencrypted Storage</h3>
-            <p><strong>Important:</strong> Password history is stored in your browser's <code>localStorage</code> <strong>without encryption</strong>.</p>
-            <p>This means:</p>
+            <h3 style="margin-top: 0; color: #856404;">${t('history.securityWarning.unencryptedTitle')}</h3>
+            <p><strong>${t('history.securityWarning.important')}</strong> ${t('history.securityWarning.storageWarning')}</p>
+            <p>${t('history.securityWarning.thisMeans')}</p>
             <ul style="margin: 10px 0; padding-left: 20px;">
-              <li>Passwords are stored in plain text on your device</li>
-              <li>Anyone with access to your computer can see them</li>
-              <li>Malicious extensions could access them</li>
-              <li>Passwords are not synced between devices</li>
+              <li>${t('history.securityWarning.plainText')}</li>
+              <li>${t('history.securityWarning.accessWarning')}</li>
+              <li>${t('history.securityWarning.extensionRisk')}</li>
+              <li>${t('history.securityWarning.noSync')}</li>
             </ul>
           </div>
 
           <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 15px; margin-bottom: 15px;">
-            <h4 style="margin-top: 0; color: #0c5460;">Recommendations</h4>
+            <h4 style="margin-top: 0; color: #0c5460;">${t('history.securityWarning.recommendationsTitle')}</h4>
             <ul style="margin: 5px 0; padding-left: 20px;">
-              <li>Only enable this feature on a secure personal device</li>
-              <li>Clear history regularly</li>
-              <li>Don't store passwords for critical accounts</li>
-              <li>Use a dedicated password manager for long-term storage</li>
+              <li>${t('history.securityWarning.secureDevice')}</li>
+              <li>${t('history.securityWarning.clearRegularly')}</li>
+              <li>${t('history.securityWarning.noCritical')}</li>
+              <li>${t('history.securityWarning.useManager')}</li>
             </ul>
           </div>
 
           <p style="font-size: 0.9em; color: #666;">
-            Note: A future version may include history encryption with a master key.
+            ${t('history.securityWarning.futureNote')}
           </p>
         </div>
         <div class="modal-footer">
-          <button id="security-warning-understood" class="btn btn-primary">I Understand</button>
-          <button id="security-warning-cancel" class="btn">Cancel and Disable</button>
+          <button id="security-warning-understood" class="btn btn-primary">${t('history.securityWarning.understand')}</button>
+          <button id="security-warning-cancel" class="btn">${t('history.securityWarning.cancelDisable')}</button>
         </div>
       </div>
     `);
