@@ -176,7 +176,7 @@ export function renderEntryRow(entry, options = {}) {
          draggable="true">
       <label class="vault-checkbox-wrapper" title="${t('vault.common.select') || 'Select'}">
         <input type="checkbox" class="vault-checkbox" data-action="multi-select"
-               ${isMultiSelected ? 'checked' : ''} aria-label="Select ${escapeHtml(entry.title)}">
+               ${isMultiSelected ? 'checked' : ''} aria-label="${t('vault.common.select')} ${escapeHtml(entry.title)}">
         <span class="vault-checkbox-mark"></span>
       </label>
       <button class="vault-fav-toggle ${isFavorite ? 'active' : ''}"
@@ -200,7 +200,7 @@ export function renderEntryRow(entry, options = {}) {
         <div class="vault-entry-subtitle">${escapeHtml(subtitle)}</div>
         ${renderTagsInRow(entry, allTags)}
       </div>
-      <div class="vault-entry-actions" role="group" aria-label="Quick actions">
+      <div class="vault-entry-actions" role="group" aria-label="${t('vault.aria.quickActions')}">
         ${entry.type === 'login' && entry.data?.username ? `
           <button class="vault-quick-btn copy-user" data-action="copy-username"
                   title="${t('vault.actions.copyUsername')}" aria-label="${t('vault.actions.copyUsername')}">

@@ -36,19 +36,19 @@ export function renderContextMenuContent({ entry, getEntryTypes, t = (k) => k })
     ${entry.type === 'login' && entry.data?.username ? `
       <button class="vault-ctx-item" data-action="copy-username">
         <span class="vault-ctx-item-icon">👤</span>
-        Copy username
+        ${t('vault.actions.copyUsername')}
       </button>
     ` : ''}
     ${entry.type === 'login' && entry.data?.password ? `
       <button class="vault-ctx-item" data-action="copy-password">
         <span class="vault-ctx-item-icon">🔑</span>
-        Copy password
+        ${t('vault.actions.copyPassword')}
       </button>
     ` : ''}
     ${entry.data?.url ? `
       <button class="vault-ctx-item" data-action="open-url">
         <span class="vault-ctx-item-icon">🔗</span>
-        Open website
+        ${t('vault.actions.openWebsite')}
       </button>
     ` : ''}
     <div class="vault-ctx-divider"></div>

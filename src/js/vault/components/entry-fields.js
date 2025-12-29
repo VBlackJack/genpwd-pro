@@ -51,7 +51,7 @@ export function renderExpirationField(entry) {
   return `
     <div class="vault-field vault-expiry-field ${statusClass}">
       <div class="vault-field-label-row">
-        <label class="vault-field-label">Password expiration</label>
+        <label class="vault-field-label">${t('vault.labels.passwordExpiration')}</label>
       </div>
       <div class="vault-expiry-display ${statusClass}">
         <span class="vault-expiry-icon">${statusIcon}</span>
@@ -76,8 +76,8 @@ export function renderTOTPField(entry) {
   return `
     <div class="vault-field vault-totp-field" data-key="totp" data-entry-id="${entry.id}">
       <div class="vault-field-label-row">
-        <label class="vault-field-label">Code 2FA (TOTP)</label>
-        <span class="vault-field-hint">(actualisation auto)</span>
+        <label class="vault-field-label">${t('vault.labels.totp2FA')}</label>
+        <span class="vault-field-hint">(${t('vault.hints.autoRefresh')})</span>
       </div>
       <div class="vault-totp-display">
         <div class="vault-totp-code" data-secret="${escapeHtml(totpSecret)}">
@@ -90,7 +90,7 @@ export function renderTOTPField(entry) {
           </svg>
           <span class="totp-timer-text">--</span>
         </div>
-        <button class="vault-field-btn copy-totp" title="Copier le code 2FA" aria-label="Copier le code 2FA">
+        <button class="vault-field-btn copy-totp" title="${t('vault.actions.copy2FACode')}" aria-label="${t('vault.actions.copy2FACode')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>

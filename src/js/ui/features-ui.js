@@ -2128,7 +2128,7 @@ function showPluginManagerModal() {
         <div class="modal-title">
           🔌 Plugin Manager
         </div>
-        <button class="modal-close" id="close-plugins-modal" aria-label="Close">
+        <button class="modal-close" id="close-plugins-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2335,7 +2335,7 @@ function showPluginSettingsModal(pluginName) {
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">⚙️ ${escapeHtml(plugin.name)} Settings</div>
-        <button class="modal-close" id="close-plugin-settings-modal" aria-label="Close">
+        <button class="modal-close" id="close-plugin-settings-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2346,7 +2346,7 @@ function showPluginSettingsModal(pluginName) {
         <div id="plugin-settings-container"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="close-plugin-settings-footer">Close</button>
+        <button class="btn" id="close-plugin-settings-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2580,7 +2580,7 @@ function showAdvancedImportModal() {
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">📥 Advanced Import</div>
-        <button class="modal-close" id="close-import-modal" aria-label="Close">
+        <button class="modal-close" id="close-import-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>

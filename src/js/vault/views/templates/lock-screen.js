@@ -57,7 +57,7 @@ export function renderLockScreen({ t }) {
         <h2>${t('vault.lockScreen.title')}</h2>
         <p class="vault-lock-subtitle">${t('vault.lockScreen.subtitle')}</p>
 
-        <div class="vault-selector" id="vault-selector" role="listbox" aria-label="Vault selection">
+        <div class="vault-selector" id="vault-selector" role="listbox" aria-label="${t('vault.aria.vaultSelection')}">
           <div class="vault-loading"><div class="vault-spinner"></div></div>
         </div>
 
@@ -133,7 +133,7 @@ export function renderVaultList(vaults, { t }) {
   if (vaults.length === 0) {
     return `
       <div class="vault-empty-small">
-        <p>No vault found. Create one to get started.</p>
+        <p>${t('vault.lockScreen.noVaultFound')}</p>
       </div>
     `;
   }

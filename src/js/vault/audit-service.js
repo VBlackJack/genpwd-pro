@@ -6,6 +6,8 @@
  * and calculate an overall security score.
  */
 
+import { t } from '../utils/i18n.js';
+
 /**
  * Calculate password entropy in bits
  * @param {string} password
@@ -135,7 +137,7 @@ async function auditEntry(entry) {
   };
 
   if (!password) {
-    result.issues.push({ type: 'empty', message: 'No password set' });
+    result.issues.push({ type: 'empty', message: t('vault.health.noPasswordSet') });
     return result;
   }
 
@@ -150,7 +152,7 @@ async function auditEntry(entry) {
   if (result.entropy < 60) {
     result.issues.push({
       type: 'weak',
-      message: `Weak password (${Math.round(result.entropy)} bits)`,
+      message: t('vault.health.weakPasswordBits', { count: Math.round(result.entropy) }),
       severity: result.entropy < 36 ? 'critical' : 'warning'
     });
   }
@@ -162,7 +164,7 @@ async function auditEntry(entry) {
     if (ageYears > 1) {
       result.issues.push({
         type: 'old',
-        message: `Unchanged for ${Math.floor(ageYears)} year(s)`,
+        message: t('vault.age.unchangedFor', { count: Math.floor(ageYears) }),
         severity: 'info'
       });
     }
@@ -254,7 +256,7 @@ export async function auditVault(entries) {
       });
       report.issues.reused.push({
         type: 'reused',
-        message: `Password shared by ${ids.length} entries`,
+        message: t('vault.health.passwordSharedBy', { count: ids.length }),
         entries: reusedEntries,
         severity: 'critical'
       });
@@ -332,12 +334,12 @@ export function getScoreColor(score) {
  * @returns {string}
  */
 export function getScoreLabel(score) {
-  if (score >= 90) return 'Excellent';
-  if (score >= 80) return 'Very Good';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  if (score >= 20) return 'Weak';
-  return 'Critical';
+  if (score >= 90) return t('vault.health.excellent');
+  if (score >= 80) return t('vault.health.good');
+  if (score >= 60) return t('vault.health.good');
+  if (score >= 40) return t('vault.health.scoreFair');
+  if (score >= 20) return t('vault.health.weak');
+  return t('vault.health.critical');
 }
 
 /**
@@ -353,8 +355,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'critical',
       icon: '🔄',
-      message: `${report.stats.reusedPasswords} reused passwords`,
-      action: 'Change these passwords immediately',
+      message: t('vault.health.reusedPasswordsCount', { count: report.stats.reusedPasswords }),
+      action: t('vault.health.changeImmediately'),
       filter: 'reused'
     });
   }
@@ -365,8 +367,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'critical',
       icon: '⚠️',
-      message: `${criticalWeak.length} very weak password(s)`,
-      action: 'Use longer and more complex passwords',
+      message: t('vault.health.veryWeakPasswords', { count: criticalWeak.length }),
+      action: t('vault.health.useLongerPasswords'),
       filter: 'weak'
     });
   }
@@ -377,8 +379,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'warning',
       icon: '🔐',
-      message: `${warningWeak.length} password(s) to strengthen`,
-      action: 'Increase the complexity of these passwords',
+      message: t('vault.health.passwordsToStrengthen', { count: warningWeak.length }),
+      action: t('vault.health.increaseComplexity'),
       filter: 'weak'
     });
   }
@@ -388,8 +390,8 @@ export function getRecommendations(report) {
     recommendations.push({
       priority: 'info',
       icon: '📅',
-      message: `${report.issues.old.length} old password(s)`,
-      action: 'Consider renewing them',
+      message: t('vault.health.oldPasswordsCount', { count: report.issues.old.length }),
+      action: t('vault.health.considerRenewing'),
       filter: 'old'
     });
   }
@@ -402,8 +404,8 @@ export function getRecommendations(report) {
       recommendations.push({
         priority: 'suggestion',
         icon: '🛡️',
-        message: `${percentage}% of entries without 2FA`,
-        action: 'Enable two-factor authentication',
+        message: t('vault.health.entriesWithout2FA', { percent: percentage }),
+        action: t('vault.health.enable2FA'),
         filter: 'no2fa'
       });
     }

@@ -18,12 +18,12 @@ export const IMPORT_FORMATS = [
  * Supported export formats
  */
 export const EXPORT_FORMATS = [
-  { id: 'json', name: 'JSON (GenPwd)', icon: '📦', desc: 'Native format with all data' },
-  { id: 'bitwarden', name: 'Bitwarden CSV', icon: '🔐', desc: 'Compatible Bitwarden' },
-  { id: 'lastpass', name: 'LastPass CSV', icon: '🔒', desc: 'Compatible LastPass' },
-  { id: '1password', name: '1Password CSV', icon: '🗝️', desc: 'Compatible 1Password' },
-  { id: 'chrome', name: 'Chrome / Edge CSV', icon: '🌐', desc: 'Compatible navigateurs' },
-  { id: 'keepass', name: 'KeePass XML', icon: '🔑', desc: 'Compatible KeePass 2.x' }
+  { id: 'json', name: 'JSON (GenPwd)', icon: '📦', descKey: 'vault.exportFormats.jsonDesc' },
+  { id: 'bitwarden', name: 'Bitwarden CSV', icon: '🔐', descKey: 'vault.exportFormats.bitwardenDesc' },
+  { id: 'lastpass', name: 'LastPass CSV', icon: '🔒', descKey: 'vault.exportFormats.lastpassDesc' },
+  { id: '1password', name: '1Password CSV', icon: '🗝️', descKey: 'vault.exportFormats.onepasswordDesc' },
+  { id: 'chrome', name: 'Chrome / Edge CSV', icon: '🌐', descKey: 'vault.exportFormats.chromeDesc' },
+  { id: 'keepass', name: 'KeePass XML', icon: '🔑', descKey: 'vault.exportFormats.keepassDesc' }
 ];
 
 /**
@@ -74,7 +74,7 @@ export function renderImportModal(options = {}) {
         </div>
         <div class="vault-modal-body">
           <div class="vault-import-formats">
-            <h4>Supported formats</h4>
+            <h4>${t('vault.import.supportedFormats')}</h4>
             <div class="vault-format-cards">
               ${renderImportFormats()}
             </div>
@@ -86,9 +86,9 @@ export function renderImportModal(options = {}) {
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <p>Drag a file here or <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse" aria-label="Browse files to import">browse</button></p>
+            <p>${t('vault.import.dragOrBrowse').replace('{browse}', `<button type="button" class="vault-btn vault-btn-link" id="btn-import-browse" aria-label="${t('vault.import.browseFiles')}">${t('vault.actions.browse')}</button>`)}</p>
             <input type="file" id="import-file-input" accept=".xml,.json,.csv" hidden>
-            <span class="vault-dropzone-hint">Formats: XML, JSON, CSV</span>
+            <span class="vault-dropzone-hint">${t('vault.import.formatsHint')}</span>
           </div>
 
           <div class="vault-import-preview" id="import-preview" hidden>
@@ -98,11 +98,11 @@ export function renderImportModal(options = {}) {
             <div class="vault-import-options">
               <label class="vault-checkbox-label">
                 <input type="checkbox" id="import-include-groups" checked>
-                <span>Import folders/groups</span>
+                <span>${t('vault.import.includeFolders')}</span>
               </label>
               <label class="vault-checkbox-label">
                 <input type="checkbox" id="import-merge-duplicates">
-                <span>Merge duplicates (by title)</span>
+                <span>${t('vault.import.mergeDuplicates')}</span>
               </label>
             </div>
             <div class="vault-import-warnings" id="import-warnings" hidden>
@@ -118,7 +118,7 @@ export function renderImportModal(options = {}) {
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            Import
+            ${t('vault.common.import')}
           </button>
         </div>
       </div>
@@ -132,29 +132,30 @@ export function renderImportModal(options = {}) {
  * @param {Object} options.stats - Import statistics
  * @param {string} options.filename - File name
  * @param {number} options.filesize - File size in bytes
+ * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
 export function renderImportSummary(options = {}) {
-  const { stats = {}, filename = '', filesize = 0 } = options;
+  const { stats = {}, filename = '', filesize = 0, t = (k) => k } = options;
 
   return `
     <div class="vault-import-stats">
       <div class="vault-import-stat">
         <span class="vault-import-stat-value">${stats.importedEntries || 0}</span>
-        <span class="vault-import-stat-label">Entries</span>
+        <span class="vault-import-stat-label">${t('vault.import.entries')}</span>
       </div>
       <div class="vault-import-stat">
         <span class="vault-import-stat-value">${stats.importedGroups || 0}</span>
-        <span class="vault-import-stat-label">Folders</span>
+        <span class="vault-import-stat-label">${t('vault.sidebar.folders')}</span>
       </div>
       <div class="vault-import-stat">
         <span class="vault-import-stat-value">${stats.customFieldsCount || 0}</span>
-        <span class="vault-import-stat-label">Fields</span>
+        <span class="vault-import-stat-label">${t('vault.import.fields')}</span>
       </div>
     </div>
     <div class="vault-import-file-info">
       <span class="vault-import-filename">${escapeHtml(filename)}</span>
-      <span class="vault-import-filesize">${(filesize / 1024).toFixed(1)} Ko</span>
+      <span class="vault-import-filesize">${(filesize / 1024).toFixed(1)} ${t('vault.import.kb')}</span>
     </div>
   `;
 }
@@ -192,17 +193,17 @@ export function renderExportModal(options = {}) {
   return `
     <div class="vault-modal">
       <div class="vault-modal-header">
-        <h3>Export ${count} entry(ies)</h3>
+        <h3>${t('vault.export.title', { count })}</h3>
         ${renderCloseBtn(t)}
       </div>
       <div class="vault-modal-body">
-        <p class="vault-modal-hint">Choisissez le format d'export :</p>
+        <p class="vault-modal-hint">${t('vault.export.chooseFormat')}</p>
         <div class="vault-export-formats">
           ${EXPORT_FORMATS.map(fmt => `
             <button class="vault-export-format-btn" data-format="${fmt.id}">
               <span class="vault-export-format-icon">${fmt.icon}</span>
               <span class="vault-export-format-name">${fmt.name}</span>
-              <span class="vault-export-format-desc">${fmt.desc}</span>
+              <span class="vault-export-format-desc">${t(fmt.descKey)}</span>
             </button>
           `).join('')}
         </div>

@@ -33,7 +33,7 @@ export function renderPasswordStrength(password, t = (k) => k) {
  * @param {Function} t - Translation function
  * @returns {string} HTML string
  */
-export function renderPasswordHistory(entry, _t = (k) => k) {
+export function renderPasswordHistory(entry, t = (k) => k) {
   const history = entry.data?.passwordHistory || [];
   if (history.length === 0) return '';
 
@@ -45,18 +45,18 @@ export function renderPasswordHistory(entry, _t = (k) => k) {
     return `
       <div class="vault-history-item" data-index="${idx}">
         <div class="vault-history-info">
-          <span class="vault-history-password" title="Click to reveal">${maskedPwd}</span>
+          <span class="vault-history-password" title="${t('vault.history.clickToReveal')}">${maskedPwd}</span>
           <span class="vault-history-date">${relativeTime}</span>
           ${h.reason ? `<span class="vault-history-reason">${escapeHtml(h.reason)}</span>` : ''}
         </div>
         <div class="vault-history-actions">
-          <button class="vault-field-btn copy-history-pwd" data-password="${escapeHtml(h.password)}" title="Copier">
+          <button class="vault-field-btn copy-history-pwd" data-password="${escapeHtml(h.password)}" title="${t('vault.common.copy')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="vault-field-btn restore-history-pwd" data-index="${idx}" title="Restaurer">
+          <button class="vault-field-btn restore-history-pwd" data-index="${idx}" title="${t('vault.actions.restore')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="1 4 1 10 7 10"></polyline>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
@@ -73,7 +73,7 @@ export function renderPasswordHistory(entry, _t = (k) => k) {
         <svg class="vault-history-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
-        <span>Historique (${history.length})</span>
+        <span>${t('vault.history.title')} (${history.length})</span>
       </button>
       <div class="vault-history-list" hidden>
         ${historyItems}

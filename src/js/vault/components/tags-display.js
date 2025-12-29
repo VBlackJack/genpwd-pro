@@ -34,7 +34,7 @@ export function renderTagsList({ tags, entries, selectedTag }) {
         <span class="vault-tag-dot" data-tag-color="${tagColor}" aria-hidden="true"></span>
         <span class="vault-nav-label">${escapeHtml(tag.name)}</span>
         <span class="vault-nav-count">${count}</span>
-        <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${escapeHtml(tag.name)}">
+        <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="${t('vault.actions.editTag')}" aria-label="${t('vault.common.edit')} ${escapeHtml(tag.name)}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -56,7 +56,7 @@ export function renderTagPicker({ tags, selectedTags = [] }) {
   return `
     <div class="vault-tag-picker">
       <div class="vault-tag-picker-list">
-        ${!tags || tags.length === 0 ? '<div class="vault-tag-empty">No tags available</div>' :
+        ${!tags || tags.length === 0 ? `<div class="vault-tag-empty">${t('vault.messages.noTags')}</div>` :
           tags.map(tag => `
             <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
               <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
@@ -73,7 +73,7 @@ export function renderTagPicker({ tags, selectedTags = [] }) {
           ${TAG_COLORS.map((color, i) => `
             <button type="button" class="vault-color-btn vault-color-option ${i === 0 ? 'selected' : ''}"
                     data-color="${color}"
-                    title="Color ${i + 1}" aria-label="Color ${color}"></button>
+                    title="${t('vault.labels.color')} ${i + 1}" aria-label="${t('vault.labels.color')} ${color}"></button>
           `).join('')}
         </div>
         <button type="button" class="vault-btn vault-btn-sm vault-btn-primary" id="btn-create-tag">

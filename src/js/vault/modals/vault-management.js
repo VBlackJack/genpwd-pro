@@ -14,7 +14,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
     <div class="vault-modal-overlay" id="create-vault-modal" role="dialog" aria-modal="true" aria-labelledby="create-vault-title">
       <div class="vault-modal">
         <div class="vault-modal-header">
-          <h3 id="create-vault-title">New Vault</h3>
+          <h3 id="create-vault-title">${t('vault.lockScreen.newVault')}</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>

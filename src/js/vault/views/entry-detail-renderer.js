@@ -93,11 +93,11 @@ function renderDetailMeta(entry) {
       ${entry.metadata?.lastUsedAt ? `
         <div class="vault-meta-row">
           <div class="vault-meta-item">
-            <span class="vault-meta-label">Last used</span>
+            <span class="vault-meta-label">${t('vault.detail.lastUsed')}</span>
             <span class="vault-meta-value">${formatDateTime(entry.metadata.lastUsedAt)}</span>
           </div>
           <div class="vault-meta-item">
-            <span class="vault-meta-label">Uses</span>
+            <span class="vault-meta-label">${t('vault.detail.usageCount')}</span>
             <span class="vault-meta-value">${entry.metadata.usageCount || 0}</span>
           </div>
         </div>

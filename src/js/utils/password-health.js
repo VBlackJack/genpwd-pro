@@ -143,19 +143,19 @@ export function analyzePasswordAge(modifiedAt) {
   let level, label;
   if (days > 365) {
     level = 'critical';
-    label = `${Math.floor(days / 365)} year(s) - Urgent renewal needed`;
+    label = `${t('vault.age.years', { count: Math.floor(days / 365) })} - ${t('vault.age.urgentRenewal')}`;
   } else if (days > 180) {
     level = 'warning';
-    label = `${Math.floor(days / 30)} months - Renewal recommended`;
+    label = `${t('vault.age.months', { count: Math.floor(days / 30) })} - ${t('vault.age.renewalRecommended')}`;
   } else if (days > 90) {
     level = 'fair';
-    label = `${Math.floor(days / 30)} months`;
+    label = t('vault.age.months', { count: Math.floor(days / 30) });
   } else if (days > 30) {
     level = 'good';
-    label = `${days} days`;
+    label = t('vault.age.days', { count: days });
   } else {
     level = 'recent';
-    label = 'Recent';
+    label = t('vault.age.recent');
   }
 
   return { days, level, label };

@@ -1095,9 +1095,9 @@ export class VaultUI {
     const filteredEntries = this.#getFilteredEntries();
 
     this.#container.innerHTML = `
-      <div class="vault-app" role="application" aria-label="Password Manager">
+      <div class="vault-app" role="application" aria-label="${t('vault.aria.passwordManager')}">
         <!-- Sidebar -->
-        <aside class="vault-sidebar" role="navigation" aria-label="Vault navigation">
+        <aside class="vault-sidebar" role="navigation" aria-label="${t('vault.aria.vaultNavigation')}">
           <!-- Sidebar Collapse Toggle -->
           <button class="vault-sidebar-collapse" id="sidebar-collapse-btn"
                   aria-label="${t('vault.sidebar.collapse')}"
@@ -1117,7 +1117,7 @@ export class VaultUI {
               </div>
               <div class="vault-current-info">
                 <span class="vault-current-name">${escapeHtml(this.#vaultMetadata?.name || 'Vault')}</span>
-                <span class="vault-current-meta">${this.#entries.length} entry(ies)</span>
+                <span class="vault-current-meta">${t('vault.misc.entryCount', { count: this.#entries.length })}</span>
               </div>
               <svg class="vault-current-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6 9 12 15 18 9"></polyline>
@@ -1125,7 +1125,7 @@ export class VaultUI {
             </button>
             <div class="vault-switcher-dropdown" id="vault-switcher-dropdown" hidden>
               <div class="vault-switcher-section">
-                <div class="vault-switcher-label">Current vault</div>
+                <div class="vault-switcher-label">${t('vault.sidebar.currentVault')}</div>
                 <div class="vault-switcher-item current">
                   <div class="vault-switcher-icon" data-vault-color="${this.#getVaultColor()}">
                     <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -1164,7 +1164,7 @@ export class VaultUI {
           </div>
 
           <div class="vault-sidebar-header">
-            <div class="vault-lock-timer" id="lock-timer" role="timer" aria-live="polite" aria-label="Verrouillage automatique">
+            <div class="vault-lock-timer" id="lock-timer" role="timer" aria-live="polite" aria-label="${t('vault.aria.autoLockTimer')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
@@ -1177,13 +1177,13 @@ export class VaultUI {
                 </svg>
               </button>
             </div>
-            <button class="vault-icon-btn" id="btn-lock" data-tooltip="Lock (Ctrl+L)" data-tooltip-pos="bottom" aria-label="Lock vault">
+            <button class="vault-icon-btn" id="btn-lock" data-tooltip="${t('vault.tooltips.lock')}" data-tooltip-pos="bottom" aria-label="${t('vault.aria.lockVault')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </button>
-            <button class="vault-icon-btn vault-theme-toggle" id="theme-toggle" data-tooltip="Switch theme" data-tooltip-pos="bottom" aria-label="Toggle light/dark theme" aria-pressed="${this.#theme === 'light'}">
+            <button class="vault-icon-btn vault-theme-toggle" id="theme-toggle" data-tooltip="${t('vault.tooltips.switchTheme')}" data-tooltip-pos="bottom" aria-label="${t('vault.aria.toggleTheme')}" aria-pressed="${this.#theme === 'light'}">
               <svg class="theme-icon-dark" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
               </svg>
@@ -1199,7 +1199,7 @@ export class VaultUI {
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
               </svg>
             </button>
-            <button class="vault-icon-btn vault-hello-settings" id="hello-settings" data-tooltip="Windows Hello" data-tooltip-pos="bottom" aria-label="Configure Windows Hello" hidden>
+            <button class="vault-icon-btn vault-hello-settings" id="hello-settings" data-tooltip="${t('vault.windowsHello.title')}" data-tooltip-pos="bottom" aria-label="${t('vault.windowsHello.configure')}" hidden>
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                 <circle cx="8.5" cy="10" r="1.5"/>
@@ -1208,12 +1208,12 @@ export class VaultUI {
               </svg>
             </button>
             </button>
-            <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="Cloud Sync" data-tooltip-pos="bottom" aria-label="Configure cloud sync">
+            <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="${t('vault.sync.cloudSync')}" data-tooltip-pos="bottom" aria-label="${t('vault.sync.configure')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
               </svg>
             </button>
-            <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="Duress Mode" data-tooltip-pos="bottom" aria-label="Configure duress mode">
+            <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="${t('vault.settings.duressMode')}" data-tooltip-pos="bottom" aria-label="${t('vault.settings.configureDuress')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
@@ -1227,9 +1227,9 @@ export class VaultUI {
             </svg>
             <input type="search" class="vault-search-input" id="vault-search"
                    placeholder="${t('vault.placeholders.searchCtrlF')}" value="${escapeHtml(this.#searchQuery)}"
-                   aria-label="Search vault">
+                   aria-label="${t('vault.aria.searchVault')}">
             <button class="vault-filter-btn ${this.#hasActiveFilters() ? 'active' : ''}" id="filter-btn"
-                    title="Advanced filters" aria-haspopup="true" aria-expanded="false">
+                    title="${t('vault.tooltips.advancedFilters')}" aria-haspopup="true" aria-expanded="false">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
@@ -1272,9 +1272,9 @@ export class VaultUI {
             </div>
           </div>
 
-          <nav class="vault-nav" aria-label="Categories">
+          <nav class="vault-nav" aria-label="${t('vault.aria.categories')}">
             <div class="vault-nav-section">
-              <div class="vault-nav-title">Categories</div>
+              <div class="vault-nav-title">${t('vault.aria.categories')}</div>
               ${getCategories().map(cat => `
                 <button class="vault-nav-item ${this.#selectedCategory === cat.id ? 'active' : ''}"
                         data-category="${cat.id}"
@@ -1288,7 +1288,7 @@ export class VaultUI {
 
             <div class="vault-nav-section">
               <div class="vault-nav-title vault-nav-title-with-action">
-                <span>Folders</span>
+                <span>${t('vault.sidebar.folders')}</span>
                 <button class="vault-nav-add-btn" id="btn-add-folder" title="${t('vault.dialogs.newFolder')}" aria-label="${t('vault.dialogs.newFolder')}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1296,15 +1296,15 @@ export class VaultUI {
                   </svg>
                 </button>
               </div>
-              <div class="vault-folder-tree" role="tree" aria-label="Folders">
+              <div class="vault-folder-tree" role="tree" aria-label="${t('vault.sidebar.folders')}">
                 ${this.#renderFolderTree()}
               </div>
             </div>
 
             <div class="vault-nav-section">
               <div class="vault-nav-title vault-nav-title-with-action">
-                <span>Tags</span>
-                <button class="vault-nav-add-btn" id="btn-add-tag" title="New tag" aria-label="Create tag">
+                <span>${t('vault.sidebar.tags')}</span>
+                <button class="vault-nav-add-btn" id="btn-add-tag" title="${t('vault.dialogs.newTag')}" aria-label="${t('vault.dialogs.newTag')}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1318,9 +1318,9 @@ export class VaultUI {
           <div class="vault-sidebar-footer">
             <div class="vault-sync-status" id="vault-sync-status" hidden>
                <span class="vault-sync-icon" id="vault-sync-icon"></span>
-               <span class="vault-sync-text" id="vault-sync-text">Ready</span>
+               <span class="vault-sync-text" id="vault-sync-text">${t('vault.sync.upToDate')}</span>
             </div>
-            <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyze password health" aria-label="Analyze password health">
+            <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="${t('vault.tooltips.analyzeHealth')}" aria-label="${t('vault.tooltips.analyzeHealth')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
@@ -1341,7 +1341,7 @@ export class VaultUI {
           <div class="vault-list-header">
             <div class="vault-list-header-top">
               ${this.#renderBreadcrumb()}
-              <span class="vault-list-count">${filteredEntries.length} entry(ies)</span>
+              <span class="vault-list-count">${t('vault.misc.entryCount', { count: filteredEntries.length })}</span>
             </div>
             <div class="vault-list-toolbar">
               <div class="vault-sort-dropdown">
@@ -1364,8 +1364,8 @@ export class VaultUI {
                 </div>
               </div>
               <button class="vault-view-toggle ${this.#viewMode === 'compact' ? 'compact' : ''}" id="view-toggle"
-                      title="${this.#viewMode === 'compact' ? 'Comfortable view' : 'Compact view'}"
-                      aria-label="Toggle display density"
+                      title="${this.#viewMode === 'compact' ? t('vault.tooltips.comfortableView') : t('vault.tooltips.compactView')}"
+                      aria-label="${t('vault.aria.toggleDensity')}"
                       aria-pressed="${this.#viewMode === 'compact'}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   ${this.#viewMode === 'compact' ? `
@@ -1383,27 +1383,27 @@ export class VaultUI {
                   `}
                 </svg>
               </button>
-              <button class="vault-help-btn" id="shortcuts-help" title="Keyboard shortcuts (?)" aria-label="Show keyboard shortcuts">
+              <button class="vault-help-btn" id="shortcuts-help" title="${t('vault.tooltips.keyboardShortcuts')}" aria-label="${t('vault.shortcuts.showShortcuts')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                   <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
               </button>
-              <button class="vault-icon-btn vault-health-btn" id="health-dashboard" data-tooltip="Password Health" data-tooltip-pos="bottom" aria-label="Health dashboard">
+              <button class="vault-icon-btn vault-health-btn" id="health-dashboard" data-tooltip="${t('vault.sidebar.passwordHealth')}" data-tooltip-pos="bottom" aria-label="${t('vault.health.title')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
-              <button class="vault-icon-btn" id="btn-export" data-tooltip="Export" data-tooltip-pos="bottom" aria-label="Export entries">
+              <button class="vault-icon-btn" id="btn-export" data-tooltip="${t('vault.common.export')}" data-tooltip-pos="bottom" aria-label="${t('vault.aria.exportEntries')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
               </button>
-              <button class="vault-icon-btn" id="btn-import" data-tooltip="Import" data-tooltip-pos="bottom" aria-label="Import entries">
+              <button class="vault-icon-btn" id="btn-import" data-tooltip="${t('vault.common.import')}" data-tooltip-pos="bottom" aria-label="${t('vault.aria.importEntries')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
@@ -1411,7 +1411,7 @@ export class VaultUI {
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
-              <button class="vault-icon-btn vault-save-btn" id="btn-save-vault" data-tooltip="Save as..." data-tooltip-pos="bottom" aria-label="Save vault">
+              <button class="vault-icon-btn vault-save-btn" id="btn-save-vault" data-tooltip="${t('vault.tooltips.saveAs')}" data-tooltip-pos="bottom" aria-label="${t('vault.dialogs.saveVault')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -1419,7 +1419,7 @@ export class VaultUI {
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
-              <button class="vault-icon-btn vault-compact-btn" id="btn-compact-mode" data-tooltip="Mode compact (widget flottant)" data-tooltip-pos="bottom" aria-label="Basculer en mode compact">
+              <button class="vault-icon-btn vault-compact-btn" id="btn-compact-mode" data-tooltip="${t('vault.tooltips.compactMode')}" data-tooltip-pos="bottom" aria-label="${t('vault.aria.toggleCompactMode')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
                   <line x1="12" y1="18" x2="12.01" y2="18"></line>
@@ -1433,46 +1433,46 @@ export class VaultUI {
             <label class="vault-checkbox-wrapper select-all">
               <input type="checkbox" class="vault-checkbox" id="select-all"
                      ${this.#selectedEntries.size === filteredEntries.length && filteredEntries.length > 0 ? 'checked' : ''}
-                     aria-label="Select all">
+                     aria-label="${t('vault.aria.selectAll')}">
               <span class="vault-checkbox-mark"></span>
             </label>
-            <span class="vault-bulk-count">${this.#selectedEntries.size} selected</span>
+            <span class="vault-bulk-count">${t('vault.bulk.selected', { count: this.#selectedEntries.size })}</span>
             <div class="vault-bulk-buttons">
-              <button class="vault-bulk-btn" id="bulk-move" title="Move to folder" aria-label="Move selected entries to folder">
+              <button class="vault-bulk-btn" id="bulk-move" title="${t('vault.bulk.moveToFolder')}" aria-label="${t('vault.bulk.moveToFolder')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
-                Move
+                ${t('vault.common.move')}
               </button>
-              <button class="vault-bulk-btn" id="bulk-export" title="Export selection" aria-label="Export selected entries">
+              <button class="vault-bulk-btn" id="bulk-export" title="${t('vault.bulk.exportSelection')}" aria-label="${t('vault.bulk.exportSelection')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Export
+                ${t('vault.common.export')}
               </button>
-              <button class="vault-bulk-btn" id="bulk-tag" title="Manage tags" aria-label="Manage tags for selected entries">
+              <button class="vault-bulk-btn" id="bulk-tag" title="${t('vault.bulk.manageTags')}" aria-label="${t('vault.bulk.manageTags')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                   <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
-                Tags
+                ${t('vault.labels.tags')}
               </button>
-              <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="Delete selection" aria-label="Delete selected entries">
+              <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="${t('vault.bulk.deleteSelection')}" aria-label="${t('vault.bulk.deleteSelection')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                Delete
+                ${t('vault.common.delete')}
               </button>
-              <button class="vault-bulk-btn" id="bulk-cancel" title="Cancel selection" aria-label="Cancel selection">
-                Cancel
+              <button class="vault-bulk-btn" id="bulk-cancel" title="${t('vault.common.cancel')}" aria-label="${t('vault.common.cancel')}">
+                ${t('vault.common.cancel')}
               </button>
             </div>
           </div>
 
-          <div class="vault-list-content ${this.#viewMode}" id="vault-entries" role="listbox" aria-label="Entry list">
+          <div class="vault-list-content ${this.#viewMode}" id="vault-entries" role="listbox" aria-label="${t('vault.aria.entryList')}">
             ${filteredEntries.length === 0
         ? renderEmptyState({ searchQuery: this.#searchQuery, t })
         : filteredEntries.map((entry, idx) => this.#renderEntryRow(entry, idx)).join('')
@@ -1482,7 +1482,7 @@ export class VaultUI {
 
         <!-- Detail Panel -->
         <aside class="vault-detail-panel ${this.#selectedEntry ? '' : 'empty'}" id="detail-panel"
-               role="complementary" aria-label="Entry details">
+               role="complementary" aria-label="${t('vault.aria.entryDetails')}">
           ${this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection()}
         </aside>
       </div>
@@ -1719,7 +1719,7 @@ export class VaultUI {
     }
 
     return `
-      <nav class="vault-breadcrumb" aria-label="Breadcrumb">
+      <nav class="vault-breadcrumb" aria-label="${t('vault.aria.breadcrumb')}">
         <span class="vault-breadcrumb-item">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -2723,7 +2723,7 @@ export class VaultUI {
             <p class="vault-form-hint">This password protects the exported file. It can be different from the vault password.</p>
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="save-vault-password" placeholder="${t('vault.form.passwordPlaceholder')}" required aria-required="true" minlength="8" aria-invalid="false">
-              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Show">
+              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="${t('vault.aria.show')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -2745,7 +2745,7 @@ export class VaultUI {
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                 <polyline points="7 3 7 8 15 8"></polyline>
               </svg>
-              Sauvegarder sous...
+              ${t('vault.tooltips.saveAs')}
             </button>
           </div>
         </form>
@@ -2854,7 +2854,7 @@ export class VaultUI {
             <polyline points="17 21 17 13 7 13 7 21"></polyline>
             <polyline points="7 3 7 8 15 8"></polyline>
           </svg>
-          Sauvegarder sous...
+          ${t('vault.tooltips.saveAs')}
         `;
       }
     }
@@ -3889,7 +3889,7 @@ export class VaultUI {
     const breachCount = await getBreachCount(entry, this.#breachCache);
     if (breachCount > 0) {
       indicator.innerHTML = `
-        <span class="vault-breach-badge" title="This password has been exposed in ${formatBreachCount(breachCount)} data breaches">
+        <span class="vault-breach-badge" title="${t('vault.health.breachWarning', { count: formatBreachCount(breachCount) })}">
           🚨 Compromised
         </span>
       `;
@@ -3897,7 +3897,7 @@ export class VaultUI {
     } else if (this.#lastBreachCheck) {
       // Only show "safe" if we've done a check
       indicator.innerHTML = `
-        <span class="vault-safe-badge" title="This password has not been found in known breaches">
+        <span class="vault-safe-badge" title="${t('vault.health.noBreaches')}">
           ✅ Safe
         </span>
       `;
@@ -4321,13 +4321,13 @@ export class VaultUI {
             <label class="vault-label" for="edit-password">${t('vault.labels.password')}</label>
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="edit-password" value="${escapeHtml(entry.data?.password || '')}">
-              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="edit-password" aria-label="Show">
+              <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="edit-password" aria-label="${t('vault.aria.show')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
               </button>
-              <button type="button" class="vault-input-btn" id="edit-generate-password" data-tooltip="Generate" aria-label="Generate password">
+              <button type="button" class="vault-input-btn" id="edit-generate-password" data-tooltip="${t('vault.actions.generate')}" aria-label="${t('vault.aria.generatePassword')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
                 </svg>
@@ -4344,7 +4344,7 @@ export class VaultUI {
             <div class="vault-input-group">
               <input type="text" class="vault-input mono" id="edit-totp" value="${escapeHtml(entry.data?.totp || '')}"
                      placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
-              <button type="button" class="vault-input-btn" id="edit-scan-totp" data-tooltip="Scanner QR" aria-label="Scanner QR ou coller otpauth://">
+              <button type="button" class="vault-input-btn" id="edit-scan-totp" data-tooltip="${t('vault.actions.scanQR')}" aria-label="${t('vault.aria.scanQROrPaste')}">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="7" height="7"></rect>
                   <rect x="14" y="3" width="7" height="7"></rect>
@@ -4947,7 +4947,7 @@ export class VaultUI {
           <label class="vault-label" for="entry-username">Username / Email</label>
           <div class="input-with-action">
             <input type="text" class="vault-input" id="entry-username" placeholder="${t('vault.form.userPlaceholder')}" autocomplete="username">
-            <button type="button" class="vault-btn-icon" id="btn-create-alias" title="Generate Email Alias (Hide-My-Email)">
+            <button type="button" class="vault-btn-icon" id="btn-create-alias" title="${t('vault.actions.generateAlias')}">
               <span class="icon">🕵️</span>
             </button>
           </div>
@@ -4956,13 +4956,13 @@ export class VaultUI {
           <label class="vault-label" for="entry-password">${t('vault.labels.password')}</label>
           <div class="vault-input-group">
             <input type="password" class="vault-input" id="entry-password" placeholder="••••••••" autocomplete="new-password">
-            <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="entry-password" aria-label="Show">
+            <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="entry-password" aria-label="${t('vault.aria.show')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </button>
-            <button type="button" class="vault-input-btn" id="generate-password" data-tooltip="Generate" aria-label="Generate password">
+            <button type="button" class="vault-input-btn" id="generate-password" data-tooltip="${t('vault.actions.generate')}" aria-label="${t('vault.aria.generatePassword')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
               </svg>
@@ -5507,8 +5507,8 @@ export class VaultUI {
             <p id="confirm-dialog-message" class="confirm-dialog-message">${escapeHtml(message)}</p>
           </div>
           <div class="vault-modal-actions">
-            <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="Cancel">${escapeHtml(cancelText)}</button>
-            <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="Confirm">${escapeHtml(confirmText)}</button>
+            <button type="button" class="vault-btn vault-btn-secondary" id="confirm-dialog-cancel" aria-label="${t('vault.common.cancel')}">${escapeHtml(cancelText)}</button>
+            <button type="button" class="vault-btn ${confirmClass}" id="confirm-dialog-confirm" aria-label="${t('vault.dialogs.confirm')}">${escapeHtml(confirmText)}</button>
           </div>
         </div>
       `;
@@ -6168,7 +6168,7 @@ export class VaultUI {
     toast.setAttribute('role', 'alert');
     toast.innerHTML = `
       <span class="toast-message">${escapeHtml(message)}</span>
-      <button class="toast-undo-btn" aria-label="Undo">Undo</button>
+      <button class="toast-undo-btn" aria-label="${t('toast.undo')}">${t('toast.undo')}</button>
       <button class="toast-close" aria-label="${t('vault.common.close')}">&times;</button>
       <div class="toast-progress"><div class="toast-progress-bar"></div></div>
     `;
@@ -6229,8 +6229,8 @@ export class VaultUI {
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      <span class="toast-message">Auto-lock in 30 seconds</span>
-      <button class="toast-action-btn" aria-label="Stay connected">Stay connected</button>
+      <span class="toast-message">${t('vault.messages.autoLockWarning')}</span>
+      <button class="toast-action-btn" aria-label="${t('vault.messages.stayConnected')}">${t('vault.messages.stayConnected')}</button>
     `;
 
     container.appendChild(toast);

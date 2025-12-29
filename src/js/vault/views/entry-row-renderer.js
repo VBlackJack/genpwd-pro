@@ -45,9 +45,9 @@ export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entr
          aria-selected="${isSelected || isMultiSelected}"
          tabindex="${isSelected ? 0 : -1}"
          draggable="true">
-      <label class="vault-checkbox-wrapper" title="Select">
+      <label class="vault-checkbox-wrapper" title="${t('vault.common.select')}">
         <input type="checkbox" class="vault-checkbox" data-action="multi-select"
-               ${isMultiSelected ? 'checked' : ''} aria-label="Select ${escapeHtml(entry.title)}">
+               ${isMultiSelected ? 'checked' : ''} aria-label="${t('vault.common.select')} ${escapeHtml(entry.title)}">
         <span class="vault-checkbox-mark"></span>
       </label>
       <button class="vault-fav-toggle ${isFavorite ? 'active' : ''}"
@@ -71,7 +71,7 @@ export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entr
         <div class="vault-entry-subtitle">${escapeHtml(subtitle)}</div>
         ${renderTagsInRow({ entry, tags })}
       </div>
-      <div class="vault-entry-actions" role="group" aria-label="Quick actions">
+      <div class="vault-entry-actions" role="group" aria-label="${t('vault.aria.quickActions')}">
         ${renderQuickActions(entry)}
       </div>
     </div>
@@ -113,7 +113,7 @@ function renderQuickActions(entry) {
   if (entry.data?.url) {
     actions.push(`
       <button class="vault-quick-btn open-url" data-action="open-url"
-              title="Open website" aria-label="Open website in new tab">
+              title="${t('vault.actions.openWebsite')}" aria-label="${t('vault.actions.openWebsite')}">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
           <polyline points="15 3 21 3 21 9"></polyline>

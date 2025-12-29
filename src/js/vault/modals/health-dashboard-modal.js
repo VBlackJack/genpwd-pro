@@ -39,10 +39,11 @@ function renderCloseBtn(t = (k) => k) {
  * @param {number} options.score - Score value (0-100)
  * @param {string} options.scoreColor - CSS color for score
  * @param {string} options.scoreLabel - Score label (e.g., "Excellent")
+ * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
 export function renderScoreGauge(options = {}) {
-  const { score = 0, scoreColor = 'var(--vault-primary)', scoreLabel = 'N/A' } = options;
+  const { score = 0, scoreColor = 'var(--vault-primary)', scoreLabel = 'N/A', t = (k) => k } = options;
   const circumference = 2 * Math.PI * 54;
   const offset = circumference * (1 - score / 100);
 
@@ -61,7 +62,7 @@ export function renderScoreGauge(options = {}) {
         </div>
       </div>
       <div class="vault-health-status" data-score-color="${scoreColor}">${scoreLabel}</div>
-      <div class="vault-health-subtitle">Overall security score</div>
+      <div class="vault-health-subtitle">${t('vault.health.overallScore')}</div>
     </div>
   `;
 }
@@ -94,19 +95,20 @@ export function renderHealthCard(options = {}) {
  * Render health stats grid
  * @param {Object} options
  * @param {Object} options.report - Audit report
+ * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
 export function renderHealthGrid(options = {}) {
-  const { report = {} } = options;
+  const { report = {}, t = (k) => k } = options;
   const stats = report.stats || {};
 
   const cards = [
-    { icon: '📊', value: report.totalEntries || 0, label: 'Total entries', cssClass: 'vault-health-total' },
-    { icon: '✅', value: stats.strongPasswords || 0, label: 'Mots de passe forts', cssClass: 'vault-health-strong', filter: 'strong' },
-    { icon: '⚠️', value: stats.weakPasswords || 0, label: 'Mots de passe faibles', cssClass: 'vault-health-weak', filter: 'weak' },
-    { icon: '🔄', value: stats.reusedPasswords || 0, label: 'Reused', cssClass: 'vault-health-reused', filter: 'reused' },
-    { icon: '📅', value: stats.oldPasswords || 0, label: 'Anciens (>1 an)', cssClass: 'vault-health-old', filter: 'old' },
-    { icon: '🛡️', value: stats.with2FA || 0, label: 'Avec 2FA', cssClass: 'vault-health-2fa' }
+    { icon: '📊', value: report.totalEntries || 0, label: t('vault.health.totalEntries'), cssClass: 'vault-health-total' },
+    { icon: '✅', value: stats.strongPasswords || 0, label: t('vault.health.strongPasswords'), cssClass: 'vault-health-strong', filter: 'strong' },
+    { icon: '⚠️', value: stats.weakPasswords || 0, label: t('vault.health.weakPasswords'), cssClass: 'vault-health-weak', filter: 'weak' },
+    { icon: '🔄', value: stats.reusedPasswords || 0, label: t('vault.health.reusedPasswords'), cssClass: 'vault-health-reused', filter: 'reused' },
+    { icon: '📅', value: stats.oldPasswords || 0, label: t('vault.health.oldPasswords'), cssClass: 'vault-health-old', filter: 'old' },
+    { icon: '🛡️', value: stats.with2FA || 0, label: t('vault.health.with2FA'), cssClass: 'vault-health-2fa' }
   ];
 
   return `
@@ -139,21 +141,22 @@ export function renderRecommendation(rec) {
 /**
  * Render recommendations section
  * @param {Array} recommendations - List of recommendations
+ * @param {Function} t - Translation function
  * @returns {string} HTML string
  */
-export function renderRecommendations(recommendations = []) {
+export function renderRecommendations(recommendations = [], t = (k) => k) {
   if (recommendations.length === 0) {
     return `
       <div class="vault-health-success">
         <span class="vault-health-success-icon">🎉</span>
-        <span>Excellent! Your vault is well secured.</span>
+        <span>${t('vault.health.excellentSecurity')}</span>
       </div>
     `;
   }
 
   return `
     <div class="vault-health-recommendations">
-      <h4>Recommandations</h4>
+      <h4>${t('vault.health.recommendations')}</h4>
       <div class="vault-recommendation-list">
         ${recommendations.map(renderRecommendation).join('')}
       </div>
@@ -177,11 +180,11 @@ export function renderBreachSection(options = {}) {
         <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
         </svg>
-        Check for breaches (HIBP)
+        ${t('vault.health.checkBreaches')}
       </button>
       ${hasAuditFilter ? `
         <button class="vault-btn vault-btn-secondary" id="btn-clear-audit-filter">
-          Clear filter
+          ${t('vault.health.clearFilter')}
         </button>
       ` : ''}
     </div>
@@ -192,7 +195,7 @@ export function renderBreachSection(options = {}) {
         <span class="vault-spinner-small"></span>
         ${t('common.checking')}
       </div>
-      <div class="vault-breach-results" id="breach-list" role="region" aria-live="polite" aria-label="Breach check results"></div>
+      <div class="vault-breach-results" id="breach-list" role="region" aria-live="polite" aria-label="${t('vault.aria.breachResults')}"></div>
     </div>
   `;
 }
@@ -200,13 +203,14 @@ export function renderBreachSection(options = {}) {
 /**
  * Render breach results - safe
  * @param {number} checkedCount - Number of passwords checked
+ * @param {Function} t - Translation function
  * @returns {string} HTML string
  */
-export function renderBreachResultsSafe(checkedCount) {
+export function renderBreachResultsSafe(checkedCount, t = (k) => k) {
   return `
     <div class="vault-breach-safe">
       <span class="vault-breach-icon">✅</span>
-      <span>No compromised passwords found in ${checkedCount} checked</span>
+      <span>${t('vault.health.noCompromised', { count: checkedCount })}</span>
     </div>
   `;
 }
@@ -216,13 +220,14 @@ export function renderBreachResultsSafe(checkedCount) {
  * @param {Array} compromised - List of compromised entries
  * @param {number} totalChecked - Total number checked
  * @param {Function} formatCount - Function to format breach count
+ * @param {Function} t - Translation function
  * @returns {string} HTML string
  */
-export function renderBreachResultsCompromised(compromised, totalChecked, formatCount = (n) => n.toString()) {
+export function renderBreachResultsCompromised(compromised, totalChecked, formatCount = (n) => n.toString(), t = (k) => k) {
   return `
     <div class="vault-breach-warning">
       <span class="vault-breach-icon">🚨</span>
-      <span>${compromised.length} compromised password(s) out of ${totalChecked}</span>
+      <span>${t('vault.health.compromisedFound', { count: compromised.length, total: totalChecked })}</span>
     </div>
     <ul class="vault-breach-list">
       ${compromised.map(({ entry, count }) => `
@@ -268,13 +273,13 @@ export function renderHealthDashboardModal(options = {}) {
     <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
       <div class="vault-modal vault-modal-health">
         <div class="vault-modal-header">
-          <h3 id="health-title">Security Dashboard</h3>
+          <h3 id="health-title">${t('vault.health.securityDashboard')}</h3>
           ${renderCloseBtn(t)}
         </div>
         <div class="vault-modal-body">
-          ${renderScoreGauge({ score: report.score, scoreColor, scoreLabel })}
-          ${renderHealthGrid({ report })}
-          ${renderRecommendations(recommendations)}
+          ${renderScoreGauge({ score: report.score, scoreColor, scoreLabel, t })}
+          ${renderHealthGrid({ report, t })}
+          ${renderRecommendations(recommendations, t)}
           ${renderBreachSection({ hasAuditFilter, t })}
         </div>
       </div>
@@ -295,13 +300,13 @@ export function renderEmptyHealthModal(options = {}) {
     <div class="vault-modal-overlay" id="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
       <div class="vault-modal vault-modal-health">
         <div class="vault-modal-header">
-          <h3 id="health-title">Security Dashboard</h3>
+          <h3 id="health-title">${t('vault.health.securityDashboard')}</h3>
           ${renderCloseBtn(t)}
         </div>
         <div class="vault-modal-body">
           <div class="vault-health-loading">
             <span class="vault-spinner"></span>
-            <p>Analyzing vault security...</p>
+            <p>${t('vault.health.analyzing')}</p>
           </div>
         </div>
       </div>
@@ -320,7 +325,7 @@ export function renderLegacyHealthModal(stats, t = (k) => k) {
     <div class="vault-modal-overlay" id="legacy-health-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-health-title">
       <div class="vault-modal vault-modal-health">
         <div class="vault-modal-header">
-          <h3 id="legacy-health-title">Password health</h3>
+          <h3 id="legacy-health-title">${t('vault.health.passwordHealth')}</h3>
           ${renderCloseBtn(t)}
         </div>
         <div class="vault-modal-body">
@@ -332,10 +337,10 @@ export function renderLegacyHealthModal(stats, t = (k) => k) {
             <div class="vault-health-status">${stats.status}</div>
           </div>
           <div class="vault-health-grid">
-            <div class="vault-health-card"><div class="vault-health-card-value">${stats.total}</div><div class="vault-health-card-label">Total</div></div>
-            <div class="vault-health-card"><div class="vault-health-card-value">${stats.strong}</div><div class="vault-health-card-label">Strong</div></div>
-            <div class="vault-health-card"><div class="vault-health-card-value">${stats.weak}</div><div class="vault-health-card-label">Weak</div></div>
-            <div class="vault-health-card"><div class="vault-health-card-value">${stats.reused}</div><div class="vault-health-card-label">Reused</div></div>
+            <div class="vault-health-card"><div class="vault-health-card-value">${stats.total}</div><div class="vault-health-card-label">${t('vault.health.total')}</div></div>
+            <div class="vault-health-card"><div class="vault-health-card-value">${stats.strong}</div><div class="vault-health-card-label">${t('vault.filters.strong')}</div></div>
+            <div class="vault-health-card"><div class="vault-health-card-value">${stats.weak}</div><div class="vault-health-card-label">${t('vault.filters.weak')}</div></div>
+            <div class="vault-health-card"><div class="vault-health-card-value">${stats.reused}</div><div class="vault-health-card-label">${t('vault.filters.reused')}</div></div>
           </div>
         </div>
       </div>

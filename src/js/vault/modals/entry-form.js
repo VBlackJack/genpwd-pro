@@ -6,6 +6,7 @@
 import { escapeHtml } from '../utils/formatter.js';
 import { renderTypeFields } from './form-fields.js';
 import { renderCustomFieldsSection } from './custom-fields.js';
+import { t } from '../../utils/i18n.js';
 
 /**
  * Entry type definitions
@@ -32,7 +33,7 @@ export function renderTypeSelector(options = {}) {
     .filter(([k]) => k !== 'preset' && k !== 'ssh');
 
   return `
-    <div class="vault-type-selector" role="radiogroup" aria-label="Entry type">
+    <div class="vault-type-selector" role="radiogroup" aria-label="${t('vault.aria.entryType')}">
       ${types.map(([key, type]) => `
         <label class="vault-type-option">
           <input type="radio" name="entry-type" value="${key}" ${key === selectedType ? 'checked' : ''}>

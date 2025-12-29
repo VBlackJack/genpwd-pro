@@ -113,8 +113,8 @@
 .text-muted { color: var(--text-muted, #94a3b8) !important; }
 .text-secondary { color: var(--text-secondary, #6b7280) !important; }
 .text-primary { color: var(--text-primary, #e5e7eb) !important; }
-.text-light { color: #e2e8f0 !important; }
-.text-slate { color: #94a3b8 !important; }
+.text-light { color: var(--text-light, #e2e8f0) !important; }
+.text-slate { color: var(--text-slate, #94a3b8) !important; }
 
 /* Background utilities */
 .bg-surface { background: var(--vault-surface, #f8f9fa) !important; }
@@ -531,7 +531,7 @@ input:checked + .toggle-slider::before {
 .vault-presets-title {
   margin: 0 0 12px;
   font-size: 0.95em;
-  color: #e2e8f0;
+  color: var(--text-light, #e2e8f0);
 }
 
 .vault-presets-list {
@@ -553,7 +553,7 @@ input:checked + .toggle-slider::before {
 
 .vault-preset-name {
   font-weight: 500;
-  color: #e2e8f0;
+  color: var(--text-light, #e2e8f0);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -561,7 +561,7 @@ input:checked + .toggle-slider::before {
 
 .vault-preset-date {
   font-size: 0.8em;
-  color: #94a3b8;
+  color: var(--text-slate, #94a3b8);
 }
 
 .vault-preset-actions {
@@ -1120,7 +1120,7 @@ input:checked + .toggle-slider::before {
 .empty-state-msg {
   text-align: center;
   padding: 40px;
-  color: #999;
+  color: var(--text-hint, #999);
 }
 
 /* Button color variants */
@@ -1149,7 +1149,7 @@ input:checked + .toggle-slider::before {
 .form-description {
   margin-top: 8px;
   font-size: 0.9em;
-  color: #666;
+  color: var(--text-secondary, #666);
 }
 
 /* Import entries list */
@@ -1164,13 +1164,13 @@ input:checked + .toggle-slider::before {
 
 .import-entry-details {
   font-size: 0.85em;
-  color: #666;
+  color: var(--text-secondary, #666);
 }
 
 .import-more-msg {
   padding: 8px;
   text-align: center;
-  color: #999;
+  color: var(--text-hint, #999);
 }
 
 /* Result entry styling */
@@ -1211,7 +1211,7 @@ input:checked + .toggle-slider::before {
 .file-name-display {
   margin-top: 10px;
   font-size: 0.9em;
-  color: #666;
+  color: var(--text-secondary, #666);
 }
 
 /* Import hint text */

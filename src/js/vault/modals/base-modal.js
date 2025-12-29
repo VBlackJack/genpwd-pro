@@ -195,20 +195,22 @@ export const TAG_COLORS = [
  * @param {string} options.id - Container ID
  * @param {string} options.selectedColor - Currently selected color
  * @param {string} options.inputId - Hidden input ID
+ * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
 export function renderColorPicker(options = {}) {
   const {
     id,
     selectedColor = TAG_COLORS[0],
-    inputId = 'color'
+    inputId = 'color',
+    t = (k) => k
   } = options;
 
   return `
     <div class="vault-color-grid" id="${id}">
       ${TAG_COLORS.map(color => `
         <button type="button" class="vault-color-option ${color === selectedColor ? 'selected' : ''}"
-                data-color="${color}" aria-label="Select color ${color}" style="background-color: ${color}">
+                data-color="${color}" aria-label="${t('vault.labels.selectColor')} ${color}" style="background-color: ${color}">
           ${color === selectedColor ? '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
         </button>
       `).join('')}

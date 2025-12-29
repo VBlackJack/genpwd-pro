@@ -23,7 +23,7 @@ export function renderLockScreen({ t = (k) => k } = {}) {
         <h2>${t('vault.lockScreen.title')}</h2>
         <p class="vault-lock-subtitle">${t('vault.lockScreen.subtitle')}</p>
 
-        <div class="vault-selector" id="vault-selector" role="listbox" aria-label="Vault selection">
+        <div class="vault-selector" id="vault-selector" role="listbox" aria-label="${t('vault.aria.vaultSelection')}">
           <div class="vault-loading"><div class="vault-spinner"></div></div>
         </div>
 

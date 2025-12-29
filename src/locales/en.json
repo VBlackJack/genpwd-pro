@@ -397,7 +397,46 @@
       "generatePassword": "Generate password",
       "scanQROrPaste": "Scan QR or paste otpauth://",
       "required": "required",
-      "deleteField": "Delete this field"
+      "deleteField": "Delete this field",
+      "passwordManager": "Password Manager",
+      "vaultNavigation": "Vault navigation",
+      "autoLockTimer": "Auto-lock timer",
+      "lockVault": "Lock vault",
+      "toggleTheme": "Toggle light/dark theme",
+      "searchVault": "Search vault",
+      "categories": "Categories",
+      "toggleDensity": "Toggle display density",
+      "toggleCompactMode": "Toggle compact mode",
+      "selectAll": "Select all",
+      "entryList": "Entry list",
+      "entryDetails": "Entry details",
+      "exportEntries": "Export entries",
+      "importEntries": "Import entries",
+      "breachResults": "Breach check results",
+      "vaultSelection": "Vault selection",
+      "quickActions": "Quick actions",
+      "loadingEntries": "Loading entries",
+      "loadingDetails": "Loading details",
+      "breadcrumb": "Breadcrumb",
+      "entryType": "Entry type"
+    },
+    "tooltips": {
+      "lock": "Lock (Ctrl+L)",
+      "switchTheme": "Switch theme",
+      "advancedFilters": "Advanced filters",
+      "analyzeHealth": "Analyze password health",
+      "comfortableView": "Comfortable view",
+      "compactView": "Compact view",
+      "keyboardShortcuts": "Keyboard shortcuts (?)",
+      "saveAs": "Save as...",
+      "compactMode": "Compact mode (floating widget)"
+    },
+    "bulk": {
+      "selected": "{count} selected",
+      "moveToFolder": "Move to folder",
+      "exportSelection": "Export selection",
+      "manageTags": "Manage tags",
+      "deleteSelection": "Delete selection"
     },
     "attachments": {
       "none": "No attachments",
@@ -449,6 +488,7 @@
       "totpKey": "TOTP Key (2FA)",
       "usernameEmail": "Username / Email",
       "passwordExpiration": "Password expiration",
+      "totp2FA": "2FA Code (TOTP)",
       "folderName": "Folder name",
       "tagName": "Tag name",
       "color": "Color",
@@ -462,7 +502,8 @@
       "modified": "Modified",
       "value": "Value",
       "customFields": "Custom fields",
-      "addField": "Add field"
+      "addField": "Add field",
+      "selectColor": "Select color"
     },
     "actions": {
       "copyUsername": "Copy username",
@@ -504,7 +545,9 @@
       "autoFill": "Auto-fill",
       "preview": "Preview",
       "sourceMarkdown": "Source Markdown",
+      "copy2FACode": "Copy 2FA code",
       "previewMode": "Preview mode",
+      "sourceMode": "Source mode",
       "editSourceMode": "Edit source mode"
     },
     "form": {
@@ -657,25 +700,36 @@
     },
     "health": {
       "title": "Security Dashboard",
+      "securityDashboard": "Security Dashboard",
       "passwordHealth": "Password health",
       "total": "Total",
+      "totalEntries": "Total entries",
       "strong": "Strong",
+      "strongPasswords": "Strong passwords",
       "weak": "Weak",
+      "weakPasswords": "Weak passwords",
       "reused": "Reused",
+      "reusedPasswords": "Reused passwords",
+      "oldPasswords": "Old (>1 year)",
+      "with2FA": "With 2FA",
       "excellent": "Excellent",
       "good": "Good",
       "needsImprovement": "Needs improvement",
       "critical": "Critical",
       "overallScore": "Overall security score",
       "vaultSecured": "Excellent! Your vault is well secured.",
+      "excellentSecurity": "Excellent! Your vault is well secured.",
+      "recommendations": "Recommendations",
+      "checkBreaches": "Check for breaches (HIBP)",
+      "clearFilter": "Clear filter",
       "checkResults": "Check results",
       "checking": "Checking...",
+      "analyzing": "Analyzing vault security...",
       "checkingProgress": "Checking {checked}/{total}...",
-      "weakPasswords": "{count} weak password(s) to strengthen",
-      "reusedPasswords": "{count} reused password(s)",
+      "noCompromised": "No compromised passwords found in {count} checked",
+      "compromisedFound": "{count} compromised password(s) out of {total}",
       "expiredPasswords": "{count} expired password(s)",
       "expiringPasswords": "{count} password(s) expiring soon",
-      "oldPasswords": "{count} old password(s) (> 6 months)",
       "iconWarning": "Warning",
       "iconReused": "Reused",
       "iconExpired": "Expired",
@@ -684,7 +738,21 @@
       "compromised": "Compromised",
       "safe": "Safe",
       "breachWarning": "This password has been exposed in {count} data breaches",
-      "noBreaches": "This password has not been found in known breaches"
+      "noBreaches": "This password has not been found in known breaches",
+      "noPasswordSet": "No password set",
+      "weakPasswordBits": "Weak password ({count} bits)",
+      "passwordSharedBy": "Password shared by {count} entries",
+      "reusedPasswordsCount": "{count} reused passwords",
+      "veryWeakPasswords": "{count} very weak password(s)",
+      "passwordsToStrengthen": "{count} password(s) to strengthen",
+      "oldPasswordsCount": "{count} old password(s)",
+      "entriesWithout2FA": "{percent}% of entries without 2FA",
+      "changeImmediately": "Change these passwords immediately",
+      "useLongerPasswords": "Use longer and more complex passwords",
+      "increaseComplexity": "Increase the complexity of these passwords",
+      "considerRenewing": "Consider renewing them",
+      "enable2FA": "Enable two-factor authentication",
+      "scoreFair": "Fair"
     },
     "expiry": {
       "expired": "Expired {days} day(s) ago",
@@ -710,7 +778,12 @@
       "expiryReminder": "Visual reminder to renew the password",
       "totpSecretEdit": "Base32 secret or otpauth:// URI",
       "totpSecretAdd": "Optional - Base32 secret or otpauth:// URI",
-      "totpRecommended": "Recommended for this service"
+      "totpRecommended": "Recommended for this service",
+      "autoRefresh": "auto refresh"
+    },
+    "history": {
+      "title": "History",
+      "clickToReveal": "Click to reveal"
     },
     "filters": {
       "type": "Type",
@@ -771,7 +844,25 @@
       "months": "{count} month(s)",
       "years": "{count} year(s)",
       "recent": "Recent",
-      "renewalRecommended": "Renewal recommended"
+      "renewalRecommended": "Renewal recommended",
+      "urgentRenewal": "Urgent renewal needed",
+      "unchangedFor": "Unchanged for {count} year(s)"
+    },
+    "relativeTime": {
+      "justNow": "Just now",
+      "minAgo": "{count} min ago",
+      "hoursAgo": "{count}h ago",
+      "daysAgo": "{count}d ago",
+      "weeksAgo": "{count} wk ago",
+      "monthsAgo": "{count} mo ago"
+    },
+    "exportFormats": {
+      "jsonDesc": "Native format with all data",
+      "bitwardenDesc": "Bitwarden compatible",
+      "lastpassDesc": "LastPass compatible",
+      "onepasswordDesc": "1Password compatible",
+      "chromeDesc": "Browser compatible",
+      "keepassDesc": "KeePass 2.x compatible"
     },
     "lockScreen": {
       "title": "Vault",
@@ -957,6 +1048,7 @@
       "cards": "Cards",
       "identities": "Identities",
       "folders": "FOLDERS",
+      "noFolders": "No folders",
       "tags": "TAGS",
       "noTags": "No tags",
       "passwordHealth": "Password health",
@@ -985,6 +1077,21 @@
       "sshKey": "SSH Key",
       "preset": "Preset",
       "recentlyModified": "Recently modified"
+    },
+    "import": {
+      "supportedFormats": "Supported formats",
+      "formatsHint": "Formats: XML, JSON, CSV",
+      "entries": "Entries",
+      "fields": "Fields",
+      "kb": "KB",
+      "dragOrBrowse": "Drag a file here or {browse}",
+      "browseFiles": "Browse files",
+      "includeFolders": "Import folders/groups",
+      "mergeDuplicates": "Merge duplicates (by title)"
+    },
+    "export": {
+      "title": "Export {count} entry(ies)",
+      "chooseFormat": "Choose export format:"
     },
     "saveModal": {
       "title": "Save to Vault",

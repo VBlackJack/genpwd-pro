@@ -5,6 +5,7 @@
 
 import { escapeHtml } from '../utils/formatter.js';
 import { getFolderColor } from '../components/color-picker.js';
+import { t } from '../../utils/i18n.js';
 
 /**
  * Build a hierarchical tree from flat folder list
@@ -74,7 +75,7 @@ export function getDescendantEntryCount(folderId, childMap, entries) {
  */
 export function renderFolderTree({ folders, entries, expandedFolders, selectedFolder }) {
   if (folders.length === 0) {
-    return '<div class="vault-nav-empty">No folders</div>';
+    return `<div class="vault-nav-empty">${t('vault.sidebar.noFolders')}</div>`;
   }
 
   const tree = buildFolderTree({ folders, entries });
