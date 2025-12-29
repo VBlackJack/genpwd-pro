@@ -105,11 +105,19 @@
   --border-color: rgba(255, 255, 255, 0.1);
   --border-hover: rgba(255, 255, 255, 0.2);
 
+  /* Input backgrounds */
+  --input-bg: var(--bg-tertiary);
+  --input-bg-hover: var(--bg-input-hover);
+  --input-bg-focus: var(--bg-input-focus);
+
   /* Shadows */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+
+  /* Focus ring shadow */
+  --focus-ring-shadow: 0 0 0 3px rgba(var(--rgb-primary), 0.15);
 
   /* Modal Overlay */
   --modal-backdrop: rgba(0, 0, 0, 0.5);
@@ -273,7 +281,8 @@
   }
 }
 
-/* Data attribute for manual theme toggle */
+/* Manual theme toggle - mirrors @media (prefers-color-scheme: light) for user override
+   Note: Duplication is intentional - @media handles system preference, [data-theme] handles manual toggle */
 [data-theme="light"] {
   --bg-deep: hsl(220, 20%, 96%);
   --bg-surface: hsl(220, 15%, 98%);
@@ -287,7 +296,6 @@
   --glass-border: rgba(0, 0, 0, 0.12);
   --glass-border-light: rgba(0, 0, 0, 0.18);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
-  /* Text Colors - WCAG AA compliant */
   --text-primary: rgba(0, 0, 0, 0.87);
   --text-secondary: rgba(0, 0, 0, 0.72);
   --text-muted: rgba(0, 0, 0, 0.62);
@@ -300,6 +308,13 @@
   --border-hover: rgba(0, 0, 0, 0.2);
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(93, 130, 240, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(240, 100, 180, 0.06) 0%, transparent 40%),
+    var(--bg-deep);
 }
 
 body {

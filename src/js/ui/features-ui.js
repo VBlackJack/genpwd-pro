@@ -549,7 +549,7 @@ export function initializePresetsUI() {
         </button>
       </div>
       <button class="btn-icon d-none" id="btn-quick-save-preset" aria-label="${i18n.t('presets.quickSave')}"><span aria-hidden="true">💾</span></button>
-      <button class="btn-icon d-none" id="btn-refresh-presets" aria-label="${i18n.t('presets.refreshFromVault')}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+      <button class="btn-icon d-none" id="btn-refresh-presets" aria-label="${i18n.t('presets.refreshFromVault')}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
     </div>
   `);
 
@@ -738,7 +738,7 @@ function bindPresetEvents() {
       } finally {
         btnRefreshPresets.disabled = false;
         btnRefreshPresets.removeAttribute('aria-busy');
-        btnRefreshPresets.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
+        btnRefreshPresets.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
       }
     });
   }

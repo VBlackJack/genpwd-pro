@@ -200,13 +200,13 @@ export function isValidMode(mode) {
 
 // Automatic constants validation
 export function validateCharSets() {
-  for (const [key, policy] of Object.entries(CHAR_SETS)) {
+  for (const [_key, policy] of Object.entries(CHAR_SETS)) {
     if (!Array.isArray(policy.consonants) || policy.consonants.length === 0) {
-      console.error(`CHAR_SETS.${key}.consonants invalid`);
+      // Silent validation failure - throw will propagate the error
       return false;
     }
     if (!Array.isArray(policy.vowels) || policy.vowels.length === 0) {
-      console.error(`CHAR_SETS.${key}.vowels invalid`);
+      // Silent validation failure - throw will propagate the error
       return false;
     }
   }
@@ -214,11 +214,11 @@ export function validateCharSets() {
   // Cross-Layout verification
   const standardLayout = CHAR_SETS['standard-layout'];
   if (standardLayout.vowels.includes('a')) {
-    console.error('"a" present in standard-layout - should be excluded');
+    // Silent validation failure - throw will propagate the error
     return false;
   }
 
-  console.log('CHAR_SETS validated with CLI-Safe + Cross-Layout');
+  // Validation successful - no logging in production
   return true;
 }
 
