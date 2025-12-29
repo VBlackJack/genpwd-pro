@@ -5,6 +5,7 @@
 
 import { escapeHtml } from '../utils/formatter.js';
 import { ICON_ALERT } from '../views/icons.js';
+import { t } from '../../utils/i18n.js';
 
 /**
  * Render confirm dialog HTML
@@ -19,10 +20,10 @@ import { ICON_ALERT } from '../views/icons.js';
  */
 export function renderConfirmDialog(options = {}) {
   const {
-    title = 'Confirm',
-    message = 'Are you sure?',
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
+    title = t('vault.dialogs.confirmTitle'),
+    message = t('vault.dialogs.areYouSure'),
+    confirmText = t('common.confirm'),
+    cancelText = t('common.cancel'),
     confirmClass = 'vault-btn-danger',
     type = 'warning'
   } = options;
@@ -66,9 +67,9 @@ export function renderConfirmDialog(options = {}) {
  */
 export async function showConfirmDialog(message, options = {}) {
   const {
-    title = 'Confirm',
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    title = t('vault.dialogs.confirmTitle'),
+    confirmLabel = t('common.confirm'),
+    cancelLabel = t('common.cancel'),
     danger = false,
     type = danger ? 'danger' : 'warning'
   } = options;

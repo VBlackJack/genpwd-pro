@@ -31,6 +31,7 @@ import {
   wipeKey,
   ALGORITHM
 } from './xchacha20.js';
+import { t } from '../../utils/i18n-node.js';
 
 /**
  * @typedef {Object} VaultKeyData
@@ -76,18 +77,18 @@ export class CryptoEngine {
   async deriveVaultKey(password, keyData) {
     // Validate inputs
     if (!password || typeof password !== 'string') {
-      throw new Error('Invalid password: must be a non-empty string');
+      throw new Error(t('errors.crypto.invalidPassword'));
     }
     if (!keyData || typeof keyData !== 'object') {
-      throw new Error('Invalid keyData: must be an object');
+      throw new Error(t('errors.crypto.invalidKeyData'));
     }
     if (!keyData.salt || typeof keyData.salt !== 'string') {
-      throw new Error('Invalid keyData.salt: must be a base64 string');
+      throw new Error(t('errors.crypto.invalidSalt'));
     }
 
     const salt = this.#base64ToArray(keyData.salt);
     if (salt.length < 16) {
-      throw new Error('Invalid salt: must be at least 16 bytes');
+      throw new Error(t('errors.crypto.saltTooShort'));
     }
 
     const key = await deriveKey(password, salt, keyData.kdfParams);
@@ -104,7 +105,7 @@ export class CryptoEngine {
   async verifyPassword(password, keyData) {
     // Validate keyData.verifier before use
     if (!keyData?.verifier || typeof keyData.verifier !== 'string') {
-      throw new Error('Invalid keyData.verifier: must be a base64 string');
+      throw new Error(t('errors.crypto.invalidVerifier'));
     }
 
     const key = await this.deriveVaultKey(password, keyData);
@@ -112,7 +113,7 @@ export class CryptoEngine {
 
     if (expectedVerifier.length !== 32) {
       wipeKey(key);
-      throw new Error('Invalid verifier: must be 32 bytes (SHA-256)');
+      throw new Error(t('errors.crypto.verifierInvalidSize'));
     }
 
     const actualVerifier = await this.#createVerifier(key);

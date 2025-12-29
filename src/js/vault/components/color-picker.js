@@ -3,20 +3,39 @@
  * Popover for selecting folder colors
  */
 
+import { t } from '../../utils/i18n.js';
+
 /**
- * Available folder colors
+ * Color data (static values)
  */
-export const FOLDER_COLORS = [
-  { color: null, label: 'Default' },
-  { color: '#ef4444', label: 'Red' },
-  { color: '#f97316', label: 'Orange' },
-  { color: '#eab308', label: 'Yellow' },
-  { color: '#22c55e', label: 'Green' },
-  { color: '#06b6d4', label: 'Cyan' },
-  { color: '#3b82f6', label: 'Blue' },
-  { color: '#8b5cf6', label: 'Purple' },
-  { color: '#ec4899', label: 'Pink' }
+const COLOR_DATA = [
+  { color: null, key: 'default' },
+  { color: '#ef4444', key: 'red' },
+  { color: '#f97316', key: 'orange' },
+  { color: '#eab308', key: 'yellow' },
+  { color: '#22c55e', key: 'green' },
+  { color: '#06b6d4', key: 'cyan' },
+  { color: '#3b82f6', key: 'blue' },
+  { color: '#8b5cf6', key: 'purple' },
+  { color: '#ec4899', key: 'pink' }
 ];
+
+/**
+ * Get folder colors with translated labels
+ * @returns {Array<{color: string|null, label: string}>}
+ */
+export function getFolderColors() {
+  return COLOR_DATA.map(c => ({
+    color: c.color,
+    label: t(`vault.colors.${c.key}`)
+  }));
+}
+
+/**
+ * Available folder colors (legacy export)
+ * @deprecated Use getFolderColors() for translated labels
+ */
+export const FOLDER_COLORS = COLOR_DATA;
 
 /**
  * Show color picker popover
@@ -29,17 +48,18 @@ export const FOLDER_COLORS = [
  * @returns {HTMLElement} The picker element
  */
 export function showColorPicker(options = {}) {
-  const { x, y, currentColor, onColorSelected, t = (k) => k } = options;
+  const { x, y, currentColor, onColorSelected } = options;
 
   // Remove existing picker
   document.querySelector('.vault-color-picker')?.remove();
 
+  const colors = getFolderColors();
   const picker = document.createElement('div');
   picker.className = 'vault-color-picker';
   picker.innerHTML = `
     <div class="vault-color-picker-header">${t('vault.folders.color')}</div>
     <div class="vault-color-picker-grid">
-      ${FOLDER_COLORS.map(c => `
+      ${colors.map(c => `
         <button class="vault-color-option ${c.color === currentColor || (!c.color && !currentColor) ? 'active' : ''}"
                 data-color="${c.color || ''}"
                 data-option-color="${c.color || ''}"

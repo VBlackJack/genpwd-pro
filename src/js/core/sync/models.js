@@ -17,6 +17,8 @@
 // src/js/core/sync/models.js - Cloud Sync Data Models
 // Mirrors Android CloudResult architecture for cross-platform consistency
 
+import { t } from '../../utils/i18n.js';
+
 /**
  * Cloud Error Types
  * Maps to Android CloudErrorType enum for consistent error handling
@@ -135,12 +137,12 @@ export class CloudResult {
 
     const errorType = errorMap[status] || CloudErrorType.GENERIC;
     const defaultMessages = {
-      401: 'Authentication expired. Please sign in again.',
-      403: 'Permission denied. Please re-authorize the app.',
-      404: 'Resource not found.',
-      409: 'Conflict detected. Remote file was modified.',
-      429: 'Too many requests. Please try again later.',
-      507: 'Storage quota exceeded.'
+      401: t('errors.auth.expired'),
+      403: t('errors.auth.permissionDenied'),
+      404: t('errors.network.notFound'),
+      409: t('errors.network.conflict'),
+      429: t('errors.network.rateLimited'),
+      507: t('errors.network.quotaExceeded')
     };
 
     return CloudResult.error(
@@ -164,14 +166,14 @@ export class CloudResult {
     if (isNetworkError || error.name === 'TypeError') {
       return CloudResult.error(
         CloudErrorType.NETWORK,
-        'Network error. Please check your internet connection.',
+        t('errors.network.error'),
         error
       );
     }
 
     return CloudResult.error(
       CloudErrorType.GENERIC,
-      error.message || 'An unexpected error occurred',
+      error.message || t('errors.generic.unexpected'),
       error
     );
   }

@@ -12,6 +12,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
 import { WINDOWS_HELLO } from '../../../js/config/crypto-constants.js';
+import { t } from '../../utils/i18n-node.js';
 
 const execAsync = promisify(exec);
 
@@ -57,10 +58,10 @@ const BASE64_REGEX = /^[A-Za-z0-9+/]+=*$/;
  */
 function validateVaultId(vaultId) {
   if (!vaultId || typeof vaultId !== 'string') {
-    throw new Error('Invalid vaultId: must be a non-empty string');
+    throw new Error(t('errors.windowsHello.invalidVaultId'));
   }
   if (!UUID_REGEX.test(vaultId)) {
-    throw new Error('Invalid vaultId: must be a valid UUID');
+    throw new Error(t('errors.windowsHello.invalidVaultIdFormat'));
   }
 }
 
@@ -71,15 +72,15 @@ function validateVaultId(vaultId) {
  */
 function validateEncryptedKey(encryptedKey) {
   if (!encryptedKey || typeof encryptedKey !== 'string') {
-    throw new Error('Invalid encryptedKey: must be a non-empty string');
+    throw new Error(t('errors.windowsHello.invalidEncryptedKey'));
   }
   // Check reasonable length (32-byte key + 16-byte IV + 16-byte auth tag = 64 bytes minimum)
   // Max 1KB to prevent abuse
   if (encryptedKey.length < 20 || encryptedKey.length > 1400) {
-    throw new Error('Invalid encryptedKey: invalid length');
+    throw new Error(t('errors.windowsHello.invalidEncryptedKeyLength'));
   }
   if (!BASE64_REGEX.test(encryptedKey)) {
-    throw new Error('Invalid encryptedKey: must be valid Base64');
+    throw new Error(t('errors.windowsHello.invalidEncryptedKeyBase64'));
   }
 }
 
@@ -167,7 +168,7 @@ export class WindowsHelloAuth {
    */
   static async requestVerification(reason = 'GenPwd Pro - Vérification requise') {
     if (!this.isWindows()) {
-      throw new Error('Windows Hello is only available on Windows');
+      throw new Error(t('errors.windowsHello.windowsOnly'));
     }
 
     try {
@@ -238,7 +239,7 @@ export class WindowsHelloAuth {
    */
   static async storeCredential(vaultId, encryptedKey) {
     if (!this.isWindows()) {
-      throw new Error('Credential Manager is only available on Windows');
+      throw new Error(t('errors.windowsHello.windowsOnly'));
     }
 
     // SECURITY: Validate vaultId is a UUID to prevent command injection
@@ -298,7 +299,7 @@ export class WindowsHelloAuth {
    */
   static async retrieveCredential(vaultId) {
     if (!this.isWindows()) {
-      throw new Error('Credential Manager is only available on Windows');
+      throw new Error(t('errors.windowsHello.windowsOnly'));
     }
 
     // SECURITY: Validate vaultId is a UUID to prevent command injection
@@ -410,7 +411,7 @@ export class WindowsHelloAuth {
    */
   static async deleteCredential(vaultId) {
     if (!this.isWindows()) {
-      throw new Error('Credential Manager is only available on Windows');
+      throw new Error(t('errors.windowsHello.windowsOnly'));
     }
 
     // SECURITY: Validate vaultId is a UUID to prevent command injection

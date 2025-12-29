@@ -17,6 +17,7 @@ import { VaultSessionManager } from '../session/vault-session.js';
 import { VaultFileManager } from '../storage/vault-file-manager.js';
 import { WindowsHelloAuth } from '../auth/windows-hello.js';
 import { ShareService } from '../services/share-service.js';
+import { t } from '../../utils/i18n-node.js';
 
 // SECURITY: Only log in development mode to prevent information disclosure
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -380,7 +381,7 @@ function safeHandler(handler, name) {
       // SECURITY: Apply global rate limiting
       const senderId = event.sender?.id?.toString() || 'unknown';
       if (!globalIPCRateLimiter.checkRequest(senderId, `vault:${name}`)) {
-        throw new Error('Too many requests. Please slow down.');
+        throw new Error(t('errors.network.rateLimited'));
       }
 
       return await handler(event, ...args);
@@ -497,10 +498,10 @@ export function registerVaultIPC(ipcMain) {
       validateObject(options, 'options');
       // Validate specific option fields
       if (options.expiryType !== undefined && typeof options.expiryType !== 'string') {
-        throw new Error('options.expiryType must be a string');
+        throw new Error(t('errors.validation.expiryTypeMustBeString'));
       }
       if (options.burnAfterReading !== undefined && typeof options.burnAfterReading !== 'boolean') {
-        throw new Error('options.burnAfterReading must be a boolean');
+        throw new Error(t('errors.validation.burnAfterReadingMustBeBoolean'));
       }
     }
 
@@ -518,7 +519,7 @@ export function registerVaultIPC(ipcMain) {
       validateString(defaultName, 'defaultName');
       // Sanitize: only allow alphanumeric, dash, underscore, space
       if (!/^[\w\-\s]+$/.test(defaultName.replace(/\.gpd$/i, ''))) {
-        throw new Error('Invalid vault name characters');
+        throw new Error(t('errors.vault.invalidVaultNameChars'));
       }
     }
 
@@ -595,7 +596,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+      throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
     try {
@@ -766,7 +767,7 @@ export function registerVaultIPC(ipcMain) {
     // Validate color format if provided (hex color)
     if (color !== undefined && color !== null) {
       if (typeof color !== 'string' || color.length > INPUT_LIMITS.COLOR_MAX || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
-        throw new Error('color must be a valid hex color (e.g., #6366f1)');
+        throw new Error(t('errors.validation.colorMustBeHex'));
       }
     }
     return session.addTag(name, color || '#6366f1');
@@ -806,7 +807,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(`${vaultId}:export`);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+      throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
     try {
@@ -830,7 +831,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(`import:${importPath}`);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+      throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
     try {
@@ -854,7 +855,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+      throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
     try {
@@ -935,14 +936,14 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+      throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
     try {
       // Check Windows Hello availability
       const isAvailable = await WindowsHelloAuth.isAvailable();
       if (!isAvailable) {
-        throw new Error('Windows Hello is not available on this system');
+        throw new Error(t('errors.windowsHello.notAvailable'));
       }
 
       // Request Windows Hello verification
@@ -950,13 +951,13 @@ export function registerVaultIPC(ipcMain) {
         'GenPwd Pro - Enable Windows Hello'
       );
       if (!verified) {
-        throw new Error('Windows Hello verification failed');
+        throw new Error(t('errors.windowsHello.verificationFailed'));
       }
 
       // Unlock vault temporarily to get the encryption key
       const vaultKey = await session.getDerivedKey(vaultId, password);
       if (!vaultKey) {
-        throw new Error('Incorrect password');
+        throw new Error(t('errors.auth.incorrectPassword'));
       }
 
       // Generate wrapper key and encrypt vault key
@@ -966,7 +967,7 @@ export function registerVaultIPC(ipcMain) {
       // Store wrapper in Windows Credential Manager
       const stored = await WindowsHelloAuth.storeCredential(vaultId, wrapperKey);
       if (!stored) {
-        throw new Error('Failed to store Windows Hello credentials');
+        throw new Error(t('errors.windowsHello.storeCredentialsFailed'));
       }
 
       // Store encrypted vault key in vault metadata
@@ -1006,7 +1007,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
-      throw new Error(`Too many attempts. Try again in ${minutes} minute(s).`);
+      throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
     try {
@@ -1015,13 +1016,13 @@ export function registerVaultIPC(ipcMain) {
       if (!encryptedKey) {
         // Cleanup orphan credential if exists
         await WindowsHelloAuth.deleteCredential(vaultId);
-        throw new Error('Windows Hello not configured for this vault. Please re-enable it with your master password.');
+        throw new Error(t('errors.windowsHello.notConfigured'));
       }
 
       // Check if credential exists in Windows Credential Manager
       const wrapperKey = await WindowsHelloAuth.retrieveCredential(vaultId);
       if (!wrapperKey) {
-        throw new Error('Windows Hello credential not found. Please re-enable Windows Hello.');
+        throw new Error(t('errors.windowsHello.credentialNotFound'));
       }
 
       // Request Windows Hello verification
@@ -1029,7 +1030,7 @@ export function registerVaultIPC(ipcMain) {
         'GenPwd Pro - Unlock Vault'
       );
       if (!verified) {
-        throw new Error('Windows Hello verification cancelled');
+        throw new Error(t('errors.windowsHello.verificationCancelled'));
       }
 
       // Decrypt vault key
@@ -1038,7 +1039,7 @@ export function registerVaultIPC(ipcMain) {
         vaultKey = WindowsHelloAuth.decryptVaultKey(encryptedKey, wrapperKey);
       } catch (decryptError) {
         console.error('[WindowsHello] Key decryption failed:', decryptError.message);
-        throw new Error('Decryption error. Please re-enable Windows Hello.');
+        throw new Error(t('errors.windowsHello.decryptionError'));
       }
 
       // Unlock vault with decrypted key
@@ -1062,7 +1063,7 @@ export function registerVaultIPC(ipcMain) {
     validateObject(config, 'config');
 
     if (!safeStorage.isEncryptionAvailable()) {
-      throw new Error('System encryption is not available');
+      throw new Error(t('errors.config.systemEncryptionNotAvailable'));
     }
 
     try {
@@ -1078,7 +1079,7 @@ export function registerVaultIPC(ipcMain) {
       return { success: true };
     } catch (error) {
       console.error('[Vault] Error saving cloud config:', error);
-      throw new Error('Failed to save cloud configuration');
+      throw new Error(t('errors.config.saveCloudFailed'));
     }
   }, 'saveCloudConfig'));
 
@@ -1113,13 +1114,13 @@ export function registerVaultIPC(ipcMain) {
     validatePassword(duressPassword);
     // Validate populateDecoy is boolean
     if (typeof populateDecoy !== 'boolean') {
-      throw new Error('populateDecoy must be a boolean');
+      throw new Error(t('errors.duress.populateDecoyMustBeBoolean'));
     }
 
     // Ensure session is unlocked
     const state = session.getState();
     if (!state.vaultId || state.status !== 'unlocked') {
-      throw new Error('Vault must be unlocked to enable Duress Mode');
+      throw new Error(t('errors.duress.vaultMustBeUnlocked'));
     }
 
     // Must pass a new method in FileManager or Session to perform the migration
@@ -1160,7 +1161,7 @@ function validateOrigin(event) {
     url = event.sender.getURL();
   } else {
     console.error('[Vault] IPC event has no sender information');
-    throw new Error('Unauthorized access');
+    throw new Error(t('errors.auth.unauthorized'));
   }
 
   // Check against trusted origins
@@ -1168,7 +1169,7 @@ function validateOrigin(event) {
 
   if (!isTrusted) {
     console.error(`[Vault] Untrusted IPC origin: ${url}`);
-    throw new Error('Unauthorized access');
+    throw new Error(t('errors.auth.unauthorized'));
   }
 }
 
@@ -1281,7 +1282,7 @@ function validateEntryData(type, data) {
 
   // Validate data is object
   if (typeof data !== 'object' || data === null) {
-    throw new Error('Entry data must be an object');
+    throw new Error(t('errors.validation.entryMustBeObject'));
   }
 
   // Whitelist allowed fields
@@ -1300,18 +1301,18 @@ function validateEntryData(type, data) {
 
     if (key === 'tagIds') {
       if (!Array.isArray(value)) {
-        throw new Error('tagIds must be an array');
+        throw new Error(t('errors.validation.tagIdsMustBeArray'));
       }
       if (!value.every(id => typeof id === 'string')) {
-        throw new Error('tagIds must contain only strings');
+        throw new Error(t('errors.validation.tagIdsMustBeStrings'));
       }
       // Limit number of tags per entry
       if (value.length > 50) {
-        throw new Error('Maximum 50 tags per entry');
+        throw new Error(t('errors.validation.maxTagsExceeded'));
       }
     } else if (key === 'favorite') {
       if (typeof value !== 'boolean') {
-        throw new Error('favorite must be a boolean');
+        throw new Error(t('errors.validation.favoriteMustBeBoolean'));
       }
     } else if (typeof value !== 'string') {
       throw new Error(`Field "${key}" must be a string`);

@@ -3,19 +3,38 @@
  * Pre-defined templates for quick entry creation
  */
 
+import { t } from '../../utils/i18n.js';
+
 /**
- * Template categories
+ * Template category IDs with icons (static data)
  */
-export const TEMPLATE_CATEGORIES = [
-  { id: 'social', name: 'Social networks', icon: '👥' },
-  { id: 'email', name: 'Email', icon: '📧' },
-  { id: 'shopping', name: 'Shopping', icon: '🛒' },
-  { id: 'finance', name: 'Finance', icon: '💰' },
-  { id: 'streaming', name: 'Streaming', icon: '🎬' },
-  { id: 'gaming', name: 'Jeux', icon: '🎮' },
-  { id: 'dev', name: 'Dev / Travail', icon: '💻' },
-  { id: 'other', name: 'Autre', icon: '📁' }
+const TEMPLATE_CATEGORY_DATA = [
+  { id: 'social', icon: '👥' },
+  { id: 'email', icon: '📧' },
+  { id: 'shopping', icon: '🛒' },
+  { id: 'finance', icon: '💰' },
+  { id: 'streaming', icon: '🎬' },
+  { id: 'gaming', icon: '🎮' },
+  { id: 'dev', icon: '💻' },
+  { id: 'other', icon: '📁' }
 ];
+
+/**
+ * Get translated template categories
+ * @returns {Array<{id: string, name: string, icon: string}>}
+ */
+export function getTemplateCategories() {
+  return TEMPLATE_CATEGORY_DATA.map(cat => ({
+    ...cat,
+    name: t(`vault.templateCategories.${cat.id}`)
+  }));
+}
+
+/**
+ * Template categories (legacy export for compatibility)
+ * @deprecated Use getTemplateCategories() for translated names
+ */
+export const TEMPLATE_CATEGORIES = TEMPLATE_CATEGORY_DATA;
 
 /**
  * Entry templates data
@@ -49,9 +68,9 @@ export const ENTRY_TEMPLATES = [
 
   // Finance
   { id: 'paypal', name: 'PayPal', icon: '💰', category: 'finance', type: 'login', url: 'https://www.paypal.com', suggestTotp: true },
-  { id: 'bank', name: 'Banque', icon: '🏦', category: 'finance', type: 'login', url: '', suggestTotp: true },
-  { id: 'card', name: 'Carte bancaire', icon: '💳', category: 'finance', type: 'card', url: '', suggestTotp: false },
-  { id: 'crypto', name: 'Crypto Wallet', icon: '₿', category: 'finance', type: 'login', url: '', suggestTotp: true },
+  { id: 'bank', nameKey: 'bank', icon: '🏦', category: 'finance', type: 'login', url: '', suggestTotp: true },
+  { id: 'card', nameKey: 'card', icon: '💳', category: 'finance', type: 'card', url: '', suggestTotp: false },
+  { id: 'crypto', nameKey: 'cryptoWallet', icon: '₿', category: 'finance', type: 'login', url: '', suggestTotp: true },
   { id: 'revolut', name: 'Revolut', icon: '💸', category: 'finance', type: 'login', url: 'https://www.revolut.com', suggestTotp: true },
 
   // Streaming
@@ -100,29 +119,48 @@ export const ENTRY_TEMPLATES = [
 ];
 
 /**
- * Get all templates
- * @returns {Array} Templates array
+ * Get template display name (handles nameKey translation)
+ * @param {Object} template - Template object
+ * @returns {string} Display name
  */
-export function getTemplates() {
-  return ENTRY_TEMPLATES;
+function getTemplateName(template) {
+  if (template.nameKey) {
+    return t(`vault.templateNames.${template.nameKey}`);
+  }
+  return template.name;
 }
 
 /**
- * Get template by ID
+ * Get all templates with translated names
+ * @returns {Array} Templates array
+ */
+export function getTemplates() {
+  return ENTRY_TEMPLATES.map(tpl => ({
+    ...tpl,
+    name: getTemplateName(tpl)
+  }));
+}
+
+/**
+ * Get template by ID with translated name
  * @param {string} templateId - Template ID
  * @returns {Object|undefined} Template object
  */
 export function getTemplateById(templateId) {
-  return ENTRY_TEMPLATES.find(t => t.id === templateId);
+  const tpl = ENTRY_TEMPLATES.find(tpl => tpl.id === templateId);
+  if (!tpl) return undefined;
+  return { ...tpl, name: getTemplateName(tpl) };
 }
 
 /**
- * Get templates by category
+ * Get templates by category with translated names
  * @param {string} categoryId - Category ID
  * @returns {Array} Templates in category
  */
 export function getTemplatesByCategory(categoryId) {
-  return ENTRY_TEMPLATES.filter(t => t.category === categoryId);
+  return ENTRY_TEMPLATES
+    .filter(tpl => tpl.category === categoryId)
+    .map(tpl => ({ ...tpl, name: getTemplateName(tpl) }));
 }
 
 /**
@@ -132,8 +170,9 @@ export function getTemplatesByCategory(categoryId) {
  */
 export function searchTemplates(query) {
   const q = query.toLowerCase().trim();
-  if (!q) return ENTRY_TEMPLATES;
-  return ENTRY_TEMPLATES.filter(t => t.name.toLowerCase().includes(q));
+  const templates = getTemplates();
+  if (!q) return templates;
+  return templates.filter(tpl => tpl.name.toLowerCase().includes(q));
 }
 
 /**
@@ -172,18 +211,18 @@ export function renderTemplateCategory(category, templates) {
 /**
  * Render template grid
  * @param {Object} options
- * @param {Array} options.templates - Templates to render (default: all)
- * @param {Array} options.categories - Categories to use (default: all)
+ * @param {Array} options.templates - Templates to render (default: all translated)
+ * @param {Array} options.categories - Categories to use (default: all translated)
  * @returns {string} HTML string
  */
 export function renderTemplateGrid(options = {}) {
   const {
-    templates = ENTRY_TEMPLATES,
-    categories = TEMPLATE_CATEGORIES
+    templates = getTemplates(),
+    categories = getTemplateCategories()
   } = options;
 
   return categories.map(cat => {
-    const catTemplates = templates.filter(t => t.category === cat.id);
+    const catTemplates = templates.filter(tpl => tpl.category === cat.id);
     return renderTemplateCategory(cat, catTemplates);
   }).join('');
 }

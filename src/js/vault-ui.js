@@ -4871,9 +4871,9 @@ export class VaultUI {
 
         const tag = this.#tags.find(t => t.id === tagId);
         const confirmed = await this.#showConfirmDialog(
-          'Delete tag',
-          `Are you sure you want to delete the tag "${tag?.name}"? It will be removed from all entries.`,
-          { confirmText: 'Delete', confirmClass: 'vault-btn-danger' }
+          t('vault.messages.deleteTagTitle'),
+          t('vault.messages.deleteTagConfirm', { name: tag?.name }),
+          { confirmText: t('common.delete'), confirmClass: 'vault-btn-danger' }
         );
         if (confirmed && await this.#deleteTag(tagId)) {
           this.#closeModal('edit-tag-modal');
@@ -5473,8 +5473,8 @@ export class VaultUI {
 
   async #showConfirmDialog(title, message, options = {}) {
     const {
-      confirmText = 'Confirm',
-      cancelText = 'Cancel',
+      confirmText = t('common.confirm'),
+      cancelText = t('common.cancel'),
       confirmClass = 'vault-btn-danger'
     } = options;
 

@@ -15,6 +15,7 @@ import { VaultFileManager } from '../storage/vault-file-manager.js';
 import { CryptoEngine } from '../crypto/crypto-engine.js';
 import { createEntry, createFolder, createTag } from '../models/vault-types.js';
 import { EventEmitter } from 'node:events';
+import { t } from '../../utils/i18n-node.js';
 
 // Security constant: matches SECURITY_TIMEOUTS.AUTO_LOCK_DEFAULT_MS in ui-constants.js (300000ms = 5 minutes)
 const DEFAULT_AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
@@ -235,7 +236,7 @@ export class VaultSessionManager extends EventEmitter {
    */
   async save() {
     if (!this.isUnlocked()) {
-      throw new Error('Vault is locked');
+      throw new Error(t('errors.vault.locked'));
     }
 
     try {
@@ -533,7 +534,7 @@ export class VaultSessionManager extends EventEmitter {
    */
   #requireUnlocked() {
     if (!this.isUnlocked()) {
-      throw new Error('Vault is locked');
+      throw new Error(t('errors.vault.locked'));
     }
     this.#resetAutoLockTimer();
   }
@@ -694,7 +695,7 @@ export class VaultSessionManager extends EventEmitter {
    * @param {boolean} populateDecoy 
    */
   async enableDuressMode(masterPassword, duressPassword, populateDecoy) {
-    if (!this.isUnlocked()) throw new Error('Vault locked');
+    if (!this.isUnlocked()) throw new Error(t('errors.vault.locked'));
 
     // Verify master password matches current key (sanity check)
     // Actually we are already unlocked, we trust the intent.

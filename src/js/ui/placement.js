@@ -24,6 +24,7 @@ import {
 } from '../utils/helpers.js';
 import { safeLog } from '../utils/logger.js';
 import { sanitizeHTML } from '../utils/dom-sanitizer.js';
+import { t } from '../utils/i18n.js';
 
 // Stores logical percentages used by the generation API.
 // The visual rendering compensates for bar margins/insets, so it is
@@ -855,7 +856,7 @@ function getAutoPresetRange(placement) {
 function updateModeIndicator() {
   if (!state.modeLabel) return;
 
-  state.modeLabel.textContent = state.mode === 'visual' ? 'Visuel' : 'Auto';
+  state.modeLabel.textContent = state.mode === 'visual' ? t('placement.visual') : t('generator.placementModeAuto');
   state.modeLabel.classList.toggle('mode-visual', state.mode === 'visual');
   state.modeLabel.classList.toggle('mode-auto', state.mode !== 'visual');
   state.container?.classList.toggle('mode-visual', state.mode === 'visual');

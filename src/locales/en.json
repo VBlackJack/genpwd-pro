@@ -599,6 +599,8 @@
       "deleteFolderConfirm": "Delete folder \"{name}\"?",
       "deleteFolderWithEntriesConfirm": "Delete folder \"{name}\" and move its {count} entries to root?",
       "deleteEntryConfirm": "Delete \"{title}\" from vault?",
+      "deleteTagTitle": "Delete tag",
+      "deleteTagConfirm": "Are you sure you want to delete the tag \"{name}\"? It will be removed from all entries.",
       "uninstallPluginConfirm": "Uninstall plugin \"{name}\"?",
       "entryDuplicated": "Entry duplicated",
       "folderCreated": "Folder created",
@@ -893,7 +895,28 @@
       "closeWithoutSaving": "Close without saving",
       "vaultNotAvailable": "Vault not available",
       "vaultApiNotAvailable": "The vault API is not available in this context.",
-      "vaultRequiresElectron": "The vault requires the Electron application to work."
+      "vaultRequiresElectron": "The vault requires the Electron application to work.",
+      "confirmTitle": "Confirm",
+      "areYouSure": "Are you sure?",
+      "deleteConfirm": "Delete",
+      "skipTour": "Skip the tour?",
+      "skip": "Skip",
+      "continue": "Continue"
+    },
+    "templateCategories": {
+      "social": "Social networks",
+      "email": "Email",
+      "shopping": "Shopping",
+      "finance": "Finance",
+      "streaming": "Streaming",
+      "gaming": "Gaming",
+      "dev": "Dev / Work",
+      "other": "Other"
+    },
+    "templateNames": {
+      "bank": "Bank",
+      "card": "Bank card",
+      "cryptoWallet": "Crypto Wallet"
     },
     "form": {
       "filePassword": "File password",
@@ -1624,5 +1647,133 @@
     "passwordTooWeak": "Password is too weak",
     "fieldNotFound": "Field not found",
     "formNotFound": "Form not found"
+  },
+  "errors": {
+    "generic": {
+      "occurred": "An error occurred",
+      "tryAgain": "An error occurred. Please try again.",
+      "unexpected": "An unexpected error occurred"
+    },
+    "sync": {
+      "locked": "SyncService is locked. Call unlock() first.",
+      "noProvider": "No sync provider configured",
+      "invalidData": "Invalid encrypted data format",
+      "decryptFailed": "Failed to decrypt remote vault. Password may have changed.",
+      "conflictDetected": "Conflict detected. User decision required.",
+      "vaultNotFound": "Vault {vaultId} not found in cloud"
+    },
+    "auth": {
+      "expired": "Authentication expired. Please sign in again.",
+      "permissionDenied": "Permission denied. Please re-authorize the app.",
+      "noCredentials": "No valid credentials. Please sign in with Google.",
+      "accessRevoked": "Access was revoked. Please sign in again.",
+      "incorrectPassword": "Incorrect password. Please try again.",
+      "masterPasswordTooShort": "Master password must be at least 8 characters",
+      "tooManyAttempts": "Too many attempts. Try again in {minutes} minute(s).",
+      "unauthorized": "Unauthorized access",
+      "oauthFailed": "Failed to exchange authorization code"
+    },
+    "file": {
+      "notFound": "File not found. Check the file path or restore from backup.",
+      "accessDenied": "Access denied. Run as administrator or check folder permissions.",
+      "alreadyExists": "File already exists. Choose a different name or location.",
+      "noSpace": "Not enough disk space. Free up space and try again.",
+      "inUse": "File is in use. Close other applications and retry.",
+      "operationNotPermitted": "Operation not permitted. Check file permissions."
+    },
+    "database": {
+      "busy": "Database busy. Close other apps using the vault and retry.",
+      "corrupted": "Database corrupted. Restore from backup or create a new vault.",
+      "error": "Database error. Try restarting the application."
+    },
+    "crypto": {
+      "encryptionError": "Encryption error. Verify your password is correct.",
+      "decryptionFailed": "Decryption failed: Invalid key or corrupted data",
+      "ciphertextTooShort": "Ciphertext too short",
+      "invalidHexLength": "Hex string must have even length",
+      "invalidAlgorithm": "Unsupported algorithm: {algorithm}",
+      "serializationFailed": "Object serialization failed: {message}",
+      "jsonParseFailed": "Decryption succeeded but JSON parsing failed: {message}",
+      "invalidKeyLength": "Invalid key length: expected {expected}, got {actual}",
+      "invalidNonceLength": "Invalid nonce length: expected {expected}, got {actual}",
+      "invalidPassword": "Invalid password: must be a non-empty string",
+      "invalidKeyData": "Invalid keyData: must be an object",
+      "invalidSalt": "Invalid keyData.salt: must be a base64 string",
+      "saltTooShort": "Invalid salt: must be at least 16 bytes",
+      "invalidVerifier": "Invalid keyData.verifier: must be a base64 string",
+      "verifierInvalidSize": "Invalid verifier: must be 32 bytes (SHA-256)",
+      "secureStorageFailed": "Secure storage required but failed - cannot store OAuth tokens"
+    },
+    "network": {
+      "error": "Network error. Check your internet connection.",
+      "timeout": "Operation timed out. Check your connection and retry.",
+      "notFound": "Resource not found.",
+      "conflict": "Conflict detected. Remote file was modified.",
+      "rateLimited": "Too many requests. Please try again later.",
+      "quotaExceeded": "Storage quota exceeded.",
+      "rateLimitedShort": "Too many requests. Please slow down."
+    },
+    "validation": {
+      "pathTraversal": "Invalid path: path traversal not allowed",
+      "absolutePathRequired": "Invalid path: must be an absolute path",
+      "invalidCharacters": "Invalid path: contains invalid characters",
+      "reservedName": "Invalid path: Windows reserved name not allowed",
+      "invalidParameter": "Invalid parameter: {name} must be a non-empty string",
+      "parameterTooLong": "Invalid parameter: {name} exceeds maximum length of {maxLength} characters",
+      "forbiddenCharacters": "Invalid {name}: contains forbidden characters",
+      "mustBeObject": "Invalid parameter: {name} must be an object",
+      "mustBeString": "Field \"{field}\" must be a string",
+      "fieldTooLong": "Field \"{field}\" exceeds maximum length of {maxLength} characters",
+      "invalidEntryType": "Invalid entry type: {type}. Must be one of: {validTypes}",
+      "entryMustBeObject": "Entry data must be an object",
+      "invalidFieldForType": "Invalid field \"{field}\" for entry type \"{type}\"",
+      "tagIdsMustBeArray": "tagIds must be an array",
+      "tagIdsMustBeStrings": "tagIds must contain only strings",
+      "maxTagsExceeded": "Maximum 50 tags per entry",
+      "favoriteMustBeBoolean": "favorite must be a boolean",
+      "colorMustBeHex": "color must be a valid hex color (e.g., #6366f1)",
+      "expiryTypeMustBeString": "options.expiryType must be a string",
+      "burnAfterReadingMustBeBoolean": "options.burnAfterReading must be a boolean",
+      "entryTitleRequired": "Entry title must be a non-empty string"
+    },
+    "vault": {
+      "locked": "Vault is locked",
+      "unlockFirst": "Vault is locked. Please unlock first.",
+      "invalidPassword": "Invalid password",
+      "notFound": "Vault not found: {vaultId}",
+      "fileNotFound": "Vault file not found: {path}",
+      "invalidFormat": "Invalid vault file format",
+      "invalidFormatV3": "Invalid vault file format (V3): {issues}",
+      "missingMetadataId": "Invalid vault data: missing metadata.id",
+      "invalidExportFormat": "Invalid vault export format",
+      "missingKeyData": "Invalid vault structure: missing slots[0].keyData",
+      "jsonParseError": "Invalid vault file: JSON parse error - {message}",
+      "invalidVaultNameChars": "Invalid vault name characters",
+      "missingFields": "Invalid vault file format: missing {fields}. File keys: [{keys}]"
+    },
+    "windowsHello": {
+      "notAvailable": "Windows Hello is not available on this system",
+      "windowsOnly": "Windows Hello is only available on Windows",
+      "credentialManagerWindowsOnly": "Credential Manager is only available on Windows",
+      "verificationFailed": "Windows Hello verification failed",
+      "verificationCancelled": "Windows Hello verification cancelled",
+      "credentialNotFound": "Windows Hello credential not found. Please re-enable Windows Hello.",
+      "notConfigured": "Windows Hello not configured for this vault. Please re-enable it with your master password.",
+      "storeCredentialsFailed": "Failed to store Windows Hello credentials",
+      "decryptionError": "Decryption error. Please re-enable Windows Hello.",
+      "invalidVaultId": "Invalid vaultId: must be a non-empty string",
+      "invalidVaultIdFormat": "Invalid vaultId: must be a valid UUID",
+      "invalidEncryptedKey": "Invalid encryptedKey: must be a non-empty string",
+      "invalidEncryptedKeyLength": "Invalid encryptedKey: invalid length",
+      "invalidEncryptedKeyBase64": "Invalid encryptedKey: must be valid Base64"
+    },
+    "config": {
+      "saveCloudFailed": "Failed to save cloud configuration",
+      "systemEncryptionNotAvailable": "System encryption is not available"
+    },
+    "duress": {
+      "vaultMustBeUnlocked": "Vault must be unlocked to enable Duress Mode",
+      "populateDecoyMustBeBoolean": "populateDecoy must be a boolean"
+    }
   }
 }

@@ -25,6 +25,7 @@ import { DuressManager } from '../crypto/duress-manager.js';
 import { CloudSyncManager } from '../sync/cloud-sync-manager.js';
 import { createEmptyVault, VAULT_FORMAT_VERSION, LEGACY_FORMAT_VERSION } from '../models/vault-types.js';
 import { ALGORITHM } from '../crypto/xchacha20.js';
+import { t } from '../../utils/i18n-node.js';
 
 const VAULT_EXTENSION = '.gpd';
 const BACKUP_EXTENSION = '.gpd.bak';
@@ -220,24 +221,24 @@ export class VaultFileManager extends EventEmitter {
 
       // Check for path traversal attempts
       if (normalizedPath.includes('..')) {
-        throw new Error('Invalid path: path traversal not allowed');
+        throw new Error(t('errors.validation.pathTraversal'));
       }
 
       // Ensure it's an absolute path
       if (!path.isAbsolute(normalizedPath)) {
-        throw new Error('Invalid path: must be an absolute path');
+        throw new Error(t('errors.validation.absolutePathRequired'));
       }
 
       // Validate path doesn't contain null bytes or suspicious patterns
       if (normalizedPath.includes('\0') || /[<>:"|?*]/.test(path.basename(normalizedPath).replace(VAULT_EXTENSION, ''))) {
-        throw new Error('Invalid path: contains invalid characters');
+        throw new Error(t('errors.validation.invalidCharacters'));
       }
 
       // Validate Windows reserved names (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
       const baseName = path.basename(normalizedPath).replace(VAULT_EXTENSION, '').toUpperCase();
       const WINDOWS_RESERVED = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
       if (WINDOWS_RESERVED.test(baseName)) {
-        throw new Error('Invalid path: Windows reserved name not allowed');
+        throw new Error(t('errors.validation.reservedName'));
       }
 
       // External vault - use provided path
@@ -397,7 +398,7 @@ export class VaultFileManager extends EventEmitter {
       }
 
       if (activeSlot === -1 || !derivedKey) {
-        throw new Error('Invalid password');
+        throw new Error(t('errors.vault.invalidPassword'));
       }
 
       // Decrypt data from Active Slot
@@ -407,7 +408,7 @@ export class VaultFileManager extends EventEmitter {
       // Get vaultId from decrypted metadata
       const vaultId = vaultData.metadata?.id;
       if (!vaultId) {
-        throw new Error('Invalid vault data: missing metadata.id');
+        throw new Error(t('errors.vault.missingMetadataId'));
       }
 
       // Register this vault if not already registered
@@ -439,7 +440,7 @@ export class VaultFileManager extends EventEmitter {
     );
 
     if (!valid || !key) {
-      throw new Error('Invalid password');
+      throw new Error(t('errors.vault.invalidPassword'));
     }
 
     // Decrypt vault data
@@ -528,7 +529,7 @@ export class VaultFileManager extends EventEmitter {
 
       // Check slot structure
       if (!vaultFile.slots?.[0]?.keyData) {
-        throw new Error('Invalid vault structure: missing slots[0].keyData');
+        throw new Error(t('errors.vault.missingKeyData'));
       }
 
       // Try unlocking Slot 0 (Real)
@@ -577,7 +578,7 @@ export class VaultFileManager extends EventEmitter {
       }
 
       if (activeSlot === -1 || !derivedKey) {
-        throw new Error('Invalid password');
+        throw new Error(t('errors.vault.invalidPassword'));
       }
 
       // Decrypt data from Active Slot
@@ -594,7 +595,7 @@ export class VaultFileManager extends EventEmitter {
     );
 
     if (!valid || !key) {
-      throw new Error('Invalid password');
+      throw new Error(t('errors.vault.invalidPassword'));
     }
 
     // Decrypt vault data
@@ -980,7 +981,7 @@ export class VaultFileManager extends EventEmitter {
 
     // Validate structure
     if (!vaultData.metadata || !vaultData.entries) {
-      throw new Error('Invalid vault export format');
+      throw new Error(t('errors.vault.invalidExportFormat'));
     }
 
     // Create new vault with imported data

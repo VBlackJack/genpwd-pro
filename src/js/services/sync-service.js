@@ -20,6 +20,7 @@ import { safeLog } from '../utils/logger.js';
 import historyManager from '../utils/history-manager.js';
 import presetManager from '../utils/preset-manager.js';
 import vaultCrypto from '../core/crypto/vault-crypto.js';
+import { t } from '../utils/i18n.js';
 import {
   CloudResult,
   CloudErrorType,
@@ -119,7 +120,7 @@ class SyncService {
    */
   async unlock(masterPassword) {
     if (!masterPassword || masterPassword.length < 8) {
-      throw new Error('Master password must be at least 8 characters');
+      throw new Error(t('errors.auth.masterPasswordTooShort'));
     }
 
     try {
@@ -187,7 +188,7 @@ class SyncService {
    */
   async encrypt(data) {
     if (this.isLocked) {
-      throw new Error('SyncService is locked. Call unlock() first.');
+      throw new Error(t('errors.sync.locked'));
     }
 
     // Generate random IV using vault-crypto
@@ -216,7 +217,7 @@ class SyncService {
    */
   async decrypt(encryptedPackage) {
     if (this.isLocked) {
-      throw new Error('SyncService is locked. Call unlock() first.');
+      throw new Error(t('errors.sync.locked'));
     }
 
     // Extract IV and encrypted data as Buffers
@@ -242,14 +243,14 @@ class SyncService {
     if (this.isLocked) {
       return CloudResult.error(
         CloudErrorType.GENERIC,
-        'SyncService is locked. Call unlock() first.'
+        t('errors.sync.locked')
       );
     }
 
     if (!this.provider) {
       return CloudResult.error(
         CloudErrorType.GENERIC,
-        'No sync provider configured'
+        t('errors.sync.noProvider')
       );
     }
 
@@ -291,7 +292,7 @@ class SyncService {
       } catch (decryptError) {
         return CloudResult.error(
           CloudErrorType.GENERIC,
-          'Failed to decrypt remote vault. Password may have changed.'
+          t('errors.sync.decryptFailed')
         );
       }
 
@@ -308,7 +309,7 @@ class SyncService {
         });
         return CloudResult.error(
           CloudErrorType.CONFLICT,
-          'Conflict detected. User decision required.'
+          t('errors.sync.conflictDetected')
         );
       }
 
@@ -474,12 +475,12 @@ class SyncService {
    */
   async syncVault(vaultId, encryptedVaultData) {
     if (!this.provider) {
-      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+      return CloudResult.error(CloudErrorType.GENERIC, t('errors.sync.noProvider'));
     }
 
     // Validate data
     if (!(encryptedVaultData instanceof ArrayBuffer)) {
-      return CloudResult.error(CloudErrorType.GENERIC, 'Invalid encrypted data format');
+      return CloudResult.error(CloudErrorType.GENERIC, t('errors.sync.invalidData'));
     }
 
     return await this.provider.uploadVault(vaultId, encryptedVaultData);
@@ -493,7 +494,7 @@ class SyncService {
    */
   async downloadVault(vaultId) {
     if (!this.provider) {
-      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+      return CloudResult.error(CloudErrorType.GENERIC, t('errors.sync.noProvider'));
     }
 
     return await this.provider.downloadVault(vaultId);
@@ -506,7 +507,7 @@ class SyncService {
    */
   async listSyncedVaults() {
     if (!this.provider) {
-      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+      return CloudResult.error(CloudErrorType.GENERIC, t('errors.sync.noProvider'));
     }
 
     return await this.provider.listVaults();
@@ -801,7 +802,7 @@ class SyncService {
    */
   async deleteRemoteData(vaultId) {
     if (!this.provider) {
-      return CloudResult.error(CloudErrorType.GENERIC, 'No sync provider configured');
+      return CloudResult.error(CloudErrorType.GENERIC, t('errors.sync.noProvider'));
     }
 
     // Authenticate first
@@ -818,7 +819,7 @@ class SyncService {
 
     const vault = listResult.data.find(v => v.vaultId === vaultId);
     if (!vault) {
-      return CloudResult.error(CloudErrorType.NOT_FOUND, `Vault ${vaultId} not found in cloud`);
+      return CloudResult.error(CloudErrorType.NOT_FOUND, t('errors.sync.vaultNotFound', { vaultId }));
     }
 
     return await this.provider.deleteVault(vault.fileId);

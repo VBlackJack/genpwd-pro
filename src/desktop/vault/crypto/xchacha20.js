@@ -13,6 +13,7 @@
 
 import nacl from 'tweetnacl';
 import tweetnaclUtil from 'tweetnacl-util';
+import { t } from '../../utils/i18n-node.js';
 const { encodeBase64, decodeBase64 } = tweetnaclUtil;
 
 /**
@@ -78,7 +79,7 @@ export function decrypt(ciphertext, nonce, key) {
   const plaintext = nacl.secretbox.open(ciphertext, nonce, key);
 
   if (!plaintext) {
-    throw new Error('Decryption failed: Invalid key or corrupted data');
+    throw new Error(t('errors.crypto.decryptionFailed'));
   }
 
   return plaintext;
