@@ -27,25 +27,25 @@ function renderDetailActions(entry) {
             data-tooltip="${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
             aria-label="${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
             aria-pressed="${entry.favorite}">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="${entry.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="${entry.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
       </svg>
     </button>
     <button class="vault-icon-btn" id="btn-edit-entry" data-tooltip="${t('vault.common.edit')} (E)" aria-label="${t('vault.dialogs.editEntry')}">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
       </svg>
     </button>
     <button class="vault-icon-btn" id="btn-duplicate-entry" data-tooltip="${t('vault.common.duplicate')}" aria-label="${t('vault.common.duplicate')}">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
       </svg>
     </button>
     ${isLogin ? `
     <button class="vault-icon-btn autotype" id="btn-autotype" data-tooltip="${t('vault.actions.autoFill')} (Ctrl+Shift+U)" aria-label="${t('vault.actions.autoFill')}">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
         <line x1="6" y1="8" x2="6" y2="8"></line>
         <line x1="10" y1="8" x2="18" y2="8"></line>
@@ -55,7 +55,7 @@ function renderDetailActions(entry) {
     </button>
     ` : ''}
     <button class="vault-icon-btn share" id="btn-share-entry" data-tooltip="${t('vault.share.title')}" aria-label="${t('vault.share.title')}">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="18" cy="5" r="3"></circle>
         <circle cx="6" cy="12" r="3"></circle>
         <circle cx="18" cy="19" r="3"></circle>
@@ -64,7 +64,7 @@ function renderDetailActions(entry) {
       </svg>
     </button>
     <button class="vault-icon-btn danger" id="btn-delete-entry" data-tooltip="${t('vault.common.delete')}" data-tooltip-pos="left" aria-label="${t('vault.common.delete')}">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="3 6 5 6 21 6"></polyline>
         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
       </svg>
@@ -118,13 +118,13 @@ function renderNoteContent(entry) {
         <label class="vault-field-label">${t('vault.fields.content')}</label>
         <div class="vault-notes-toggle">
           <button type="button" class="vault-notes-mode active" data-mode="preview" title="${t('vault.actions.preview')}" aria-label="${t('vault.actions.previewMode')}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
           </button>
           <button type="button" class="vault-notes-mode" data-mode="source" title="${t('vault.actions.sourceMarkdown')}" aria-label="${t('vault.actions.editSourceMode')}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
             </svg>

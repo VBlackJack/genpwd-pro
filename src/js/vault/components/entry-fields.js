@@ -91,13 +91,13 @@ export function renderTOTPField(entry) {
           <span class="totp-timer-text">--</span>
         </div>
         <button class="vault-field-btn copy-totp" title="Copier le code 2FA" aria-label="Copier le code 2FA">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
         </button>
         <button class="vault-field-btn show-totp-qr" data-secret="${escapeHtml(totpSecret)}" data-title="${escapeHtml(entry.title)}" data-account="${escapeHtml(entry.data?.username || '')}" title="${t('vault.aria.showQRCode')}" aria-label="${t('vault.aria.showQRCode')}">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
             <rect x="14" y="14" width="7" height="7"></rect>

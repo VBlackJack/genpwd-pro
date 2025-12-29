@@ -565,17 +565,7 @@
   animation: timer-pulse 1s ease-in-out infinite;
 }
 
-@keyframes timer-pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.6;
-  }
-}
+/* timer-pulse animation moved to _animations.css */
 
 /* ==================== VAULT CONTAINER ==================== */
 #vault-container {
@@ -1402,19 +1392,7 @@
   animation: vault-copy-success 0.6s ease;
 }
 
-@keyframes vault-copy-success {
-  0% {
-    transform: scale(1);
-  }
-
-  30% {
-    transform: scale(1.2);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
+/* vault-copy-success animation moved to _animations.css */
 
 /* ==================== DETAIL PANEL ==================== */
 .vault-detail-panel {
@@ -1682,15 +1660,7 @@ kbd {
   animation: vault-strength-shimmer 1.5s ease-in-out infinite;
 }
 
-@keyframes vault-strength-shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100%);
-  }
-}
+/* vault-strength-shimmer animation moved to _animations.css */
 
 .vault-strength-fill.weak {
   background: linear-gradient(90deg, var(--vault-error), var(--accent-red-light, #f87171));
@@ -2057,17 +2027,7 @@ kbd {
   animation: slideIn 0.2s ease;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* slideIn animation moved to _animations.css */
 
 .vault-custom-field-header {
   display: flex;
@@ -2558,32 +2518,14 @@ kbd {
   border-radius: var(--vault-radius-sm);
 }
 
-@keyframes vault-skeleton-loading {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
-}
+/* vault-skeleton-loading animation moved to _animations.css */
 
 /* Fade in animation for new entries */
 .vault-fade-in {
   animation: vault-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes vault-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* vault-fade-in animation moved to _animations.css */
 
 /* Stagger animation for lists */
 .vault-stagger>* {
@@ -2635,19 +2577,7 @@ kbd {
   animation: vault-check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes vault-check-pop {
-  0% {
-    transform: scale(0);
-  }
-
-  50% {
-    transform: scale(1.2);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
+/* vault-check-pop animation moved to _animations.css */
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -3750,17 +3680,7 @@ kbd {
   animation: vault-slide-down 0.2s ease;
 }
 
-@keyframes vault-slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* vault-slide-down animation moved to _animations.css */
 
 .vault-gen-header {
   display: flex;
@@ -3904,17 +3824,7 @@ kbd {
   backdrop-filter: none;
 }
 
-@keyframes vault-ctx-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+/* vault-ctx-appear animation moved to _animations.css */
 
 .vault-ctx-header {
   display: flex;
@@ -3989,17 +3899,7 @@ kbd {
   animation: vault-preview-appear 0.2s ease;
 }
 
-@keyframes vault-preview-appear {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* vault-preview-appear animation moved to _animations.css */
 
 .vault-preview-header {
   display: flex;
@@ -4111,17 +4011,7 @@ kbd {
   animation: spin 3s linear infinite;
 }
 
-@keyframes vault-health-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+/* vault-health-appear animation moved to _animations.css */
 
 .vault-health-circle.excellent {
   --health-color: var(--vault-success);
@@ -4751,17 +4641,7 @@ kbd {
   animation: fadeScaleIn 0.2s ease;
 }
 
-@keyframes fadeScaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
+/* fadeScaleIn animation moved to _animations.css */
 
 .vault-hello-header {
   display: flex;
@@ -4853,17 +4733,7 @@ kbd {
   animation: pulse-dirty 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse-dirty {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
+/* pulse-dirty animation moved to _animations.css */
 
 /* ==================== TOTP / 2FA FIELD ==================== */
 
@@ -4940,17 +4810,7 @@ kbd {
   z-index: var(--z-base);
 }
 
-@keyframes totpPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.6;
-  }
-}
+/* totpPulse animation moved to _animations.css */
 
 /* Copy TOTP button */
 .vault-totp-display .copy-totp {
@@ -6021,31 +5881,7 @@ kbd {
   animation: pulse-warning 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse-danger {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes pulse-warning {
-
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-}
+/* pulse-danger and pulse-warning animations moved to _animations.css */
 
 /* Expiry field in detail panel */
 .vault-expiry-field {
@@ -6230,17 +6066,7 @@ kbd {
   border: 1px solid rgba(var(--rgb-success), 0.2);
 }
 
-@keyframes pulse-breach {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-}
+/* pulse-breach animation moved to _animations.css */
 
 /* Breach item in health modal - clickable */
 .vault-breach-item {
@@ -6970,11 +6796,7 @@ kbd {
   animation: vault-empty-rotate 20s linear infinite;
 }
 
-@keyframes vault-empty-rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* vault-empty-rotate animation moved to _animations.css */
 
 /* ==================== SKELETON LOADING ==================== */
 
@@ -6988,15 +6810,7 @@ kbd {
   border-radius: var(--vault-radius-sm);
 }
 
-@keyframes vault-skeleton-pulse {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
-}
+/* vault-skeleton-pulse animation moved to _animations.css */
 
 .vault-skeleton-text {
   height: 1em;
@@ -7372,19 +7186,7 @@ kbd {
   animation: vault-pulse 2s ease-in-out infinite;
 }
 
-@keyframes vault-pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
+/* vault-pulse animation moved to _animations.css */
 
 /* ==================== COMPACT/OVERLAY MODE ==================== */
 /* Floating widget mode - 380x640, always on top, mobile-like */

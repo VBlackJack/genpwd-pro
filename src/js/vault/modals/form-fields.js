@@ -44,14 +44,14 @@ export function renderPasswordField(options = {}) {
         <input type="password" class="vault-input" id="${id}"
                value="${escapeHtml(value)}" placeholder="${placeholder}" autocomplete="new-password">
         <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="${id}" aria-label="Show">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
             <circle cx="12" cy="12" r="3"></circle>
           </svg>
         </button>
         ${showGenerator ? `
           <button type="button" class="vault-input-btn" id="${id}-generate" data-tooltip="Generate" aria-label="Generate password">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
             </svg>
           </button>
@@ -148,7 +148,7 @@ export function renderLoginFields(options = {}) {
                placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
         ${isEdit ? `
           <button type="button" class="vault-input-btn" id="${prefix}-scan-totp" data-tooltip="Scanner QR" aria-label="Scanner QR ou coller otpauth://">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>

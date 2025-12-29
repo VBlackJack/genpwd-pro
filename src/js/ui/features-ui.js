@@ -549,7 +549,7 @@ export function initializePresetsUI() {
         </button>
       </div>
       <button class="btn-icon d-none" id="btn-quick-save-preset" aria-label="${i18n.t('presets.quickSave')}"><span aria-hidden="true">💾</span></button>
-      <button class="btn-icon d-none" id="btn-refresh-presets" aria-label="${i18n.t('presets.refreshFromVault')}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+      <button class="btn-icon d-none" id="btn-refresh-presets" aria-label="${i18n.t('presets.refreshFromVault')}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
     </div>
   `);
 
@@ -738,7 +738,7 @@ function bindPresetEvents() {
       } finally {
         btnRefreshPresets.disabled = false;
         btnRefreshPresets.removeAttribute('aria-busy');
-        btnRefreshPresets.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
+        btnRefreshPresets.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
       }
     });
   }
@@ -1533,7 +1533,7 @@ async function showVaultPresetSyncModal() {
 
           <div class="vault-sync-actions">
             <button class="btn full-width d-flex items-center justify-center gap-8" id="btn-export-to-vault">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="17 8 12 3 7 8"/>
                 <line x1="12" y1="3" x2="12" y2="15"/>
@@ -1541,7 +1541,7 @@ async function showVaultPresetSyncModal() {
               ${i18n.t('presets.vaultSync.exportToVault')}
             </button>
             <button class="btn full-width d-flex items-center justify-center gap-8" id="btn-import-from-vault" ${vaultPresetCount === 0 ? 'disabled' : ''}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>

@@ -448,8 +448,20 @@
       "autoFill": "Astuce : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> remplit vos formulaires"
     },
     "shortcuts": {
+      "title": "Raccourcis Clavier",
+      "general": "Général",
+      "entries": "Entrées",
+      "quickActions": "Actions Rapides",
       "navigate": "Naviguer",
-      "newEntry": "Nouvelle entrée"
+      "newEntry": "Nouvelle entrée",
+      "editEntry": "Modifier l'entrée",
+      "duplicateEntry": "Dupliquer l'entrée",
+      "deleteEntry": "Supprimer l'entrée",
+      "focusSearch": "Rechercher",
+      "showShortcuts": "Afficher les raccourcis",
+      "copyUsername": "Copier le nom d'utilisateur",
+      "copyPassword": "Copier le mot de passe",
+      "autoFill": "Remplissage auto"
     },
     "placeholders": {
       "searchCtrlF": "Rechercher... (Ctrl+F)",

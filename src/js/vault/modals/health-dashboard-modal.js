@@ -25,7 +25,7 @@ export const HEALTH_CARDS = [
 function renderCloseBtn(t = (k) => k) {
   return `
     <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
@@ -49,7 +49,7 @@ export function renderScoreGauge(options = {}) {
   return `
     <div class="vault-health-score">
       <div class="vault-score-gauge" data-score-color="${scoreColor}" data-score-percent="${score}">
-        <svg viewBox="0 0 120 120" class="vault-score-ring">
+        <svg aria-hidden="true" viewBox="0 0 120 120" class="vault-score-ring">
           <circle class="vault-score-bg" cx="60" cy="60" r="54" />
           <circle class="vault-score-progress" cx="60" cy="60" r="54"
             stroke-dasharray="${circumference}"
@@ -174,7 +174,7 @@ export function renderBreachSection(options = {}) {
   return `
     <div class="vault-health-actions">
       <button class="vault-btn vault-btn-outline" id="btn-check-breaches">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
         </svg>
         Check for breaches (HIBP)

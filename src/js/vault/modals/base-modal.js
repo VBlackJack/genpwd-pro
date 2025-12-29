@@ -14,7 +14,7 @@ import { ICON_CLOSE } from '../views/icons.js';
 export function renderCloseButton({ t = (k) => k } = {}) {
   return `
     <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
         ${ICON_CLOSE}
       </svg>
     </button>
@@ -87,7 +87,7 @@ export function renderModalActions(options = {}) {
     return `
       <div class="vault-modal-actions vault-modal-actions-split">
         <button type="button" class="vault-btn vault-btn-danger" id="btn-delete">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
           </svg>
@@ -209,7 +209,7 @@ export function renderColorPicker(options = {}) {
       ${TAG_COLORS.map(color => `
         <button type="button" class="vault-color-option ${color === selectedColor ? 'selected' : ''}"
                 data-color="${color}" aria-label="Select color ${color}" style="background-color: ${color}">
-          ${color === selectedColor ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+          ${color === selectedColor ? '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
         </button>
       `).join('')}
     </div>

@@ -24,7 +24,7 @@ export function renderCustomFieldsSection(options = {}) {
     <div class="vault-custom-fields-section">
       <div class="vault-section-header">
         <h4 class="vault-section-title">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="12" y1="8" x2="12" y2="16"></line>
             <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -32,7 +32,7 @@ export function renderCustomFieldsSection(options = {}) {
           ${t('vault.labels.customFields')}
         </h4>
         <button type="button" class="vault-btn vault-btn-sm vault-btn-ghost" id="btn-add-custom-field">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
@@ -77,7 +77,7 @@ export function renderCustomField(options = {}) {
           <span>Secure</span>
         </label>
         <button type="button" class="vault-icon-btn danger vault-remove-field-btn" title="Delete" aria-label="Delete this field">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -91,7 +91,7 @@ export function renderCustomField(options = {}) {
                aria-label="${t('vault.placeholders.fieldValue')}">
         ${shouldMask ? `
           <button type="button" class="vault-input-btn toggle-pwd-visibility" aria-label="${t('vault.aria.toggleVisibility')}">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
@@ -212,7 +212,7 @@ function attachSingleFieldEvents(fieldEl, t = (k) => k) {
         btn.className = 'vault-input-btn toggle-pwd-visibility';
         btn.setAttribute('aria-label', t('vault.aria.toggleVisibility'));
         btn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
             <circle cx="12" cy="12" r="3"></circle>
           </svg>

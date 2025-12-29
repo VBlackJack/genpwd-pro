@@ -343,8 +343,20 @@
       "autoFill": "Consejo: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> rellena tus formularios"
     },
     "shortcuts": {
+      "title": "Atajos de Teclado",
+      "general": "General",
+      "entries": "Entradas",
+      "quickActions": "Acciones Rápidas",
       "navigate": "Navegar",
-      "newEntry": "Nueva entrada"
+      "newEntry": "Nueva entrada",
+      "editEntry": "Editar entrada",
+      "duplicateEntry": "Duplicar entrada",
+      "deleteEntry": "Eliminar entrada",
+      "focusSearch": "Buscar",
+      "showShortcuts": "Mostrar atajos",
+      "copyUsername": "Copiar usuario",
+      "copyPassword": "Copiar contraseña",
+      "autoFill": "Autorellenar"
     },
     "placeholders": {
       "searchCtrlF": "Buscar... (Ctrl+F)",

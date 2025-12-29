@@ -126,7 +126,7 @@ export function showToast(message, type = 'info', options = {}) {
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close';
     closeBtn.setAttribute('aria-label', i18n.t('toast.dismiss'));
-    closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    closeBtn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
     div.appendChild(closeBtn);
 
     wrap.appendChild(div);

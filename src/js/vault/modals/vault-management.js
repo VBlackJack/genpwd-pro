@@ -16,7 +16,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
         <div class="vault-modal-header">
           <h3 id="create-vault-title">New Vault</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -36,7 +36,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
               <label class="vault-radio-option">
                 <input type="radio" name="vault-location-type" value="default" checked>
                 <span class="vault-radio-label">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
                   </svg>
@@ -46,7 +46,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
               <label class="vault-radio-option">
                 <input type="radio" name="vault-location-type" value="custom">
                 <span class="vault-radio-label">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                   </svg>
                   ${t('vault.createModal.chooseLocation')}
@@ -55,7 +55,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
             </div>
             <div class="vault-custom-location" id="custom-location-section" hidden>
               <button type="button" class="vault-btn vault-btn-outline vault-btn-sm" id="btn-choose-location">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
                 ${t('vault.createModal.browse')}
@@ -70,7 +70,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
               <input type="password" class="vault-input" id="new-vault-password"
                      placeholder="${t('vault.createModal.passwordPlaceholder')}" required aria-required="true" minlength="12" aria-describedby="vault-password-message" aria-invalid="false">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="new-vault-password" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
@@ -90,7 +90,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
             <label class="vault-checkbox-option">
               <input type="checkbox" id="new-vault-hello">
               <span class="vault-checkbox-label">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                   <circle cx="8.5" cy="10" r="1.5"/>
                   <circle cx="15.5" cy="10" r="1.5"/>
@@ -125,7 +125,7 @@ export function renderOpenExternalModal({ t = (k) => k } = {}) {
         <div class="vault-modal-header">
           <h3 id="open-external-title">${t('vault.actions.openVault')}</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -143,7 +143,7 @@ export function renderOpenExternalModal({ t = (k) => k } = {}) {
                      placeholder="${t('vault.externalModal.passwordPlaceholder')}" required autocomplete="current-password"
                      aria-label="${t('vault.labels.password')}" aria-required="true">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="external-vault-password" aria-label="${t('vault.lockScreen.showHide')}">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>

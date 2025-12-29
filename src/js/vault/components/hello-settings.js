@@ -32,7 +32,7 @@ export function showHelloSettingsPopover(options = {}) {
 
   popover.innerHTML = `
     <div class="vault-hello-header">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
         <circle cx="8.5" cy="10" r="1.5"/>
         <circle cx="15.5" cy="10" r="1.5"/>
@@ -44,7 +44,7 @@ export function showHelloSettingsPopover(options = {}) {
       <p class="vault-hello-description">${isEnabled ? enabledDesc : disabledDesc}</p>
       ${isEnabled ? `
         <button class="vault-btn vault-btn-sm vault-btn-danger" id="hello-disable">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="15" y1="9" x2="9" y2="15"></line>
             <line x1="9" y1="9" x2="15" y2="15"></line>
@@ -53,7 +53,7 @@ export function showHelloSettingsPopover(options = {}) {
         </button>
       ` : `
         <button class="vault-btn vault-btn-sm vault-btn-primary" id="hello-enable">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
@@ -162,7 +162,7 @@ export function showPasswordPrompt(options = {}) {
         <div class="vault-modal-header">
           <h3>${title}</h3>
           <button type="button" class="vault-modal-close" data-close aria-label="${closeLabel}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -175,7 +175,7 @@ export function showPasswordPrompt(options = {}) {
               <input type="password" class="vault-input" id="pwd-prompt-input"
                      placeholder="${placeholder}" autocomplete="current-password" required autofocus>
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="pwd-prompt-input">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>

@@ -101,7 +101,7 @@ export function renderFolderNodes({ nodes, expandedFolders, selectedFolder }) {
               data-folder-toggle="${node.id}"
               aria-expanded="${isExpanded}"
               aria-label="${isExpanded ? 'Collapse' : 'Expand'} ${node.name}">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </button>

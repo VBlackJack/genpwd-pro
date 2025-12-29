@@ -35,7 +35,7 @@ export class SyncSettingsModal extends Modal {
           <div class="vault-modal-header">
             <h2 id="${this._modalId}-title">${t('syncModal.title')}</h2>
             <button type="button" class="vault-modal-close" aria-label="${t('common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
@@ -87,7 +87,7 @@ export class SyncSettingsModal extends Modal {
                           data-target="webdav-password"
                           aria-label="${t('vault.lockScreen.showHide')}"
                           aria-pressed="false">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <circle cx="12" cy="12" r="3"></circle>
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     </svg>
@@ -98,7 +98,7 @@ export class SyncSettingsModal extends Modal {
 
               <div class="vault-form-group">
                 <button type="button" id="btn-test-webdav" class="vault-btn vault-btn-outline vault-btn-sm" style="width: 100%">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                   </svg>
                   ${t('syncModal.testConnection')}
@@ -218,7 +218,7 @@ export class SyncSettingsModal extends Modal {
     } finally {
       btn.disabled = false;
       btn.innerHTML = `
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
         ${t('syncModal.testConnection')}

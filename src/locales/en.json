@@ -349,8 +349,20 @@
       "autoFill": "Tip: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> auto-fills your forms"
     },
     "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "general": "General",
+      "entries": "Entries",
+      "quickActions": "Quick Actions",
       "navigate": "Navigate",
-      "newEntry": "New entry"
+      "newEntry": "New entry",
+      "editEntry": "Edit entry",
+      "duplicateEntry": "Duplicate entry",
+      "deleteEntry": "Delete entry",
+      "focusSearch": "Focus search",
+      "showShortcuts": "Show shortcuts",
+      "copyUsername": "Copy username",
+      "copyPassword": "Copy password",
+      "autoFill": "Auto-fill form"
     },
     "placeholders": {
       "password": "Enter password",

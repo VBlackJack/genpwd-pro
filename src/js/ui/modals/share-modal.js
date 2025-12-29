@@ -45,7 +45,7 @@ export class ShareModal extends Modal {
           <div class="vault-modal-header">
             <h2 id="${this._modalId}-title">${t('shareModal.title')}</h2>
             <button type="button" class="vault-modal-close" aria-label="${t('common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>

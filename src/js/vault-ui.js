@@ -521,7 +521,7 @@ export class VaultUI {
                  aria-selected="${i === 0}"
                  tabindex="${i === 0 ? 0 : -1}">
               <div class="vault-list-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
@@ -531,13 +531,13 @@ export class VaultUI {
                 <div class="vault-list-meta">${v.isMissing ? '⚠️ ' + t('vault.messages.fileNotFound') : formatDate(v.modifiedAt)}</div>
               </div>
               <button type="button" class="vault-list-forget" data-vault-id="${v.id}" title="${t('vault.messages.forgetVault')}" aria-label="${t('vault.messages.forgetVault')}">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
               <div class="vault-list-check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
               </div>
@@ -1102,7 +1102,7 @@ export class VaultUI {
           <button class="vault-sidebar-collapse" id="sidebar-collapse-btn"
                   aria-label="${t('vault.sidebar.collapse')}"
                   title="${t('vault.sidebar.collapse')}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
@@ -1110,7 +1110,7 @@ export class VaultUI {
           <div class="vault-selector-header">
             <button class="vault-current" id="vault-switcher" aria-haspopup="true" aria-expanded="false">
               <div class="vault-current-icon" data-vault-color="${this.#getVaultColor()}">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
@@ -1128,7 +1128,7 @@ export class VaultUI {
                 <div class="vault-switcher-label">Current vault</div>
                 <div class="vault-switcher-item current">
                   <div class="vault-switcher-icon" data-vault-color="${this.#getVaultColor()}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
@@ -1142,7 +1142,7 @@ export class VaultUI {
               <div class="vault-switcher-divider"></div>
               <div class="vault-switcher-actions">
                 <button class="vault-switcher-action" id="btn-switch-vault">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="16 3 21 3 21 8"></polyline>
                     <line x1="4" y1="20" x2="21" y2="3"></line>
                     <polyline points="21 16 21 21 16 21"></polyline>
@@ -1152,7 +1152,7 @@ export class VaultUI {
                   <span>${t('vault.sidebar.switchVault')}</span>
                 </button>
                 <button class="vault-switcher-action" id="btn-create-new-vault">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -1165,20 +1165,20 @@ export class VaultUI {
 
           <div class="vault-sidebar-header">
             <div class="vault-lock-timer" id="lock-timer" role="timer" aria-live="polite" aria-label="Verrouillage automatique">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <span id="lock-countdown">${this.#formatTime(this.#autoLockTimeout)}</span>
               <button class="vault-timer-settings" id="timer-settings" title="${t('vault.settings.configureLockDelay')}" aria-label="${t('vault.settings.configureLockDelay')}">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
               </button>
             </div>
             <button class="vault-icon-btn" id="btn-lock" data-tooltip="Lock (Ctrl+L)" data-tooltip-pos="bottom" aria-label="Lock vault">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
@@ -1200,7 +1200,7 @@ export class VaultUI {
               </svg>
             </button>
             <button class="vault-icon-btn vault-hello-settings" id="hello-settings" data-tooltip="Windows Hello" data-tooltip-pos="bottom" aria-label="Configure Windows Hello" hidden>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                 <circle cx="8.5" cy="10" r="1.5"/>
                 <circle cx="15.5" cy="10" r="1.5"/>
@@ -1209,19 +1209,19 @@ export class VaultUI {
             </button>
             </button>
             <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="Cloud Sync" data-tooltip-pos="bottom" aria-label="Configure cloud sync">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
               </svg>
             </button>
             <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="Duress Mode" data-tooltip-pos="bottom" aria-label="Configure duress mode">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
             </button>
           </div>
 
           <div class="vault-sidebar-search">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -1230,7 +1230,7 @@ export class VaultUI {
                    aria-label="Search vault">
             <button class="vault-filter-btn ${this.#hasActiveFilters() ? 'active' : ''}" id="filter-btn"
                     title="Advanced filters" aria-haspopup="true" aria-expanded="false">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
               ${this.#hasActiveFilters() ? '<span class="filter-badge"></span>' : ''}
@@ -1290,7 +1290,7 @@ export class VaultUI {
               <div class="vault-nav-title vault-nav-title-with-action">
                 <span>Folders</span>
                 <button class="vault-nav-add-btn" id="btn-add-folder" title="${t('vault.dialogs.newFolder')}" aria-label="${t('vault.dialogs.newFolder')}">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
@@ -1305,7 +1305,7 @@ export class VaultUI {
               <div class="vault-nav-title vault-nav-title-with-action">
                 <span>Tags</span>
                 <button class="vault-nav-add-btn" id="btn-add-tag" title="New tag" aria-label="Create tag">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
@@ -1321,13 +1321,13 @@ export class VaultUI {
                <span class="vault-sync-text" id="vault-sync-text">Ready</span>
             </div>
             <button class="vault-btn vault-btn-outline vault-btn-full" id="btn-health-dashboard" title="Analyze password health" aria-label="Analyze password health">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
               ${t('vault.sidebar.passwordHealth')}
             </button>
             <button class="vault-btn vault-btn-primary vault-btn-full" id="btn-add-entry">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
@@ -1346,7 +1346,7 @@ export class VaultUI {
             <div class="vault-list-toolbar">
               <div class="vault-sort-dropdown">
                 <button class="vault-sort-btn" id="sort-btn" aria-haspopup="listbox" aria-expanded="false">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="4" y1="6" x2="20" y2="6"></line>
                     <line x1="4" y1="12" x2="16" y2="12"></line>
                     <line x1="4" y1="18" x2="12" y2="18"></line>
@@ -1367,7 +1367,7 @@ export class VaultUI {
                       title="${this.#viewMode === 'compact' ? 'Comfortable view' : 'Compact view'}"
                       aria-label="Toggle display density"
                       aria-pressed="${this.#viewMode === 'compact'}">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   ${this.#viewMode === 'compact' ? `
                     <rect x="3" y="3" width="7" height="7"></rect>
                     <rect x="14" y="3" width="7" height="7"></rect>
@@ -1384,27 +1384,27 @@ export class VaultUI {
                 </svg>
               </button>
               <button class="vault-help-btn" id="shortcuts-help" title="Keyboard shortcuts (?)" aria-label="Show keyboard shortcuts">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                   <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
               </button>
               <button class="vault-icon-btn vault-health-btn" id="health-dashboard" data-tooltip="Password Health" data-tooltip-pos="bottom" aria-label="Health dashboard">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
               <button class="vault-icon-btn" id="btn-export" data-tooltip="Export" data-tooltip-pos="bottom" aria-label="Export entries">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
               </button>
               <button class="vault-icon-btn" id="btn-import" data-tooltip="Import" data-tooltip-pos="bottom" aria-label="Import entries">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -1412,7 +1412,7 @@ export class VaultUI {
               </button>
               <div class="vault-toolbar-divider"></div>
               <button class="vault-icon-btn vault-save-btn" id="btn-save-vault" data-tooltip="Save as..." data-tooltip-pos="bottom" aria-label="Save vault">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
@@ -1420,7 +1420,7 @@ export class VaultUI {
               </button>
               <div class="vault-toolbar-divider"></div>
               <button class="vault-icon-btn vault-compact-btn" id="btn-compact-mode" data-tooltip="Mode compact (widget flottant)" data-tooltip-pos="bottom" aria-label="Basculer en mode compact">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
                   <line x1="12" y1="18" x2="12.01" y2="18"></line>
                 </svg>
@@ -1439,13 +1439,13 @@ export class VaultUI {
             <span class="vault-bulk-count">${this.#selectedEntries.size} selected</span>
             <div class="vault-bulk-buttons">
               <button class="vault-bulk-btn" id="bulk-move" title="Move to folder" aria-label="Move selected entries to folder">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
                 Move
               </button>
               <button class="vault-bulk-btn" id="bulk-export" title="Export selection" aria-label="Export selected entries">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -1453,14 +1453,14 @@ export class VaultUI {
                 Export
               </button>
               <button class="vault-bulk-btn" id="bulk-tag" title="Manage tags" aria-label="Manage tags for selected entries">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                   <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
                 Tags
               </button>
               <button class="vault-bulk-btn vault-bulk-btn-danger" id="bulk-delete" title="Delete selection" aria-label="Delete selected entries">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
@@ -1721,7 +1721,7 @@ export class VaultUI {
     return `
       <nav class="vault-breadcrumb" aria-label="Breadcrumb">
         <span class="vault-breadcrumb-item">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
@@ -2027,7 +2027,7 @@ export class VaultUI {
     } finally {
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="17 8 12 3 7 8"></polyline>
           <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -2100,7 +2100,7 @@ export class VaultUI {
       btn.innerHTML = '';
       if (btn.dataset.color === (tag.color || '#6b7280')) {
         btn.classList.add('selected');
-        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        btn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
       }
     });
   }
@@ -2144,7 +2144,7 @@ export class VaultUI {
         <div class="vault-modal-header">
           <h3>Manage tags (${count} entr${count > 1 ? 'ies' : 'y'})</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -2420,7 +2420,7 @@ export class VaultUI {
     loadingDiv.hidden = true;
     btn.disabled = false;
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
       </svg>
       Check for breaches (HIBP)
@@ -2699,7 +2699,7 @@ export class VaultUI {
         <div class="vault-modal-header">
           <h3>${t('vault.dialogs.saveVault')}</h3>
           <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -2724,7 +2724,7 @@ export class VaultUI {
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="save-vault-password" placeholder="${t('vault.form.passwordPlaceholder')}" required aria-required="true" minlength="8" aria-invalid="false">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="save-vault-password" aria-label="Show">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
@@ -2740,7 +2740,7 @@ export class VaultUI {
           <div class="vault-modal-actions">
             <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
             <button type="submit" class="vault-btn vault-btn-primary">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                 <polyline points="7 3 7 8 15 8"></polyline>
@@ -2849,7 +2849,7 @@ export class VaultUI {
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
             <polyline points="17 21 17 13 7 13 7 21"></polyline>
             <polyline points="7 3 7 8 15 8"></polyline>
@@ -2900,12 +2900,12 @@ export class VaultUI {
 
       // Change icon
       btn.innerHTML = compact
-        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        ? `<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
              <line x1="8" y1="21" x2="16" y2="21"></line>
              <line x1="12" y1="17" x2="12" y2="21"></line>
            </svg>`
-        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        : `<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
              <line x1="12" y1="18" x2="12.01" y2="18"></line>
            </svg>`;
@@ -4322,13 +4322,13 @@ export class VaultUI {
             <div class="vault-input-group">
               <input type="password" class="vault-input" id="edit-password" value="${escapeHtml(entry.data?.password || '')}">
               <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="edit-password" aria-label="Show">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
               </button>
               <button type="button" class="vault-input-btn" id="edit-generate-password" data-tooltip="Generate" aria-label="Generate password">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
                 </svg>
               </button>
@@ -4345,7 +4345,7 @@ export class VaultUI {
               <input type="text" class="vault-input mono" id="edit-totp" value="${escapeHtml(entry.data?.totp || '')}"
                      placeholder="${t('vault.placeholders.totpKeyExample')}" autocomplete="off" spellcheck="false">
               <button type="button" class="vault-input-btn" id="edit-scan-totp" data-tooltip="Scanner QR" aria-label="Scanner QR ou coller otpauth://">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="7" height="7"></rect>
                   <rect x="14" y="3" width="7" height="7"></rect>
                   <rect x="14" y="14" width="7" height="7"></rect>
@@ -4819,7 +4819,7 @@ export class VaultUI {
             b.innerHTML = '';
           });
           btn.classList.add('selected');
-          btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+          btn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
           document.getElementById('tag-color').value = btn.dataset.color;
         });
       });
@@ -4859,7 +4859,7 @@ export class VaultUI {
             b.innerHTML = '';
           });
           btn.classList.add('selected');
-          btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+          btn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
           document.getElementById('edit-tag-color').value = btn.dataset.color;
         });
       });
@@ -4957,13 +4957,13 @@ export class VaultUI {
           <div class="vault-input-group">
             <input type="password" class="vault-input" id="entry-password" placeholder="••••••••" autocomplete="new-password">
             <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="entry-password" aria-label="Show">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </button>
             <button type="button" class="vault-input-btn" id="generate-password" data-tooltip="Generate" aria-label="Generate password">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
               </svg>
             </button>
@@ -5239,7 +5239,7 @@ export class VaultUI {
           btn.className = 'vault-input-btn toggle-pwd-visibility';
           btn.setAttribute('aria-label', t('vault.aria.toggleVisibility'));
           btn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
@@ -5495,7 +5495,7 @@ export class VaultUI {
         <div class="vault-modal-content vault-modal-sm" role="alertdialog" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
           <div class="vault-modal-header">
             <h3 id="confirm-dialog-title" class="vault-modal-title">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon-warning">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon-warning">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -6225,7 +6225,7 @@ export class VaultUI {
     toast.className = 'toast toast-warning toast-autolock-warning';
     toast.setAttribute('role', 'alert');
     toast.innerHTML = `
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
@@ -6314,12 +6314,12 @@ export class VaultUI {
     if (data.status === 'syncing') {
       el.classList.add('syncing');
       icon.className = 'vault-sync-icon vault-sync-spinner';
-      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+      icon.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
       text.textContent = data.message || t('vault.sync.syncing');
     } else if (data.status === 'synced') {
       el.classList.add('synced');
       icon.className = 'vault-sync-icon';
-      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+      icon.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
       text.textContent = data.message || t('vault.sync.upToDate');
 
       // Hide after 5 seconds
@@ -6329,7 +6329,7 @@ export class VaultUI {
     } else if (data.status === 'error') {
       el.classList.add('error');
       icon.className = 'vault-sync-icon';
-      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+      icon.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
       text.textContent = data.message || t('vault.sync.syncError');
     }
   }

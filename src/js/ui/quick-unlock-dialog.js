@@ -121,7 +121,7 @@ export class QuickUnlockDialog {
         <div class="quick-unlock-modal">
           <div class="quick-unlock-header">
             <div class="quick-unlock-icon">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
@@ -159,7 +159,7 @@ export class QuickUnlockDialog {
                   aria-label="${t('vault.labels.password')}"
                 >
                 <button type="button" class="quick-unlock-toggle-pwd" id="quick-unlock-toggle-pwd" aria-label="${t('vault.quickUnlock.showPassword')}">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
@@ -180,7 +180,7 @@ export class QuickUnlockDialog {
                 <span>${t('vault.quickUnlock.or') || 'or'}</span>
               </div>
               <button type="button" class="quick-unlock-btn quick-unlock-btn-hello" id="quick-unlock-hello-btn" aria-label="${t('vault.quickUnlock.unlockWithHello')}">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                   <path d="M12 6c-2.21 0-4 1.79-4 4v2c0 2.21 1.79 4 4 4s4-1.79 4-4v-2c0-2.21-1.79-4-4-4z"/>
                   <circle cx="9" cy="10" r="1"/>
@@ -196,7 +196,7 @@ export class QuickUnlockDialog {
                 ${t('common.cancel')}
               </button>
               <button type="submit" class="quick-unlock-btn quick-unlock-btn-primary" id="quick-unlock-submit">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
                 </svg>
@@ -206,7 +206,7 @@ export class QuickUnlockDialog {
           </form>
 
           <button type="button" class="quick-unlock-close" id="quick-unlock-close" aria-label="${t('common.close')}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -425,7 +425,7 @@ export class QuickUnlockDialog {
       if (helloBtn) {
         helloBtn.disabled = false;
         helloBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
             <path d="M12 6c-2.21 0-4 1.79-4 4v2c0 2.21 1.79 4 4 4s4-1.79 4-4v-2c0-2.21-1.79-4-4-4z"/>
             <circle cx="9" cy="10" r="1"/>
@@ -489,7 +489,7 @@ export class QuickUnlockDialog {
         submitBtn.disabled = false;
         submitBtn.removeAttribute('aria-busy');
         submitBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
           </svg>

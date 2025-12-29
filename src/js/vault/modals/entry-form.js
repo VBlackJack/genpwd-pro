@@ -110,7 +110,7 @@ export function renderFolderSelector(options = {}) {
 function renderCloseBtn(t = (k) => k) {
   return `
     <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
@@ -148,7 +148,7 @@ export function renderAddEntryModal(options = {}) {
           <!-- Template Selector -->
           <div class="vault-template-section">
             <button type="button" class="vault-template-toggle" id="toggle-templates" aria-expanded="false">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7"></rect>
                 <rect x="14" y="3" width="7" height="7"></rect>
                 <rect x="14" y="14" width="7" height="7"></rect>

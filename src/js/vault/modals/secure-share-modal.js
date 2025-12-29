@@ -162,7 +162,7 @@ export function showSecureShareModal(options = {}) {
       <div class="vault-modal-header">
         <h3>${t('vault.share.title') || 'Share'} "${escapeHtml(entry.title)}"</h3>
         <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -170,7 +170,7 @@ export function showSecureShareModal(options = {}) {
       </div>
       <div class="vault-modal-body">
         <p class="vault-share-warning">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -183,14 +183,14 @@ export function showSecureShareModal(options = {}) {
           <div class="vault-share-passphrase">
             <input type="text" class="vault-input" id="share-passphrase" value="${currentPassphrase}" readonly>
             <button type="button" class="vault-btn vault-btn-secondary" id="regenerate-passphrase" title="${t('vault.share.regenerate') || 'Regenerate'}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="1 4 1 10 7 10"></polyline>
                 <polyline points="23 20 23 14 17 14"></polyline>
                 <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
               </svg>
             </button>
             <button type="button" class="vault-btn vault-btn-secondary" id="copy-passphrase" title="${t('vault.common.copy') || 'Copy'}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
@@ -220,7 +220,7 @@ export function showSecureShareModal(options = {}) {
           <label class="vault-label">${t('vault.share.encryptedText') || 'Encrypted text to share'}</label>
           <textarea class="vault-input vault-textarea" id="share-output" rows="4" readonly></textarea>
           <button type="button" class="vault-btn vault-btn-primary" id="copy-share">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
@@ -231,7 +231,7 @@ export function showSecureShareModal(options = {}) {
         <div class="vault-modal-actions">
           <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
           <button type="button" class="vault-btn vault-btn-primary" id="generate-share">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>

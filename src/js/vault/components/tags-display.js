@@ -35,7 +35,7 @@ export function renderTagsList({ tags, entries, selectedTag }) {
         <span class="vault-nav-label">${escapeHtml(tag.name)}</span>
         <span class="vault-nav-count">${count}</span>
         <button class="vault-tag-edit-btn" data-edit-tag="${tag.id}" title="Edit tag" aria-label="Edit ${escapeHtml(tag.name)}">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
@@ -77,7 +77,7 @@ export function renderTagPicker({ tags, selectedTags = [] }) {
           `).join('')}
         </div>
         <button type="button" class="vault-btn vault-btn-sm vault-btn-primary" id="btn-create-tag">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>

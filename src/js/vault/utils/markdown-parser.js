@@ -98,13 +98,13 @@ export function renderNotesFieldHTML(notes, t = (k) => k) {
         <label class="vault-field-label">${t('vault.labels.notes')}</label>
         <div class="vault-notes-toggle">
           <button type="button" class="vault-notes-mode active" data-mode="preview" title="Preview">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
           </button>
           <button type="button" class="vault-notes-mode" data-mode="source" title="Source Markdown">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
             </svg>

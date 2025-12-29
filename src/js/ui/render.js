@@ -42,7 +42,7 @@ export function renderResults(results, mask) {
           <div class="empty-icon">🔐</div>
           <p>${t('generator.emptyState')}</p>
           <button type="button" class="btn btn-accent empty-state-cta" id="empty-generate-btn">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M12 3v3m0 12v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M3 12h3m12 0h3M4.22 19.78l2.12-2.12M18.36 6.34l2.12-2.12"/>
               <circle cx="12" cy="12" r="4"/>
             </svg>
@@ -105,7 +105,7 @@ function createPasswordCard(item, id, mask) {
   const vaultAvailable = VaultBridge.isAvailable();
   const saveToVaultBtn = vaultAvailable ? `
     <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="${t('common.save')}" aria-label="${t('vault.actions.saveToVault')}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
@@ -127,13 +127,13 @@ function createPasswordCard(item, id, mask) {
       <div class="value mono">${escapeHtml(value)}</div>
       <div class="actions">
         <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton')}" aria-label="${t('breach.checkButton')}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
         ${saveToVaultBtn}
         <button class="action-btn copy-btn" type="button" title="${t('common.copy')}" aria-label="${t('toast.copyPassword')}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
@@ -449,7 +449,7 @@ function showContextMenu(e, password) {
   menu.setAttribute('aria-label', t('contextMenu.title'));
   menu.innerHTML = `
     <button class="pwd-ctx-item" data-action="copy" role="menuitem" aria-label="${t('contextMenu.copy')}">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
       </svg>
@@ -457,7 +457,7 @@ function showContextMenu(e, password) {
     </button>
     ${vaultAvailable ? `
       <button class="pwd-ctx-item" data-action="save-vault" role="menuitem" aria-label="${t('contextMenu.saveToVault')}">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
@@ -613,7 +613,7 @@ export function renderEmptyState() {
         <div class="empty-icon">🔐</div>
         <p>${t('generator.emptyState')}</p>
         <button type="button" class="btn btn-accent empty-state-cta" id="empty-generate-btn">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 3v3m0 12v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M3 12h3m12 0h3M4.22 19.78l2.12-2.12M18.36 6.34l2.12-2.12"/>
             <circle cx="12" cy="12" r="4"/>
           </svg>

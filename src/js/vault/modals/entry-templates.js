@@ -200,7 +200,7 @@ export function renderTemplatePicker(options = {}) {
   return `
     <div class="vault-template-section">
       <button type="button" class="vault-template-toggle" id="toggle-templates" aria-expanded="false">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7"></rect>
           <rect x="14" y="3" width="7" height="7"></rect>
           <rect x="14" y="14" width="7" height="7"></rect>

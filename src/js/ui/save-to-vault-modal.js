@@ -136,7 +136,7 @@ export class SaveToVaultModal {
           <div class="save-vault-header">
             <div class="save-vault-title-row">
               <div class="save-vault-icon">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
@@ -144,7 +144,7 @@ export class SaveToVaultModal {
               <h3 id="save-vault-title">${t('vault.saveModal.title')}</h3>
             </div>
             <button type="button" class="save-vault-close" id="save-vault-close" aria-label="${t('common.close')}">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
@@ -158,7 +158,7 @@ export class SaveToVaultModal {
               <div class="save-vault-password-display">
                 <code class="save-vault-password-value">${escapeHtml(this.#currentPassword)}</code>
                 <button type="button" class="save-vault-copy-btn" id="save-vault-copy" title="${t('common.copy')}" aria-label="${t('common.copy')}">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
@@ -224,7 +224,7 @@ export class SaveToVaultModal {
             <!-- Notes (collapsed by default) -->
             <details class="save-vault-notes-section">
               <summary class="save-vault-notes-toggle">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 18l6-6-6-6"/>
                 </svg>
                 ${t('vault.saveModal.addNotes')}
@@ -245,7 +245,7 @@ export class SaveToVaultModal {
                 ${t('common.cancel')}
               </button>
               <button type="submit" class="save-vault-btn save-vault-btn-primary" id="save-vault-submit">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
@@ -432,7 +432,7 @@ export class SaveToVaultModal {
         submitBtn.disabled = false;
         submitBtn.removeAttribute('aria-busy');
         submitBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
             <polyline points="17 21 17 13 7 13 7 21"></polyline>
             <polyline points="7 3 7 8 15 8"></polyline>

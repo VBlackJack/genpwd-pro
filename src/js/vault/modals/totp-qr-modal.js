@@ -54,7 +54,7 @@ export function showTOTPQRModal(options = {}) {
       <div class="vault-modal-header">
         <h3>${t('vault.totp.qrTitle') || 'QR Code TOTP'}</h3>
         <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>

@@ -4,39 +4,43 @@
  */
 
 import { renderModal } from './base-modal.js';
+import { t } from '../../utils/i18n.js';
 
 /**
- * Shortcut categories
+ * Get shortcut categories with translations
+ * @returns {Array} Shortcut categories
  */
-const SHORTCUT_CATEGORIES = [
-  {
-    title: 'General',
-    shortcuts: [
-      { keys: ['Ctrl', 'L'], description: 'Lock vault' },
-      { keys: ['Ctrl', 'F'], description: 'Focus search' },
-      { keys: ['?'], description: 'Show shortcuts' },
-      { keys: ['Esc'], description: 'Close modal' }
-    ]
-  },
-  {
-    title: 'Entries',
-    shortcuts: [
-      { keys: ['Ctrl', 'N'], description: 'New entry' },
-      { keys: ['Ctrl', 'E'], description: 'Edit entry' },
-      { keys: ['Ctrl', 'D'], description: 'Duplicate entry' },
-      { keys: ['Delete'], description: 'Delete entry' },
-      { keys: ['↑', '↓'], description: 'Navigate entries' }
-    ]
-  },
-  {
-    title: 'Quick Actions',
-    shortcuts: [
-      { keys: ['Ctrl', 'U'], description: 'Copy username' },
-      { keys: ['Ctrl', 'P'], description: 'Copy password' },
-      { keys: ['Ctrl', 'Shift', 'U'], description: 'Auto-fill form' }
-    ]
-  }
-];
+function getShortcutCategories() {
+  return [
+    {
+      title: t('vault.shortcuts.general'),
+      shortcuts: [
+        { keys: ['Ctrl', 'L'], description: t('settingsModal.shortcuts.lockVault') },
+        { keys: ['Ctrl', 'F'], description: t('vault.shortcuts.focusSearch') },
+        { keys: ['?'], description: t('vault.shortcuts.showShortcuts') },
+        { keys: ['Esc'], description: t('settingsModal.shortcuts.closeModal') }
+      ]
+    },
+    {
+      title: t('vault.shortcuts.entries'),
+      shortcuts: [
+        { keys: ['Ctrl', 'N'], description: t('vault.shortcuts.newEntry') },
+        { keys: ['Ctrl', 'E'], description: t('vault.shortcuts.editEntry') },
+        { keys: ['Ctrl', 'D'], description: t('vault.shortcuts.duplicateEntry') },
+        { keys: ['Delete'], description: t('vault.shortcuts.deleteEntry') },
+        { keys: ['↑', '↓'], description: t('settingsModal.shortcuts.navigate') }
+      ]
+    },
+    {
+      title: t('vault.shortcuts.quickActions'),
+      shortcuts: [
+        { keys: ['Ctrl', 'U'], description: t('vault.shortcuts.copyUsername') },
+        { keys: ['Ctrl', 'P'], description: t('vault.shortcuts.copyPassword') },
+        { keys: ['Ctrl', 'Shift', 'U'], description: t('vault.shortcuts.autoFill') }
+      ]
+    }
+  ];
+}
 
 /**
  * Render keyboard shortcut key
@@ -86,10 +90,11 @@ function renderCategory(category) {
  * @returns {string} HTML string
  */
 function renderShortcutsContent() {
+  const categories = getShortcutCategories();
   return `
     <div class="vault-modal-body vault-shortcuts-body">
       <div class="vault-shortcuts-grid">
-        ${SHORTCUT_CATEGORIES.map(renderCategory).join('')}
+        ${categories.map(renderCategory).join('')}
       </div>
     </div>
   `;
@@ -97,16 +102,12 @@ function renderShortcutsContent() {
 
 /**
  * Render shortcuts modal
- * @param {Object} options - Options
- * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
-export function renderShortcutsModal(options = {}) {
-  const { t = (k) => k } = options;
-
+export function renderShortcutsModal() {
   return renderModal({
     id: 'shortcuts-modal',
-    title: 'Keyboard shortcuts',
+    title: t('vault.shortcuts.title'),
     content: renderShortcutsContent(),
     size: 'md',
     t
@@ -117,6 +118,4 @@ export function renderShortcutsModal(options = {}) {
  * Get all shortcut definitions for external use
  * @returns {Array} Shortcut categories
  */
-export function getShortcutCategories() {
-  return SHORTCUT_CATEGORIES;
-}
+export { getShortcutCategories };

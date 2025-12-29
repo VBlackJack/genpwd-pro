@@ -12,15 +12,28 @@
   --vault-text-muted: var(--text-secondary);
   --vault-text-dim: var(--text-hint, rgba(255, 255, 255, 0.35));
   --vault-primary: var(--accent-primary);
+
+  /* Spacing scale (4px base) */
+  --vault-space-1: 0.25rem;  /* 4px */
+  --vault-space-2: 0.5rem;   /* 8px */
+  --vault-space-3: 0.75rem;  /* 12px */
+  --vault-space-4: 1rem;     /* 16px */
+  --vault-space-5: 1.25rem;  /* 20px */
+  --vault-space-6: 1.5rem;   /* 24px */
+  --vault-space-8: 2rem;     /* 32px */
+
+  /* Border radius */
   --vault-radius: var(--radius-sm);
   --vault-radius-sm: var(--radius-sm, 8px);
   --vault-radius-md: var(--radius-md, 12px);
   --vault-radius-lg: var(--radius-lg, 16px);
+
   /* Status colors - used throughout vault UI */
   --vault-success: var(--accent-green, #10b981);
   --vault-warning: var(--accent-yellow, #eab308);
   --vault-danger: var(--accent-red, #ef4444);
   --vault-error: var(--vault-danger);
+
   /* Transitions and shadows */
   --vault-transition: 0.15s ease;
   --vault-shadow-lg: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.3));

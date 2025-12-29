@@ -36,7 +36,7 @@ export function renderConfirmDialog(options = {}) {
     <div class="vault-modal-content vault-modal-sm" role="alertdialog" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
       <div class="vault-modal-header">
         <h3 id="confirm-dialog-title" class="vault-modal-title">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${iconColor}" stroke-width="2" class="modal-icon-warning">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${iconColor}" stroke-width="2" class="modal-icon-warning">
             ${ICON_ALERT}
           </svg>
           ${escapeHtml(title)}
