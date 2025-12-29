@@ -882,7 +882,8 @@
     "settings": {
       "lockTimeout": "Délai de verrouillage",
       "duressMode": "Mode Coercition",
-      "configureDuress": "Configurer le Mode Coercition"
+      "configureDuress": "Configurer le Mode Coercition",
+      "configureLockDelay": "Configurer le délai de verrouillage"
     },
     "generator": {
       "title": "Générateur de mot de passe",

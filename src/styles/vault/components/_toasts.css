@@ -31,58 +31,59 @@
   opacity: 1;
 }
 
-.toast-success {
+/* Vault toast type variants (scoped to avoid conflict with utilities.css) */
+.vault-toast.toast-success {
   border-left: 3px solid var(--vault-success);
 }
 
-.toast-error {
+.vault-toast.toast-error {
   border-left: 3px solid var(--vault-error);
 }
 
-.toast-warning {
+.vault-toast.toast-warning {
   border-left: 3px solid var(--vault-warning);
 }
 
-.toast-info {
+.vault-toast.toast-info {
   border-left: 3px solid var(--vault-primary);
 }
 
 /* Toast icon support */
-.toast-icon {
+.vault-toast .toast-icon {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
 }
 
-.toast-success .toast-icon {
+.vault-toast.toast-success .toast-icon {
   color: var(--vault-success);
 }
 
-.toast-error .toast-icon {
+.vault-toast.toast-error .toast-icon {
   color: var(--vault-error);
 }
 
-.toast-warning .toast-icon {
+.vault-toast.toast-warning .toast-icon {
   color: var(--vault-warning);
 }
 
-.toast-info .toast-icon {
+.vault-toast.toast-info .toast-icon {
   color: var(--vault-primary);
 }
 
-/* Detailed error toast */
-.toast.toast-detailed {
+/* Detailed error toast (scoped to vault) */
+.vault-toast.toast-detailed {
   flex-wrap: wrap;
   max-width: 380px;
   padding: 1rem 1.25rem 1rem 1rem;
 }
 
-.toast.toast-detailed .toast-icon {
+.vault-toast.toast-detailed .toast-icon {
   width: 20px;
   height: 20px;
 }
 
-.toast.toast-detailed .toast-content {
+.vault-toast.toast-detailed .toast-content {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -90,12 +91,12 @@
   gap: 4px;
 }
 
-.toast.toast-detailed .toast-title {
+.vault-toast.toast-detailed .toast-title {
   font-weight: 600;
   color: var(--vault-text);
 }
 
-.toast.toast-detailed .toast-suggestion {
+.vault-toast.toast-detailed .toast-suggestion {
   font-size: 0.8rem;
   font-weight: 400;
   color: var(--vault-text-muted);

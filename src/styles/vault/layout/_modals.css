@@ -26,15 +26,13 @@
   width: 100%;
   max-width: 420px;
   max-height: 90vh;
-  background: var(--vault-bg-primary, #1a1d2e);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--vault-bg-primary);
+  border: 1px solid var(--glass-border-light);
   border-radius: var(--vault-radius-lg);
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-xl, 0 25px 50px -12px rgba(0, 0, 0, 0.6));
   overflow: hidden;
   transform: scale(0.9) translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--transition-spring);
 }
 
 .vault-modal-overlay.active .vault-modal {

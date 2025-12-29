@@ -777,7 +777,8 @@
     "settings": {
       "lockTimeout": "Tiempo de bloqueo",
       "duressMode": "Modo de Coacción",
-      "configureDuress": "Configurar modo de coacción"
+      "configureDuress": "Configurar modo de coacción",
+      "configureLockDelay": "Configurar tiempo de bloqueo"
     },
     "generator": {
       "title": "Generador de contraseñas",

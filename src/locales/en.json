@@ -805,7 +805,8 @@
     "settings": {
       "lockTimeout": "Lock timeout",
       "duressMode": "Duress Mode",
-      "configureDuress": "Configure duress mode"
+      "configureDuress": "Configure duress mode",
+      "configureLockDelay": "Configure lock delay"
     },
     "generator": {
       "title": "Password generator",

@@ -25,6 +25,9 @@
   --bg-quaternary: hsl(var(--hue-bg), 20%, 22%);
   --bg-hover: rgba(255, 255, 255, 0.05);
   --bg-error: rgba(244, 67, 54, 0.1);
+  --bg-input-hover: rgba(20, 25, 45, 0.7);
+  --bg-input-focus: rgba(20, 25, 45, 0.8);
+  --border-hover: rgba(255, 255, 255, 0.2);
 
   /* Glassmorphism Tokens */
   --glass-str: 0.15;
@@ -34,13 +37,12 @@
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   --glass-blur: blur(12px);
 
-  /* Text Colors - WCAG AA compliant (4.5:1 contrast ratio minimum) */
+  /* Text Colors - WCAG AAA compliant (7:1 contrast ratio target) */
   --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.78);
-  --text-muted: rgba(255, 255, 255, 0.72); /* Improved from 0.65 for better contrast */
-  --text-hint: rgba(255, 255, 255, 0.60); /* Improved from 0.55 for better contrast */
+  --text-secondary: rgba(255, 255, 255, 0.82);
+  --text-muted: rgba(255, 255, 255, 0.75); /* WCAG AAA: ~7:1 ratio on dark bg */
+  --text-hint: rgba(255, 255, 255, 0.65); /* WCAG AA: ~5:1 ratio on dark bg */
   --text-on-accent: #ffffff; /* Text on colored buttons/backgrounds */
-  /* Note: Improved contrast ratios for better accessibility */
 
   /* Accent Colors - Semantic (legacy, prefer --accent-* variants) */
   /* @deprecated Use --accent-primary instead */
@@ -105,8 +107,9 @@
 
   /* Shadows */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 
   /* Modal Overlay */
   --modal-backdrop: rgba(0, 0, 0, 0.5);
@@ -241,9 +244,9 @@
 
     /* Text Colors - Light theme (WCAG AA compliant) */
     --text-primary: rgba(0, 0, 0, 0.87);
-    --text-secondary: rgba(0, 0, 0, 0.7);
-    --text-muted: rgba(0, 0, 0, 0.55);
-    --text-hint: rgba(0, 0, 0, 0.60); /* WCAG AA: 4.5:1 contrast ratio */
+    --text-secondary: rgba(0, 0, 0, 0.72);
+    --text-muted: rgba(0, 0, 0, 0.62); /* WCAG AA: ~4.5:1 on white bg */
+    --text-hint: rgba(0, 0, 0, 0.55); /* WCAG AA: ~4.5:1 on white bg */
 
     /* Theme-specific text colors */
     --text-dimmed: #5a5f7a;
@@ -286,9 +289,9 @@
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
   /* Text Colors - WCAG AA compliant */
   --text-primary: rgba(0, 0, 0, 0.87);
-  --text-secondary: rgba(0, 0, 0, 0.7);
-  --text-muted: rgba(0, 0, 0, 0.55);
-  --text-hint: rgba(0, 0, 0, 0.45);
+  --text-secondary: rgba(0, 0, 0, 0.72);
+  --text-muted: rgba(0, 0, 0, 0.62);
+  --text-hint: rgba(0, 0, 0, 0.55);
   --text-dimmed: #5a5f7a;
   --text-bright: #1a1f36;
   --bg-code: rgba(0, 0, 0, 0.05);

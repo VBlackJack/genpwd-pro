@@ -2313,6 +2313,7 @@ kbd {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  filter: grayscale(40%);
 }
 
 .vault-btn:disabled::before {
