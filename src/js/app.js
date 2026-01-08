@@ -26,6 +26,7 @@ import { showToast } from './utils/toast.js';
 import { initErrorMonitoring, reportError } from './utils/error-monitoring.js';
 import { ANIMATION_DURATION } from './config/ui-constants.js';
 import { initThemeSystem } from './utils/theme-manager.js';
+import { initThemeToggle } from './ui/components/theme-toggle.js';
 import { isDevelopment } from './utils/environment.js';
 import { initKeyboardShortcuts, removeKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
 
@@ -61,6 +62,7 @@ class GenPwdApp {
 
       // 0. Initialize theme system (first for UI)
       initThemeSystem();
+      initThemeToggle();
       safeLog('Theme system initialized');
 
       // 1. Initialize error monitoring

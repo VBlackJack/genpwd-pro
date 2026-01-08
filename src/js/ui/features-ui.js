@@ -2999,7 +2999,7 @@ export function initializeAllFeatures() {
   initializeLanguageSelector();
   initializePresetsUI();
   initializeHistoryUI();
-  initializePluginsUI();
+  // initializePluginsUI(); // Disabled - no plugins available yet
   initializeAdvancedImportExportUI();
   initializeHIBPUI();
   safeLog('All feature UIs initialized');

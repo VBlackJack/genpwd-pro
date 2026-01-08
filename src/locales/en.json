@@ -90,7 +90,21 @@
     "vaultStatus": "Vault status",
     "vaultLocked": "Locked",
     "vaultUnlocked": "Unlocked",
-    "clickToAccessVault": "Click to access vault"
+    "clickToAccessVault": "Click to access vault",
+    "theme": "Theme",
+    "themeToggle": "Change theme",
+    "themeToggleTitle": "Click to cycle themes, right-click for all options",
+    "themeMenu": "Theme selection menu",
+    "themeSwitched": "Theme changed"
+  },
+  "themes": {
+    "system": "System",
+    "dark": "Dark",
+    "light": "Light",
+    "highContrast": "High Contrast",
+    "high-contrast": "High Contrast",
+    "ocean": "Ocean",
+    "forest": "Forest"
   },
   "sections": {
     "generationMode": "Generation Mode",
@@ -1356,12 +1370,21 @@
   "settingsModal": {
     "title": "Settings",
     "tabs": {
+      "appearance": "Appearance",
       "general": "General",
       "shortcuts": "Shortcuts",
       "security": "Security",
       "danger": "Danger Zone"
     },
     "categories": "Settings categories",
+    "appearance": {
+      "theme": "Theme",
+      "themeDesc": "Choose your preferred color scheme",
+      "systemTheme": "Follow system theme",
+      "systemThemeDesc": "Automatically switch between light and dark based on your system settings",
+      "accentColor": "Use Windows accent color",
+      "accentColorDesc": "Apply your Windows personalization color to buttons and highlights"
+    },
     "general": {
       "appearance": "Appearance",
       "appearanceDesc": "Customize application appearance",

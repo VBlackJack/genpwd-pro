@@ -132,14 +132,14 @@ header::before {
   align-items: center;
   gap: 4px;
   padding: 5px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-light);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-medium);
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 var(--overlay-light);
 }
 
 .header-tab {
@@ -168,7 +168,7 @@ header::before {
 }
 
 .header-tab:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-medium);
   color: var(--text-primary);
 }
 
@@ -183,7 +183,7 @@ header::before {
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.4),
     0 4px 12px rgba(99, 102, 241, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 var(--overlay-strong);
 }
 
 .header-tab.active svg {
@@ -238,9 +238,9 @@ header::before {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--overlay-medium);
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-strong);
   backdrop-filter: blur(10px);
   transition: all var(--transition-smooth);
   font-size: var(--text-sm);
@@ -252,10 +252,10 @@ header::before {
 }
 
 .about-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-strong);
+  border-color: var(--overlay-intense);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px var(--overlay-strong);
 }
 
 .about-btn:focus-visible {
@@ -352,19 +352,25 @@ header::before {
   padding: 14px 16px;
   cursor: pointer;
   user-select: none;
-  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(135deg, var(--overlay-light) 0%, var(--overlay-subtle) 100%);
+  border-bottom: 1px solid var(--overlay-light);
   transition: all var(--transition-normal);
+  /* Ensure button element behaves like block */
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--overlay-light);
+  text-align: left;
+  font: inherit;
 }
 
 .section-header:hover {
-  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(135deg, var(--overlay-medium) 0%, var(--overlay-subtle) 100%);
 }
 
 .section-header:focus-visible {
   outline: 2px solid var(--accent-cyan);
   outline-offset: -2px;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, var(--overlay-subtle) 100%);
 }
 
 .section-header strong {
@@ -449,7 +455,7 @@ header::before {
   flex-wrap: wrap;
   padding: 12px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  background: linear-gradient(180deg, var(--overlay-subtle), transparent);
 }
 
 .results-list {
@@ -694,4 +700,92 @@ header::before {
     height: auto;
     min-height: 300px;
   }
+}
+
+/* ============================================================================
+   LIGHT THEME OVERRIDES
+   ============================================================================ */
+
+/* Note: Most overrides removed - CSS variables (--overlay-*) now handle theme switching automatically */
+
+[data-theme="light"] header {
+  background: linear-gradient(135deg,
+    rgba(59, 130, 246, 0.08) 0%,
+    rgba(139, 92, 246, 0.08) 50%,
+    rgba(16, 185, 129, 0.06) 100%);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="light"] header::before {
+  background:
+    radial-gradient(600px circle at 0% 0%, rgba(59, 130, 246, 0.1), transparent 50%),
+    radial-gradient(400px circle at 100% 100%, rgba(139, 92, 246, 0.08), transparent 50%);
+}
+
+[data-theme="light"] .header-tab.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.12));
+  color: var(--text-primary);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.3),
+    0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+/* Light Theme Sections - Premium Clean Design */
+body[data-theme="light"] .section {
+  background: white !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+  border-left: 4px solid rgba(99, 102, 241, 0.5) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(99, 102, 241, 0.06) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+body[data-theme="light"] .section:hover {
+  border-color: rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 8px 20px rgba(99, 102, 241, 0.08) !important;
+}
+
+body[data-theme="light"] .section-header {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.02) 100%) !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1) !important;
+  width: 100% !important;
+}
+
+body[data-theme="light"] .section-header:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+  border-bottom-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+body[data-theme="light"] .section-header:focus-visible {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.06) 100%) !important;
+  outline: 2px solid var(--accent-purple) !important;
+  outline-offset: -2px !important;
+}
+
+body[data-theme="light"] .section-header .badge {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08)) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  color: var(--accent-purple) !important;
+}
+
+body[data-theme="light"] .section-header .chev {
+  color: rgba(99, 102, 241, 0.4) !important;
+}
+
+body[data-theme="light"] .section-header:hover .chev {
+  color: var(--accent-purple) !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .section-content {
+  background: rgba(99, 102, 241, 0.01) !important;
+}
+
+[data-theme="light"] .debug {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .debug-header {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), transparent);
 }

@@ -465,7 +465,21 @@
     "vaultLocked": "Verrouillé",
     "vaultStatus": "État du coffre",
     "vaultTab": "Coffre",
-    "vaultUnlocked": "Déverrouillé"
+    "vaultUnlocked": "Déverrouillé",
+    "theme": "Thème",
+    "themeToggle": "Changer de thème",
+    "themeToggleTitle": "Cliquer pour changer de thème, clic droit pour toutes les options",
+    "themeMenu": "Menu de sélection du thème",
+    "themeSwitched": "Thème changé"
+  },
+  "themes": {
+    "system": "Système",
+    "dark": "Sombre",
+    "light": "Clair",
+    "highContrast": "Contraste élevé",
+    "high-contrast": "Contraste élevé",
+    "ocean": "Océan",
+    "forest": "Forêt"
   },
   "health": {
     "checkingProgress": "__TRANSLATE__ Checking {checked}/{total}..."
@@ -919,6 +933,14 @@
     }
   },
   "settingsModal": {
+    "appearance": {
+      "accentColor": "Utiliser la couleur d'accentuation Windows",
+      "accentColorDesc": "Appliquer la couleur d'accent système aux éléments de l'interface",
+      "systemTheme": "Suivre le thème système",
+      "systemThemeDesc": "Basculer automatiquement entre les thèmes clair et sombre selon les préférences système",
+      "theme": "Thème",
+      "themeDesc": "Choisissez votre palette de couleurs préférée"
+    },
     "categories": "Catégories de paramètres",
     "danger": {
       "deleteEverything": "Tout supprimer",
@@ -966,6 +988,7 @@
       "title": "Raccourcis clavier"
     },
     "tabs": {
+      "appearance": "Apparence",
       "danger": "Zone Danger",
       "general": "Général",
       "security": "Sécurité",

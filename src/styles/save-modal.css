@@ -706,7 +706,7 @@
 }
 
 .quick-unlock-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
 }
 
 .quick-unlock-btn-primary {

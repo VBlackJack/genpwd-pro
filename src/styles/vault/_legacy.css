@@ -26,6 +26,24 @@
   --vault-shadow-lg: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.3));
 }
 
+/* ==================== LIGHT THEME SUPPORT ==================== */
+[data-theme="light"] {
+  /* Vault surfaces - dark overlays on light backgrounds */
+  --vault-surface: rgba(0, 0, 0, 0.03);
+  --vault-surface-hover: rgba(0, 0, 0, 0.06);
+  --vault-border: rgba(0, 0, 0, 0.1);
+  --vault-border-light: rgba(0, 0, 0, 0.15);
+  --vault-text-dim: var(--text-hint, rgba(0, 0, 0, 0.5));
+  /* Additional light theme vault variables */
+  --vault-bg-primary: var(--bg-secondary);
+  --vault-bg-secondary: var(--bg-tertiary);
+  --vault-sidebar-bg: rgba(255, 255, 255, 0.8);
+  --vault-panel-bg: rgba(255, 255, 255, 0.9);
+  --vault-item-bg: rgba(0, 0, 0, 0.02);
+  --vault-item-hover-bg: rgba(0, 0, 0, 0.05);
+  --vault-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
 /* ==================== LAYOUT: 3-PANE GLASS ==================== */
 .vault-app {
   display: grid;
@@ -47,8 +65,7 @@
   position: relative;
   z-index: var(--z-dropdown);
   isolation: isolate; /* Create stacking context */
-  background: rgba(13, 16, 28, 0.6);
-  /* Slightly more opaque for readability */
+  background: var(--vault-sidebar-bg, rgba(13, 16, 28, 0.6));
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
   display: flex;
@@ -172,7 +189,7 @@
   gap: 12px;
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md, 10px);
   color: var(--text-primary);
@@ -182,8 +199,8 @@
 }
 
 .vault-current:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-medium);
+  border-color: var(--overlay-intense);
 }
 
 .vault-current-icon {
@@ -295,8 +312,8 @@
 }
 
 .vault-entry-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-light);
+  border-color: var(--overlay-medium);
 }
 
 .vault-entry-item:hover::before {
@@ -308,7 +325,7 @@
   border-color: rgba(99, 102, 241, 0.2);
   box-shadow:
     0 4px 16px rgba(99, 102, 241, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 var(--overlay-light);
 }
 
 .vault-entry-item.selected::before {
@@ -321,10 +338,10 @@
 .field-group {
   position: relative;
   margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--overlay-subtle);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--overlay-medium);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   transition: all var(--transition-smooth);
@@ -340,15 +357,15 @@
   height: 1px;
   background: linear-gradient(90deg,
     transparent,
-    rgba(255, 255, 255, 0.1),
+    var(--overlay-strong),
     transparent);
   opacity: 0;
   transition: opacity var(--transition-smooth);
 }
 
 .field-group:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--overlay-strong);
+  background: var(--overlay-subtle);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
@@ -383,10 +400,10 @@
 /* Action Buttons - Premium Style */
 .action-btn {
   position: relative;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-light);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-strong);
   color: var(--text-primary);
   padding: 10px 18px;
   border-radius: var(--radius-md);
@@ -410,7 +427,7 @@
   border-color: rgba(99, 102, 241, 0.4);
   box-shadow:
     0 4px 20px rgba(99, 102, 241, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 var(--overlay-strong);
   transform: translateY(-2px);
 }
 
@@ -591,7 +608,7 @@
   width: 100%;
   max-width: 380px;
   padding: 2rem;
-  background: rgba(13, 16, 28, 0.8);
+  background: var(--vault-panel-bg, rgba(13, 16, 28, 0.8));
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg, 16px);
   border: 1px solid var(--glass-border);
@@ -636,7 +653,7 @@
   align-items: center;
   gap: 12px;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-light);
   border: 1px solid transparent;
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
@@ -645,7 +662,7 @@
 }
 
 .vault-list-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-medium);
   border-color: var(--glass-border);
 }
 
@@ -779,7 +796,7 @@
 }
 
 .vault-input-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
   color: var(--text-primary);
 }
 
@@ -835,7 +852,7 @@
 }
 
 .vault-link-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-light);
   color: var(--vault-primary);
 }
 
@@ -1655,7 +1672,7 @@ kbd {
   bottom: 0;
   background: linear-gradient(90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.3) 50%,
+      var(--overlay-highlight) 50%,
       transparent 100%);
   animation: vault-strength-shimmer 1.5s ease-in-out infinite;
 }
@@ -1757,11 +1774,9 @@ kbd {
   max-width: 420px;
   max-height: 90vh;
   background: var(--vault-bg-primary, #1a1d2e);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--vault-border-light);
   border-radius: var(--vault-radius-lg);
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: var(--vault-shadow-lg);
   overflow: hidden;
   transform: scale(0.9) translateY(20px);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1896,7 +1911,7 @@ kbd {
   box-shadow:
     0 0 0 3px rgba(59, 130, 246, 0.15),
     0 2px 8px rgba(59, 130, 246, 0.1);
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--bg-input-focus);
 }
 
 .vault-input::placeholder {
@@ -2244,7 +2259,7 @@ kbd {
   left: 50%;
   width: 0;
   height: 0;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
   border-radius: var(--radius-full);
   transform: translate(-50%, -50%);
   transition: width 0.4s ease, height 0.4s ease;
@@ -2403,14 +2418,14 @@ kbd {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: rgba(30, 41, 59, 0.95);
+  background: var(--bg-surface, rgba(30, 41, 59, 0.95));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-strong);
   border-radius: var(--vault-radius-lg);
   box-shadow:
     0 20px 40px -12px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 0 0 1px var(--overlay-light);
   color: var(--vault-text);
   font-size: 0.875rem;
   font-weight: 500;
@@ -2750,7 +2765,7 @@ kbd {
 }
 
 .toast-undo-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
   border-color: var(--vault-text);
 }
 
@@ -2760,7 +2775,7 @@ kbd {
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
   border-radius: 0 0 var(--vault-radius-sm) var(--vault-radius-sm);
   overflow: hidden;
 }
@@ -3172,7 +3187,7 @@ kbd {
 }
 
 .vault-bulk-actions .vault-checkbox-mark {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: var(--overlay-highlight);
 }
 
 .vault-bulk-actions .vault-checkbox:checked+.vault-checkbox-mark {
@@ -3199,17 +3214,17 @@ kbd {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-intense);
   border: none;
   border-radius: var(--vault-radius-sm);
-  color: white;
+  color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
   transition: background var(--vault-transition);
 }
 
 .vault-bulk-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--overlay-highlight);
 }
 
 .vault-bulk-btn-danger {
@@ -3673,9 +3688,9 @@ kbd {
   margin-top: 0.5rem;
   padding: 1rem;
   background: var(--vault-bg-secondary, #252a3d);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--vault-border-light);
   border-radius: var(--vault-radius);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--vault-shadow-lg);
   z-index: var(--z-header);
   animation: vault-slide-down 0.2s ease;
 }

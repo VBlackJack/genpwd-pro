@@ -136,13 +136,34 @@ const THEMES = {
 };
 
 const STORAGE_KEY = 'genpwd-theme';
+const MODE_STORAGE_KEY = 'genpwd-theme-mode';
+const TRANSITION_DURATION = 200; // ms
+
+/**
+ * Theme preference modes
+ */
+export const THEME_MODES = {
+  SYSTEM: 'system',
+  MANUAL: 'manual'
+};
+
 let currentTheme = 'dark';
+let currentMode = THEME_MODES.SYSTEM;
+
+/**
+ * Check if user prefers reduced motion
+ * @returns {boolean}
+ */
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}
 
 /**
  * Applies a theme to the page
  * @param {string} themeName - Theme name to apply
+ * @param {boolean} animate - Whether to animate the transition (default: true)
  */
-export function applyTheme(themeName) {
+export function applyTheme(themeName, animate = true) {
   const theme = THEMES[themeName];
 
   if (!theme) {
@@ -152,6 +173,12 @@ export function applyTheme(themeName) {
 
   const root = document.documentElement;
   const variables = THEMES[themeName].variables;
+
+  // Add transition class for smooth theme change (unless reduced motion or no animation)
+  const shouldAnimate = animate && !prefersReducedMotion();
+  if (shouldAnimate) {
+    document.body.classList.add('theme-transitioning');
+  }
 
   // Apply all CSS variables
   Object.entries(variables).forEach(([property, value]) => {
@@ -168,6 +195,18 @@ export function applyTheme(themeName) {
 
   // Update data-theme attribute for advanced CSS
   document.body.setAttribute('data-theme', themeName);
+
+  // Remove transition class after animation completes
+  if (shouldAnimate) {
+    setTimeout(() => {
+      document.body.classList.remove('theme-transitioning');
+    }, TRANSITION_DURATION);
+  }
+
+  // Dispatch custom event for other components to react
+  window.dispatchEvent(new CustomEvent('theme:changed', {
+    detail: { theme: themeName, mode: currentMode }
+  }));
 
   safeLog(`Theme applied: ${themeName} (${theme.name})`);
 }
@@ -193,42 +232,127 @@ export function getAvailableThemes() {
 }
 
 /**
+ * Gets the current theme mode
+ * @returns {string} Current mode ('system' or 'manual')
+ */
+export function getThemeMode() {
+  return currentMode;
+}
+
+/**
+ * Sets the theme mode
+ * @param {string} mode - 'system' or 'manual'
+ */
+export function setThemeMode(mode) {
+  if (mode !== THEME_MODES.SYSTEM && mode !== THEME_MODES.MANUAL) {
+    safeLog(`Invalid theme mode: ${mode}`);
+    return;
+  }
+
+  currentMode = mode;
+
+  try {
+    safeSetItem(MODE_STORAGE_KEY, mode);
+  } catch (e) {
+    safeLog('Unable to save theme mode to localStorage');
+  }
+
+  // If switching to system mode, apply system preference
+  if (mode === THEME_MODES.SYSTEM) {
+    const systemTheme = getSystemPreferredTheme();
+    applyTheme(systemTheme);
+  }
+
+  safeLog(`Theme mode set to: ${mode}`);
+}
+
+/**
+ * Gets the system preferred theme
+ * @returns {string} Theme name based on system preference
+ */
+export function getSystemPreferredTheme() {
+  if (!window.matchMedia) return 'dark';
+
+  const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+  if (prefersHighContrast) return 'high-contrast';
+  if (prefersLight) return 'light';
+  return 'dark';
+}
+
+/**
+ * Cycles through quick themes: System → Light → Dark → System
+ * For header toggle button
+ * @returns {Object} { theme: string, mode: string }
+ */
+export function cycleQuickTheme() {
+  // Quick cycle order: system → light → dark → system
+  if (currentMode === THEME_MODES.SYSTEM) {
+    // System → Light (manual)
+    currentMode = THEME_MODES.MANUAL;
+    safeSetItem(MODE_STORAGE_KEY, THEME_MODES.MANUAL);
+    applyTheme('light');
+    return { theme: 'light', mode: THEME_MODES.MANUAL };
+  } else if (currentTheme === 'light') {
+    // Light → Dark (manual)
+    applyTheme('dark');
+    return { theme: 'dark', mode: THEME_MODES.MANUAL };
+  } else {
+    // Dark (or any other) → System
+    currentMode = THEME_MODES.SYSTEM;
+    safeSetItem(MODE_STORAGE_KEY, THEME_MODES.SYSTEM);
+    // Clear saved theme to enable system detection
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      // Ignore
+    }
+    const systemTheme = getSystemPreferredTheme();
+    applyTheme(systemTheme);
+    return { theme: systemTheme, mode: THEME_MODES.SYSTEM };
+  }
+}
+
+/**
  * Loads saved theme or detects system preference
  */
 export function loadSavedTheme() {
   let themeName = 'dark'; // Default
 
-  // 1. Check localStorage
+  // 1. Load mode preference
   try {
-    const saved = safeGetItem(STORAGE_KEY);
-    if (saved && THEMES[saved]) {
-      themeName = saved;
-      safeLog(`Theme loaded from localStorage: ${themeName}`);
-      applyTheme(themeName);
-      return;
+    const savedMode = safeGetItem(MODE_STORAGE_KEY);
+    if (savedMode === THEME_MODES.SYSTEM || savedMode === THEME_MODES.MANUAL) {
+      currentMode = savedMode;
     }
   } catch (e) {
-    safeLog('Unable to read localStorage');
+    // Default to system mode
+    currentMode = THEME_MODES.SYSTEM;
   }
 
-  // 2. Detect system preference
-  if (window.matchMedia) {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
-
-    if (prefersHighContrast) {
-      themeName = 'high-contrast';
-    } else if (prefersLight) {
-      themeName = 'light';
-    } else if (prefersDark) {
-      themeName = 'dark';
+  // 2. If manual mode, load saved theme
+  if (currentMode === THEME_MODES.MANUAL) {
+    try {
+      const saved = safeGetItem(STORAGE_KEY);
+      if (saved && THEMES[saved]) {
+        themeName = saved;
+        safeLog(`Theme loaded from localStorage: ${themeName} (manual mode)`);
+        applyTheme(themeName, false); // No animation on load
+        return;
+      }
+    } catch (e) {
+      safeLog('Unable to read localStorage');
     }
+  }
 
+  // 3. System mode or no saved theme: detect system preference
+  if (window.matchMedia) {
+    themeName = getSystemPreferredTheme();
     safeLog(`Theme detected from system preferences: ${themeName}`);
   }
 
-  applyTheme(themeName);
+  applyTheme(themeName, false); // No animation on initial load
 }
 
 /**
@@ -253,15 +377,11 @@ export function watchSystemThemeChanges() {
   systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
   systemThemeChangeHandler = (e) => {
-    // Only change if no theme is explicitly saved
-    try {
-      const hasSavedTheme = safeGetItem(STORAGE_KEY);
-      if (!hasSavedTheme) {
-        applyTheme(e.matches ? 'dark' : 'light');
-        safeLog('Theme updated due to system change');
-      }
-    } catch (err) {
-      safeLog('Error during system theme change');
+    // Only change if in system mode
+    if (currentMode === THEME_MODES.SYSTEM) {
+      const newTheme = getSystemPreferredTheme();
+      applyTheme(newTheme);
+      safeLog(`Theme updated due to system change: ${newTheme}`);
     }
   };
 

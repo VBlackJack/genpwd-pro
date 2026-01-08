@@ -465,7 +465,21 @@
     "vaultLocked": "Bloqueada",
     "vaultStatus": "Estado de la bóveda",
     "vaultTab": "Bóveda",
-    "vaultUnlocked": "Desbloqueada"
+    "vaultUnlocked": "Desbloqueada",
+    "theme": "Tema",
+    "themeToggle": "Cambiar tema",
+    "themeToggleTitle": "Clic para cambiar de tema, clic derecho para todas las opciones",
+    "themeMenu": "Menú de selección de tema",
+    "themeSwitched": "Tema cambiado"
+  },
+  "themes": {
+    "system": "Sistema",
+    "dark": "Oscuro",
+    "light": "Claro",
+    "highContrast": "Alto Contraste",
+    "high-contrast": "Alto Contraste",
+    "ocean": "Océano",
+    "forest": "Bosque"
   },
   "health": {
     "checkingProgress": "__TRANSLATE__ Checking {checked}/{total}..."
@@ -919,6 +933,14 @@
     }
   },
   "settingsModal": {
+    "appearance": {
+      "accentColor": "Usar color de acento de Windows",
+      "accentColorDesc": "Aplicar el color de acento del sistema a los elementos de la interfaz",
+      "systemTheme": "Seguir tema del sistema",
+      "systemThemeDesc": "Cambiar automáticamente entre temas claro y oscuro según las preferencias del sistema",
+      "theme": "Tema",
+      "themeDesc": "Elige tu esquema de colores preferido"
+    },
     "categories": "Categorías de configuración",
     "danger": {
       "deleteEverything": "Eliminar todo",
@@ -966,6 +988,7 @@
       "title": "Atajos de teclado"
     },
     "tabs": {
+      "appearance": "Apariencia",
       "danger": "Zona peligro",
       "general": "General",
       "security": "Seguridad",

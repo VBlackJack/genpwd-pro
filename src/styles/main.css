@@ -38,6 +38,14 @@
   --glass-blur: blur(12px);
   --bg-surface-alpha: rgba(13, 16, 28, 0.8);
 
+  /* Semantic Overlay System - Theme-aware */
+  --overlay-subtle: rgba(255, 255, 255, 0.03);
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.08);
+  --overlay-strong: rgba(255, 255, 255, 0.12);
+  --overlay-intense: rgba(255, 255, 255, 0.2);
+  --overlay-highlight: rgba(255, 255, 255, 0.25);
+
   /* Text Colors - WCAG AAA compliant (7:1 contrast ratio target) */
   --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: rgba(255, 255, 255, 0.82);
@@ -227,12 +235,6 @@
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 
-  /* Common semi-transparent colors */
-  --overlay-light: rgba(255, 255, 255, 0.05);
-  --overlay-medium: rgba(255, 255, 255, 0.1);
-  --overlay-strong: rgba(255, 255, 255, 0.15);
-  --overlay-dark: rgba(0, 0, 0, 0.2);
-  --overlay-darker: rgba(0, 0, 0, 0.4);
 }
 
 /* ==================== LIGHT THEME ==================== */
@@ -296,10 +298,25 @@
   --bg-quaternary: hsl(220, 8%, 86%);
   --bg-hover: rgba(0, 0, 0, 0.04);
   --bg-error: rgba(244, 67, 54, 0.08);
+  --bg-input-hover: rgba(0, 0, 0, 0.04);
+  --bg-input-focus: rgba(0, 0, 0, 0.06);
+
+  /* Glassmorphism - Light theme */
   --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(0, 0, 0, 0.12);
   --glass-border-light: rgba(0, 0, 0, 0.18);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+  --bg-surface-alpha: rgba(255, 255, 255, 0.9);
+
+  /* Semantic Overlay System - Light theme (dark overlays on light bg) */
+  --overlay-subtle: rgba(0, 0, 0, 0.02);
+  --overlay-light: rgba(0, 0, 0, 0.04);
+  --overlay-medium: rgba(0, 0, 0, 0.06);
+  --overlay-strong: rgba(0, 0, 0, 0.1);
+  --overlay-intense: rgba(0, 0, 0, 0.15);
+  --overlay-highlight: rgba(0, 0, 0, 0.2);
+
+  /* Text Colors - Light theme */
   --text-primary: rgba(0, 0, 0, 0.87);
   --text-secondary: rgba(0, 0, 0, 0.72);
   --text-muted: rgba(0, 0, 0, 0.62);
@@ -307,14 +324,18 @@
   --text-dimmed: #5a5f7a;
   --text-bright: #1a1f36;
   --bg-code: rgba(0, 0, 0, 0.05);
+
+  /* Borders - Light theme */
   --border: rgba(0, 0, 0, 0.1);
   --border-color: rgba(0, 0, 0, 0.1);
   --border-hover: rgba(0, 0, 0, 0.2);
+
+  /* Shadows - Light theme */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
-[data-theme="light"] body {
+body[data-theme="light"] {
   background:
     radial-gradient(circle at 10% 20%, rgba(93, 130, 240, 0.08) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(240, 100, 180, 0.06) 0%, transparent 40%),
@@ -360,35 +381,35 @@ body {
 
 /* Elevated Glass Panel - for cards and modals */
 .glass-elevated {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-light);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-strong);
   border-radius: var(--radius-lg);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 0 0 1px var(--overlay-subtle),
+    inset 0 1px 0 var(--overlay-strong);
 }
 
 /* Frosted Glass - more opaque for content areas */
 .glass-frosted {
-  background: rgba(15, 20, 35, 0.75);
+  background: var(--bg-surface-alpha);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-medium);
   border-radius: var(--radius-lg);
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 var(--overlay-medium);
 }
 
 /* Subtle Glass - minimal effect for nested elements */
 .glass-subtle {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--overlay-subtle);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-light);
   border-radius: var(--radius-md);
 }
 
@@ -398,18 +419,18 @@ body {
 }
 
 .glass-interactive:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-medium);
+  border-color: var(--overlay-intense);
   transform: translateY(-2px);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 0 0 1px var(--overlay-strong);
 }
 
 /* Gradient border effect (pseudo-element based) */
 .glass-gradient-border {
   position: relative;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-subtle);
   border: none;
   border-radius: var(--radius-lg);
 }
@@ -440,11 +461,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
   border-radius: var(--radius-md);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-intense);
 }
 
 /* Wider scrollbars for touch devices (WCAG AA touch target compliance) */
@@ -869,7 +890,7 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
 .animate-float { animation: float 4s ease-in-out infinite; }
 .animate-breathe { animation: breathe 3s ease-in-out infinite; }
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-strong), transparent);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -883,6 +904,28 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
 .stagger-6 { animation-delay: 0.3s; }
 .stagger-7 { animation-delay: 0.35s; }
 .stagger-8 { animation-delay: 0.4s; }
+
+/* ==================== THEME TRANSITION SUPPORT ==================== */
+/* Smooth transitions when changing themes - applied temporarily via JS */
+
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 200ms ease-out,
+    color 200ms ease-out,
+    border-color 200ms ease-out,
+    box-shadow 200ms ease-out,
+    fill 200ms ease-out,
+    stroke 200ms ease-out !important;
+}
+
+/* Exclude elements that shouldn't transition */
+.theme-transitioning .no-theme-transition,
+.theme-transitioning .no-theme-transition * {
+  transition: none !important;
+}
 
 /* ==================== REDUCED MOTION SUPPORT ==================== */
 /* Respects user preference for reduced motion (accessibility) */
@@ -932,6 +975,14 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   input,
   select,
   textarea {
+    transition: none !important;
+  }
+
+  /* Theme transitions: instant change when reduced motion is preferred */
+  .theme-transitioning,
+  .theme-transitioning *,
+  .theme-transitioning *::before,
+  .theme-transitioning *::after {
     transition: none !important;
   }
 }

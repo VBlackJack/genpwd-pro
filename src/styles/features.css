@@ -133,7 +133,7 @@
 .border-vault { border: 1px solid var(--vault-border, #e0e0e0) !important; }
 .border-blue-alpha { border: 1px solid rgba(59, 130, 246, 0.2) !important; }
 .border-yellow-alpha { border: 1px solid rgba(251, 191, 36, 0.3) !important; }
-.border-top { border-top: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.border-top { border-top: 1px solid var(--overlay-strong) !important; }
 .border-left-green { border-left: 4px solid var(--accent-green, #10b981) !important; }
 .rounded { border-radius: var(--radius-sm, 6px) !important; }
 .rounded-4 { border-radius: var(--radius-xs, 4px) !important; }
@@ -506,7 +506,7 @@ input:checked + .toggle-slider::before {
 .vault-sync-checkbox-row {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-strong);
 }
 
 .vault-sync-checkbox-label {
@@ -525,7 +525,7 @@ input:checked + .toggle-slider::before {
 .vault-presets-section {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-strong);
 }
 
 .vault-presets-title {
@@ -545,7 +545,7 @@ input:checked + .toggle-slider::before {
   align-items: center;
   padding: 10px;
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-light);
   border-radius: var(--radius-sm, 6px);
 }
 

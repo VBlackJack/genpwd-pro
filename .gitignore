@@ -183,3 +183,6 @@ android/*/build/
 test_output*.txt
 lint_output*.txt
 full_test_output*.txt
+
+# BMAD development methodology (local only)
+.bmad/
