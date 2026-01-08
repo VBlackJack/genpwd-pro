@@ -2067,7 +2067,7 @@ export class VaultUI {
       for (const entry of this.#entries) {
         if (entry.tags?.includes(tagId)) {
           const newTags = entry.tags.filter(t => t !== tagId);
-          await window.vault.entries.update(entry.id, { tags: newTags });
+          await window.vault.entries.update(entry.id, { tagIds: newTags });
         }
       }
       await window.vault.tags.delete(tagId);
@@ -2236,7 +2236,7 @@ export class VaultUI {
       }
 
       if (changed) {
-        await window.vault.entries.update(entryId, { tags: newTags });
+        await window.vault.entries.update(entryId, { tagIds: newTags });
         updated++;
       }
     }
@@ -4166,7 +4166,7 @@ export class VaultUI {
       const newEntry = await window.vault.entries.add(
         entry.type,
         `${entry.title} (copy)`,
-        { ...newData, folderId: entry.folderId, notes: entry.notes, tags: entry.tags || [] }
+        { ...newData, folderId: entry.folderId, notes: entry.notes, tagIds: entry.tags || [] }
       );
       this.#selectedEntry = newEntry;
       showToast(t('vault.messages.entryDuplicated'), 'success');
@@ -4762,7 +4762,7 @@ export class VaultUI {
       btn.innerHTML = '<span class="vault-spinner-small"></span>';
 
       try {
-        const newEntry = await window.vault.entries.add(type, title, { ...data, folderId, tags: selectedTags });
+        const newEntry = await window.vault.entries.add(type, title, { ...data, folderId, tagIds: selectedTags });
         this.#closeModal('add-entry-modal');
         this.#selectedEntry = newEntry;
         showToast(t('vault.messages.entryAdded'), 'success');
