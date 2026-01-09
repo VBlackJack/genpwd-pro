@@ -186,7 +186,7 @@ function buildKeePassEntry(entry) {
 				<ForegroundColor />
 				<BackgroundColor />
 				<OverrideURL />
-				<Tags>${entry.favorite ? 'Favori' : ''}</Tags>
+				<Tags>${entry.favorite ? 'Favorite' : ''}</Tags>
 				<Times>
 					<CreationTime>${createdAt}</CreationTime>
 					<LastModificationTime>${modifiedAt}</LastModificationTime>

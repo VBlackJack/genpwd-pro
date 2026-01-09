@@ -58,7 +58,7 @@ export function renderTagPicker(options = {}) {
   const { tags = [], selectedTagIds = [] } = options;
 
   if (tags.length === 0) {
-    return `<div class="vault-tag-picker-empty">${options.t ? options.t('vault.messages.noTags') : 'No tags available'}</div>`;
+    return `<div class="vault-tag-picker-empty">${t('vault.messages.noTags')}</div>`;
   }
 
   return `

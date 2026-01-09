@@ -74,7 +74,7 @@
   "app": {
     "ariaLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé",
     "description": "Gestionnaire de mots de passe professionnel avec coffre chiffré",
-    "loaded": "__TRANSLATE__ GenPwd Pro v{version} loaded successfully",
+    "loaded": "GenPwd Pro v{version} chargé avec succès",
     "subtitle": "Générateur de mots de passe sécurisés",
     "title": "GenPwd Pro",
     "version": "Version {version}"
@@ -83,7 +83,7 @@
     "appLabel": "GenPwd Pro - Gestionnaire de mots de passe sécurisé",
     "caseManagement": "Mode de gestion majuscules/minuscules",
     "characterPolicy": "Politique de caractères",
-    "checkBreaches": "__TRANSLATE__ Check passwords against breach database",
+    "checkBreaches": "Vérifier les mots de passe contre la base de données des fuites",
     "configPanel": "Panneau de configuration",
     "customSpecialsDesc": "Entrez les caractères spéciaux que vous souhaitez inclure dans les mots de passe générés",
     "debugPanel": "Panneau de debug",
@@ -110,15 +110,15 @@
     "setAllTitle": "Mettre tous les blocs en Titre",
     "setAllUpper": "Mettre tous les blocs en majuscules",
     "showAbout": "Afficher les informations sur GenPwd Pro",
-    "showTestConsole": "__TRANSLATE__ Show test console",
-    "showTestResults": "__TRANSLATE__ Show test results",
+    "showTestConsole": "Afficher la console de test",
+    "showTestResults": "Afficher les résultats des tests",
     "specialsPlacement": "Placement des caractères spéciaux",
-    "unsavedChanges": "__TRANSLATE__ Unsaved changes",
+    "unsavedChanges": "Modifications non sauvegardées",
     "vaultTab": "Onglet Coffre",
     "wordSeparator": "Séparateur de mots"
   },
   "breach": {
-    "breachesCount": "__TRANSLATE__ {count} breaches",
+    "breachesCount": "{count} fuites détectées",
     "checkButton": "Vérifier les fuites",
     "checkResults": "Résultats de vérification",
     "checking": "Vérification des fuites de données...",
@@ -140,8 +140,8 @@
     "pwnedWarning": "⚠️ {count} mot(s) de passe trouvé(s) dans les fuites",
     "safeMessage": "✅ Tous les {count} mot(s) de passe sont sûrs",
     "stats": {
-      "breached": "__TRANSLATE__ Breached",
-      "safe": "__TRANSLATE__ Safe"
+      "breached": "Compromis",
+      "safe": "Sécurisé"
     }
   },
   "case": {
@@ -160,13 +160,13 @@
   "common": {
     "about": "À propos",
     "analyzing": "Analyse...",
-    "apply": "__TRANSLATE__ Apply",
+    "apply": "Appliquer",
     "cancel": "Annuler",
     "checking": "Vérification...",
     "clear": "Effacer",
-    "clearAll": "__TRANSLATE__ Clear All",
+    "clearAll": "Tout effacer",
     "close": "Fermer",
-    "collapse": "__TRANSLATE__ Collapse",
+    "collapse": "Réduire",
     "confirm": "Confirmer",
     "confirmation": "Confirmation",
     "console": "Console",
@@ -175,11 +175,11 @@
     "creating": "Création...",
     "debug": "Debug",
     "delete": "Supprimer",
-    "disable": "__TRANSLATE__ Disable",
-    "enable": "__TRANSLATE__ Enable",
-    "expand": "__TRANSLATE__ Expand",
+    "disable": "Désactiver",
+    "enable": "Activer",
+    "expand": "Développer",
     "export": "Exporter",
-    "forget": "__TRANSLATE__ Forget",
+    "forget": "Oublier",
     "generate": "Générer",
     "importing": "Importation...",
     "loading": "Chargement...",
@@ -189,14 +189,14 @@
     "save": "Sauvegarder",
     "skipToMain": "Aller au contenu principal",
     "tests": "Tests",
-    "uninstall": "__TRANSLATE__ Uninstall",
-    "update": "__TRANSLATE__ Update",
+    "uninstall": "Désinstaller",
+    "update": "Mettre à jour",
     "verifying": "Vérification..."
   },
   "contextMenu": {
-    "copy": "__TRANSLATE__ Copy password",
-    "saveToVault": "__TRANSLATE__ Save to vault",
-    "title": "__TRANSLATE__ Password actions"
+    "copy": "Copier le mot de passe",
+    "saveToVault": "Enregistrer dans le coffre",
+    "title": "Actions mot de passe"
   },
   "dashboard": {
     "accountsSamePassword": "{count} comptes utilisent le même mot de passe",
@@ -231,160 +231,160 @@
   },
   "desktop": {
     "dialogs": {
-      "createVaultTitle": "__TRANSLATE__ Create vault at...",
-      "helloEnablePrompt": "__TRANSLATE__ GenPwd Pro - Enable Windows Hello",
-      "helloUnlockPrompt": "__TRANSLATE__ GenPwd Pro - Unlock Vault",
-      "openVaultTitle": "__TRANSLATE__ Open vault...",
-      "vaultFileFilter": "__TRANSLATE__ GenPwd Vault"
+      "createVaultTitle": "Créer un coffre à...",
+      "helloEnablePrompt": "GenPwd Pro - Activer Windows Hello",
+      "helloUnlockPrompt": "GenPwd Pro - Déverrouiller le coffre",
+      "openVaultTitle": "Ouvrir un coffre...",
+      "vaultFileFilter": "Coffre GenPwd"
     }
   },
   "dictionaries": {
     "english": "🇬🇧 Anglais",
     "french": "🇫🇷 Français",
     "info": {
-      "error": "__TRANSLATE__ Error: {error}",
-      "wordsInfo": "__TRANSLATE__ {count} words • {version} • Source: {source}"
+      "error": "Erreur : {error}",
+      "wordsInfo": "{count} mots • {version} • Source : {source}"
     },
     "latin": "🏛️ Latin",
     "loading": "Chargement du dictionnaire...",
-    "noWordsAvailable": "__TRANSLATE__ No words available"
+    "noWordsAvailable": "Aucun mot disponible"
   },
   "errors": {
     "auth": {
-      "accessRevoked": "__TRANSLATE__ Access was revoked. Please sign in again.",
-      "expired": "__TRANSLATE__ Authentication expired. Please sign in again.",
-      "incorrectPassword": "__TRANSLATE__ Incorrect password. Please try again.",
-      "masterPasswordTooShort": "__TRANSLATE__ Master password must be at least 8 characters",
-      "noCredentials": "__TRANSLATE__ No valid credentials. Please sign in with Google.",
-      "oauthFailed": "__TRANSLATE__ Failed to exchange authorization code",
-      "permissionDenied": "__TRANSLATE__ Permission denied. Please re-authorize the app.",
-      "tooManyAttempts": "__TRANSLATE__ Too many attempts. Try again in {minutes} minute(s).",
-      "unauthorized": "__TRANSLATE__ Unauthorized access"
+      "accessRevoked": "L'accès a été révoqué. Veuillez vous reconnecter.",
+      "expired": "Authentification expirée. Veuillez vous reconnecter.",
+      "incorrectPassword": "Mot de passe incorrect. Veuillez réessayer.",
+      "masterPasswordTooShort": "Le mot de passe principal doit contenir au moins 8 caractères",
+      "noCredentials": "Aucune information d'identification valide. Veuillez vous connecter avec Google.",
+      "oauthFailed": "Échec de l'échange du code d'autorisation",
+      "permissionDenied": "Permission refusée. Veuillez réautoriser l'application.",
+      "tooManyAttempts": "Trop de tentatives. Réessayez dans {minutes} minute(s).",
+      "unauthorized": "Accès non autorisé"
     },
     "config": {
-      "saveCloudFailed": "__TRANSLATE__ Failed to save cloud configuration",
-      "systemEncryptionNotAvailable": "__TRANSLATE__ System encryption is not available"
+      "saveCloudFailed": "Échec de la sauvegarde de la configuration cloud",
+      "systemEncryptionNotAvailable": "Le chiffrement système n'est pas disponible"
     },
     "crypto": {
-      "ciphertextTooShort": "__TRANSLATE__ Ciphertext too short",
-      "decryptionFailed": "__TRANSLATE__ Decryption failed: Invalid key or corrupted data",
-      "encryptionError": "__TRANSLATE__ Encryption error. Verify your password is correct.",
-      "invalidAlgorithm": "__TRANSLATE__ Unsupported algorithm: {algorithm}",
-      "invalidHexLength": "__TRANSLATE__ Hex string must have even length",
-      "invalidKeyData": "__TRANSLATE__ Invalid keyData: must be an object",
-      "invalidKeyLength": "__TRANSLATE__ Invalid key length: expected {expected}, got {actual}",
-      "invalidNonceLength": "__TRANSLATE__ Invalid nonce length: expected {expected}, got {actual}",
-      "invalidPassword": "__TRANSLATE__ Invalid password: must be a non-empty string",
-      "invalidSalt": "__TRANSLATE__ Invalid keyData.salt: must be a base64 string",
-      "invalidVerifier": "__TRANSLATE__ Invalid keyData.verifier: must be a base64 string",
-      "jsonParseFailed": "__TRANSLATE__ Decryption succeeded but JSON parsing failed: {message}",
-      "saltTooShort": "__TRANSLATE__ Invalid salt: must be at least 16 bytes",
-      "secureStorageFailed": "__TRANSLATE__ Secure storage required but failed - cannot store OAuth tokens",
-      "serializationFailed": "__TRANSLATE__ Object serialization failed: {message}",
-      "verifierInvalidSize": "__TRANSLATE__ Invalid verifier: must be 32 bytes (SHA-256)"
+      "ciphertextTooShort": "Texte chiffré trop court",
+      "decryptionFailed": "Échec du déchiffrement : clé invalide ou données corrompues",
+      "encryptionError": "Erreur de chiffrement. Vérifiez que votre mot de passe est correct.",
+      "invalidAlgorithm": "Algorithme non supporté : {algorithm}",
+      "invalidHexLength": "La chaîne hexadécimale doit avoir une longueur paire",
+      "invalidKeyData": "keyData invalide : doit être un objet",
+      "invalidKeyLength": "Longueur de clé invalide : attendu {expected}, obtenu {actual}",
+      "invalidNonceLength": "Longueur de nonce invalide : attendu {expected}, obtenu {actual}",
+      "invalidPassword": "Mot de passe invalide : doit être une chaîne non vide",
+      "invalidSalt": "keyData.salt invalide : doit être une chaîne base64",
+      "invalidVerifier": "keyData.verifier invalide : doit être une chaîne base64",
+      "jsonParseFailed": "Déchiffrement réussi mais échec de l'analyse JSON : {message}",
+      "saltTooShort": "Sel invalide : doit faire au moins 16 octets",
+      "secureStorageFailed": "Stockage sécurisé requis mais échec - impossible de stocker les tokens OAuth",
+      "serializationFailed": "Échec de la sérialisation de l'objet : {message}",
+      "verifierInvalidSize": "Vérificateur invalide : doit faire 32 octets (SHA-256)"
     },
     "database": {
-      "busy": "__TRANSLATE__ Database busy. Close other apps using the vault and retry.",
-      "corrupted": "__TRANSLATE__ Database corrupted. Restore from backup or create a new vault.",
-      "error": "__TRANSLATE__ Database error. Try restarting the application."
+      "busy": "Base de données occupée. Fermez les autres applications utilisant le coffre et réessayez.",
+      "corrupted": "Base de données corrompue. Restaurez depuis une sauvegarde ou créez un nouveau coffre.",
+      "error": "Erreur de base de données. Essayez de redémarrer l'application."
     },
     "duress": {
-      "populateDecoyMustBeBoolean": "__TRANSLATE__ populateDecoy must be a boolean",
-      "vaultMustBeUnlocked": "__TRANSLATE__ Vault must be unlocked to enable Duress Mode"
+      "populateDecoyMustBeBoolean": "populateDecoy doit être un booléen",
+      "vaultMustBeUnlocked": "Le coffre doit être déverrouillé pour activer le mode contrainte"
     },
     "file": {
-      "accessDenied": "__TRANSLATE__ Access denied. Run as administrator or check folder permissions.",
-      "alreadyExists": "__TRANSLATE__ File already exists. Choose a different name or location.",
-      "inUse": "__TRANSLATE__ File is in use. Close other applications and retry.",
-      "noSpace": "__TRANSLATE__ Not enough disk space. Free up space and try again.",
-      "notFound": "__TRANSLATE__ File not found. Check the file path or restore from backup.",
-      "operationNotPermitted": "__TRANSLATE__ Operation not permitted. Check file permissions."
+      "accessDenied": "Accès refusé. Exécutez en tant qu'administrateur ou vérifiez les permissions du dossier.",
+      "alreadyExists": "Le fichier existe déjà. Choisissez un autre nom ou emplacement.",
+      "inUse": "Le fichier est en cours d'utilisation. Fermez les autres applications et réessayez.",
+      "noSpace": "Espace disque insuffisant. Libérez de l'espace et réessayez.",
+      "notFound": "Fichier non trouvé. Vérifiez le chemin du fichier ou restaurez depuis une sauvegarde.",
+      "operationNotPermitted": "Opération non permise. Vérifiez les permissions du fichier."
     },
     "generation": {
-      "allFailed": "__TRANSLATE__ All generations failed",
-      "invalidResult": "__TRANSLATE__ Generation failed - invalid result",
-      "unknownMode": "__TRANSLATE__ Unknown generation mode: {mode}"
+      "allFailed": "Toutes les générations ont échoué",
+      "invalidResult": "Échec de la génération - résultat invalide",
+      "unknownMode": "Mode de génération inconnu : {mode}"
     },
     "generic": {
-      "occurred": "__TRANSLATE__ An error occurred",
-      "tryAgain": "__TRANSLATE__ An error occurred. Please try again.",
-      "unexpected": "__TRANSLATE__ An unexpected error occurred",
-      "unknown": "__TRANSLATE__ An error occurred"
+      "occurred": "Une erreur s'est produite",
+      "tryAgain": "Une erreur s'est produite. Veuillez réessayer.",
+      "unexpected": "Une erreur inattendue s'est produite",
+      "unknown": "Une erreur s'est produite"
     },
     "network": {
-      "conflict": "__TRANSLATE__ Conflict detected. Remote file was modified.",
-      "error": "__TRANSLATE__ Network error. Check your internet connection.",
-      "notFound": "__TRANSLATE__ Resource not found.",
-      "quotaExceeded": "__TRANSLATE__ Storage quota exceeded.",
-      "rateLimited": "__TRANSLATE__ Too many requests. Please try again later.",
-      "rateLimitedShort": "__TRANSLATE__ Too many requests. Please slow down.",
-      "timeout": "__TRANSLATE__ Operation timed out. Check your connection and retry."
+      "conflict": "Conflit détecté. Le fichier distant a été modifié.",
+      "error": "Erreur réseau. Vérifiez votre connexion internet.",
+      "notFound": "Ressource non trouvée.",
+      "quotaExceeded": "Quota de stockage dépassé.",
+      "rateLimited": "Trop de requêtes. Veuillez réessayer plus tard.",
+      "rateLimitedShort": "Trop de requêtes. Veuillez ralentir.",
+      "timeout": "Délai d'attente dépassé. Vérifiez votre connexion et réessayez."
     },
     "session": {
-      "locked": "__TRANSLATE__ Vault is locked. Please unlock first.",
-      "timeout": "__TRANSLATE__ Operation timed out. Please try again."
+      "locked": "Le coffre est verrouillé. Veuillez d'abord le déverrouiller.",
+      "timeout": "Délai d'attente dépassé. Veuillez réessayer."
     },
     "sync": {
-      "conflictDetected": "__TRANSLATE__ Conflict detected. User decision required.",
-      "decryptFailed": "__TRANSLATE__ Failed to decrypt remote vault. Password may have changed.",
-      "invalidData": "__TRANSLATE__ Invalid encrypted data format",
-      "locked": "__TRANSLATE__ SyncService is locked. Call unlock() first.",
-      "noProvider": "__TRANSLATE__ No sync provider configured",
-      "vaultNotFound": "__TRANSLATE__ Vault {vaultId} not found in cloud"
+      "conflictDetected": "Conflit détecté. Décision de l'utilisateur requise.",
+      "decryptFailed": "Échec du déchiffrement du coffre distant. Le mot de passe a peut-être changé.",
+      "invalidData": "Format de données chiffrées invalide",
+      "locked": "SyncService est verrouillé. Appelez unlock() d'abord.",
+      "noProvider": "Aucun fournisseur de synchronisation configuré",
+      "vaultNotFound": "Coffre {vaultId} non trouvé dans le cloud"
     },
     "validation": {
-      "absolutePathRequired": "__TRANSLATE__ Invalid path: must be an absolute path",
-      "burnAfterReadingMustBeBoolean": "__TRANSLATE__ options.burnAfterReading must be a boolean",
-      "colorMustBeHex": "__TRANSLATE__ color must be a valid hex color (e.g., #6366f1)",
-      "entryMustBeObject": "__TRANSLATE__ Entry data must be an object",
-      "entryTitleRequired": "__TRANSLATE__ Entry title must be a non-empty string",
-      "expiryTypeMustBeString": "__TRANSLATE__ options.expiryType must be a string",
-      "favoriteMustBeBoolean": "__TRANSLATE__ favorite must be a boolean",
-      "fieldTooLong": "__TRANSLATE__ Field \"{field}\" exceeds maximum length of {maxLength} characters",
-      "forbiddenCharacters": "__TRANSLATE__ Invalid {name}: contains forbidden characters",
-      "invalidCharacters": "__TRANSLATE__ Invalid path: contains invalid characters",
-      "invalidEntryType": "__TRANSLATE__ Invalid entry type: {type}. Must be one of: {validTypes}",
-      "invalidFieldForType": "__TRANSLATE__ Invalid field \"{field}\" for entry type \"{type}\"",
-      "invalidParameter": "__TRANSLATE__ Invalid parameter: {name} must be a non-empty string",
-      "maxTagsExceeded": "__TRANSLATE__ Maximum 50 tags per entry",
-      "mustBeObject": "__TRANSLATE__ Invalid parameter: {name} must be an object",
-      "mustBeString": "__TRANSLATE__ Field \"{field}\" must be a string",
-      "parameterTooLong": "__TRANSLATE__ Invalid parameter: {name} exceeds maximum length of {maxLength} characters",
-      "pathTraversal": "__TRANSLATE__ Invalid path: path traversal not allowed",
-      "reservedName": "__TRANSLATE__ Invalid path: Windows reserved name not allowed",
-      "tagIdsMustBeArray": "__TRANSLATE__ tagIds must be an array",
-      "tagIdsMustBeStrings": "__TRANSLATE__ tagIds must contain only strings"
+      "absolutePathRequired": "Chemin invalide : doit être un chemin absolu",
+      "burnAfterReadingMustBeBoolean": "options.burnAfterReading doit être un booléen",
+      "colorMustBeHex": "La couleur doit être un code hexadécimal valide (ex: #6366f1)",
+      "entryMustBeObject": "Les données de l'entrée doivent être un objet",
+      "entryTitleRequired": "Le titre de l'entrée doit être une chaîne non vide",
+      "expiryTypeMustBeString": "options.expiryType doit être une chaîne",
+      "favoriteMustBeBoolean": "favori doit être un booléen",
+      "fieldTooLong": "Le champ \"{field}\" dépasse la longueur maximale de {maxLength} caractères",
+      "forbiddenCharacters": "{name} invalide : contient des caractères interdits",
+      "invalidCharacters": "Chemin invalide : contient des caractères invalides",
+      "invalidEntryType": "Type d'entrée invalide : {type}. Doit être l'un des suivants : {validTypes}",
+      "invalidFieldForType": "Champ \"{field}\" invalide pour le type d'entrée \"{type}\"",
+      "invalidParameter": "Paramètre invalide : {name} doit être une chaîne non vide",
+      "maxTagsExceeded": "Maximum 50 étiquettes par entrée",
+      "mustBeObject": "Paramètre invalide : {name} doit être un objet",
+      "mustBeString": "Le champ \"{field}\" doit être une chaîne",
+      "parameterTooLong": "Paramètre invalide : {name} dépasse la longueur maximale de {maxLength} caractères",
+      "pathTraversal": "Chemin invalide : traversée de chemin non autorisée",
+      "reservedName": "Chemin invalide : nom réservé Windows non autorisé",
+      "tagIdsMustBeArray": "tagIds doit être un tableau",
+      "tagIdsMustBeStrings": "tagIds ne doit contenir que des chaînes"
     },
     "vault": {
-      "fileNotFound": "__TRANSLATE__ Vault file not found: {path}",
-      "invalidExportFormat": "__TRANSLATE__ Invalid vault export format",
-      "invalidFormat": "__TRANSLATE__ Invalid vault file format",
-      "invalidFormatV3": "__TRANSLATE__ Invalid vault file format (V3): {issues}",
-      "invalidPassword": "__TRANSLATE__ Invalid password",
-      "invalidVaultNameChars": "__TRANSLATE__ Invalid vault name characters",
-      "jsonParseError": "__TRANSLATE__ Invalid vault file: JSON parse error - {message}",
-      "locked": "__TRANSLATE__ Vault is locked",
-      "missingFields": "__TRANSLATE__ Invalid vault file format: missing {fields}. File keys: [{keys}]",
-      "missingKeyData": "__TRANSLATE__ Invalid vault structure: missing slots[0].keyData",
-      "missingMetadataId": "__TRANSLATE__ Invalid vault data: missing metadata.id",
-      "notFound": "__TRANSLATE__ Vault not found: {vaultId}",
-      "unlockFirst": "__TRANSLATE__ Vault is locked. Please unlock first."
+      "fileNotFound": "Fichier de coffre non trouvé : {path}",
+      "invalidExportFormat": "Format d'export de coffre invalide",
+      "invalidFormat": "Format de fichier de coffre invalide",
+      "invalidFormatV3": "Format de fichier de coffre invalide (V3) : {issues}",
+      "invalidPassword": "Mot de passe invalide",
+      "invalidVaultNameChars": "Caractères de nom de coffre invalides",
+      "jsonParseError": "Fichier de coffre invalide : erreur d'analyse JSON - {message}",
+      "locked": "Le coffre est verrouillé",
+      "missingFields": "Format de fichier de coffre invalide : champs manquants {fields}. Clés du fichier : [{keys}]",
+      "missingKeyData": "Structure de coffre invalide : slots[0].keyData manquant",
+      "missingMetadataId": "Données de coffre invalides : metadata.id manquant",
+      "notFound": "Coffre non trouvé : {vaultId}",
+      "unlockFirst": "Le coffre est verrouillé. Veuillez d'abord le déverrouiller."
     },
     "windowsHello": {
-      "credentialManagerWindowsOnly": "__TRANSLATE__ Credential Manager is only available on Windows",
-      "credentialNotFound": "__TRANSLATE__ Windows Hello credential not found. Please re-enable Windows Hello.",
-      "decryptionError": "__TRANSLATE__ Decryption error. Please re-enable Windows Hello.",
-      "invalidEncryptedKey": "__TRANSLATE__ Invalid encryptedKey: must be a non-empty string",
-      "invalidEncryptedKeyBase64": "__TRANSLATE__ Invalid encryptedKey: must be valid Base64",
-      "invalidEncryptedKeyLength": "__TRANSLATE__ Invalid encryptedKey: invalid length",
-      "invalidVaultId": "__TRANSLATE__ Invalid vaultId: must be a non-empty string",
-      "invalidVaultIdFormat": "__TRANSLATE__ Invalid vaultId: must be a valid UUID",
-      "notAvailable": "__TRANSLATE__ Windows Hello is not available on this system",
-      "notConfigured": "__TRANSLATE__ Windows Hello not configured for this vault. Please re-enable it with your master password.",
-      "storeCredentialsFailed": "__TRANSLATE__ Failed to store Windows Hello credentials",
-      "verificationCancelled": "__TRANSLATE__ Windows Hello verification cancelled",
-      "verificationFailed": "__TRANSLATE__ Windows Hello verification failed",
-      "windowsOnly": "__TRANSLATE__ Windows Hello is only available on Windows"
+      "credentialManagerWindowsOnly": "Le gestionnaire d'informations d'identification n'est disponible que sur Windows",
+      "credentialNotFound": "Informations d'identification Windows Hello non trouvées. Veuillez réactiver Windows Hello.",
+      "decryptionError": "Erreur de déchiffrement. Veuillez réactiver Windows Hello.",
+      "invalidEncryptedKey": "encryptedKey invalide : doit être une chaîne non vide",
+      "invalidEncryptedKeyBase64": "encryptedKey invalide : doit être un Base64 valide",
+      "invalidEncryptedKeyLength": "encryptedKey invalide : longueur invalide",
+      "invalidVaultId": "vaultId invalide : doit être une chaîne non vide",
+      "invalidVaultIdFormat": "vaultId invalide : doit être un UUID valide",
+      "notAvailable": "Windows Hello n'est pas disponible sur ce système",
+      "notConfigured": "Windows Hello non configuré pour ce coffre. Veuillez le réactiver avec votre mot de passe principal.",
+      "storeCredentialsFailed": "Échec du stockage des informations d'identification Windows Hello",
+      "verificationCancelled": "Vérification Windows Hello annulée",
+      "verificationFailed": "Échec de la vérification Windows Hello",
+      "windowsOnly": "Windows Hello n'est disponible que sur Windows"
     }
   },
   "export": {
@@ -399,14 +399,14 @@
     "description": "Exporter {count} mot(s) de passe vers différents formats de gestionnaires",
     "download": "📥 Télécharger l'export",
     "failed": "Échec de l'export : {error}",
-    "folderName": "__TRANSLATE__ GenPwd Pro",
+    "folderName": "GenPwd Pro",
     "formatInfo": "Informations sur le format :",
     "formatLabels": {
-      "1password": "__TRANSLATE__ 1Password",
-      "bitwarden": "__TRANSLATE__ Bitwarden",
-      "chrome": "__TRANSLATE__ Chrome / Edge",
-      "generic": "__TRANSLATE__ Generic Format",
-      "lastpass": "__TRANSLATE__ LastPass"
+      "1password": "1Password",
+      "bitwarden": "Bitwarden",
+      "chrome": "Chrome / Edge",
+      "generic": "Format générique",
+      "lastpass": "LastPass"
     },
     "formats": {
       "bitwardenJson": "Format JSON pour Bitwarden. Complet avec dossiers, favoris et horodatages.",
@@ -416,12 +416,12 @@
       "lastpassCsv": "Format CSV compatible avec LastPass. Champs : url, username, password, extra, name, grouping.",
       "onepasswordCsv": "Format CSV pour 1Password. Champs : Title, URL, Username, Password, Notes, Category."
     },
-    "generatedBy": "__TRANSLATE__ Generated by GenPwd Pro on {date}",
+    "generatedBy": "Généré par GenPwd Pro le {date}",
     "genericFormats": "Formats génériques",
     "includeMetadata": "Inclure les métadonnées (horodatages, notes)",
     "jsonButton": "📊 JSON (.json) - Données complètes",
     "passwordManagers": "Gestionnaires de mots de passe",
-    "passwordTitle": "__TRANSLATE__ Password {index}",
+    "passwordTitle": "Mot de passe {index}",
     "selectFormat": "Sélectionner le format d'export :",
     "selectFormatDetails": "Sélectionnez un format pour voir les détails",
     "simpleTitle": "Choisir le format d'export",
@@ -482,7 +482,7 @@
     "forest": "Forêt"
   },
   "health": {
-    "checkingProgress": "__TRANSLATE__ Checking {checked}/{total}..."
+    "checkingProgress": "Vérification {checked}/{total}..."
   },
   "help": {
     "builtInTests": "Tests intégrés",
@@ -501,9 +501,9 @@
   "history": {
     "clearAll": "🗑️ Tout effacer",
     "clearAllConfirm": "Effacer tout l'historique ? Cette action est irréversible !",
-    "clearTitle": "__TRANSLATE__ Clear History",
+    "clearTitle": "Effacer l'historique",
     "deleteEntryConfirm": "Supprimer cette entrée ?",
-    "deleteTitle": "__TRANSLATE__ Delete Entry",
+    "deleteTitle": "Supprimer l'entrée",
     "empty": "Aucun mot de passe dans l'historique",
     "emptyHint": "Les mots de passe générés apparaîtront ici",
     "emptyState": "Aucun mot de passe dans l'historique",
@@ -518,23 +518,23 @@
     "search": "Rechercher",
     "searchPlaceholder": "Rechercher...",
     "securityWarning": {
-      "accessWarning": "__TRANSLATE__ Anyone with access to your computer can see them",
-      "cancelDisable": "__TRANSLATE__ Cancel and Disable",
-      "clearRegularly": "__TRANSLATE__ Clear history regularly",
-      "extensionRisk": "__TRANSLATE__ Malicious extensions could access them",
-      "futureNote": "__TRANSLATE__ Note: A future version may include history encryption with a master key.",
-      "important": "__TRANSLATE__ Important:",
-      "noCritical": "__TRANSLATE__ Don't store passwords for critical accounts",
-      "noSync": "__TRANSLATE__ Passwords are not synced between devices",
-      "plainText": "__TRANSLATE__ Passwords are stored in plain text on your device",
-      "recommendationsTitle": "__TRANSLATE__ Recommendations",
-      "secureDevice": "__TRANSLATE__ Only enable this feature on a secure personal device",
-      "storageWarning": "__TRANSLATE__ Password history is stored in your browser's localStorage without encryption.",
-      "thisMeans": "__TRANSLATE__ This means:",
-      "title": "__TRANSLATE__ Security Warning",
-      "understand": "__TRANSLATE__ I Understand",
-      "unencryptedTitle": "__TRANSLATE__ Unencrypted Storage",
-      "useManager": "__TRANSLATE__ Use a dedicated password manager for long-term storage"
+      "accessWarning": "Toute personne ayant accès à votre ordinateur peut les voir",
+      "cancelDisable": "Annuler et désactiver",
+      "clearRegularly": "Effacez régulièrement l'historique",
+      "extensionRisk": "Des extensions malveillantes pourraient y accéder",
+      "futureNote": "Note : Une future version pourrait inclure le chiffrement de l'historique avec une clé maître.",
+      "important": "Important :",
+      "noCritical": "Ne stockez pas les mots de passe de comptes critiques",
+      "noSync": "Les mots de passe ne sont pas synchronisés entre appareils",
+      "plainText": "Les mots de passe sont stockés en clair sur votre appareil",
+      "recommendationsTitle": "Recommandations",
+      "secureDevice": "N'activez cette fonctionnalité que sur un appareil personnel sécurisé",
+      "storageWarning": "L'historique des mots de passe est stocké dans le localStorage de votre navigateur sans chiffrement.",
+      "thisMeans": "Cela signifie :",
+      "title": "Avertissement de sécurité",
+      "understand": "J'ai compris",
+      "unencryptedTitle": "Stockage non chiffré",
+      "useManager": "Utilisez un gestionnaire de mots de passe dédié pour le stockage à long terme"
     },
     "stats": {
       "avgEntropy": "Entropie Moy.",
@@ -545,50 +545,50 @@
   },
   "import": {
     "defaults": {
-      "bitwarden": "__TRANSLATE__ Import Bitwarden",
-      "chrome": "__TRANSLATE__ Import Chrome",
-      "customField": "__TRANSLATE__ Custom Field",
-      "firefox": "__TRANSLATE__ Import Firefox",
-      "folder": "__TRANSLATE__ Folder",
-      "importEntry": "__TRANSLATE__ Import {count}",
-      "importedEntry": "__TRANSLATE__ Imported Entry",
-      "importedFolder": "__TRANSLATE__ Imported Folder",
-      "keepass": "__TRANSLATE__ Import KeePass",
-      "lastpass": "__TRANSLATE__ Import LastPass",
-      "onepassword": "__TRANSLATE__ Import 1Password",
-      "untitled": "__TRANSLATE__ Untitled",
-      "untitledEntry": "__TRANSLATE__ Untitled Entry",
-      "untitledGroup": "__TRANSLATE__ Untitled Group"
+      "bitwarden": "Import Bitwarden",
+      "chrome": "Import Chrome",
+      "customField": "Champ personnalisé",
+      "firefox": "Import Firefox",
+      "folder": "Dossier",
+      "importEntry": "Importer {count}",
+      "importedEntry": "Entrée importée",
+      "importedFolder": "Dossier importé",
+      "keepass": "Import KeePass",
+      "lastpass": "Import LastPass",
+      "onepassword": "Import 1Password",
+      "untitled": "Sans titre",
+      "untitledEntry": "Entrée sans titre",
+      "untitledGroup": "Groupe sans titre"
     },
     "description": "Importer des mots de passe depuis des gestionnaires populaires",
     "failed": "Échec de l'import : {error}",
-    "formatInfo": "__TRANSLATE__ Format Information:",
+    "formatInfo": "Informations sur le format :",
     "formatNames": {
-      "bitwardenJson": "__TRANSLATE__ Bitwarden JSON",
-      "genericCsv": "__TRANSLATE__ Generic CSV",
-      "genericJson": "__TRANSLATE__ Generic JSON",
-      "kdbx": "__TRANSLATE__ KeePass KDBX",
-      "keepassCsv": "__TRANSLATE__ KeePass CSV",
-      "keepassXml": "__TRANSLATE__ KeePass XML",
-      "lastpassCsv": "__TRANSLATE__ LastPass CSV",
-      "onepasswordCsv": "__TRANSLATE__ 1Password CSV"
+      "bitwardenJson": "Bitwarden JSON",
+      "genericCsv": "CSV générique",
+      "genericJson": "JSON générique",
+      "kdbx": "KeePass KDBX",
+      "keepassCsv": "KeePass CSV",
+      "keepassXml": "KeePass XML",
+      "lastpassCsv": "LastPass CSV",
+      "onepasswordCsv": "1Password CSV"
     },
     "formats": {
-      "bitwardenJson": "__TRANSLATE__ Import from Bitwarden JSON export. Full-featured with folders and timestamps.",
-      "genericCsv": "__TRANSLATE__ Import from generic CSV with fields: title, username, password, url, notes.",
-      "genericJson": "__TRANSLATE__ Import from GenPwd Pro or other generic JSON formats.",
-      "keepassCsv": "__TRANSLATE__ Import from KeePass CSV export. Basic fields: Account, Login Name, Password, Web Site, Comments.",
-      "keepassXml": "__TRANSLATE__ Import from KeePass XML export. Supports full metadata including groups, timestamps, and custom fields.",
-      "lastpassCsv": "__TRANSLATE__ Import from LastPass CSV export. Fields: url, username, password, extra, name, grouping.",
-      "onepasswordCsv": "__TRANSLATE__ Import from 1Password CSV export. Fields: Title, URL, Username, Password, Notes."
+      "bitwardenJson": "Import depuis l'export JSON Bitwarden. Complet avec dossiers et horodatages.",
+      "genericCsv": "Import depuis un CSV générique avec les champs : titre, nom d'utilisateur, mot de passe, url, notes.",
+      "genericJson": "Import depuis GenPwd Pro ou d'autres formats JSON génériques.",
+      "keepassCsv": "Import depuis l'export CSV KeePass. Champs basiques : Compte, Nom de connexion, Mot de passe, Site Web, Commentaires.",
+      "keepassXml": "Import depuis l'export XML KeePass. Supporte les métadonnées complètes incluant groupes, horodatages et champs personnalisés.",
+      "lastpassCsv": "Import depuis l'export CSV LastPass. Champs : url, nom d'utilisateur, mot de passe, extra, nom, groupement.",
+      "onepasswordCsv": "Import depuis l'export CSV 1Password. Champs : Titre, URL, Nom d'utilisateur, Mot de passe, Notes."
     },
-    "genericFormats": "__TRANSLATE__ Generic Formats",
-    "importPasswords": "__TRANSLATE__ Import Passwords",
-    "passwordManagers": "__TRANSLATE__ Password Managers",
-    "preview": "__TRANSLATE__ Preview",
-    "selectFile": "__TRANSLATE__ Select File",
-    "selectFormat": "__TRANSLATE__ Select Import Format:",
-    "selectFormatDetails": "__TRANSLATE__ Select a format to see details",
+    "genericFormats": "Formats génériques",
+    "importPasswords": "Importer des mots de passe",
+    "passwordManagers": "Gestionnaires de mots de passe",
+    "preview": "Aperçu",
+    "selectFile": "Sélectionner un fichier",
+    "selectFormat": "Sélectionner le format d'import :",
+    "selectFormatDetails": "Sélectionnez un format pour voir les détails",
     "title": "📥 Import avancé"
   },
   "keyboard": {
@@ -602,7 +602,7 @@
     "wordToTransform": "Mot à transformer"
   },
   "links": {
-    "github": "__TRANSLATE__ https://github.com/VBlackJack/genpwd-pro"
+    "github": "https://github.com/VBlackJack/genpwd-pro"
   },
   "modal": {
     "closeEsc": "Fermer (Échap)",
@@ -713,40 +713,40 @@
     "visual": "🎯 Visuel"
   },
   "plugins": {
-    "activeHooksCount": "__TRANSLATE__ {count} active hook(s)",
-    "clearAll": "__TRANSLATE__ Clear All",
-    "clearAllTitle": "__TRANSLATE__ Clear All Plugins",
-    "configTitle": "__TRANSLATE__ Plugin Configuration:",
-    "emptyState": "__TRANSLATE__ No plugins installed. Click \"Load Demo Plugins\" to get started!",
-    "export": "__TRANSLATE__ Export",
-    "hooksLabel": "__TRANSLATE__ Hooks:",
-    "installFromFile": "__TRANSLATE__ Install from File",
-    "loadDemoPlugins": "__TRANSLATE__ Load Demo Plugins",
-    "loadedAt": "__TRANSLATE__ Loaded: {date}",
-    "managePlugins": "__TRANSLATE__ Manage Plugins",
-    "noSettings": "__TRANSLATE__ This plugin does not have configurable settings.",
-    "none": "__TRANSLATE__ None",
-    "pluginsInstalled": "__TRANSLATE__ {count} plugin(s) installed",
-    "renderError": "__TRANSLATE__ Error rendering plugin settings: {error}",
-    "selectFormat": "__TRANSLATE__ Select a format to see details",
-    "selectedFile": "__TRANSLATE__ Selected: {name} ({size} KB)",
-    "settings": "__TRANSLATE__ Settings",
-    "settingsTitle": "__TRANSLATE__ {name} Settings",
+    "activeHooksCount": "{count} hook(s) actif(s)",
+    "clearAll": "Tout effacer",
+    "clearAllTitle": "Tout effacer Plugins",
+    "configTitle": "Configuration du plugin :",
+    "emptyState": "Aucun plugin installé. Cliquez sur « Charger les plugins démo » pour commencer !",
+    "export": "Exporter",
+    "hooksLabel": "Hooks :",
+    "installFromFile": "Installer depuis un fichier",
+    "loadDemoPlugins": "Charger les plugins démo",
+    "loadedAt": "Chargé : {date}",
+    "managePlugins": "Gérer les plugins",
+    "noSettings": "Ce plugin n'a pas de paramètres configurables.",
+    "none": "Aucun",
+    "pluginsInstalled": "{count} plugin(s) installé(s)",
+    "renderError": "Erreur d'affichage des paramètres du plugin : {error}",
+    "selectFormat": "Sélectionnez un format pour voir les détails",
+    "selectedFile": "Sélectionné : {name} ({size} Ko)",
+    "settings": "Paramètres",
+    "settingsTitle": "Paramètres de {name}",
     "stats": {
-      "activeHooks": "__TRANSLATE__ Active Hooks",
-      "enabled": "__TRANSLATE__ Enabled",
-      "totalPlugins": "__TRANSLATE__ Total Plugins"
+      "activeHooks": "Hooks actifs",
+      "enabled": "Activé",
+      "totalPlugins": "Total des plugins"
     },
-    "statusLabel": "__TRANSLATE__ Status:",
+    "statusLabel": "Statut :",
     "toast": {
-      "alreadyExists": "__TRANSLATE__ Plugin \"{name}\" already exists",
-      "disabled": "__TRANSLATE__ Plugin \"{name}\" disabled",
-      "enabled": "__TRANSLATE__ Plugin \"{name}\" enabled",
-      "loaded": "__TRANSLATE__ Plugin \"{name}\" loaded",
-      "unloaded": "__TRANSLATE__ Plugin \"{name}\" unloaded",
-      "validationFailed": "__TRANSLATE__ Plugin validation failed: {error}"
+      "alreadyExists": "Le plugin « {name} » existe déjà",
+      "disabled": "Plugin « {name} » désactivé",
+      "enabled": "Plugin « {name} » activé",
+      "loaded": "Plugin « {name} » chargé",
+      "unloaded": "Plugin « {name} » déchargé",
+      "validationFailed": "La validation du plugin a échoué : {error}"
     },
-    "uninstallTitle": "__TRANSLATE__ Uninstall Plugin"
+    "uninstallTitle": "Désinstaller Plugin"
   },
   "policy": {
     "alphanumeric": "Alphanumérique (lettres + chiffres)",
@@ -779,14 +779,14 @@
       "undefined": "Non défini",
       "unknownMode": "Mode inconnu"
     },
-    "copyOf": "__TRANSLATE__ Copy of {name}",
+    "copyOf": "Copie de {name}",
     "createNew": "Créer un nouveau préréglage",
     "defaults": {
-      "description": "__TRANSLATE__ Default recommended configuration",
-      "name": "__TRANSLATE__ Default"
+      "description": "Configuration recommandée par défaut",
+      "name": "Par défaut"
     },
     "deleteConfirm": "Supprimer ce préréglage ?",
-    "deleteTitle": "__TRANSLATE__ Delete Preset",
+    "deleteTitle": "Supprimer le préréglage",
     "dialog": {
       "configToSave": "Configuration à sauvegarder :",
       "configuration": "⚙️ Configuration",
@@ -818,13 +818,13 @@
     "refreshFromVault": "Actualiser les préréglages depuis le coffre-fort",
     "replaceConfirm": "Remplacer la configuration « {name} » par les paramètres actuels ?",
     "save": "Sauvegarder la configuration",
-    "saveTooltip": "__TRANSLATE__ Save current settings as new preset",
+    "saveTooltip": "Enregistrer les paramètres actuels comme nouveau préréglage",
     "select": "-- Sélectionner --",
     "title": "Préréglages",
     "update": "Mettre à jour",
     "updateFailed": "Échec de la mise à jour",
-    "updateTitle": "__TRANSLATE__ Update Preset",
-    "updateTooltip": "__TRANSLATE__ Update preset \"{name}\" with current settings",
+    "updateTitle": "Mettre à jour Preset",
+    "updateTooltip": "Mettre à jour preset \"{name}\" with current settings",
     "updated": "mis à jour",
     "vaultSync": {
       "deleteFromVault": "Supprimer du coffre",
@@ -845,10 +845,10 @@
     }
   },
   "pwa": {
-    "install": "__TRANSLATE__ Install",
-    "installSubtitle": "__TRANSLATE__ Add to home screen for offline access",
-    "installTitle": "__TRANSLATE__ Install GenPwd Pro",
-    "notNow": "__TRANSLATE__ Not now"
+    "install": "Installer",
+    "installSubtitle": "Ajouter à l'écran d'accueil pour un accès hors ligne",
+    "installTitle": "Installer GenPwd Pro",
+    "notNow": "Pas maintenant"
   },
   "results": {
     "allCopied": "Tous les mots de passe copiés !",
@@ -891,18 +891,18 @@
     "lengthRange": "Longueur (6–64)",
     "maskDisplay": "Masquer l'affichage",
     "native": {
-      "clipboardAutoClear": "__TRANSLATE__ Automatic clipboard clearing",
-      "clipboardDelay": "__TRANSLATE__ Delay:",
-      "minimizeToTray": "__TRANSLATE__ Minimize to system tray",
-      "minimizeToTrayDesc": "__TRANSLATE__ Application stays active in background",
-      "minute1": "__TRANSLATE__ 1 minute",
-      "minutes2": "__TRANSLATE__ 2 minutes",
-      "quickUnlock": "__TRANSLATE__ Quick unlock (Windows Hello)",
-      "quickUnlockDesc": "__TRANSLATE__ Uses biometrics to unlock vault faster",
-      "quickUnlockWarning": "__TRANSLATE__ Security tradeoff: Stores encrypted password locally for convenience",
-      "seconds15": "__TRANSLATE__ 15 seconds",
-      "seconds30": "__TRANSLATE__ 30 seconds",
-      "title": "__TRANSLATE__ System Integration"
+      "clipboardAutoClear": "Effacement automatique du presse-papiers",
+      "clipboardDelay": "Délai :",
+      "minimizeToTray": "Réduire dans la zone de notification",
+      "minimizeToTrayDesc": "L'application reste active en arrière-plan",
+      "minute1": "1 minute",
+      "minutes2": "2 minutes",
+      "quickUnlock": "Déverrouillage rapide (Windows Hello)",
+      "quickUnlockDesc": "Utilise la biométrie pour déverrouiller le coffre plus rapidement",
+      "quickUnlockWarning": "Compromis sécurité : Stocke le mot de passe chiffré localement pour plus de commodité",
+      "seconds15": "15 secondes",
+      "seconds30": "30 secondes",
+      "title": "Intégration système"
     },
     "placementDigits": "Placement chiffres",
     "placementSpecials": "Placement spéciaux",
@@ -911,25 +911,25 @@
     "quantityRange": "Nombre (1–20)",
     "specials": "Spéciaux",
     "specialsRange": "Spéciaux (0–6)",
-    "themeLabel": "__TRANSLATE__ Theme:",
+    "themeLabel": "Thème :",
     "time": {
-      "disabled": "__TRANSLATE__ Disabled",
-      "minute1": "__TRANSLATE__ 1 minute",
-      "minutes10": "__TRANSLATE__ 10 minutes",
-      "minutes15": "__TRANSLATE__ 15 minutes",
-      "minutes2": "__TRANSLATE__ 2 minutes",
-      "minutes30": "__TRANSLATE__ 30 minutes",
-      "minutes5": "__TRANSLATE__ 5 minutes",
-      "seconds10": "__TRANSLATE__ 10 seconds",
-      "seconds30": "__TRANSLATE__ 30 seconds"
+      "disabled": "Désactivé",
+      "minute1": "1 minute",
+      "minutes10": "10 minutes",
+      "minutes15": "15 minutes",
+      "minutes2": "2 minutes",
+      "minutes30": "30 minutes",
+      "minutes5": "5 minutes",
+      "seconds10": "10 secondes",
+      "seconds30": "30 secondes"
     },
     "timeout": {
-      "10min": "__TRANSLATE__ 10 minutes",
-      "15min": "__TRANSLATE__ 15 minutes",
-      "1min": "__TRANSLATE__ 1 minute",
-      "2min": "__TRANSLATE__ 2 minutes",
-      "30min": "__TRANSLATE__ 30 minutes",
-      "5min": "__TRANSLATE__ 5 minutes"
+      "10min": "10 minutes",
+      "15min": "15 minutes",
+      "1min": "1 minute",
+      "2min": "2 minutes",
+      "30min": "30 minutes",
+      "5min": "5 minutes"
     }
   },
   "settingsModal": {
@@ -1019,31 +1019,31 @@
   },
   "shortcuts": {
     "descriptions": {
-      "autoType": "__TRANSLATE__ Auto-fill form",
-      "closeModal": "__TRANSLATE__ Close modal",
-      "copyAll": "__TRANSLATE__ Copy all passwords",
-      "copyPassword": "__TRANSLATE__ Copy password",
-      "copyUsername": "__TRANSLATE__ Copy username",
-      "deleteEntry": "__TRANSLATE__ Delete selected entry",
-      "duplicateEntry": "__TRANSLATE__ Duplicate entry",
-      "editEntry": "__TRANSLATE__ Edit selected entry",
-      "exportResults": "__TRANSLATE__ Export results",
-      "generate": "__TRANSLATE__ Generate passwords",
-      "lock": "__TRANSLATE__ Lock vault",
-      "newEntry": "__TRANSLATE__ New entry",
-      "nextEntry": "__TRANSLATE__ Select next entry",
-      "prevEntry": "__TRANSLATE__ Select previous entry",
-      "runTests": "__TRANSLATE__ Run tests",
-      "search": "__TRANSLATE__ Focus search",
-      "showShortcuts": "__TRANSLATE__ Show keyboard shortcuts"
+      "autoType": "Saisie automatique du formulaire",
+      "closeModal": "Fermer la fenêtre",
+      "copyAll": "Copier tous les mots de passe",
+      "copyPassword": "Copier le mot de passe",
+      "copyUsername": "Copier le nom d'utilisateur",
+      "deleteEntry": "Supprimer l'entrée sélectionnée",
+      "duplicateEntry": "Dupliquer l'entrée",
+      "editEntry": "Modifier l'entrée sélectionnée",
+      "exportResults": "Exporter les résultats",
+      "generate": "Générer des mots de passe",
+      "lock": "Verrouiller le coffre",
+      "newEntry": "Nouvelle entrée",
+      "nextEntry": "Sélectionner l'entrée suivante",
+      "prevEntry": "Sélectionner l'entrée précédente",
+      "runTests": "Lancer les tests",
+      "search": "Activer la recherche",
+      "showShortcuts": "Afficher les raccourcis clavier"
     }
   },
   "sync": {
     "status": {
-      "syncError": "__TRANSLATE__ Sync error",
-      "synced": "__TRANSLATE__ Synced",
-      "uploadError": "__TRANSLATE__ Upload error",
-      "uploading": "__TRANSLATE__ Uploading to cloud..."
+      "syncError": "Erreur de synchronisation",
+      "synced": "Synchronisé",
+      "uploadError": "Erreur d'envoi",
+      "uploading": "Envoi vers le cloud..."
     }
   },
   "syncModal": {
@@ -1075,19 +1075,19 @@
     "title": "📊 Résultats des Tests - GenPwd Pro v{version}"
   },
   "tests": {
-    "error": "__TRANSLATE__ Error",
-    "running": "__TRANSLATE__ Running..."
+    "error": "Erreur",
+    "running": "Exécution en cours..."
   },
   "toast": {
     "allPluginsCleared": "Tous les plugins supprimés",
     "allPresetsExported": "Tous les préréglages exportés !",
     "appInstalled": "GenPwd Pro installé avec succès !",
     "appUpdated": "Application mise à jour - Dernière version utilisée",
-    "authError": "__TRANSLATE__ Authentication error: {error}",
+    "authError": "Erreur d'authentification : {error}",
     "authSuccess": "Authentification réussie",
     "autoClearDisabled": "Effacement auto désactivé",
     "autoClearEnabled": "Effacement auto : {time}",
-    "autoTypeBlocked": "__TRANSLATE__ Auto-type blocked for security",
+    "autoTypeBlocked": "Saisie automatique bloquée pour raison de sécurité",
     "backOnline": "De retour en ligne",
     "blockAdded": "Bloc ajouté",
     "blockMaxReached": "Nombre maximum de blocs atteint",
@@ -1098,7 +1098,7 @@
     "clearResultsConfirm": "Voulez-vous vraiment effacer tous les résultats ?",
     "clipboardAutoCleared": "Presse-papier effacé automatiquement",
     "configurationUpdated": "Configuration mise à jour !",
-    "copiedAutoClear": "__TRANSLATE__ Copied (auto-clear in {seconds}s)",
+    "copiedAutoClear": "Copié (effacement auto dans {seconds}s)",
     "copiedToClipboard": "Copié dans le presse-papier",
     "copyFailed": "Échec de la copie",
     "copyPassword": "Copier le mot de passe",
@@ -1176,7 +1176,7 @@
     "presetsLoaded": "{count} préréglage(s) chargé(s) depuis le coffre",
     "presetsSkipped": "{count} préréglage(s) ignoré(s) (existent déjà)",
     "resultsCleared": "Résultats effacés",
-    "secureCopyFailed": "__TRANSLATE__ Secure copy failed",
+    "secureCopyFailed": "Échec de la copie sécurisée",
     "storageQuotaExceeded": "Stockage plein. Certaines données n'ont pas pu être enregistrées.",
     "syncConfigError": "Erreur de sauvegarde",
     "syncConfigSaved": "Configuration sauvegardée",
@@ -1207,30 +1207,30 @@
   "vault": {
     "actions": {
       "addToFavorites": "Ajouter aux favoris",
-      "autoFill": "__TRANSLATE__ Auto-fill",
+      "autoFill": "Remplissage auto",
       "browse": "parcourir",
       "checkBreaches": "Vérifier les fuites (HIBP)",
       "clearFilter": "Effacer le filtre",
-      "color": "__TRANSLATE__ Color",
+      "color": "Couleur",
       "copy2FACode": "Copier le code 2FA",
       "copyPassword": "Copier le mot de passe",
       "copyUsername": "Copier l'identifiant",
       "copyValue": "Copier",
       "createVault": "Créer un coffre",
-      "delete": "__TRANSLATE__ Delete Entry",
-      "deleteFolder": "__TRANSLATE__ Delete Folder",
+      "delete": "Supprimer l'entrée",
+      "deleteFolder": "Supprimer le dossier",
       "download": "Télécharger",
-      "editSourceMode": "__TRANSLATE__ Edit source mode",
+      "editSourceMode": "Mode édition source",
       "enableDuress": "Activer le mode coercition",
       "encrypting": "Chiffrement...",
-      "forgetVault": "__TRANSLATE__ Forget Vault",
+      "forgetVault": "Oublier ce coffre",
       "generate": "Générer",
       "generateAlias": "Générer un alias email (Hide-My-Email)",
       "generateLink": "Générer le lien",
       "generateNow": "Générer maintenant",
       "generatePassword": "Générer un mot de passe",
       "generating": "Génération...",
-      "newSubfolder": "__TRANSLATE__ New subfolder",
+      "newSubfolder": "Nouveau sous-dossier",
       "open": "Ouvrir",
       "openVault": "Ouvrir un coffre",
       "openWebsite": "Ouvrir le site",
@@ -1239,7 +1239,7 @@
       "previewMode": "Mode aperçu",
       "regenerate": "Régénérer",
       "removeFromFavorites": "Retirer des favoris",
-      "rename": "__TRANSLATE__ Rename",
+      "rename": "Renommer",
       "restore": "Restaurer",
       "saveToVault": "Sauvegarder dans le coffre",
       "scanQR": "Scanner QR",
@@ -1268,7 +1268,7 @@
       "categories": "Catégories",
       "clickToCopy": "Cliquer pour copier",
       "deleteField": "Supprimer ce champ",
-      "entryActions": "__TRANSLATE__ Entry actions",
+      "entryActions": "Actions sur l'entrée",
       "entryDetails": "Détails de l'entrée",
       "entryList": "Liste des entrées",
       "entryType": "Type d'entrée",
@@ -1300,18 +1300,18 @@
       "none": "Aucune pièce jointe"
     },
     "autotype": {
-      "copyHint": "__TRANSLATE__ Copy the values below:",
-      "manualTitle": "__TRANSLATE__ Manual Auto-fill",
-      "requiresApp": "__TRANSLATE__ Automatic auto-fill requires the Electron application."
+      "copyHint": "Copiez les valeurs ci-dessous :",
+      "manualTitle": "Remplissage manuel",
+      "requiresApp": "Le remplissage automatique nécessite l'application Electron."
     },
     "bulk": {
-      "checkHint": "__TRANSLATE__ Check to add, uncheck to remove",
+      "checkHint": "Cocher pour ajouter, décocher pour retirer",
       "deleteSelection": "Supprimer la sélection",
-      "entries": "__TRANSLATE__ entries",
-      "entry": "__TRANSLATE__ entry",
+      "entries": "entrées",
+      "entry": "entrée",
       "exportSelection": "Exporter la sélection",
       "manageTags": "Gérer les étiquettes",
-      "manageTagsCount": "__TRANSLATE__ Manage tags ({count} {entries})",
+      "manageTagsCount": "Gérer les étiquettes ({count} {entries})",
       "moveToFolder": "Déplacer vers un dossier",
       "selected": "{count} sélectionné(s)"
     },
@@ -1331,7 +1331,7 @@
       "add": "Ajouter",
       "cancel": "Annuler",
       "close": "Fermer",
-      "confirm": "__TRANSLATE__ Confirm",
+      "confirm": "Confirmer",
       "copied": "Copié !",
       "copy": "Copier",
       "create": "Créer",
@@ -1398,9 +1398,9 @@
       "areYouSure": "Êtes-vous sûr ?",
       "closeWithoutSaving": "Fermer sans sauvegarder",
       "confirmTitle": "Confirmer",
-      "continue": "__TRANSLATE__ Continue",
+      "continue": "Continuer",
       "createVault": "Créer un coffre à...",
-      "deleteConfirm": "__TRANSLATE__ Delete",
+      "deleteConfirm": "Supprimer",
       "editEntry": "Modifier l'entrée",
       "editTag": "Modifier l'étiquette",
       "hidePassword": "Masquer le mot de passe",
@@ -1411,8 +1411,8 @@
       "newTag": "Nouvelle étiquette",
       "openVault": "Ouvrir un coffre...",
       "saveVault": "Sauvegarder le coffre",
-      "skip": "__TRANSLATE__ Skip",
-      "skipTour": "__TRANSLATE__ Skip the tour?",
+      "skip": "Passer",
+      "skipTour": "Passer la visite guidée ?",
       "unsavedChanges": "Modifications non enregistrées",
       "unsavedChangesMessage": "Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer sans sauvegarder ?",
       "vaultApiNotAvailable": "L'API du coffre n'est pas disponible dans ce contexte.",
@@ -1451,7 +1451,7 @@
       "strengthPrefix": "Force du mot de passe",
       "strengthTitle": "Force"
     },
-    "entryCount": "__TRANSLATE__ {count} entries",
+    "entryCount": "{count} entrées",
     "entryTypes": {
       "card": "Carte",
       "identity": "Identité",
@@ -1459,14 +1459,14 @@
       "note": "Note"
     },
     "errors": {
-      "exportFailed": "__TRANSLATE__ Export failed",
-      "presetNotFound": "__TRANSLATE__ Preset not found",
-      "saveFailed": "__TRANSLATE__ Save failed",
-      "titleRequired": "__TRANSLATE__ Title required",
-      "unknownError": "__TRANSLATE__ Unknown error",
-      "vaultLocked": "__TRANSLATE__ Vault locked",
-      "vaultNotAvailable": "__TRANSLATE__ Vault not available",
-      "vaultUnavailableOrLocked": "__TRANSLATE__ Vault unavailable or locked"
+      "exportFailed": "Échec de l'export",
+      "presetNotFound": "Préréglage introuvable",
+      "saveFailed": "Échec de la sauvegarde",
+      "titleRequired": "Titre requis",
+      "unknownError": "Erreur inconnue",
+      "vaultLocked": "Coffre verrouillé",
+      "vaultNotAvailable": "Coffre non disponible",
+      "vaultUnavailableOrLocked": "Coffre non disponible ou verrouillé"
     },
     "expiry": {
       "1year": "1 an",
@@ -1521,7 +1521,7 @@
       "secure": "Sécurisé"
     },
     "fields": {
-      "content": "__TRANSLATE__ Content"
+      "content": "Contenu"
     },
     "filters": {
       "allAges": "Tous",
@@ -1551,7 +1551,7 @@
       "weak": "Faible"
     },
     "folders": {
-      "color": "__TRANSLATE__ Folder color"
+      "color": "Couleur du dossier"
     },
     "form": {
       "confirmPassword": "Confirmer le mot de passe",
@@ -1583,16 +1583,16 @@
     "generator": {
       "blocks": "Blocs :",
       "clickToCycle": "Cliquez pour changer (U → l → T → U)",
-      "copyLabel": "__TRANSLATE__ Copy password to clipboard",
+      "copyLabel": "Copier le mot de passe dans le presse-papiers",
       "emptyState": "Aucun mot de passe généré",
       "invalidData": "Données de mot de passe invalides",
-      "length": "__TRANSLATE__ Length",
+      "length": "Longueur",
       "manualChange": "Modification manuelle",
-      "outputLabel": "__TRANSLATE__ Generated password",
-      "regenerate": "__TRANSLATE__ Regenerate",
-      "regenerateLabel": "__TRANSLATE__ Generate new password",
+      "outputLabel": "Mot de passe généré",
+      "regenerate": "Régénérer",
+      "regenerateLabel": "Générer un nouveau mot de passe",
       "title": "Générateur de mot de passe",
-      "usePassword": "__TRANSLATE__ Use this password"
+      "usePassword": "Utiliser ce mot de passe"
     },
     "health": {
       "analyzing": "Analyse de la sécurité du coffre...",
@@ -1666,25 +1666,25 @@
       "dragOrBrowse": "Glissez un fichier ici ou {browse}",
       "entries": "Entrées",
       "errors": {
-        "importFailed": "__TRANSLATE__ Failed to import vault.",
-        "invalidGpdbFormat": "__TRANSLATE__ Invalid file format. Expected GPDB vault file.",
-        "invalidPassword": "__TRANSLATE__ Invalid password or key file",
-        "invalidPasswordOrCorrupted": "__TRANSLATE__ Invalid password or corrupted data.",
-        "invalidV1Format": "__TRANSLATE__ Invalid V1 format: missing header/encryptedData structure.",
-        "invalidVersion": "__TRANSLATE__ Invalid file version.",
-        "invalidXml": "__TRANSLATE__ Invalid XML format",
-        "kdbxDesktopOnly": "__TRANSLATE__ KDBX/KeePass import is only available in the desktop application. Please use CSV or JSON export from KeePass instead.",
-        "kdbxDesktopRequired": "__TRANSLATE__ KDBX import requires the desktop application. Please use the Electron app for KeePass imports.",
-        "kdbxElectronRequired": "__TRANSLATE__ KDBX import requires Electron desktop app",
-        "kdbxMethodRequired": "__TRANSLATE__ KDBX format requires importKDBX(dbData, password, keyFileData) method",
-        "missingEncryption": "__TRANSLATE__ Missing encryption data.",
-        "unsupportedExportFormat": "__TRANSLATE__ Unsupported export format: {format}",
-        "unsupportedImportFormat": "__TRANSLATE__ Unsupported import format: {format}",
-        "xmlForbiddenPatterns": "__TRANSLATE__ XML contains forbidden patterns (potential security risk)",
-        "xmlTooLarge": "__TRANSLATE__ XML file too large (max 10MB)"
+        "importFailed": "Échec de l'import du coffre.",
+        "invalidGpdbFormat": "Format de fichier invalide. Fichier GPDB attendu.",
+        "invalidPassword": "Mot de passe ou fichier de clé invalide",
+        "invalidPasswordOrCorrupted": "Mot de passe invalide ou données corrompues.",
+        "invalidV1Format": "Format V1 invalide : structure header/encryptedData manquante.",
+        "invalidVersion": "Version de fichier invalide.",
+        "invalidXml": "Format XML invalide",
+        "kdbxDesktopOnly": "L'import KDBX/KeePass n'est disponible que dans l'application de bureau. Utilisez plutôt l'export CSV ou JSON de KeePass.",
+        "kdbxDesktopRequired": "L'import KDBX nécessite l'application de bureau. Utilisez l'application Electron pour les imports KeePass.",
+        "kdbxElectronRequired": "L'import KDBX nécessite l'application de bureau Electron",
+        "kdbxMethodRequired": "Le format KDBX nécessite la méthode importKDBX(dbData, password, keyFileData)",
+        "missingEncryption": "Données de chiffrement manquantes.",
+        "unsupportedExportFormat": "Format d'export non supporté : {format}",
+        "unsupportedImportFormat": "Format d'import non supporté : {format}",
+        "xmlForbiddenPatterns": "Le XML contient des motifs interdits (risque de sécurité potentiel)",
+        "xmlTooLarge": "Fichier XML trop volumineux (max 10 Mo)"
       },
       "fields": "Champs",
-      "folders": "__TRANSLATE__ Folders",
+      "folders": "Dossiers",
       "formatsHint": "Formats : XML, JSON, CSV",
       "includeFolders": "Importer les dossiers/groupes",
       "kb": "Ko",
@@ -1696,14 +1696,14 @@
       "attachments": "Pièces jointes",
       "cardHolder": "Titulaire",
       "cardNumber": "Numéro de carte",
-      "cardholder": "__TRANSLATE__ Cardholder",
+      "cardholder": "Titulaire de la carte",
       "color": "Couleur",
       "content": "Contenu",
       "customFields": "Champs personnalisés",
       "cvv": "CVV",
       "email": "Email",
       "expiration": "Expiration",
-      "expiry": "__TRANSLATE__ Expiry",
+      "expiry": "Expiration",
       "fieldType": "Type de champ",
       "folder": "Dossier",
       "folderName": "Nom du dossier",
@@ -1712,7 +1712,7 @@
       "modified": "Modifié",
       "noFolder": "Aucun dossier",
       "noFolderRoot": "Aucun dossier (racine)",
-      "note": "__TRANSLATE__ Note",
+      "note": "Note",
       "notes": "Notes",
       "password": "Mot de passe",
       "passwordAge": "Âge du mot de passe",
@@ -1726,7 +1726,7 @@
       "totp": "Clé TOTP (2FA)",
       "totp2FA": "Code 2FA (TOTP)",
       "totpKey": "Clé TOTP (2FA)",
-      "untitled": "__TRANSLATE__ Untitled",
+      "untitled": "Sans titre",
       "url": "URL",
       "useTemplate": "Utiliser un modèle",
       "username": "Identifiant",
@@ -1757,7 +1757,7 @@
       "autoFillError": "Erreur auto-remplissage",
       "autoFillProgress": "Auto-remplissage en cours...",
       "autoLockWarning": "Verrouillage automatique dans 1 minute",
-      "autoTypePerforming": "__TRANSLATE__ Auto-Type: {title}",
+      "autoTypePerforming": "Saisie automatique : {title}",
       "bulkDeleteFailed": "Échec de la suppression en masse",
       "checkFileFormat": "Vérifiez le format du fichier (CSV ou JSON requis)",
       "clearSearch": "Effacer la recherche",
@@ -1809,7 +1809,7 @@
       "invalidXmlFormat": "Format XML invalide",
       "kdbxNotSupported": "Les fichiers .kdbx ne sont pas supportés. Exportez en XML depuis KeePass.",
       "keepassImported": "KeePass XML : {count} entrée(s) importée(s)",
-      "matchesFound": "__TRANSLATE__ {count} matches found",
+      "matchesFound": "{count} résultats trouvés",
       "minCharactersRequired": "Minimum {count} caractères requis",
       "modificationError": "Erreur de modification",
       "moveError": "Erreur de déplacement",
@@ -1823,8 +1823,8 @@
       "noResults": "Aucun résultat",
       "noTags": "Aucune étiquette disponible",
       "noTagsCreate": "Aucune étiquette disponible. Créez d'abord des étiquettes.",
-      "noTagsSidebar": "__TRANSLATE__ No tags available. Create a tag from the sidebar.",
-      "noVaultFound": "__TRANSLATE__ No vault found. Create one to get started.",
+      "noTagsSidebar": "Aucune étiquette disponible. Créez une étiquette depuis la barre latérale.",
+      "noVaultFound": "Aucun coffre trouvé. Créez-en un pour commencer.",
       "normalMode": "Mode normal",
       "notKeePassFile": "Ce fichier n'est pas un export KeePass XML",
       "oldPasswordCopied": "Ancien mot de passe copié",
@@ -1837,7 +1837,7 @@
       "removedFromFavorites": "Retiré des favoris",
       "restoreError": "Erreur de restauration",
       "restored": "Restauré",
-      "savedWithTitle": "__TRANSLATE__ Saved to vault: {title}",
+      "savedWithTitle": "Enregistré dans le coffre : {title}",
       "searchTip": "Essayez des termes plus courts ou vérifiez l'orthographe",
       "selectTagsForEntries": "Sélectionnez les étiquettes à appliquer à {count} entrées sélectionnées.",
       "selectVault": "Sélectionnez un coffre",
@@ -1858,21 +1858,21 @@
       "unpinned": "Désépinglé",
       "updateError": "Erreur de mise à jour",
       "usernameCopied": "Identifiant copié",
-      "vaultApiNotAvailable": "__TRANSLATE__ The vault API is not available in this context.",
+      "vaultApiNotAvailable": "L'API du coffre n'est pas disponible dans ce contexte.",
       "vaultCreatedAt": "Coffre créé à l'emplacement {path}",
       "vaultCreatedSuccess": "Coffre créé avec succès",
       "vaultCreatedWithHello": "Coffre créé avec Windows Hello activé",
       "vaultCreatedWithoutHello": "Coffre créé (Windows Hello non activé)",
       "vaultForgotten": "Coffre retiré de la liste",
       "vaultLocked": "Coffre verrouillé",
-      "vaultNotAvailable": "__TRANSLATE__ Vault not available",
+      "vaultNotAvailable": "Coffre non disponible",
       "vaultOpenedSuccess": "Coffre ouvert avec succès",
-      "vaultRequiresElectron": "__TRANSLATE__ The vault requires the Electron application to work.",
+      "vaultRequiresElectron": "Le coffre nécessite l'application Electron pour fonctionner.",
       "vaultSaved": "Coffre sauvegardé : {fileName}"
     },
     "misc": {
       "autoFillHint": "L'auto-remplissage automatique nécessite l'application Electron.",
-      "biometricFailed": "__TRANSLATE__ Windows Hello failed",
+      "biometricFailed": "Échec de Windows Hello",
       "copy": "Copier",
       "copyValuesBelow": "Copiez les valeurs ci-dessous :",
       "dropFiles": "Glissez vos fichiers ici ou",
@@ -1936,7 +1936,7 @@
       "urlPlaceholder": "https://exemple.com",
       "websiteUrl": "URL du site web"
     },
-    "selectedCount": "__TRANSLATE__ {count} selected",
+    "selectedCount": "{count} sélectionné(s)",
     "settings": {
       "configureDuress": "Configurer le Mode Coercition",
       "configureLockDelay": "Configurer le délai de verrouillage",
@@ -2040,8 +2040,8 @@
       "switchTheme": "Changer de thème"
     },
     "totp": {
-      "qrTitle": "__TRANSLATE__ TOTP QR Code",
-      "scanHint": "__TRANSLATE__ Scan with your authenticator app (Google Authenticator, Authy, etc.)"
+      "qrTitle": "QR Code TOTP",
+      "scanHint": "Scannez avec votre application d'authentification (Google Authenticator, Authy, etc.)"
     },
     "validation": {
       "fieldRequired": "Ce champ est requis",
@@ -2050,7 +2050,7 @@
       "invalidUrl": "URL invalide",
       "maxLength": "Maximum {count} caractères",
       "minLength": "Minimum {count} caractères",
-      "passwordsMatch": "__TRANSLATE__ Passwords match",
+      "passwordsMatch": "Les mots de passe correspondent",
       "passwordsNoMatch": "Les mots de passe ne correspondent pas",
       "tooWeak": "Mot de passe trop faible"
     },
@@ -2115,13 +2115,13 @@
       "disableFailed": "Échec désactivation",
       "disableSuccess": "Windows Hello désactivé",
       "disabled": "Windows Hello (désactivé)",
-      "disabledDescription": "__TRANSLATE__ Enable Windows Hello to unlock this vault with your fingerprint or face.",
+      "disabledDescription": "Activez Windows Hello pour déverrouiller ce coffre avec votre empreinte digitale ou votre visage.",
       "disabledMessage": "Activez Windows Hello pour déverrouiller ce coffre avec votre empreinte digitale ou votre visage.",
       "enable": "Activer",
       "enableFailed": "Échec activation Windows Hello",
       "enableSuccess": "Windows Hello activé",
       "enabled": "Windows Hello (activé)",
-      "enabledDescription": "__TRANSLATE__ Windows Hello is enabled for this vault. You can unlock with your fingerprint or face.",
+      "enabledDescription": "Windows Hello est activé pour ce coffre. Vous pouvez déverrouiller avec votre empreinte digitale ou votre visage.",
       "enabledMessage": "Windows Hello est activé pour ce coffre. Vous pouvez déverrouiller avec votre empreinte ou votre visage.",
       "enabling": "Activation Windows Hello...",
       "enterPassword": "Entrez votre mot de passe pour activer Windows Hello",
@@ -2133,10 +2133,10 @@
       "title": "Windows Hello",
       "unlockVault": "GenPwd Pro - Déverrouiller le coffre",
       "verificationFailed": "Vérification Windows Hello échouée",
-      "verificationRequired": "__TRANSLATE__ Verification required"
+      "verificationRequired": "Vérification requise"
     }
   },
   "windowsHello": {
-    "verificationRequired": "__TRANSLATE__ GenPwd Pro - Verification required"
+    "verificationRequired": "GenPwd Pro - Vérification requise"
   }
 }
