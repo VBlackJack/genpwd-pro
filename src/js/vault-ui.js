@@ -1462,7 +1462,7 @@ export class VaultUI {
           ${this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection({ t })}
         </aside>
       </div>
-      ${renderAddEntryModal({ entryTypes: ENTRY_TYPES, folders: this.#folders, tags: this.#tags, templateGridHtml: renderTemplateGrid(), t })}
+      ${renderAddEntryModal({ entryTypes: getEntryTypes(), folders: this.#folders, tags: this.#tags, templateGridHtml: renderTemplateGrid(), t })}
       ${renderAddFolderModal({ t })}
       ${renderEditEntryModal({ t })}
       ${renderShortcutsModal({ t })}

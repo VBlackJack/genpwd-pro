@@ -182,7 +182,7 @@ export function renderAddEntryModal(options = {}) {
 
           <div class="vault-form-group">
             <label class="vault-label">${t('vault.labels.tags')}</label>
-            ${renderTagPicker({ tags, selectedTagIds: [] })}
+            ${renderTagPicker({ tags, selectedTagIds: [], t })}
           </div>
 
           <div id="entry-type-fields"></div>
