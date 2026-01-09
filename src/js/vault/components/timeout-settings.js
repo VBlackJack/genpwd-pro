@@ -37,7 +37,7 @@ export function showTimeoutSettings(options = {}) {
   popover.className = 'vault-timeout-settings';
   popover.innerHTML = `
     <div class="vault-timeout-header">
-      <span>${t('vault.settings.lockTimeout') || 'Lock timeout'}</span>
+      <span>${t('vault.settings.lockTimeout')}</span>
     </div>
     <div class="vault-timeout-options">
       ${TIMEOUT_OPTIONS.map(opt => `

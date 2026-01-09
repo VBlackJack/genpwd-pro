@@ -118,13 +118,13 @@ function renderNoteContent(entry) {
         <label class="vault-field-label">${t('vault.fields.content')}</label>
         <div class="vault-notes-toggle">
           <button type="button" class="vault-notes-mode active" data-mode="preview" title="${t('vault.actions.preview')}" aria-label="${t('vault.actions.previewMode')}">
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
           </button>
           <button type="button" class="vault-notes-mode" data-mode="source" title="${t('vault.actions.sourceMarkdown')}" aria-label="${t('vault.actions.editSourceMode')}">
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
             </svg>
@@ -217,22 +217,22 @@ function renderSecuritySummary(entry, entries = []) {
           <span class="vault-security-value">${strengthInfo.label}</span>
         </div>
         <div class="vault-security-item ${has2FA ? 'success' : 'muted'}">
-          <span class="vault-security-icon">${has2FA ? '🔐' : '🔓'}</span>
+          <span class="vault-security-icon" role="img" aria-hidden="true">${has2FA ? '🔐' : '🔓'}</span>
           <span class="vault-security-label">2FA</span>
           <span class="vault-security-value">${has2FA ? t('vault.entryInfo.has2FA') : t('vault.entryInfo.no2FA')}</span>
         </div>
         ${isDuplicate ? `
           <div class="vault-security-item danger">
-            <span class="vault-security-icon">🔁</span>
+            <span class="vault-security-icon" role="img" aria-hidden="true">🔁</span>
             <span class="vault-security-label">${t('vault.badges.reused')}</span>
             <span class="vault-security-value">${t('vault.entryCard.reusedPassword')}</span>
           </div>
         ` : ''}
         ${expiryStatus.status !== 'none' && expiryStatus.status !== 'ok' ? `
           <div class="vault-security-item ${expiryStatus.status === 'expired' ? 'danger' : 'warning'}">
-            <span class="vault-security-icon">⏰</span>
+            <span class="vault-security-icon" role="img" aria-hidden="true">⏰</span>
             <span class="vault-security-label">${t('vault.labels.expiration')}</span>
-            <span class="vault-security-value">${expiryStatus.label || t('vault.badges.' + expiryStatus.status)}</span>
+            <span class="vault-security-value">${t('vault.badges.' + expiryStatus.status)}</span>
           </div>
         ` : ''}
       </div>
@@ -308,12 +308,18 @@ export function renderEntryDetail({ entry, tags, entries = [] }) {
       <div class="vault-detail-info">
         <div class="vault-detail-title-row">
           ${isPinned ? `<span class="vault-pin-badge" title="${t('vault.badges.pinned')}">📌</span>` : ''}
-          ${isFavorite ? `<span class="vault-fav-indicator" title="${t('vault.badges.favorite')}">★</span>` : ''}
+          ${isFavorite ? `<span class="vault-fav-indicator" title="${t('vault.badges.favorite')}" aria-hidden="true">★</span>` : ''}
           <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
         </div>
         <div class="vault-detail-subtitle-row">
           <span class="vault-detail-type" style="--type-color: ${type.color}">${type.label}</span>
-          ${entry.data?.url ? `<span class="vault-detail-domain">${new URL(entry.data.url).hostname}</span>` : ''}
+          ${entry.data?.url ? (() => {
+            try {
+              return `<span class="vault-detail-domain">${escapeHtml(new URL(entry.data.url).hostname)}</span>`;
+            } catch {
+              return '';
+            }
+          })() : ''}
         </div>
         <div class="vault-detail-tags">${renderTagsInDetail({ entry, tags })}</div>
         ${renderQuickInfoBar(entry)}

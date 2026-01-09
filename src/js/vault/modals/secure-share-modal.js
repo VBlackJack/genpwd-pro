@@ -157,10 +157,13 @@ export function showSecureShareModal(options = {}) {
   const modal = document.createElement('div');
   modal.className = 'vault-modal-overlay';
   modal.id = 'share-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'share-modal-title');
   modal.innerHTML = `
     <div class="vault-modal">
       <div class="vault-modal-header">
-        <h3>${t('vault.share.title')} "${escapeHtml(entry.title)}"</h3>
+        <h3 id="share-modal-title">${t('vault.share.title')} "${escapeHtml(entry.title)}"</h3>
         <button type="button" class="vault-modal-close" data-close-modal aria-label="${t('vault.common.close')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>

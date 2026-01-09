@@ -60,7 +60,7 @@ export class AliasSettingsModal extends Modal {
                 <div class="vault-field-hint" id="alias-help-text">
                   ${t('aliasModal.helpSimpleLogin')}
                 </div>
-                <div class="field-error" id="alias-api-key-error" hidden aria-live="polite"></div>
+                <div class="field-error" id="alias-api-key-error" role="alert" hidden aria-live="polite"></div>
               </div>
 
               <div id="alias-status-msg" class="vault-field-message" role="status" aria-live="polite" hidden></div>

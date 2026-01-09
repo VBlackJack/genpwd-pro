@@ -38,10 +38,13 @@ export function showAutotypeModal(options = {}) {
   const modal = document.createElement('div');
   modal.className = 'vault-modal-overlay';
   modal.id = 'autotype-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'autotype-modal-title');
   modal.innerHTML = `
     <div class="vault-modal vault-modal-sm">
       <div class="vault-modal-header">
-        <h3>${t('vault.autotype.manualTitle')}</h3>
+        <h3 id="autotype-modal-title">${t('vault.autotype.manualTitle')}</h3>
         ${renderCloseBtn(t)}
       </div>
       <div class="vault-modal-body">

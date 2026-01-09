@@ -175,8 +175,8 @@ export function renderImportWarnings(options = {}) {
   }
 
   return `
-    ${errors.map(e => `<div class="vault-import-error">❌ ${escapeHtml(e)}</div>`).join('')}
-    ${warnings.map(w => `<div class="vault-import-warning">⚠️ ${escapeHtml(w)}</div>`).join('')}
+    ${errors.map(e => `<div class="vault-import-error" role="alert"><span aria-hidden="true">❌</span> ${escapeHtml(e)}</div>`).join('')}
+    ${warnings.map(w => `<div class="vault-import-warning" role="alert"><span aria-hidden="true">⚠️</span> ${escapeHtml(w)}</div>`).join('')}
   `;
 }
 
@@ -193,7 +193,7 @@ export function renderExportModal(options = {}) {
   return `
     <div class="vault-modal">
       <div class="vault-modal-header">
-        <h3>${t('vault.export.title', { count })}</h3>
+        <h3 id="export-format-modal-title">${t('vault.export.title', { count })}</h3>
         ${renderCloseBtn(t)}
       </div>
       <div class="vault-modal-body">
@@ -232,6 +232,7 @@ export function showExportFormatModal(options = {}) {
     modal.className = 'vault-modal-overlay';
     modal.role = 'dialog';
     modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'export-format-modal-title');
     document.body.appendChild(modal);
   }
 

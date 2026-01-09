@@ -4,6 +4,7 @@
  */
 
 import { t } from '../../utils/i18n.js';
+import { safeLog } from '../../utils/logger.js';
 import { getPasswordStrength, getPasswordAgeDays, getExpiryStatus } from '../utils/password-utils.js';
 
 /**
@@ -25,10 +26,10 @@ export async function sha1(text) {
  * @returns {string} Formatted string
  */
 export function formatBreachCount(count) {
-  if (count < 10) return `${count} fois`;
-  if (count < 1000) return `${count}+ fois`;
-  if (count < 1000000) return `${Math.floor(count / 1000)}K+ fois`;
-  return `${Math.floor(count / 1000000)}M+ fois`;
+  if (count < 10) return t('vault.health.breachTimes', { count });
+  if (count < 1000) return t('vault.health.breachTimesPlus', { count });
+  if (count < 1000000) return t('vault.health.breachTimesK', { count: Math.floor(count / 1000) });
+  return t('vault.health.breachTimesM', { count: Math.floor(count / 1000000) });
 }
 
 /**
@@ -44,7 +45,7 @@ export function calculateHealthStats(entries) {
     return {
       score: 100,
       scoreClass: 'excellent',
-      status: 'No username',
+      status: t('vault.health.noLogins'),
       total: 0,
       strong: 0,
       weak: 0,
@@ -258,7 +259,7 @@ export async function checkAllBreaches(entries, cache, options = {}) {
       newChecks++;
     } catch (err) {
       // Log but continue
-      console.warn(`Breach check error for ${entry.id}:`, err);
+      safeLog(`Breach check error for ${entry.id}: ${err.message}`);
     }
 
     checked++;

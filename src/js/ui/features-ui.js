@@ -799,7 +799,7 @@ function showSavePresetDialog() {
         <div class="form-group">
           <label for="preset-name">${i18n.t('presets.dialog.nameLabel')} <span class="text-red">*</span></label>
           <input type="text" id="preset-name" class="input-field" placeholder="${i18n.t('presets.dialog.namePlaceholder')}" required maxlength="50">
-          <span class="error-msg" id="name-error"></span>
+          <span class="error-msg" id="name-error" role="alert"></span>
         </div>
 
         <div class="form-group">
@@ -1336,7 +1336,7 @@ function showEditPresetModal(presetId) {
         <div class="form-group">
           <label for="edit-preset-name">${i18n.t('presets.dialog.nameLabel')} <span class="text-red">*</span></label>
           <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50">
-          <span class="error-msg" id="edit-name-error"></span>
+          <span class="error-msg" id="edit-name-error" role="alert"></span>
         </div>
 
         <div class="form-group mt-12">

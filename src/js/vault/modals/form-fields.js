@@ -54,14 +54,14 @@ export function renderPasswordField(options = {}) {
       <div class="vault-input-group">
         <input type="password" class="vault-input" id="${id}"
                value="${escapeHtml(value)}" placeholder="${placeholder}" autocomplete="new-password">
-        <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="${id}" aria-label="${t('vault.aria.show')}"
+        <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="${id}" aria-label="${t('vault.aria.togglePasswordVisibility')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
             <circle cx="12" cy="12" r="3"></circle>
           </svg>
         </button>
         ${showGenerator ? `
-          <button type="button" class="vault-input-btn" id="${id}-generate" data-tooltip="${t('vault.actions.generate')}" aria-label="${t('vault.aria.generatePassword')}"
+          <button type="button" class="vault-input-btn" id="${id}-generate" data-tooltip="${t('vault.actions.generate')}" aria-label="${t('vault.actions.generate')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
             </svg>
@@ -241,10 +241,10 @@ export function renderCardFields(options = {}) {
                placeholder="${t('vault.placeholders.expiryFormat')}" autocomplete="cc-exp">
       </div>
       <div class="vault-form-group">
-        <label class="vault-label" for="${prefix}-cvv">CVV</label>
+        <label class="vault-label" for="${prefix}-cvv">${t('vault.labels.cvv')}</label>
         <input type="password" class="vault-input" id="${prefix}-cvv"
                value="${escapeHtml(data.cvv || '')}"
-               placeholder="${isEdit ? '' : t('vault.placeholders.cvvExample')}" maxlength="4" autocomplete="cc-csc">
+               placeholder="${isEdit ? '' : t('vault.placeholders.cvvExample')}" minlength="3" maxlength="4" autocomplete="cc-csc">
       </div>
     </div>
   `;

@@ -27,3 +27,65 @@
 /* View modes and enhanced entry styling */
 @import 'components/_entries.css';
 @import 'components/_detail-panel.css';
+
+/* ==================== ACCESSIBILITY ==================== */
+/* Skip to main content link */
+.vault-skip-link {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  background: var(--vault-primary);
+  color: white;
+  font-weight: 500;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  text-decoration: none;
+  z-index: var(--z-max);
+  transition: top 0.2s ease;
+}
+
+.vault-skip-link:focus {
+  top: 0;
+  outline: 2px solid var(--vault-primary);
+  outline-offset: 2px;
+}
+
+/* Visually hidden but accessible */
+.vault-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus-visible styles for icon buttons */
+.vault-icon-btn:focus-visible,
+.vault-action-btn:focus-visible,
+.vault-sidebar-btn:focus-visible,
+[class*="vault-"] button:focus-visible {
+  outline: 2px solid var(--vault-primary);
+  outline-offset: 2px;
+}
+
+/* ==================== REDUCED MOTION ==================== */
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .vault-skip-link {
+    transition: none;
+  }
+}

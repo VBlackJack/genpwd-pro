@@ -1206,6 +1206,7 @@
   },
   "vault": {
     "actions": {
+      "addSubfolder": "Ajouter un sous-dossier",
       "addToFavorites": "Ajouter aux favoris",
       "autoFill": "Remplissage auto",
       "browse": "parcourir",
@@ -1240,6 +1241,7 @@
       "regenerate": "Régénérer",
       "removeFromFavorites": "Retirer des favoris",
       "rename": "Renommer",
+      "renameFolder": "Renommer le dossier",
       "restore": "Restaurer",
       "saveToVault": "Sauvegarder dans le coffre",
       "scanQR": "Scanner QR",
@@ -1292,6 +1294,7 @@
       "toggleDensity": "Basculer la densité d'affichage",
       "toggleTheme": "Basculer thème clair/sombre",
       "toggleVisibility": "Afficher/Masquer",
+      "togglePasswordVisibility": "Afficher/Masquer le mot de passe",
       "vaultNavigation": "Navigation du coffre",
       "vaultSelection": "Sélection du coffre"
     },
@@ -1398,6 +1401,7 @@
       "areYouSure": "Êtes-vous sûr ?",
       "closeWithoutSaving": "Fermer sans sauvegarder",
       "confirmTitle": "Confirmer",
+      "promptTitle": "Saisie requise",
       "continue": "Continuer",
       "createVault": "Créer un coffre à...",
       "deleteConfirm": "Supprimer",
@@ -1446,6 +1450,8 @@
       "expired": "Expiré",
       "expiresSoon": "Expire bientôt",
       "expiresToday": "Expire aujourd'hui",
+      "has2FA": "2FA activé",
+      "hasAttachments": "Contient des pièces jointes",
       "pinned": "Épinglé",
       "reusedPassword": "Mot de passe réutilisé",
       "strengthPrefix": "Force du mot de passe",
@@ -1648,7 +1654,12 @@
       "weak": "Faibles",
       "weakPasswordBits": "Mot de passe faible ({count} bits)",
       "weakPasswords": "Mots de passe faibles",
-      "with2FA": "Avec 2FA"
+      "with2FA": "Avec 2FA",
+      "noLogins": "Aucun identifiant",
+      "breachTimes": "{count} fois",
+      "breachTimesPlus": "{count}+ fois",
+      "breachTimesK": "{count}K+ fois",
+      "breachTimesM": "{count}M+ fois"
     },
     "hints": {
       "autoRefresh": "actualisation auto",
@@ -2072,6 +2083,19 @@
       "expandAll": "Tout déplier",
       "collapseAll": "Tout replier"
     },
+    "generator": {
+      "title": "Générateur de mot de passe",
+      "outputLabel": "Mot de passe généré",
+      "copyLabel": "Copier le mot de passe",
+      "regenerateLabel": "Générer un nouveau mot de passe",
+      "regenerate": "Régénérer",
+      "length": "Longueur",
+      "usePassword": "Utiliser ce mot de passe",
+      "uppercase": "A-Z (majuscules)",
+      "lowercase": "a-z (minuscules)",
+      "numbers": "0-9 (chiffres)",
+      "symbols": "!@#$ (symboles)"
+    },
     "entryInfo": {
       "lastModified": "Modifié",
       "strength": "Force",
@@ -2102,6 +2126,12 @@
       "old": "Ancien",
       "new": "Nouveau",
       "has2FA": "2FA"
+    },
+    "expiry": {
+      "expired": "Expiré depuis {days} jour(s)",
+      "expiresToday": "Expire aujourd'hui",
+      "expiresIn": "Expire dans {days} jour(s)",
+      "expiresOn": "Expire le {date}"
     },
     "welcome": {
       "createFirst": "Créer ma première entrée",

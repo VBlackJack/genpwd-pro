@@ -150,6 +150,9 @@ export function showPasswordPrompt(options = {}) {
     const modal = document.createElement('div');
     modal.id = modalId;
     modal.className = 'vault-modal-overlay active';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'password-prompt-modal-title');
 
     const title = t('vault.windowsHello.verificationRequired');
     const closeLabel = t('vault.common.close');
@@ -160,7 +163,7 @@ export function showPasswordPrompt(options = {}) {
     modal.innerHTML = `
       <div class="vault-modal vault-modal-sm">
         <div class="vault-modal-header">
-          <h3>${title}</h3>
+          <h3 id="password-prompt-modal-title">${title}</h3>
           <button type="button" class="vault-modal-close" data-close aria-label="${closeLabel}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>

@@ -3,7 +3,7 @@
  * File attachment rendering and utilities
  */
 
-import { escapeHtml } from '../utils/formatter.js';
+import { escapeHtml, formatFileSize } from '../utils/formatter.js';
 
 /**
  * Get file icon based on MIME type
@@ -16,19 +16,6 @@ export function getFileIcon(mimeType) {
   if (mimeType.includes('pdf')) return '📄';
   if (mimeType.includes('text')) return '📝';
   return '📎';
-}
-
-/**
- * Format file size for display
- * @param {number} bytes - File size in bytes
- * @returns {string} Formatted size string
- */
-export function formatFileSize(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 /**

@@ -311,3 +311,79 @@ export function showConfirm(message, options = {}) {
     });
   });
 }
+
+/**
+ * Promise-based prompt dialog (accessible replacement for prompt())
+ * @param {string} message - Prompt message
+ * @param {Object} [options] - Optional configuration
+ * @param {string} [options.title] - Dialog title
+ * @param {string} [options.defaultValue] - Default input value
+ * @param {string} [options.placeholder] - Input placeholder
+ * @param {string} [options.confirmLabel] - Confirm button label
+ * @param {string} [options.cancelLabel] - Cancel button label
+ * @returns {Promise<string|null>} Resolves with input value or null if cancelled
+ */
+export function showPrompt(message, options = {}) {
+  return new Promise((resolve) => {
+    const modalId = `prompt-dialog-${Date.now()}`;
+    const inputId = `prompt-input-${Date.now()}`;
+    const defaultValue = options.defaultValue || '';
+    const placeholder = options.placeholder || '';
+
+    const modal = createModal({
+      id: modalId,
+      title: options.title || t('vault.dialogs.promptTitle'),
+      content: `
+        <p>${escapeHtml(message)}</p>
+        <div class="form-group">
+          <input type="text" id="${inputId}" class="form-control"
+                 value="${escapeHtml(defaultValue)}"
+                 placeholder="${escapeHtml(placeholder)}"
+                 autocomplete="off">
+        </div>
+      `,
+      size: 'small',
+      actions: [
+        {
+          id: 'cancel',
+          label: options.cancelLabel || t('common.cancel'),
+          className: 'btn-secondary',
+          onClick: (e, modalEl) => {
+            closeModalInstance(modalEl, null);
+            resolve(null);
+          }
+        },
+        {
+          id: 'confirm',
+          label: options.confirmLabel || t('common.confirm'),
+          className: 'btn-primary',
+          onClick: (e, modalEl) => {
+            const input = modalEl.querySelector(`#${inputId}`);
+            const value = input?.value?.trim() || null;
+            closeModalInstance(modalEl, null);
+            resolve(value);
+          }
+        }
+      ],
+      onOpen: (modalEl) => {
+        const input = modalEl.querySelector(`#${inputId}`);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+        // Handle Enter key to submit
+        input?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const value = input.value?.trim() || null;
+            closeModalInstance(modalEl, null);
+            resolve(value);
+          }
+        });
+      },
+      onClose: () => resolve(null)
+    });
+
+    if (!modal) resolve(null);
+  });
+}

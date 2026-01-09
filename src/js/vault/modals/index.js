@@ -23,12 +23,14 @@ export {
   renderBulkTagModal
 } from './folder-tag-modals.js';
 
-// Confirm dialog
+// Confirm and prompt dialogs
 export {
   renderConfirmDialog,
   showConfirmDialog,
   showDangerConfirm,
-  showWarningConfirm
+  showWarningConfirm,
+  renderPromptDialog,
+  showPromptDialog
 } from './confirm-dialog.js';
 
 // Shortcuts modal

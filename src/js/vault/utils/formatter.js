@@ -3,7 +3,7 @@
  * Pure functions for formatting data display
  */
 
-import { t } from '../../utils/i18n.js';
+import { t, i18n } from '../../utils/i18n.js';
 
 /**
  * Escape HTML special characters to prevent XSS
@@ -20,23 +20,25 @@ export function escapeHtml(str) {
 /**
  * Format date to localized date string
  * @param {string|Date} dateStr - Date to format
- * @param {string} locale - Locale code (default: 'en-US')
+ * @param {string} locale - Locale code (uses app locale if not specified)
  * @returns {string} Formatted date
  */
-export function formatDate(dateStr, locale = 'en-US') {
+export function formatDate(dateStr, locale = null) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString(locale);
+  const effectiveLocale = locale || i18n.getLocale() || navigator.language || 'en-US';
+  return new Date(dateStr).toLocaleDateString(effectiveLocale);
 }
 
 /**
  * Format date to localized datetime string
  * @param {string|Date} dateStr - Date to format
- * @param {string} locale - Locale code (default: 'fr-FR')
+ * @param {string} locale - Locale code (uses app locale if not specified)
  * @returns {string} Formatted datetime
  */
-export function formatDateTime(dateStr, locale = 'fr-FR') {
+export function formatDateTime(dateStr, locale = null) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleString(locale);
+  const effectiveLocale = locale || i18n.getLocale() || navigator.language || 'en-US';
+  return new Date(dateStr).toLocaleString(effectiveLocale);
 }
 
 /**

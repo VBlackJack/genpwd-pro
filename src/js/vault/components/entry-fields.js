@@ -5,7 +5,7 @@
 
 import { escapeHtml } from '../utils/formatter.js';
 import { getExpiryStatus } from '../utils/password-utils.js';
-import { t } from '../../utils/i18n.js';
+import { t, i18n } from '../../utils/i18n.js';
 
 /**
  * Render password expiration field
@@ -15,9 +15,10 @@ import { t } from '../../utils/i18n.js';
 export function renderExpirationField(entry) {
   if (!entry.data?.expiresAt) return '';
 
-  const status = getExpiryStatus(entry);
+  const status = getExpiryStatus(entry, t);
   const expiresDate = new Date(entry.data.expiresAt);
-  const formattedDate = expiresDate.toLocaleDateString('en-US', {
+  const locale = i18n.getLocale() || navigator.language || 'en-US';
+  const formattedDate = expiresDate.toLocaleDateString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -54,7 +55,7 @@ export function renderExpirationField(entry) {
         <label class="vault-field-label">${t('vault.labels.passwordExpiration')}</label>
       </div>
       <div class="vault-expiry-display ${statusClass}">
-        <span class="vault-expiry-icon">${statusIcon}</span>
+        <span class="vault-expiry-icon" role="img" aria-hidden="true">${statusIcon}</span>
         <div class="vault-expiry-info">
           <span class="vault-expiry-date">${formattedDate}</span>
           <span class="vault-expiry-status">${status.label}</span>

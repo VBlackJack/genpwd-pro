@@ -12,10 +12,10 @@ import { t } from '../../utils/i18n.js';
  * Entry type definitions
  */
 export const ENTRY_TYPE_DEFS = {
-  login: { icon: '🔑', color: '#60a5fa' },
-  note: { icon: '📝', color: '#fbbf24' },
-  card: { icon: '💳', color: '#f472b6' },
-  identity: { icon: '👤', color: '#a78bfa' }
+  login: { icon: '🔑', color: 'var(--vault-type-login)' },
+  note: { icon: '📝', color: 'var(--vault-type-note)' },
+  card: { icon: '💳', color: 'var(--vault-type-card)' },
+  identity: { icon: '👤', color: 'var(--vault-type-identity)' }
 };
 
 /**
@@ -67,7 +67,7 @@ export function renderTagPicker(options = {}) {
         <label class="vault-tag-option">
           <input type="checkbox" name="entry-tags" value="${tag.id}"
                  ${selectedTagIds.includes(tag.id) ? 'checked' : ''}>
-          <span class="vault-tag-chip" style="--tag-color: ${tag.color || '#6b7280'}">
+          <span class="vault-tag-chip" style="--tag-color: ${tag.color || 'var(--vault-text-muted)'}">
             ${escapeHtml(tag.name)}
           </span>
         </label>
@@ -238,10 +238,11 @@ export function renderEditEntryContent(options = {}) {
 
   const titleField = `
     <div class="vault-form-group">
-      <label class="vault-label" for="edit-title">${t('vault.labels.title')} <span class="required">*</span></label>
+      <label class="vault-label" for="edit-title">${t('vault.labels.title')} <span class="required" aria-label="${t('vault.aria.required')}">*</span></label>
       <input type="text" class="vault-input" id="edit-title"
              value="${escapeHtml(entry.title)}"
-             required aria-required="true" aria-invalid="false">
+             required aria-required="true" aria-describedby="edit-title-message" aria-invalid="false">
+      <div class="vault-field-message" id="edit-title-message" role="alert" aria-live="polite"></div>
     </div>
   `;
 

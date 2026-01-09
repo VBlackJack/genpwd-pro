@@ -482,6 +482,7 @@
       "hideValue": "Hide value",
       "showValue": "Show value",
       "toggleVisibility": "Show/Hide",
+      "togglePasswordVisibility": "Toggle password visibility",
       "showQRCode": "Show QR Code",
       "clickToCopy": "Click to copy",
       "entryActions": "Entry actions",
@@ -544,6 +545,19 @@
       "expandAll": "Expand all",
       "collapseAll": "Collapse all"
     },
+    "generator": {
+      "title": "Password Generator",
+      "outputLabel": "Generated password",
+      "copyLabel": "Copy password",
+      "regenerateLabel": "Generate new password",
+      "regenerate": "Regenerate",
+      "length": "Length",
+      "usePassword": "Use this password",
+      "uppercase": "A-Z (uppercase)",
+      "lowercase": "a-z (lowercase)",
+      "numbers": "0-9 (digits)",
+      "symbols": "!@#$ (symbols)"
+    },
     "entryInfo": {
       "lastModified": "Modified",
       "strength": "Strength",
@@ -574,6 +588,12 @@
       "old": "Old",
       "new": "New",
       "has2FA": "2FA"
+    },
+    "expiry": {
+      "expired": "Expired {days} day(s) ago",
+      "expiresToday": "Expires today",
+      "expiresIn": "Expires in {days} day(s)",
+      "expiresOn": "Expires on {date}"
     },
     "bulk": {
       "selected": "{count} selected",
@@ -704,6 +724,8 @@
       "saveToVault": "Save to vault",
       "forgetVault": "Forget Vault",
       "deleteFolder": "Delete Folder",
+      "renameFolder": "Rename Folder",
+      "addSubfolder": "Add Subfolder",
       "delete": "Delete Entry",
       "rename": "Rename",
       "newSubfolder": "New subfolder",
@@ -929,7 +951,12 @@
       "increaseComplexity": "Increase the complexity of these passwords",
       "considerRenewing": "Consider renewing them",
       "enable2FA": "Enable two-factor authentication",
-      "scoreFair": "Fair"
+      "scoreFair": "Fair",
+      "noLogins": "No logins",
+      "breachTimes": "{count} times",
+      "breachTimesPlus": "{count}+ times",
+      "breachTimesK": "{count}K+ times",
+      "breachTimesM": "{count}M+ times"
     },
     "expiry": {
       "expired": "Expired {days} day(s) ago",
@@ -991,6 +1018,8 @@
     },
     "entryCard": {
       "pinned": "Pinned",
+      "has2FA": "Has 2FA enabled",
+      "hasAttachments": "Has attachments",
       "reusedPassword": "Reused password",
       "strengthPrefix": "Password strength",
       "strengthTitle": "Strength",
@@ -1072,6 +1101,7 @@
       "vaultApiNotAvailable": "The vault API is not available in this context.",
       "vaultRequiresElectron": "The vault requires the Electron application to work.",
       "confirmTitle": "Confirm",
+      "promptTitle": "Input required",
       "areYouSure": "Are you sure?",
       "deleteConfirm": "Delete",
       "skipTour": "Skip the tour?",

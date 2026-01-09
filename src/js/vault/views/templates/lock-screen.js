@@ -50,7 +50,7 @@ export function renderLockScreen({ t }) {
     <div class="vault-lock-screen">
       <div class="vault-lock-content">
         <div class="vault-lock-icon">
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5">
             ${ICON_LOCK}
           </svg>
         </div>
@@ -68,14 +68,14 @@ export function renderLockScreen({ t }) {
                    aria-label="${t('vault.lockScreen.masterPassword')}" aria-required="true">
             <button type="button" class="vault-input-btn" id="toggle-password"
                     title="${t('vault.lockScreen.showHide')}" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
-              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </button>
           </div>
           <button type="submit" class="vault-btn vault-btn-primary vault-btn-full" id="btn-unlock">
-            <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               ${ICON_UNLOCK}
             </svg>
             <svg class="btn-spinner" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" hidden>
@@ -95,7 +95,7 @@ export function renderLockScreen({ t }) {
             <span>${t('vault.lockScreen.or')}</span>
           </div>
           <button type="button" class="vault-btn vault-btn-hello" id="btn-hello-unlock">
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5">
               ${ICON_HELLO}
             </svg>
             <span>Windows Hello</span>
@@ -104,14 +104,14 @@ export function renderLockScreen({ t }) {
 
         <div class="vault-lock-actions">
           <button type="button" class="vault-link-btn" id="btn-create-vault">
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               ${ICON_PLUS}
             </svg>
             ${t('vault.lockScreen.newVault')}
           </button>
           <span class="vault-action-divider">|</span>
           <button type="button" class="vault-link-btn" id="btn-open-external">
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               ${ICON_FOLDER}
             </svg>
             ${t('vault.lockScreen.openFile')}
@@ -186,5 +186,5 @@ export function renderVaultListLoading() {
  * @returns {string} HTML string
  */
 export function renderVaultListError({ t }) {
-  return `<div class="vault-error">${t('vault.messages.errorLoadingVaults')}</div>`;
+  return `<div class="vault-error" role="alert">${t('vault.messages.errorLoadingVaults')}</div>`;
 }

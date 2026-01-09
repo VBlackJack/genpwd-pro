@@ -170,7 +170,7 @@ export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entr
               title="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
               aria-label="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
               aria-pressed="${isFavorite}">
-        ${isFavorite ? '★' : '☆'}
+        <span aria-hidden="true">${isFavorite ? '★' : '☆'}</span>
       </button>
       <div class="vault-entry-icon" data-type-color="${type.color}" aria-hidden="true">
         ${entry.data?.url ? renderFaviconImg(entry.data.url, mode === VIEW_MODES.COMPACT ? 18 : 24) : type.icon}
@@ -256,12 +256,12 @@ function renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metad
                 title="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
                 aria-label="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
                 aria-pressed="${isFavorite}">
-          ${isFavorite ? '★' : '☆'}
+          <span aria-hidden="true">${isFavorite ? '★' : '☆'}</span>
         </button>
       </div>
       <div class="vault-card-body">
         <div class="vault-card-title">
-          ${isPinned ? `<span class="vault-pin-badge"><span aria-hidden="true">📌</span></span>` : ''}
+          ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.entryCard.pinned')}"><span aria-hidden="true">📌</span></span>` : ''}
           ${escapeHtml(entry.title)}
         </div>
         <div class="vault-card-subtitle">${escapeHtml(subtitle)}</div>
@@ -270,8 +270,8 @@ function renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metad
       </div>
       <div class="vault-card-footer">
         <div class="vault-card-meta">
-          ${metadata.has2FA ? '<span class="vault-card-2fa" title="2FA">🔐</span>' : ''}
-          ${metadata.hasAttachments ? '<span class="vault-card-attach" title="Attachments">📎</span>' : ''}
+          ${metadata.has2FA ? `<span class="vault-card-2fa" role="img" aria-label="${t('vault.entryCard.has2FA')}" title="${t('vault.entryCard.has2FA')}">🔐</span>` : ''}
+          ${metadata.hasAttachments ? `<span class="vault-card-attach" role="img" aria-label="${t('vault.entryCard.hasAttachments')}" title="${t('vault.entryCard.hasAttachments')}">📎</span>` : ''}
         </div>
         <div class="vault-card-actions" role="group" aria-label="${t('vault.aria.quickActions')}">
           ${renderQuickActions(entry, true)}

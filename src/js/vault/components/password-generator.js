@@ -81,19 +81,19 @@ export function showPasswordGenerator(options = {}) {
     </div>
     <div class="vault-gen-preview">
       <input type="text" class="vault-gen-output" id="gen-output" readonly aria-label="${t('vault.generator.outputLabel')}">
-      <button class="vault-gen-copy" title="${t('common.copy')}" aria-label="${t('vault.generator.copyLabel')}">📋</button>
-      <button class="vault-gen-refresh" title="${t('vault.generator.regenerate')}" aria-label="${t('vault.generator.regenerateLabel')}">🔄</button>
+      <button class="vault-gen-copy" title="${t('common.copy')}" aria-label="${t('vault.generator.copyLabel')}"><span aria-hidden="true">📋</span></button>
+      <button class="vault-gen-refresh" title="${t('vault.generator.regenerate')}" aria-label="${t('vault.generator.regenerateLabel')}"><span aria-hidden="true">🔄</span></button>
     </div>
     <div class="vault-gen-options">
       <div class="vault-gen-length">
-        <label>${t('vault.generator.length')}: <span id="gen-length-value">${DEFAULT_OPTIONS.length}</span></label>
+        <label for="gen-length">${t('vault.generator.length')}: <span id="gen-length-value">${DEFAULT_OPTIONS.length}</span></label>
         <input type="range" id="gen-length" min="8" max="64" value="${DEFAULT_OPTIONS.length}">
       </div>
       <div class="vault-gen-checkboxes">
-        <label><input type="checkbox" id="gen-uppercase" checked> A-Z</label>
-        <label><input type="checkbox" id="gen-lowercase" checked> a-z</label>
-        <label><input type="checkbox" id="gen-numbers" checked> 0-9</label>
-        <label><input type="checkbox" id="gen-symbols" checked> !@#$</label>
+        <label><input type="checkbox" id="gen-uppercase" checked> ${t('vault.generator.uppercase')}</label>
+        <label><input type="checkbox" id="gen-lowercase" checked> ${t('vault.generator.lowercase')}</label>
+        <label><input type="checkbox" id="gen-numbers" checked> ${t('vault.generator.numbers')}</label>
+        <label><input type="checkbox" id="gen-symbols" checked> ${t('vault.generator.symbols')}</label>
       </div>
     </div>
     <button class="vault-btn vault-btn-primary vault-btn-sm vault-btn-full" id="gen-use">

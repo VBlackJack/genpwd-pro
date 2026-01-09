@@ -59,7 +59,7 @@ import { SyncSettingsModal } from './ui/modals/sync-settings-modal.js';
 import { AliasService } from './services/alias-service.js';
 import { AliasSettingsModal } from './ui/modals/alias-settings-modal.js';
 import { SettingsModal } from './ui/modals/settings-modal.js';
-import { showConfirm } from './ui/modal-manager.js';
+import { showConfirm, showPrompt } from './ui/modal-manager.js';
 import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
@@ -600,7 +600,7 @@ export class VaultUI {
         this.#updateHelloSection(vaults[0].id);
       }
     } catch (error) {
-      container.innerHTML = `<div class="vault-error">${t('vault.messages.errorLoadingVaults')}</div>`;
+      container.innerHTML = `<div class="vault-error" role="alert">${t('vault.messages.errorLoadingVaults')}</div>`;
     }
   }
 
@@ -1097,6 +1097,10 @@ export class VaultUI {
 
     this.#container.innerHTML = `
       <div class="vault-app" role="application" aria-label="${t('vault.aria.passwordManager')}">
+        <!-- Skip to main content link for accessibility -->
+        <a href="#vault-main-content" class="vault-skip-link">${t('common.skipToMain')}</a>
+        <!-- Screen reader status announcements -->
+        <div id="vault-status-announcer" class="vault-visually-hidden" aria-live="polite" aria-atomic="true"></div>
         <!-- Sidebar -->
         <aside class="vault-sidebar" role="navigation" aria-label="${t('vault.aria.vaultNavigation')}">
           <!-- Sidebar Collapse Toggle -->
@@ -1313,7 +1317,7 @@ export class VaultUI {
         </aside>
 
         <!-- Entry List -->
-        <main class="vault-list-panel" role="main">
+        <main class="vault-list-panel" id="vault-main-content" role="main" tabindex="-1">
           <div class="vault-list-header">
             <div class="vault-list-header-top">
               ${this.#renderBreadcrumb()}
@@ -1616,7 +1620,10 @@ export class VaultUI {
     const folder = this.#folders.find(f => f.id === folderId);
     if (!folder) return;
 
-    const newName = prompt(t('vault.dialogs.newFolderName'), folder.name);
+    const newName = await showPrompt(t('vault.dialogs.newFolderName'), {
+      title: t('vault.actions.renameFolder'),
+      defaultValue: folder.name
+    });
     if (newName && newName.trim() && newName !== folder.name) {
       try {
         await window.vault.folders.update(folderId, { name: newName.trim() });
@@ -1633,7 +1640,9 @@ export class VaultUI {
    * Show modal to add a subfolder
    */
   async #showAddSubfolderModal(parentId) {
-    const name = prompt(t('vault.dialogs.newSubfolderName'));
+    const name = await showPrompt(t('vault.dialogs.newSubfolderName'), {
+      title: t('vault.actions.addSubfolder')
+    });
     if (name && name.trim()) {
       try {
         await window.vault.folders.add(name.trim(), parentId);
@@ -1922,8 +1931,8 @@ export class VaultUI {
       if (result.warnings.length > 0 || result.errors.length > 0) {
         importWarnings.hidden = false;
         importWarnings.innerHTML = `
-          ${result.errors.map(e => `<div class="vault-import-error">❌ ${escapeHtml(e)}</div>`).join('')}
-          ${result.warnings.map(w => `<div class="vault-import-warning">⚠️ ${escapeHtml(w)}</div>`).join('')}
+          ${result.errors.map(e => `<div class="vault-import-error" role="alert">❌ ${escapeHtml(e)}</div>`).join('')}
+          ${result.warnings.map(w => `<div class="vault-import-warning" role="alert">⚠️ ${escapeHtml(w)}</div>`).join('')}
         `;
       }
 
@@ -1931,7 +1940,7 @@ export class VaultUI {
       confirmBtn.disabled = result.entries.length === 0;
 
     } catch (error) {
-      importSummary.innerHTML = `<div class="vault-import-error">❌ ${t('vault.common.error')}: ${escapeHtml(error.message)}</div>`;
+      importSummary.innerHTML = `<div class="vault-import-error" role="alert">❌ ${t('vault.common.error')}: ${escapeHtml(error.message)}</div>`;
       confirmBtn.disabled = true;
     }
   }

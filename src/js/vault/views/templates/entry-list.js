@@ -184,7 +184,7 @@ export function renderEntryRow(entry, options = {}) {
               title="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
               aria-label="${isFavorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}"
               aria-pressed="${isFavorite}">
-        ${isFavorite ? '★' : '☆'}
+        <span aria-hidden="true">${isFavorite ? '★' : '☆'}</span>
       </button>
       <div class="vault-entry-icon" data-type-color="${type.color}" aria-hidden="true">
         ${entry.data?.url ? renderFaviconImg(entry.data.url, 20) : type.icon}

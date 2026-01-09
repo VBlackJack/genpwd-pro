@@ -185,7 +185,7 @@ export class SaveToVaultModal {
                 minlength="1"
                 maxlength="100"
               >
-              <span class="field-error" id="save-vault-title-error" hidden>${t('vault.messages.titleRequired')}</span>
+              <span class="field-error" id="save-vault-title-error" role="alert" hidden>${t('vault.messages.titleRequired')}</span>
             </div>
 
             <!-- Username -->

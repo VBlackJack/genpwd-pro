@@ -5,7 +5,7 @@
 
 import { escapeHtml } from '../utils/formatter.js';
 import { renderPasswordStrength } from '../utils/password-display.js';
-import { t } from '../../utils/i18n.js';
+import { t, i18n } from '../../utils/i18n.js';
 
 /**
  * Render a single field in the detail view
@@ -178,7 +178,8 @@ function renderCustomField(field, fieldKindLabels) {
   } else if (isDate && field.value) {
     try {
       const date = new Date(field.value);
-      displayValue = date.toLocaleDateString('en-US');
+      const locale = i18n.getLocale() || navigator.language || 'en-US';
+      displayValue = date.toLocaleDateString(locale);
     } catch {
       displayValue = escapeHtml(field.value);
     }
@@ -190,7 +191,7 @@ function renderCustomField(field, fieldKindLabels) {
     <div class="vault-field vault-custom-field-display" data-field-id="${escapeHtml(field.id || '')}" data-masked="${isMasked}">
       <div class="vault-field-label-row">
         <label class="vault-field-label">${escapeHtml(field.label)}</label>
-        ${field.isSecured ? '<span class="vault-field-badge secure">🔒 Secured</span>' : ''}
+        ${field.isSecured ? `<span class="vault-field-badge secure">🔒 ${t('vault.fieldKinds.secured')}</span>` : ''}
         <span class="vault-field-kind-badge">${fieldKindLabels[field.kind] || field.kind}</span>
       </div>
       <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(field.value || '')}">
