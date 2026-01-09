@@ -81,3 +81,19 @@ export {
   MAX_ATTACHMENT_SIZE,
   isValidAttachmentSize
 } from './attachments-handler.js';
+
+// View mode switcher
+export {
+  VIEW_MODES,
+  GROUP_BY_OPTIONS,
+  initViewMode,
+  getViewMode,
+  getGroupBy,
+  setViewMode,
+  setGroupBy,
+  onViewModeChange,
+  renderViewModeSwitcher,
+  renderGroupByDropdown,
+  renderViewToolbar,
+  initViewModeSwitcherEvents
+} from './view-mode-switcher.js';

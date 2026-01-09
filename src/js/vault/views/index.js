@@ -15,7 +15,8 @@ export {
   filterByAuditIds,
   sortEntries,
   applyFilters,
-  getExpiryStatus
+  getExpiryStatus,
+  getEntryCounts
 } from './search-filter.js';
 
 // Icons

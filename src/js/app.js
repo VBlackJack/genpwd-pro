@@ -62,7 +62,7 @@ class GenPwdApp {
 
       // 0. Initialize theme system (first for UI)
       initThemeSystem();
-      initThemeToggle();
+      // Note: initThemeToggle moved after i18n for proper translations
       safeLog('Theme system initialized');
 
       // 1. Initialize error monitoring
@@ -94,6 +94,10 @@ class GenPwdApp {
       } catch (i18nError) {
         safeLog(`i18n not available: ${i18nError.message} - continuing without i18n`);
       }
+
+      // 1.4 Initialize theme toggle (after i18n for proper translations)
+      initThemeToggle();
+      safeLog('Theme toggle initialized');
 
       // 2. Environment validation
       if (!this.validateEnvironment()) {

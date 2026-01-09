@@ -1364,13 +1364,13 @@
       "vaultNamePlaceholder": "Mon Coffre"
     },
     "defaults": {
-      "category": "__TRANSLATE__ Category",
-      "entryTitle": "__TRANSLATE__ GenPwd Entry",
-      "folder": "__TRANSLATE__ Folder",
-      "myVault": "__TRANSLATE__ My Vault",
-      "tag": "__TRANSLATE__ Tag",
-      "totpIssuer": "__TRANSLATE__ GenPwd",
-      "vault": "__TRANSLATE__ Vault"
+      "category": "Catégorie",
+      "entryTitle": "Entrée GenPwd",
+      "folder": "Dossier",
+      "myVault": "Mon Coffre",
+      "tag": "Étiquette",
+      "totpIssuer": "GenPwd",
+      "vault": "Coffre"
     },
     "detail": {
       "created": "CRÉÉ",
@@ -1984,6 +1984,7 @@
       "noTags": "Aucun tag",
       "notes": "Notes",
       "passwordHealth": "Santé des mots de passe",
+      "presets": "Préréglages",
       "recent": "Récents",
       "switchVault": "Changer de coffre",
       "tags": "TAGS"
@@ -2054,10 +2055,53 @@
       "tooWeak": "Mot de passe trop faible"
     },
     "view": {
-      "comfortable": "__TRANSLATE__ Comfortable view",
-      "compact": "__TRANSLATE__ Compact view",
-      "compactWidget": "__TRANSLATE__ Compact mode (floating widget)",
-      "exitCompact": "__TRANSLATE__ Exit compact mode"
+      "comfortable": "Vue confortable",
+      "compact": "Vue compacte",
+      "compactWidget": "Mode compact (widget flottant)",
+      "exitCompact": "Quitter le mode compact",
+      "grid": "Vue grille",
+      "viewMode": "Mode d'affichage",
+      "sortBy": "Trier par",
+      "groupBy": "Grouper par",
+      "groupByNone": "Pas de groupement",
+      "groupByType": "Par type",
+      "groupByFolder": "Par dossier",
+      "groupByStrength": "Par force",
+      "showDetails": "Afficher les détails",
+      "hideDetails": "Masquer les détails",
+      "expandAll": "Tout déplier",
+      "collapseAll": "Tout replier"
+    },
+    "entryInfo": {
+      "lastModified": "Modifié",
+      "strength": "Force",
+      "expiresIn": "Expire dans",
+      "expired": "Expiré",
+      "neverExpires": "N'expire jamais",
+      "has2FA": "2FA activé",
+      "no2FA": "Sans 2FA",
+      "attachmentsCount": "{count} pièce(s) jointe(s)",
+      "customFieldsCount": "{count} champ(s) perso.",
+      "passwordHistory": "Historique disponible",
+      "securityScore": "Score de sécurité",
+      "daysOld": "{count}j",
+      "weeksOld": "{count}sem",
+      "monthsOld": "{count}m",
+      "yearsOld": "{count}a"
+    },
+    "badges": {
+      "favorite": "Favori",
+      "pinned": "Épinglé",
+      "weak": "Faible",
+      "medium": "Moyen",
+      "strong": "Fort",
+      "expired": "Expiré",
+      "expiring": "Bientôt",
+      "reused": "Réutilisé",
+      "compromised": "Compromis",
+      "old": "Ancien",
+      "new": "Nouveau",
+      "has2FA": "2FA"
     },
     "welcome": {
       "createFirst": "Créer ma première entrée",

@@ -120,7 +120,8 @@ const getCategories = () => [
   { id: 'login', icon: '🔑', label: t('vault.sidebar.logins') },
   { id: 'note', icon: '📝', label: t('vault.sidebar.notes') },
   { id: 'card', icon: '💳', label: t('vault.sidebar.cards') },
-  { id: 'identity', icon: '👤', label: t('vault.sidebar.identities') }
+  { id: 'identity', icon: '👤', label: t('vault.sidebar.identities') },
+  { id: 'preset', icon: '⚙️', label: t('vault.sidebar.presets'), separator: true }
 ];
 
 // Sort options - function to get translated labels
@@ -1183,39 +1184,13 @@ export class VaultUI {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </button>
-            <button class="vault-icon-btn vault-theme-toggle" id="theme-toggle" data-tooltip="${t('vault.tooltips.switchTheme')}" data-tooltip-pos="bottom" aria-label="${t('vault.aria.toggleTheme')}" aria-pressed="${this.#theme === 'light'}">
-              <svg class="theme-icon-dark" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-              </svg>
-              <svg class="theme-icon-light" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-            </button>
+            <!-- Windows Hello button (shown only when available) -->
             <button class="vault-icon-btn vault-hello-settings" id="hello-settings" data-tooltip="${t('vault.windowsHello.title')}" data-tooltip-pos="bottom" aria-label="${t('vault.windowsHello.configure')}" hidden>
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
                 <circle cx="8.5" cy="10" r="1.5"/>
                 <circle cx="15.5" cy="10" r="1.5"/>
                 <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
-              </svg>
-            </button>
-            </button>
-            <button class="vault-icon-btn" id="btn-cloud-sync" data-tooltip="${t('vault.sync.cloudSync')}" data-tooltip-pos="bottom" aria-label="${t('vault.sync.configure')}">
-              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
-              </svg>
-            </button>
-            <button class="vault-icon-btn" id="btn-duress-setup" data-tooltip="${t('vault.settings.duressMode')}" data-tooltip-pos="bottom" aria-label="${t('vault.settings.configureDuress')}">
-              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
             </button>
           </div>
@@ -1276,6 +1251,7 @@ export class VaultUI {
             <div class="vault-nav-section">
               <div class="vault-nav-title">${t('vault.aria.categories')}</div>
               ${getCategories().map(cat => `
+                ${cat.separator ? '<div class="vault-nav-separator"></div>' : ''}
                 <button class="vault-nav-item ${this.#selectedCategory === cat.id ? 'active' : ''}"
                         data-category="${cat.id}"
                         aria-current="${this.#selectedCategory === cat.id ? 'true' : 'false'}">
@@ -1483,7 +1459,7 @@ export class VaultUI {
         <!-- Detail Panel -->
         <aside class="vault-detail-panel ${this.#selectedEntry ? '' : 'empty'}" id="detail-panel"
                role="complementary" aria-label="${t('vault.aria.entryDetails')}">
-          ${this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection()}
+          ${this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection({ t })}
         </aside>
       </div>
       ${renderAddEntryModal({ entryTypes: ENTRY_TYPES, folders: this.#folders, tags: this.#tags, templateGridHtml: renderTemplateGrid(), t })}
@@ -3873,7 +3849,7 @@ export class VaultUI {
     if (!panel) return;
 
     panel.classList.toggle('empty', !this.#selectedEntry);
-    panel.innerHTML = this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection();
+    panel.innerHTML = this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection({ t });
     this.#attachDetailPanelEvents();
 
     // Update breach indicator asynchronously
@@ -3918,6 +3894,8 @@ export class VaultUI {
       btn.addEventListener('click', () => {
         const field = btn.closest('.vault-field');
         const textEl = field?.querySelector('.vault-field-text');
+        const revealedEl = field?.querySelector('.vault-field-revealed');
+        const contentEl = field?.querySelector('.vault-password-card-content, .vault-reveal-on-hover');
         if (!textEl) return;
 
         const isMasked = textEl.classList.contains('masked');
@@ -3926,6 +3904,7 @@ export class VaultUI {
         if (isMasked) {
           textEl.textContent = realValue;
           textEl.classList.remove('masked');
+          contentEl?.classList.add('permanently-revealed');
           btn.querySelector('.icon-show').hidden = true;
           btn.querySelector('.icon-hide').hidden = false;
           btn.setAttribute('aria-pressed', 'true');
@@ -3933,6 +3912,7 @@ export class VaultUI {
         } else {
           textEl.textContent = '•'.repeat(Math.min(realValue.length, 24));
           textEl.classList.add('masked');
+          contentEl?.classList.remove('permanently-revealed');
           btn.querySelector('.icon-show').hidden = false;
           btn.querySelector('.icon-hide').hidden = true;
           btn.setAttribute('aria-pressed', 'false');
@@ -5661,10 +5641,13 @@ export class VaultUI {
   }
 
   #getCategoryCount(categoryId) {
-    if (categoryId === 'all') return this.#entries.length;
-    if (categoryId === 'favorites') return this.#entries.filter(e => e.favorite).length;
-    if (categoryId === 'recent') return Math.min(10, this.#entries.length);
-    return this.#entries.filter(e => e.type === categoryId).length;
+    // Presets are shown separately, exclude from main counts
+    const nonPresets = this.#entries.filter(e => e.type !== 'preset');
+    if (categoryId === 'preset') return this.#entries.filter(e => e.type === 'preset').length;
+    if (categoryId === 'all') return nonPresets.length;
+    if (categoryId === 'favorites') return nonPresets.filter(e => e.favorite).length;
+    if (categoryId === 'recent') return Math.min(10, nonPresets.length);
+    return nonPresets.filter(e => e.type === categoryId).length;
   }
 
   // Password generator moved to ./vault/components/password-generator.js

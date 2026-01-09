@@ -1,0 +1,532 @@
+/*
+ * Copyright 2025 Julien Bombled
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* ============================================
+   Entry List View Modes
+   ============================================ */
+
+/* View Mode Switcher */
+.vault-view-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-3);
+  padding: var(--vault-space-2) var(--vault-space-3);
+  border-bottom: 1px solid var(--vault-border);
+}
+
+.vault-view-switcher {
+  display: flex;
+  align-items: center;
+  background: var(--vault-surface);
+  border-radius: var(--vault-radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.vault-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--vault-text-muted);
+  border-radius: calc(var(--vault-radius-sm) - 2px);
+  cursor: pointer;
+  transition: all var(--vault-transition);
+}
+
+.vault-view-btn:hover {
+  background: var(--vault-surface-hover);
+  color: var(--vault-text);
+}
+
+.vault-view-btn.active {
+  background: var(--vault-primary);
+  color: white;
+}
+
+/* Group By Dropdown */
+.vault-group-by {
+  margin-left: auto;
+}
+
+.vault-group-select {
+  padding: var(--vault-space-1) var(--vault-space-2);
+  background: var(--vault-surface);
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-sm);
+  color: var(--vault-text);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.vault-group-select:hover {
+  border-color: var(--vault-border-light);
+}
+
+/* ============================================
+   Entry Row Base Styles
+   ============================================ */
+
+.vault-entry-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-2);
+  padding: var(--vault-space-2) var(--vault-space-3);
+  border-bottom: 1px solid var(--vault-border);
+  cursor: pointer;
+  transition: background var(--vault-transition);
+}
+
+.vault-entry-row:hover {
+  background: var(--vault-surface-hover);
+}
+
+.vault-entry-row.selected {
+  background: rgba(var(--accent-primary-rgb, 99, 102, 241), 0.15);
+}
+
+.vault-entry-row.pinned {
+  background: rgba(var(--accent-yellow-rgb, 234, 179, 8), 0.05);
+  border-left: 3px solid var(--vault-warning);
+}
+
+.vault-entry-row.is-favorite .vault-fav-toggle {
+  color: var(--vault-warning);
+}
+
+/* ============================================
+   View Mode: Compact
+   ============================================ */
+
+.vault-entry-list.view-compact .vault-entry-row,
+.vault-entry-row.vault-entry-compact {
+  padding: var(--vault-space-1) var(--vault-space-3);
+  gap: var(--vault-space-2);
+}
+
+.vault-entry-compact .vault-entry-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+
+.vault-entry-compact .vault-entry-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vault-entry-compact .vault-entry-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-2);
+}
+
+.vault-entry-compact .vault-entry-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-entry-compact .vault-entry-subtitle {
+  font-size: 0.75rem;
+  color: var(--vault-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-entry-compact .vault-entry-badges,
+.vault-entry-compact .vault-entry-meta,
+.vault-entry-compact .vault-tags-row {
+  display: none;
+}
+
+/* Compact Indicators (dots) */
+.vault-compact-indicators {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.vault-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vault-text-muted);
+}
+
+.vault-indicator-dot.success {
+  background: var(--vault-success);
+}
+
+.vault-indicator-dot.warning {
+  background: var(--vault-warning);
+}
+
+.vault-indicator-dot.danger {
+  background: var(--vault-danger);
+}
+
+/* ============================================
+   View Mode: Comfortable (Default)
+   ============================================ */
+
+.vault-entry-list.view-comfortable .vault-entry-row,
+.vault-entry-row.vault-entry-comfortable {
+  padding: var(--vault-space-3);
+  gap: var(--vault-space-3);
+  flex-wrap: wrap;
+}
+
+.vault-entry-comfortable .vault-entry-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  border-radius: var(--vault-radius-sm);
+  background: var(--vault-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-entry-comfortable .vault-entry-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vault-space-1);
+}
+
+.vault-entry-comfortable .vault-entry-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-2);
+}
+
+.vault-entry-comfortable .vault-entry-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vault-text);
+}
+
+.vault-entry-comfortable .vault-entry-subtitle {
+  font-size: 0.8125rem;
+  color: var(--vault-text-muted);
+}
+
+/* Badges */
+.vault-entry-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vault-space-1);
+  margin-top: var(--vault-space-1);
+}
+
+.vault-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  background: var(--vault-surface);
+  color: var(--vault-text-muted);
+}
+
+.vault-badge-2fa {
+  background: rgba(var(--accent-green-rgb, 16, 185, 129), 0.15);
+  color: var(--vault-success);
+}
+
+.vault-badge-strength {
+  background: var(--vault-surface);
+}
+
+.vault-badge-weak {
+  background: rgba(var(--accent-red-rgb, 239, 68, 68), 0.15);
+  color: var(--vault-danger);
+}
+
+.vault-badge-medium {
+  background: rgba(var(--accent-yellow-rgb, 234, 179, 8), 0.15);
+  color: var(--vault-warning);
+}
+
+.vault-badge-strong {
+  background: rgba(var(--accent-green-rgb, 16, 185, 129), 0.15);
+  color: var(--vault-success);
+}
+
+.vault-badge-danger {
+  background: rgba(var(--accent-red-rgb, 239, 68, 68), 0.15);
+  color: var(--vault-danger);
+}
+
+.vault-badge-warning {
+  background: rgba(var(--accent-yellow-rgb, 234, 179, 8), 0.15);
+  color: var(--vault-warning);
+}
+
+/* Meta info line */
+.vault-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-2);
+  font-size: 0.75rem;
+  color: var(--vault-text-dim);
+  margin-top: var(--vault-space-1);
+}
+
+.vault-entry-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vault-meta-sep {
+  color: var(--vault-border-light);
+}
+
+/* ============================================
+   View Mode: Grid
+   ============================================ */
+
+.vault-entry-list.view-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--vault-space-3);
+  padding: var(--vault-space-3);
+}
+
+.vault-entry-list.view-grid .vault-entry-row,
+.vault-entry-row.vault-entry-grid {
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-md);
+  background: var(--vault-surface);
+  overflow: hidden;
+  transition: transform var(--vault-transition), box-shadow var(--vault-transition);
+}
+
+.vault-entry-list.view-grid .vault-entry-row:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--vault-shadow-lg);
+}
+
+/* Grid Card Header */
+.vault-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--vault-space-3);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--vault-border);
+}
+
+.vault-card-icon {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  border-radius: var(--vault-radius-sm);
+  background: var(--vault-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-card-icon img {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+/* Grid Card Body */
+.vault-card-body {
+  padding: var(--vault-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--vault-space-2);
+}
+
+.vault-card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vault-text);
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-1);
+}
+
+.vault-card-subtitle {
+  font-size: 0.8125rem;
+  color: var(--vault-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Grid Card Footer */
+.vault-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--vault-space-2) var(--vault-space-3);
+  border-top: 1px solid var(--vault-border);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.vault-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-2);
+  font-size: 0.75rem;
+  color: var(--vault-text-dim);
+}
+
+.vault-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-1);
+}
+
+.vault-card-actions .vault-quick-btn {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+}
+
+/* ============================================
+   Strength Indicators
+   ============================================ */
+
+.vault-strength-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vault-strength-dot.weak {
+  background: var(--vault-danger);
+}
+
+.vault-strength-dot.medium {
+  background: var(--vault-warning);
+}
+
+.vault-strength-dot.strong {
+  background: var(--vault-success);
+}
+
+/* Entry type color indicator */
+.vault-entry-icon[data-type-color] {
+  position: relative;
+}
+
+.vault-entry-icon[data-type-color]::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: attr(data-type-color);
+}
+
+/* ============================================
+   Quick Actions
+   ============================================ */
+
+.vault-entry-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--vault-space-1);
+  opacity: 0;
+  transition: opacity var(--vault-transition);
+}
+
+.vault-entry-row:hover .vault-entry-actions {
+  opacity: 1;
+}
+
+.vault-quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--vault-text-muted);
+  border-radius: var(--vault-radius-sm);
+  cursor: pointer;
+  transition: all var(--vault-transition);
+}
+
+.vault-quick-btn:hover {
+  background: var(--vault-surface-hover);
+  color: var(--vault-primary);
+}
+
+.vault-quick-btn.copy-pass:hover {
+  color: var(--vault-success);
+}
+
+.vault-quick-btn.copy-2fa:hover {
+  color: var(--vault-warning);
+}
+
+/* ============================================
+   Pin Badge
+   ============================================ */
+
+.vault-pin-badge {
+  display: inline-flex;
+  font-size: 0.75em;
+  margin-right: 4px;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  .vault-entry-list.view-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .vault-view-toolbar {
+    flex-wrap: wrap;
+  }
+}

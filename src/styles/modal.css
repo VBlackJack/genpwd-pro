@@ -573,10 +573,10 @@ h2.modal-title {
    ============================================================================ */
 
 .pwd {
-  /* Flexbox: row layout with multi-line password support */
+  /* Flexbox: row layout with centered alignment */
   display: flex !important;
   flex-direction: row !important;
-  align-items: flex-start !important; /* Align to top for multi-line passwords */
+  align-items: center !important; /* Center password text with action buttons */
   justify-content: space-between !important;
   gap: 12px;
   flex-wrap: nowrap;

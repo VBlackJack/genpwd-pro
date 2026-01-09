@@ -53,12 +53,15 @@ export function maskHistoryPassword(password) {
 
 /**
  * Get relative time string (e.g., "5 min ago", "2d ago")
- * @param {Date} date - Date to compare
+ * @param {Date|string} date - Date to compare
  * @returns {string} Relative time string
  */
 export function getRelativeTime(date) {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return '';
+
   const now = new Date();
-  const diff = now - date;
+  const diff = now - dateObj;
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
@@ -69,6 +72,15 @@ export function getRelativeTime(date) {
   if (days < 7) return t('vault.relativeTime.daysAgo', { count: days });
   if (days < 30) return t('vault.relativeTime.weeksAgo', { count: Math.floor(days / 7) });
   return t('vault.relativeTime.monthsAgo', { count: Math.floor(days / 30) });
+}
+
+/**
+ * Alias for getRelativeTime for consistent naming
+ * @param {Date|string} date - Date to format
+ * @returns {string} Relative time string
+ */
+export function formatRelativeTime(date) {
+  return getRelativeTime(date);
 }
 
 /**

@@ -19,3 +19,11 @@
 /* ==================== LEGACY (full original file) ==================== */
 /* This contains all styles - uncomment modules above and remove from _legacy.css to migrate */
 @import '_legacy.css';
+
+/* ==================== LAYOUT ==================== */
+@import 'layout/_sidebar.css';
+
+/* ==================== NEW COMPONENTS ==================== */
+/* View modes and enhanced entry styling */
+@import 'components/_entries.css';
+@import 'components/_detail-panel.css';

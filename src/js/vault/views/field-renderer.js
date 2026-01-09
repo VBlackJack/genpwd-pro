@@ -21,17 +21,19 @@ import { t } from '../../utils/i18n.js';
 export function renderField({ label, value, key = '', masked = false, copyable = false, isUrl = false }) {
   if (!value) return '';
 
+  // Use special password card for password fields
+  if (key === 'password') {
+    return renderPasswordCard({ label, value });
+  }
+
   // Dynamic masking based on actual value length
   const maskedValue = masked ? '•'.repeat(Math.min(value.length, 24)) : escapeHtml(value);
-  const strengthHtml = key === 'password' ? renderPasswordStrength(value) : '';
-  const breachHtml = key === 'password' ? '<div class="vault-breach-indicator" id="password-breach-indicator"></div>' : '';
 
   return `
     <div class="vault-field" data-key="${key}" data-masked="${masked}">
       <div class="vault-field-label-row">
         <label class="vault-field-label">${label}</label>
         ${masked ? `<span class="vault-field-hint">${t('vault.detail.hoverToReveal')}</span>` : ''}
-        ${breachHtml}
       </div>
       <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(value)}">
         <span class="vault-field-text ${masked ? 'masked' : ''}" data-value="${escapeHtml(value)}">
@@ -41,6 +43,38 @@ export function renderField({ label, value, key = '', masked = false, copyable =
         <div class="vault-field-actions">
           ${masked ? renderVisibilityToggle() : ''}
           ${copyable ? renderCopyButton(value, label) : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render password field as a styled card (like generator)
+ * @param {Object} options - Options
+ * @param {string} options.label - Field label
+ * @param {string} options.value - Password value
+ * @returns {string} HTML string
+ */
+function renderPasswordCard({ label, value }) {
+  const maskedValue = '•'.repeat(Math.min(value.length, 24));
+  const strengthHtml = renderPasswordStrength(value, t);
+
+  return `
+    <div class="vault-field vault-password-card" data-key="password" data-masked="true">
+      <div class="vault-field-label-row">
+        <label class="vault-field-label">${label}</label>
+        <span class="vault-field-hint">${t('vault.detail.hoverToReveal')}</span>
+        <div class="vault-breach-indicator" id="password-breach-indicator"></div>
+      </div>
+      <div class="vault-password-card-body">
+        <div class="vault-password-card-content vault-reveal-on-hover" data-real-value="${escapeHtml(value)}">
+          <span class="vault-field-text masked" data-value="${escapeHtml(value)}">${maskedValue}</span>
+          <span class="vault-field-revealed">${escapeHtml(value)}</span>
+        </div>
+        <div class="vault-password-card-actions">
+          ${renderVisibilityToggle()}
+          ${renderCopyButton(value, label)}
         </div>
       </div>
       ${strengthHtml}

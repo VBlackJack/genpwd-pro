@@ -107,23 +107,53 @@ export function filterByAge(entries, ageFilter) {
 /**
  * Filter entries by category
  * @param {Array} entries - Entries to filter
- * @param {string} category - Category (all, favorites, recent, login, note, card, identity)
+ * @param {string} category - Category (all, favorites, recent, login, note, card, identity, preset)
+ * @param {boolean} [includePresets=false] - Whether to include presets in non-preset categories
  * @returns {Array} Filtered entries
  */
-export function filterByCategory(entries, category) {
-  if (!category || category === 'all') return entries;
+export function filterByCategory(entries, category, includePresets = false) {
+  // For preset category, only show presets
+  if (category === 'preset') {
+    return entries.filter(e => e.type === 'preset');
+  }
+
+  // Filter out presets for all other categories unless explicitly included
+  const filteredEntries = includePresets ? entries : entries.filter(e => e.type !== 'preset');
+
+  if (!category || category === 'all') return filteredEntries;
 
   if (category === 'favorites') {
-    return entries.filter(e => e.favorite);
+    return filteredEntries.filter(e => e.favorite);
   }
 
   if (category === 'recent') {
-    return [...entries]
+    return [...filteredEntries]
       .sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt))
       .slice(0, 10);
   }
 
-  return entries.filter(e => e.type === category);
+  return filteredEntries.filter(e => e.type === category);
+}
+
+/**
+ * Get entry counts by category (excluding presets from main counts)
+ * @param {Array} entries - All entries
+ * @returns {Object} Counts by category
+ */
+export function getEntryCounts(entries) {
+  const nonPresetEntries = entries.filter(e => e.type !== 'preset');
+  const presetEntries = entries.filter(e => e.type === 'preset');
+
+  return {
+    all: nonPresetEntries.length,
+    favorites: nonPresetEntries.filter(e => e.favorite).length,
+    recent: Math.min(nonPresetEntries.length, 10),
+    login: nonPresetEntries.filter(e => e.type === 'login').length,
+    note: nonPresetEntries.filter(e => e.type === 'note').length,
+    card: nonPresetEntries.filter(e => e.type === 'card').length,
+    identity: nonPresetEntries.filter(e => e.type === 'identity').length,
+    preset: presetEntries.length
+  };
 }
 
 /**

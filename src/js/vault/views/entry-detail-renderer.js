@@ -1,10 +1,9 @@
 /**
  * @fileoverview Entry Detail Panel Renderer
- * Pure rendering functions for the entry detail view
+ * Pure rendering functions for the entry detail view with enhanced organization
  */
 
-import { escapeHtml } from '../utils/formatter.js';
-import { formatDateTime } from '../utils/formatter.js';
+import { escapeHtml, formatDateTime, formatRelativeTime } from '../utils/formatter.js';
 import { renderFaviconImg } from '../utils/favicon-manager.js';
 import { parseMarkdown, renderNotesFieldHTML } from '../utils/markdown-parser.js';
 import { renderPasswordHistory, renderPasswordAge } from '../utils/password-display.js';
@@ -12,6 +11,7 @@ import { renderField, renderCustomFieldsDisplay } from './field-renderer.js';
 import { renderTagsInDetail } from '../components/tags-display.js';
 import { renderExpirationField, renderTOTPField } from '../components/entry-fields.js';
 import { getEntryTypes, ENTRY_TYPES } from '../../config/entry-types.js';
+import { getPasswordStrength, isPasswordDuplicated, getExpiryStatus } from '../utils/password-utils.js';
 import { t } from '../../utils/i18n.js';
 
 /**
@@ -152,7 +152,7 @@ export function renderEntryFields(entry) {
       return `
         ${renderField({ label: t('vault.labels.username'), value: entry.data?.username, key: 'username', copyable: true })}
         ${renderField({ label: t('vault.labels.password'), value: entry.data?.password, key: 'password', masked: true, copyable: true })}
-        ${renderPasswordHistory(entry)}
+        ${renderPasswordHistory(entry, t)}
         ${entry.data?.totp ? renderTOTPField(entry) : ''}
         ${renderField({ label: t('vault.labels.url'), value: entry.data?.url, key: 'url', copyable: true, isUrl: true })}
         ${renderExpirationField(entry)}
@@ -179,26 +179,144 @@ export function renderEntryFields(entry) {
 }
 
 /**
+ * Render security summary for login entries
+ * @param {Object} entry - The entry object
+ * @param {Array} entries - All entries for duplicate checking
+ * @returns {string} HTML string
+ */
+function renderSecuritySummary(entry, entries = []) {
+  if (entry.type !== 'login' || !entry.data?.password) return '';
+
+  const strength = getPasswordStrength(entry.data.password);
+  const isDuplicate = isPasswordDuplicated(entry.data.password, entry.id, entries);
+  const expiryStatus = getExpiryStatus(entry);
+  const has2FA = Boolean(entry.data?.totp);
+
+  const strengthLabels = {
+    weak: { label: t('vault.badges.weak'), class: 'danger' },
+    medium: { label: t('vault.badges.medium'), class: 'warning' },
+    strong: { label: t('vault.badges.strong'), class: 'success' }
+  };
+
+  const strengthInfo = strengthLabels[strength] || strengthLabels.medium;
+
+  return `
+    <div class="vault-detail-section vault-security-summary">
+      <div class="vault-section-header">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>${t('vault.entryInfo.securityScore')}</span>
+      </div>
+      <div class="vault-security-indicators">
+        <div class="vault-security-item ${strengthInfo.class}">
+          <span class="vault-security-icon">
+            <span class="vault-strength-dot ${strength}"></span>
+          </span>
+          <span class="vault-security-label">${t('vault.entryInfo.strength')}</span>
+          <span class="vault-security-value">${strengthInfo.label}</span>
+        </div>
+        <div class="vault-security-item ${has2FA ? 'success' : 'muted'}">
+          <span class="vault-security-icon">${has2FA ? '🔐' : '🔓'}</span>
+          <span class="vault-security-label">2FA</span>
+          <span class="vault-security-value">${has2FA ? t('vault.entryInfo.has2FA') : t('vault.entryInfo.no2FA')}</span>
+        </div>
+        ${isDuplicate ? `
+          <div class="vault-security-item danger">
+            <span class="vault-security-icon">🔁</span>
+            <span class="vault-security-label">${t('vault.badges.reused')}</span>
+            <span class="vault-security-value">${t('vault.entryCard.reusedPassword')}</span>
+          </div>
+        ` : ''}
+        ${expiryStatus.status !== 'none' && expiryStatus.status !== 'ok' ? `
+          <div class="vault-security-item ${expiryStatus.status === 'expired' ? 'danger' : 'warning'}">
+            <span class="vault-security-icon">⏰</span>
+            <span class="vault-security-label">${t('vault.labels.expiration')}</span>
+            <span class="vault-security-value">${expiryStatus.label || t('vault.badges.' + expiryStatus.status)}</span>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render quick info bar with key stats
+ * @param {Object} entry - The entry object
+ * @returns {string} HTML string
+ */
+function renderQuickInfoBar(entry) {
+  const modifiedDate = entry.modifiedAt || entry.metadata?.updatedAt;
+  const usageCount = entry.metadata?.usageCount || 0;
+  const hasAttachments = entry.attachments && entry.attachments.length > 0;
+  const hasCustomFields = entry.customFields && entry.customFields.length > 0;
+
+  return `
+    <div class="vault-quick-info-bar">
+      ${modifiedDate ? `
+        <span class="vault-quick-info-item" title="${t('vault.detail.modified')}">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          ${formatRelativeTime(modifiedDate)}
+        </span>
+      ` : ''}
+      ${usageCount > 0 ? `
+        <span class="vault-quick-info-item" title="${t('vault.detail.usageCount')}">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          ${usageCount}
+        </span>
+      ` : ''}
+      ${hasAttachments ? `
+        <span class="vault-quick-info-item" title="${t('vault.entryInfo.attachmentsCount', { count: entry.attachments.length })}">
+          📎 ${entry.attachments.length}
+        </span>
+      ` : ''}
+      ${hasCustomFields ? `
+        <span class="vault-quick-info-item" title="${t('vault.entryInfo.customFieldsCount', { count: entry.customFields.length })}">
+          +${entry.customFields.length}
+        </span>
+      ` : ''}
+    </div>
+  `;
+}
+
+/**
  * Render the complete entry detail view
  * @param {Object} options - Render options
  * @param {Object} options.entry - The entry to render
  * @param {Array} options.tags - All available tags
+ * @param {Array} [options.entries] - All entries for duplicate checking
  * @returns {string} HTML string
  */
-export function renderEntryDetail({ entry, tags }) {
+export function renderEntryDetail({ entry, tags, entries = [] }) {
   if (!entry) return '';
 
   const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
+  const isPinned = entry.pinned;
+  const isFavorite = entry.favorite;
 
   return `
     <div class="vault-detail-header">
       <div class="vault-detail-icon" data-type-color="${type.color}" aria-hidden="true">
-        ${entry.data?.url ? renderFaviconImg(entry.data.url, 32) : type.icon}
+        ${entry.data?.url ? renderFaviconImg(entry.data.url, 40) : type.icon}
       </div>
       <div class="vault-detail-info">
-        <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
-        <span class="vault-detail-type">${type.label}</span>
+        <div class="vault-detail-title-row">
+          ${isPinned ? `<span class="vault-pin-badge" title="${t('vault.badges.pinned')}">📌</span>` : ''}
+          ${isFavorite ? `<span class="vault-fav-indicator" title="${t('vault.badges.favorite')}">★</span>` : ''}
+          <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
+        </div>
+        <div class="vault-detail-subtitle-row">
+          <span class="vault-detail-type" style="--type-color: ${type.color}">${type.label}</span>
+          ${entry.data?.url ? `<span class="vault-detail-domain">${new URL(entry.data.url).hostname}</span>` : ''}
+        </div>
         <div class="vault-detail-tags">${renderTagsInDetail({ entry, tags })}</div>
+        ${renderQuickInfoBar(entry)}
       </div>
       <div class="vault-detail-actions" role="group" aria-label="${t('vault.aria.entryActions')}">
         ${renderDetailActions(entry)}
@@ -206,10 +324,38 @@ export function renderEntryDetail({ entry, tags }) {
     </div>
 
     <div class="vault-detail-body">
-      ${renderEntryFields(entry)}
-      ${renderCustomFieldsDisplay(entry)}
-      ${renderPasswordAge(entry)}
-      ${renderDetailMeta(entry)}
+      ${renderSecuritySummary(entry, entries)}
+
+      <div class="vault-detail-section vault-fields-section">
+        ${renderEntryFields(entry)}
+      </div>
+
+      ${entry.customFields && entry.customFields.length > 0 ? `
+        <div class="vault-detail-section vault-custom-fields-section">
+          <div class="vault-section-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>${t('vault.labels.customFields')}</span>
+          </div>
+          ${renderCustomFieldsDisplay(entry)}
+        </div>
+      ` : ''}
+
+      ${renderPasswordAge(entry, t)}
+
+      <div class="vault-detail-section vault-meta-section">
+        <div class="vault-section-header">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>${t('vault.detail.modified')}</span>
+        </div>
+        ${renderDetailMeta(entry)}
+      </div>
     </div>
   `;
 }
