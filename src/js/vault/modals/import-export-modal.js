@@ -4,6 +4,87 @@
  */
 
 import { escapeHtml } from '../utils/formatter.js';
+import { safeLog } from '../../utils/logger.js';
+
+/**
+ * Maximum import file size (50MB)
+ */
+export const MAX_IMPORT_FILE_SIZE = 50 * 1024 * 1024;
+
+/**
+ * Strict extension-to-MIME type mapping for validation
+ * Each extension maps to an array of acceptable MIME types
+ */
+const EXTENSION_MIME_MAP = Object.freeze({
+  xml: ['text/xml', 'application/xml', 'application/x-keepass2'],
+  json: ['application/json', 'text/json'],
+  csv: ['text/csv', 'application/csv', 'text/comma-separated-values']
+});
+
+/**
+ * Check if MIME type matches extension
+ * @param {string} ext - File extension (lowercase, without dot)
+ * @param {string} mimeType - MIME type from file
+ * @returns {boolean} True if valid combination
+ */
+function isValidMimeForExtension(ext, mimeType) {
+  // Empty MIME is always allowed (some browsers don't report it)
+  if (!mimeType || mimeType === '') return true;
+
+  const normalizedMime = mimeType.toLowerCase().split(';')[0].trim();
+
+  // Check if MIME matches the extension
+  const expectedMimes = EXTENSION_MIME_MAP[ext];
+  if (expectedMimes && expectedMimes.includes(normalizedMime)) {
+    return true;
+  }
+
+  // Allow text/plain only for CSV (some systems misreport)
+  if (ext === 'csv' && normalizedMime === 'text/plain') {
+    return true;
+  }
+
+  // Reject any other MIME type (prevents disguised files)
+  return false;
+}
+
+/**
+ * Validate import file before processing
+ * @param {File} file - File to validate
+ * @param {Function} t - Translation function
+ * @returns {{ valid: boolean, error?: string }} Validation result
+ */
+export function validateImportFile(file, t = (k) => k) {
+  if (!file) {
+    return { valid: false, error: t('vault.import.errors.noFile') };
+  }
+
+  // Check file size
+  if (file.size > MAX_IMPORT_FILE_SIZE) {
+    return { valid: false, error: t('vault.import.errors.fileTooLarge') };
+  }
+
+  // Validate filename (prevent path traversal and null bytes)
+  const filename = file.name || '';
+  if (filename.includes('\0') || filename.includes('..') || /[<>:"/\\|?*]/.test(filename)) {
+    return { valid: false, error: t('vault.import.errors.invalidFilename') };
+  }
+
+  // Check file extension matches expected format
+  const ext = filename.toLowerCase().split('.').pop();
+  const validExtensions = Object.keys(EXTENSION_MIME_MAP);
+  if (!validExtensions.includes(ext)) {
+    return { valid: false, error: t('vault.import.errors.invalidFormat') };
+  }
+
+  // Strict MIME type validation
+  if (!isValidMimeForExtension(ext, file.type)) {
+    safeLog(`[Import] MIME type mismatch: "${file.type}" for extension .${ext}`);
+    return { valid: false, error: t('vault.import.errors.mimeTypeMismatch') };
+  }
+
+  return { valid: true };
+}
 
 /**
  * Supported import formats
@@ -86,9 +167,12 @@ export function renderImportModal(options = {}) {
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <p>${t('vault.import.dragOrBrowse').replace('{browse}', `<button type="button" class="vault-btn vault-btn-link" id="btn-import-browse" aria-label="${t('vault.import.browseFiles')}">${t('vault.actions.browse')}</button>`)}</p>
+            <p class="vault-dropzone-text">
+              <span>${escapeHtml(t('vault.import.dragFiles'))}</span>
+              <button type="button" class="vault-btn vault-btn-link" id="btn-import-browse" aria-label="${escapeHtml(t('vault.import.browseFiles'))}">${escapeHtml(t('vault.actions.browse'))}</button>
+            </p>
             <input type="file" id="import-file-input" accept=".xml,.json,.csv" hidden>
-            <span class="vault-dropzone-hint">${t('vault.import.formatsHint')}</span>
+            <span class="vault-dropzone-hint">${escapeHtml(t('vault.import.formatsHint'))}</span>
           </div>
 
           <div class="vault-import-preview" id="import-preview" hidden>

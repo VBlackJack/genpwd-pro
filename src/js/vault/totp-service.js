@@ -244,6 +244,7 @@ export class TOTPManager {
   #listeners = new Map();
   #intervalId = null;
   #cache = new Map();
+  #inFlight = new Set();
 
   /**
    * Start watching a TOTP secret
@@ -298,6 +299,7 @@ export class TOTPManager {
     }
     this.#listeners.clear();
     this.#cache.clear();
+    this.#inFlight.clear();
   }
 
   /**
@@ -316,6 +318,12 @@ export class TOTPManager {
    * Update a single TOTP
    */
   async #updateTOTP(id, otpConfig, callback) {
+    // Prevent concurrent updates for same ID (race condition guard)
+    if (this.#inFlight.has(id)) {
+      return;
+    }
+
+    this.#inFlight.add(id);
     try {
       const result = await generateTOTP(otpConfig.secret, {
         period: otpConfig.period || 30,
@@ -327,11 +335,21 @@ export class TOTPManager {
       const cached = this.#cache.get(id);
       if (!cached || cached.code !== result.code || cached.remainingSeconds !== result.remainingSeconds) {
         this.#cache.set(id, result);
-        callback(result);
+        try {
+          callback(result);
+        } catch (callbackError) {
+          safeLog(`[TOTP] Callback error for ${id}: ${callbackError.message}`);
+        }
       }
     } catch (error) {
       safeLog(`[TOTP] Error generating code: ${error.message}`);
-      callback({ code: '------', remainingSeconds: 0, period: 30, error });
+      try {
+        callback({ code: '------', remainingSeconds: 0, period: 30, error });
+      } catch (callbackError) {
+        safeLog(`[TOTP] Error callback failed for ${id}: ${callbackError.message}`);
+      }
+    } finally {
+      this.#inFlight.delete(id);
     }
   }
 

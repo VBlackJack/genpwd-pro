@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 // src/js/config/constants.js - All project constants
-export const APP_VERSION = '3.0.0';
+export const APP_VERSION = '3.0.1';
 export const APP_NAME = 'GenPwd Pro';
 
 // Safe special characters for CLI and cross-platform usage

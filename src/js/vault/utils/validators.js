@@ -72,7 +72,7 @@ export function validateFieldValue(value, rules = {}) {
   }
   // Valid with success message
   else if (trimmedValue && rules.showSuccess) {
-    message = rules.successMessage || '✓';
+    message = rules.successMessage || t('vault.validation.valid');
     messageType = 'success';
   }
 

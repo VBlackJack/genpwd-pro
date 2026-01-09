@@ -89,12 +89,13 @@ export function showPasswordGenerator(options = {}) {
         <label for="gen-length">${t('vault.generator.length')}: <span id="gen-length-value">${DEFAULT_OPTIONS.length}</span></label>
         <input type="range" id="gen-length" min="8" max="64" value="${DEFAULT_OPTIONS.length}">
       </div>
-      <div class="vault-gen-checkboxes">
+      <fieldset class="vault-gen-checkboxes">
+        <legend class="visually-hidden">${t('vault.generator.characterOptions')}</legend>
         <label><input type="checkbox" id="gen-uppercase" checked> ${t('vault.generator.uppercase')}</label>
         <label><input type="checkbox" id="gen-lowercase" checked> ${t('vault.generator.lowercase')}</label>
         <label><input type="checkbox" id="gen-numbers" checked> ${t('vault.generator.numbers')}</label>
         <label><input type="checkbox" id="gen-symbols" checked> ${t('vault.generator.symbols')}</label>
-      </div>
+      </fieldset>
     </div>
     <button class="vault-btn vault-btn-primary vault-btn-sm vault-btn-full" id="gen-use">
       ${t('vault.generator.usePassword')}
@@ -105,14 +106,21 @@ export function showPasswordGenerator(options = {}) {
 
   // Generate password based on current options
   const generate = () => {
+    const lengthInput = popover.querySelector('#gen-length');
+    const parsedLength = lengthInput ? parseInt(lengthInput.value, 10) : NaN;
+    const length = Number.isFinite(parsedLength) && parsedLength >= 8 && parsedLength <= 64
+      ? parsedLength
+      : DEFAULT_OPTIONS.length;
+
     const pwd = generatePassword({
-      length: parseInt(popover.querySelector('#gen-length').value, 10),
-      uppercase: popover.querySelector('#gen-uppercase').checked,
-      lowercase: popover.querySelector('#gen-lowercase').checked,
-      numbers: popover.querySelector('#gen-numbers').checked,
-      symbols: popover.querySelector('#gen-symbols').checked
+      length,
+      uppercase: popover.querySelector('#gen-uppercase')?.checked ?? DEFAULT_OPTIONS.uppercase,
+      lowercase: popover.querySelector('#gen-lowercase')?.checked ?? DEFAULT_OPTIONS.lowercase,
+      numbers: popover.querySelector('#gen-numbers')?.checked ?? DEFAULT_OPTIONS.numbers,
+      symbols: popover.querySelector('#gen-symbols')?.checked ?? DEFAULT_OPTIONS.symbols
     });
-    popover.querySelector('#gen-output').value = pwd;
+    const outputEl = popover.querySelector('#gen-output');
+    if (outputEl) outputEl.value = pwd;
     return pwd;
   };
 
@@ -137,8 +145,8 @@ export function showPasswordGenerator(options = {}) {
       try {
         await navigator.clipboard.writeText(pwd);
         if (onCopy) onCopy(pwd);
-      } catch (err) {
-        console.error('Failed to copy password:', err);
+      } catch {
+        // Clipboard access denied - silently fail, let onCopy handler show toast if needed
       }
     }
   });
@@ -151,29 +159,53 @@ export function showPasswordGenerator(options = {}) {
     popover.remove();
   });
 
-  popover.querySelector('.vault-gen-close')?.addEventListener('click', () => popover.remove());
+  // AbortController for centralized cleanup of all event listeners
+  const abortController = new AbortController();
+  const { signal } = abortController;
 
-  // Close on outside click
+  const closeAndCleanup = (restoreFocus = true) => {
+    abortController.abort();
+    popover.remove();
+    if (restoreFocus) input?.focus();
+  };
+
+  // Store cleanup function on popover for external access
+  popover._cleanup = closeAndCleanup;
+
+  popover.querySelector('.vault-gen-close')?.addEventListener('click', () => closeAndCleanup(), { signal });
+
+  // Handle Escape key to close popover
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeAndCleanup();
+    }
+  }, { signal });
+
+  // Close on outside click (delayed to avoid immediate close)
   setTimeout(() => {
-    const closePopover = (e) => {
+    if (signal.aborted) return;
+    document.addEventListener('click', (e) => {
       if (!document.body.contains(popover)) {
-        document.removeEventListener('click', closePopover);
         return;
       }
       if (!popover.contains(e.target) && e.target !== input) {
-        popover.remove();
-        document.removeEventListener('click', closePopover);
+        closeAndCleanup(false);
       }
-    };
-    document.addEventListener('click', closePopover);
+    }, { signal });
   }, 100);
 
   return popover;
 }
 
 /**
- * Close any open password generator
+ * Close any open password generator with proper cleanup
  */
 export function closePasswordGenerator() {
-  document.querySelector('.vault-password-generator')?.remove();
+  const popover = document.querySelector('.vault-password-generator');
+  if (popover?._cleanup) {
+    popover._cleanup(false);
+  } else {
+    popover?.remove();
+  }
 }

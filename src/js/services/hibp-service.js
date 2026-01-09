@@ -147,7 +147,7 @@ class HIBPService {
     return fetch(url, {
       method: 'GET',
       headers: {
-        'User-Agent': 'GenPwd-Pro-v3.0.0',
+        'User-Agent': 'GenPwd-Pro-v3.0.1',
         'Add-Padding': 'true' // Request padding for additional privacy
       }
     });

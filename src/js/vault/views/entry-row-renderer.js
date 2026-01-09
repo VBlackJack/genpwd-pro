@@ -209,22 +209,26 @@ function renderCompactIndicators(strength, isDuplicate, expiryStatus, has2FA) {
   const indicators = [];
 
   if (strength) {
-    indicators.push(`<span class="vault-strength-dot ${strength}" title="${t('vault.badges.' + strength)}"></span>`);
+    const strengthLabel = t('vault.badges.' + strength);
+    indicators.push(`<span class="vault-strength-dot ${strength}" title="${strengthLabel}" role="img" aria-label="${strengthLabel}"></span>`);
   }
 
   if (isDuplicate) {
-    indicators.push(`<span class="vault-indicator-dot danger" title="${t('vault.badges.reused')}"></span>`);
+    const reusedLabel = t('vault.badges.reused');
+    indicators.push(`<span class="vault-indicator-dot danger" title="${reusedLabel}" role="img" aria-label="${reusedLabel}"></span>`);
   }
 
   if (expiryStatus.status === 'expired' || expiryStatus.status === 'soon') {
-    indicators.push(`<span class="vault-indicator-dot ${expiryStatus.status === 'expired' ? 'danger' : 'warning'}" title="${expiryStatus.status === 'expired' ? t('vault.badges.expired') : t('vault.badges.expiring')}"></span>`);
+    const expiryLabel = expiryStatus.status === 'expired' ? t('vault.badges.expired') : t('vault.badges.expiring');
+    indicators.push(`<span class="vault-indicator-dot ${expiryStatus.status === 'expired' ? 'danger' : 'warning'}" title="${expiryLabel}" role="img" aria-label="${expiryLabel}"></span>`);
   }
 
   if (has2FA) {
-    indicators.push(`<span class="vault-indicator-dot success" title="${t('vault.badges.has2FA')}"></span>`);
+    const has2FALabel = t('vault.badges.has2FA');
+    indicators.push(`<span class="vault-indicator-dot success" title="${has2FALabel}" role="img" aria-label="${has2FALabel}"></span>`);
   }
 
-  return indicators.length > 0 ? `<span class="vault-compact-indicators">${indicators.join('')}</span>` : '';
+  return indicators.length > 0 ? `<span class="vault-compact-indicators" role="group" aria-label="${t('vault.aria.statusIndicators')}">${indicators.join('')}</span>` : '';
 }
 
 /**

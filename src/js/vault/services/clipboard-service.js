@@ -4,6 +4,7 @@
  */
 
 import { getSecureClipboard } from '../../utils/secure-clipboard.js';
+import { safeLog } from '../../utils/logger.js';
 
 /**
  * Create a clipboard service instance
@@ -50,10 +51,12 @@ export function createClipboardService(options = {}) {
         onSuccess?.(message);
         return true;
       } else {
+        safeLog('[ClipboardService] Copy failed - clipboard access may be denied');
         onError?.();
         return false;
       }
-    } catch {
+    } catch (err) {
+      safeLog('[ClipboardService] Copy error:', err?.message || 'Unknown error');
       onError?.();
       return false;
     }

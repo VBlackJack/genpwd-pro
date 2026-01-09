@@ -76,7 +76,7 @@ export function renderCreateVaultModal({ t = (k) => k } = {}) {
                 </svg>
               </button>
             </div>
-            <div class="vault-password-strength" id="new-password-strength"></div>
+            <div class="vault-password-strength" id="new-password-strength" role="status" aria-live="polite" aria-atomic="true"></div>
             <div class="vault-field-message" id="vault-password-message" role="alert" aria-live="polite"></div>
           </div>
           <div class="vault-form-group">

@@ -15,10 +15,14 @@ import { t } from '../../utils/i18n.js';
  * @returns {Array} Tree structure with children arrays
  */
 export function buildFolderTree({ folders, entries }) {
+  // Null guards for arrays
+  const safefolders = Array.isArray(folders) ? folders : [];
+  const safeEntries = Array.isArray(entries) ? entries : [];
+
   const childMap = new Map(); // parentId -> children[]
 
   // First pass: group by parentId
-  for (const folder of folders) {
+  for (const folder of safefolders) {
     const parentId = folder.parentId || null;
     if (!childMap.has(parentId)) {
       childMap.set(parentId, []);
@@ -29,8 +33,8 @@ export function buildFolderTree({ folders, entries }) {
   // Build tree recursively
   const buildNode = (folder, depth = 0) => {
     const children = childMap.get(folder.id) || [];
-    const entryCount = entries.filter(e => e.folderId === folder.id).length;
-    const descendantCount = getDescendantEntryCount(folder.id, childMap, entries);
+    const entryCount = safeEntries.filter(e => e.folderId === folder.id).length;
+    const descendantCount = getDescendantEntryCount(folder.id, childMap, safeEntries);
 
     return {
       ...folder,
@@ -97,10 +101,12 @@ export function renderFolderNodes({ nodes, expandedFolders, selectedFolder }) {
     const folderColor = getFolderColor(node.id);
     const paddingLeft = node.depth * 16;
 
+    const childrenId = `folder-children-${node.id}`;
     const expandIcon = node.hasChildren ? `
       <button class="vault-folder-toggle ${isExpanded ? 'expanded' : ''}"
               data-folder-toggle="${node.id}"
               aria-expanded="${isExpanded}"
+              aria-controls="${childrenId}"
               aria-label="${isExpanded ? t('vault.common.collapse') : t('vault.common.expand')} ${node.name}">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"></polyline>
@@ -126,7 +132,7 @@ export function renderFolderNodes({ nodes, expandedFolders, selectedFolder }) {
 
     // Render children if expanded
     if (node.hasChildren && isExpanded) {
-      html += `<div class="vault-folder-children" role="group">${renderFolderNodes({ nodes: node.children, expandedFolders, selectedFolder })}</div>`;
+      html += `<div class="vault-folder-children" id="${childrenId}" role="group">${renderFolderNodes({ nodes: node.children, expandedFolders, selectedFolder })}</div>`;
     }
 
     html += '</div>';

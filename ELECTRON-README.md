@@ -1,8 +1,8 @@
 # GenPwd Pro - Desktop Application (Electron)
 
-Application desktop multiplateforme pour GenPwd Pro **v3.0.0** - Gestionnaire de mots de passe sécurisé.
+Application desktop multiplateforme pour GenPwd Pro **v3.0.1** - Gestionnaire de mots de passe sécurisé.
 
-## 🎯 Nouveautés v3.0.0
+## 🎯 Nouveautés v3.0.1
 
 ### Coffre-fort Chiffré
 - **Chiffrement AES-256-GCM** avec dérivation PBKDF2 (100,000 itérations)
@@ -33,19 +33,19 @@ Application desktop multiplateforme pour GenPwd Pro **v3.0.0** - Gestionnaire de
 ### Windows
 
 #### Option 1: Installeur (Recommandé)
-1. Téléchargez `GenPwd Pro-3.0.0-win-x64.exe`
+1. Téléchargez `GenPwd Pro-3.0.1-win-x64.exe`
 2. Double-cliquez pour installer
 3. Suivez l'assistant d'installation
 4. Lancez depuis le Menu Démarrer ou le raccourci Bureau
 
 #### Option 2: Version Portable
-1. Téléchargez `GenPwd Pro-3.0.0-portable.exe`
+1. Téléchargez `GenPwd Pro-3.0.1-portable.exe`
 2. Déplacez où vous voulez (ex: clé USB)
 3. Double-cliquez pour lancer
 4. Aucune installation requise
 
 #### Option 3: Archive ZIP
-1. Téléchargez `GenPwd Pro-3.0.0-win-x64.zip`
+1. Téléchargez `GenPwd Pro-3.0.1-win-x64.zip`
 2. Décompressez où vous voulez
 3. Lancez `GenPwd Pro.exe`
 
@@ -150,11 +150,11 @@ node tools/prepare-release.js
 ### Structure des builds
 ```
 release/
-├── GenPwd Pro-3.0.0-win.exe       # Installeur (x64 + ia32)
-├── GenPwd Pro-3.0.0-win-x64.exe   # Installeur x64 uniquement
-├── GenPwd Pro-3.0.0-win-ia32.exe  # Installeur 32-bit
-├── GenPwd Pro-3.0.0-portable.exe  # Portable (pas d'installation)
-├── GenPwd Pro-3.0.0-win-x64.zip   # Archive ZIP
+├── GenPwd Pro-3.0.1-win.exe       # Installeur (x64 + ia32)
+├── GenPwd Pro-3.0.1-win-x64.exe   # Installeur x64 uniquement
+├── GenPwd Pro-3.0.1-win-ia32.exe  # Installeur 32-bit
+├── GenPwd Pro-3.0.1-portable.exe  # Portable (pas d'installation)
+├── GenPwd Pro-3.0.1-win-x64.zip   # Archive ZIP
 ├── win-unpacked/                   # Version décompressée x64
 └── win-ia32-unpacked/              # Version décompressée 32-bit
 ```

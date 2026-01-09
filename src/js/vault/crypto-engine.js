@@ -1,5 +1,6 @@
 import { KEYSET_ENVELOPE } from '../config/crypto-constants.js';
 import { Result } from '../utils/result.js';
+import { safeLog } from '../utils/logger.js';
 
 const KEYSET_ENVELOPE_VERSION = KEYSET_ENVELOPE.VERSION;
 const KEYSET_ENVELOPE_IV_BYTES = KEYSET_ENVELOPE.IV_BYTES;
@@ -128,9 +129,9 @@ async function decryptKeyMaterial(encrypted, keyEncryptionKey, associatedData = 
     return plaintext;
   } catch (cause) {
     wipeBytes(kek);
-    const error = new Error('Unable to decrypt keyset');
-    error.cause = cause;
-    throw error;
+    // Log internally for debugging, don't expose crypto details externally
+    safeLog('[CryptoEngine] Keyset decryption failed:', cause?.message || cause);
+    throw new Error('Unable to decrypt keyset');
   }
 }
 

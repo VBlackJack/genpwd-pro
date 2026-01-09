@@ -3950,10 +3950,10 @@ kbd {
   position: fixed;
   min-width: 200px;
   padding: 0.5rem 0;
-  background: var(--vault-surface, #1e2235);
-  border: 1px solid var(--vault-border, rgba(255, 255, 255, 0.15));
+  background: var(--bg-secondary, #232740);
+  border: 1px solid var(--vault-border-light, rgba(255, 255, 255, 0.2));
   border-radius: var(--vault-radius);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.1);
   z-index: var(--z-tooltip);
   animation: vault-ctx-appear 0.15s ease;
   backdrop-filter: none;

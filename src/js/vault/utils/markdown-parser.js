@@ -3,7 +3,7 @@
  * Lightweight markdown to HTML conversion for vault notes
  */
 
-import { escapeHtml } from './formatter.js';
+import { escapeHtml, escapeHtmlAttr } from './formatter.js';
 
 /**
  * Validate and sanitize URL for safe use in href
@@ -70,7 +70,10 @@ export function parseMarkdown(text) {
   // Links [text](url) - with URL sanitization to prevent XSS
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
     const safeUrl = sanitizeUrl(url);
-    return safeUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>` : text;
+    if (!safeUrl) return text;
+    // Escape URL for href attribute to prevent attribute breakout XSS
+    const attrSafeUrl = escapeHtmlAttr(safeUrl);
+    return `<a href="${attrSafeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`;
   });
 
   // Blockquotes (> text)
@@ -82,15 +85,16 @@ export function parseMarkdown(text) {
   html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
   html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
 
-  // Ordered lists (1. item)
-  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // Ordered lists (1. item) - wrap in <ol>
+  html = html.replace(/^\d+\. (.+)$/gm, '<li class="md-ol-item">$1</li>');
+  html = html.replace(/(<li class="md-ol-item">.*<\/li>\n?)+/g, (match) => `<ol>${match.replace(/ class="md-ol-item"/g, '')}</ol>`);
 
   // Horizontal rule (--- or ***)
   html = html.replace(/^(---|\*\*\*)$/gm, '<hr>');
 
-  // Checkboxes (- [ ] or - [x])
-  html = html.replace(/\[ \]/g, '<input type="checkbox" disabled>');
-  html = html.replace(/\[x\]/gi, '<input type="checkbox" disabled checked>');
+  // Checkboxes (- [ ] or - [x]) with accessible labels
+  html = html.replace(/\[ \]/g, '<input type="checkbox" disabled aria-label="Unchecked task">');
+  html = html.replace(/\[x\]/gi, '<input type="checkbox" disabled checked aria-label="Completed task">');
 
   // Paragraphs (double newline)
   html = html.replace(/\n\n+/g, '</p><p>');

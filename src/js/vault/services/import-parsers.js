@@ -353,10 +353,22 @@ export function parseCSV(csvText) {
   };
 
   const entries = [];
+  const skippedRows = [];
+  const headerCount = headers.length;
 
   for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i]);
-    if (values.length === 0) continue;
+
+    // Skip completely empty rows
+    if (values.length === 0 || values.every(v => !v)) continue;
+
+    // Validate column count - allow some flexibility but detect severely malformed rows
+    // Too few columns: might be missing required fields
+    // Too many columns: might indicate parsing issues
+    if (values.length < Math.min(2, headerCount) || values.length > headerCount + 5) {
+      skippedRows.push(i + 1); // 1-based line number
+      continue;
+    }
 
     const entry = mapCSVToEntry(headers, values, format);
     if (entry && entry.title && entry.password) {
@@ -368,6 +380,7 @@ export function parseCSV(csvText) {
     entries,
     format,
     formatName: formatNames[format],
-    withTotp: entries.filter(e => e.totp).length
+    withTotp: entries.filter(e => e.totp).length,
+    skippedRows: skippedRows.length > 0 ? skippedRows : null
   };
 }

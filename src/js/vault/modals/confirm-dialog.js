@@ -86,7 +86,6 @@ export async function showConfirmDialog(message, options = {}) {
     modal = document.createElement('div');
     modal.id = modalId;
     modal.className = 'vault-modal';
-    modal.setAttribute('aria-hidden', 'true');
     modal.innerHTML = renderConfirmDialog({
       title,
       message,
@@ -98,18 +97,68 @@ export async function showConfirmDialog(message, options = {}) {
 
     document.body.appendChild(modal);
 
-    // Show modal
+    // Show modal - requestAnimationFrame ensures DOM is ready
     requestAnimationFrame(() => {
       modal.classList.add('active');
       modal.setAttribute('aria-hidden', 'false');
 
-      // Focus confirm button
-      const confirmBtn = modal.querySelector('#confirm-dialog-confirm');
-      confirmBtn?.focus();
+      // For alertdialog with danger type, focus cancel button (safer default)
+      // For other types, focus confirm button
+      const focusTarget = danger
+        ? modal.querySelector('#confirm-dialog-cancel')
+        : modal.querySelector('#confirm-dialog-confirm');
+      focusTarget?.focus();
     });
 
+    // Store references for cleanup
+    const confirmBtn = modal.querySelector('#confirm-dialog-confirm');
+    const cancelBtn = modal.querySelector('#confirm-dialog-cancel');
+    const backdrop = modal.querySelector('.vault-modal-backdrop');
+
     // Event handlers
-    const cleanup = () => {
+    const handleConfirm = () => {
+      cleanupAndClose();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      cleanupAndClose();
+      resolve(false);
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        handleCancel();
+      } else if (e.key === 'Tab') {
+        // Focus trap: keep focus within dialog
+        const focusableElements = modal.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        const firstEl = focusableElements[0];
+        const lastEl = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl?.focus();
+        }
+      }
+    };
+
+    const handleBackdropClick = () => {
+      handleCancel();
+    };
+
+    // Centralized cleanup to remove all listeners
+    const cleanupAndClose = () => {
+      // Remove all event listeners
+      confirmBtn?.removeEventListener('click', handleConfirm);
+      cancelBtn?.removeEventListener('click', handleCancel);
+      backdrop?.removeEventListener('click', handleBackdropClick);
+      document.removeEventListener('keydown', handleKeydown);
+
       modal.classList.remove('active');
       modal.setAttribute('aria-hidden', 'true');
       setTimeout(() => {
@@ -121,27 +170,11 @@ export async function showConfirmDialog(message, options = {}) {
       }, 300);
     };
 
-    const handleConfirm = () => {
-      cleanup();
-      resolve(true);
-    };
-
-    const handleCancel = () => {
-      cleanup();
-      resolve(false);
-    };
-
-    const handleKeydown = (e) => {
-      if (e.key === 'Escape') {
-        handleCancel();
-      }
-    };
-
     // Attach event listeners
-    modal.querySelector('#confirm-dialog-confirm')?.addEventListener('click', handleConfirm);
-    modal.querySelector('#confirm-dialog-cancel')?.addEventListener('click', handleCancel);
-    modal.querySelector('.vault-modal-backdrop')?.addEventListener('click', handleCancel);
-    document.addEventListener('keydown', handleKeydown, { once: true });
+    confirmBtn?.addEventListener('click', handleConfirm);
+    cancelBtn?.addEventListener('click', handleCancel);
+    backdrop?.addEventListener('click', handleBackdropClick);
+    document.addEventListener('keydown', handleKeydown);
   });
 }
 
@@ -253,7 +286,6 @@ export async function showPromptDialog(message, options = {}) {
     modal = document.createElement('div');
     modal.id = modalId;
     modal.className = 'vault-modal';
-    modal.setAttribute('aria-hidden', 'true');
     modal.innerHTML = renderPromptDialog({
       title,
       message,
@@ -265,7 +297,7 @@ export async function showPromptDialog(message, options = {}) {
 
     document.body.appendChild(modal);
 
-    // Show modal
+    // Show modal - requestAnimationFrame ensures DOM is ready
     requestAnimationFrame(() => {
       modal.classList.add('active');
       modal.setAttribute('aria-hidden', 'false');

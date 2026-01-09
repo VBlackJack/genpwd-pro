@@ -5,6 +5,9 @@
 
 import { t } from '../../utils/i18n.js';
 
+/** @type {Function|null} Current picker cleanup function */
+let currentPickerCleanup = null;
+
 /**
  * Color data (static values)
  */
@@ -66,7 +69,7 @@ export function showColorPicker(options = {}) {
                 title="${c.label}"
                 aria-label="${c.label}"
                 aria-pressed="${c.color === currentColor || (!c.color && !currentColor) ? 'true' : 'false'}">
-          <span aria-hidden="true">${c.color === currentColor || (!c.color && !currentColor) ? '✓' : ''}</span>
+          <span aria-hidden="true">${c.color === currentColor || (!c.color && !currentColor) ? t('vault.symbols.checkmark') : ''}</span>
         </button>
       `).join('')}
     </div>
@@ -95,8 +98,12 @@ export function showColorPicker(options = {}) {
 
   // Event handlers with double-click prevention
   picker.querySelectorAll('.vault-color-option').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (isSelecting) return;
+    btn.addEventListener('click', (e) => {
+      // Prevent double-click immediately on capture
+      if (isSelecting) {
+        e.stopImmediatePropagation();
+        return;
+      }
       isSelecting = true;
       const color = btn.dataset.color || null;
       cleanup();
@@ -142,14 +149,20 @@ export function showColorPicker(options = {}) {
 
   // Cleanup function
   const cleanup = () => {
+    currentPickerCleanup = null;
     picker.removeEventListener('keydown', handleKeydown);
     document.removeEventListener('click', handler);
-    picker.remove();
+    if (document.body.contains(picker)) {
+      picker.remove();
+    }
     // Restore focus if element still exists in DOM
     if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.body.contains(previouslyFocused)) {
       previouslyFocused.focus();
     }
   };
+
+  // Store cleanup for external calls
+  currentPickerCleanup = cleanup;
 
   // Close on click outside
   const handler = (e) => {
@@ -167,13 +180,59 @@ export function showColorPicker(options = {}) {
 }
 
 /**
- * Close any open color picker
+ * Close any open color picker with proper cleanup
  */
 export function closeColorPicker() {
-  document.querySelector('.vault-color-picker')?.remove();
+  if (currentPickerCleanup) {
+    currentPickerCleanup();
+  } else {
+    // Fallback: just remove element if cleanup not available
+    document.querySelector('.vault-color-picker')?.remove();
+  }
 }
 
 const STORAGE_KEY = 'genpwd-vault-folder-colors';
+
+/** Valid hex color pattern */
+const HEX_COLOR_PATTERN = /^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+
+/**
+ * Validate color is a valid hex value
+ * @param {string} color - Color to validate
+ * @returns {boolean} True if valid hex color
+ */
+function isValidHexColor(color) {
+  return typeof color === 'string' && HEX_COLOR_PATTERN.test(color);
+}
+
+/**
+ * Safely parse and validate folder colors from localStorage
+ * @returns {Object} Validated colors object with only valid entries
+ */
+function getSanitizedColorsFromStorage() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return {};
+
+    const parsed = JSON.parse(stored);
+
+    // Validate parsed data is a plain object
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+
+    // Filter to only valid string keys with valid hex color values
+    const sanitized = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof key === 'string' && key.length > 0 && isValidHexColor(value)) {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Get folder color from localStorage
@@ -181,12 +240,9 @@ const STORAGE_KEY = 'genpwd-vault-folder-colors';
  * @returns {string|null} Color hex or null
  */
 export function getFolderColor(folderId) {
-  try {
-    const colors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    return colors[folderId] || null;
-  } catch {
-    return null;
-  }
+  if (!folderId || typeof folderId !== 'string') return null;
+  const colors = getSanitizedColorsFromStorage();
+  return colors[folderId] || null;
 }
 
 /**
@@ -195,9 +251,10 @@ export function getFolderColor(folderId) {
  * @param {string|null} color - Color hex or null to remove
  */
 export function setFolderColor(folderId, color) {
+  if (!folderId || typeof folderId !== 'string') return;
   try {
-    const colors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    if (color) {
+    const colors = getSanitizedColorsFromStorage();
+    if (color && isValidHexColor(color)) {
       colors[folderId] = color;
     } else {
       delete colors[folderId];

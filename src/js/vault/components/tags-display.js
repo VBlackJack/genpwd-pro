@@ -6,6 +6,60 @@
 import { escapeHtml } from '../utils/formatter.js';
 import { t } from '../../utils/i18n.js';
 
+/** Default tag color */
+const DEFAULT_TAG_COLOR = '#6b7280';
+
+/**
+ * Strict color validation patterns
+ * - Hex: #RGB or #RRGGBB (case insensitive)
+ * - RGB: rgb(0-255, 0-255, 0-255)
+ * - RGBA: rgba(0-255, 0-255, 0-255, 0-1)
+ */
+const HEX_COLOR_PATTERN = /^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+const RGB_COLOR_PATTERN = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/;
+const RGBA_COLOR_PATTERN = /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/;
+
+/**
+ * Validate RGB values are within 0-255 range
+ * @param {string[]} values - RGB value strings
+ * @returns {boolean} True if all values are valid
+ */
+function isValidRgbRange(values) {
+  return values.every(v => {
+    const num = parseInt(v, 10);
+    return num >= 0 && num <= 255;
+  });
+}
+
+/**
+ * Validate and sanitize tag color (strict validation to prevent injection)
+ * @param {string} color - Color value to validate
+ * @returns {string} Valid color or default
+ */
+function sanitizeTagColor(color) {
+  if (!color || typeof color !== 'string') return DEFAULT_TAG_COLOR;
+  const trimmed = color.trim();
+
+  // Check hex format
+  if (HEX_COLOR_PATTERN.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Check rgb format with range validation
+  const rgbMatch = trimmed.match(RGB_COLOR_PATTERN);
+  if (rgbMatch && isValidRgbRange([rgbMatch[1], rgbMatch[2], rgbMatch[3]])) {
+    return trimmed;
+  }
+
+  // Check rgba format with range validation
+  const rgbaMatch = trimmed.match(RGBA_COLOR_PATTERN);
+  if (rgbaMatch && isValidRgbRange([rgbaMatch[1], rgbaMatch[2], rgbaMatch[3]])) {
+    return trimmed;
+  }
+
+  return DEFAULT_TAG_COLOR;
+}
+
 /**
  * Tag colors with semantic keys for accessibility
  */
@@ -48,7 +102,7 @@ export function renderTagsList({ tags, entries, selectedTag }) {
   }
 
   return tags.map(tag => {
-    const tagColor = tag.color || '#6b7280';
+    const tagColor = sanitizeTagColor(tag.color);
     const count = entries.filter(e => e.tags?.includes(tag.id)).length;
     const isActive = selectedTag === tag.id;
 
@@ -85,7 +139,7 @@ export function renderTagPicker({ tags, selectedTags = [] }) {
           tags.map(tag => `
             <label class="vault-tag-option ${selectedTags.includes(tag.id) ? 'selected' : ''}">
               <input type="checkbox" name="entry-tags" value="${tag.id}" ${selectedTags.includes(tag.id) ? 'checked' : ''}>
-              <span class="vault-tag-chip" data-tag-color="${tag.color || '#6b7280'}">
+              <span class="vault-tag-chip" data-tag-color="${sanitizeTagColor(tag.color)}">
                 ${escapeHtml(tag.name)}
               </span>
             </label>
@@ -129,7 +183,7 @@ export function renderTagsInRow({ entry, tags, maxVisible = 3 }) {
   return `
     <div class="vault-entry-tags">
       ${entryTags.slice(0, maxVisible).map(tag => `
-        <span class="vault-mini-tag" data-tag-color="${tag.color || '#6b7280'}" title="${escapeHtml(tag.name)}">
+        <span class="vault-mini-tag" data-tag-color="${sanitizeTagColor(tag.color)}" title="${escapeHtml(tag.name)}">
           ${escapeHtml(tag.name)}
         </span>
       `).join('')}
@@ -152,7 +206,7 @@ export function renderTagsInDetail({ entry, tags }) {
   if (entryTags.length === 0) return '';
 
   return entryTags.map(tag => `
-    <span class="vault-detail-tag" data-tag-color="${tag.color || '#6b7280'}">
+    <span class="vault-detail-tag" data-tag-color="${sanitizeTagColor(tag.color)}">
       ${escapeHtml(tag.name)}
     </span>
   `).join('');

@@ -108,7 +108,7 @@ async function sendErrorToMonitoring(error) {
         error: sanitized,
         app: {
           name: 'GenPwd Pro',
-          version: '3.0.0', // Synchronized with package.json
+          version: '3.0.1', // Synchronized with package.json
           environment: isDevelopment() ? 'development' : 'production'
         }
       })

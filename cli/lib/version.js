@@ -3,4 +3,4 @@
  * Copyright 2025 Julien Bombled
  */
 
-export const version = '3.0.0';
+export const version = '3.0.1';

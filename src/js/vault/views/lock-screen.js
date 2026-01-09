@@ -13,7 +13,7 @@ export function renderLockScreen({ t = (k) => k } = {}) {
   return `
     <div class="vault-lock-screen">
       <div class="vault-lock-content">
-        <div class="vault-lock-icon">
+        <div class="vault-lock-icon" role="img" aria-label="${t('vault.aria.vaultLocked')}">
           <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -68,7 +68,7 @@ export function renderLockScreen({ t = (k) => k } = {}) {
               <circle cx="15.5" cy="10" r="1.5"/>
               <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
             </svg>
-            <span>Windows Hello</span>
+            <span>${t('vault.lockScreen.windowsHello')}</span>
           </button>
         </div>
 

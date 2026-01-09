@@ -204,7 +204,24 @@ function closeModalInstance(modal, onClose) {
     delete modal._focusTrapHandler;
   }
   if (modal._previouslyFocused && typeof modal._previouslyFocused.focus === 'function') {
-    try { modal._previouslyFocused.focus(); } catch (e) { }
+    try {
+      // Check if element is still in DOM before focusing
+      if (document.body.contains(modal._previouslyFocused)) {
+        modal._previouslyFocused.focus();
+      } else {
+        // Fallback targets when original element is gone
+        const fallbackTargets = [
+          document.querySelector('[role="main"]'),
+          document.querySelector('main'),
+          document.querySelector('.app-content'),
+          document.body
+        ];
+        const fallback = fallbackTargets.find(el => el && typeof el.focus === 'function');
+        if (fallback) fallback.focus();
+      }
+    } catch (e) {
+      safeLog('Modal focus restoration failed:', e?.message);
+    }
     delete modal._previouslyFocused;
   }
   if (typeof onClose === 'function') {

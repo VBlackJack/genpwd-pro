@@ -196,7 +196,7 @@ export function searchTemplates(query) {
  */
 export function renderTemplateItem(template) {
   return `
-    <button type="button" class="vault-template-item" data-template-id="${template.id}" title="${template.name}" role="option">
+    <button type="button" class="vault-template-item" data-template-id="${template.id}" title="${template.name}">
       <span class="vault-template-icon" aria-hidden="true">${template.icon}</span>
       <span class="vault-template-name">${template.name}</span>
     </button>
@@ -215,7 +215,7 @@ export function renderTemplateCategory(category, templates) {
   return `
     <div class="vault-template-category" data-category="${category.id}">
       <div class="vault-template-category-header">${category.icon} ${category.name}</div>
-      <div class="vault-template-items" role="listbox">
+      <div class="vault-template-items" role="group" aria-label="${category.name}">
         ${templates.map(renderTemplateItem).join('')}
       </div>
     </div>
@@ -287,6 +287,12 @@ export function createTemplatePickerController(options = {}) {
 
   let isAttached = false;
 
+  // Store handlers for proper cleanup
+  let toggleHandler = null;
+  let searchHandler = null;
+  let applyTemplateTimeout = null;
+  const itemHandlers = new Map();
+
   /**
    * Toggle template picker visibility
    */
@@ -347,7 +353,12 @@ export function createTemplatePickerController(options = {}) {
     }
 
     // Wait for type fields to render, then set URL
-    setTimeout(() => {
+    // Clear any pending timeout to prevent stale callbacks
+    if (applyTemplateTimeout) {
+      clearTimeout(applyTemplateTimeout);
+    }
+    applyTemplateTimeout = setTimeout(() => {
+      applyTemplateTimeout = null;
       if (template.url) {
         const urlInput = document.getElementById('entry-url');
         if (urlInput) urlInput.value = template.url;
@@ -389,20 +400,28 @@ export function createTemplatePickerController(options = {}) {
     if (isAttached) return;
 
     // Toggle button
-    document.getElementById('toggle-templates')?.addEventListener('click', togglePicker);
+    const toggleBtn = document.getElementById('toggle-templates');
+    if (toggleBtn) {
+      toggleHandler = togglePicker;
+      toggleBtn.addEventListener('click', toggleHandler);
+    }
 
     // Search input with debounce to prevent excessive DOM updates
-    const debouncedFilter = debounce((value) => filterTemplates(value), 150);
-    document.getElementById('template-search')?.addEventListener('input', (e) => {
-      debouncedFilter(e.target.value);
-    });
+    const searchInput = document.getElementById('template-search');
+    if (searchInput) {
+      const debouncedFilter = debounce((value) => filterTemplates(value), 150);
+      searchHandler = (e) => debouncedFilter(e.target.value);
+      searchInput.addEventListener('input', searchHandler);
+    }
 
     // Template items
     document.querySelectorAll('.vault-template-item').forEach(item => {
-      item.addEventListener('click', () => {
+      const handler = () => {
         const templateId = item.dataset.templateId;
         if (templateId) applyTemplate(templateId);
-      });
+      };
+      item.addEventListener('click', handler);
+      itemHandlers.set(item, handler);
     });
 
     isAttached = true;
@@ -412,7 +431,34 @@ export function createTemplatePickerController(options = {}) {
    * Detach event listeners (for cleanup)
    */
   function detach() {
-    // Note: Would need to store handlers for proper cleanup
+    if (!isAttached) return;
+
+    // Clear any pending template application timeout
+    if (applyTemplateTimeout) {
+      clearTimeout(applyTemplateTimeout);
+      applyTemplateTimeout = null;
+    }
+
+    // Remove toggle handler
+    const toggleBtn = document.getElementById('toggle-templates');
+    if (toggleBtn && toggleHandler) {
+      toggleBtn.removeEventListener('click', toggleHandler);
+      toggleHandler = null;
+    }
+
+    // Remove search handler
+    const searchInput = document.getElementById('template-search');
+    if (searchInput && searchHandler) {
+      searchInput.removeEventListener('input', searchHandler);
+      searchHandler = null;
+    }
+
+    // Remove item handlers
+    itemHandlers.forEach((handler, item) => {
+      item.removeEventListener('click', handler);
+    });
+    itemHandlers.clear();
+
     isAttached = false;
   }
 

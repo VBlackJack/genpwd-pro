@@ -52,17 +52,45 @@ export class TooltipManager {
       }
     };
 
+    // Keyboard focus handlers for a11y
+    const handleFocusIn = (e) => {
+      const target = e.target.closest('[data-tooltip]');
+      if (target) {
+        this.#show(target);
+      }
+    };
+
+    const handleFocusOut = (e) => {
+      const target = e.target.closest('[data-tooltip]');
+      if (target) {
+        this.#hide();
+      }
+    };
+
+    // Hide on Escape key press
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        this.hideNow();
+      }
+    };
+
     const handleScroll = () => this.#hide();
 
     // Use event delegation on the container
     container.addEventListener('mouseenter', handleMouseEnter, true);
     container.addEventListener('mouseleave', handleMouseLeave, true);
+    container.addEventListener('focusin', handleFocusIn, true);
+    container.addEventListener('focusout', handleFocusOut, true);
+    container.addEventListener('keydown', handleKeyDown, true);
     container.addEventListener('scroll', handleScroll, true);
 
     // Store for cleanup
     this.#cleanupHandlers.push(
       () => container.removeEventListener('mouseenter', handleMouseEnter, true),
       () => container.removeEventListener('mouseleave', handleMouseLeave, true),
+      () => container.removeEventListener('focusin', handleFocusIn, true),
+      () => container.removeEventListener('focusout', handleFocusOut, true),
+      () => container.removeEventListener('keydown', handleKeyDown, true),
       () => container.removeEventListener('scroll', handleScroll, true)
     );
   }
@@ -188,14 +216,33 @@ export class TooltipManager {
       this.#tooltipTimeout = null;
     }
 
-    // Remove event listeners
-    this.#cleanupHandlers.forEach(fn => fn());
+    // Remove event listeners with error protection
+    for (const fn of this.#cleanupHandlers) {
+      try {
+        fn();
+      } catch {
+        // Continue cleanup even if one handler fails
+      }
+    }
     this.#cleanupHandlers = [];
 
-    // Remove tooltip element
+    // Remove tooltip element (guaranteed cleanup)
     if (this.#tooltipElement) {
-      this.#tooltipElement.remove();
+      try {
+        if (this.#tooltipElement.parentNode) {
+          this.#tooltipElement.remove();
+        }
+      } catch {
+        // Ignore removal errors
+      }
       this.#tooltipElement = null;
+    }
+
+    // Also remove any orphaned tooltips from previous instances
+    try {
+      document.querySelectorAll('.vault-tooltip-js').forEach(el => el.remove());
+    } catch {
+      // Ignore cleanup errors
     }
 
     this.#container = null;

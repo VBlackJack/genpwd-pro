@@ -69,7 +69,7 @@ export function renderPasswordField(options = {}) {
           </button>
         ` : ''}
       </div>
-      <div class="vault-password-strength" id="${id}-strength" aria-live="polite" aria-atomic="true"></div>
+      <div class="vault-password-strength" id="${id}-strength" role="status" aria-live="polite" aria-atomic="true" aria-label="${t('vault.aria.passwordStrength')}"></div>
     </div>
   `;
 }

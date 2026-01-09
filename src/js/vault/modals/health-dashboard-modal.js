@@ -113,7 +113,7 @@ export function renderHealthGrid(options = {}) {
   ];
 
   return `
-    <div class="vault-health-grid">
+    <div class="vault-health-grid" aria-live="polite" aria-atomic="true">
       ${cards.map(card => renderHealthCard(card)).join('')}
     </div>
   `;
@@ -177,11 +177,12 @@ export function renderBreachSection(options = {}) {
 
   return `
     <div class="vault-health-actions">
-      <button class="vault-btn vault-btn-outline" id="btn-check-breaches">
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="vault-btn vault-btn-outline" id="btn-check-breaches" data-loading-text="${t('vault.common.checking')}">
+        <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
         </svg>
-        ${t('vault.health.checkBreaches')}
+        <span class="btn-spinner" hidden><span class="vault-spinner-small"></span></span>
+        <span class="btn-text">${t('vault.health.checkBreaches')}</span>
       </button>
       ${hasAuditFilter ? `
         <button class="vault-btn vault-btn-secondary" id="btn-clear-audit-filter">
@@ -347,4 +348,29 @@ export function renderLegacyHealthModal(stats, t = (k) => k) {
       </div>
     </div>
   `;
+}
+
+/**
+ * Set breach check button loading state
+ * @param {boolean} isLoading - Whether button is in loading state
+ */
+export function setBreachButtonLoading(isLoading) {
+  const btn = document.getElementById('btn-check-breaches');
+  if (!btn) return;
+
+  const icon = btn.querySelector('.btn-icon');
+  const spinner = btn.querySelector('.btn-spinner');
+  const text = btn.querySelector('.btn-text');
+
+  btn.disabled = isLoading;
+  btn.setAttribute('aria-busy', String(isLoading));
+
+  if (icon) icon.hidden = isLoading;
+  if (spinner) spinner.hidden = !isLoading;
+  if (text && isLoading) {
+    text.dataset.originalText = text.textContent;
+    text.textContent = btn.dataset.loadingText || text.textContent;
+  } else if (text && !isLoading && text.dataset.originalText) {
+    text.textContent = text.dataset.originalText;
+  }
 }

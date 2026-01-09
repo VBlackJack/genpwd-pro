@@ -42,6 +42,7 @@ export class ThemeToggle {
     this.dropdown = null;
     this.isDropdownOpen = false;
     this.longPressTimer = null;
+    this.abortController = new AbortController();
 
     this.#init();
   }
@@ -128,20 +129,20 @@ export class ThemeToggle {
       }
     });
 
-    // Close dropdown on outside click
+    // Close dropdown on outside click (with cleanup via AbortController)
     document.addEventListener('click', (e) => {
       if (this.isDropdownOpen && !this.button.contains(e.target) && !this.dropdown?.contains(e.target)) {
         this.#closeDropdown();
       }
-    });
+    }, { signal: this.abortController.signal });
 
-    // Close dropdown on Escape
+    // Close dropdown on Escape (with cleanup via AbortController)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isDropdownOpen) {
         this.#closeDropdown();
         this.button.focus();
       }
-    });
+    }, { signal: this.abortController.signal });
   }
 
   #handleClick() {
@@ -292,6 +293,9 @@ export class ThemeToggle {
    * Destroy the component and clean up
    */
   destroy() {
+    // Abort all document listeners
+    this.abortController.abort();
+
     if (this.button) {
       this.button.remove();
     }

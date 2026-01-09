@@ -75,6 +75,8 @@ function isInputElement(target) {
  */
 export function createKeyboardService(handlers = {}) {
   let keydownHandler = null;
+  let activityContainer = null;
+  let activityHandler = null;
 
   const {
     onLock,
@@ -203,13 +205,18 @@ export function createKeyboardService(handlers = {}) {
    * @param {HTMLElement} container - Container for mouse activity tracking
    */
   function start(container) {
+    // Clean up any existing listeners first
+    stop();
+
     keydownHandler = handleKeydown;
     document.addEventListener('keydown', keydownHandler);
 
     // Track mouse activity for auto-lock reset
     if (container && onActivity) {
-      container.addEventListener('mousemove', onActivity, { passive: true });
-      container.addEventListener('click', onActivity, { passive: true });
+      activityContainer = container;
+      activityHandler = onActivity;
+      container.addEventListener('mousemove', activityHandler, { passive: true });
+      container.addEventListener('click', activityHandler, { passive: true });
     }
   }
 
@@ -220,6 +227,14 @@ export function createKeyboardService(handlers = {}) {
     if (keydownHandler) {
       document.removeEventListener('keydown', keydownHandler);
       keydownHandler = null;
+    }
+
+    // Clean up mouse activity listeners
+    if (activityContainer && activityHandler) {
+      activityContainer.removeEventListener('mousemove', activityHandler);
+      activityContainer.removeEventListener('click', activityHandler);
+      activityContainer = null;
+      activityHandler = null;
     }
   }
 

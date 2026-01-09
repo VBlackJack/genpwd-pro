@@ -17,6 +17,9 @@ export function createModalService() {
   /** @type {Map<string, Function>} */
   const focusTrapHandlers = new Map();
 
+  /** @type {Map<string, HTMLElement>} Track elements with added tabindex for cleanup */
+  const addedTabindexElements = new Map();
+
   /** @type {HTMLElement|null} */
   let lastFocusedElement = null;
 
@@ -84,6 +87,8 @@ export function createModalService() {
         if (content) {
           content.setAttribute('tabindex', '-1');
           content.focus();
+          // Track for cleanup
+          addedTabindexElements.set(modal.id, content);
         }
       }
     });
@@ -98,6 +103,13 @@ export function createModalService() {
     if (handler) {
       modal.removeEventListener('keydown', handler);
       focusTrapHandlers.delete(modal.id);
+    }
+
+    // Clean up tabindex if we added it
+    const tabindexElement = addedTabindexElements.get(modal.id);
+    if (tabindexElement) {
+      tabindexElement.removeAttribute('tabindex');
+      addedTabindexElements.delete(modal.id);
     }
   }
 
@@ -121,6 +133,9 @@ export function createModalService() {
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
 
+    // Prevent background scroll
+    document.body.style.overflow = 'hidden';
+
     // Setup focus trap
     setupFocusTrap(modal, () => close(modalId));
 
@@ -143,6 +158,9 @@ export function createModalService() {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
     modal.removeAttribute('aria-modal');
+
+    // Restore background scroll
+    document.body.style.overflow = '';
 
     // Restore focus
     if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
@@ -192,6 +210,15 @@ export function createModalService() {
       }
     });
     focusTrapHandlers.clear();
+
+    // Clean up all added tabindex attributes
+    addedTabindexElements.forEach((element) => {
+      if (element && document.body.contains(element)) {
+        element.removeAttribute('tabindex');
+      }
+    });
+    addedTabindexElements.clear();
+
     lastFocusedElement = null;
   }
 

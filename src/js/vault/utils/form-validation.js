@@ -58,7 +58,8 @@ function updateMessageElement(messageEl, input, message, messageType) {
     span.textContent = message;
     messageEl.appendChild(span);
     messageEl.className = `vault-field-message visible ${messageType}`;
-    messageEl.setAttribute('role', 'alert');
+    // Use role="alert" (assertive) for errors, role="status" (polite) for success
+    messageEl.setAttribute('role', messageType === 'error' ? 'alert' : 'status');
     messageEl.setAttribute('aria-live', messageType === 'error' ? 'assertive' : 'polite');
     messageEl.setAttribute('aria-atomic', 'true');
   } else {
@@ -130,7 +131,7 @@ export function validateField(input, messageEl, rules = {}) {
   }
   // Valid
   else if (value && rules.showSuccess) {
-    message = rules.successMessage || '✓';
+    message = rules.successMessage || t('vault.validation.valid');
     messageType = 'success';
   }
 

@@ -12,6 +12,7 @@ import { getPasswordStrength, getPasswordAgeDays } from '../utils/password-utils
  * @returns {Array} Filtered entries
  */
 export function filterBySearch(entries, query) {
+  if (!entries) return [];
   if (!query) return entries;
 
   const q = query.toLowerCase();
@@ -31,6 +32,7 @@ export function filterBySearch(entries, query) {
  * @returns {Array} Filtered entries
  */
 export function filterByType(entries, type) {
+  if (!entries) return [];
   if (!type) return entries;
   return entries.filter(e => e.type === type);
 }
@@ -42,6 +44,7 @@ export function filterByType(entries, type) {
  * @returns {Array} Filtered entries
  */
 export function filterByStrength(entries, strength) {
+  if (!entries) return [];
   if (!strength) return entries;
   return entries.filter(e => {
     if (e.type !== 'login' || !e.data?.password) return false;
@@ -79,6 +82,7 @@ export function getExpiryStatus(entry) {
  * @returns {Array} Filtered entries
  */
 export function filterByAge(entries, ageFilter) {
+  if (!entries) return [];
   if (!ageFilter) return entries;
 
   return entries.filter(e => {

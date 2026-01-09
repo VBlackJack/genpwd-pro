@@ -1276,10 +1276,12 @@
       "entryType": "Type d'entrée",
       "exportEntries": "Exporter les entrées",
       "generatePassword": "Générer un mot de passe",
+      "generatingShare": "Génération du partage chiffré",
       "hideValue": "Masquer la valeur",
       "importEntries": "Importer des entrées",
       "loadingDetails": "Chargement des détails",
       "loadingEntries": "Chargement des entrées",
+      "loadingVaults": "Chargement des coffres",
       "lockVault": "Verrouiller le coffre",
       "passwordManager": "Gestionnaire de mots de passe",
       "quickActions": "Actions rapides",
@@ -1303,7 +1305,13 @@
       "downloadAttachment": "Télécharger la pièce jointe {name}",
       "togglePasswordHistory": "Afficher/masquer l'historique des mots de passe",
       "copyHistoryPassword": "Copier l'ancien mot de passe",
-      "restoreHistoryPassword": "Restaurer l'ancien mot de passe"
+      "restoreHistoryPassword": "Restaurer l'ancien mot de passe",
+      "contextMenu": "Menu contextuel de l'entrée",
+      "folderContextMenu": "Menu contextuel du dossier",
+      "passwordStrength": "Indicateur de force du mot de passe",
+      "autotypeSteps": "Étapes de saisie automatique",
+      "entryPreview": "Aperçu de l'entrée",
+      "statusIndicators": "Indicateurs d'état"
     },
     "attachments": {
       "dropOrBrowse": "Déposez vos fichiers ici ou {browse}",
@@ -1313,7 +1321,9 @@
     "autotype": {
       "copyHint": "Copiez les valeurs ci-dessous :",
       "manualTitle": "Remplissage manuel",
-      "requiresApp": "Le remplissage automatique nécessite l'application Electron."
+      "requiresApp": "Le remplissage automatique nécessite l'application Electron.",
+      "copyUsername": "Copier le nom d'utilisateur",
+      "copyPassword": "Copier le mot de passe"
     },
     "bulk": {
       "checkHint": "Cocher pour ajouter, décocher pour retirer",
@@ -1337,6 +1347,9 @@
       "purple": "Violet",
       "red": "Rouge",
       "yellow": "Jaune"
+    },
+    "symbols": {
+      "checkmark": "✓"
     },
     "common": {
       "add": "Ajouter",
@@ -1507,7 +1520,14 @@
     },
     "export": {
       "chooseFormat": "Choisissez le format d'export :",
-      "title": "Exporter {count} entrée(s)"
+      "title": "Exporter {count} entrée(s)",
+      "warnings": {
+        "plaintextGeneric": "Cet export contient des mots de passe non chiffrés. Stockez le fichier en sécurité et supprimez-le après utilisation.",
+        "plaintextJson": "L'export JSON contient tous les mots de passe en clair. Toute personne ayant accès à ce fichier peut lire vos mots de passe.",
+        "plaintextCsv": "L'export CSV contient tous les mots de passe en clair. Toute personne ayant accès à ce fichier peut lire vos mots de passe.",
+        "plaintextXml": "L'export XML KeePass contient les mots de passe. Importez dans KeePass et supprimez le fichier XML immédiatement."
+      },
+      "securityWarning": "Avertissement de sécurité"
     },
     "exportFormats": {
       "bitwardenDesc": "Compatible Bitwarden",
@@ -1705,7 +1725,12 @@
         "unsupportedExportFormat": "Format d'export non supporté : {format}",
         "unsupportedImportFormat": "Format d'import non supporté : {format}",
         "xmlForbiddenPatterns": "Le XML contient des motifs interdits (risque de sécurité potentiel)",
-        "xmlTooLarge": "Fichier XML trop volumineux (max 10 Mo)"
+        "xmlTooLarge": "Fichier XML trop volumineux (max 10 Mo)",
+        "noFile": "Aucun fichier sélectionné",
+        "fileTooLarge": "Fichier trop volumineux (max 50 Mo)",
+        "invalidFormat": "Format de fichier invalide. Formats supportés : XML, JSON, CSV",
+        "invalidFilename": "Nom de fichier invalide. Contient des caractères non autorisés.",
+        "mimeTypeMismatch": "Le type de fichier ne correspond pas à l'extension. Assurez-vous que le fichier est un XML, JSON ou CSV valide."
       },
       "fields": "Champs",
       "folders": "Dossiers",
@@ -1766,7 +1791,8 @@
       "showHide": "Afficher/Masquer",
       "subtitle": "Sélectionnez un coffre et entrez votre mot de passe",
       "title": "Coffre",
-      "unlock": "Déverrouiller"
+      "unlock": "Déverrouiller",
+      "windowsHello": "Windows Hello"
     },
     "messages": {
       "addedToFavorites": "Ajouté aux favoris",
@@ -2065,7 +2091,8 @@
     },
     "totp": {
       "qrTitle": "QR Code TOTP",
-      "scanHint": "Scannez avec votre application d'authentification (Google Authenticator, Authy, etc.)"
+      "scanHint": "Scannez avec votre application d'authentification (Google Authenticator, Authy, etc.)",
+      "qrError": "Erreur de génération du QR code"
     },
     "validation": {
       "fieldRequired": "Ce champ est requis",
@@ -2076,7 +2103,8 @@
       "minLength": "Minimum {count} caractères",
       "passwordsMatch": "Les mots de passe correspondent",
       "passwordsNoMatch": "Les mots de passe ne correspondent pas",
-      "tooWeak": "Mot de passe trop faible"
+      "tooWeak": "Mot de passe trop faible",
+      "valid": "Valide"
     },
     "view": {
       "comfortable": "Vue confortable",
@@ -2094,7 +2122,8 @@
       "showDetails": "Afficher les détails",
       "hideDetails": "Masquer les détails",
       "expandAll": "Tout déplier",
-      "collapseAll": "Tout replier"
+      "collapseAll": "Tout replier",
+      "modeChanged": "Vue changée en {mode}"
     },
     "generator": {
       "title": "Générateur de mot de passe",
@@ -2107,7 +2136,8 @@
       "uppercase": "A-Z (majuscules)",
       "lowercase": "a-z (minuscules)",
       "numbers": "0-9 (chiffres)",
-      "symbols": "!@#$ (symboles)"
+      "symbols": "!@#$ (symboles)",
+      "characterOptions": "Options de caractères"
     },
     "entryInfo": {
       "lastModified": "Modifié",

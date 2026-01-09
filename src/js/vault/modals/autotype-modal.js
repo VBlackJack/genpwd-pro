@@ -35,6 +35,9 @@ export function showAutotypeModal(options = {}) {
   const username = entry.data?.username || '';
   const password = entry.data?.password || '';
 
+  // Store previously focused element for restoration
+  const previouslyFocused = document.activeElement;
+
   const modal = document.createElement('div');
   modal.className = 'vault-modal-overlay';
   modal.id = 'autotype-modal';
@@ -50,20 +53,20 @@ export function showAutotypeModal(options = {}) {
       <div class="vault-modal-body">
         <p class="vault-modal-hint">${t('vault.autotype.requiresApp')}</p>
         <p class="vault-modal-hint">${t('vault.autotype.copyHint')}</p>
-        <div class="vault-autotype-steps">
-          <div class="vault-autotype-step">
-            <span class="vault-autotype-label">1. ${t('vault.labels.username')}</span>
+        <ol class="vault-autotype-steps" aria-label="${t('vault.aria.autotypeSteps')}">
+          <li class="vault-autotype-step">
+            <span class="vault-autotype-label">${t('vault.labels.username')}</span>
             <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-user">
-              ${t('vault.common.copy')} "${escapeHtml(username.substring(0, 10))}${username.length > 10 ? '...' : ''}"
+              ${t('vault.autotype.copyUsername')}
             </button>
-          </div>
-          <div class="vault-autotype-step">
-            <span class="vault-autotype-label">2. ${t('vault.labels.password')}</span>
+          </li>
+          <li class="vault-autotype-step">
+            <span class="vault-autotype-label">${t('vault.labels.password')}</span>
             <button class="vault-btn vault-btn-sm vault-btn-primary" id="copy-autotype-pass">
-              ${t('vault.common.copy')} ••••••••
+              ${t('vault.autotype.copyPassword')}
             </button>
-          </div>
-        </div>
+          </li>
+        </ol>
       </div>
     </div>
   `;
@@ -71,7 +74,26 @@ export function showAutotypeModal(options = {}) {
   document.body.appendChild(modal);
 
   // Bind events
-  const closeModal = () => modal.remove();
+  const closeModal = () => {
+    modal.remove();
+    // Restore focus to previously focused element with fallback
+    if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.body.contains(previouslyFocused)) {
+      previouslyFocused.focus();
+    } else {
+      // Fallback: focus main landmark or entry list for accessibility
+      const fallbackTargets = [
+        document.querySelector('[role="main"]'),
+        document.querySelector('.vault-entry-list'),
+        document.querySelector('.vault-content'),
+        document.body
+      ];
+      const fallback = fallbackTargets.find(el => el && typeof el.focus === 'function');
+      if (fallback) {
+        fallback.setAttribute('tabindex', '-1');
+        fallback.focus();
+      }
+    }
+  };
 
   modal.querySelector('[data-close-modal]')?.addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => {

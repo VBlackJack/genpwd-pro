@@ -68,7 +68,10 @@ export {
 // Entry fields
 export {
   renderExpirationField,
-  renderTOTPField
+  renderTOTPField,
+  getTotpSecret,
+  clearTotpSecret,
+  clearAllTotpSecrets
 } from './entry-fields.js';
 
 // Attachments handling

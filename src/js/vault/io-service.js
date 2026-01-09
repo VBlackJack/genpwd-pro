@@ -80,18 +80,65 @@ function getRandomBytes(length) {
  * @returns {string}
  */
 function bytesToBase64(bytes) {
+  if (!(bytes instanceof Uint8Array)) {
+    throw new TypeError('Expected Uint8Array');
+  }
   const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
   return btoa(binString);
 }
 
 /**
- * Convert Base64 string to Uint8Array
- * @param {string} base64
+ * Validate Base64 string format
+ * @param {string} str - String to validate
+ * @returns {boolean} True if valid Base64
+ */
+function isValidBase64(str) {
+  if (typeof str !== 'string') return false;
+  if (str.length === 0) return false;
+
+  // Standard Base64 alphabet plus padding
+  const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+  if (!base64Pattern.test(str)) return false;
+
+  // Check length is valid (must be divisible by 4 after padding normalization)
+  // Or valid unpadded length: len % 4 cannot be 1
+  const len = str.replace(/=/g, '').length;
+  if (len % 4 === 1) return false;
+
+  return true;
+}
+
+/**
+ * Convert Base64 string to Uint8Array with validation
+ * @param {string} base64 - Base64 encoded string
  * @returns {Uint8Array}
+ * @throws {Error} If input is not valid Base64
  */
 function base64ToBytes(base64) {
-  const binString = atob(base64);
-  return Uint8Array.from(binString, (m) => m.codePointAt(0));
+  // Type validation
+  if (typeof base64 !== 'string') {
+    throw new TypeError('Expected string for Base64 input');
+  }
+
+  // Trim whitespace (Base64 may have line breaks)
+  const trimmed = base64.trim();
+
+  // Validate format
+  if (!isValidBase64(trimmed)) {
+    throw new Error('Invalid Base64 format');
+  }
+
+  // Maximum reasonable size check (100MB decoded = ~133MB encoded)
+  if (trimmed.length > 140000000) {
+    throw new Error('Base64 input too large');
+  }
+
+  try {
+    const binString = atob(trimmed);
+    return Uint8Array.from(binString, (m) => m.codePointAt(0));
+  } catch (e) {
+    throw new Error(`Base64 decode failed: ${e.message}`);
+  }
 }
 
 /**

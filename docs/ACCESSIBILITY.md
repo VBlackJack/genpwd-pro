@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document tracks accessibility compliance efforts for GenPwd Pro v3.0.0, targeting WCAG 2.1 Level AA conformance to ensure the application is usable by everyone, including people with disabilities.
+This document tracks accessibility compliance efforts for GenPwd Pro v3.0.1, targeting WCAG 2.1 Level AA conformance to ensure the application is usable by everyone, including people with disabilities.
 
 ## Accessibility Goals
 

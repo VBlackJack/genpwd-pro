@@ -102,6 +102,7 @@ import { showColorPicker, getFolderColor, setFolderColor } from './vault/compone
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
 import { renderTagsList } from './vault/components/tags-display.js';
 import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
+import { getTotpSecret, clearTotpSecret, clearAllTotpSecrets } from './vault/components/entry-fields.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -1754,9 +1755,11 @@ export class VaultUI {
 
     const updateTOTP = async () => {
       for (const field of totpFields) {
-        const codeContainer = field.querySelector('.vault-totp-code');
-        const secret = codeContainer?.dataset.secret;
-        if (!secret) continue;
+        // Retrieve secret from secure in-memory store using entry ID
+        const entryId = field.dataset.entryId;
+        const totpData = entryId ? getTotpSecret(entryId) : null;
+        if (!totpData?.secret) continue;
+        const secret = totpData.secret;
 
         try {
           const result = await this.#generateTOTP(secret);
@@ -3973,14 +3976,21 @@ export class VaultUI {
       el.title = t('vault.aria.clickToCopy');
     });
 
-    // Show TOTP QR Code
+    // Show TOTP QR Code - Retrieve secret from secure in-memory store
     document.querySelectorAll('.show-totp-qr').forEach(btn => {
       btn.addEventListener('click', () => {
-        const secret = btn.dataset.secret;
-        const issuer = btn.dataset.title || t('vault.defaults.totpIssuer');
-        const account = btn.dataset.account || '';
-        if (secret) {
-          showTOTPQRModal({ secret, issuer, account, t });
+        const totpField = btn.closest('.vault-totp-field');
+        const entryId = totpField?.dataset.entryId;
+        if (entryId) {
+          const totpData = getTotpSecret(entryId);
+          if (totpData) {
+            showTOTPQRModal({
+              secret: totpData.secret,
+              issuer: totpData.title || t('vault.defaults.totpIssuer'),
+              account: totpData.account || '',
+              t
+            });
+          }
         }
       });
     });
@@ -5666,6 +5676,8 @@ export class VaultUI {
 
   async #lock() {
     try {
+      // Clear sensitive TOTP secrets from memory
+      clearAllTotpSecrets();
       await window.vault.lock();
       showToast(t('vault.messages.vaultLocked'), 'success');
     } catch (error) {

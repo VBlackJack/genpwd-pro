@@ -542,8 +542,10 @@
 }
 
 .vault-entry-row:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
   border-color: var(--vault-primary);
+  box-shadow: inset 0 0 0 1px var(--vault-primary);
 }
 
 .vault-entry-row.selected {

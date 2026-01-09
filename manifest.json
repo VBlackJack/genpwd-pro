@@ -2,7 +2,7 @@
   "name": "GenPwd Pro - Secure Password Generator",
   "short_name": "GenPwd Pro",
   "description": "Advanced password generator with plugins, import/export, and offline support",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

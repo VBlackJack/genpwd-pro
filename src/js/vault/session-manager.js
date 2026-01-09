@@ -28,6 +28,11 @@ export class InMemorySessionManager extends SessionManager {
       return Result.err(new TypeError('Master key must be a Uint8Array'));
     }
 
+    // Prevent double-unlock: clear existing keys before storing new one
+    if (this.isUnlocked()) {
+      await this.clear();
+    }
+
     if (isDuress) {
       this.duressKey = cloneKey(key);
       this.isDuressMode = true;

@@ -8,6 +8,36 @@ import { renderPasswordStrength } from '../utils/password-display.js';
 import { t, i18n } from '../../utils/i18n.js';
 
 /**
+ * Check if a URL is safe to use in href attributes
+ * Prevents javascript:, data:, and other dangerous protocols
+ * @param {string} url - URL to validate
+ * @returns {boolean} True if safe to use
+ */
+function isSafeUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim().toLowerCase();
+  // Block dangerous protocols explicitly
+  if (trimmed.startsWith('javascript:') ||
+      trimmed.startsWith('data:') ||
+      trimmed.startsWith('vbscript:') ||
+      trimmed.startsWith('file://')) {
+    return false;
+  }
+  // Allow http, https, mailto, tel protocols only
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') ||
+      trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) {
+    return true;
+  }
+  // Allow relative URLs that start with / ./ or ../ (no protocol)
+  if (!trimmed.includes(':') && (
+    trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')
+  )) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Maximum number of mask characters to display for hidden values.
  * Prevents excessively long mask strings while still indicating value presence.
  */
@@ -25,7 +55,8 @@ const MAX_MASK_LENGTH = 24;
  * @returns {string} HTML string
  */
 export function renderField({ label, value, key = '', masked = false, copyable = false, isUrl = false }) {
-  if (!value) return '';
+  // Guard against non-string or empty values
+  if (typeof value !== 'string' || !value) return '';
 
   // Use special password card for password fields
   if (key === 'password') {
@@ -41,9 +72,9 @@ export function renderField({ label, value, key = '', masked = false, copyable =
         <label class="vault-field-label">${label}</label>
         ${masked ? `<span class="vault-field-hint">${t('vault.detail.hoverToReveal')}</span>` : ''}
       </div>
-      <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(value)}">
+      <div class="vault-field-value ${masked ? 'vault-reveal-on-hover' : ''}">
         <span class="vault-field-text ${masked ? 'masked' : ''}" data-value="${escapeHtml(value)}">
-          ${isUrl ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>` : maskedValue}
+          ${isUrl && isSafeUrl(value) ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>` : maskedValue}
         </span>
         <span class="vault-field-revealed">${escapeHtml(value)}</span>
         <div class="vault-field-actions">
@@ -74,7 +105,7 @@ function renderPasswordCard({ label, value }) {
         <div class="vault-breach-indicator" id="password-breach-indicator"></div>
       </div>
       <div class="vault-password-card-body">
-        <div class="vault-password-card-content vault-reveal-on-hover" data-real-value="${escapeHtml(value)}">
+        <div class="vault-password-card-content vault-reveal-on-hover">
           <span class="vault-field-text masked" data-value="${escapeHtml(value)}">${maskedValue}</span>
           <span class="vault-field-revealed">${escapeHtml(value)}</span>
         </div>
@@ -94,7 +125,7 @@ function renderPasswordCard({ label, value }) {
  */
 function renderVisibilityToggle() {
   return `
-    <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" type="button">
+    <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false" type="button">
       <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
         <circle cx="12" cy="12" r="3"></circle>
@@ -175,12 +206,15 @@ function renderCustomField(field, fieldKindLabels) {
 
   // Format value based on type
   let displayValue = escapeHtml(field.value || '');
-  if (isUrl && field.value) {
+  if (isUrl && field.value && isSafeUrl(field.value)) {
     displayValue = `<a href="${escapeHtml(field.value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(field.value)}</a>`;
   } else if (isEmail && field.value) {
-    displayValue = `<a href="mailto:${escapeHtml(field.value)}">${escapeHtml(field.value)}</a>`;
+    // Encode email for safe mailto href
+    displayValue = `<a href="mailto:${encodeURIComponent(field.value)}">${escapeHtml(field.value)}</a>`;
   } else if (isPhone && field.value) {
-    displayValue = `<a href="tel:${escapeHtml(field.value)}">${escapeHtml(field.value)}</a>`;
+    // Encode phone for safe tel href (remove non-digit chars except +)
+    const safePhone = field.value.replace(/[^\d+]/g, '');
+    displayValue = `<a href="tel:${encodeURIComponent(safePhone)}">${escapeHtml(field.value)}</a>`;
   } else if (isDate && field.value) {
     try {
       const date = new Date(field.value);
@@ -200,7 +234,7 @@ function renderCustomField(field, fieldKindLabels) {
         ${field.isSecured ? `<span class="vault-field-badge secure">🔒 ${t('vault.fieldKinds.secured')}</span>` : ''}
         <span class="vault-field-kind-badge">${fieldKindLabels[field.kind] || field.kind}</span>
       </div>
-      <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}" data-real-value="${escapeHtml(field.value || '')}">
+      <div class="vault-field-value ${isMasked ? 'vault-reveal-on-hover' : ''}">
         <span class="vault-field-text ${isMasked ? 'masked' : ''}" data-value="${escapeHtml(field.value || '')}">
           ${isMasked ? maskedValue : displayValue}
         </span>

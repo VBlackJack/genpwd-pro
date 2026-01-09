@@ -93,7 +93,11 @@ export function renderPasswordAge(entry, t = (k) => k) {
   // Only show for login entries with passwords
   if (entry.type !== 'login' || !entry.data?.password) return '';
 
+  // Guard against missing or invalid modifiedAt
+  if (!entry.modifiedAt) return '';
   const modifiedAt = new Date(entry.modifiedAt);
+  if (isNaN(modifiedAt.getTime())) return '';
+
   const now = new Date();
   const daysSinceModified = Math.floor((now - modifiedAt) / (1000 * 60 * 60 * 24));
 

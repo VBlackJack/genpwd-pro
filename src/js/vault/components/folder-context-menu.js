@@ -21,14 +21,14 @@ export const FOLDER_ACTIONS = {
  */
 function renderFolderContextMenuContent({ t = (k) => k } = {}) {
   return `
-    <button class="vault-ctx-item" data-action="${FOLDER_ACTIONS.RENAME}">
+    <button class="vault-ctx-item" role="menuitem" data-action="${FOLDER_ACTIONS.RENAME}">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
       </svg>
       ${t('vault.actions.rename')}
     </button>
-    <button class="vault-ctx-item" data-action="${FOLDER_ACTIONS.ADD_SUBFOLDER}">
+    <button class="vault-ctx-item" role="menuitem" data-action="${FOLDER_ACTIONS.ADD_SUBFOLDER}">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
         <line x1="12" y1="11" x2="12" y2="17"></line>
@@ -36,7 +36,7 @@ function renderFolderContextMenuContent({ t = (k) => k } = {}) {
       </svg>
       ${t('vault.actions.newSubfolder')}
     </button>
-    <button class="vault-ctx-item" data-action="${FOLDER_ACTIONS.COLOR}">
+    <button class="vault-ctx-item" role="menuitem" data-action="${FOLDER_ACTIONS.COLOR}">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="13.5" cy="6.5" r=".5"></circle>
         <circle cx="17.5" cy="10.5" r=".5"></circle>
@@ -47,7 +47,7 @@ function renderFolderContextMenuContent({ t = (k) => k } = {}) {
       ${t('vault.actions.color')}
     </button>
     <div class="vault-ctx-divider"></div>
-    <button class="vault-ctx-item vault-ctx-danger" data-action="${FOLDER_ACTIONS.DELETE}">
+    <button class="vault-ctx-item vault-ctx-danger" role="menuitem" data-action="${FOLDER_ACTIONS.DELETE}">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="3 6 5 6 21 6"></polyline>
         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -73,6 +73,8 @@ export function showFolderContextMenu({ folderId, x, y, t, onAction }) {
 
   const menu = document.createElement('div');
   menu.className = 'vault-folder-context-menu vault-context-menu';
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', t('vault.aria.folderContextMenu'));
   menu.innerHTML = renderFolderContextMenuContent({ t });
 
   menu.style.left = `${x}px`;
@@ -89,27 +91,122 @@ export function showFolderContextMenu({ folderId, x, y, t, onAction }) {
   }
 
   // Handle actions
-  menu.querySelectorAll('.vault-ctx-item').forEach(item => {
+  const menuItems = menu.querySelectorAll('.vault-ctx-item');
+  menuItems.forEach(item => {
     item.addEventListener('click', () => {
       const action = item.dataset.action;
-      menu.remove();
+      cleanup();
       if (onAction) onAction(action, folderId, x, y);
     });
   });
+
+  // Keyboard navigation for accessibility
+  let focusedIndex = -1;
+  const focusableItems = Array.from(menuItems);
+
+  const focusItem = (index) => {
+    if (index >= 0 && index < focusableItems.length) {
+      focusedIndex = index;
+      focusableItems[index].focus();
+    }
+  };
+
+  const handleKeydown = (e) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        focusItem(focusedIndex < focusableItems.length - 1 ? focusedIndex + 1 : 0);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        focusItem(focusedIndex > 0 ? focusedIndex - 1 : focusableItems.length - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        focusItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        focusItem(focusableItems.length - 1);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (focusedIndex >= 0) {
+          const action = focusableItems[focusedIndex].dataset.action;
+          cleanup();
+          if (onAction) onAction(action, folderId, x, y);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        cleanup();
+        break;
+      case 'Tab':
+        // Trap focus within menu
+        e.preventDefault();
+        if (e.shiftKey) {
+          focusItem(focusedIndex > 0 ? focusedIndex - 1 : focusableItems.length - 1);
+        } else {
+          focusItem(focusedIndex < focusableItems.length - 1 ? focusedIndex + 1 : 0);
+        }
+        break;
+    }
+  };
+
+  menu.addEventListener('keydown', handleKeydown);
+
+  // Focus first item for keyboard users
+  requestAnimationFrame(() => focusItem(0));
+
+  // Track timeout for cleanup
+  let closeTimeoutId = null;
+  let closeHandler = null;
+
+  // Centralized cleanup function
+  const cleanup = () => {
+    if (closeTimeoutId) {
+      clearTimeout(closeTimeoutId);
+      closeTimeoutId = null;
+    }
+    if (closeHandler) {
+      document.removeEventListener('click', closeHandler);
+      closeHandler = null;
+    }
+    menu.removeEventListener('keydown', handleKeydown);
+    if (document.body.contains(menu)) {
+      menu.remove();
+    }
+  };
 
   // Close on outside click - with safety check for removed elements
   const closeMenu = (e) => {
     // Guard: if menu was already removed, just cleanup listener
     if (!document.body.contains(menu)) {
-      document.removeEventListener('click', closeMenu);
+      if (closeHandler) {
+        document.removeEventListener('click', closeHandler);
+        closeHandler = null;
+      }
       return;
     }
-    if (!menu.contains(e.target)) {
-      menu.remove();
-      document.removeEventListener('click', closeMenu);
+    // Guard: e.target may be null in edge cases
+    if (!e.target || !menu.contains(e.target)) {
+      cleanup();
     }
   };
-  setTimeout(() => document.addEventListener('click', closeMenu), 100);
+
+  // Store reference for cleanup
+  closeHandler = closeMenu;
+  closeTimeoutId = setTimeout(() => {
+    closeTimeoutId = null;
+    // Only add listener if menu still exists
+    if (document.body.contains(menu)) {
+      document.addEventListener('click', closeHandler);
+    }
+  }, 100);
+
+  // Store cleanup function on menu element for external cleanup
+  menu._cleanup = cleanup;
 
   return menu;
 }
@@ -118,5 +215,12 @@ export function showFolderContextMenu({ folderId, x, y, t, onAction }) {
  * Close any open folder context menu
  */
 export function closeFolderContextMenu() {
-  document.querySelector('.vault-folder-context-menu')?.remove();
+  const menu = document.querySelector('.vault-folder-context-menu');
+  if (menu) {
+    // Call cleanup if available to clear timeout and listeners
+    if (typeof menu._cleanup === 'function') {
+      menu._cleanup();
+    }
+    menu.remove();
+  }
 }

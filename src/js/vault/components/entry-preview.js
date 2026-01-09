@@ -147,16 +147,20 @@ export function showEntryPreview(options = {}) {
 
   if (!entry) return null;
 
+  // Validate entry data shape
+  const data = entry.data || {};
   const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
   const preview = document.createElement('div');
   preview.className = 'vault-entry-preview';
+  preview.setAttribute('role', 'tooltip');
+  preview.setAttribute('aria-label', t('vault.aria.entryPreview'));
 
   const fieldsHtml = buildPreviewFields(entry, t);
 
   preview.innerHTML = `
     <div class="vault-preview-header">
-      <div class="vault-preview-icon" data-type-color="${type.color}">
-        ${type.icon}
+      <div class="vault-preview-icon" data-type-color="${escapeHtml(type.color || '')}">
+        ${escapeHtml(type.icon || '')}
       </div>
       <span class="vault-preview-title">${escapeHtml(entry.title)}</span>
     </div>

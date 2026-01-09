@@ -164,6 +164,15 @@
   opacity: 0.6;
 }
 
+.vault-section-title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
 /* Security Summary */
 .vault-security-summary {
   background: var(--vault-surface);

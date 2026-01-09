@@ -206,7 +206,7 @@ function renderSecuritySummary(entry, entries = []) {
         <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
         </svg>
-        <span>${t('vault.entryInfo.securityScore')}</span>
+        <h4 class="vault-section-title">${t('vault.entryInfo.securityScore')}</h4>
       </div>
       <div class="vault-security-indicators">
         <div class="vault-security-item ${strengthInfo.class}">
@@ -315,6 +315,11 @@ export function renderEntryDetail({ entry, tags, entries = [] }) {
           <span class="vault-detail-type" style="--type-color: ${type.color}">${type.label}</span>
           ${entry.data?.url ? (() => {
             try {
+              // Validate URL has safe protocol before parsing
+              const urlLower = entry.data.url.trim().toLowerCase();
+              if (!urlLower.startsWith('http://') && !urlLower.startsWith('https://')) {
+                return '';
+              }
               return `<span class="vault-detail-domain">${escapeHtml(new URL(entry.data.url).hostname)}</span>`;
             } catch {
               return '';
@@ -343,7 +348,7 @@ export function renderEntryDetail({ entry, tags, entries = [] }) {
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>${t('vault.labels.customFields')}</span>
+            <h4 class="vault-section-title">${t('vault.labels.customFields')}</h4>
           </div>
           ${renderCustomFieldsDisplay(entry)}
         </div>
@@ -358,7 +363,7 @@ export function renderEntryDetail({ entry, tags, entries = [] }) {
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span>${t('vault.detail.modified')}</span>
+          <h4 class="vault-section-title">${t('vault.detail.modified')}</h4>
         </div>
         ${renderDetailMeta(entry)}
       </div>

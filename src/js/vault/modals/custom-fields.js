@@ -138,23 +138,26 @@ export function collectCustomFieldsData() {
 
 /**
  * Create custom fields event attachment helper
- * Returns a function that can be called to attach events
+ * Returns an object with attach and cleanup methods
  * @param {Object} options
  * @param {Function} options.t - Translation function
  * @param {Function} options.onFieldAdded - Callback when field is added
- * @returns {Function} Attach events function
+ * @returns {{ attach: Function, cleanup: Function }} Controller object
  */
 export function createCustomFieldsController(options = {}) {
   const { t = (k) => k, onFieldAdded } = options;
 
-  return function attachCustomFieldsEvents() {
+  // Track all event listeners for cleanup
+  const listeners = new Map();
+
+  function attachCustomFieldsEvents() {
     const addBtn = document.getElementById('btn-add-custom-field');
     const container = document.getElementById('custom-fields-container');
 
     if (!addBtn || !container) return;
 
-    // Add new field button
-    addBtn.addEventListener('click', () => {
+    // Add new field button handler
+    const handleAddField = () => {
       const fieldCount = container.querySelectorAll('.vault-custom-field').length;
       const newField = document.createElement('div');
       newField.innerHTML = createCustomFieldElement(fieldCount, t);
@@ -162,19 +165,39 @@ export function createCustomFieldsController(options = {}) {
       container.appendChild(fieldEl);
 
       // Attach events to the new field
-      attachSingleFieldEvents(fieldEl, t);
+      attachSingleFieldEvents(fieldEl, t, listeners);
 
       // Focus the label input
       fieldEl.querySelector('.vault-custom-field-label')?.focus();
 
       // Callback
       if (onFieldAdded) onFieldAdded(fieldEl);
-    });
+    };
+
+    addBtn.addEventListener('click', handleAddField);
+    listeners.set(addBtn, [{ type: 'click', handler: handleAddField }]);
 
     // Attach events to existing fields
     container.querySelectorAll('.vault-custom-field').forEach(fieldEl => {
-      attachSingleFieldEvents(fieldEl, t);
+      attachSingleFieldEvents(fieldEl, t, listeners);
     });
+  }
+
+  function cleanup() {
+    // Remove all tracked listeners
+    listeners.forEach((eventList, element) => {
+      if (element && document.body.contains(element)) {
+        eventList.forEach(({ type, handler }) => {
+          element.removeEventListener(type, handler);
+        });
+      }
+    });
+    listeners.clear();
+  }
+
+  return {
+    attach: attachCustomFieldsEvents,
+    cleanup
   };
 }
 
@@ -182,12 +205,18 @@ export function createCustomFieldsController(options = {}) {
  * Attach events to a single custom field element
  * @param {HTMLElement} fieldEl - Field element
  * @param {Function} t - Translation function
+ * @param {Map} listeners - Map to track listeners for cleanup
  */
-function attachSingleFieldEvents(fieldEl, t = (k) => k) {
+function attachSingleFieldEvents(fieldEl, t = (k) => k, listeners = null) {
+  const fieldListeners = [];
+
   // Remove field button
-  fieldEl.querySelector('.vault-remove-field-btn')?.addEventListener('click', () => {
-    fieldEl.remove();
-  });
+  const removeBtn = fieldEl.querySelector('.vault-remove-field-btn');
+  if (removeBtn) {
+    const handleRemove = () => fieldEl.remove();
+    removeBtn.addEventListener('click', handleRemove);
+    fieldListeners.push({ el: removeBtn, type: 'click', handler: handleRemove });
+  }
 
   // Kind selector - update input type when kind changes
   const kindSelect = fieldEl.querySelector('.vault-custom-field-kind');
@@ -196,8 +225,13 @@ function attachSingleFieldEvents(fieldEl, t = (k) => k) {
 
   const updateInputType = () => {
     const kind = kindSelect?.value;
+
+    // Validate kind against known options
+    const validKinds = FIELD_KIND_OPTIONS.map(opt => opt.value);
+    const safeKind = validKinds.includes(kind) ? kind : 'text';
+
     const isSecured = securedCheckbox?.checked;
-    const shouldMask = kind === 'password' || kind === 'hidden' || isSecured;
+    const shouldMask = safeKind === 'password' || safeKind === 'hidden' || isSecured;
 
     if (valueInput) {
       valueInput.type = shouldMask ? 'password' : 'text';
@@ -207,19 +241,33 @@ function attachSingleFieldEvents(fieldEl, t = (k) => k) {
       let toggleBtn = inputGroup?.querySelector('.toggle-pwd-visibility');
 
       if (shouldMask && !toggleBtn) {
+        // Create button with accessibility attributes set before DOM insertion
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'vault-input-btn toggle-pwd-visibility';
         btn.setAttribute('aria-label', t('vault.aria.toggleVisibility'));
-        btn.innerHTML = `
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        `;
-        btn.addEventListener('click', () => {
-          valueInput.type = valueInput.type === 'password' ? 'text' : 'password';
-        });
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('title', t('vault.aria.toggleVisibility'));
+
+        // Create SVG via DOM for better accessibility
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '18');
+        svg.setAttribute('height', '18');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+        btn.appendChild(svg);
+
+        const handleDynamicToggle = () => {
+          const isHidden = valueInput.type === 'password';
+          valueInput.type = isHidden ? 'text' : 'password';
+          btn.setAttribute('aria-pressed', String(isHidden));
+        };
+        btn.addEventListener('click', handleDynamicToggle);
+        fieldListeners.push({ el: btn, type: 'click', handler: handleDynamicToggle });
         inputGroup.appendChild(btn);
       } else if (!shouldMask && toggleBtn) {
         toggleBtn.remove();
@@ -227,13 +275,29 @@ function attachSingleFieldEvents(fieldEl, t = (k) => k) {
     }
   };
 
-  kindSelect?.addEventListener('change', updateInputType);
-  securedCheckbox?.addEventListener('change', updateInputType);
+  if (kindSelect) {
+    kindSelect.addEventListener('change', updateInputType);
+    fieldListeners.push({ el: kindSelect, type: 'change', handler: updateInputType });
+  }
+  if (securedCheckbox) {
+    securedCheckbox.addEventListener('change', updateInputType);
+    fieldListeners.push({ el: securedCheckbox, type: 'change', handler: updateInputType });
+  }
 
   // Existing toggle visibility buttons
-  fieldEl.querySelector('.toggle-pwd-visibility')?.addEventListener('click', function() {
-    if (valueInput) {
-      valueInput.type = valueInput.type === 'password' ? 'text' : 'password';
-    }
-  });
+  const toggleBtn = fieldEl.querySelector('.toggle-pwd-visibility');
+  if (toggleBtn) {
+    const handleToggle = () => {
+      if (valueInput) {
+        valueInput.type = valueInput.type === 'password' ? 'text' : 'password';
+      }
+    };
+    toggleBtn.addEventListener('click', handleToggle);
+    fieldListeners.push({ el: toggleBtn, type: 'click', handler: handleToggle });
+  }
+
+  // Store listeners for cleanup if map provided
+  if (listeners) {
+    listeners.set(fieldEl, fieldListeners);
+  }
 }

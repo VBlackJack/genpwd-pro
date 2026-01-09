@@ -38,7 +38,7 @@ export function showHelloSettingsPopover(options = {}) {
         <circle cx="15.5" cy="10" r="1.5"/>
         <path d="M12 18c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z"/>
       </svg>
-      <span>Windows Hello</span>
+      <span>${t('vault.windowsHello.title')}</span>
     </div>
     <div class="vault-hello-body">
       <p class="vault-hello-description">${isEnabled ? enabledDesc : disabledDesc}</p>
@@ -99,21 +99,48 @@ export function showHelloSettingsPopover(options = {}) {
     }
   }, true);
 
-  // Close on click outside with proper cleanup
+  // Close on click outside with proper cleanup and race condition prevention
   let closeTimeout = null;
-  const closeHandler = (e) => {
-    if (!document.body.contains(popover)) {
-      document.removeEventListener('click', closeHandler);
-      return;
+  let closeHandler = null;
+
+  const cleanupAndRemove = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+      closeTimeout = null;
     }
-    if (!popover.contains(e.target) && !e.target.closest('#hello-settings')) {
-      if (closeTimeout) clearTimeout(closeTimeout);
+    if (closeHandler) {
       document.removeEventListener('click', closeHandler);
+      closeHandler = null;
+    }
+    if (document.body.contains(popover)) {
       popover.remove();
     }
   };
+
+  closeHandler = (e) => {
+    if (!document.body.contains(popover)) {
+      // Popover was removed externally, just cleanup
+      if (closeHandler) {
+        document.removeEventListener('click', closeHandler);
+        closeHandler = null;
+      }
+      return;
+    }
+    if (!popover.contains(e.target) && !e.target.closest('#hello-settings')) {
+      cleanupAndRemove();
+    }
+  };
+
   // Delay to avoid immediate close
-  closeTimeout = setTimeout(() => document.addEventListener('click', closeHandler), 200);
+  closeTimeout = setTimeout(() => {
+    if (document.body.contains(popover)) {
+      document.addEventListener('click', closeHandler);
+    }
+    closeTimeout = null;
+  }, 200);
+
+  // Store cleanup function on popover for external cleanup
+  popover._cleanup = cleanupAndRemove;
 
   return popover;
 }
@@ -122,7 +149,15 @@ export function showHelloSettingsPopover(options = {}) {
  * Close Windows Hello settings popover
  */
 export function closeHelloSettingsPopover() {
-  document.querySelector('.vault-hello-popover')?.remove();
+  const popover = document.querySelector('.vault-hello-popover');
+  if (popover) {
+    // Call cleanup if available to clear timeout and listeners
+    if (typeof popover._cleanup === 'function') {
+      popover._cleanup();
+    } else {
+      popover.remove();
+    }
+  }
 }
 
 /**
@@ -201,8 +236,25 @@ export function showPasswordPrompt(options = {}) {
 
     document.body.appendChild(modal);
 
-    // Focus password input
-    setTimeout(() => modal.querySelector('#pwd-prompt-input')?.focus(), 100);
+    // Track timeouts for cleanup
+    const timeoutIds = new Set();
+
+    const safeTimeout = (fn, delay) => {
+      const id = setTimeout(() => {
+        timeoutIds.delete(id);
+        fn();
+      }, delay);
+      timeoutIds.add(id);
+      return id;
+    };
+
+    const clearAllTimeouts = () => {
+      timeoutIds.forEach(id => clearTimeout(id));
+      timeoutIds.clear();
+    };
+
+    // Focus password input using requestAnimationFrame for reliability
+    requestAnimationFrame(() => modal.querySelector('#pwd-prompt-input')?.focus());
 
     // Toggle password visibility
     modal.querySelector('.toggle-pwd-visibility')?.addEventListener('click', () => {
@@ -212,20 +264,25 @@ export function showPasswordPrompt(options = {}) {
 
     // Close handlers
     const close = () => {
+      clearAllTimeouts();
       modal.classList.remove('active');
-      setTimeout(() => modal.remove(), 200);
+      safeTimeout(() => modal.remove(), 200);
       resolve(null);
     };
 
     modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 
-    // Submit handler
+    // Submit handler with double-submit prevention
+    let submitted = false;
     modal.querySelector('#pwd-prompt-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (submitted) return;
+      submitted = true;
+      clearAllTimeouts();
       const password = modal.querySelector('#pwd-prompt-input')?.value;
       modal.classList.remove('active');
-      setTimeout(() => modal.remove(), 200);
+      safeTimeout(() => modal.remove(), 200);
       resolve(password || null);
     });
   });

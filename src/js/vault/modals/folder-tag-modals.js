@@ -10,6 +10,17 @@ import {
   renderColorPicker,
   TAG_COLORS
 } from './base-modal.js';
+import { escapeHtml } from '../utils/formatter.js';
+
+// Color validation for XSS prevention
+const DEFAULT_TAG_COLOR = '#6b7280';
+const COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/;
+
+function sanitizeTagColor(color) {
+  if (!color || typeof color !== 'string') return DEFAULT_TAG_COLOR;
+  const trimmed = color.trim();
+  return COLOR_PATTERN.test(trimmed) ? trimmed : DEFAULT_TAG_COLOR;
+}
 
 /**
  * Render add folder modal
@@ -151,7 +162,7 @@ export function renderMoveFolderModal(options = {}) {
             <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
-            <span>${f.name}</span>
+            <span>${escapeHtml(f.name)}</span>
           </button>
         `).join('')}
       </div>
@@ -194,8 +205,8 @@ export function renderBulkTagModal(options = {}) {
           <label class="vault-bulk-tag-item">
             <input type="checkbox" class="vault-checkbox" data-tag-id="${tag.id}"
                    ${selectedTags.has(tag.id) ? 'checked' : ''}>
-            <span class="vault-bulk-tag-color" style="background-color: ${tag.color || '#6b7280'}"></span>
-            <span class="vault-bulk-tag-name">${tag.name}</span>
+            <span class="vault-bulk-tag-color" style="background-color: ${sanitizeTagColor(tag.color)}"></span>
+            <span class="vault-bulk-tag-name">${escapeHtml(tag.name)}</span>
           </label>
         `).join('')}
       </div>

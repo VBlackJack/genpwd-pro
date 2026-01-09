@@ -4,7 +4,7 @@
  */
 
 // Icons are defined locally in ENTRY_TYPES
-import { escapeHtml } from '../../utils/formatter.js';
+import { escapeHtml, sanitizeCssColor } from '../../utils/formatter.js';
 import { getPasswordStrength } from '../../utils/password-utils.js';
 import { renderFaviconImg } from '../../utils/favicon-manager.js';
 
@@ -119,7 +119,7 @@ function renderTagsInRow(entry, allTags = []) {
   return `
     <div class="vault-entry-tags">
       ${tags.map(tag => `
-        <span class="vault-mini-tag" style="--tag-color: ${tag.color || '#6b7280'}" title="${escapeHtml(tag.name)}">
+        <span class="vault-mini-tag" style="--tag-color: ${sanitizeCssColor(tag.color)}" title="${escapeHtml(tag.name)}">
           ${escapeHtml(tag.name)}
         </span>
       `).join('')}

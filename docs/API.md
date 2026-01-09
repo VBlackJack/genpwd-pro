@@ -1,4 +1,4 @@
-# API Documentation - GenPwd Pro v3.0.0
+# API Documentation - GenPwd Pro v3.0.1
 
 > Interface de programmation fonctionnelle basée sur les modules ES6
 
@@ -327,6 +327,6 @@ Les scripts correspondants se trouvent dans `tools/` (build, dev-server, run_tes
 ---
 
 <div align="center">
-  <b>GenPwd Pro v3.0.0 - API Documentation</b><br />
+  <b>GenPwd Pro v3.0.1 - API Documentation</b><br />
   <i>© 2025 - Apache 2.0 License - Architecture Modulaire ES6</i>
 </div>

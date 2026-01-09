@@ -1,9 +1,78 @@
 /**
  * @fileoverview Export Service
  * Handles exporting vault entries to various formats
+ *
+ * SECURITY WARNING: All exports are in PLAINTEXT and contain unencrypted
+ * passwords and sensitive data. Users should be warned before exporting.
  */
 
 import i18n from '../../utils/i18n.js';
+
+// ============================================================================
+// EXPORT SECURITY INFORMATION
+// ============================================================================
+
+/**
+ * Export format security metadata
+ * All current formats export in PLAINTEXT - passwords are NOT encrypted
+ */
+export const EXPORT_SECURITY = Object.freeze({
+  json: {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextJson'
+  },
+  csv: {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextCsv'
+  },
+  keepass: {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextXml'
+  },
+  bitwarden: {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextCsv'
+  },
+  lastpass: {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextCsv'
+  },
+  '1password': {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextCsv'
+  },
+  chrome: {
+    encrypted: false,
+    containsPasswords: true,
+    warningKey: 'vault.export.warnings.plaintextCsv'
+  }
+});
+
+/**
+ * Check if export format contains unencrypted sensitive data
+ * @param {string} format - Export format
+ * @returns {boolean} True if export is unencrypted plaintext
+ */
+export function isPlaintextExport(format) {
+  const security = EXPORT_SECURITY[format];
+  return security ? !security.encrypted && security.containsPasswords : true;
+}
+
+/**
+ * Get security warning for export format
+ * @param {string} format - Export format
+ * @returns {string} Warning message i18n key
+ */
+export function getExportWarningKey(format) {
+  const security = EXPORT_SECURITY[format];
+  return security?.warningKey || 'vault.export.warnings.plaintextGeneric';
+}
 
 /**
  * Escape CSV special characters
@@ -11,7 +80,9 @@ import i18n from '../../utils/i18n.js';
  * @returns {string} Escaped CSV value
  */
 function escapeCSV(val) {
-  if (!val) return '';
+  // Handle null, undefined, and non-string types safely
+  // Note: 0 and false are falsy but valid values
+  if (val === null || val === undefined) return '';
   const str = String(val);
   if (str.includes(',') || str.includes('\n') || str.includes('"')) {
     return `"${str.replace(/"/g, '""')}"`;
@@ -77,7 +148,7 @@ function buildCSVRow(fields) {
  */
 export function exportToJSON(entries) {
   const exportData = {
-    version: '3.0.0',
+    version: '3.0.1',
     exportedAt: new Date().toISOString(),
     entries: entries.map(e => ({
       type: e.type,

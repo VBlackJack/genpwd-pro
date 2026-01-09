@@ -65,13 +65,18 @@ export function calculateHealthStats(entries) {
     else if (strength !== 'medium') weak++;
   });
 
-  // Count reused passwords
+  // Count reused passwords (filter out empty/null passwords)
   const passwordCounts = {};
   logins.forEach(entry => {
-    const pwd = entry.data.password;
-    passwordCounts[pwd] = (passwordCounts[pwd] || 0) + 1;
+    const pwd = entry.data?.password;
+    if (pwd && typeof pwd === 'string' && pwd.length > 0) {
+      passwordCounts[pwd] = (passwordCounts[pwd] || 0) + 1;
+    }
   });
-  const reused = logins.filter(e => passwordCounts[e.data.password] > 1).length;
+  const reused = logins.filter(e => {
+    const pwd = e.data?.password;
+    return pwd && typeof pwd === 'string' && passwordCounts[pwd] > 1;
+  }).length;
 
   // Count old passwords (by age) and expiring passwords (by expiresAt date)
   let old = 0, expired = 0, expiring = 0;
@@ -181,8 +186,8 @@ export function calculateHealthStats(entries) {
 export async function checkPasswordBreach(password, cache) {
   const hash = await sha1(password);
 
-  // Check cache first
-  if (cache.has(hash)) {
+  // Check cache first (with null guard)
+  if (cache?.has(hash)) {
     return cache.get(hash);
   }
 
@@ -202,13 +207,13 @@ export async function checkPasswordBreach(password, cache) {
         const [hashSuffix, countStr] = line.split(':');
         if (hashSuffix === suffix) {
           const count = parseInt(countStr, 10) || 0;
-          cache.set(hash, count);
+          cache?.set(hash, count);
           return count;
         }
       }
 
       // Not found in breach database
-      cache.set(hash, 0);
+      cache?.set(hash, 0);
       return 0;
     }
   } catch (err) {
@@ -240,8 +245,8 @@ export async function checkAllBreaches(entries, cache, options = {}) {
     try {
       const hash = await sha1(entry.data.password);
 
-      // Check cache first
-      if (cache.has(hash)) {
+      // Check cache first (with null guard)
+      if (cache?.has(hash)) {
         const cachedCount = cache.get(hash);
         if (cachedCount > 0) {
           compromised.push({ entry, count: cachedCount });
@@ -283,7 +288,7 @@ export async function checkAllBreaches(entries, cache, options = {}) {
 export async function getBreachCount(entry, cache) {
   if (entry.type !== 'login' || !entry.data?.password) return 0;
   const hash = await sha1(entry.data.password);
-  return cache.get(hash) || 0;
+  return cache?.get(hash) || 0;
 }
 
 /**

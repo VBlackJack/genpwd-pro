@@ -37,46 +37,46 @@ export function renderContextMenuContent({ entry, getEntryTypes, t = (k) => k })
     </div>
     <div class="vault-ctx-divider"></div>
     ${entry.type === 'login' && entry.data?.username ? `
-      <button class="vault-ctx-item" data-action="copy-username">
+      <button class="vault-ctx-item" role="menuitem" data-action="copy-username">
         <span class="vault-ctx-item-icon" aria-hidden="true">👤</span>
         ${t('vault.actions.copyUsername')}
       </button>
     ` : ''}
     ${entry.type === 'login' && entry.data?.password ? `
-      <button class="vault-ctx-item" data-action="copy-password">
+      <button class="vault-ctx-item" role="menuitem" data-action="copy-password">
         <span class="vault-ctx-item-icon" aria-hidden="true">🔑</span>
         ${t('vault.actions.copyPassword')}
       </button>
     ` : ''}
     ${entry.data?.url ? `
-      <button class="vault-ctx-item" data-action="open-url">
+      <button class="vault-ctx-item" role="menuitem" data-action="open-url">
         <span class="vault-ctx-item-icon" aria-hidden="true">🔗</span>
         ${t('vault.actions.openWebsite')}
       </button>
     ` : ''}
     <div class="vault-ctx-divider"></div>
-    <button class="vault-ctx-item" data-action="edit">
+    <button class="vault-ctx-item" role="menuitem" data-action="edit">
       <span class="vault-ctx-item-icon" aria-hidden="true">✏️</span>
       ${t('vault.common.edit')}
     </button>
-    <button class="vault-ctx-item" data-action="duplicate">
+    <button class="vault-ctx-item" role="menuitem" data-action="duplicate">
       <span class="vault-ctx-item-icon" aria-hidden="true">📋</span>
       ${t('vault.common.duplicate')}
     </button>
-    <button class="vault-ctx-item" data-action="move">
+    <button class="vault-ctx-item" role="menuitem" data-action="move">
       <span class="vault-ctx-item-icon" aria-hidden="true">📁</span>
       ${t('vault.common.move')}
     </button>
-    <button class="vault-ctx-item" data-action="toggle-favorite">
+    <button class="vault-ctx-item" role="menuitem" data-action="toggle-favorite">
       <span class="vault-ctx-item-icon" aria-hidden="true">${entry.favorite ? '☆' : '★'}</span>
       ${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}
     </button>
-    <button class="vault-ctx-item" data-action="toggle-pin">
+    <button class="vault-ctx-item" role="menuitem" data-action="toggle-pin">
       <span class="vault-ctx-item-icon" aria-hidden="true">${entry.pinned ? '📍' : '📌'}</span>
       ${entry.pinned ? t('vault.actions.unpin') : t('vault.actions.pinToTop')}
     </button>
     <div class="vault-ctx-divider"></div>
-    <button class="vault-ctx-item vault-ctx-danger" data-action="delete">
+    <button class="vault-ctx-item vault-ctx-danger" role="menuitem" data-action="delete">
       <span class="vault-ctx-item-icon" aria-hidden="true">🗑️</span>
       ${t('vault.common.delete')}
     </button>
@@ -94,13 +94,27 @@ export function renderContextMenuContent({ entry, getEntryTypes, t = (k) => k })
  * @param {Function} options.onAction - Callback when action is selected (action, entry)
  * @returns {HTMLElement} The menu element
  */
-export function showContextMenu({ entry, x, y, getEntryTypes, t, onAction }) {
+export function showContextMenu({ entry, x, y, getEntryTypes, t = (k) => k, onAction }) {
   // Remove existing context menu
   document.querySelector('.vault-context-menu')?.remove();
 
+  // Validate entry exists
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+
   const menu = document.createElement('div');
   menu.className = 'vault-context-menu';
-  menu.innerHTML = renderContextMenuContent({ entry, getEntryTypes, t });
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', t('vault.aria.contextMenu'));
+
+  try {
+    menu.innerHTML = renderContextMenuContent({ entry, getEntryTypes, t });
+  } catch {
+    // Fallback if rendering fails - use translated error without exposing details
+    const errorText = typeof t === 'function' ? t('vault.common.error') : '';
+    menu.innerHTML = `<div class="vault-ctx-item vault-ctx-error">${escapeHtml(errorText) || '⚠'}</div>`;
+  }
 
   // Position the menu
   document.body.appendChild(menu);
@@ -108,11 +122,11 @@ export function showContextMenu({ entry, x, y, getEntryTypes, t, onAction }) {
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
 
-  // Adjust if menu goes off-screen
-  let posX = x;
-  let posY = y;
-  if (x + rect.width > viewportW) posX = viewportW - rect.width - 10;
-  if (y + rect.height > viewportH) posY = viewportH - rect.height - 10;
+  // Adjust if menu goes off-screen (all edges)
+  let posX = Math.max(10, x);
+  let posY = Math.max(10, y);
+  if (posX + rect.width > viewportW) posX = Math.max(10, viewportW - rect.width - 10);
+  if (posY + rect.height > viewportH) posY = Math.max(10, viewportH - rect.height - 10);
 
   menu.style.left = `${posX}px`;
   menu.style.top = `${posY}px`;
@@ -128,33 +142,62 @@ export function showContextMenu({ entry, x, y, getEntryTypes, t, onAction }) {
     });
   });
 
-  // Close on click outside or Escape
-  setTimeout(() => {
-    const cleanup = () => {
-      document.removeEventListener('click', handler);
+  // Centralized cleanup for guaranteed listener removal
+  let clickHandler = null;
+  let escHandler = null;
+  let setupTimeoutId = null;
+
+  const cleanupListeners = () => {
+    if (setupTimeoutId) {
+      clearTimeout(setupTimeoutId);
+      setupTimeoutId = null;
+    }
+    if (clickHandler) {
+      document.removeEventListener('click', clickHandler);
+      clickHandler = null;
+    }
+    if (escHandler) {
       document.removeEventListener('keydown', escHandler);
-    };
-    const handler = (e) => {
+      escHandler = null;
+    }
+  };
+
+  const closeAndCleanup = () => {
+    cleanupListeners();
+    if (document.body.contains(menu)) {
+      menu.remove();
+    }
+  };
+
+  // Store cleanup on menu element for external access
+  menu._cleanup = closeAndCleanup;
+
+  // Close on click outside or Escape
+  setupTimeoutId = setTimeout(() => {
+    setupTimeoutId = null;
+    // Guard: menu may have been removed before timeout fires
+    if (!document.body.contains(menu)) {
+      return;
+    }
+    clickHandler = (e) => {
       if (!document.body.contains(menu)) {
-        cleanup();
+        cleanupListeners();
         return;
       }
       if (!menu.contains(e.target)) {
-        closeMenu();
-        cleanup();
+        closeAndCleanup();
       }
     };
-    const escHandler = (e) => {
+    escHandler = (e) => {
       if (e.key === 'Escape') {
         if (!document.body.contains(menu)) {
-          cleanup();
+          cleanupListeners();
           return;
         }
-        closeMenu();
-        cleanup();
+        closeAndCleanup();
       }
     };
-    document.addEventListener('click', handler);
+    document.addEventListener('click', clickHandler);
     document.addEventListener('keydown', escHandler);
   }, 0);
 
@@ -165,5 +208,12 @@ export function showContextMenu({ entry, x, y, getEntryTypes, t, onAction }) {
  * Close any open context menu
  */
 export function closeContextMenu() {
-  document.querySelector('.vault-context-menu')?.remove();
+  const menu = document.querySelector('.vault-context-menu');
+  if (menu) {
+    if (typeof menu._cleanup === 'function') {
+      menu._cleanup();
+    } else {
+      menu.remove();
+    }
+  }
 }

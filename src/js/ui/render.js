@@ -28,7 +28,19 @@ import { checkPasswordBreach, formatBreachCount, getBreachSeverity } from '../ut
 const clickTimers = new WeakMap();
 let eventController = new AbortController();
 
+/**
+ * Cleanup previous event listeners before re-rendering
+ */
+function cleanupEventController() {
+  if (eventController) {
+    eventController.abort();
+  }
+  eventController = new AbortController();
+}
+
 export function renderResults(results, mask) {
+  // Cleanup previous listeners before rendering new content
+  cleanupEventController();
   const wrap = getElement('#results-list');
   if (!wrap) return;
 

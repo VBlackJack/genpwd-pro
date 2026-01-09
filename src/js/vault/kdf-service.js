@@ -48,7 +48,7 @@ export class ScryptKdfService extends KdfService {
       throw new TypeError('Scrypt iterations must be a power of two greater than zero');
     }
     if (iterations > MAX_ITERATIONS) {
-      throw new RangeError(`Scrypt iterations exceeds maximum (${MAX_ITERATIONS})`);
+      throw new RangeError('Scrypt iterations exceeds allowed maximum');
     }
 
     // Validate memory (must be positive and within bounds)
@@ -56,7 +56,7 @@ export class ScryptKdfService extends KdfService {
       throw new TypeError('Scrypt memoryKb must be greater than zero');
     }
     if (memoryKb > MAX_MEMORY_KB) {
-      throw new RangeError(`Scrypt memoryKb exceeds maximum (${MAX_MEMORY_KB} KB / 1 GB)`);
+      throw new RangeError('Scrypt memoryKb exceeds allowed maximum');
     }
 
     // Validate parallelism (must be positive integer within bounds)
@@ -64,7 +64,7 @@ export class ScryptKdfService extends KdfService {
       throw new TypeError('Scrypt parallelism must be a positive integer');
     }
     if (parallelism > MAX_PARALLELISM) {
-      throw new RangeError(`Scrypt parallelism exceeds maximum (${MAX_PARALLELISM})`);
+      throw new RangeError('Scrypt parallelism exceeds allowed maximum');
     }
 
     // Validate salt

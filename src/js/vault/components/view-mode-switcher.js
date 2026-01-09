@@ -43,10 +43,12 @@ export const GROUP_BY_OPTIONS = {
 
 const STORAGE_KEY = 'genpwd_vault_view_mode';
 const GROUP_STORAGE_KEY = 'genpwd_vault_group_by';
+const ANNOUNCEMENT_DEBOUNCE_MS = 500;
 
 let currentViewMode = VIEW_MODES.COMFORTABLE;
 let currentGroupBy = GROUP_BY_OPTIONS.NONE;
 let onChangeCallback = null;
+let announcementTimeoutId = null;
 
 /**
  * Initialize view mode from storage
@@ -96,6 +98,9 @@ export function setViewMode(mode) {
   // Update UI classes
   updateViewModeClasses();
 
+  // Announce change to screen readers
+  announceViewModeChange(mode);
+
   // Trigger callback if set
   if (typeof onChangeCallback === 'function') {
     onChangeCallback({ viewMode: mode, groupBy: currentGroupBy });
@@ -143,6 +148,45 @@ function updateViewModeClasses() {
 
   // Add current view mode class
   entryList.classList.add(`view-${currentViewMode}`);
+}
+
+/**
+ * Announce view mode change to screen readers via aria-live region
+ * Debounced to prevent rapid-fire announcements when changing quickly
+ * @param {string} mode - The new view mode
+ */
+function announceViewModeChange(mode) {
+  // Cancel any pending announcement
+  if (announcementTimeoutId) {
+    clearTimeout(announcementTimeoutId);
+  }
+
+  // Debounce: wait before announcing to avoid spam
+  announcementTimeoutId = setTimeout(() => {
+    announcementTimeoutId = null;
+
+    // Get or create live region
+    let liveRegion = document.getElementById('vault-view-mode-announcement');
+    if (!liveRegion) {
+      liveRegion = document.createElement('div');
+      liveRegion.id = 'vault-view-mode-announcement';
+      liveRegion.setAttribute('role', 'status');
+      liveRegion.setAttribute('aria-live', 'polite');
+      liveRegion.setAttribute('aria-atomic', 'true');
+      liveRegion.className = 'sr-only';
+      document.body.appendChild(liveRegion);
+    }
+
+    // Get localized mode name
+    const modeLabel = mode === VIEW_MODES.COMPACT
+      ? t('vault.view.compact')
+      : mode === VIEW_MODES.COMFORTABLE
+        ? t('vault.view.comfortable')
+        : t('vault.view.grid');
+
+    // Announce the change
+    liveRegion.textContent = t('vault.view.modeChanged', { mode: modeLabel });
+  }, ANNOUNCEMENT_DEBOUNCE_MS);
 }
 
 /**

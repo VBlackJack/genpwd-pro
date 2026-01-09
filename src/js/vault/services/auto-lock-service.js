@@ -4,6 +4,7 @@
  */
 
 import { getInactivityManager } from '../../utils/inactivity-manager.js';
+import { safeLog } from '../../utils/logger.js';
 
 const STORAGE_KEY = 'genpwd-vault-autolock-timeout';
 const DEFAULT_TIMEOUT = 300; // 5 minutes
@@ -33,8 +34,8 @@ export function createAutoLockService(options = {}) {
       if (saved) {
         timeout = parseInt(saved, 10);
       }
-    } catch {
-      // Use default
+    } catch (e) {
+      safeLog('[AutoLockService] Failed to load timeout from storage:', e?.message);
     }
     secondsRemaining = timeout;
   }
@@ -48,8 +49,8 @@ export function createAutoLockService(options = {}) {
     secondsRemaining = value;
     try {
       localStorage.setItem(STORAGE_KEY, String(value));
-    } catch {
-      // Ignore storage errors
+    } catch (e) {
+      safeLog('[AutoLockService] Failed to save timeout to storage:', e?.message);
     }
   }
 
@@ -92,6 +93,12 @@ export function createAutoLockService(options = {}) {
    * Start the auto-lock timer
    */
   function start() {
+    // Clear any existing timer to prevent accumulation
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+
     loadTimeout();
 
     const inactivityManager = getInactivityManager();

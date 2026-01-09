@@ -138,6 +138,20 @@ function detectColumnType(header) {
 }
 
 /**
+ * Validate Base32 encoded string
+ * @param {string} str - String to validate
+ * @returns {boolean} True if valid Base32
+ */
+function isValidBase32(str) {
+  if (!str || typeof str !== 'string') return false;
+  // Base32 alphabet: A-Z and 2-7, with optional padding (=)
+  const base32Pattern = /^[A-Z2-7]+=*$/i;
+  const cleaned = str.replace(/\s/g, '').toUpperCase();
+  // Must be at least 16 chars for reasonable entropy
+  return cleaned.length >= 16 && base32Pattern.test(cleaned);
+}
+
+/**
  * Parse TOTP URI into OtpConfig
  * @param {string} uri - otpauth:// URI
  * @returns {Object|null}
@@ -150,11 +164,32 @@ function parseTotpUri(uri) {
     const secret = url.searchParams.get('secret');
     if (!secret) return null;
 
+    // Validate secret is valid Base32
+    const cleanedSecret = secret.toUpperCase().replace(/\s/g, '');
+    if (!isValidBase32(cleanedSecret)) {
+      safeLog('[Import] Invalid TOTP secret format - not valid Base32');
+      return null;
+    }
+
+    // Validate digits (must be 6 or 8)
+    const digits = parseInt(url.searchParams.get('digits') || '6', 10);
+    if (digits !== 6 && digits !== 8) {
+      safeLog('[Import] Invalid TOTP digits - must be 6 or 8');
+      return null;
+    }
+
+    // Validate period (must be positive)
+    const period = parseInt(url.searchParams.get('period') || '30', 10);
+    if (period < 1 || period > 300) {
+      safeLog('[Import] Invalid TOTP period - must be between 1 and 300');
+      return null;
+    }
+
     return {
-      secret: secret.toUpperCase(),
+      secret: cleanedSecret,
       algorithm: url.searchParams.get('algorithm') || 'SHA1',
-      digits: parseInt(url.searchParams.get('digits') || '6', 10),
-      period: parseInt(url.searchParams.get('period') || '30', 10)
+      digits,
+      period
     };
   } catch {
     return null;
@@ -444,7 +479,7 @@ export function parseKeePassXML(xmlContent) {
           uri: url,
           tags,
           otpConfig,
-          groupId,
+          folderId: groupId,
           fields: customFields,
           metadata: {
             createdAt: creationTime || Date.now(),
@@ -689,6 +724,126 @@ export function parseGenericCSV(csvContent, options = {}) {
 }
 
 // ============================================================================
+// JSON SECURITY UTILITIES
+// ============================================================================
+
+/**
+ * Check if an object key is a prototype pollution vector
+ * @param {string} key - Object key to check
+ * @returns {boolean} True if key is dangerous
+ */
+function isDangerousKey(key) {
+  const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+  return DANGEROUS_KEYS.includes(key);
+}
+
+/**
+ * Recursively validate and sanitize JSON object to prevent prototype pollution
+ * @param {*} obj - Object to validate
+ * @param {number} depth - Current recursion depth
+ * @param {number} maxDepth - Maximum allowed depth
+ * @returns {*} Sanitized object
+ * @throws {Error} If validation fails
+ */
+function sanitizeJsonObject(obj, depth = 0, maxDepth = 20) {
+  // Prevent infinite recursion
+  if (depth > maxDepth) {
+    throw new Error('JSON structure too deeply nested');
+  }
+
+  // Handle primitives
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeJsonObject(item, depth + 1, maxDepth));
+  }
+
+  // Handle objects - create clean object without dangerous keys
+  const sanitized = Object.create(null);
+  for (const key of Object.keys(obj)) {
+    if (isDangerousKey(key)) {
+      // Skip dangerous keys silently
+      continue;
+    }
+    sanitized[key] = sanitizeJsonObject(obj[key], depth + 1, maxDepth);
+  }
+
+  return sanitized;
+}
+
+/**
+ * Safely parse and validate JSON content
+ * @param {string} jsonContent - Raw JSON string
+ * @returns {Object} Parsed and sanitized object
+ * @throws {Error} If parsing or validation fails
+ */
+function safeJsonParse(jsonContent) {
+  // Parse JSON
+  const parsed = JSON.parse(jsonContent);
+
+  // Must be an object (Bitwarden exports are always objects)
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('Invalid JSON structure: expected object');
+  }
+
+  // Sanitize to prevent prototype pollution
+  return sanitizeJsonObject(parsed);
+}
+
+/**
+ * Validate Bitwarden JSON structure
+ * @param {Object} data - Parsed JSON data
+ * @returns {Object} Validation result with isValid and errors
+ */
+function validateBitwardenSchema(data) {
+  const errors = [];
+
+  // Check for expected Bitwarden structure
+  if (data.encrypted === true) {
+    errors.push('Encrypted Bitwarden exports are not supported. Please export unencrypted.');
+    return { isValid: false, errors };
+  }
+
+  // Validate folders array if present
+  if (data.folders !== undefined) {
+    if (!Array.isArray(data.folders)) {
+      errors.push('Invalid folders format: expected array');
+    } else {
+      for (let i = 0; i < data.folders.length; i++) {
+        const folder = data.folders[i];
+        if (typeof folder !== 'object' || folder === null) {
+          errors.push(`Invalid folder at index ${i}`);
+        }
+      }
+    }
+  }
+
+  // Validate items array if present
+  if (data.items !== undefined) {
+    if (!Array.isArray(data.items)) {
+      errors.push('Invalid items format: expected array');
+    } else {
+      for (let i = 0; i < data.items.length; i++) {
+        const item = data.items[i];
+        if (typeof item !== 'object' || item === null) {
+          errors.push(`Invalid item at index ${i}`);
+        }
+      }
+    }
+  }
+
+  // At least one of folders or items should exist
+  if (!data.folders && !data.items) {
+    errors.push('No folders or items found in export');
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
+// ============================================================================
 // BITWARDEN PARSER
 // ============================================================================
 
@@ -714,7 +869,15 @@ export function parseBitwardenJSON(jsonContent) {
   };
 
   try {
-    const data = JSON.parse(jsonContent);
+    // Safe parse with prototype pollution protection
+    const data = safeJsonParse(jsonContent);
+
+    // Validate schema structure
+    const validation = validateBitwardenSchema(data);
+    if (!validation.isValid) {
+      result.errors.push(...validation.errors);
+      return result;
+    }
 
     // Process folders
     const folderMap = new Map();

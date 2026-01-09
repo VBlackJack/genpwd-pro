@@ -4,7 +4,7 @@
  */
 
 import { ENTRY_TYPES, getTypeLabel } from './entry-list.js';
-import { escapeHtml, formatDateTime } from '../../utils/formatter.js';
+import { escapeHtml, formatDateTime, sanitizeCssColor } from '../../utils/formatter.js';
 import { renderFaviconImg } from '../../utils/favicon-manager.js';
 
 /**
@@ -23,7 +23,7 @@ function renderTagsInDetail(entry, allTags = []) {
   if (tags.length === 0) return '';
 
   return tags.map(tag => `
-    <span class="vault-detail-tag" style="--tag-color: ${tag.color || '#6b7280'}">
+    <span class="vault-detail-tag" style="--tag-color: ${sanitizeCssColor(tag.color)}">
       ${escapeHtml(tag.name)}
     </span>
   `).join('');
@@ -138,7 +138,7 @@ export function renderField(label, value, options = {}) {
         ${copyable ? `
           <div class="vault-field-actions">
             ${masked ? `
-              <button class="vault-field-btn toggle-reveal" title="${options.t?.('vault.aria.toggleVisibility')}" aria-label="${options.t?.('vault.aria.toggleVisibility')}">
+              <button class="vault-field-btn toggle-reveal" title="${options.t?.('vault.aria.toggleVisibility')}" aria-label="${options.t?.('vault.aria.toggleVisibility')}" aria-pressed="false">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -340,7 +340,7 @@ export function renderCustomFields(fields, options = {}) {
               ${isMasked ? `<span class="vault-field-revealed">${displayValue}</span>` : ''}
               <div class="vault-field-actions">
                 ${isMasked ? `
-                  <button class="vault-field-btn toggle-reveal" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}">
+                  <button class="vault-field-btn toggle-reveal" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
                     <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                       <circle cx="12" cy="12" r="3"></circle>

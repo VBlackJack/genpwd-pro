@@ -510,6 +510,8 @@
       "quickActions": "Quick actions",
       "loadingEntries": "Loading entries",
       "loadingDetails": "Loading details",
+      "loadingVaults": "Loading vaults",
+      "generatingShare": "Generating encrypted share",
       "breadcrumb": "Breadcrumb",
       "entryType": "Entry type",
       "browseForAttachments": "Browse for files to attach",
@@ -518,7 +520,13 @@
       "downloadAttachment": "Download attachment {name}",
       "togglePasswordHistory": "Toggle password history",
       "copyHistoryPassword": "Copy previous password",
-      "restoreHistoryPassword": "Restore previous password"
+      "restoreHistoryPassword": "Restore previous password",
+      "contextMenu": "Entry context menu",
+      "folderContextMenu": "Folder context menu",
+      "passwordStrength": "Password strength indicator",
+      "autotypeSteps": "Auto-fill steps",
+      "entryPreview": "Entry preview",
+      "statusIndicators": "Status indicators"
     },
     "tooltips": {
       "lock": "Lock (Ctrl+L)",
@@ -550,7 +558,8 @@
       "showDetails": "Show details",
       "hideDetails": "Hide details",
       "expandAll": "Expand all",
-      "collapseAll": "Collapse all"
+      "collapseAll": "Collapse all",
+      "modeChanged": "View changed to {mode}"
     },
     "generator": {
       "title": "Password Generator",
@@ -563,7 +572,8 @@
       "uppercase": "A-Z (uppercase)",
       "lowercase": "a-z (lowercase)",
       "numbers": "0-9 (digits)",
-      "symbols": "!@#$ (symbols)"
+      "symbols": "!@#$ (symbols)",
+      "characterOptions": "Character options"
     },
     "entryInfo": {
       "lastModified": "Modified",
@@ -624,7 +634,8 @@
     },
     "totp": {
       "qrTitle": "TOTP QR Code",
-      "scanHint": "Scan with your authenticator app (Google Authenticator, Authy, etc.)"
+      "scanHint": "Scan with your authenticator app (Google Authenticator, Authy, etc.)",
+      "qrError": "Failed to generate QR code"
     },
     "entryCount": "{count} entries",
     "selectedCount": "{count} selected",
@@ -780,7 +791,8 @@
       "invalidEmail": "Invalid email address",
       "passwordsNoMatch": "Passwords do not match",
       "passwordsMatch": "Passwords match",
-      "tooWeak": "Password is too weak"
+      "tooWeak": "Password is too weak",
+      "valid": "Valid"
     },
     "messages": {
       "fileNotFound": "File not found",
@@ -1091,7 +1103,8 @@
       "derivingKey": "Deriving key...",
       "or": "or",
       "newVault": "New vault",
-      "openFile": "Open file..."
+      "openFile": "Open file...",
+      "windowsHello": "Windows Hello"
     },
     "dialogs": {
       "createVault": "Create vault at...",
@@ -1238,6 +1251,9 @@
       "pink": "Pink",
       "folderColor": "Folder color"
     },
+    "symbols": {
+      "checkmark": "✓"
+    },
     "folders": {
       "color": "Folder color",
       "countTooltip": "{count} in this folder, {total} total"
@@ -1245,7 +1261,9 @@
     "autotype": {
       "manualTitle": "Manual Auto-fill",
       "requiresApp": "Automatic auto-fill requires the Electron application.",
-      "copyHint": "Copy the values below:"
+      "copyHint": "Copy the values below:",
+      "copyUsername": "Copy username",
+      "copyPassword": "Copy password"
     },
     "sort": {
       "sort": "Sort",
@@ -1347,12 +1365,24 @@
         "missingEncryption": "Missing encryption data.",
         "invalidPasswordOrCorrupted": "Invalid password or corrupted data.",
         "invalidV1Format": "Invalid V1 format: missing header/encryptedData structure.",
-        "importFailed": "Failed to import vault."
+        "importFailed": "Failed to import vault.",
+        "noFile": "No file selected",
+        "fileTooLarge": "File too large (max 50MB)",
+        "invalidFormat": "Invalid file format. Supported: XML, JSON, CSV",
+        "invalidFilename": "Invalid filename. Contains unsafe characters.",
+        "mimeTypeMismatch": "File type does not match file extension. Please ensure the file is a valid XML, JSON, or CSV."
       }
     },
     "export": {
       "title": "Export {count} entry(ies)",
-      "chooseFormat": "Choose export format:"
+      "chooseFormat": "Choose export format:",
+      "warnings": {
+        "plaintextGeneric": "This export contains unencrypted passwords. Store the file securely and delete it after use.",
+        "plaintextJson": "JSON export contains all passwords in plain text. Anyone with access to this file can read your passwords.",
+        "plaintextCsv": "CSV export contains all passwords in plain text. Anyone with access to this file can read your passwords.",
+        "plaintextXml": "KeePass XML export contains passwords. Import into KeePass and delete the XML file immediately."
+      },
+      "securityWarning": "Security Warning"
     },
     "saveModal": {
       "title": "Save to Vault",

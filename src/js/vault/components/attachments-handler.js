@@ -96,6 +96,23 @@ export function downloadAttachment(file) {
     return false;
   }
 
+  // Validate data URL format to prevent XSS via malicious URLs
+  if (!file.data.startsWith('data:') ||
+      (!file.data.includes(';base64,') && !file.data.includes(','))) {
+    return false;
+  }
+
+  // Validate MIME type is safe (block executables)
+  const mimeType = extractMimeType(file.data);
+  if (!isSafeMimeType(mimeType)) {
+    return false;
+  }
+
+  // Validate file extension is safe
+  if (!isAllowedFileType(file)) {
+    return false;
+  }
+
   let link = null;
   try {
     link = document.createElement('a');
@@ -118,6 +135,68 @@ export function downloadAttachment(file) {
 /** Maximum attachment size (5 MB) */
 export const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
+/** Blocked executable file extensions */
+const BLOCKED_EXTENSIONS = new Set([
+  '.exe', '.bat', '.cmd', '.com', '.msi', '.scr',  // Windows executables
+  '.sh', '.bash', '.zsh', '.fish',                  // Unix shell scripts
+  '.ps1', '.psm1', '.psd1',                         // PowerShell
+  '.vbs', '.vbe', '.js', '.jse', '.ws', '.wsf',     // Script files
+  '.dll', '.sys', '.drv',                           // Windows system files
+  '.app', '.dmg', '.pkg',                           // macOS executables
+  '.deb', '.rpm', '.appimage',                      // Linux packages
+  '.jar', '.class',                                 // Java executables
+  '.reg', '.inf',                                   // Windows registry/config
+  '.hta', '.cpl', '.msc'                            // Windows special
+]);
+
+/** Blocked executable MIME types */
+const BLOCKED_MIME_TYPES = new Set([
+  'application/x-msdownload',
+  'application/x-msdos-program',
+  'application/x-executable',
+  'application/x-sharedlib',
+  'application/x-shellscript',
+  'application/x-sh',
+  'application/x-csh',
+  'application/x-powershell',
+  'application/vnd.microsoft.portable-executable',
+  'application/x-ms-shortcut',
+  'application/x-msi',
+  'application/x-apple-diskimage',
+  'application/x-java-archive',
+  'application/java-archive',
+  'application/x-deb',
+  'application/x-rpm',
+  'application/x-appimage',
+  'text/x-shellscript',
+  'text/x-script.python',
+  'text/javascript',
+  'application/javascript',
+  'application/x-javascript',
+  'application/hta'
+]);
+
+/**
+ * Extract MIME type from data URL
+ * @param {string} dataUrl - Data URL string
+ * @returns {string|null} MIME type or null if invalid
+ */
+function extractMimeType(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') return null;
+  const match = dataUrl.match(/^data:([^;,]+)/);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/**
+ * Check if MIME type is safe for download
+ * @param {string} mimeType - MIME type to check
+ * @returns {boolean} True if safe
+ */
+function isSafeMimeType(mimeType) {
+  if (!mimeType) return true; // Allow if no MIME type (will use extension check)
+  return !BLOCKED_MIME_TYPES.has(mimeType.toLowerCase());
+}
+
 /**
  * Validate file size
  * @param {File} file - File to validate
@@ -125,4 +204,30 @@ export const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
  */
 export function isValidAttachmentSize(file) {
   return file.size <= MAX_ATTACHMENT_SIZE;
+}
+
+/**
+ * Validate file type - block potentially dangerous executables
+ * @param {File|Object} file - File object with name property
+ * @returns {boolean} True if file type is allowed
+ */
+export function isAllowedFileType(file) {
+  if (!file?.name) return false;
+  const name = file.name.toLowerCase();
+  const lastDot = name.lastIndexOf('.');
+  if (lastDot === -1) return true; // No extension is allowed
+  const ext = name.slice(lastDot);
+  return !BLOCKED_EXTENSIONS.has(ext);
+}
+
+/**
+ * Validate data URL format
+ * @param {string} dataUrl - Data URL string to validate
+ * @returns {boolean} True if valid data URL format
+ */
+export function isValidDataUrl(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') return false;
+  // Must start with 'data:' and contain base64 marker or plain data
+  return dataUrl.startsWith('data:') &&
+         (dataUrl.includes(';base64,') || dataUrl.includes(','));
 }

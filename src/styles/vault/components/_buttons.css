@@ -48,7 +48,8 @@
 }
 
 .vault-btn:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--vault-primary), 0 0 0 4px rgba(var(--rgb-primary), 0.2);
 }
 

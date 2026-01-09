@@ -431,20 +431,26 @@
 .vault-strength-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 
+/* Weak: triangle shape for colorblind accessibility */
 .vault-strength-dot.weak {
   background: var(--vault-danger);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  border-radius: 0;
 }
 
+/* Medium: square shape for colorblind accessibility */
 .vault-strength-dot.medium {
   background: var(--vault-warning);
+  border-radius: 2px;
 }
 
+/* Strong: circle shape (default) for colorblind accessibility */
 .vault-strength-dot.strong {
   background: var(--vault-success);
+  border-radius: 50%;
 }
 
 /* Entry type color indicator */
@@ -486,12 +492,18 @@
   justify-content: center;
   width: 28px;
   height: 28px;
+  /* Minimum touch target size per WCAG 2.1 AA */
+  min-width: 44px;
+  min-height: 44px;
   border: none;
   background: transparent;
   color: var(--vault-text-muted);
   border-radius: var(--vault-radius-sm);
   cursor: pointer;
   transition: all var(--vault-transition);
+  /* Center the visual content within the larger touch target */
+  padding: 8px;
+  margin: -8px;
 }
 
 .vault-quick-btn:hover {

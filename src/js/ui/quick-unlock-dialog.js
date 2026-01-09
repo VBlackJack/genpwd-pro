@@ -50,6 +50,8 @@ export class QuickUnlockDialog {
 
       this.#resolvePromise = resolve;
       this.#rejectPromise = reject;
+      // Save previously focused element before any DOM changes
+      this.#previouslyFocusedElement = document.activeElement;
       this.#render(options);
       this.#show();
       this.#bindEvents();
@@ -299,9 +301,6 @@ export class QuickUnlockDialog {
     const closeBtn = document.getElementById('quick-unlock-close');
     const cancelBtn = document.getElementById('quick-unlock-cancel');
     const togglePwdBtn = document.getElementById('quick-unlock-toggle-pwd');
-
-    // Save previously focused element
-    this.#previouslyFocusedElement = document.activeElement;
 
     // Close on overlay click
     overlay?.addEventListener('click', (e) => {

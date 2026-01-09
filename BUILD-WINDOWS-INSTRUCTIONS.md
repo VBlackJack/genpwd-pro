@@ -1,4 +1,4 @@
-# Instructions de Build Windows - GenPwd Pro v3.0.0
+# Instructions de Build Windows - GenPwd Pro v3.0.1
 
 Ce document explique comment construire l'exécutable Windows et l'installeur pour GenPwd Pro.
 
@@ -54,9 +54,9 @@ Les fichiers seront créés dans le dossier `release/`:
 
 ```
 release/
-├── GenPwd Pro-3.0.0-win-x64.exe        # Installeur NSIS (recommandé)
-├── GenPwd Pro-3.0.0-win-x64.zip        # Version portable
-├── GenPwd Pro-3.0.0-portable.exe       # Exécutable portable
+├── GenPwd Pro-3.0.1-win-x64.exe        # Installeur NSIS (recommandé)
+├── GenPwd Pro-3.0.1-win-x64.zip        # Version portable
+├── GenPwd Pro-3.0.1-portable.exe       # Exécutable portable
 └── win-unpacked/                       # Version non-empaquetée (test)
     └── GenPwd Pro.exe
 ```
@@ -100,7 +100,7 @@ npm run electron:build:all
 ## 📦 Types de Builds Disponibles
 
 ### 1. Installeur NSIS (Recommandé)
-- **Fichier:** `GenPwd Pro-3.0.0-win-x64.exe`
+- **Fichier:** `GenPwd Pro-3.0.1-win-x64.exe`
 - **Taille:** ~150-200 MB
 - **Fonctionnalités:**
   - Installation guidée
@@ -110,7 +110,7 @@ npm run electron:build:all
   - Support x64 et x86
 
 ### 2. Version Portable
-- **Fichier:** `GenPwd Pro-3.0.0-portable.exe`
+- **Fichier:** `GenPwd Pro-3.0.1-portable.exe`
 - **Taille:** ~150 MB
 - **Fonctionnalités:**
   - Exécution sans installation
@@ -118,7 +118,7 @@ npm run electron:build:all
   - Aucune trace dans le registre
 
 ### 3. Archive ZIP
-- **Fichier:** `GenPwd Pro-3.0.0-win-x64.zip`
+- **Fichier:** `GenPwd Pro-3.0.1-win-x64.zip`
 - **Taille:** ~140 MB
 - **Contenu:** Application complète décompressable
 
@@ -269,19 +269,19 @@ git tag v3.0.0
 git push origin v3.0.0
 
 # Créer la release sur GitHub et uploader:
-# - GenPwd Pro-3.0.0-win-x64.exe
-# - GenPwd Pro-3.0.0-portable.exe
-# - GenPwd Pro-3.0.0-win-x64.zip
+# - GenPwd Pro-3.0.1-win-x64.exe
+# - GenPwd Pro-3.0.1-portable.exe
+# - GenPwd Pro-3.0.1-win-x64.zip
 ```
 
 ### Générer les Checksums
 
 ```cmd
 REM SHA256
-certutil -hashfile "release\GenPwd Pro-3.0.0-win-x64.exe" SHA256
+certutil -hashfile "release\GenPwd Pro-3.0.1-win-x64.exe" SHA256
 
 REM MD5
-certutil -hashfile "release\GenPwd Pro-3.0.0-win-x64.exe" MD5
+certutil -hashfile "release\GenPwd Pro-3.0.1-win-x64.exe" MD5
 ```
 
 ## 📚 Ressources

@@ -78,8 +78,11 @@
 }
 
 .vault-modal-close:focus-visible {
-  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline: 2px solid var(--vault-primary, var(--accent-cyan, #00d4ff));
   outline-offset: 2px;
+  /* Enhanced visibility with background change */
+  background: var(--vault-surface-hover);
+  color: var(--vault-primary);
 }
 
 .vault-modal-body {

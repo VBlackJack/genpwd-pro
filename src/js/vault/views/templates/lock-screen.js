@@ -4,21 +4,7 @@
  */
 
 import { ICON_LOCK, ICON_UNLOCK, ICON_PLUS, ICON_FOLDER, ICON_HELLO, ICON_CLOSE, ICON_CHECK } from '../icons.js';
-
-/**
- * Escape HTML special characters
- * @param {string} str - String to escape
- * @returns {string} Escaped string
- */
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+import { escapeHtml } from '../../utils/formatter.js';
 
 /**
  * Format date for display
@@ -58,7 +44,10 @@ export function renderLockScreen({ t }) {
         <p class="vault-lock-subtitle">${t('vault.lockScreen.subtitle')}</p>
 
         <div class="vault-selector" id="vault-selector" role="listbox" aria-label="${t('vault.aria.vaultSelection')}">
-          <div class="vault-loading"><div class="vault-spinner"></div></div>
+          <div class="vault-loading">
+            <div class="vault-spinner"></div>
+            <span class="sr-only" role="status" aria-live="polite">${t('vault.aria.loadingVaults')}</span>
+          </div>
         </div>
 
         <form class="vault-unlock-form" id="unlock-form">
@@ -98,7 +87,7 @@ export function renderLockScreen({ t }) {
             <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5">
               ${ICON_HELLO}
             </svg>
-            <span>Windows Hello</span>
+            <span>${t('vault.lockScreen.windowsHello')}</span>
           </button>
         </div>
 
@@ -139,7 +128,7 @@ export function renderVaultList(vaults, { t }) {
   }
 
   return `
-    <div class="vault-list" role="listbox">
+    <div class="vault-list">
       ${vaults.map((v, i) => `
         <div class="vault-list-item ${i === 0 ? 'selected' : ''} ${v.isMissing ? 'vault-missing' : ''}"
              data-vault-id="${v.id}"
@@ -173,10 +162,17 @@ export function renderVaultList(vaults, { t }) {
 
 /**
  * Render vault list loading state
+ * @param {Object} options - Options
+ * @param {Function} options.t - Translation function
  * @returns {string} HTML string
  */
-export function renderVaultListLoading() {
-  return `<div class="vault-loading"><div class="vault-spinner"></div></div>`;
+export function renderVaultListLoading({ t = (k) => k } = {}) {
+  return `
+    <div class="vault-loading">
+      <div class="vault-spinner"></div>
+      <span class="sr-only" role="status" aria-live="polite">${t('vault.aria.loadingVaults')}</span>
+    </div>
+  `;
 }
 
 /**

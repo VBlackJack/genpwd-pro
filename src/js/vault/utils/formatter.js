@@ -18,6 +18,39 @@ export function escapeHtml(str) {
 }
 
 /**
+ * Escape string for safe use in HTML attributes
+ * Escapes quotes in addition to standard HTML entities
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string safe for attribute values
+ */
+export function escapeHtmlAttr(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitize CSS color value to prevent CSS injection
+ * Only allows hex colors (#RGB or #RRGGBB) and CSS variables
+ * @param {string} color - Color value to sanitize
+ * @param {string} fallback - Fallback color if invalid
+ * @returns {string} Sanitized color value
+ */
+export function sanitizeCssColor(color, fallback = '#6b7280') {
+  if (!color || typeof color !== 'string') return fallback;
+  const trimmed = color.trim();
+  // Allow hex colors
+  if (/^#[0-9A-Fa-f]{3,6}$/.test(trimmed)) return trimmed;
+  // Allow CSS variables (only alphanumeric and dashes)
+  if (/^var\(--[a-zA-Z0-9-]+\)$/.test(trimmed)) return trimmed;
+  return fallback;
+}
+
+/**
  * Format date to localized date string
  * @param {string|Date} dateStr - Date to format
  * @param {string} locale - Locale code (uses app locale if not specified)

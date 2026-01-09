@@ -6,21 +6,42 @@
 import { escapeHtml } from '../utils/formatter.js';
 
 /**
- * Word list for passphrase generation
+ * Extended word list for passphrase generation (128 words = 7 bits per word)
+ * 4-word passphrase = 28 bits entropy, 6-word = 42 bits (recommended)
  */
 const PASSPHRASE_WORDS = [
-  'pomme', 'banane', 'cerise', 'dragon', 'eagle', 'foret', 'jardin', 'harbor',
-  'island', 'jungle', 'knight', 'citron', 'montagne', 'nature', 'ocean', 'palace',
-  'queen', 'river', 'storm', 'tigre', 'umbrella', 'valley', 'winter', 'xenon',
-  'yellow', 'zebre', 'alpha', 'brave', 'crystal', 'diamond', 'ember', 'falcon'
+  // Nature - Animals
+  'eagle', 'falcon', 'tiger', 'dragon', 'phoenix', 'wolf', 'bear', 'lion',
+  'shark', 'whale', 'hawk', 'raven', 'panther', 'cobra', 'viper', 'jaguar',
+  // Nature - Plants & Places
+  'forest', 'garden', 'island', 'jungle', 'valley', 'ocean', 'river', 'storm',
+  'canyon', 'summit', 'glacier', 'meadow', 'desert', 'tundra', 'lagoon', 'reef',
+  // Fruits & Food
+  'apple', 'banana', 'cherry', 'lemon', 'orange', 'mango', 'grape', 'melon',
+  'peach', 'olive', 'walnut', 'almond', 'coffee', 'honey', 'pepper', 'ginger',
+  // Elements & Materials
+  'crystal', 'diamond', 'amber', 'bronze', 'silver', 'cobalt', 'titanium', 'carbon',
+  'xenon', 'neon', 'argon', 'helium', 'plasma', 'granite', 'marble', 'quartz',
+  // Actions & Adjectives
+  'brave', 'swift', 'silent', 'cosmic', 'lunar', 'solar', 'stellar', 'primal',
+  'ancient', 'frozen', 'blazing', 'golden', 'crimson', 'azure', 'violet', 'scarlet',
+  // Objects & Concepts
+  'palace', 'castle', 'tower', 'temple', 'harbor', 'beacon', 'anchor', 'compass',
+  'shield', 'crown', 'throne', 'scepter', 'banner', 'crest', 'sigil', 'relic',
+  // Time & Space
+  'winter', 'autumn', 'spring', 'summer', 'midnight', 'twilight', 'sunrise', 'zenith',
+  'epoch', 'era', 'century', 'moment', 'instant', 'eternal', 'infinite', 'prism',
+  // Abstract & Modern
+  'alpha', 'omega', 'delta', 'sigma', 'quantum', 'vector', 'cipher', 'matrix',
+  'vortex', 'nexus', 'vertex', 'apex', 'zenith', 'nadir', 'origin', 'echo'
 ];
 
 /**
  * Generate a random passphrase using CSPRNG
- * @param {number} wordCount - Number of words (default: 4)
+ * @param {number} wordCount - Number of words (default: 6 for ~42 bits entropy)
  * @returns {string} Passphrase with words separated by dashes
  */
-export function generateSharePassphrase(wordCount = 4) {
+export function generateSharePassphrase(wordCount = 6) {
   const randomBytes = new Uint8Array(wordCount);
   crypto.getRandomValues(randomBytes);
 
@@ -94,43 +115,56 @@ function buildShareData(entry, options = {}) {
  * @returns {Promise<string>} Encrypted share string
  */
 export async function createSecureShare(entry, passphrase, options = {}) {
-  const shareData = buildShareData(entry, options);
+  // Validate inputs
+  if (!entry || typeof entry !== 'object') {
+    throw new Error('Invalid entry provided');
+  }
+  if (!passphrase || typeof passphrase !== 'string' || passphrase.length < 4) {
+    throw new Error('Invalid passphrase');
+  }
 
-  // Encrypt using Web Crypto API
-  const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  try {
+    const shareData = buildShareData(entry, options);
 
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(passphrase),
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  );
+    // Encrypt using Web Crypto API
+    const encoder = new TextEncoder();
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  // Using PBKDF2 with 100000 iterations for compatibility
-  const key = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt']
-  );
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(passphrase),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
 
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encoder.encode(JSON.stringify(shareData))
-  );
+    // Using PBKDF2 with 100000 iterations for compatibility
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt']
+    );
 
-  // Combine salt + iv + ciphertext and encode
-  const result = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
-  result.set(salt, 0);
-  result.set(iv, salt.length);
-  result.set(new Uint8Array(ciphertext), salt.length + iv.length);
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encoder.encode(JSON.stringify(shareData))
+    );
 
-  return `GENPWD:1:${btoa(String.fromCharCode(...result))}`;
+    // Combine salt + iv + ciphertext and encode
+    const result = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+    result.set(salt, 0);
+    result.set(iv, salt.length);
+    result.set(new Uint8Array(ciphertext), salt.length + iv.length);
+
+    return `GENPWD:1:${btoa(String.fromCharCode(...result))}`;
+  } catch (error) {
+    // Re-throw with generic message to avoid exposing crypto internals
+    throw new Error('Encryption failed');
+  }
 }
 
 /**
@@ -274,9 +308,29 @@ export function showSecureShareModal(options = {}) {
 
   // Generate share
   modal.querySelector('#generate-share')?.addEventListener('click', async () => {
+    const generateBtn = modal.querySelector('#generate-share');
     const passphrase = modal.querySelector('#share-passphrase')?.value;
     const expiry = parseInt(modal.querySelector('#share-expiry')?.value || '86400000', 10);
     const includeNotes = modal.querySelector('#share-include-notes')?.checked || false;
+
+    // Show loading state and disable button
+    if (generateBtn) {
+      generateBtn.disabled = true;
+      generateBtn.setAttribute('aria-busy', 'true');
+      generateBtn.dataset.originalText = generateBtn.textContent;
+      generateBtn.innerHTML = `<span class="vault-spinner-small"></span> ${t('vault.common.generating')}`;
+    }
+
+    // Announce to screen readers
+    let srAnnouncer = modal.querySelector('.share-sr-announcer');
+    if (!srAnnouncer) {
+      srAnnouncer = document.createElement('span');
+      srAnnouncer.className = 'sr-only share-sr-announcer';
+      srAnnouncer.setAttribute('role', 'status');
+      srAnnouncer.setAttribute('aria-live', 'polite');
+      modal.querySelector('.vault-modal-body')?.appendChild(srAnnouncer);
+    }
+    srAnnouncer.textContent = t('vault.aria.generatingShare');
 
     try {
       const shareText = await createSecureShare(entry, passphrase, {
@@ -293,6 +347,13 @@ export function showSecureShareModal(options = {}) {
       if (onSuccess) onSuccess(t('vault.messages.shareGenerated'));
     } catch (error) {
       if (onError) onError(t('vault.messages.generationError'));
+    } finally {
+      // Restore button state
+      if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.removeAttribute('aria-busy');
+        generateBtn.textContent = generateBtn.dataset.originalText || t('vault.actions.generateShare');
+      }
     }
   });
 

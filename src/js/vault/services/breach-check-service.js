@@ -41,6 +41,9 @@ export function createBreachCheckService(options = {}) {
   // In-memory cache for session
   const cache = new Map();
 
+  // Track current operation to prevent race conditions
+  let currentOperationId = 0;
+
   /**
    * Check a single password against HIBP
    * @param {string} password - Password to check
@@ -95,12 +98,21 @@ export function createBreachCheckService(options = {}) {
    * @returns {Promise<Object>} Results with compromised entries
    */
   async function checkEntries(entries) {
+    // Increment operation ID to invalidate any previous operation
+    currentOperationId++;
+    const thisOperationId = currentOperationId;
+
     const logins = entries.filter(e => e.type === 'login' && e.data?.password);
     const compromised = [];
     let checked = 0;
     let newChecks = 0;
 
     for (const entry of logins) {
+      // Check if operation was superseded
+      if (thisOperationId !== currentOperationId) {
+        return null; // Silently abort - newer operation is running
+      }
+
       try {
         const hash = await sha1(entry.data.password);
 
@@ -111,7 +123,9 @@ export function createBreachCheckService(options = {}) {
             compromised.push({ entry, count: cachedCount });
           }
           checked++;
-          if (onProgress) onProgress(checked, logins.length);
+          if (onProgress && thisOperationId === currentOperationId) {
+            onProgress(checked, logins.length);
+          }
           continue;
         }
 
@@ -123,7 +137,9 @@ export function createBreachCheckService(options = {}) {
         newChecks++;
         checked++;
 
-        if (onProgress) onProgress(checked, logins.length);
+        if (onProgress && thisOperationId === currentOperationId) {
+          onProgress(checked, logins.length);
+        }
 
         // Small delay to avoid rate limiting (only for new checks)
         if (newChecks > 0 && checked < logins.length) {
@@ -132,8 +148,15 @@ export function createBreachCheckService(options = {}) {
       } catch (err) {
         // Continue with other entries on error
         checked++;
-        if (onProgress) onProgress(checked, logins.length);
+        if (onProgress && thisOperationId === currentOperationId) {
+          onProgress(checked, logins.length);
+        }
       }
+    }
+
+    // Final check before completing
+    if (thisOperationId !== currentOperationId) {
+      return null; // Superseded
     }
 
     const results = {

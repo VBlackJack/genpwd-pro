@@ -3,7 +3,7 @@
  * Add and Edit entry modal templates
  */
 
-import { escapeHtml } from '../utils/formatter.js';
+import { escapeHtml, sanitizeCssColor } from '../utils/formatter.js';
 import { renderTypeFields } from './form-fields.js';
 import { renderCustomFieldsSection } from './custom-fields.js';
 import { t } from '../../utils/i18n.js';
@@ -33,17 +33,20 @@ export function renderTypeSelector(options = {}) {
     .filter(([k]) => k !== 'preset' && k !== 'ssh');
 
   return `
-    <div class="vault-type-selector" role="radiogroup" aria-label="${t('vault.aria.entryType')}">
-      ${types.map(([key, type]) => `
-        <label class="vault-type-option">
-          <input type="radio" name="entry-type" value="${key}" ${key === selectedType ? 'checked' : ''}>
-          <span class="vault-type-card" data-type-color="${type.color}">
-            <span class="vault-type-icon">${type.icon}</span>
-            <span class="vault-type-label">${type.label}</span>
-          </span>
-        </label>
-      `).join('')}
-    </div>
+    <fieldset class="vault-type-selector-fieldset">
+      <legend class="visually-hidden">${t('vault.aria.entryType')}</legend>
+      <div class="vault-type-selector" role="radiogroup" aria-label="${t('vault.aria.entryType')}">
+        ${types.map(([key, type]) => `
+          <label class="vault-type-option">
+            <input type="radio" name="entry-type" value="${key}" ${key === selectedType ? 'checked' : ''}>
+            <span class="vault-type-card" data-type-color="${type.color}">
+              <span class="vault-type-icon">${type.icon}</span>
+              <span class="vault-type-label">${type.label}</span>
+            </span>
+          </label>
+        `).join('')}
+      </div>
+    </fieldset>
   `;
 }
 
@@ -67,7 +70,7 @@ export function renderTagPicker(options = {}) {
         <label class="vault-tag-option">
           <input type="checkbox" name="entry-tags" value="${tag.id}"
                  ${selectedTagIds.includes(tag.id) ? 'checked' : ''}>
-          <span class="vault-tag-chip" style="--tag-color: ${tag.color || 'var(--vault-text-muted)'}">
+          <span class="vault-tag-chip" style="--tag-color: ${sanitizeCssColor(tag.color, 'var(--vault-text-muted)')}">
             ${escapeHtml(tag.name)}
           </span>
         </label>
@@ -174,7 +177,7 @@ export function renderAddEntryModal(options = {}) {
             <label class="vault-label" for="entry-title">${t('vault.labels.title')} <span class="required" aria-label="${t('vault.aria.required')}">*</span></label>
             <input type="text" class="vault-input" id="entry-title"
                    placeholder="${t('vault.placeholders.entryTitleExample')}"
-                   required aria-required="true" aria-describedby="entry-title-message" aria-invalid="false">
+                   required aria-required="true" aria-describedby="entry-title-message">
             <div class="vault-field-message" id="entry-title-message" role="alert" aria-live="polite"></div>
           </div>
 
@@ -241,7 +244,7 @@ export function renderEditEntryContent(options = {}) {
       <label class="vault-label" for="edit-title">${t('vault.labels.title')} <span class="required" aria-label="${t('vault.aria.required')}">*</span></label>
       <input type="text" class="vault-input" id="edit-title"
              value="${escapeHtml(entry.title)}"
-             required aria-required="true" aria-describedby="edit-title-message" aria-invalid="false">
+             required aria-required="true" aria-describedby="edit-title-message">
       <div class="vault-field-message" id="edit-title-message" role="alert" aria-live="polite"></div>
     </div>
   `;

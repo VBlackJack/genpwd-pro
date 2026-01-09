@@ -52,7 +52,8 @@
 }
 
 .vault-input:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   border-color: var(--vault-primary);
   box-shadow:
     0 0 0 3px rgba(var(--rgb-primary), 0.15),

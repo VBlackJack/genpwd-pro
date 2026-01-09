@@ -1276,10 +1276,12 @@
       "entryType": "Tipo de entrada",
       "exportEntries": "Exportar entradas",
       "generatePassword": "Generar contraseña",
+      "generatingShare": "Generando compartir cifrado",
       "hideValue": "Ocultar valor",
       "importEntries": "Importar entradas",
       "loadingDetails": "Cargando detalles",
       "loadingEntries": "Cargando entradas",
+      "loadingVaults": "Cargando bóvedas",
       "lockVault": "Bloquear bóveda",
       "passwordManager": "Gestor de contraseñas",
       "quickActions": "Acciones rápidas",
@@ -1303,7 +1305,13 @@
       "downloadAttachment": "Descargar adjunto {name}",
       "togglePasswordHistory": "Mostrar/ocultar historial de contraseñas",
       "copyHistoryPassword": "Copiar contraseña anterior",
-      "restoreHistoryPassword": "Restaurar contraseña anterior"
+      "restoreHistoryPassword": "Restaurar contraseña anterior",
+      "contextMenu": "Menú contextual de entrada",
+      "folderContextMenu": "Menú contextual de carpeta",
+      "passwordStrength": "Indicador de fortaleza de contraseña",
+      "autotypeSteps": "Pasos de auto-completar",
+      "entryPreview": "Vista previa de entrada",
+      "statusIndicators": "Indicadores de estado"
     },
     "attachments": {
       "dropOrBrowse": "Suelte sus archivos aquí o {browse}",
@@ -1313,7 +1321,9 @@
     "autotype": {
       "copyHint": "Copie los valores a continuación:",
       "manualTitle": "Auto-completar Manual",
-      "requiresApp": "El auto-completar automático requiere la aplicación Electron."
+      "requiresApp": "El auto-completar automático requiere la aplicación Electron.",
+      "copyUsername": "Copiar nombre de usuario",
+      "copyPassword": "Copiar contraseña"
     },
     "bulk": {
       "checkHint": "Marque para añadir, desmarque para quitar",
@@ -1337,6 +1347,9 @@
       "purple": "Morado",
       "red": "Rojo",
       "yellow": "Amarillo"
+    },
+    "symbols": {
+      "checkmark": "✓"
     },
     "common": {
       "add": "Añadir",
@@ -1705,7 +1718,10 @@
         "unsupportedExportFormat": "Formato de exportación no soportado: {format}",
         "unsupportedImportFormat": "Formato de importación no soportado: {format}",
         "xmlForbiddenPatterns": "El XML contiene patrones prohibidos (riesgo de seguridad potencial)",
-        "xmlTooLarge": "El archivo XML es demasiado grande (máx. 10MB)"
+        "xmlTooLarge": "El archivo XML es demasiado grande (máx. 10MB)",
+        "noFile": "Ningún archivo seleccionado",
+        "fileTooLarge": "Archivo demasiado grande (máx. 50MB)",
+        "invalidFormat": "Formato de archivo inválido. Soportados: XML, JSON, CSV"
       },
       "fields": "Campos",
       "folders": "Carpetas",
@@ -1766,7 +1782,8 @@
       "showHide": "Mostrar/Ocultar",
       "subtitle": "Seleccione una bóveda e introduzca su contraseña",
       "title": "Bóveda",
-      "unlock": "Desbloquear"
+      "unlock": "Desbloquear",
+      "windowsHello": "Windows Hello"
     },
     "messages": {
       "addedToFavorites": "Añadido a favoritos",
@@ -2064,7 +2081,8 @@
     },
     "totp": {
       "qrTitle": "Código QR TOTP",
-      "scanHint": "Escanee con su aplicación de autenticación (Google Authenticator, Authy, etc.)"
+      "scanHint": "Escanee con su aplicación de autenticación (Google Authenticator, Authy, etc.)",
+      "qrError": "Error al generar código QR"
     },
     "validation": {
       "fieldRequired": "Este campo es obligatorio",
@@ -2075,13 +2093,15 @@
       "minLength": "Mínimo {count} caracteres",
       "passwordsMatch": "Las contraseñas coinciden",
       "passwordsNoMatch": "Las contraseñas no coinciden",
-      "tooWeak": "La contraseña es demasiado débil"
+      "tooWeak": "La contraseña es demasiado débil",
+      "valid": "Válido"
     },
     "view": {
       "comfortable": "Vista cómoda",
       "compact": "Vista compacta",
       "compactWidget": "Modo compacto (widget flotante)",
-      "exitCompact": "Salir del modo compacto"
+      "exitCompact": "Salir del modo compacto",
+      "modeChanged": "Vista cambiada a {mode}"
     },
     "generator": {
       "title": "Generador de contraseñas",
@@ -2094,7 +2114,8 @@
       "uppercase": "A-Z (mayúsculas)",
       "lowercase": "a-z (minúsculas)",
       "numbers": "0-9 (dígitos)",
-      "symbols": "!@#$ (símbolos)"
+      "symbols": "!@#$ (símbolos)",
+      "characterOptions": "Opciones de caracteres"
     },
     "welcome": {
       "createFirst": "Crear mi primera entrada",
