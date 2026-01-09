@@ -50,13 +50,13 @@ export function renderPasswordHistory(entry, t = (k) => k) {
           ${h.reason ? `<span class="vault-history-reason">${escapeHtml(h.reason)}</span>` : ''}
         </div>
         <div class="vault-history-actions">
-          <button class="vault-field-btn copy-history-pwd" data-password="${escapeHtml(h.password)}" title="${t('vault.common.copy')}">
+          <button class="vault-field-btn copy-history-pwd" data-password="${escapeHtml(h.password)}" title="${t('vault.common.copy')}" aria-label="${t('vault.aria.copyHistoryPassword')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="vault-field-btn restore-history-pwd" data-index="${idx}" title="${t('vault.actions.restore')}">
+          <button class="vault-field-btn restore-history-pwd" data-index="${idx}" title="${t('vault.actions.restore')}" aria-label="${t('vault.aria.restoreHistoryPassword')}">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="1 4 1 10 7 10"></polyline>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
@@ -67,15 +67,16 @@ export function renderPasswordHistory(entry, t = (k) => k) {
     `;
   }).join('');
 
+  const historyId = `pwd-history-${entry.id || Date.now()}`;
   return `
     <div class="vault-password-history">
-      <button class="vault-history-toggle" aria-expanded="false">
-        <svg class="vault-history-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="vault-history-toggle" aria-expanded="false" aria-controls="${historyId}" aria-label="${t('vault.aria.togglePasswordHistory')}">
+        <svg class="vault-history-chevron" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
         <span>${t('vault.history.title')} (${history.length})</span>
       </button>
-      <div class="vault-history-list" hidden>
+      <div class="vault-history-list" id="${historyId}" role="list" hidden>
         ${historyItems}
       </div>
     </div>

@@ -53,7 +53,8 @@ export function renderPasswordField(options = {}) {
       <label class="vault-label" for="${id}">${t('vault.labels.password')}</label>
       <div class="vault-input-group">
         <input type="password" class="vault-input" id="${id}"
-               value="${escapeHtml(value)}" placeholder="${placeholder}" autocomplete="new-password">
+               value="${escapeHtml(value)}" placeholder="${placeholder}" autocomplete="new-password"
+               aria-describedby="${id}-strength">
         <button type="button" class="vault-input-btn toggle-pwd-visibility" data-target="${id}" aria-label="${t('vault.aria.togglePasswordVisibility')}">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -68,7 +69,7 @@ export function renderPasswordField(options = {}) {
           </button>
         ` : ''}
       </div>
-      <div class="vault-password-strength" id="${id}-strength"></div>
+      <div class="vault-password-strength" id="${id}-strength" aria-live="polite" aria-atomic="true"></div>
     </div>
   `;
 }
@@ -130,12 +131,12 @@ export function renderLoginFields(options = {}) {
     <div class="vault-form-group">
       <label class="vault-label" for="${prefix}-username">${t('vault.labels.usernameEmail')}</label>
       ${isEdit ? `
-        <input type="text" class="vault-input" id="${prefix}-username" value="${escapeHtml(data.username || '')}">
+        <input type="text" class="vault-input" id="${prefix}-username" value="${escapeHtml(data.username || '')}" maxlength="255">
       ` : `
         <div class="input-with-action">
-          <input type="text" class="vault-input" id="${prefix}-username" placeholder="${t('vault.form.userPlaceholder')}" autocomplete="username">
-          <button type="button" class="vault-btn-icon" id="btn-create-alias" title="${t('vault.actions.generateAlias')}">
-            <span class="icon">🕵️</span>
+          <input type="text" class="vault-input" id="${prefix}-username" placeholder="${t('vault.form.userPlaceholder')}" autocomplete="username" maxlength="255">
+          <button type="button" class="vault-btn-icon" id="btn-create-alias" title="${t('vault.actions.generateAlias')}" aria-label="${t('vault.actions.generateAlias')}">
+            <span class="icon" aria-hidden="true">🕵️</span>
           </button>
         </div>
       `}
@@ -151,7 +152,7 @@ export function renderLoginFields(options = {}) {
       <input type="url" class="vault-input" id="${prefix}-url"
              value="${escapeHtml(data.url || '')}"
              placeholder="${isEdit ? '' : t('vault.placeholders.urlExample')}"
-             aria-describedby="${prefix}-url-message">
+             aria-describedby="${prefix}-url-message" maxlength="2048">
       <div class="vault-field-message" id="${prefix}-url-message" role="alert" aria-live="polite"></div>
     </div>
     <div class="vault-form-group">
@@ -181,7 +182,7 @@ export function renderLoginFields(options = {}) {
     <div class="vault-form-group">
       <label class="vault-label" for="${prefix}-notes">${t('vault.labels.notes')}</label>
       <textarea class="vault-input vault-textarea" id="${prefix}-notes" rows="${isEdit ? 3 : 2}"
-                placeholder="${isEdit ? '' : t('vault.form.optionalNotes')}">${escapeHtml(data.notes || '')}</textarea>
+                placeholder="${isEdit ? '' : t('vault.form.optionalNotes')}" maxlength="10000">${escapeHtml(data.notes || '')}</textarea>
     </div>
   `;
 }

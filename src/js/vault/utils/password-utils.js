@@ -3,6 +3,8 @@
  * Password strength calculation and generation
  */
 
+import { t as defaultT, i18n } from '../../utils/i18n.js';
+
 /**
  * Get simple password strength level
  * @param {string} password - Password to check
@@ -45,17 +47,13 @@ export function calculatePasswordStrength(password, t = null) {
   if (/[0-9]/.test(password)) score++;
   if (/[^a-zA-Z0-9]/.test(password)) score++;
 
-  // Labels with i18n support
-  const labels = t ? {
-    weak: t('vault.detail.weak'),
-    fair: t('vault.detail.fair'),
-    good: t('vault.detail.good'),
-    excellent: t('vault.detail.excellent')
-  } : {
-    weak: 'Weak',
-    fair: 'Fair',
-    good: 'Good',
-    excellent: 'Excellent'
+  // Labels with i18n support (use passed t or default import)
+  const translate = t || defaultT;
+  const labels = {
+    weak: translate('vault.detail.weak'),
+    fair: translate('vault.detail.fair'),
+    good: translate('vault.detail.good'),
+    excellent: translate('vault.detail.excellent')
   };
 
   const levels = [
@@ -183,23 +181,13 @@ export function getExpiryStatus(entry, t = null) {
   const diffMs = expiresAt - now;
   const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-  // Helper for translatable labels
-  const getExpiredLabel = (days) => {
-    if (t) return t('vault.expiry.expired', { days });
-    return `Expired ${days} day${days > 1 ? 's' : ''} ago`;
-  };
-  const getExpiresTodayLabel = () => {
-    if (t) return t('vault.expiry.expiresToday');
-    return 'Expires today';
-  };
-  const getExpiresInLabel = (days) => {
-    if (t) return t('vault.expiry.expiresIn', { days });
-    return `Expires in ${days} day${days > 1 ? 's' : ''}`;
-  };
-  const getExpiresOnLabel = (date) => {
-    if (t) return t('vault.expiry.expiresOn', { date: date.toLocaleDateString() });
-    return `Expires on ${date.toLocaleDateString('en-US')}`;
-  };
+  // Helper for translatable labels (use passed t or default import)
+  const translate = t || defaultT;
+  const locale = i18n.getLocale() || navigator.language || 'en-US';
+  const getExpiredLabel = (days) => translate('vault.expiry.expired', { days });
+  const getExpiresTodayLabel = () => translate('vault.expiry.expiresToday');
+  const getExpiresInLabel = (days) => translate('vault.expiry.expiresIn', { days });
+  const getExpiresOnLabel = (date) => translate('vault.expiry.expiresOn', { date: date.toLocaleDateString(locale) });
 
   if (daysLeft < 0) {
     // Expired

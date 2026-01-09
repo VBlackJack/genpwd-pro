@@ -6,6 +6,28 @@
 import { escapeHtml } from './formatter.js';
 
 /**
+ * Validate and sanitize URL for safe use in href
+ * Only allows http, https, mailto, and tel protocols
+ * @param {string} url - URL to validate
+ * @returns {string} Sanitized URL or empty string if unsafe
+ */
+function sanitizeUrl(url) {
+  if (!url) return '';
+  const trimmed = url.trim().toLowerCase();
+  // Allow only safe protocols
+  if (trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('mailto:') ||
+      trimmed.startsWith('tel:') ||
+      trimmed.startsWith('/') ||
+      trimmed.startsWith('#')) {
+    return url.trim();
+  }
+  // Block javascript:, data:, vbscript:, and other dangerous protocols
+  return '';
+}
+
+/**
  * Parse markdown text to HTML
  * Supports: headers, bold, italic, strikethrough, links, code blocks,
  * inline code, blockquotes, lists, checkboxes, horizontal rules
@@ -45,8 +67,11 @@ export function parseMarkdown(text) {
   // Strikethrough (~~text~~)
   html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
 
-  // Links [text](url)
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  // Links [text](url) - with URL sanitization to prevent XSS
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+    const safeUrl = sanitizeUrl(url);
+    return safeUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>` : text;
+  });
 
   // Blockquotes (> text)
   html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');

@@ -1296,10 +1296,18 @@
       "toggleVisibility": "Mostrar/Ocultar",
       "togglePasswordVisibility": "Mostrar/Ocultar contraseña",
       "vaultNavigation": "Navegación de la bóveda",
-      "vaultSelection": "Selección de bóveda"
+      "vaultSelection": "Selección de bóveda",
+      "browseForAttachments": "Buscar archivos para adjuntar",
+      "attachmentInput": "Seleccionar archivos para adjuntar",
+      "deleteAttachment": "Eliminar adjunto {name}",
+      "downloadAttachment": "Descargar adjunto {name}",
+      "togglePasswordHistory": "Mostrar/ocultar historial de contraseñas",
+      "copyHistoryPassword": "Copiar contraseña anterior",
+      "restoreHistoryPassword": "Restaurar contraseña anterior"
     },
     "attachments": {
       "dropOrBrowse": "Suelte sus archivos aquí o {browse}",
+      "dropLabel": "Suelte sus archivos aquí o",
       "none": "Sin adjuntos"
     },
     "autotype": {
@@ -1333,7 +1341,9 @@
     "common": {
       "add": "Añadir",
       "cancel": "Cancelar",
+      "checking": "Verificando...",
       "close": "Cerrar",
+      "collapse": "Contraer",
       "confirm": "Confirmar",
       "copied": "¡Copiado!",
       "copy": "Copiar",
@@ -1342,6 +1352,7 @@
       "duplicate": "Duplicar",
       "edit": "Editar",
       "error": "Error",
+      "expand": "Expandir",
       "export": "Exportar",
       "import": "Importar",
       "move": "Mover a...",
@@ -1557,7 +1568,8 @@
       "weak": "Débil"
     },
     "folders": {
-      "color": "Color de carpeta"
+      "color": "Color de carpeta",
+      "countTooltip": "{count} en esta carpeta, {total} en total"
     },
     "form": {
       "confirmPassword": "Confirmar contraseña",
@@ -1664,6 +1676,7 @@
     "hints": {
       "autoRefresh": "actualización automática",
       "expiryReminder": "Recordatorio visual para renovar la contraseña",
+      "noCustomFields": "Sin campos personalizados. Haga clic en \"Añadir campo\" para crear uno.",
       "totpRecommended": "Recomendado para este servicio",
       "totpSecretAdd": "Opcional - Secreto Base32 o URI otpauth://",
       "totpSecretEdit": "Secreto Base32 o URI otpauth://"

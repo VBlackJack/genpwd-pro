@@ -397,6 +397,45 @@ GenPwd Pro parle **3 langues** :
 2. Sélectionnez votre langue
 3. L'interface change instantanément
 
+### Raccourcis clavier
+
+**Coffre-fort (Desktop) :**
+
+| Raccourci | Action |
+|-----------|--------|
+| `Ctrl+Shift+P` | Afficher/masquer (global, depuis n'importe quelle app) |
+| `Ctrl+L` | Verrouiller le coffre |
+| `Ctrl+N` | Nouvelle entrée |
+| `Ctrl+E` | Modifier l'entrée sélectionnée |
+| `Ctrl+D` | Dupliquer l'entrée |
+| `Ctrl+Suppr` | Supprimer l'entrée |
+| `Ctrl+F` | Rechercher |
+| `Ctrl+B` | Copier le nom d'utilisateur |
+| `Ctrl+C` | Copier le mot de passe |
+| `↑` / `↓` | Naviguer dans la liste |
+| `Entrée` | Ouvrir les détails |
+| `?` | Afficher les raccourcis |
+| `Échap` | Fermer la modale |
+
+**Générateur :**
+
+| Raccourci | Action |
+|-----------|--------|
+| `Ctrl+G` ou `G` | Générer les mots de passe |
+| `Ctrl+Shift+C` | Copier tous les mots de passe |
+| `Échap` | Fermer les modales |
+
+### Accessibilité WCAG 2.1
+
+GenPwd Pro est conçu pour être accessible à tous :
+
+- **Navigation clavier complète** : Toutes les fonctions accessibles sans souris
+- **Lecteurs d'écran** : Compatible NVDA, JAWS, VoiceOver
+- **Thème contraste élevé** : Pour les malvoyants
+- **Focus visible** : Indicateurs clairs de focus
+- **ARIA complet** : Attributs aria-label, aria-live, aria-expanded
+- **Pas de CAPTCHA** : Aucune barrière pour les utilisateurs
+
 ### Dictionnaires pour les phrases de mots
 
 Quand vous utilisez le mode **Phrase de mots**, vous pouvez choisir la langue des mots :
@@ -573,7 +612,7 @@ Consultez le fichier [LICENSE](./LICENSE) pour les détails juridiques complets.
 ---
 
 **Fait avec ❤️ par la communauté open source**
-Version 2.6.0 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Signaler un problème](https://github.com/VBlackJack/genpwd-pro/issues)
+Version 3.0.0 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Signaler un problème](https://github.com/VBlackJack/genpwd-pro/issues)
 
 ---
 ---
@@ -906,6 +945,45 @@ GenPwd Pro speaks **3 languages**:
 2. Select your language
 3. The interface changes instantly
 
+### Keyboard shortcuts
+
+**Vault (Desktop):**
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+P` | Show/hide (global, from any app) |
+| `Ctrl+L` | Lock vault |
+| `Ctrl+N` | New entry |
+| `Ctrl+E` | Edit selected entry |
+| `Ctrl+D` | Duplicate entry |
+| `Ctrl+Delete` | Delete entry |
+| `Ctrl+F` | Search |
+| `Ctrl+B` | Copy username |
+| `Ctrl+C` | Copy password |
+| `↑` / `↓` | Navigate list |
+| `Enter` | Open details |
+| `?` | Show shortcuts |
+| `Escape` | Close modal |
+
+**Generator:**
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+G` or `G` | Generate passwords |
+| `Ctrl+Shift+C` | Copy all passwords |
+| `Escape` | Close modals |
+
+### WCAG 2.1 Accessibility
+
+GenPwd Pro is designed to be accessible to everyone:
+
+- **Full keyboard navigation**: All features accessible without mouse
+- **Screen readers**: Compatible with NVDA, JAWS, VoiceOver
+- **High contrast theme**: For visually impaired users
+- **Visible focus**: Clear focus indicators
+- **Full ARIA support**: aria-label, aria-live, aria-expanded attributes
+- **No CAPTCHA**: No barriers for users
+
 ### Dictionaries for word phrases
 
 When using **Word phrase** mode, you can choose the language of words:
@@ -1082,7 +1160,7 @@ See the [LICENSE](./LICENSE) file for complete legal details.
 ---
 
 **Made with ❤️ by the open source community**
-Version 2.6.0 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Report an issue](https://github.com/VBlackJack/genpwd-pro/issues)
+Version 3.0.0 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Report an issue](https://github.com/VBlackJack/genpwd-pro/issues)
 
 ---
 

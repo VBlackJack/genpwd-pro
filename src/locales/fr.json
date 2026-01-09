@@ -1296,10 +1296,18 @@
       "toggleVisibility": "Afficher/Masquer",
       "togglePasswordVisibility": "Afficher/Masquer le mot de passe",
       "vaultNavigation": "Navigation du coffre",
-      "vaultSelection": "Sélection du coffre"
+      "vaultSelection": "Sélection du coffre",
+      "browseForAttachments": "Parcourir les fichiers à joindre",
+      "attachmentInput": "Sélectionner les fichiers à joindre",
+      "deleteAttachment": "Supprimer la pièce jointe {name}",
+      "downloadAttachment": "Télécharger la pièce jointe {name}",
+      "togglePasswordHistory": "Afficher/masquer l'historique des mots de passe",
+      "copyHistoryPassword": "Copier l'ancien mot de passe",
+      "restoreHistoryPassword": "Restaurer l'ancien mot de passe"
     },
     "attachments": {
       "dropOrBrowse": "Déposez vos fichiers ici ou {browse}",
+      "dropLabel": "Déposez vos fichiers ici ou",
       "none": "Aucune pièce jointe"
     },
     "autotype": {
@@ -1333,7 +1341,9 @@
     "common": {
       "add": "Ajouter",
       "cancel": "Annuler",
+      "checking": "Vérification...",
       "close": "Fermer",
+      "collapse": "Réduire",
       "confirm": "Confirmer",
       "copied": "Copié !",
       "copy": "Copier",
@@ -1342,6 +1352,7 @@
       "duplicate": "Dupliquer",
       "edit": "Modifier",
       "error": "Erreur",
+      "expand": "Développer",
       "export": "Exporter",
       "import": "Importer",
       "move": "Déplacer vers...",
@@ -1557,7 +1568,8 @@
       "weak": "Faible"
     },
     "folders": {
-      "color": "Couleur du dossier"
+      "color": "Couleur du dossier",
+      "countTooltip": "{count} dans ce dossier, {total} au total"
     },
     "form": {
       "confirmPassword": "Confirmer le mot de passe",
@@ -1664,6 +1676,7 @@
     "hints": {
       "autoRefresh": "actualisation auto",
       "expiryReminder": "Rappel visuel pour renouveler le mot de passe",
+      "noCustomFields": "Aucun champ personnalisé. Cliquez sur « Ajouter un champ » pour en créer un.",
       "totpRecommended": "Recommandé pour ce service",
       "totpSecretAdd": "Optionnel - Secret Base32 ou URI otpauth://",
       "totpSecretEdit": "Secret Base32 ou URI otpauth://"

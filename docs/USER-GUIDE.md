@@ -1,6 +1,6 @@
-# Guide Utilisateur - GenPwd Pro v2.5.1
+# Guide Utilisateur - GenPwd Pro v3.0
 
-> Guide complet pour maîtriser toutes les fonctionnalités du générateur de mots de passe
+> Guide complet pour maîtriser toutes les fonctionnalités du générateur et gestionnaire de mots de passe
 
 ## Table des matières
 
@@ -8,16 +8,22 @@
 2. [Modes de génération](#modes-de-génération)
 3. [Placement avancé](#placement-avancé)
 4. [Système de blocs de casse](#système-de-blocs-de-casse)
-5. [Dictionnaires multilingues](#dictionnaires-multilingues)
-6. [Tests intégrés](#tests-intégrés)
-7. [Conseils de sécurité](#conseils-de-sécurité)
+5. [Coffre-fort sécurisé](#coffre-fort-sécurisé)
+6. [Audit de sécurité](#audit-de-sécurité)
+7. [Authentification 2FA/TOTP](#authentification-2fatotp)
+8. [Import/Export](#importexport)
+9. [Application Desktop](#application-desktop)
+10. [Raccourcis clavier](#raccourcis-clavier)
+11. [Conseils de sécurité](#conseils-de-sécurité)
+
+---
 
 ## 🚀 Démarrage rapide
 
 ### Premier lancement
 
-1. **Ouvrez l'application** dans votre navigateur
-2. L'interface dark theme s'affiche avec les options principales
+1. **Ouvrez l'application** dans votre navigateur ou lancez l'application desktop
+2. L'interface s'affiche avec les options de génération
 3. **Choisissez un mode** : Syllables (défaut), Passphrase ou Leet
 4. **Cliquez sur "Générer"** pour créer votre premier mot de passe
 5. **Copiez** le résultat avec le bouton dédié
@@ -29,7 +35,9 @@ L'interface se compose de :
 - **Bouton de génération** : Action principale avec animation
 - **Zone de résultat** : Affichage du mot de passe avec indicateur d'entropie
 - **Actions rapides** : Copier, Masquer/Afficher, Exporter
-- **Zone de tests** : Validation automatique des fonctionnalités
+- **Coffre-fort** : Accès au gestionnaire de mots de passe (v3.0)
+
+---
 
 ## 🎯 Modes de génération
 
@@ -50,16 +58,9 @@ Pour atteindre 100+ bits : 25+ caractères recommandés
 - **Caractères spéciaux** : Insertion automatique ou manuelle
 - **Chiffres** : Placement intelligent en fin de mot
 
-**Avantages** :
-- ✅ Facile à mémoriser phonétiquement
-- ✅ Très haute entropie (jusqu'à 140 bits)
-- ✅ Compatible avec tous les systèmes
-
 ### Mode Passphrase (Mots séparés)
 
 **Cas d'usage** : Phrases de passe longues mais simples à retenir
-
-Génère une phrase composée de mots réels séparés par des caractères :
 
 ```
 Exemple : Forcer-Vague-Nature2
@@ -70,37 +71,18 @@ Dictionnaire : 2429 mots français
 **Options disponibles** :
 - **Nombre de mots** : 3 à 8 mots
 - **Séparateurs** : `-`, `_`, `.` ou espace
-- **Casse** : Title Case, MAJUSCULES, minuscules
 - **Dictionnaire** : Français, English, Latin
-
-**Stratégies de mémorisation** :
-1. Créez une histoire avec les mots
-2. Utilisez la première lettre de chaque mot
-3. Associez à des images mentales
 
 ### Mode Leet Speak (L33t)
 
 **Cas d'usage** : Transformation de mots familiers en version sécurisée
-
-Convertit du texte normal en leet speak avec substitutions :
 
 ```
 Exemple : P@55W0RD_
 Transformations : a→@, e→3, o→0, s→5
 ```
 
-**Table de conversion** :
-| Lettre | Leet | Lettre | Leet |
-|--------|------|--------|------|
-| a/A | @ | o/O | 0 |
-| e/E | 3 | s/S | 5 |
-| i/I | 1 | t/T | 7 |
-| l/L | ! | g/G | 9 |
-
-**Conseils** :
-- Partez d'un mot que vous connaissez
-- Appliquez les transformations systématiquement
-- Ajoutez des caractères en début/fin
+---
 
 ## 📍 Placement avancé
 
@@ -110,7 +92,7 @@ Le placement visuel permet de positionner précisément les caractères spéciau
 
 ```
 Début    : #6HOBumefyri
-Milieu   : HoBu#6mefyri  
+Milieu   : HoBu#6mefyri
 Fin      : HOBumefyri#6
 ```
 
@@ -121,31 +103,11 @@ Fin      : HOBumefyri#6
 3. **Aperçu en temps réel** du placement
 4. **Générez** pour appliquer le placement
 
-### Stratégies de placement
-
-**Début (0-20%)** : Idéal pour satisfaire les exigences "commence par un caractère spécial"
-```
-Exemple : @3RIQafosifyvunacy
-Usage : Systèmes exigeant un symbole en premier
-```
-
-**Milieu (40-60%)** : Distribution équilibrée, moins prévisible
-```
-Exemple : RIQafo@3sifyvunacy
-Usage : Maximum de sécurité contre les attaques
-```
-
-**Fin (80-100%)** : Compatible avec la plupart des systèmes legacy
-```
-Exemple : RIQafosifyvunacy@3
-Usage : Bases de données anciennes, systèmes restrictifs
-```
+---
 
 ## 🎨 Système de blocs de casse
 
 ### Comprendre les blocs U/T/L
-
-Le système de blocs permet de créer des patterns de casse personnalisés :
 
 - **U (UPPER)** : Tout en MAJUSCULES
 - **T (Title)** : Première Lettre Majuscule
@@ -163,180 +125,239 @@ PREMIER-Deuxieme-troisieme
 Premier-Deuxieme-Troisieme
 ```
 
-**Pattern L-U-L** :
+---
+
+## 🔐 Coffre-fort sécurisé
+
+### Nouveau dans v3.0
+
+GenPwd Pro v3.0 transforme l'application en un **gestionnaire de mots de passe complet**, rivalisant avec KeePass et Bitwarden.
+
+### Création d'un coffre-fort
+
+1. Cliquez sur **"Coffre-fort"** dans le menu principal
+2. Définissez un **mot de passe maître** (minimum 12 caractères recommandé)
+3. Le coffre est créé avec chiffrement **AES-256-GCM**
+
+### Types d'entrées
+
+| Type | Description | Champs |
+|------|-------------|--------|
+| **Login** | Identifiants de connexion | Username, Password, URL |
+| **Note sécurisée** | Texte chiffré | Note avec rendu Markdown |
+| **Carte bancaire** | Données de paiement | Numéro, Expiration, CVV |
+| **Identité** | Informations personnelles | Nom, Email, Téléphone |
+
+### Organisation des entrées
+
+- **Dossiers** : Créez une hiérarchie avec des sous-dossiers
+- **Tags** : Ajoutez des étiquettes colorées pour catégoriser
+- **Favoris** : Marquez vos entrées les plus utilisées
+- **Recherche avancée** : Utilisez des opérateurs comme `tag:`, `type:`, `folder:`
+
+### Actions rapides
+
+- **Double-clic** sur une entrée : Copie le mot de passe
+- **Clic droit** : Menu contextuel avec toutes les actions
+- **Survol** : Boutons d'actions rapides (copier, ouvrir URL)
+
+---
+
+## 🛡️ Audit de sécurité
+
+### Dashboard de sécurité
+
+Le tableau de bord analyse automatiquement vos mots de passe :
+
+- **Score global** : 0-100 avec jauge visuelle
+- **Mots de passe faibles** : Entropie < 60 bits
+- **Mots de passe réutilisés** : Détection via hash SHA-256
+- **Mots de passe anciens** : > 1 an sans changement
+
+### Recommandations
+
+Cliquez sur chaque catégorie pour :
+- Voir les entrées concernées
+- Recevoir des suggestions d'amélioration
+- Générer un nouveau mot de passe directement
+
+---
+
+## 🔑 Authentification 2FA/TOTP
+
+### Générateur TOTP intégré
+
+GenPwd Pro inclut un générateur de codes TOTP conforme RFC 6238 :
+
+1. **Ajoutez une entrée Login**
+2. Cliquez sur **"Ajouter TOTP"**
+3. Scannez le QR code ou entrez la clé manuellement
+4. Les codes se rafraîchissent automatiquement toutes les 30 secondes
+
+### Formats supportés
+
+- URI `otpauth://totp/...`
+- Clé secrète Base32
+- QR Code (scan)
+
+### Algorithmes supportés
+
+- SHA1 (défaut, compatibilité maximale)
+- SHA256
+- SHA512
+
+---
+
+## 📥 Import/Export
+
+### Import depuis d'autres gestionnaires
+
+| Source | Format | Fonctionnalités |
+|--------|--------|-----------------|
+| **KeePass 2.x** | XML | Groupes, champs personnalisés, notes |
+| **Bitwarden** | JSON | Collections, tous types d'entrées |
+| **CSV générique** | CSV | Détection intelligente des colonnes |
+
+### Processus d'import
+
+1. Exportez depuis votre ancien gestionnaire
+2. Dans GenPwd Pro, cliquez sur **"Importer"**
+3. Sélectionnez ou glissez-déposez le fichier
+4. Prévisualisez les entrées avant confirmation
+5. Les entrées sont ajoutées à votre coffre
+
+### Export
+
+- **Format .gpdb** : Format natif chiffré
+- **Backup** : Sauvegarde automatique avant écrasement
+
+---
+
+## 🖥️ Application Desktop
+
+### Fonctionnalités Electron
+
+L'application desktop offre des fonctionnalités exclusives :
+
+#### System Tray
+- **Icône** dans la zone de notification
+- **Menu contextuel** : Afficher, Générer, Verrouiller, Quitter
+- **Génération rapide** depuis le tray avec copie auto-clear (30s)
+- **Minimize to Tray** : Fermer ne quitte pas l'application
+
+#### Global Hotkey (Boss Key)
+- **Windows/Linux** : `Ctrl+Shift+P`
+- **macOS** : `Cmd+Shift+P`
+- Toggle visibilité depuis n'importe quelle application
+
+#### Mode Compact
+- Fenêtre flottante 380x640 pixels
+- Always on Top pour remplissage facile
+- Interface simplifiée : Recherche + liste uniquement
+
+#### Auto-Type (KeePass-style)
+Séquence configurable pour saisie automatique :
 ```
-premier-DEUXIEME-troisieme
+{USERNAME}{TAB}{PASSWORD}{ENTER}
 ```
 
-### Création de patterns personnalisés
+Placeholders supportés :
+- `{USERNAME}`, `{PASSWORD}`, `{URL}`, `{NOTES}`
+- `{TAB}`, `{ENTER}`, `{DELAY N}`
 
-1. **Définissez votre pattern** : Ex: "U-L-T-L"
-2. **Appliquez aux mots générés**
-3. **Résultat** : PREMIER-deuxieme-Troisieme-quatrieme
+---
 
-**Cas d'usage** :
-- Respect de politiques d'entreprise spécifiques
-- Amélioration de la mémorisation par pattern visuel
-- Contournement de filtres de mots de passe
+## ⌨️ Raccourcis clavier
 
-## 🌍 Dictionnaires multilingues
+### Navigation générale
 
-### Dictionnaires disponibles
+| Raccourci | Action |
+|-----------|--------|
+| `Ctrl+N` / `Cmd+N` | Nouvelle entrée |
+| `Ctrl+E` / `Cmd+E` | Éditer entrée sélectionnée |
+| `Delete` | Supprimer entrée |
+| `Ctrl+F` / `Cmd+F` | Recherche |
+| `Escape` | Fermer modal / Annuler |
 
-| Langue | Mots | Fichier | Entropie/mot |
-|--------|------|---------|--------------|
-| Français | 2429 | french.json | ~11.2 bits |
-| English | 3000+ | english.json | ~11.5 bits |
-| Latin | 1500+ | latin.json | ~10.5 bits |
+### Actions sur les entrées
 
-### Changement de langue
+| Raccourci | Action |
+|-----------|--------|
+| `Ctrl+C` / `Cmd+C` | Copier mot de passe |
+| `Ctrl+Shift+C` | Copier username |
+| `Ctrl+U` / `Cmd+U` | Ouvrir URL |
+| `Ctrl+B` / `Cmd+B` | Toggle favori |
 
-1. **Ouvrez les paramètres** (icône ⚙️)
-2. **Sélectionnez la langue** dans le menu déroulant
-3. Le dictionnaire se **charge dynamiquement**
-4. **Générez** un nouveau mot de passe
+### Desktop uniquement
 
-### Ajout de dictionnaires personnalisés
+| Raccourci | Action |
+|-----------|--------|
+| `Ctrl+Shift+P` / `Cmd+Shift+P` | Toggle visibilité (global) |
+| `Ctrl+L` / `Cmd+L` | Verrouiller coffre |
+| `Ctrl+M` / `Cmd+M` | Mode compact |
 
-Pour ajouter votre propre dictionnaire :
-
-1. **Créez un fichier JSON** dans `/dictionaries/`
-```json
-{
-  "language": "italian",
-  "words": ["casa", "sole", "mare", "cielo", ...]
-}
-```
-
-2. **Déclarez dans `dictionaries.js`** :
-```javascript
-AVAILABLE_DICTIONARIES.set('italian', {
-  path: '/dictionaries/italian.json',
-  wordCount: 2000
-});
-```
-
-3. **Rechargez l'application**
-
-## 🧪 Tests intégrés
-
-### Lancement des tests
-
-**Via l'interface** :
-1. Cliquez sur le bouton "Tests" en bas de l'interface
-2. La modal s'ouvre avec la progression
-3. Résultats détaillés après ~30 secondes
-
-**Via la console** :
-```bash
-npm run test
-```
-
-### Interprétation des résultats
-
-```
-📊 RAPPORT FINAL - Score: 100%
-✅ Tests réussis: 13 | ❌ Tests échoués: 0
-```
-
-**Signification des tests** :
-
-| Test | Vérifie | Succès = |
-|------|---------|----------|
-| Syllables Base | Génération standard | Pattern correct, entropie >100 bits |
-| Passphrase | Mots du dictionnaire | Mots valides, séparateurs OK |
-| Leet | Transformations | Au moins 3 substitutions |
-| Placement | Position caractères | Respect de la position demandée |
-| Blocks | Patterns de casse | Application correcte U/T/L |
-| UI | Interface | Boutons fonctionnels, copie OK |
-
-### Diagnostic des problèmes
-
-**Test échoué** : Vérifiez :
-- Console JavaScript pour les erreurs
-- Dictionnaires correctement chargés
-- Permissions du navigateur (clipboard)
+---
 
 ## 🔐 Conseils de sécurité
 
+### Mot de passe maître
+
+- **Minimum** : 12 caractères
+- **Recommandé** : 16+ caractères ou passphrase de 4+ mots
+- **Jamais** : Réutiliser un mot de passe existant
+- **Mémorisation** : Utilisez une phrase personnelle transformée
+
 ### Bonnes pratiques
 
-#### Longueur optimale
-- **Minimum** : 12 caractères (80+ bits d'entropie)
-- **Recommandé** : 16-20 caractères (100+ bits)
-- **Maximum sécurité** : 20+ caractères (120+ bits)
-
-#### Composition idéale
 ```
-✅ Majuscules + minuscules + chiffres + spéciaux
-✅ Éviter les mots du dictionnaire non transformés
-✅ Pas d'informations personnelles
-✅ Unique pour chaque service
+✅ Mot de passe unique par service
+✅ Activer 2FA partout où possible
+✅ Vérifier régulièrement l'audit de sécurité
+✅ Faire des sauvegardes régulières du coffre
+✅ Utiliser le verrouillage automatique
 ```
 
-### ⚠️ Attention aux fausses entropies
+### Paramètres de sécurité
 
-Certains générateurs affichent des valeurs d'entropie gonflées artificiellement. 
-Les vraies valeurs pour des mots de passe standards :
-- 6 caractères : ~35-40 bits maximum
-- 12 caractères : ~70-80 bits  
-- 18+ caractères : 100+ bits possibles
+- **Auto-Lock** : Verrouillage après inactivité (1-60 min)
+- **Clipboard Clear** : Nettoyage automatique (30s par défaut)
+- **Visual Protection** : Floutage quand fenêtre perd le focus
 
-### Stockage sécurisé
+### En cas de compromission
 
-**Recommandations** :
-1. **Gestionnaire de mots de passe** (recommandé)
-2. **Carnet physique** dans un coffre
-3. **Jamais** : Post-it, fichier texte, email
+1. **Changez immédiatement** le mot de passe maître
+2. **Identifiez** les entrées potentiellement compromises
+3. **Changez** les mots de passe des services concernés
+4. **Activez 2FA** sur tous les comptes critiques
 
-### Renouvellement
-
-**Fréquence suggérée** :
-- Services critiques : Tous les 3-6 mois
-- Services standards : Tous les 12 mois
-- Après incident : Immédiatement
-
-### Indicateurs de compromission
-
-Changez immédiatement si :
-- 🚨 Notification de breach/fuite
-- 🚨 Activité suspecte sur le compte
-- 🚨 Email de réinitialisation non sollicité
-- 🚨 Le service a été piraté
+---
 
 ## 💡 Astuces avancées
 
-### Combinaison de modes
+### Recherche avancée
 
-Créez des mots de passe ultra-sécurisés en combinant :
-1. Générez une passphrase
-2. Appliquez le leet speak à certains mots
-3. Ajoutez un placement personnalisé
-
-**Résultat** : `@Soleil-Pl@g3-Vacances-2024!`
-
-### Mémorisation efficace
-
-**Technique de l'histoire** :
-1. Passphrase : `Cheval-Galoper-Prairie-Vent`
-2. Histoire : "Le cheval galope dans la prairie avec le vent"
-3. Ajoutez votre touche : `Cheval7-Galoper-Prairie-Vent!`
-
-### Export et sauvegarde
-
-L'export JSON contient :
-```json
-{
-  "password": "VotreMotDePasse",
-  "entropy": 120.5,
-  "mode": "passphrase",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "options": {
-    "length": 5,
-    "dictionary": "french"
-  }
-}
+Utilisez des opérateurs pour filtrer :
 ```
+tag:important           # Entrées avec le tag "important"
+type:login              # Uniquement les logins
+folder:Travail          # Dans le dossier "Travail"
+has:totp                # Entrées avec TOTP configuré
+-archived               # Exclure les entrées archivées
+```
+
+### Templates personnalisés
+
+Créez des templates pour vos types d'entrées fréquents :
+1. Créez une entrée modèle
+2. Clic droit → "Enregistrer comme template"
+3. Utilisez le template lors de la création
+
+### Historique des mots de passe
+
+Chaque entrée conserve l'historique des modifications :
+- Consultez les anciennes versions
+- Restaurez un mot de passe précédent si nécessaire
+- Utile en cas de changement accidentel
 
 ---
 

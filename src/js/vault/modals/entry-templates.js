@@ -6,6 +6,20 @@
 import { t } from '../../utils/i18n.js';
 
 /**
+ * Simple debounce utility for input handlers
+ * @param {Function} fn - Function to debounce
+ * @param {number} ms - Delay in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(fn, ms = 150) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
+/**
  * Template category IDs with icons (static data)
  */
 const TEMPLATE_CATEGORY_DATA = [
@@ -238,7 +252,7 @@ export function renderTemplatePicker(options = {}) {
 
   return `
     <div class="vault-template-section">
-      <button type="button" class="vault-template-toggle" id="toggle-templates" aria-expanded="false">
+      <button type="button" class="vault-template-toggle" id="toggle-templates" aria-expanded="false" aria-controls="template-picker">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7"></rect>
           <rect x="14" y="3" width="7" height="7"></rect>
@@ -377,9 +391,10 @@ export function createTemplatePickerController(options = {}) {
     // Toggle button
     document.getElementById('toggle-templates')?.addEventListener('click', togglePicker);
 
-    // Search input
+    // Search input with debounce to prevent excessive DOM updates
+    const debouncedFilter = debounce((value) => filterTemplates(value), 150);
     document.getElementById('template-search')?.addEventListener('input', (e) => {
-      filterTemplates(e.target.value);
+      debouncedFilter(e.target.value);
     });
 
     // Template items

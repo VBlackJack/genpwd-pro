@@ -8,6 +8,12 @@ import { renderPasswordStrength } from '../utils/password-display.js';
 import { t, i18n } from '../../utils/i18n.js';
 
 /**
+ * Maximum number of mask characters to display for hidden values.
+ * Prevents excessively long mask strings while still indicating value presence.
+ */
+const MAX_MASK_LENGTH = 24;
+
+/**
  * Render a single field in the detail view
  * @param {Object} options - Field options
  * @param {string} options.label - Field label
@@ -27,7 +33,7 @@ export function renderField({ label, value, key = '', masked = false, copyable =
   }
 
   // Dynamic masking based on actual value length
-  const maskedValue = masked ? '•'.repeat(Math.min(value.length, 24)) : escapeHtml(value);
+  const maskedValue = masked ? '•'.repeat(Math.min(value.length, MAX_MASK_LENGTH)) : escapeHtml(value);
 
   return `
     <div class="vault-field" data-key="${key}" data-masked="${masked}">
@@ -88,7 +94,7 @@ function renderPasswordCard({ label, value }) {
  */
 function renderVisibilityToggle() {
   return `
-    <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" aria-pressed="false">
+    <button class="vault-field-btn toggle-visibility" title="${t('vault.aria.toggleVisibility')}" aria-label="${t('vault.aria.toggleVisibility')}" type="button">
       <svg class="icon-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
         <circle cx="12" cy="12" r="3"></circle>

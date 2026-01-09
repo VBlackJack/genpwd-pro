@@ -101,7 +101,7 @@ export function renderFolderNodes({ nodes, expandedFolders, selectedFolder }) {
       <button class="vault-folder-toggle ${isExpanded ? 'expanded' : ''}"
               data-folder-toggle="${node.id}"
               aria-expanded="${isExpanded}"
-              aria-label="${isExpanded ? t('common.collapse') : t('common.expand')} ${node.name}">
+              aria-label="${isExpanded ? t('vault.common.collapse') : t('vault.common.expand')} ${node.name}">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
@@ -115,12 +115,12 @@ export function renderFolderNodes({ nodes, expandedFolders, selectedFolder }) {
         <button class="vault-nav-item vault-folder-item vault-nav-folder ${isSelected ? 'active' : ''}"
                 data-folder="${node.id}"
                 data-padding="${8 + paddingLeft}"
-                aria-current="${isSelected ? 'true' : 'false'}"
+                ${isSelected ? 'aria-current="page"' : ''}
                 draggable="true">
           ${expandIcon}
           <span class="vault-nav-icon vault-folder-color" ${folderColor ? `data-folder-color="${folderColor}"` : ''} aria-hidden="true">${folderIcon}</span>
           <span class="vault-nav-label">${escapeHtml(node.name)}</span>
-          <span class="vault-nav-count" title="${node.entryCount} in this folder, ${node.totalCount} total">${node.totalCount}</span>
+          <span class="vault-nav-count" title="${t('vault.folders.countTooltip', { count: node.entryCount, total: node.totalCount })}">${node.totalCount}</span>
         </button>
     `;
 

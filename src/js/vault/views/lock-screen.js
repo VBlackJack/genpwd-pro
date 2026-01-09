@@ -33,7 +33,7 @@ export function renderLockScreen({ t = (k) => k } = {}) {
                    placeholder="${t('vault.lockScreen.masterPassword')}" autocomplete="current-password"
                    aria-label="${t('vault.lockScreen.masterPassword')}" aria-required="true">
             <button type="button" class="vault-input-btn" id="toggle-password"
-                    title="${t('vault.lockScreen.showHide')}" aria-label="${t('vault.lockScreen.showHide')}" aria-pressed="false">
+                    title="${t('vault.lockScreen.showHide')}" aria-label="${t('vault.lockScreen.showHide')}">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>

@@ -37,12 +37,14 @@ export function showTimeoutSettings(options = {}) {
   popover.className = 'vault-timeout-settings';
   popover.innerHTML = `
     <div class="vault-timeout-header">
-      <span>${t('vault.settings.lockTimeout')}</span>
+      <span id="timeout-group-label">${t('vault.settings.lockTimeout')}</span>
     </div>
-    <div class="vault-timeout-options">
+    <div class="vault-timeout-options" role="radiogroup" aria-labelledby="timeout-group-label">
       ${TIMEOUT_OPTIONS.map(opt => `
         <button class="vault-timeout-option ${opt.value === currentTimeout ? 'active' : ''}"
-                data-timeout="${opt.value}">
+                data-timeout="${opt.value}"
+                role="radio"
+                aria-checked="${opt.value === currentTimeout ? 'true' : 'false'}">
           ${t(opt.labelKey)}
         </button>
       `).join('')}
@@ -57,9 +59,13 @@ export function showTimeoutSettings(options = {}) {
       const newTimeout = parseInt(btn.dataset.timeout, 10);
       const label = btn.textContent.trim();
 
-      // Update UI
-      popover.querySelectorAll('.vault-timeout-option').forEach(b => b.classList.remove('active'));
+      // Update UI and ARIA states
+      popover.querySelectorAll('.vault-timeout-option').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-checked', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-checked', 'true');
 
       if (onTimeoutSelected) {
         onTimeoutSelected(newTimeout, label);

@@ -511,7 +511,14 @@
       "loadingEntries": "Loading entries",
       "loadingDetails": "Loading details",
       "breadcrumb": "Breadcrumb",
-      "entryType": "Entry type"
+      "entryType": "Entry type",
+      "browseForAttachments": "Browse for files to attach",
+      "attachmentInput": "Select files to attach",
+      "deleteAttachment": "Delete attachment {name}",
+      "downloadAttachment": "Download attachment {name}",
+      "togglePasswordHistory": "Toggle password history",
+      "copyHistoryPassword": "Copy previous password",
+      "restoreHistoryPassword": "Restore previous password"
     },
     "tooltips": {
       "lock": "Lock (Ctrl+L)",
@@ -623,7 +630,8 @@
     "selectedCount": "{count} selected",
     "attachments": {
       "none": "No attachments",
-      "dropOrBrowse": "Drop your files here or {browse}"
+      "dropOrBrowse": "Drop your files here or {browse}",
+      "dropLabel": "Drop your files here or"
     },
     "common": {
       "save": "Save",
@@ -644,7 +652,10 @@
       "success": "Success",
       "warning": "Warning",
       "confirm": "Confirm",
-      "copy": "Copy"
+      "copy": "Copy",
+      "checking": "Checking...",
+      "collapse": "Collapse",
+      "expand": "Expand"
     },
     "fields": {
       "content": "Content"
@@ -983,7 +994,8 @@
       "totpSecretEdit": "Base32 secret or otpauth:// URI",
       "totpSecretAdd": "Optional - Base32 secret or otpauth:// URI",
       "totpRecommended": "Recommended for this service",
-      "autoRefresh": "auto refresh"
+      "autoRefresh": "auto refresh",
+      "noCustomFields": "No custom fields. Click \"Add Field\" to create one."
     },
     "history": {
       "title": "History",
@@ -1227,7 +1239,8 @@
       "folderColor": "Folder color"
     },
     "folders": {
-      "color": "Folder color"
+      "color": "Folder color",
+      "countTooltip": "{count} in this folder, {total} total"
     },
     "autotype": {
       "manualTitle": "Manual Auto-fill",

@@ -6,8 +6,33 @@
 import { escapeHtml } from '../utils/formatter.js';
 import { t } from '../../utils/i18n.js';
 
+/**
+ * Tag colors with semantic keys for accessibility
+ */
+const TAG_COLOR_DATA = [
+  { color: '#ef4444', key: 'red' },
+  { color: '#f97316', key: 'orange' },
+  { color: '#eab308', key: 'yellow' },
+  { color: '#22c55e', key: 'green' },
+  { color: '#14b8a6', key: 'cyan' },
+  { color: '#3b82f6', key: 'blue' },
+  { color: '#8b5cf6', key: 'purple' },
+  { color: '#ec4899', key: 'pink' }
+];
+
 /** Default tag colors for picker */
-export const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
+export const TAG_COLORS = TAG_COLOR_DATA.map(c => c.color);
+
+/**
+ * Get tag colors with translated labels
+ * @returns {Array<{color: string, label: string}>}
+ */
+export function getTagColors() {
+  return TAG_COLOR_DATA.map(c => ({
+    color: c.color,
+    label: t(`vault.colors.${c.key}`)
+  }));
+}
 
 /**
  * Render tags list in sidebar
@@ -30,7 +55,7 @@ export function renderTagsList({ tags, entries, selectedTag }) {
     return `
       <button class="vault-nav-item vault-tag-item ${isActive ? 'active' : ''}"
               data-tag="${tag.id}"
-              aria-current="${isActive ? 'true' : 'false'}">
+              ${isActive ? 'aria-current="page"' : ''}>
         <span class="vault-tag-dot" data-tag-color="${tagColor}" aria-hidden="true"></span>
         <span class="vault-nav-label">${escapeHtml(tag.name)}</span>
         <span class="vault-nav-count">${count}</span>
@@ -70,10 +95,10 @@ export function renderTagPicker({ tags, selectedTags = [] }) {
       <div class="vault-tag-picker-add">
         <input type="text" class="vault-input vault-input-sm" id="new-tag-name" placeholder="${t('vault.placeholders.newTag')}">
         <div class="vault-tag-color-picker" id="tag-color-picker">
-          ${TAG_COLORS.map((color, i) => `
+          ${getTagColors().map((c, i) => `
             <button type="button" class="vault-color-btn vault-color-option ${i === 0 ? 'selected' : ''}"
-                    data-color="${color}"
-                    title="${t('vault.labels.color')} ${i + 1}" aria-label="${t('vault.labels.color')} ${color}"></button>
+                    data-color="${c.color}"
+                    title="${c.label}" aria-label="${c.label}"></button>
           `).join('')}
         </div>
         <button type="button" class="vault-btn vault-btn-sm vault-btn-primary" id="btn-create-tag">

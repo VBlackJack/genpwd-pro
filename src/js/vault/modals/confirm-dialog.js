@@ -22,8 +22,8 @@ export function renderConfirmDialog(options = {}) {
   const {
     title = t('vault.dialogs.confirmTitle'),
     message = t('vault.dialogs.areYouSure'),
-    confirmText = t('common.confirm'),
-    cancelText = t('common.cancel'),
+    confirmText = t('vault.common.confirm'),
+    cancelText = t('vault.common.cancel'),
     confirmClass = 'vault-btn-danger',
     type = 'warning'
   } = options;
@@ -34,7 +34,7 @@ export function renderConfirmDialog(options = {}) {
 
   return `
     <div class="vault-modal-backdrop"></div>
-    <div class="vault-modal-content vault-modal-sm" role="alertdialog" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+    <div class="vault-modal-content vault-modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
       <div class="vault-modal-header">
         <h3 id="confirm-dialog-title" class="vault-modal-title">
           <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${iconColor}" stroke-width="2" class="modal-icon-warning">
@@ -68,8 +68,8 @@ export function renderConfirmDialog(options = {}) {
 export async function showConfirmDialog(message, options = {}) {
   const {
     title = t('vault.dialogs.confirmTitle'),
-    confirmLabel = t('common.confirm'),
-    cancelLabel = t('common.cancel'),
+    confirmLabel = t('vault.common.confirm'),
+    cancelLabel = t('vault.common.cancel'),
     danger = false,
     type = danger ? 'danger' : 'warning'
   } = options;
@@ -115,7 +115,7 @@ export async function showConfirmDialog(message, options = {}) {
       setTimeout(() => {
         modal.remove();
         // Restore focus to previously focused element
-        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.body.contains(previouslyFocused)) {
           previouslyFocused.focus();
         }
       }, 300);
@@ -189,8 +189,8 @@ export function renderPromptDialog(options = {}) {
     message = '',
     placeholder = '',
     defaultValue = '',
-    confirmText = t('common.confirm'),
-    cancelText = t('common.cancel')
+    confirmText = t('vault.common.confirm'),
+    cancelText = t('vault.common.cancel')
   } = options;
 
   return `
@@ -237,8 +237,8 @@ export async function showPromptDialog(message, options = {}) {
     title = t('vault.dialogs.promptTitle'),
     placeholder = '',
     defaultValue = '',
-    confirmLabel = t('common.confirm'),
-    cancelLabel = t('common.cancel')
+    confirmLabel = t('vault.common.confirm'),
+    cancelLabel = t('vault.common.cancel')
   } = options;
 
   return new Promise((resolve) => {
@@ -277,13 +277,38 @@ export async function showPromptDialog(message, options = {}) {
     });
 
     // Event handlers
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+    };
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      handleConfirm();
+    };
+
+    // Cache element references
+    const form = modal.querySelector('#prompt-dialog-form');
+    const cancelBtn = modal.querySelector('#prompt-dialog-cancel');
+    const closeBtn = modal.querySelector('#prompt-dialog-close');
+    const backdrop = modal.querySelector('.vault-modal-backdrop');
+
     const cleanup = () => {
+      // Remove all event listeners
+      form?.removeEventListener('submit', handleSubmit);
+      cancelBtn?.removeEventListener('click', handleCancel);
+      closeBtn?.removeEventListener('click', handleCancel);
+      backdrop?.removeEventListener('click', handleCancel);
+      modal.removeEventListener('keydown', handleKeydown);
+
       modal.classList.remove('active');
       modal.setAttribute('aria-hidden', 'true');
       setTimeout(() => {
         modal.remove();
         // Restore focus to previously focused element
-        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.body.contains(previouslyFocused)) {
           previouslyFocused.focus();
         }
       }, 300);
@@ -301,21 +326,11 @@ export async function showPromptDialog(message, options = {}) {
       resolve(null);
     };
 
-    const handleKeydown = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleCancel();
-      }
-    };
-
     // Attach event listeners
-    modal.querySelector('#prompt-dialog-form')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleConfirm();
-    });
-    modal.querySelector('#prompt-dialog-cancel')?.addEventListener('click', handleCancel);
-    modal.querySelector('#prompt-dialog-close')?.addEventListener('click', handleCancel);
-    modal.querySelector('.vault-modal-backdrop')?.addEventListener('click', handleCancel);
+    form?.addEventListener('submit', handleSubmit);
+    cancelBtn?.addEventListener('click', handleCancel);
+    closeBtn?.addEventListener('click', handleCancel);
+    backdrop?.addEventListener('click', handleCancel);
     modal.addEventListener('keydown', handleKeydown);
   });
 }

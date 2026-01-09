@@ -1,4 +1,4 @@
-# Documentation Technique - GenPwd Pro v2.5.1
+# Documentation Technique - GenPwd Pro v3.0.0
 
 > Architecture, flux internes et outils de build/test
 
@@ -239,6 +239,6 @@ Les tests navigateur (Puppeteer) valident la console de debug, la copie presse-p
 ---
 
 <div align="center">
-  <b>GenPwd Pro v2.5.1 - Architecture Technique</b><br />
+  <b>GenPwd Pro v3.0.0 - Architecture Technique</b><br />
   <i>© 2025 - Apache 2.0 License</i>
 </div>

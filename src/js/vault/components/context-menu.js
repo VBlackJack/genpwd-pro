@@ -12,8 +12,11 @@ import { escapeHtml } from '../utils/formatter.js';
  * @returns {Object} Type info with icon and color
  */
 function getTypeInfo(type, getEntryTypes) {
+  const defaultType = { icon: '🔑', color: '#60a5fa' };
+  if (!getEntryTypes) return defaultType;
   const types = getEntryTypes();
-  return types[type] || types.login || { icon: '🔑', color: '#60a5fa' };
+  if (!types || !type) return defaultType;
+  return types[type] || types.login || defaultType;
 }
 
 /**
@@ -29,52 +32,52 @@ export function renderContextMenuContent({ entry, getEntryTypes, t = (k) => k })
 
   return `
     <div class="vault-ctx-header">
-      <span class="vault-ctx-icon" data-type-color="${type.color}">${type.icon}</span>
+      <span class="vault-ctx-icon" data-type-color="${type.color}" aria-hidden="true">${type.icon}</span>
       <span class="vault-ctx-title">${escapeHtml(entry.title)}</span>
     </div>
     <div class="vault-ctx-divider"></div>
     ${entry.type === 'login' && entry.data?.username ? `
       <button class="vault-ctx-item" data-action="copy-username">
-        <span class="vault-ctx-item-icon">👤</span>
+        <span class="vault-ctx-item-icon" aria-hidden="true">👤</span>
         ${t('vault.actions.copyUsername')}
       </button>
     ` : ''}
     ${entry.type === 'login' && entry.data?.password ? `
       <button class="vault-ctx-item" data-action="copy-password">
-        <span class="vault-ctx-item-icon">🔑</span>
+        <span class="vault-ctx-item-icon" aria-hidden="true">🔑</span>
         ${t('vault.actions.copyPassword')}
       </button>
     ` : ''}
     ${entry.data?.url ? `
       <button class="vault-ctx-item" data-action="open-url">
-        <span class="vault-ctx-item-icon">🔗</span>
+        <span class="vault-ctx-item-icon" aria-hidden="true">🔗</span>
         ${t('vault.actions.openWebsite')}
       </button>
     ` : ''}
     <div class="vault-ctx-divider"></div>
     <button class="vault-ctx-item" data-action="edit">
-      <span class="vault-ctx-item-icon">✏️</span>
+      <span class="vault-ctx-item-icon" aria-hidden="true">✏️</span>
       ${t('vault.common.edit')}
     </button>
     <button class="vault-ctx-item" data-action="duplicate">
-      <span class="vault-ctx-item-icon">📋</span>
+      <span class="vault-ctx-item-icon" aria-hidden="true">📋</span>
       ${t('vault.common.duplicate')}
     </button>
     <button class="vault-ctx-item" data-action="move">
-      <span class="vault-ctx-item-icon">📁</span>
+      <span class="vault-ctx-item-icon" aria-hidden="true">📁</span>
       ${t('vault.common.move')}
     </button>
     <button class="vault-ctx-item" data-action="toggle-favorite">
-      <span class="vault-ctx-item-icon">${entry.favorite ? '☆' : '★'}</span>
+      <span class="vault-ctx-item-icon" aria-hidden="true">${entry.favorite ? '☆' : '★'}</span>
       ${entry.favorite ? t('vault.actions.removeFromFavorites') : t('vault.actions.addToFavorites')}
     </button>
     <button class="vault-ctx-item" data-action="toggle-pin">
-      <span class="vault-ctx-item-icon">${entry.pinned ? '📍' : '📌'}</span>
+      <span class="vault-ctx-item-icon" aria-hidden="true">${entry.pinned ? '📍' : '📌'}</span>
       ${entry.pinned ? t('vault.actions.unpin') : t('vault.actions.pinToTop')}
     </button>
     <div class="vault-ctx-divider"></div>
     <button class="vault-ctx-item vault-ctx-danger" data-action="delete">
-      <span class="vault-ctx-item-icon">🗑️</span>
+      <span class="vault-ctx-item-icon" aria-hidden="true">🗑️</span>
       ${t('vault.common.delete')}
     </button>
   `;

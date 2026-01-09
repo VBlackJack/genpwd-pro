@@ -49,9 +49,12 @@ export function renderAttachmentsUI({ entry, isEditing, t = (k) => k }) {
          <h3 class="vault-detail-subtitle">${t('vault.labels.attachments')} (${attachments.length})</h3>
          ${isEditing ? `
            <div class="vault-file-drop-zone" id="file-drop-zone">
-             <span class="drop-icon">📎</span>
-             <span class="drop-text">${t('vault.attachments.dropOrBrowse').replace('{browse}', `<button type="button" class="link-btn" id="btn-browse-files">${t('vault.actions.browse')}</button>`)}</span>
-             <input type="file" id="file-input" multiple class="vault-file-input-hidden">
+             <span class="drop-icon" aria-hidden="true">📎</span>
+             <span class="drop-text">
+               ${t('vault.attachments.dropLabel')}
+               <button type="button" class="link-btn" id="btn-browse-files" aria-label="${t('vault.aria.browseForAttachments')}">${t('vault.actions.browse')}</button>
+             </span>
+             <input type="file" id="file-input" multiple class="vault-file-input-hidden" aria-label="${t('vault.aria.attachmentInput')}">
            </div>
          ` : ''}
       </div>
@@ -67,11 +70,11 @@ export function renderAttachmentsUI({ entry, isEditing, t = (k) => k }) {
             </div>
             <div class="attachment-actions">
               ${isEditing ? `
-                <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="${t('vault.common.delete')}">
+                <button type="button" class="vault-icon-btn danger" data-delete-attachment="${index}" title="${t('vault.common.delete')}" aria-label="${t('vault.aria.deleteAttachment', { name: escapeHtml(file.name) })}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
               ` : `
-                <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="${t('vault.actions.download')}">
+                <button type="button" class="vault-icon-btn" data-download-attachment="${index}" title="${t('vault.actions.download')}" aria-label="${t('vault.aria.downloadAttachment', { name: escapeHtml(file.name) })}">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 </button>
               `}
@@ -86,19 +89,29 @@ export function renderAttachmentsUI({ entry, isEditing, t = (k) => k }) {
 /**
  * Download an attachment
  * @param {Object} file - Attachment file object with name and data
+ * @returns {boolean} True if download initiated successfully
  */
 export function downloadAttachment(file) {
-  if (!file || !file.data) return;
+  if (!file || !file.data) {
+    return false;
+  }
 
+  let link = null;
   try {
-    const link = document.createElement('a');
+    link = document.createElement('a');
     link.href = file.data;
-    link.download = file.name;
+    link.download = file.name || 'download';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    return true;
   } catch (err) {
-    throw new Error('Download failed');
+    // Silent fail - caller can handle UI feedback
+    return false;
+  } finally {
+    // Always clean up DOM
+    if (link && link.parentNode) {
+      document.body.removeChild(link);
+    }
   }
 }
 

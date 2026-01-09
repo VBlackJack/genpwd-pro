@@ -217,20 +217,20 @@ function renderSecuritySummary(entry, entries = []) {
           <span class="vault-security-value">${strengthInfo.label}</span>
         </div>
         <div class="vault-security-item ${has2FA ? 'success' : 'muted'}">
-          <span class="vault-security-icon" role="img" aria-hidden="true">${has2FA ? '🔐' : '🔓'}</span>
+          <span class="vault-security-icon" aria-hidden="true">${has2FA ? '🔐' : '🔓'}</span>
           <span class="vault-security-label">2FA</span>
           <span class="vault-security-value">${has2FA ? t('vault.entryInfo.has2FA') : t('vault.entryInfo.no2FA')}</span>
         </div>
         ${isDuplicate ? `
           <div class="vault-security-item danger">
-            <span class="vault-security-icon" role="img" aria-hidden="true">🔁</span>
+            <span class="vault-security-icon" aria-hidden="true">🔁</span>
             <span class="vault-security-label">${t('vault.badges.reused')}</span>
             <span class="vault-security-value">${t('vault.entryCard.reusedPassword')}</span>
           </div>
         ` : ''}
         ${expiryStatus.status !== 'none' && expiryStatus.status !== 'ok' ? `
           <div class="vault-security-item ${expiryStatus.status === 'expired' ? 'danger' : 'warning'}">
-            <span class="vault-security-icon" role="img" aria-hidden="true">⏰</span>
+            <span class="vault-security-icon" aria-hidden="true">⏰</span>
             <span class="vault-security-label">${t('vault.labels.expiration')}</span>
             <span class="vault-security-value">${t('vault.badges.' + expiryStatus.status)}</span>
           </div>
@@ -273,7 +273,7 @@ function renderQuickInfoBar(entry) {
       ` : ''}
       ${hasAttachments ? `
         <span class="vault-quick-info-item" title="${t('vault.entryInfo.attachmentsCount', { count: entry.attachments.length })}">
-          📎 ${entry.attachments.length}
+          <span aria-hidden="true">📎</span> ${entry.attachments.length}
         </span>
       ` : ''}
       ${hasCustomFields ? `
@@ -307,8 +307,8 @@ export function renderEntryDetail({ entry, tags, entries = [] }) {
       </div>
       <div class="vault-detail-info">
         <div class="vault-detail-title-row">
-          ${isPinned ? `<span class="vault-pin-badge" title="${t('vault.badges.pinned')}">📌</span>` : ''}
-          ${isFavorite ? `<span class="vault-fav-indicator" title="${t('vault.badges.favorite')}" aria-hidden="true">★</span>` : ''}
+          ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.badges.pinned')}" title="${t('vault.badges.pinned')}">📌</span>` : ''}
+          ${isFavorite ? `<span class="vault-fav-indicator" role="img" aria-label="${t('vault.badges.favorite')}" title="${t('vault.badges.favorite')}">★</span>` : ''}
           <h3 class="vault-detail-title">${escapeHtml(entry.title)}</h3>
         </div>
         <div class="vault-detail-subtitle-row">

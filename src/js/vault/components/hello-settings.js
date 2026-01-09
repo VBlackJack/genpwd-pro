@@ -99,15 +99,21 @@ export function showHelloSettingsPopover(options = {}) {
     }
   }, true);
 
-  // Close on click outside
+  // Close on click outside with proper cleanup
+  let closeTimeout = null;
   const closeHandler = (e) => {
-    if (!popover.contains(e.target) && !e.target.closest('#hello-settings')) {
-      popover.remove();
+    if (!document.body.contains(popover)) {
       document.removeEventListener('click', closeHandler);
+      return;
+    }
+    if (!popover.contains(e.target) && !e.target.closest('#hello-settings')) {
+      if (closeTimeout) clearTimeout(closeTimeout);
+      document.removeEventListener('click', closeHandler);
+      popover.remove();
     }
   };
   // Delay to avoid immediate close
-  setTimeout(() => document.addEventListener('click', closeHandler), 200);
+  closeTimeout = setTimeout(() => document.addEventListener('click', closeHandler), 200);
 
   return popover;
 }

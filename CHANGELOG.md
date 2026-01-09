@@ -5,6 +5,45 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [3.0.1] - 2026-01-09
+
+### ♿ Accessibilité & Polish (BMAD Audit)
+
+Améliorations issues d'une analyse BMAD complète (12 rounds) pour atteindre la conformité WCAG 2.1 Level AA.
+
+#### Accessibilité (a11y)
+- **aria-modal** : Ajouté sur tous les dialogues d'alerte
+- **aria-controls** : Ajouté sur les toggles (historique mots de passe, templates)
+- **aria-checked** : Pattern radio correct pour les options de timeout
+- **aria-atomic** : Ajouté sur les messages de validation pour lecture complète
+- **aria-label** : Ajouté sur tous les boutons d'icônes (pièces jointes, historique)
+- **Focus trap** : Implémenté dans le color picker avec restauration du focus
+- **Focus visible** : Amélioration des indicateurs de focus CSS
+
+#### Internationalisation (i18n)
+- **Zero hardcoding** : Suppression de toutes les strings hardcodées en fallback
+- **Locale dynamique** : Formatage des dates avec `i18n.getLocale()` au lieu de `'en-US'`
+- **Nouvelles clés** : `togglePasswordHistory`, `copyHistoryPassword`, `restoreHistoryPassword`
+- **Attachments** : `dropLabel`, `browseForAttachments`, `deleteAttachment`, `downloadAttachment`
+
+#### Sécurité
+- **XSS prevention** : Messages de validation injectés via `textContent` au lieu de `innerHTML`
+- **URL sanitization** : Validation des protocoles dans le parser Markdown
+- **Null safety** : Checks ajoutés dans context-menu, confirm-dialog, password-utils
+
+#### Qualité du code
+- **Memory leaks** : Cleanup des event listeners dans hello-settings, confirm-dialog, color-picker
+- **Debounce** : Ajouté sur la recherche de templates (150ms)
+- **Double-click prevention** : Protection contre les clics multiples dans color-picker
+- **Event cleanup** : Suppression explicite des listeners avant `remove()` des modales
+
+#### Documentation
+- **README.md** : Section raccourcis clavier ajoutée (FR + EN)
+- **README.md** : Section accessibilité WCAG 2.1 ajoutée
+- **CHANGELOG.md** : Documentation des améliorations BMAD
+
+---
+
 ## [3.0.0] - 2025-12-22
 
 ### 🎉 Version Majeure : Gestionnaire de Mots de Passe Desktop

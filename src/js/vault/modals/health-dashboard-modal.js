@@ -194,7 +194,7 @@ export function renderBreachSection(options = {}) {
       <h4>${t('vault.breach.checkResults')}</h4>
       <div class="vault-breach-loading" id="breach-loading">
         <span class="vault-spinner-small"></span>
-        ${t('common.checking')}
+        ${t('vault.common.checking')}
       </div>
       <div class="vault-breach-results" id="breach-list" role="region" aria-live="polite" aria-label="${t('vault.aria.breachResults')}"></div>
     </div>
@@ -210,7 +210,7 @@ export function renderBreachSection(options = {}) {
 export function renderBreachResultsSafe(checkedCount, t = (k) => k) {
   return `
     <div class="vault-breach-safe">
-      <span class="vault-breach-icon">✅</span>
+      <span class="vault-breach-icon" aria-hidden="true">✅</span>
       <span>${t('vault.health.noCompromised', { count: checkedCount })}</span>
     </div>
   `;
@@ -227,7 +227,7 @@ export function renderBreachResultsSafe(checkedCount, t = (k) => k) {
 export function renderBreachResultsCompromised(compromised, totalChecked, formatCount = (n) => n.toString(), t = (k) => k) {
   return `
     <div class="vault-breach-warning">
-      <span class="vault-breach-icon">🚨</span>
+      <span class="vault-breach-icon" aria-hidden="true">🚨</span>
       <span>${t('vault.health.compromisedFound', { count: compromised.length, total: totalChecked })}</span>
     </div>
     <ul class="vault-breach-list">

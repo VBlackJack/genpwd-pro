@@ -77,11 +77,11 @@ export function showPasswordGenerator(options = {}) {
   popover.innerHTML = `
     <div class="vault-gen-header">
       <span>${t('vault.generator.title')}</span>
-      <button class="vault-gen-close" aria-label="${t('common.close')}">&times;</button>
+      <button class="vault-gen-close" aria-label="${t('vault.common.close')}">&times;</button>
     </div>
     <div class="vault-gen-preview">
-      <input type="text" class="vault-gen-output" id="gen-output" readonly aria-label="${t('vault.generator.outputLabel')}">
-      <button class="vault-gen-copy" title="${t('common.copy')}" aria-label="${t('vault.generator.copyLabel')}"><span aria-hidden="true">📋</span></button>
+      <input type="text" class="vault-gen-output" id="gen-output" readonly tabindex="0" aria-label="${t('vault.generator.outputLabel')}" aria-live="polite">
+      <button class="vault-gen-copy" title="${t('vault.common.copy')}" aria-label="${t('vault.generator.copyLabel')}"><span aria-hidden="true">📋</span></button>
       <button class="vault-gen-refresh" title="${t('vault.generator.regenerate')}" aria-label="${t('vault.generator.regenerateLabel')}"><span aria-hidden="true">🔄</span></button>
     </div>
     <div class="vault-gen-options">
@@ -134,8 +134,12 @@ export function showPasswordGenerator(options = {}) {
   popover.querySelector('.vault-gen-copy')?.addEventListener('click', async () => {
     const pwd = popover.querySelector('.vault-gen-output')?.value;
     if (pwd) {
-      await navigator.clipboard.writeText(pwd);
-      if (onCopy) onCopy(pwd);
+      try {
+        await navigator.clipboard.writeText(pwd);
+        if (onCopy) onCopy(pwd);
+      } catch (err) {
+        console.error('Failed to copy password:', err);
+      }
     }
   });
 

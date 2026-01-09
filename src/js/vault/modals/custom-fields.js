@@ -40,7 +40,7 @@ export function renderCustomFieldsSection(options = {}) {
         </button>
       </div>
       <div id="custom-fields-container">
-        ${existingFieldsHtml}
+        ${existingFieldsHtml || `<p class="vault-empty-state-hint">${t('vault.hints.noCustomFields')}</p>`}
       </div>
     </div>
   `;

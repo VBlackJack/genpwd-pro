@@ -5,6 +5,7 @@
 
 import { escapeHtml } from '../utils/formatter.js';
 import { getEntryTypes, ENTRY_TYPES } from '../../config/entry-types.js';
+import { i18n } from '../../utils/i18n.js';
 
 /**
  * Position a preview element relative to cursor
@@ -114,7 +115,8 @@ function buildPreviewFields(entry, t) {
 
   // Add modified date
   if (entry.modifiedAt) {
-    const modified = new Date(entry.modifiedAt).toLocaleDateString('en-US', {
+    const locale = i18n.getLocale() || navigator.language || 'en-US';
+    const modified = new Date(entry.modifiedAt).toLocaleDateString(locale, {
       day: 'numeric', month: 'short', year: 'numeric'
     });
     fieldsHtml += `

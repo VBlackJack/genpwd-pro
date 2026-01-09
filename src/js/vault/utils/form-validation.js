@@ -51,11 +51,16 @@ function updateMessageElement(messageEl, input, message, messageType) {
   }
 
   if (message) {
-    const icon = getValidationIcon(messageType);
-    messageEl.innerHTML = `${icon}<span>${message}</span>`;
+    // Build safely: icon via innerHTML (trusted SVG), message via textContent
+    messageEl.innerHTML = '';
+    messageEl.insertAdjacentHTML('beforeend', getValidationIcon(messageType));
+    const span = document.createElement('span');
+    span.textContent = message;
+    messageEl.appendChild(span);
     messageEl.className = `vault-field-message visible ${messageType}`;
     messageEl.setAttribute('role', 'alert');
     messageEl.setAttribute('aria-live', messageType === 'error' ? 'assertive' : 'polite');
+    messageEl.setAttribute('aria-atomic', 'true');
   } else {
     messageEl.className = 'vault-field-message';
     messageEl.innerHTML = '';

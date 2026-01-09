@@ -59,8 +59,9 @@ export function maskHistoryPassword(password) {
  * @returns {string} Relative time string
  */
 export function getRelativeTime(date) {
+  if (!date) return '';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(dateObj.getTime())) return '';
+  if (!dateObj || isNaN(dateObj.getTime())) return '';
 
   const now = new Date();
   const diff = now - dateObj;

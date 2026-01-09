@@ -63,8 +63,10 @@ export function showColorPicker(options = {}) {
         <button class="vault-color-option ${c.color === currentColor || (!c.color && !currentColor) ? 'active' : ''}"
                 data-color="${c.color || ''}"
                 data-option-color="${c.color || ''}"
-                title="${c.label}">
-          ${c.color === currentColor || (!c.color && !currentColor) ? '✓' : ''}
+                title="${c.label}"
+                aria-label="${c.label}"
+                aria-pressed="${c.color === currentColor || (!c.color && !currentColor) ? 'true' : 'false'}">
+          <span aria-hidden="true">${c.color === currentColor || (!c.color && !currentColor) ? '✓' : ''}</span>
         </button>
       `).join('')}
     </div>
@@ -87,29 +89,79 @@ export function showColorPicker(options = {}) {
   picker.style.left = `${posX}px`;
   picker.style.top = `${posY}px`;
 
-  // Event handlers
+  // Store previously focused element for focus restoration
+  const previouslyFocused = document.activeElement;
+  let isSelecting = false;
+
+  // Event handlers with double-click prevention
   picker.querySelectorAll('.vault-color-option').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (isSelecting) return;
+      isSelecting = true;
       const color = btn.dataset.color || null;
-      picker.remove();
+      cleanup();
       if (onColorSelected) onColorSelected(color);
     });
   });
 
+  // Focus first option
+  const firstBtn = picker.querySelector('.vault-color-option');
+  requestAnimationFrame(() => firstBtn?.focus());
+
+  // Keyboard navigation and focus trap
+  const handleKeydown = (e) => {
+    const buttons = Array.from(picker.querySelectorAll('.vault-color-option'));
+    const currentIndex = buttons.indexOf(document.activeElement);
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cleanup();
+    } else if (e.key === 'Tab') {
+      // Focus trap
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = buttons[(currentIndex + 1) % buttons.length];
+      next?.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = buttons[(currentIndex - 1 + buttons.length) % buttons.length];
+      prev?.focus();
+    }
+  };
+
+  picker.addEventListener('keydown', handleKeydown);
+
+  // Cleanup function
+  const cleanup = () => {
+    picker.removeEventListener('keydown', handleKeydown);
+    document.removeEventListener('click', handler);
+    picker.remove();
+    // Restore focus if element still exists in DOM
+    if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.body.contains(previouslyFocused)) {
+      previouslyFocused.focus();
+    }
+  };
+
   // Close on click outside
-  setTimeout(() => {
-    const handler = (e) => {
-      if (!document.body.contains(picker)) {
-        document.removeEventListener('click', handler);
-        return;
-      }
-      if (!picker.contains(e.target)) {
-        picker.remove();
-        document.removeEventListener('click', handler);
-      }
-    };
-    document.addEventListener('click', handler);
-  }, 0);
+  const handler = (e) => {
+    if (!document.body.contains(picker)) {
+      document.removeEventListener('click', handler);
+      return;
+    }
+    if (!picker.contains(e.target)) {
+      cleanup();
+    }
+  };
+  setTimeout(() => document.addEventListener('click', handler), 0);
 
   return picker;
 }

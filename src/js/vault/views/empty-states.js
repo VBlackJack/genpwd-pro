@@ -116,7 +116,8 @@ export function renderNoSelection({ t = (k) => k } = {}) {
  */
 export function renderEntrySkeleton(count = 5) {
   return `
-    <div class="vault-skeleton-list" aria-hidden="true" role="status" aria-label="${i18n.t('vault.aria.loadingEntries')}">
+    <div class="sr-only" role="status" aria-live="polite">${i18n.t('vault.aria.loadingEntries')}</div>
+    <div class="vault-skeleton-list" aria-hidden="true">
       ${Array(count).fill('').map(() => `
         <div class="vault-skeleton-entry">
           <div class="vault-skeleton vault-skeleton-icon"></div>
@@ -136,7 +137,8 @@ export function renderEntrySkeleton(count = 5) {
  */
 export function renderDetailSkeleton() {
   return `
-    <div class="vault-skeleton-detail" aria-hidden="true" role="status" aria-label="${i18n.t('vault.aria.loadingDetails')}">
+    <div class="sr-only" role="status" aria-live="polite">${i18n.t('vault.aria.loadingDetails')}</div>
+    <div class="vault-skeleton-detail" aria-hidden="true">
       <div class="vault-skeleton-detail-header">
         <div class="vault-skeleton vault-skeleton-icon-lg"></div>
         <div class="vault-skeleton-info">
