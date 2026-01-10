@@ -2016,10 +2016,14 @@ ipcMain.handle('fs:show-open-dialog', async (event, options = {}) => {
 const ALLOWED_EXTENSIONS = ['.gpdb', '.gpd', '.json'];
 
 // Allowed directories for vault operations
+// SECURITY: Restricted to specific folders to prevent accidental file placement
+// - userData: App data folder (default vault location)
+// - documents: User's Documents folder
+// - .genpwd: Dedicated vault folder in home (instead of entire home directory)
 const ALLOWED_VAULT_DIRS = [
   app.getPath('userData'),
   app.getPath('documents'),
-  app.getPath('home')
+  path.join(app.getPath('home'), '.genpwd')  // Dedicated folder instead of entire home
 ];
 
 /**
@@ -2068,6 +2072,30 @@ function validateVaultPath(filePath) {
 
   if (!isAllowed) {
     return { valid: false, errorKey: 'errorNotInAllowedDir' };
+  }
+
+  // SECURITY: Check for symlinks to prevent directory escape attacks
+  // Symlinks could redirect vault files outside allowed directories
+  try {
+    // Check if any component of the path is a symlink
+    const realPath = fs.realpathSync(path.dirname(normalizedPath));
+    const normalizedReal = path.normalize(realPath);
+
+    // Verify the real path is still within allowed directories
+    const realPathAllowed = ALLOWED_VAULT_DIRS.some(allowedDir => {
+      const normalizedAllowed = path.normalize(allowedDir);
+      return normalizedReal.startsWith(normalizedAllowed + path.sep) || normalizedReal === normalizedAllowed;
+    });
+
+    if (!realPathAllowed) {
+      return { valid: false, errorKey: 'errorNotInAllowedDir' };
+    }
+  } catch (e) {
+    // If we can't resolve the path (directory doesn't exist yet), that's OK
+    // The directory will be created by the vault manager if needed
+    if (e.code !== 'ENOENT') {
+      return { valid: false, errorKey: 'errorInvalidFilePath' };
+    }
   }
 
   return { valid: true };
@@ -2441,7 +2469,8 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
       return { success: false, error: t.errorAutoTypeWindowDetect };
     }
 
-    // Check for dangerous target windows (command prompts, terminals, etc.)
+    // Check for dangerous target windows (command prompts, terminals, system tools)
+    // SECURITY: Prevent auto-typing into shells or admin tools where data could be executed
     const dangerousPatterns = [
       /cmd\.exe/i,
       /powershell/i,
@@ -2454,7 +2483,13 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
       /mintty/i,
       /conemu/i,
       /cmder/i,
-      /administrator:/i
+      /administrator:/i,
+      /regedit/i,           // Registry Editor
+      /gpedit/i,            // Group Policy Editor
+      /mmc\.exe/i,          // Microsoft Management Console
+      /wscript/i,           // Windows Script Host
+      /cscript/i,           // Console Script Host
+      /run dialog/i         // Run dialog (Win+R)
     ];
 
     const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));

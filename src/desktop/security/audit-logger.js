@@ -34,6 +34,18 @@ import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// ==================== DEVELOPMENT LOGGING ====================
+// Only log errors in development to prevent information disclosure in production
+const IS_DEV = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
+/**
+ * Safe error logging wrapper - only logs in development builds
+ * @param  {...any} args
+ */
+function devError(...args) {
+  if (IS_DEV) console.error(...args);
+}
+
 /**
  * Audit event types
  * @enum {string}
@@ -95,7 +107,7 @@ class AuditLogger {
       // Log initialization
       this.log(AuditEventType.INFO, AuditCategory.SESSION, 'Audit logger initialized');
     } catch (error) {
-      console.error('[AuditLogger] Failed to initialize:', error.message);
+      devError('[AuditLogger] Failed to initialize:', error.message);
       this.enabled = false;
     }
   }
@@ -175,7 +187,7 @@ class AuditLogger {
       fs.appendFileSync(this.logFile, entry + '\n', { mode: 0o600 });
     } catch (error) {
       // Silent fail to prevent disrupting application
-      console.error('[AuditLogger] Write error:', error.message);
+      devError('[AuditLogger] Write error:', error.message);
     }
   }
 
@@ -203,7 +215,7 @@ class AuditLogger {
         }
       }
     } catch (error) {
-      console.error('[AuditLogger] Rotation error:', error.message);
+      devError('[AuditLogger] Rotation error:', error.message);
     }
   }
 
@@ -378,7 +390,7 @@ class AuditLogger {
 
       return entries;
     } catch (error) {
-      console.error('[AuditLogger] Read error:', error.message);
+      devError('[AuditLogger] Read error:', error.message);
       return [];
     }
   }
@@ -402,7 +414,7 @@ class AuditLogger {
         }
       }
     } catch (error) {
-      console.error('[AuditLogger] Clear error:', error.message);
+      devError('[AuditLogger] Clear error:', error.message);
     }
   }
 }
