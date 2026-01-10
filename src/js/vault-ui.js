@@ -84,7 +84,9 @@ import { renderCreateVaultModal, renderOpenExternalModal } from './vault/modals/
 import { renderAddEntryModal, renderEditEntryModal } from './vault/modals/entry-form.js';
 import { showAutotypeModal } from './vault/modals/autotype-modal.js';
 import { showTOTPQRModal } from './vault/modals/totp-qr-modal.js';
-import { showSecureShareModal } from './vault/modals/secure-share-modal.js';
+import { showSecureShareModal, showOpenShareModal } from './vault/modals/secure-share-modal.js';
+import { showVaultSettingsModal } from './vault/modals/vault-settings-modal.js';
+import { getVaultSettingsService } from './vault/services/vault-settings-service.js';
 import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.js';
 
 // Vault views imports (Phase 6 modularization)
@@ -374,11 +376,22 @@ export class VaultUI {
     const saved = localStorage.getItem('genpwd-vault-visual-protection');
     this.#visualProtectionEnabled = saved !== 'false'; // Default true
 
+    // Get vault settings service for lock behavior
+    const vaultSettings = getVaultSettingsService();
+
     if (window.electronAPI?.onWindowBlur) {
       this.#unsubscribeBlur = window.electronAPI.onWindowBlur(() => {
-        if (this.#visualProtectionEnabled && this.#currentView === 'main') {
-          this.#isWindowBlurred = true;
-          this.#applyVisualProtection(true);
+        if (this.#currentView === 'main') {
+          // Lock on blur if enabled in settings
+          if (vaultSettings.get('lockOnBlur')) {
+            this.#lock();
+            return;
+          }
+          // Otherwise just apply visual protection
+          if (this.#visualProtectionEnabled) {
+            this.#isWindowBlurred = true;
+            this.#applyVisualProtection(true);
+          }
         }
       });
     }
@@ -388,6 +401,15 @@ export class VaultUI {
         if (this.#isWindowBlurred) {
           this.#isWindowBlurred = false;
           this.#applyVisualProtection(false);
+        }
+      });
+    }
+
+    // Lock on minimize if enabled
+    if (window.electronAPI?.onWindowMinimize) {
+      window.electronAPI.onWindowMinimize(() => {
+        if (this.#currentView === 'main' && vaultSettings.get('lockOnMinimize')) {
+          this.#lock();
         }
       });
     }
@@ -1190,6 +1212,15 @@ export class VaultUI {
             </div>
           </div>
 
+          <!-- Vault Settings Button -->
+          <button class="vault-settings-btn" id="btn-vault-settings" title="${t('vault.settings.title')}" aria-label="${t('vault.settings.title')}">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>${t('vault.settings.title')}</span>
+          </button>
+
           <div class="vault-sidebar-header">
             <div class="vault-lock-timer" id="lock-timer" role="timer" aria-live="polite" aria-label="${t('vault.aria.autoLockTimer')}">
               <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -1410,6 +1441,12 @@ export class VaultUI {
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </button>
+              <button class="vault-icon-btn" id="btn-open-share" data-tooltip="${t('vault.openShare.title')}" data-tooltip-pos="bottom" aria-label="${t('vault.openShare.title')}">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
                 </svg>
               </button>
               <div class="vault-toolbar-divider"></div>
@@ -2869,6 +2906,67 @@ export class VaultUI {
     }
   }
 
+  /**
+   * Show open share modal to decrypt shared entries
+   */
+  #showOpenShareModal() {
+    showOpenShareModal({
+      onImport: async (shareData) => {
+        try {
+          // Add entry via vault API
+          const type = shareData.type || 'login';
+          const title = shareData.title || t('vault.common.untitled');
+          const data = {
+            ...shareData.data,
+            notes: shareData.notes || '',
+            folderId: null
+          };
+
+          const newEntry = await window.vault.entries.add(type, title, data);
+          this.#selectedEntry = newEntry;
+          await this.#loadData();
+          this.#render();
+          showToast(t('vault.messages.entryAdded'), 'success');
+        } catch (error) {
+          safeLog('[VaultUI] Import share error:', error);
+          showToast(t('vault.common.error'), 'error');
+        }
+      },
+      onCopy: (text, message) => this.#copyToClipboard(text, message),
+      onSuccess: (message) => showToast(message, 'success'),
+      onError: (message) => showToast(message, 'error'),
+      t
+    });
+  }
+
+  /**
+   * Show vault settings modal
+   */
+  #showVaultSettingsModal() {
+    showVaultSettingsModal({
+      onSave: (settings) => {
+        // Update local timeout if changed
+        if (settings.lockTimeout !== this.#autoLockTimeout) {
+          this.#autoLockTimeout = settings.lockTimeout;
+          this.#autoLockSeconds = settings.lockTimeout;
+          try {
+            localStorage.setItem('genpwd-vault-autolock-timeout', settings.lockTimeout.toString());
+          } catch {
+            // Storage not available
+          }
+          // Update the inactivity manager with the new timeout
+          const inactivityManager = getInactivityManager();
+          inactivityManager.setTimeout(settings.lockTimeout);
+          inactivityManager.recordActivity(); // Reset the timer
+          // Update the countdown display immediately
+          this.#updateLockCountdown();
+        }
+      },
+      onSuccess: (message) => showToast(message, 'success'),
+      t
+    });
+  }
+
   // ==================== COMPACT/OVERLAY MODE ====================
 
   /**
@@ -3018,10 +3116,23 @@ export class VaultUI {
           } catch {
             // Storage not available
           }
+          // Sync with vault settings service
+          getVaultSettingsService().set('lockTimeout', newTimeout);
+          // Update the inactivity manager with the new timeout
+          const inactivityManager = getInactivityManager();
+          inactivityManager.setTimeout(newTimeout);
+          inactivityManager.recordActivity(); // Reset the timer
+          // Update the countdown display immediately
+          this.#updateLockCountdown();
           showToast(t('vault.messages.timeoutSet', { value: label }), 'success');
         },
         t
       });
+    }, { signal });
+
+    // Vault settings button
+    document.getElementById('btn-vault-settings')?.addEventListener('click', () => {
+      this.#showVaultSettingsModal();
     }, { signal });
 
     // Theme toggle button
@@ -3444,6 +3555,11 @@ export class VaultUI {
     // Import
     document.getElementById('btn-import')?.addEventListener('click', () => {
       this.#triggerImport();
+    });
+
+    // Open shared entry
+    document.getElementById('btn-open-share')?.addEventListener('click', () => {
+      this.#showOpenShareModal();
     });
 
     // Save vault to file

@@ -4025,10 +4025,10 @@ kbd {
   position: fixed;
   max-width: 300px;
   padding: 1rem;
-  background: var(--vault-surface);
-  border: 1px solid var(--vault-border);
+  background: #1a1d2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius);
-  box-shadow: var(--vault-shadow-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   z-index: var(--z-header);
   pointer-events: none;
   animation: vault-preview-appear 0.2s ease;
@@ -4539,7 +4539,7 @@ kbd {
   left: 0;
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: var(--vault-surface);
+  background: #1a1d2e;
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);
@@ -5577,6 +5577,128 @@ kbd {
 .vault-share-result .vault-btn-primary {
   margin-top: 0.75rem;
   width: 100%;
+}
+
+/* Open Share Modal - Info text */
+.vault-share-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: var(--vault-radius-md, 8px);
+  border-left: 3px solid var(--vault-primary, #6366f1);
+  font-size: 0.8125rem;
+  color: var(--vault-text-muted, #8c94ca);
+  margin-bottom: 1rem;
+}
+
+.vault-share-info svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  color: var(--vault-primary, #6366f1);
+}
+
+/* Open Share Modal - Decrypted result */
+.vault-share-decrypted {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--vault-surface, rgba(255, 255, 255, 0.03));
+  border-radius: var(--vault-radius-md, 8px);
+  border: 1px solid var(--vault-border, rgba(255, 255, 255, 0.1));
+}
+
+.vault-share-decrypted-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--vault-border, rgba(255, 255, 255, 0.1));
+}
+
+.vault-share-decrypted-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--vault-text, #fff);
+}
+
+.vault-share-decrypted-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vault-decrypted-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--vault-radius-sm, 6px);
+}
+
+.vault-decrypted-label {
+  flex-shrink: 0;
+  min-width: 80px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--vault-text-muted, #8c94ca);
+}
+
+.vault-decrypted-value {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--vault-text, #fff);
+  word-break: break-word;
+}
+
+.vault-decrypted-value.sensitive {
+  font-family: var(--font-mono, monospace);
+  color: var(--vault-text-dim, #6b7280);
+}
+
+.vault-decrypted-field .vault-btn-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--vault-radius-sm, 6px);
+  color: var(--vault-text-muted, #8c94ca);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vault-decrypted-field .vault-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vault-text, #fff);
+}
+
+.vault-share-decrypted-meta {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--vault-border, rgba(255, 255, 255, 0.1));
+  font-size: 0.75rem;
+  color: var(--vault-text-dim, #6b7280);
+}
+
+/* Success button style for import */
+.vault-btn-success {
+  background: var(--vault-success, #10b981);
+  color: #fff;
+  border: none;
+}
+
+.vault-btn-success:hover {
+  background: color-mix(in srgb, var(--vault-success, #10b981) 85%, #000);
 }
 
 .vault-checkbox-label {
@@ -6836,15 +6958,15 @@ kbd {
   position: fixed;
   z-index: var(--z-tooltip);
   padding: 6px 12px;
-  background: var(--vault-surface, #1e293b);
-  border: 1px solid var(--vault-border, #475569);
+  background: #1a1d2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius-sm, 4px);
   font-family: var(--vault-font, system-ui, -apple-system, sans-serif);
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--vault-text, #f1f5f9);
+  color: #f1f5f9;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   max-width: 300px;
   pointer-events: none;
   opacity: 0;
@@ -7801,4 +7923,132 @@ body.mode-compact .vault-empty-text {
 
 .vault-favicon-visible {
   display: flex !important;
+}
+
+/* ==================== VAULT SETTINGS MODAL ==================== */
+
+/* Settings button in sidebar */
+.vault-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--vault-surface);
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius);
+  color: var(--vault-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--vault-transition);
+  margin-top: 8px;
+}
+
+.vault-settings-btn:hover {
+  background: var(--vault-surface-hover);
+  color: var(--vault-text);
+  border-color: var(--vault-primary);
+}
+
+.vault-settings-btn:focus-visible {
+  outline: 2px solid var(--vault-primary);
+  outline-offset: 2px;
+}
+
+.vault-settings-btn svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.vault-settings-btn:hover svg {
+  opacity: 1;
+}
+
+/* Settings modal specific styles */
+.vault-settings-modal {
+  max-width: 500px;
+}
+
+.vault-settings-modal .vault-modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vault-settings-modal .vault-modal-header h3 svg {
+  opacity: 0.7;
+}
+
+.vault-settings-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--vault-border);
+}
+
+.vault-settings-section:last-of-type {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.vault-settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vault-text);
+}
+
+.vault-settings-section-title svg {
+  opacity: 0.7;
+  color: var(--vault-primary);
+}
+
+.vault-settings-hint {
+  margin: 4px 0 0 24px;
+  font-size: 12px;
+  color: var(--vault-text-tertiary);
+  line-height: 1.4;
+}
+
+/* Settings checkbox styling */
+.vault-settings-modal .vault-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.vault-settings-modal .vault-checkbox-label input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--vault-primary);
+  cursor: pointer;
+}
+
+.vault-settings-modal .vault-checkbox-label span {
+  font-size: 14px;
+  color: var(--vault-text);
+  line-height: 1.4;
+}
+
+/* Settings select styling */
+.vault-settings-modal .vault-select {
+  max-width: 200px;
+}
+
+/* Collapsed sidebar hides settings button text */
+.vault-sidebar.collapsed .vault-settings-btn span {
+  display: none;
+}
+
+.vault-sidebar.collapsed .vault-settings-btn {
+  justify-content: center;
+  padding: 10px;
 }

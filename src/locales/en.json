@@ -549,7 +549,9 @@
       "required": "required",
       "deleteField": "Delete this field",
       "passwordManager": "Password Manager",
+      "vaultLocked": "Vault locked",
       "vaultNavigation": "Vault navigation",
+      "passwordStrength": "Password strength",
       "autoLockTimer": "Auto-lock timer",
       "lockVault": "Lock vault",
       "toggleTheme": "Toggle light/dark theme",
@@ -723,7 +725,10 @@
       "copy": "Copy",
       "checking": "Checking...",
       "collapse": "Collapse",
-      "expand": "Expand"
+      "expand": "Expand",
+      "generating": "Generating...",
+      "decrypting": "Decrypting...",
+      "untitled": "Untitled"
     },
     "fields": {
       "content": "Content"
@@ -794,6 +799,7 @@
       "openVault": "Open Vault",
       "generating": "Generating...",
       "generateLink": "Generate link",
+      "move": "Move",
       "verifying": "Verifying...",
       "encrypting": "Encrypting...",
       "enableDuress": "Enable Duress Mode",
@@ -1174,6 +1180,7 @@
       "newFolderName": "New folder name:",
       "newSubfolderName": "New subfolder name:",
       "hidePassword": "Hide password",
+      "moveToFolder": "Move to folder",
       "editEntry": "Edit entry",
       "verificationRequired": "Verification required",
       "unsavedChanges": "Unsaved changes",
@@ -1235,11 +1242,35 @@
     "share": {
       "title": "Secure Share",
       "encryptionInfo": "Data will be encrypted with the passphrase below.",
+      "encryptionWarning": "Share the passphrase via a different channel (e.g., phone call, in person).",
+      "expiration": "Expiration",
+      "generate": "Generate",
+      "generateShare": "Generate share",
+      "hour1": "1 hour",
+      "hours24": "24 hours",
+      "days7": "7 days",
+      "days30": "30 days",
+      "includeNotes": "Include notes",
       "passphrase": "Passphrase",
+      "passphraseHint": "Auto-generated passphrase",
+      "regenerate": "Regenerate",
       "shareHint": "Share this phrase separately (e.g., by phone)",
       "encryptedText": "Encrypted text to share",
-      "copyEncrypted": "Copy encrypted text",
-      "generateShare": "Generate share"
+      "copyEncrypted": "Copy encrypted text"
+    },
+    "openShare": {
+      "title": "Open Shared Entry",
+      "info": "Paste the encrypted share text and enter the passphrase to decrypt.",
+      "encryptedData": "Encrypted share data",
+      "passphrasePlaceholder": "eagle-falcon-tiger-dragon-phoenix-wolf",
+      "decrypt": "Decrypt",
+      "import": "Import to vault",
+      "expiresAt": "Expires at",
+      "noData": "Please paste the encrypted share data",
+      "noPassphrase": "Please enter the passphrase",
+      "decrypted": "Share decrypted successfully",
+      "decryptFailed": "Decryption failed - invalid passphrase or corrupted data",
+      "expired": "This share has expired"
     },
     "windowsHello": {
       "title": "Windows Hello",
@@ -1277,10 +1308,28 @@
       "syncing": "Synchronizing..."
     },
     "settings": {
+      "title": "Vault Settings",
       "lockTimeout": "Lock timeout",
       "duressMode": "Duress Mode",
       "configureDuress": "Configure duress mode",
-      "configureLockDelay": "Configure lock delay"
+      "configureLockDelay": "Configure lock delay",
+      "lockSection": "Auto-Lock",
+      "disabled": "Disabled",
+      "lockOnMinimize": "Lock when minimized",
+      "lockOnMinimizeHint": "Automatically lock the vault when the application is minimized",
+      "lockOnBlur": "Lock when window loses focus",
+      "lockOnBlurHint": "Lock the vault when you switch to another application",
+      "lockOnSystemIdle": "Lock on system idle",
+      "lockOnSystemIdleHint": "Lock the vault when the system becomes idle or locks",
+      "securitySection": "Security",
+      "clipboardClear": "Clear clipboard after copy",
+      "clipboardClearHint": "Automatically clear copied passwords from clipboard",
+      "clipboardNever": "Never",
+      "clipboard15s": "15 seconds",
+      "clipboard30s": "30 seconds",
+      "requirePasswordReveal": "Require password to reveal entries",
+      "requirePasswordRevealHint": "Ask for master password before showing sensitive data",
+      "saved": "Settings saved"
     },
     "generator": {
       "title": "Password generator",
@@ -1402,6 +1451,7 @@
       "folders": "Folders",
       "fields": "Fields",
       "kb": "KB",
+      "dragFiles": "Drag files here",
       "dragOrBrowse": "Drag a file here or {browse}",
       "browseFiles": "Browse files",
       "includeFolders": "Import folders/groups",
