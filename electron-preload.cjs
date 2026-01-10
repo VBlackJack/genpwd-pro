@@ -253,6 +253,47 @@ contextBridge.exposeInMainWorld('vault', {
     unlock: (vaultId) => ipcRenderer.invoke('vault:hello:unlock', { vaultId })
   },
 
+  // ==================== AUTO-UPDATER ====================
+  updates: {
+    /**
+     * Check for available updates
+     * @returns {Promise<{available: boolean, version?: string, currentVersion?: string, error?: string}>}
+     */
+    checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+
+    /**
+     * Install downloaded update (restarts app)
+     */
+    installUpdate: () => ipcRenderer.invoke('app:installUpdate'),
+
+    /**
+     * Listen for update available event
+     */
+    onUpdateAvailable: (callback) => {
+      const handler = (_, data) => callback(data);
+      ipcRenderer.on('update:available', handler);
+      return () => ipcRenderer.removeListener('update:available', handler);
+    },
+
+    /**
+     * Listen for download progress
+     */
+    onDownloadProgress: (callback) => {
+      const handler = (_, data) => callback(data);
+      ipcRenderer.on('update:progress', handler);
+      return () => ipcRenderer.removeListener('update:progress', handler);
+    },
+
+    /**
+     * Listen for update downloaded event
+     */
+    onUpdateDownloaded: (callback) => {
+      const handler = (_, data) => callback(data);
+      ipcRenderer.on('update:downloaded', handler);
+      return () => ipcRenderer.removeListener('update:downloaded', handler);
+    }
+  },
+
   // ==================== LOW-LEVEL I/O ====================
   io: {
     /**

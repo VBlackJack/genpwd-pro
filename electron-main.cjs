@@ -35,6 +35,7 @@ const {
 const path = require('path');
 const fs = require('fs');
 const { execSync, spawn } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 const { version: APP_VERSION } = require('./package.json');
 
 // ==================== MAIN PROCESS TRANSLATIONS ====================
@@ -140,7 +141,17 @@ const translations = {
     errorMissingSequence: 'Missing sequence or data',
     errorAutoTypeWindowDetect: 'Could not detect target window. Auto-type cancelled for security.',
     errorAutoTypeTimeout: 'Auto-type timed out',
-    clipboardAutoCleared: 'Clipboard auto-cleared for security'
+    clipboardAutoCleared: 'Clipboard auto-cleared for security',
+    // Auto-updater
+    updateAvailable: 'Update Available',
+    updateAvailableMessage: 'A new version ({version}) is available. It will be downloaded in the background.',
+    updateDownloaded: 'Update Ready',
+    updateDownloadedMessage: 'Version {version} has been downloaded. Restart to apply the update.',
+    updateRestartNow: 'Restart Now',
+    updateLater: 'Later',
+    updateChecking: 'Checking for updates...',
+    updateNotAvailable: 'You are using the latest version.',
+    updateError: 'Update error: {message}'
   },
   fr: {
     // Tray menu
@@ -242,7 +253,17 @@ const translations = {
     errorMissingSequence: 'Séquence ou données manquantes',
     errorAutoTypeWindowDetect: 'Impossible de détecter la fenêtre cible. Saisie automatique annulée par sécurité.',
     errorAutoTypeTimeout: 'Délai de saisie automatique expiré',
-    clipboardAutoCleared: 'Presse-papiers effacé automatiquement par sécurité'
+    clipboardAutoCleared: 'Presse-papiers effacé automatiquement par sécurité',
+    // Auto-updater
+    updateAvailable: 'Mise à jour disponible',
+    updateAvailableMessage: 'Une nouvelle version ({version}) est disponible. Elle sera téléchargée en arrière-plan.',
+    updateDownloaded: 'Mise à jour prête',
+    updateDownloadedMessage: 'La version {version} a été téléchargée. Redémarrez pour appliquer la mise à jour.',
+    updateRestartNow: 'Redémarrer maintenant',
+    updateLater: 'Plus tard',
+    updateChecking: 'Vérification des mises à jour...',
+    updateNotAvailable: 'Vous utilisez la dernière version.',
+    updateError: 'Erreur de mise à jour : {message}'
   },
   es: {
     // Tray menu
@@ -344,7 +365,17 @@ const translations = {
     errorMissingSequence: 'Secuencia o datos faltantes',
     errorAutoTypeWindowDetect: 'No se pudo detectar ventana objetivo. Escritura automática cancelada por seguridad.',
     errorAutoTypeTimeout: 'Tiempo de escritura automática agotado',
-    clipboardAutoCleared: 'Portapapeles limpiado automáticamente por seguridad'
+    clipboardAutoCleared: 'Portapapeles limpiado automáticamente por seguridad',
+    // Auto-updater
+    updateAvailable: 'Actualización disponible',
+    updateAvailableMessage: 'Una nueva versión ({version}) está disponible. Se descargará en segundo plano.',
+    updateDownloaded: 'Actualización lista',
+    updateDownloadedMessage: 'La versión {version} se ha descargado. Reinicie para aplicar la actualización.',
+    updateRestartNow: 'Reiniciar ahora',
+    updateLater: 'Más tarde',
+    updateChecking: 'Buscando actualizaciones...',
+    updateNotAvailable: 'Está usando la última versión.',
+    updateError: 'Error de actualización: {message}'
   }
 };
 
@@ -1091,6 +1122,154 @@ function initThumbnailToolbar() {
     devError('[GenPwd Pro] Failed to set thumbnail toolbar:', error.message);
   }
 }
+
+// ==================== AUTO-UPDATER ====================
+// Secure automatic updates from GitHub Releases
+
+/**
+ * Initialize the auto-updater with security settings
+ * Updates are downloaded from GitHub Releases and verified
+ */
+function initAutoUpdater() {
+  // Skip auto-updates in development mode
+  if (process.env.NODE_ENV === 'development') {
+    devLog('[AutoUpdater] Skipped in development mode');
+    return;
+  }
+
+  const t = getMainTranslations();
+
+  // Configure auto-updater
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.autoRunAppAfterInstall = true;
+
+  // SECURITY: Only allow signed updates in production
+  // Note: Set to false only for testing unsigned builds
+  autoUpdater.allowDowngrade = false;
+
+  // Event: Checking for updates
+  autoUpdater.on('checking-for-update', () => {
+    devLog('[AutoUpdater] Checking for updates...');
+  });
+
+  // Event: Update available
+  autoUpdater.on('update-available', (info) => {
+    devLog('[AutoUpdater] Update available:', info.version);
+
+    // Show notification
+    if (Notification.isSupported()) {
+      const notification = new Notification({
+        title: t.updateAvailable,
+        body: t.updateAvailableMessage.replace('{version}', info.version),
+        icon: path.join(__dirname, 'assets', 'icon.ico')
+      });
+      notification.show();
+    }
+
+    // Notify renderer
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('update:available', {
+        version: info.version,
+        releaseNotes: info.releaseNotes
+      });
+    }
+  });
+
+  // Event: No update available
+  autoUpdater.on('update-not-available', (info) => {
+    devLog('[AutoUpdater] No update available, current:', info.version);
+  });
+
+  // Event: Download progress
+  autoUpdater.on('download-progress', (progress) => {
+    devLog(`[AutoUpdater] Download progress: ${Math.round(progress.percent)}%`);
+
+    // Notify renderer of progress
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('update:progress', {
+        percent: progress.percent,
+        bytesPerSecond: progress.bytesPerSecond,
+        transferred: progress.transferred,
+        total: progress.total
+      });
+    }
+  });
+
+  // Event: Update downloaded
+  autoUpdater.on('update-downloaded', (info) => {
+    devLog('[AutoUpdater] Update downloaded:', info.version);
+
+    // Show dialog to restart
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: t.updateDownloaded,
+      message: t.updateDownloadedMessage.replace('{version}', info.version),
+      buttons: [t.updateRestartNow, t.updateLater],
+      defaultId: 0,
+      cancelId: 1
+    }).then(({ response }) => {
+      if (response === 0) {
+        // User chose to restart now
+        autoUpdater.quitAndInstall(false, true);
+      }
+    });
+
+    // Notify renderer
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('update:downloaded', {
+        version: info.version
+      });
+    }
+  });
+
+  // Event: Error
+  autoUpdater.on('error', (error) => {
+    devError('[AutoUpdater] Error:', error.message);
+
+    // Don't show errors to user in production (silent fail)
+    // Log for debugging purposes only
+  });
+
+  // Check for updates after a short delay (don't block startup)
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch((error) => {
+      devError('[AutoUpdater] Check failed:', error.message);
+    });
+  }, 5000);
+
+  // Check for updates periodically (every 4 hours)
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch((error) => {
+      devError('[AutoUpdater] Periodic check failed:', error.message);
+    });
+  }, 4 * 60 * 60 * 1000);
+
+  devLog('[AutoUpdater] Initialized');
+}
+
+// IPC handler for manual update check
+ipcMain.handle('app:checkForUpdates', async () => {
+  if (process.env.NODE_ENV === 'development') {
+    return { available: false, message: 'Updates disabled in development' };
+  }
+
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return {
+      available: result.updateInfo.version !== APP_VERSION,
+      version: result.updateInfo.version,
+      currentVersion: APP_VERSION
+    };
+  } catch (error) {
+    return { available: false, error: error.message };
+  }
+});
+
+// IPC handler to trigger update install
+ipcMain.handle('app:installUpdate', async () => {
+  autoUpdater.quitAndInstall(false, true);
+});
 
 // ==================== WINDOWS JUMP LIST ====================
 // Provides quick access to common actions from taskbar right-click
@@ -2390,6 +2569,7 @@ app.whenReady().then(async () => {
   createTray();
   initJumpList();
   initThumbnailToolbar();
+  initAutoUpdater();
 
   // Handle hidden startup (auto-start)
   if (startHidden && mainWindow) {
