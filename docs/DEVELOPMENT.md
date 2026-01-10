@@ -1,4 +1,4 @@
-# Guide de Développement - GenPwd Pro v3.0.1
+# Guide de Développement - GenPwd Pro v3.0.2
 
 > Configuration et bonnes pratiques pour le développement local
 
@@ -297,6 +297,6 @@ npm run build
 ---
 
 <div align="center">
-  <b>GenPwd Pro v3.0.1 - Guide de Développement</b><br>
+  <b>GenPwd Pro v3.0.2 - Guide de Développement</b><br>
   Pour toute question : <a href="https://github.com/VBlackJack/genpwd-pro/discussions">GitHub Discussions</a>
 </div>

@@ -5,6 +5,35 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [3.0.2] - 2026-01-10
+
+### 🔒 Security Audit & Infrastructure (BMAD Implementation)
+
+Implementation of all 9 recommendations from the BMAD security audit.
+
+#### Security Infrastructure
+- **Electron CVE Monitoring** : Weekly automated workflow to check for Electron vulnerabilities
+- **Dependabot** : Automated dependency updates with security grouping
+- **SRI Generator** : Tool to generate Subresource Integrity hashes for scripts
+- **CSP Nonce Manager** : Infrastructure for nonce-based CSP in Electron
+- **Import Fuzzing Tests** : Security fuzzing for CSV/JSON parsers (XSS, injection, prototype pollution)
+
+#### Documentation
+- **SECURITY_AUDIT_BMAD.md** : Complete BMAD audit report (9.0/10 score)
+- **THREAT_MODEL.md** : STRIDE-based threat model with 10 threat scenarios
+- **DEPENDENCY_AUDIT_KDBXWEB.md** : Security audit of kdbxweb dependency
+
+#### Architecture
+- **Electron Modularization** : Split electron-main.cjs into separate modules:
+  - `clipboard-manager.cjs` : Secure clipboard with auto-clear
+  - `security-utils.cjs` : Path validation, rate limiting, secure storage
+  - `translations.cjs` : Extracted i18n strings for main process
+
+#### UI Fix
+- **Vault Location Selector** : Added missing CSS styles for custom vault storage location
+
+---
+
 ## [3.0.1] - 2026-01-09
 
 ### ♿ Accessibilité & Polish (BMAD Audit)

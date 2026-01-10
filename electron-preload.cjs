@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
 
   // Application version
-  version: '3.0.1',
+  version: '3.0.2',
 
   // Check if running in Electron
   isElectron: true,

@@ -1,8 +1,8 @@
 # GenPwd Pro - Gestionnaire de Mots de Passe Sécurisé
 # GenPwd Pro - Secure Password Manager
 
-> **v3.0.1** - Générateur + Coffre-fort chiffré + TOTP
-> **v3.0.1** - Generator + Encrypted Vault + TOTP
+> **v3.0.2** - Générateur + Coffre-fort chiffré + TOTP
+> **v3.0.2** - Generator + Encrypted Vault + TOTP
 
 [🇫🇷 Version Française](#-version-française) | [🇬🇧 English Version](#-english-version)
 
@@ -48,7 +48,7 @@
 
 ## Qu'est-ce que GenPwd Pro ?
 
-**GenPwd Pro v3.0.1** est un **gestionnaire de mots de passe complet** qui combine :
+**GenPwd Pro v3.0.2** est un **gestionnaire de mots de passe complet** qui combine :
 
 - **Générateur intelligent** : Crée des mots de passe complexes et mémorisables
 - **Coffre-fort chiffré** : Stocke vos identifiants en toute sécurité (AES-256-GCM)
@@ -57,7 +57,7 @@
 
 **Alternative gratuite et open-source** à KeePass, Bitwarden, 1Password.
 
-### Nouveautés v3.0.1 (Desktop)
+### Nouveautés v3.0.2 (Desktop)
 - 🔐 **Coffre-fort local** avec chiffrement AES-256-GCM
 - 📁 **Dossiers et tags** pour organiser vos entrées
 - 🔑 **TOTP intégré** pour la double authentification
@@ -100,7 +100,7 @@ GenPwd Pro est fait pour **vous** si :
 
 ## Fonctionnalités principales
 
-### Coffre-fort sécurisé (v3.0.1)
+### Coffre-fort sécurisé (v3.0.2)
 - **Chiffrement AES-256-GCM** avec dérivation PBKDF2 (100,000 itérations)
 - **Types d'entrées** : Login, Note sécurisée, Carte bancaire, Identité
 - **Organisation** : Dossiers hiérarchiques, tags personnalisés, favoris
@@ -147,9 +147,9 @@ Vous avez **4 moyens simples** d'utiliser GenPwd Pro :
 
 1. Allez sur la [page des téléchargements](https://github.com/VBlackJack/genpwd-pro/releases)
 2. Téléchargez la version Windows :
-   - **Installeur** : `GenPwd Pro-3.0.1-win-x64.exe` (recommandé)
-   - **Portable** : `GenPwd Pro-3.0.1-portable.exe` (pas d'installation)
-   - **ZIP** : `GenPwd Pro-3.0.1-win-x64.zip`
+   - **Installeur** : `GenPwd Pro-3.0.2-win-x64.exe` (recommandé)
+   - **Portable** : `GenPwd Pro-3.0.2-portable.exe` (pas d'installation)
+   - **ZIP** : `GenPwd Pro-3.0.2-win-x64.zip`
 3. Installez ou lancez directement
 4. Créez votre coffre-fort avec un mot de passe maître
 
@@ -612,7 +612,7 @@ Consultez le fichier [LICENSE](./LICENSE) pour les détails juridiques complets.
 ---
 
 **Fait avec ❤️ par la communauté open source**
-Version 3.0.1 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Signaler un problème](https://github.com/VBlackJack/genpwd-pro/issues)
+Version 3.0.2 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Signaler un problème](https://github.com/VBlackJack/genpwd-pro/issues)
 
 ---
 ---
@@ -1160,7 +1160,7 @@ See the [LICENSE](./LICENSE) file for complete legal details.
 ---
 
 **Made with ❤️ by the open source community**
-Version 3.0.1 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Report an issue](https://github.com/VBlackJack/genpwd-pro/issues)
+Version 3.0.2 | [GitHub](https://github.com/VBlackJack/genpwd-pro) | [Report an issue](https://github.com/VBlackJack/genpwd-pro/issues)
 
 ---
 

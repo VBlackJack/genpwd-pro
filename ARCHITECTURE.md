@@ -1,7 +1,7 @@
-# Architecture GenPwd Pro v3.0.1
+# Architecture GenPwd Pro v3.0.2
 
 **Date**: 2026-01-09
-**Version**: 3.0.1
+**Version**: 3.0.2
 **License**: Apache 2.0
 
 ---
