@@ -101,6 +101,63 @@ h1 {
   font-weight: 600;
 }
 
+.vault-header .vault-name {
+  flex: 1;
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+/* Native Messaging Status Panel */
+.vault-status-panel {
+  text-align: center;
+  padding: 24px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+}
+
+.vault-status-panel .status-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.vault-status-panel .status-text {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.vault-status-panel .status-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.vault-status-panel .status-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.vault-status-panel .status-actions .btn-secondary {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+#native-locked {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+}
+
+#native-locked .status-icon {
+  opacity: 0.8;
+}
+
+#native-connected {
+  padding: 12px;
+  background: #ecfdf5;
+  border-radius: var(--border-radius);
+  border: 1px solid #a7f3d0;
+}
+
 /* Tab Navigation */
 .tab-nav {
   display: flex;

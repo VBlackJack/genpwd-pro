@@ -16,8 +16,10 @@
 
 /**
  * @fileoverview Background service worker for GenPwd Pro Chrome extension
- * Handles messaging, context menus, and vault session management
+ * Handles messaging, context menus, and native messaging to Windows app
  */
+
+import nativeClient from './native/native-client.js';
 
 // ============================================================================
 // INSTALLATION
@@ -102,8 +104,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleMessage(message, sender) {
   switch (message.type) {
+    case 'GET_VAULT_STATUS':
+      return handleGetVaultStatus();
+
+    case 'GET_ENTRIES':
+      return handleGetEntries();
+
     case 'GET_ENTRIES_FOR_URL':
       return handleGetEntriesForUrl(message.url);
+
+    case 'GET_ENTRIES_FOR_DOMAIN':
+      return handleGetEntriesForDomain(message.domain);
+
+    case 'SEARCH_ENTRIES':
+      return handleSearchEntries(message.query);
+
+    case 'GET_ENTRY':
+      return handleGetEntry(message.id);
+
+    case 'GET_TOTP':
+      return handleGetTOTP(message.id);
 
     case 'FILL_ENTRY':
       return handleFillEntry(message.entryId, sender.tab);
@@ -112,23 +132,144 @@ async function handleMessage(message, sender) {
       chrome.action.openPopup();
       return { success: true };
 
-    case 'GET_VAULT_STATUS':
-      return { unlocked: false }; // Vault state is in popup context
+    case 'NATIVE_CONNECT':
+      return handleNativeConnect();
 
     default:
       return { success: false, error: 'Unknown message type' };
   }
 }
 
+async function handleNativeConnect() {
+  try {
+    const connected = await nativeClient.connect();
+    if (connected) {
+      const status = await nativeClient.getStatus();
+      return { success: true, ...status };
+    }
+    const state = nativeClient.getConnectionState();
+    return { success: false, error: state.error || 'Failed to connect' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function handleGetVaultStatus() {
+  try {
+    if (!nativeClient.isConnected()) {
+      const connected = await nativeClient.connect();
+      if (!connected) {
+        const state = nativeClient.getConnectionState();
+        return { connected: false, unlocked: false, error: state.error };
+      }
+    }
+    const status = await nativeClient.getStatus();
+    const unlocked = await nativeClient.isUnlocked();
+    return {
+      connected: true,
+      unlocked: unlocked.unlocked,
+      status: status.status,
+      vaultName: status.vaultName
+    };
+  } catch (error) {
+    return { connected: false, unlocked: false, error: error.message };
+  }
+}
+
+async function handleGetEntries() {
+  try {
+    const result = await nativeClient.getEntries();
+    return result;
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
 async function handleGetEntriesForUrl(url) {
-  // This would query the vault if it were stored in background
-  // For now, return locked state and let popup handle vault
-  return { locked: true, entries: [] };
+  try {
+    // Extract domain from URL
+    const domain = new URL(url).hostname.replace(/^www\./, '');
+    return await handleGetEntriesForDomain(domain);
+  } catch (error) {
+    return { success: false, entries: [], error: error.message };
+  }
+}
+
+async function handleGetEntriesForDomain(domain) {
+  try {
+    const result = await nativeClient.getEntriesForDomain(domain);
+    return result;
+  } catch (error) {
+    return { success: false, entries: [], error: error.message };
+  }
+}
+
+async function handleSearchEntries(query) {
+  try {
+    const result = await nativeClient.searchEntries(query);
+    return result;
+  } catch (error) {
+    return { success: false, entries: [], error: error.message };
+  }
+}
+
+async function handleGetEntry(id) {
+  try {
+    const result = await nativeClient.getEntry(id);
+    return result;
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function handleGetTOTP(id) {
+  try {
+    const result = await nativeClient.getTOTP(id);
+    return result;
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
 
 async function handleFillEntry(entryId, tab) {
-  // This would fill from background if vault were here
-  return { success: false, error: 'Use popup to fill' };
+  if (!tab?.id) {
+    return { success: false, error: 'No active tab' };
+  }
+
+  try {
+    // Get full entry with password
+    const result = await nativeClient.getEntry(entryId);
+    if (!result.success || !result.entry) {
+      return { success: false, error: result.error || 'Entry not found' };
+    }
+
+    const entry = result.entry;
+    const credentials = {
+      username: entry.username,
+      password: entry.password
+    };
+
+    // Get TOTP if available
+    if (entry.hasTotp) {
+      const totpResult = await nativeClient.getTOTP(entryId);
+      if (totpResult.success) {
+        credentials.otp = totpResult.code;
+      }
+    }
+
+    // Send to content script
+    await chrome.tabs.sendMessage(tab.id, {
+      type: 'FILL_CREDENTIALS',
+      credentials
+    });
+
+    // Notify app for audit
+    await nativeClient.notifyFill(entryId);
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
 
 // ============================================================================

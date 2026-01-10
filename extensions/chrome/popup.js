@@ -20,8 +20,9 @@
  */
 
 import {
-  loadVault, unlockVault, lockVault, isUnlocked, hasVaultFile,
-  getEntries, getEntriesForDomain, searchEntries, recordActivity
+  loadVault, unlockVault, lockVault, isUnlocked as isLocalUnlocked, hasVaultFile,
+  getEntries as getLocalEntries, getEntriesForDomain as getLocalEntriesForDomain,
+  searchEntries as searchLocalEntries, recordActivity
 } from './vault/vault-loader.js';
 import { generateTOTP, formatTOTPCode, totpManager } from './vault/totp.js';
 import { extractDomain, getFaviconUrl } from './utils/url-matcher.js';
@@ -34,6 +35,8 @@ import { initializeI18n } from './utils/i18n-helper.js';
 let currentTab = null;
 let currentDomain = null;
 let selectedEntry = null;
+let useNativeMessaging = false;
+let nativeStatus = { connected: false, unlocked: false };
 
 // ============================================================================
 // DOM ELEMENTS
@@ -54,6 +57,14 @@ function initElements() {
   elements.btnUnlock = $('btn-unlock');
   elements.unlockError = $('unlock-error');
   elements.btnLock = $('btn-lock');
+
+  // Native messaging
+  elements.nativeDisconnected = $('native-disconnected');
+  elements.nativeLocked = $('native-locked');
+  elements.nativeConnected = $('native-connected');
+  elements.vaultNameDisplay = $('vault-name-display');
+  elements.btnRetryConnect = $('btn-retry-connect');
+  elements.btnUseLocalVault = $('btn-use-local-vault');
 
   // Tabs
   elements.tabNav = $('tab-nav');
@@ -112,6 +123,9 @@ async function init() {
   // Load settings
   await loadSettings();
 
+  // Check native messaging connection first
+  await checkNativeConnection();
+
   // Update UI based on vault state
   updateVaultUI();
 
@@ -120,30 +134,115 @@ async function init() {
 }
 
 // ============================================================================
+// NATIVE MESSAGING
+// ============================================================================
+
+async function checkNativeConnection() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_VAULT_STATUS' });
+    if (response.connected) {
+      useNativeMessaging = true;
+      nativeStatus = {
+        connected: true,
+        unlocked: response.unlocked,
+        status: response.status,
+        vaultName: response.vaultName
+      };
+      return true;
+    }
+  } catch (e) {
+    console.log('Native messaging not available:', e.message);
+  }
+
+  useNativeMessaging = false;
+  nativeStatus = { connected: false, unlocked: false };
+  return false;
+}
+
+async function retryNativeConnection() {
+  showConnectionStatus('connecting');
+  const connected = await checkNativeConnection();
+  updateVaultUI();
+  return connected;
+}
+
+function showConnectionStatus(status) {
+  elements.nativeDisconnected?.classList.add('hidden');
+  elements.nativeLocked?.classList.add('hidden');
+  elements.nativeConnected?.classList.add('hidden');
+  elements.vaultLocked?.classList.add('hidden');
+  elements.vaultUnlock?.classList.add('hidden');
+  elements.vaultUnlocked?.classList.add('hidden');
+
+  if (status === 'connecting') {
+    // Show loading state
+    if (elements.nativeDisconnected) {
+      elements.nativeDisconnected.classList.remove('hidden');
+      const statusText = elements.nativeDisconnected.querySelector('.status-text');
+      if (statusText) statusText.textContent = 'Connecting...';
+    }
+  }
+}
+
+// ============================================================================
 // VAULT UI
 // ============================================================================
 
 function updateVaultUI() {
-  if (isUnlocked()) {
-    elements.vaultLocked?.classList.add('hidden');
-    elements.vaultUnlock?.classList.add('hidden');
-    elements.vaultUnlocked?.classList.remove('hidden');
-    elements.tabNav?.classList.remove('hidden');
-    showTab('autofill');
-    loadEntriesForCurrentSite();
-  } else if (hasVaultFile()) {
-    elements.vaultLocked?.classList.add('hidden');
-    elements.vaultUnlock?.classList.remove('hidden');
-    elements.vaultUnlocked?.classList.add('hidden');
-    elements.tabNav?.classList.add('hidden');
-    hideAllTabs();
+  // Hide all states first
+  elements.nativeDisconnected?.classList.add('hidden');
+  elements.nativeLocked?.classList.add('hidden');
+  elements.nativeConnected?.classList.add('hidden');
+  elements.vaultLocked?.classList.add('hidden');
+  elements.vaultUnlock?.classList.add('hidden');
+  elements.vaultUnlocked?.classList.add('hidden');
+
+  if (useNativeMessaging) {
+    // Native messaging mode
+    if (nativeStatus.unlocked) {
+      // Connected and unlocked - show entries
+      elements.nativeConnected?.classList.remove('hidden');
+      elements.tabNav?.classList.remove('hidden');
+      if (elements.vaultNameDisplay && nativeStatus.vaultName) {
+        elements.vaultNameDisplay.textContent = nativeStatus.vaultName;
+      }
+      showTab('autofill');
+      loadEntriesForCurrentSite();
+    } else if (nativeStatus.connected) {
+      // Connected but vault is locked
+      elements.nativeLocked?.classList.remove('hidden');
+      elements.tabNav?.classList.add('hidden');
+      hideAllTabs();
+    } else {
+      // Not connected to app
+      elements.nativeDisconnected?.classList.remove('hidden');
+      elements.tabNav?.classList.add('hidden');
+      hideAllTabs();
+    }
   } else {
-    elements.vaultLocked?.classList.remove('hidden');
-    elements.vaultUnlock?.classList.add('hidden');
-    elements.vaultUnlocked?.classList.add('hidden');
-    elements.tabNav?.classList.add('hidden');
-    hideAllTabs();
+    // Local vault mode (fallback)
+    if (isLocalUnlocked()) {
+      elements.vaultUnlocked?.classList.remove('hidden');
+      elements.tabNav?.classList.remove('hidden');
+      showTab('autofill');
+      loadEntriesForCurrentSite();
+    } else if (hasVaultFile()) {
+      elements.vaultUnlock?.classList.remove('hidden');
+      elements.tabNav?.classList.add('hidden');
+      hideAllTabs();
+    } else {
+      elements.vaultLocked?.classList.remove('hidden');
+      elements.tabNav?.classList.add('hidden');
+      hideAllTabs();
+    }
   }
+}
+
+function isUnlocked() {
+  if (useNativeMessaging) {
+    return nativeStatus.unlocked;
+  }
+  return isLocalUnlocked();
 }
 
 function hideAllTabs() {
@@ -168,6 +267,13 @@ function showTab(tabId) {
 // ============================================================================
 
 function setupEventListeners() {
+  // Native messaging buttons
+  elements.btnRetryConnect?.addEventListener('click', retryNativeConnection);
+  elements.btnUseLocalVault?.addEventListener('click', () => {
+    useNativeMessaging = false;
+    updateVaultUI();
+  });
+
   // Vault file loading
   elements.btnLoadVault?.addEventListener('click', () => {
     elements.vaultFileInput?.click();
@@ -181,10 +287,12 @@ function setupEventListeners() {
     if (e.key === 'Enter') handleUnlock();
   });
 
-  // Lock
+  // Lock (only for local vault mode)
   elements.btnLock?.addEventListener('click', () => {
-    lockVault();
-    updateVaultUI();
+    if (!useNativeMessaging) {
+      lockVault();
+      updateVaultUI();
+    }
   });
 
   // Tab navigation
@@ -288,21 +396,59 @@ function showError(message) {
 // ENTRIES LIST
 // ============================================================================
 
-function loadEntriesForCurrentSite() {
+async function loadEntriesForCurrentSite() {
   if (currentDomain) {
     elements.currentSite?.classList.remove('hidden');
     if (elements.siteDomain) elements.siteDomain.textContent = currentDomain;
-    renderEntries(getEntriesForDomain(currentDomain));
+
+    if (useNativeMessaging) {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: 'GET_ENTRIES_FOR_DOMAIN',
+          domain: currentDomain
+        });
+        renderEntries(response.entries || []);
+      } catch (e) {
+        console.error('Failed to get entries:', e);
+        renderEntries([]);
+      }
+    } else {
+      renderEntries(getLocalEntriesForDomain(currentDomain));
+    }
   } else {
     elements.currentSite?.classList.add('hidden');
-    renderEntries(getEntries().slice(0, 10));
+
+    if (useNativeMessaging) {
+      try {
+        const response = await chrome.runtime.sendMessage({ type: 'GET_ENTRIES' });
+        renderEntries((response.entries || []).slice(0, 10));
+      } catch (e) {
+        console.error('Failed to get entries:', e);
+        renderEntries([]);
+      }
+    } else {
+      renderEntries(getLocalEntries().slice(0, 10));
+    }
   }
 }
 
-function handleSearch() {
+async function handleSearch() {
   const query = elements.searchEntries?.value?.trim() || '';
   if (query) {
-    renderEntries(searchEntries(query));
+    if (useNativeMessaging) {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: 'SEARCH_ENTRIES',
+          query
+        });
+        renderEntries(response.entries || []);
+      } catch (e) {
+        console.error('Search failed:', e);
+        renderEntries([]);
+      }
+    } else {
+      renderEntries(searchLocalEntries(query));
+    }
   } else {
     loadEntriesForCurrentSite();
   }
@@ -316,20 +462,24 @@ function renderEntries(entries) {
     return;
   }
 
-  elements.entriesList.innerHTML = entries.map(entry => `
+  elements.entriesList.innerHTML = entries.map(entry => {
+    const entryUrl = entry.url || entry.uri || '';
+    const hasOtp = entry.hasTotp || entry.otpConfig;
+    return `
     <div class="entry-item" data-entry-id="${entry.id}">
-      <img class="entry-favicon" src="${getFaviconUrl(extractDomain(entry.uri))}" onerror="this.style.display='none'">
+      <img class="entry-favicon" src="${getFaviconUrl(extractDomain(entryUrl))}" onerror="this.style.display='none'">
       <div class="entry-info">
         <div class="entry-title">${escapeHtml(entry.title)}</div>
         <div class="entry-username">${escapeHtml(entry.username || '')}</div>
       </div>
-      ${entry.otpConfig ? '<span class="entry-otp-badge">OTP</span>' : ''}
+      ${hasOtp ? '<span class="entry-otp-badge">OTP</span>' : ''}
       <div class="entry-actions">
         <button class="btn-icon btn-fill" title="Fill">✏️</button>
         <button class="btn-icon btn-copy-pwd" title="Copy password">📋</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   // Add click handlers
   elements.entriesList.querySelectorAll('.entry-item').forEach(item => {
@@ -341,9 +491,9 @@ function renderEntries(entries) {
       fillEntry(entry);
     });
 
-    item.querySelector('.btn-copy-pwd')?.addEventListener('click', (e) => {
+    item.querySelector('.btn-copy-pwd')?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      copyToClipboard(entry.password);
+      await copyEntryPassword(entry);
     });
 
     item.addEventListener('click', () => {
@@ -352,15 +502,36 @@ function renderEntries(entries) {
   });
 }
 
+async function copyEntryPassword(entry) {
+  if (useNativeMessaging) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_ENTRY',
+        id: entry.id
+      });
+      if (response.success && response.entry) {
+        await copyToClipboard(response.entry.password);
+      }
+    } catch (e) {
+      console.error('Failed to copy password:', e);
+    }
+  } else {
+    await copyToClipboard(entry.password);
+  }
+}
+
 function showEntryDetails(entry) {
   selectedEntry = entry;
   if (!elements.entriesList) return;
+
+  const entryUrl = entry.url || entry.uri || '';
+  const hasOtp = entry.hasTotp || entry.otpConfig;
 
   // Create details overlay
   const detailsHtml = `
     <div class="entry-details">
       <div class="entry-detail-header">
-        <img class="entry-favicon" src="${getFaviconUrl(extractDomain(entry.uri))}" onerror="this.style.display='none'">
+        <img class="entry-favicon" src="${getFaviconUrl(extractDomain(entryUrl))}" onerror="this.style.display='none'">
         <div>
           <div class="entry-title">${escapeHtml(entry.title)}</div>
           <div class="entry-username">${escapeHtml(entry.username || '')}</div>
@@ -370,7 +541,7 @@ function showEntryDetails(entry) {
       <div class="entry-actions-bar">
         <button class="btn-primary btn-fill-all">Fill credentials</button>
       </div>
-      ${entry.otpConfig ? '<div id="otp-container" class="otp-display"></div>' : ''}
+      ${hasOtp ? '<div id="otp-container" class="otp-display"></div>' : ''}
     </div>
   `;
 
@@ -386,26 +557,59 @@ function showEntryDetails(entry) {
   });
 
   // Start OTP display if available
-  if (entry.otpConfig) {
+  if (hasOtp) {
     startOTPDisplay(entry);
   }
 }
 
-function startOTPDisplay(entry) {
+async function startOTPDisplay(entry) {
   const container = $('otp-container');
   if (!container) return;
 
-  totpManager.watch(entry.id, entry.otpConfig, (result) => {
-    container.innerHTML = `
-      <div class="otp-code">${formatTOTPCode(result.code)}</div>
-      <div class="otp-countdown ${result.remainingSeconds <= 5 ? 'warning' : ''}">${result.remainingSeconds}</div>
-      <button class="btn-icon btn-copy-otp" title="Copy OTP">📋</button>
-    `;
+  if (useNativeMessaging) {
+    // Use native messaging for TOTP
+    const updateOTP = async () => {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: 'GET_TOTP',
+          id: entry.id
+        });
+        if (response.success) {
+          container.innerHTML = `
+            <div class="otp-code">${formatTOTPCode(response.code)}</div>
+            <div class="otp-countdown ${response.remaining <= 5 ? 'warning' : ''}">${response.remaining}</div>
+            <button class="btn-icon btn-copy-otp" title="Copy OTP">📋</button>
+          `;
 
-    container.querySelector('.btn-copy-otp')?.addEventListener('click', () => {
-      copyToClipboard(result.code);
+          container.querySelector('.btn-copy-otp')?.addEventListener('click', () => {
+            copyToClipboard(response.code);
+          });
+        }
+      } catch (e) {
+        console.error('Failed to get TOTP:', e);
+      }
+    };
+
+    // Update immediately and then every second
+    await updateOTP();
+    const interval = setInterval(updateOTP, 1000);
+
+    // Store interval so it can be cleared when popup closes
+    container.dataset.otpInterval = interval;
+  } else if (entry.otpConfig) {
+    // Use local TOTP generation
+    totpManager.watch(entry.id, entry.otpConfig, (result) => {
+      container.innerHTML = `
+        <div class="otp-code">${formatTOTPCode(result.code)}</div>
+        <div class="otp-countdown ${result.remainingSeconds <= 5 ? 'warning' : ''}">${result.remainingSeconds}</div>
+        <button class="btn-icon btn-copy-otp" title="Copy OTP">📋</button>
+      `;
+
+      container.querySelector('.btn-copy-otp')?.addEventListener('click', () => {
+        copyToClipboard(result.code);
+      });
     });
-  });
+  }
 }
 
 // ============================================================================
@@ -415,30 +619,45 @@ function startOTPDisplay(entry) {
 async function fillEntry(entry) {
   if (!currentTab?.id) return;
 
-  recordActivity();
-
   try {
-    const credentials = {
-      username: entry.username,
-      password: entry.password
-    };
-
-    // Generate OTP if available
-    if (entry.otpConfig) {
-      const otp = await generateTOTP(entry.otpConfig.secret, {
-        period: entry.otpConfig.period,
-        digits: entry.otpConfig.digits,
-        algorithm: entry.otpConfig.algorithm
+    if (useNativeMessaging) {
+      // Use background script to fill via native messaging
+      const response = await chrome.runtime.sendMessage({
+        type: 'FILL_ENTRY',
+        entryId: entry.id
       });
-      credentials.otp = otp.code;
+
+      if (response.success) {
+        window.close();
+      } else {
+        console.error('Fill failed:', response.error);
+      }
+    } else {
+      // Local vault mode
+      recordActivity();
+
+      const credentials = {
+        username: entry.username,
+        password: entry.password
+      };
+
+      // Generate OTP if available
+      if (entry.otpConfig) {
+        const otp = await generateTOTP(entry.otpConfig.secret, {
+          period: entry.otpConfig.period,
+          digits: entry.otpConfig.digits,
+          algorithm: entry.otpConfig.algorithm
+        });
+        credentials.otp = otp.code;
+      }
+
+      await chrome.tabs.sendMessage(currentTab.id, {
+        type: 'FILL_CREDENTIALS',
+        credentials
+      });
+
+      window.close();
     }
-
-    await chrome.tabs.sendMessage(currentTab.id, {
-      type: 'FILL_CREDENTIALS',
-      credentials
-    });
-
-    window.close();
   } catch (error) {
     console.error('Fill failed:', error);
   }

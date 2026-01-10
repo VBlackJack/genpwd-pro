@@ -1,0 +1,9 @@
+{
+  "name": "com.genpwdpro.nmh",
+  "description": "GenPwd Pro Native Messaging Host",
+  "path": "G:\\_dev\\GenPwdPro\\genpwd-pro\\native-host\\genpwd-native-host.bat",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://oldgipiljfknnogifnheeoaeihonmkhf/"
+  ]
+}

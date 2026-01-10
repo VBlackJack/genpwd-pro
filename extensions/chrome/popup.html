@@ -15,13 +15,41 @@
     <main>
       <!-- Vault Status -->
       <section id="vault-status" class="vault-status">
-        <div id="vault-locked" class="vault-locked">
+        <!-- Native Messaging: App not running -->
+        <div id="native-disconnected" class="vault-status-panel hidden">
+          <div class="status-icon">📡</div>
+          <p class="status-text" data-i18n="appNotRunning">GenPwd Pro app is not running</p>
+          <p class="status-hint" data-i18n="appNotRunningHint">Start the app to access your vault</p>
+          <div class="status-actions">
+            <button id="btn-retry-connect" class="btn-secondary" data-i18n="retryConnect">Retry</button>
+            <button id="btn-use-local-vault" class="btn-secondary" data-i18n="useLocalVault">Load local file</button>
+          </div>
+        </div>
+
+        <!-- Native Messaging: Connected but vault locked -->
+        <div id="native-locked" class="vault-status-panel hidden">
+          <div class="status-icon">🔒</div>
+          <p class="status-text" data-i18n="vaultLockedApp">Vault is locked</p>
+          <p class="status-hint" data-i18n="vaultLockedAppHint">Unlock the vault in GenPwd Pro app</p>
+        </div>
+
+        <!-- Native Messaging: Connected and unlocked -->
+        <div id="native-connected" class="vault-status-panel hidden">
+          <div class="vault-header">
+            <span class="unlock-icon">🔓</span>
+            <span id="vault-name-display" class="vault-name"></span>
+          </div>
+        </div>
+
+        <!-- Local vault: No vault loaded -->
+        <div id="vault-locked" class="vault-locked hidden">
           <div class="lock-icon">🔒</div>
-          <p data-i18n="vaultLocked">Vault is locked</p>
+          <p data-i18n="vaultLocked">No vault loaded</p>
           <button id="btn-load-vault" class="btn-secondary" data-i18n="loadVault">Load Vault</button>
           <input type="file" id="vault-file-input" accept=".gpdb" hidden>
         </div>
 
+        <!-- Local vault: Enter password -->
         <div id="vault-unlock" class="vault-unlock hidden">
           <p data-i18n="enterPassword">Enter master password</p>
           <input type="password" id="master-password" class="input-field" placeholder="Master password" autocomplete="current-password">
@@ -29,6 +57,7 @@
           <p id="unlock-error" class="error-text hidden"></p>
         </div>
 
+        <!-- Local vault: Unlocked -->
         <div id="vault-unlocked" class="vault-unlocked hidden">
           <div class="vault-header">
             <span class="unlock-icon">🔓</span>

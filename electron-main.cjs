@@ -34,6 +34,7 @@ const {
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const net = require('net');
 const { execSync, spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 const { version: APP_VERSION } = require('./package.json');
@@ -2620,6 +2621,242 @@ app.whenReady().then(async () => {
   } catch (error) {
     devError('[GenPwd Pro] Failed to load vault module:', error);
   }
+
+  // ==================== NATIVE MESSAGING PIPE SERVER ====================
+  // Named pipe server for Chrome extension native messaging host
+  const PIPE_NAME = '\\\\.\\pipe\\genpwd-pro';
+  let pipeServer = null;
+
+  function startPipeServer() {
+    pipeServer = net.createServer((client) => {
+      devLog('[Pipe Server] Client connected');
+      let dataBuffer = '';
+
+      client.on('data', async (data) => {
+        dataBuffer += data.toString('utf8');
+
+        // Messages are newline-delimited JSON
+        const lines = dataBuffer.split('\n');
+        dataBuffer = lines.pop(); // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const request = JSON.parse(line);
+              const response = await handlePipeRequest(request);
+              client.write(JSON.stringify(response) + '\n');
+            } catch (e) {
+              devError('[Pipe Server] Invalid JSON:', line);
+              client.write(JSON.stringify({
+                requestId: null,
+                success: false,
+                error: 'Invalid JSON'
+              }) + '\n');
+            }
+          }
+        }
+      });
+
+      client.on('error', (err) => {
+        devError('[Pipe Server] Client error:', err.message);
+      });
+
+      client.on('close', () => {
+        devLog('[Pipe Server] Client disconnected');
+      });
+    });
+
+    pipeServer.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        // Pipe already exists, try to unlink and restart
+        devLog('[Pipe Server] Pipe in use, retrying...');
+        setTimeout(() => {
+          pipeServer.close();
+          startPipeServer();
+        }, 1000);
+      } else {
+        devError('[Pipe Server] Server error:', err.message);
+      }
+    });
+
+    pipeServer.listen(PIPE_NAME, () => {
+      console.log('[GenPwd Pro] Native messaging pipe server started');
+    });
+  }
+
+  async function handlePipeRequest(request) {
+    const { requestId, action, ...data } = request;
+
+    if (!vaultModule) {
+      return { requestId, success: false, error: 'Vault module not loaded' };
+    }
+
+    const session = vaultModule.getSession();
+
+    try {
+      switch (action) {
+        case 'getStatus': {
+          if (!session) {
+            return { requestId, success: true, status: 'no_vault' };
+          }
+          const state = session.getState();
+          return {
+            requestId,
+            success: true,
+            status: state.status,
+            vaultName: state.vaultName
+          };
+        }
+
+        case 'isUnlocked': {
+          const unlocked = session ? session.isUnlocked() : false;
+          return { requestId, success: true, unlocked };
+        }
+
+        case 'getEntries': {
+          if (!session || !session.isUnlocked()) {
+            return { requestId, success: false, error: 'Vault is locked' };
+          }
+          const entries = session.getEntries();
+          // Return sanitized entries (no passwords)
+          const sanitized = entries.map(e => ({
+            id: e.id,
+            type: e.type,
+            title: e.title,
+            username: e.username,
+            url: e.url,
+            group: e.group,
+            icon: e.icon,
+            hasTotp: !!e.totp
+          }));
+          return { requestId, success: true, entries: sanitized };
+        }
+
+        case 'getEntriesForDomain': {
+          if (!session || !session.isUnlocked()) {
+            return { requestId, success: false, error: 'Vault is locked' };
+          }
+          const { domain } = data;
+          const entries = session.getEntries();
+          // Filter entries by domain
+          const matches = entries.filter(e => {
+            if (!e.url) return false;
+            try {
+              const entryDomain = new URL(e.url).hostname.replace(/^www\./, '');
+              const targetDomain = domain.replace(/^www\./, '');
+              return entryDomain === targetDomain ||
+                     entryDomain.endsWith('.' + targetDomain) ||
+                     targetDomain.endsWith('.' + entryDomain);
+            } catch {
+              return e.url.includes(domain);
+            }
+          }).map(e => ({
+            id: e.id,
+            type: e.type,
+            title: e.title,
+            username: e.username,
+            url: e.url,
+            group: e.group,
+            icon: e.icon,
+            hasTotp: !!e.totp
+          }));
+          return { requestId, success: true, entries: matches };
+        }
+
+        case 'searchEntries': {
+          if (!session || !session.isUnlocked()) {
+            return { requestId, success: false, error: 'Vault is locked' };
+          }
+          const { query } = data;
+          const results = session.searchEntries(query);
+          const sanitized = results.map(e => ({
+            id: e.id,
+            type: e.type,
+            title: e.title,
+            username: e.username,
+            url: e.url,
+            group: e.group,
+            icon: e.icon,
+            hasTotp: !!e.totp
+          }));
+          return { requestId, success: true, entries: sanitized };
+        }
+
+        case 'getEntry': {
+          if (!session || !session.isUnlocked()) {
+            return { requestId, success: false, error: 'Vault is locked' };
+          }
+          const { id } = data;
+          const entry = session.getEntry(id);
+          if (!entry) {
+            return { requestId, success: false, error: 'Entry not found' };
+          }
+          // Return full entry including password for autofill
+          return {
+            requestId,
+            success: true,
+            entry: {
+              id: entry.id,
+              type: entry.type,
+              title: entry.title,
+              username: entry.username,
+              password: entry.password,
+              url: entry.url,
+              notes: entry.notes,
+              group: entry.group,
+              icon: entry.icon,
+              hasTotp: !!entry.totp
+            }
+          };
+        }
+
+        case 'getTOTP': {
+          if (!session || !session.isUnlocked()) {
+            return { requestId, success: false, error: 'Vault is locked' };
+          }
+          const { id } = data;
+          const entry = session.getEntry(id);
+          if (!entry || !entry.totp) {
+            return { requestId, success: false, error: 'No TOTP configured' };
+          }
+          // Generate TOTP code
+          try {
+            // Dynamic import TOTP service
+            const { totpService } = await import('./src/js/vault/totp-service.js');
+            const code = totpService.generateTOTP(entry.totp);
+            const remaining = totpService.getRemainingSeconds(entry.totp.period || 30);
+            return { requestId, success: true, code, remaining };
+          } catch (err) {
+            return { requestId, success: false, error: 'TOTP generation failed' };
+          }
+        }
+
+        case 'fillEntry': {
+          // This action is used to notify the app that an entry was filled
+          // Can be used for audit logging in the future
+          devLog('[Pipe Server] Entry filled:', data.id);
+          return { requestId, success: true };
+        }
+
+        default:
+          return { requestId, success: false, error: `Unknown action: ${action}` };
+      }
+    } catch (error) {
+      devError('[Pipe Server] Error handling request:', error.message);
+      return { requestId, success: false, error: error.message };
+    }
+  }
+
+  // Start the pipe server
+  startPipeServer();
+
+  // Clean up on app quit
+  app.on('before-quit', () => {
+    if (pipeServer) {
+      pipeServer.close();
+      devLog('[Pipe Server] Server closed');
+    }
+  });
 
   createWindow();
   createApplicationMenu();

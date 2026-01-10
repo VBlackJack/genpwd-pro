@@ -346,5 +346,33 @@
   "openPopup": {
     "message": "Open GenPwd Pro",
     "description": "Action to open the popup"
+  },
+  "appNotRunning": {
+    "message": "GenPwd Pro app is not running",
+    "description": "Message when the desktop app is not detected"
+  },
+  "appNotRunningHint": {
+    "message": "Start the desktop app to access your vault",
+    "description": "Hint text for app not running state"
+  },
+  "retryConnect": {
+    "message": "Retry",
+    "description": "Button to retry connecting to the app"
+  },
+  "useLocalVault": {
+    "message": "Load local file",
+    "description": "Button to use local vault file instead"
+  },
+  "vaultLockedApp": {
+    "message": "Vault is locked",
+    "description": "Message when vault is locked in the desktop app"
+  },
+  "vaultLockedAppHint": {
+    "message": "Unlock the vault in GenPwd Pro app",
+    "description": "Hint text for vault locked state"
+  },
+  "connectedToApp": {
+    "message": "Connected to GenPwd Pro",
+    "description": "Message when connected to desktop app"
   }
 }
