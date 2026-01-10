@@ -1,0 +1,126 @@
+# Dependabot configuration for GenPwd Pro
+# Automatically creates PRs for dependency updates
+
+version: 2
+updates:
+  # NPM dependencies (main project)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "VBlackJack"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
+    groups:
+      # Group all development dependencies together
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group testing related dependencies
+      testing:
+        patterns:
+          - "@axe-core/*"
+          - "axe-core"
+          - "playwright"
+          - "c8"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group build tools
+      build-tools:
+        patterns:
+          - "electron"
+          - "electron-builder"
+          - "eslint*"
+          - "@eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Ignore major version updates for Electron (require manual review)
+      - dependency-name: "electron"
+        update-types: ["version-update:semver-major"]
+      # Ignore major updates for crypto libraries (security-critical)
+      - dependency-name: "tweetnacl"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tink-crypto"
+        update-types: ["version-update:semver-major"]
+    # Security updates always enabled
+    security-updates:
+      open-pull-requests-limit: 5
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "VBlackJack"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+    groups:
+      # Group all GitHub Actions updates
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Android Gradle dependencies
+  - package-ecosystem: "gradle"
+    directory: "/android"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "VBlackJack"
+    labels:
+      - "dependencies"
+      - "android"
+      - "gradle"
+    commit-message:
+      prefix: "deps(android)"
+    groups:
+      # Group Kotlin and Compose updates
+      kotlin-compose:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "androidx.compose*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group AndroidX libraries
+      androidx:
+        patterns:
+          - "androidx.*"
+        exclude-patterns:
+          - "androidx.compose*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Ignore major AGP updates (require careful migration)
+      - dependency-name: "com.android.tools.build:gradle"
+        update-types: ["version-update:semver-major"]
