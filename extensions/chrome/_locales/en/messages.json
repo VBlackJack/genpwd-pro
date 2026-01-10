@@ -4,11 +4,11 @@
     "description": "The name of the extension"
   },
   "extensionDescription": {
-    "message": "Secure password generator - Chrome Extension",
+    "message": "Secure password manager with autofill - Chrome Extension",
     "description": "The description of the extension"
   },
   "extensionTitle": {
-    "message": "GenPwd Pro - Secure Password Generator",
+    "message": "GenPwd Pro - Password Manager",
     "description": "The title shown in the browser action"
   },
   "tagline": {
@@ -174,8 +174,12 @@
     "description": "Error message when copy fails"
   },
   "contextMenuGenerate": {
-    "message": "Generate a password",
+    "message": "Generate password",
     "description": "Context menu item text"
+  },
+  "contextMenuFill": {
+    "message": "Fill with GenPwd Pro",
+    "description": "Context menu fill item text"
   },
   "iconTooltip": {
     "message": "Generate a secure password",
@@ -212,5 +216,135 @@
   "errorInvalidContext": {
     "message": "Invalid context",
     "description": "Error when message comes from non-tab context"
+  },
+  "vaultLocked": {
+    "message": "Vault is locked",
+    "description": "Text shown when vault is locked"
+  },
+  "vaultUnlocked": {
+    "message": "Vault unlocked",
+    "description": "Text shown when vault is unlocked"
+  },
+  "loadVault": {
+    "message": "Load Vault",
+    "description": "Button to load vault file"
+  },
+  "enterPassword": {
+    "message": "Enter master password",
+    "description": "Prompt for master password"
+  },
+  "unlock": {
+    "message": "Unlock",
+    "description": "Unlock button text"
+  },
+  "wrongPassword": {
+    "message": "Wrong password",
+    "description": "Error when password is incorrect"
+  },
+  "decryptionFailed": {
+    "message": "Decryption failed",
+    "description": "Error when vault decryption fails"
+  },
+  "invalidVaultFormat": {
+    "message": "Invalid vault format",
+    "description": "Error when vault file is invalid"
+  },
+  "tabAutofill": {
+    "message": "Autofill",
+    "description": "Autofill tab label"
+  },
+  "tabGenerator": {
+    "message": "Generator",
+    "description": "Generator tab label"
+  },
+  "tabSettings": {
+    "message": "Settings",
+    "description": "Settings tab label"
+  },
+  "searchPlaceholder": {
+    "message": "Search entries...",
+    "description": "Placeholder for search input"
+  },
+  "currentSite": {
+    "message": "Current site:",
+    "description": "Label for current site display"
+  },
+  "noEntriesFound": {
+    "message": "No entries found",
+    "description": "Message when no entries match"
+  },
+  "noMatchingEntries": {
+    "message": "No matching entries for this site",
+    "description": "Message when no entries match current site"
+  },
+  "settingAutofillEnabled": {
+    "message": "Enable autofill",
+    "description": "Setting to enable autofill"
+  },
+  "settingShowIcon": {
+    "message": "Show icon on fields",
+    "description": "Setting to show icon on input fields"
+  },
+  "settingLockTimeout": {
+    "message": "Auto-lock timeout",
+    "description": "Setting for auto-lock timeout"
+  },
+  "fillCredentials": {
+    "message": "Fill credentials",
+    "description": "Action to fill credentials"
+  },
+  "copyPassword": {
+    "message": "Copy password",
+    "description": "Action to copy password"
+  },
+  "copyUsername": {
+    "message": "Copy username",
+    "description": "Action to copy username"
+  },
+  "copyOtp": {
+    "message": "Copy OTP",
+    "description": "Action to copy OTP code"
+  },
+  "otpCopied": {
+    "message": "OTP copied",
+    "description": "Message when OTP is copied"
+  },
+  "passwordCopied": {
+    "message": "Password copied",
+    "description": "Message when password is copied"
+  },
+  "credentialsFilled": {
+    "message": "Credentials filled",
+    "description": "Message when credentials are filled"
+  },
+  "httpWarning": {
+    "message": "Insecure site (HTTP)",
+    "description": "Warning for HTTP sites"
+  },
+  "selectEntry": {
+    "message": "Select entry",
+    "description": "Prompt to select an entry"
+  },
+  "entriesForSite": {
+    "message": "Entries for $SITE$",
+    "description": "Header showing entries for a site",
+    "placeholders": {
+      "site": {
+        "content": "$1",
+        "example": "github.com"
+      }
+    }
+  },
+  "allEntries": {
+    "message": "All entries",
+    "description": "Header for all entries list"
+  },
+  "lockVault": {
+    "message": "Lock vault",
+    "description": "Action to lock the vault"
+  },
+  "openPopup": {
+    "message": "Open GenPwd Pro",
+    "description": "Action to open the popup"
   }
 }

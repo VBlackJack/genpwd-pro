@@ -4,11 +4,11 @@
     "description": "The name of the extension"
   },
   "extensionDescription": {
-    "message": "Générateur de mots de passe sécurisés - Extension Chrome",
+    "message": "Gestionnaire de mots de passe sécurisé avec remplissage auto - Extension Chrome",
     "description": "The description of the extension"
   },
   "extensionTitle": {
-    "message": "GenPwd Pro - Générateur de mots de passe",
+    "message": "GenPwd Pro - Gestionnaire de mots de passe",
     "description": "The title shown in the browser action"
   },
   "tagline": {
@@ -84,7 +84,7 @@
     "description": "French dictionary option"
   },
   "dictionaryEnglish": {
-    "message": "English",
+    "message": "Anglais",
     "description": "English dictionary option"
   },
   "dictionaryLatin": {
@@ -156,11 +156,11 @@
     "description": "Copy button text"
   },
   "copiedButton": {
-    "message": "Copié!",
+    "message": "Copié !",
     "description": "Copy button text after copying"
   },
   "errorUnknownMode": {
-    "message": "Mode inconnu: $MODE$",
+    "message": "Mode inconnu : $MODE$",
     "description": "Error for unknown generation mode",
     "placeholders": {
       "mode": {
@@ -176,6 +176,10 @@
   "contextMenuGenerate": {
     "message": "Générer un mot de passe",
     "description": "Context menu item text"
+  },
+  "contextMenuFill": {
+    "message": "Remplir avec GenPwd Pro",
+    "description": "Context menu fill item text"
   },
   "iconTooltip": {
     "message": "Générer un mot de passe sécurisé",
@@ -194,7 +198,7 @@
     "description": "Strong password strength"
   },
   "strengthVeryStrong": {
-    "message": "Très Fort",
+    "message": "Très fort",
     "description": "Very strong password strength"
   },
   "errorInvalidParams": {
@@ -212,5 +216,135 @@
   "errorInvalidContext": {
     "message": "Contexte invalide",
     "description": "Error when message comes from non-tab context"
+  },
+  "vaultLocked": {
+    "message": "Coffre verrouillé",
+    "description": "Text shown when vault is locked"
+  },
+  "vaultUnlocked": {
+    "message": "Coffre déverrouillé",
+    "description": "Text shown when vault is unlocked"
+  },
+  "loadVault": {
+    "message": "Charger le coffre",
+    "description": "Button to load vault file"
+  },
+  "enterPassword": {
+    "message": "Entrez le mot de passe maître",
+    "description": "Prompt for master password"
+  },
+  "unlock": {
+    "message": "Déverrouiller",
+    "description": "Unlock button text"
+  },
+  "wrongPassword": {
+    "message": "Mot de passe incorrect",
+    "description": "Error when password is incorrect"
+  },
+  "decryptionFailed": {
+    "message": "Échec du déchiffrement",
+    "description": "Error when vault decryption fails"
+  },
+  "invalidVaultFormat": {
+    "message": "Format de coffre invalide",
+    "description": "Error when vault file is invalid"
+  },
+  "tabAutofill": {
+    "message": "Remplissage",
+    "description": "Autofill tab label"
+  },
+  "tabGenerator": {
+    "message": "Générateur",
+    "description": "Generator tab label"
+  },
+  "tabSettings": {
+    "message": "Paramètres",
+    "description": "Settings tab label"
+  },
+  "searchPlaceholder": {
+    "message": "Rechercher...",
+    "description": "Placeholder for search input"
+  },
+  "currentSite": {
+    "message": "Site actuel :",
+    "description": "Label for current site display"
+  },
+  "noEntriesFound": {
+    "message": "Aucune entrée trouvée",
+    "description": "Message when no entries match"
+  },
+  "noMatchingEntries": {
+    "message": "Aucune entrée pour ce site",
+    "description": "Message when no entries match current site"
+  },
+  "settingAutofillEnabled": {
+    "message": "Activer le remplissage auto",
+    "description": "Setting to enable autofill"
+  },
+  "settingShowIcon": {
+    "message": "Afficher l'icône sur les champs",
+    "description": "Setting to show icon on input fields"
+  },
+  "settingLockTimeout": {
+    "message": "Verrouillage automatique",
+    "description": "Setting for auto-lock timeout"
+  },
+  "fillCredentials": {
+    "message": "Remplir les identifiants",
+    "description": "Action to fill credentials"
+  },
+  "copyPassword": {
+    "message": "Copier le mot de passe",
+    "description": "Action to copy password"
+  },
+  "copyUsername": {
+    "message": "Copier l'identifiant",
+    "description": "Action to copy username"
+  },
+  "copyOtp": {
+    "message": "Copier le code OTP",
+    "description": "Action to copy OTP code"
+  },
+  "otpCopied": {
+    "message": "OTP copié",
+    "description": "Message when OTP is copied"
+  },
+  "passwordCopied": {
+    "message": "Mot de passe copié",
+    "description": "Message when password is copied"
+  },
+  "credentialsFilled": {
+    "message": "Identifiants remplis",
+    "description": "Message when credentials are filled"
+  },
+  "httpWarning": {
+    "message": "Site non sécurisé (HTTP)",
+    "description": "Warning for HTTP sites"
+  },
+  "selectEntry": {
+    "message": "Sélectionner une entrée",
+    "description": "Prompt to select an entry"
+  },
+  "entriesForSite": {
+    "message": "Entrées pour $SITE$",
+    "description": "Header showing entries for a site",
+    "placeholders": {
+      "site": {
+        "content": "$1",
+        "example": "github.com"
+      }
+    }
+  },
+  "allEntries": {
+    "message": "Toutes les entrées",
+    "description": "Header for all entries list"
+  },
+  "lockVault": {
+    "message": "Verrouiller le coffre",
+    "description": "Action to lock the vault"
+  },
+  "openPopup": {
+    "message": "Ouvrir GenPwd Pro",
+    "description": "Action to open the popup"
   }
 }

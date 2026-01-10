@@ -10,116 +10,137 @@
   <div class="container">
     <header>
       <h1>🔐 <span data-i18n="extensionName">GenPwd Pro</span></h1>
-      <p class="tagline" data-i18n="tagline">Secure password generator</p>
     </header>
 
     <main>
-      <!-- Mode Selection -->
-      <section class="mode-section">
-        <label for="mode" data-i18n="modeLabel">Generation mode</label>
-        <select id="mode" class="input-field">
-          <option value="syllables" data-i18n="modeSyllables">Syllables (recommended)</option>
-          <option value="passphrase" data-i18n="modePassphrase">Passphrase</option>
-          <option value="leet" data-i18n="modeLeet">Leet Speak</option>
-        </select>
+      <!-- Vault Status -->
+      <section id="vault-status" class="vault-status">
+        <div id="vault-locked" class="vault-locked">
+          <div class="lock-icon">🔒</div>
+          <p data-i18n="vaultLocked">Vault is locked</p>
+          <button id="btn-load-vault" class="btn-secondary" data-i18n="loadVault">Load Vault</button>
+          <input type="file" id="vault-file-input" accept=".gpdb" hidden>
+        </div>
+
+        <div id="vault-unlock" class="vault-unlock hidden">
+          <p data-i18n="enterPassword">Enter master password</p>
+          <input type="password" id="master-password" class="input-field" placeholder="Master password" autocomplete="current-password">
+          <button id="btn-unlock" class="btn-primary" data-i18n="unlock">Unlock</button>
+          <p id="unlock-error" class="error-text hidden"></p>
+        </div>
+
+        <div id="vault-unlocked" class="vault-unlocked hidden">
+          <div class="vault-header">
+            <span class="unlock-icon">🔓</span>
+            <span data-i18n="vaultUnlocked">Vault unlocked</span>
+            <button id="btn-lock" class="btn-icon" title="Lock vault">🔒</button>
+          </div>
+        </div>
       </section>
 
-      <!-- Syllables Mode Options -->
-      <div id="syllables-options" class="mode-options">
-        <div class="option-group">
-          <label for="length" data-i18n="lengthLabel">Length</label>
-          <input type="number" id="length" class="input-field" value="20" min="6" max="64" aria-describedby="length-help">
-          <span id="length-help" class="visually-hidden" data-i18n="lengthHelp">Between 6 and 64 characters</span>
+      <!-- Tab Navigation -->
+      <nav id="tab-nav" class="tab-nav hidden">
+        <button class="tab-btn active" data-tab="autofill" data-i18n="tabAutofill">Autofill</button>
+        <button class="tab-btn" data-tab="generator" data-i18n="tabGenerator">Generator</button>
+        <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">Settings</button>
+      </nav>
+
+      <!-- Autofill Tab -->
+      <section id="tab-autofill" class="tab-content hidden">
+        <div class="search-box">
+          <input type="text" id="search-entries" class="input-field" placeholder="Search entries..." data-i18n-placeholder="searchPlaceholder">
         </div>
 
+        <div id="current-site" class="current-site hidden">
+          <span class="site-label" data-i18n="currentSite">Current site:</span>
+          <span id="site-domain" class="site-domain"></span>
+        </div>
+
+        <div id="entries-list" class="entries-list">
+          <p class="empty-message" data-i18n="noEntriesFound">No entries found</p>
+        </div>
+      </section>
+
+      <!-- Generator Tab -->
+      <section id="tab-generator" class="tab-content hidden">
         <div class="option-group">
-          <label for="policy" data-i18n="policyLabel">Policy</label>
-          <select id="policy" class="input-field">
-            <option value="standard" data-i18n="policyStandard">Standard</option>
-            <option value="standard-layout" data-i18n="policyStandardLayout">Standard Layout</option>
-            <option value="alphanumerique" data-i18n="policyAlphanumeric">Alphanumeric</option>
-            <option value="alphanumerique-layout" data-i18n="policyAlphanumericLayout">Alphanumeric Layout</option>
+          <label for="mode" data-i18n="modeLabel">Mode</label>
+          <select id="mode" class="input-field">
+            <option value="syllables" data-i18n="modeSyllables">Syllables</option>
+            <option value="passphrase" data-i18n="modePassphrase">Passphrase</option>
+            <option value="leet" data-i18n="modeLeet">Leet</option>
           </select>
         </div>
-      </div>
 
-      <!-- Passphrase Mode Options -->
-      <div id="passphrase-options" class="mode-options hidden">
-        <div class="option-group">
-          <label for="wordCount" data-i18n="wordCountLabel">Word count</label>
-          <input type="number" id="wordCount" class="input-field" value="5" min="2" max="8" aria-describedby="wordCount-help">
-          <span id="wordCount-help" class="visually-hidden" data-i18n="wordCountHelp">Between 2 and 8 words</span>
+        <div id="syllables-options" class="mode-options">
+          <div class="option-group">
+            <label for="length" data-i18n="lengthLabel">Length</label>
+            <input type="number" id="length" class="input-field" value="20" min="6" max="64">
+          </div>
         </div>
 
-        <div class="option-group">
-          <label for="separator" data-i18n="separatorLabel">Separator</label>
-          <input type="text" id="separator" class="input-field" value="-" maxlength="3" aria-describedby="separator-help">
-          <span id="separator-help" class="visually-hidden" data-i18n="separatorHelp">Maximum 3 characters</span>
+        <div id="passphrase-options" class="mode-options hidden">
+          <div class="option-group">
+            <label for="wordCount" data-i18n="wordCountLabel">Words</label>
+            <input type="number" id="wordCount" class="input-field" value="5" min="2" max="8">
+          </div>
         </div>
 
-        <div class="option-group">
-          <label for="dictionary" data-i18n="dictionaryLabel">Dictionary</label>
-          <select id="dictionary" class="input-field">
-            <option value="french" data-i18n="dictionaryFrench">French</option>
-            <option value="english" data-i18n="dictionaryEnglish">English</option>
-            <option value="latin" data-i18n="dictionaryLatin">Latin</option>
-          </select>
+        <div id="leet-options" class="mode-options hidden">
+          <div class="option-group">
+            <label for="leetWord" data-i18n="leetWordLabel">Word</label>
+            <input type="text" id="leetWord" class="input-field" value="password">
+          </div>
         </div>
-      </div>
 
-      <!-- Leet Mode Options -->
-      <div id="leet-options" class="mode-options hidden">
-        <div class="option-group">
-          <label for="leetWord" data-i18n="leetWordLabel">Word to transform</label>
-          <input type="text" id="leetWord" class="input-field" value="password" aria-describedby="leetWord-help">
-          <span id="leetWord-help" class="visually-hidden" data-i18n="leetWordHelp">Word to convert to leet speak</span>
-        </div>
-      </div>
-
-      <!-- Common Options -->
-      <section class="common-options">
         <div class="option-row">
           <div class="option-group">
             <label for="digits" data-i18n="digitsLabel">Digits</label>
-            <input type="number" id="digits" class="input-field" value="2" min="0" max="6" aria-describedby="digits-help">
-            <span id="digits-help" class="visually-hidden" data-i18n="digitsHelp">Between 0 and 6 digits</span>
+            <input type="number" id="digits" class="input-field" value="2" min="0" max="6">
           </div>
-
           <div class="option-group">
             <label for="specials" data-i18n="specialsLabel">Specials</label>
-            <input type="number" id="specials" class="input-field" value="2" min="0" max="6" aria-describedby="specials-help">
-            <span id="specials-help" class="visually-hidden" data-i18n="specialsHelp">Between 0 and 6 special characters</span>
+            <input type="number" id="specials" class="input-field" value="2" min="0" max="6">
           </div>
         </div>
 
-        <div class="option-group">
-          <label for="caseMode" data-i18n="caseModeLabel">Case</label>
-          <select id="caseMode" class="input-field">
-            <option value="mixte" data-i18n="caseMixed">Mixed</option>
-            <option value="minuscule" data-i18n="caseLower">Lowercase</option>
-            <option value="majuscule" data-i18n="caseUpper">Uppercase</option>
-            <option value="title" data-i18n="caseTitle">Title Case</option>
-          </select>
-        </div>
+        <button id="generate-btn" class="btn-primary">🎲 <span data-i18n="generateButton">Generate</span></button>
 
-        <div class="option-group">
-          <label for="quantity" data-i18n="quantityLabel">Quantity</label>
-          <input type="number" id="quantity" class="input-field" value="5" min="1" max="20">
+        <div id="generated-password" class="generated-password hidden">
+          <input type="text" id="password-output" class="password-output" readonly>
+          <button id="btn-copy-generated" class="btn-icon" title="Copy">📋</button>
+          <button id="btn-fill-generated" class="btn-icon" title="Fill">✏️</button>
         </div>
       </section>
 
-      <!-- Generate Button -->
-      <button id="generate-btn" class="btn-primary">🎲 <span data-i18n="generateButton">Generate</span></button>
-
-      <!-- Results Section -->
-      <section id="results-section" class="results-section hidden">
-        <h2 data-i18n="resultsTitle">Results</h2>
-        <div id="results-container" class="results-container"></div>
+      <!-- Settings Tab -->
+      <section id="tab-settings" class="tab-content hidden">
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="setting-autofill-enabled" checked>
+            <span data-i18n="settingAutofillEnabled">Enable autofill</span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="setting-show-icon">
+            <span data-i18n="settingShowIcon">Show icon on fields</span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <label for="setting-lock-timeout" data-i18n="settingLockTimeout">Auto-lock timeout</label>
+          <select id="setting-lock-timeout" class="input-field">
+            <option value="60">1 min</option>
+            <option value="300" selected>5 min</option>
+            <option value="600">10 min</option>
+            <option value="1800">30 min</option>
+          </select>
+        </div>
       </section>
     </main>
 
     <footer>
-      <p class="footer-text">© 2025 GenPwd Pro | <a href="https://github.com/VBlackJack/genpwd-pro" target="_blank">GitHub</a></p>
+      <p class="footer-text">GenPwd Pro v3.0.3</p>
     </footer>
   </div>
 

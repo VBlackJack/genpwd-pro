@@ -1,0 +1,272 @@
+/*
+ * Copyright 2025 Julien Bombled
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * GenPwd Pro - Content Script Styles
+ * Styles for inline autofill icon and dropdown
+ */
+
+/* Autofill Icon */
+#genpwd-autofill-icon {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+#genpwd-autofill-icon:hover {
+  background: #f3f4f6;
+  border-color: #6366f1;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+  transform: scale(1.05);
+}
+
+#genpwd-autofill-icon:active {
+  transform: scale(0.95);
+}
+
+/* Autofill Dropdown */
+#genpwd-autofill-dropdown {
+  position: absolute;
+  min-width: 280px;
+  max-width: 360px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+}
+
+/* Dropdown Header */
+.genpwd-dropdown-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 8px 8px 0 0;
+}
+
+.genpwd-dropdown-title {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  font-size: 14px;
+}
+
+.genpwd-dropdown-domain {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Entry List */
+.genpwd-entries-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Entry Item */
+.genpwd-entry-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.genpwd-entry-item:last-child {
+  border-bottom: none;
+}
+
+.genpwd-entry-item:hover {
+  background: #f3f4f6;
+}
+
+.genpwd-entry-item:active {
+  background: #e5e7eb;
+}
+
+/* Entry Favicon */
+.genpwd-entry-favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Entry Info */
+.genpwd-entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.genpwd-entry-title {
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.genpwd-entry-username {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Entry Actions */
+.genpwd-entry-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.genpwd-action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s ease;
+}
+
+.genpwd-action-btn:hover {
+  background: #e5e7eb;
+}
+
+/* OTP Badge */
+.genpwd-otp-badge {
+  font-size: 10px;
+  background: #eef2ff;
+  color: #6366f1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* Empty State */
+.genpwd-empty-state {
+  padding: 24px 16px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.genpwd-empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.genpwd-empty-text {
+  font-size: 13px;
+}
+
+/* Locked State */
+.genpwd-locked-state {
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.genpwd-locked-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.genpwd-locked-text {
+  color: #6b7280;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.genpwd-unlock-btn {
+  background: #6366f1;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.genpwd-unlock-btn:hover {
+  background: #4f46e5;
+}
+
+/* Scrollbar */
+.genpwd-entries-list::-webkit-scrollbar,
+#genpwd-autofill-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.genpwd-entries-list::-webkit-scrollbar-track,
+#genpwd-autofill-dropdown::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.genpwd-entries-list::-webkit-scrollbar-thumb,
+#genpwd-autofill-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.genpwd-entries-list::-webkit-scrollbar-thumb:hover,
+#genpwd-autofill-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Animation */
+@keyframes genpwd-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#genpwd-autofill-dropdown {
+  animation: genpwd-fade-in 0.15s ease;
+}
