@@ -560,5 +560,5 @@ npm run lint
 ---
 
 **Date de création :** 2025-11-04
-**Version :** GenPwd Pro v2.5.2+
+**Version :** GenPwd Pro v3.0.3+
 **Auteur :** Julien Bombled
