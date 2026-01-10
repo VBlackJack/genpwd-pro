@@ -631,13 +631,13 @@ function handleDeepLink(url) {
 
   // Validate deep link URL
   if (!url || typeof url !== 'string') {
-    console.warn('[GenPwd Pro] Invalid deep link: not a string');
+    devLog('[GenPwd Pro] Invalid deep link: not a string');
     return;
   }
 
   // Must start with our protocol
   if (!url.startsWith('genpwd://')) {
-    console.warn('[GenPwd Pro] Invalid deep link: wrong protocol');
+    devLog('[GenPwd Pro] Invalid deep link: wrong protocol');
     return;
   }
 
@@ -646,21 +646,43 @@ function handleDeepLink(url) {
   try {
     parsedUrl = new URL(url);
   } catch (e) {
-    console.warn('[GenPwd Pro] Invalid deep link: malformed URL');
+    devLog('[GenPwd Pro] Invalid deep link: malformed URL');
     return;
   }
 
   // Allowed actions (whitelist)
   const allowedHosts = ['unlock', 'open', 'generate', 'settings'];
   if (!allowedHosts.includes(parsedUrl.host)) {
-    console.warn(`[GenPwd Pro] Invalid deep link: unknown action '${parsedUrl.host}'`);
+    devLog(`[GenPwd Pro] Invalid deep link: unknown action '${parsedUrl.host}'`);
     return;
   }
 
   // Sanitize: only allow alphanumeric, dash, underscore in path segments
   const safePathRegex = /^[a-zA-Z0-9\-_\/]*$/;
   if (!safePathRegex.test(parsedUrl.pathname)) {
-    console.warn('[GenPwd Pro] Invalid deep link: unsafe characters in path');
+    devLog('[GenPwd Pro] Invalid deep link: unsafe characters in path');
+    return;
+  }
+
+  // Sanitize query parameters - only allow safe characters
+  const safeParamRegex = /^[a-zA-Z0-9\-_\.]*$/;
+  for (const [key, value] of parsedUrl.searchParams) {
+    // Validate parameter name
+    if (!safeParamRegex.test(key)) {
+      devLog(`[GenPwd Pro] Invalid deep link: unsafe parameter name '${key}'`);
+      return;
+    }
+    // Validate parameter value (allow slightly more chars but still strict)
+    // Max length 256 to prevent DoS
+    if (value.length > 256 || !/^[a-zA-Z0-9\-_\.\@\+]*$/.test(value)) {
+      devLog(`[GenPwd Pro] Invalid deep link: unsafe parameter value for '${key}'`);
+      return;
+    }
+  }
+
+  // Limit total number of parameters to prevent abuse
+  if ([...parsedUrl.searchParams].length > 10) {
+    devLog('[GenPwd Pro] Invalid deep link: too many parameters');
     return;
   }
 

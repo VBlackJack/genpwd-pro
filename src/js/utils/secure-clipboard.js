@@ -235,12 +235,12 @@ class SecureClipboard {
       // Try Electron secure copy first (handles TTL natively)
       if (secure && window.electronAPI?.copyToClipboardSecure && this.#timeoutMs > 0) {
         await window.electronAPI.copyToClipboardSecure(text, this.#timeoutMs);
-        this.#storeReference(text);
+        await this.#storeReference(text);
         safeLog(`[SecureClipboard] Copied via Electron (secure, ${this.#timeoutMs}ms TTL)`);
       } else {
         // Fallback to browser clipboard API
         await navigator.clipboard.writeText(text);
-        this.#storeReference(text);
+        await this.#storeReference(text);
 
         // Schedule auto-clear if secure
         if (secure && this.#timeoutMs > 0) {

@@ -27,6 +27,34 @@ import { createEmptyVault, VAULT_FORMAT_VERSION, LEGACY_FORMAT_VERSION } from '.
 import { ALGORITHM } from '../crypto/xchacha20.js';
 import { t } from '../../utils/i18n-node.js';
 
+// ==================== DEVELOPMENT LOGGING ====================
+// Only log in development to prevent information disclosure in production
+const IS_DEV = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
+/**
+ * Safe logging wrapper - only logs in development builds
+ * @param  {...any} args
+ */
+function devLog(...args) {
+  if (IS_DEV) console.log(...args);
+}
+
+/**
+ * Safe warning wrapper - only logs in development builds
+ * @param  {...any} args
+ */
+function devWarn(...args) {
+  if (IS_DEV) console.warn(...args);
+}
+
+/**
+ * Safe error wrapper - only logs in development builds
+ * @param  {...any} args
+ */
+function devError(...args) {
+  if (IS_DEV) console.error(...args);
+}
+
 const VAULT_EXTENSION = '.gpd';
 const BACKUP_EXTENSION = '.gpd.bak';
 const REGISTRY_FILE = 'vault-registry.json';
@@ -107,7 +135,7 @@ export class VaultFileManager extends EventEmitter {
     } catch (error) {
       // Registry doesn't exist yet (ENOENT) is expected on first run
       if (error.code !== 'ENOENT') {
-        console.warn('[VaultFileManager] Registry load error (using empty):', error.message);
+        devWarn('[VaultFileManager] Registry load error (using empty):', error.message);
       }
       this.#vaultRegistry = new Map();
       this.#unregisteredVaults = new Set();
@@ -347,7 +375,7 @@ export class VaultFileManager extends EventEmitter {
     const version = vaultFile.version || vaultFile.header?.version || LEGACY_FORMAT_VERSION;
 
     // Log detected structure for debugging
-    console.log('[VaultFileManager] Opening vault:', {
+    devLog('[VaultFileManager] Opening vault:', {
       path: vaultPath,
       detectedVersion: version,
       hasSlots: !!vaultFile.slots,
@@ -381,11 +409,11 @@ export class VaultFileManager extends EventEmitter {
             activeSlot = 0;
             derivedKey = key;
           } catch (e) {
-            console.warn('[VaultFileManager] Slot 0 payload decryption failed:', e.message);
+            devWarn('[VaultFileManager] Slot 0 payload decryption failed:', e.message);
           }
         }
       } catch (e) {
-        console.warn('[VaultFileManager] Slot 0 KDF verification failed:', e.message);
+        devWarn('[VaultFileManager] Slot 0 KDF verification failed:', e.message);
       }
 
       // If Slot 0 failed, try Slot 1 (Decoy)
@@ -399,11 +427,11 @@ export class VaultFileManager extends EventEmitter {
               activeSlot = 1;
               derivedKey = key;
             } catch (e) {
-              console.debug('[VaultFileManager] Slot 1 payload decryption failed (expected for chaff):', e.message);
+              devLog('[VaultFileManager] Slot 1 payload decryption failed (expected for chaff):', e.message);
             }
           }
         } catch (e) {
-          console.warn('[VaultFileManager] Slot 1 KDF verification failed:', e.message);
+          devWarn('[VaultFileManager] Slot 1 KDF verification failed:', e.message);
         }
       }
 
@@ -496,7 +524,7 @@ export class VaultFileManager extends EventEmitter {
         hasHello: vaultFile.header?.windowsHello?.enabled === true
       };
     } catch (error) {
-      console.error(`[VaultFileManager] Error reading metadata: ${error.message}`);
+      devError(`[VaultFileManager] Error reading metadata: ${error.message}`);
       return null;
     }
   }
@@ -509,17 +537,17 @@ export class VaultFileManager extends EventEmitter {
    * @throws {Error} If vault not found or password invalid
    */
   async openVault(vaultId, password) {
-    console.log('[VaultFileManager] openVault called for:', vaultId);
+    devLog('[VaultFileManager] openVault called for:', vaultId);
 
     // Use registered path (supports external vaults)
     const vaultPath = this.getRegisteredVaultPath(vaultId);
-    console.log('[VaultFileManager] Vault path:', vaultPath);
+    devLog('[VaultFileManager] Vault path:', vaultPath);
 
     // Read file
     let fileContent;
     try {
       fileContent = await fs.readFile(vaultPath, 'utf-8');
-      console.log('[VaultFileManager] File read successfully, size:', fileContent.length);
+      devLog('[VaultFileManager] File read successfully, size:', fileContent.length);
     } catch (error) {
       if (error.code === 'ENOENT') {
         throw new Error(t('errors.vault.notFound', { vaultId }));
@@ -530,7 +558,7 @@ export class VaultFileManager extends EventEmitter {
     // Parse vault file
     const vaultFile = JSON.parse(fileContent);
     const version = vaultFile.version || vaultFile.header?.version || LEGACY_FORMAT_VERSION;
-    console.log('[VaultFileManager] Detected version:', version, 'Keys:', Object.keys(vaultFile));
+    devLog('[VaultFileManager] Detected version:', version, 'Keys:', Object.keys(vaultFile));
 
     // --- V3 IMPLEMENTATION (DUAL SLOT) ---
     if (version === VAULT_FORMAT_VERSION) {
@@ -636,7 +664,7 @@ export class VaultFileManager extends EventEmitter {
     try {
       await fs.copyFile(vaultPath, backupPath);
     } catch (backupError) {
-      console.warn('[VaultFileManager] Failed to create backup:', backupError.message);
+      devWarn('[VaultFileManager] Failed to create backup:', backupError.message);
       // Continue with save - backup failure shouldn't block the operation
     }
 
@@ -673,7 +701,7 @@ export class VaultFileManager extends EventEmitter {
     // Trigger Auto-Sync
     // We don't await this to avoid blocking UI response
     this.#cloudSync.uploadVault(vaultPath, vaultId).catch(err => {
-      console.error('[VaultFileManager] Auto-sync failed:', err);
+      devError('[VaultFileManager] Auto-sync failed:', err);
       // Emit error status so UI can notify user
       this.emit('sync:status', { vaultId, status: 'error', message: 'Sync failed: ' + err.message });
     });
@@ -711,7 +739,7 @@ export class VaultFileManager extends EventEmitter {
         // Finally delete
         await fs.unlink(filePath);
       } catch (error) {
-        if (error.code !== 'ENOENT') console.error(`Failed to securely wipe ${filePath}:`, error);
+        if (error.code !== 'ENOENT') devError(`Failed to securely wipe ${filePath}:`, error);
       }
     };
 
@@ -764,7 +792,7 @@ export class VaultFileManager extends EventEmitter {
         seenIds.add(vaultId);
       } catch (error) {
         // Vault file may have been moved/deleted - keep in registry but mark as missing
-        console.warn(`[VaultFileManager] Registry vault not accessible: ${entry.path}`);
+        devWarn(`[VaultFileManager] Registry vault not accessible: ${entry.path}`);
         vaults.push({
           id: vaultId,
           name: entry.name || vaultId.substring(0, 8),
@@ -800,7 +828,7 @@ export class VaultFileManager extends EventEmitter {
         }
 
         if (!vaultId) {
-          console.warn(`[VaultFileManager] Could not determine vaultId for: ${file}`);
+          devWarn(`[VaultFileManager] Could not determine vaultId for: ${file}`);
           continue;
         }
 
@@ -825,7 +853,7 @@ export class VaultFileManager extends EventEmitter {
           hasHello: hasHello(vaultFile)
         });
       } catch (error) {
-        console.error(`Error reading vault file ${file}:`, error.message);
+        devError(`Error reading vault file ${file}:`, error.message);
       }
     }
 
@@ -870,7 +898,7 @@ export class VaultFileManager extends EventEmitter {
     try {
       await fs.copyFile(vaultPath, `${vaultPath}.bak`);
     } catch (backupError) {
-      console.warn('[VaultFileManager] Failed to backup before password change:', backupError.message);
+      devWarn('[VaultFileManager] Failed to backup before password change:', backupError.message);
     }
 
     // Check if V3 format
@@ -926,7 +954,7 @@ export class VaultFileManager extends EventEmitter {
     try {
       await fs.copyFile(vaultPath, backupPath);
     } catch (backupError) {
-      console.warn('[VaultFileManager] Failed to backup before V3 migration:', backupError.message);
+      devWarn('[VaultFileManager] Failed to backup before V3 migration:', backupError.message);
     }
 
     // 2. Prepare Slot A (Real Vault)
@@ -1177,7 +1205,7 @@ export class VaultFileManager extends EventEmitter {
       }
       return null;
     } catch (error) {
-      console.error('[VaultFileManager] Error reading Hello key:', error.message);
+      devError('[VaultFileManager] Error reading Hello key:', error.message);
       return null;
     }
   }
