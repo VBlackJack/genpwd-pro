@@ -63,6 +63,7 @@ import { showConfirm, showPrompt } from './ui/modal-manager.js';
 import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
+import { setupWizardModal } from './ui/modals/setup-wizard-modal.js';
 // QR code generation moved to totp-qr-modal.js
 
 // Vault utility imports (Phase 6 modularization)
@@ -511,6 +512,11 @@ export class VaultUI {
             <p>${t('vault.messages.noVaultFound')}</p>
           </div>
         `;
+        // Show setup wizard for first-time users
+        setupWizardModal.checkAndShow(() => {
+          // Open create vault modal when wizard completes
+          this.#openModal('create-vault-modal');
+        });
         return;
       }
 
@@ -3286,7 +3292,6 @@ export class VaultUI {
     document.getElementById('btn-add-entry')?.addEventListener('click', () => {
       this.#openModal('add-entry-modal');
       this.#updateEntryTypeFields();
-      document.getElementById('entry-title')?.focus();
     });
 
     // Add folder button
@@ -3909,12 +3914,8 @@ export class VaultUI {
   }
 
   #attachDetailPanelEvents() {
-    // Share button
-    document.getElementById('btn-share-entry')?.addEventListener('click', () => {
-      if (this.#selectedEntry) {
-        this.#shareModal.open(this.#selectedEntry);
-      }
-    });
+    // Share button - handled in #attachEntryActions()
+    // Note: Share functionality is in showSecureShareModal()
 
     // Toggle visibility
     document.querySelectorAll('.toggle-visibility').forEach(btn => {
@@ -5397,6 +5398,18 @@ export class VaultUI {
 
     // Focus trap setup
     this.#setupFocusTrap(modal);
+
+    // Auto-focus first input for entry modals (UX best practice)
+    if (modalId === 'add-entry-modal') {
+      // Use requestAnimationFrame to ensure modal is rendered
+      requestAnimationFrame(() => {
+        document.getElementById('entry-title')?.focus();
+      });
+    } else if (modalId === 'edit-entry-modal') {
+      requestAnimationFrame(() => {
+        document.getElementById('edit-title')?.focus();
+      });
+    }
   }
 
   #closeModal(modalId) {

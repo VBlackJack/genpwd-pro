@@ -190,11 +190,11 @@
 .vault-security-item {
   display: flex;
   align-items: center;
-  gap: var(--vault-space-2);
-  padding: var(--vault-space-2) var(--vault-space-3, 0.75rem);
+  gap: var(--vault-space-2, 0.5rem);
+  padding: var(--vault-space-2, 0.5rem) var(--vault-space-3, 0.75rem);
   background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--vault-radius-sm);
-  border-left: 3px solid var(--vault-border);
+  border-radius: var(--vault-radius-sm, 6px);
+  border-left: 3px solid var(--vault-border, rgba(255, 255, 255, 0.1));
   flex: 0 0 auto;
   white-space: nowrap;
 }
@@ -232,14 +232,16 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--vault-text-muted);
+  color: var(--vault-text-muted, #8c94ca);
+  flex-shrink: 0;
 }
 
 .vault-security-value {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--vault-text);
+  color: var(--vault-text, #fff);
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* Fields Section */

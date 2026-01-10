@@ -85,6 +85,62 @@
     "expand": "Expand",
     "retry": "Retry"
   },
+  "changelog": {
+    "title": "What's New",
+    "releaseNotes": "Release notes",
+    "gotIt": "Got it!",
+    "viewFullChangelog": "View full changelog on GitHub",
+    "highlights": "Highlights",
+    "features": {
+      "uxImprovements": "UX Improvements",
+      "uxImprovementsDesc": "Enhanced accessibility and user experience",
+      "accessibility": "Accessibility",
+      "accessibilityDesc": "WCAG 2.1 AA compliance improvements",
+      "i18n": "Internationalization",
+      "i18nDesc": "Complete translation support",
+      "security": "Security",
+      "securityDesc": "Security audit and infrastructure updates"
+    }
+  },
+  "setupWizard": {
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "welcome": {
+      "title": "Welcome to GenPwd Pro",
+      "description": "Your secure password manager with military-grade encryption.",
+      "feature1": "AES-256 encryption for all your passwords",
+      "feature2": "Organize with folders, tags, and search",
+      "feature3": "Import from KeePass, Bitwarden, and more"
+    },
+    "security": {
+      "title": "Your Security Matters",
+      "description": "GenPwd Pro is designed with security as the top priority.",
+      "encryption": "AES-256 Encryption",
+      "encryptionDesc": "Industry-standard encryption used by banks and governments.",
+      "masterPassword": "Master Password",
+      "masterPasswordDesc": "Only you know your master password. We never store it.",
+      "zeroKnowledge": "Zero Knowledge",
+      "zeroKnowledgeDesc": "Your data stays on your device. No cloud, no tracking."
+    },
+    "features": {
+      "title": "Powerful Features",
+      "description": "Everything you need to manage your digital life securely.",
+      "organization": "Folders & Tags",
+      "import": "Import/Export",
+      "generator": "Password Generator",
+      "audit": "Security Audit",
+      "autofill": "Auto-fill",
+      "customization": "Customization"
+    },
+    "ready": {
+      "title": "You're All Set!",
+      "description": "Create your first vault to start securing your passwords.",
+      "createVault": "Create My First Vault",
+      "hint": "You can also import from an existing password manager."
+    }
+  },
   "header": {
     "generatorTab": "Generator",
     "vaultTab": "Vault",
@@ -2220,5 +2276,11 @@
       "helloEnablePrompt": "GenPwd Pro - Enable Windows Hello",
       "helloUnlockPrompt": "GenPwd Pro - Unlock Vault"
     }
+  },
+  "crashRecovery": {
+    "sessionRestored": "Previous session restored",
+    "unexpectedClose": "The application was closed unexpectedly",
+    "recoverSession": "Recover session?",
+    "dismiss": "Dismiss"
   }
 }

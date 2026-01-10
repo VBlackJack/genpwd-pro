@@ -32,6 +32,9 @@ const DEFAULT_CONFIG = {
   storageKey: 'genpwd_locale'
 };
 
+// RTL (Right-to-Left) language codes
+const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'];
+
 class I18n {
   constructor(config = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -231,9 +234,45 @@ class I18n {
     const flags = {
       'fr': '🇫🇷',
       'en': '🇬🇧',
-      'es': '🇪🇸'
+      'es': '🇪🇸',
+      'ar': '🇸🇦',
+      'he': '🇮🇱',
+      'fa': '🇮🇷',
+      'ur': '🇵🇰'
     };
     return flags[locale] || '🌐';
+  }
+
+  /**
+   * Check if a locale is RTL (Right-to-Left)
+   * @param {string} [locale] - Locale code (defaults to current)
+   * @returns {boolean} True if RTL
+   */
+  isRTL(locale = this.currentLocale) {
+    return RTL_LOCALES.includes(locale);
+  }
+
+  /**
+   * Get text direction for a locale
+   * @param {string} [locale] - Locale code (defaults to current)
+   * @returns {'ltr'|'rtl'} Text direction
+   */
+  getDirection(locale = this.currentLocale) {
+    return this.isRTL(locale) ? 'rtl' : 'ltr';
+  }
+
+  /**
+   * Update document direction based on current locale
+   * @private
+   */
+  _updateDocumentDirection() {
+    if (typeof document !== 'undefined') {
+      const dir = this.getDirection();
+      document.documentElement.dir = dir;
+      document.documentElement.lang = this.currentLocale;
+      // Also set on body for CSS selectors
+      document.body?.setAttribute('dir', dir);
+    }
   }
 
   /**
@@ -385,6 +424,9 @@ class I18n {
    * @private
    */
   _notifyLocaleChange() {
+    // Update document direction for RTL support
+    this._updateDocumentDirection();
+
     if (this._localeChangeListeners) {
       for (const callback of this._localeChangeListeners) {
         try {

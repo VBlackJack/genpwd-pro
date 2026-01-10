@@ -194,6 +194,62 @@
     "verifying": "Verificando...",
     "retry": "Reintentar"
   },
+  "changelog": {
+    "title": "Novedades",
+    "releaseNotes": "Notas de la versión",
+    "gotIt": "¡Entendido!",
+    "viewFullChangelog": "Ver changelog completo en GitHub",
+    "highlights": "Destacados",
+    "features": {
+      "uxImprovements": "Mejoras UX",
+      "uxImprovementsDesc": "Accesibilidad y experiencia de usuario mejoradas",
+      "accessibility": "Accesibilidad",
+      "accessibilityDesc": "Mejoras de conformidad WCAG 2.1 AA",
+      "i18n": "Internacionalización",
+      "i18nDesc": "Soporte completo de traducciones",
+      "security": "Seguridad",
+      "securityDesc": "Auditoría de seguridad y actualizaciones de infraestructura"
+    }
+  },
+  "setupWizard": {
+    "skip": "Omitir",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "finish": "Finalizar",
+    "welcome": {
+      "title": "Bienvenido a GenPwd Pro",
+      "description": "Tu gestor de contraseñas seguro con cifrado de grado militar.",
+      "feature1": "Cifrado AES-256 para todas tus contraseñas",
+      "feature2": "Organiza con carpetas, etiquetas y búsqueda",
+      "feature3": "Importa desde KeePass, Bitwarden y más"
+    },
+    "security": {
+      "title": "Tu seguridad importa",
+      "description": "GenPwd Pro está diseñado con la seguridad como máxima prioridad.",
+      "encryption": "Cifrado AES-256",
+      "encryptionDesc": "Cifrado estándar utilizado por bancos y gobiernos.",
+      "masterPassword": "Contraseña maestra",
+      "masterPasswordDesc": "Solo tú conoces tu contraseña maestra. Nunca la almacenamos.",
+      "zeroKnowledge": "Cero conocimiento",
+      "zeroKnowledgeDesc": "Tus datos permanecen en tu dispositivo. Sin nube, sin rastreo."
+    },
+    "features": {
+      "title": "Funciones potentes",
+      "description": "Todo lo que necesitas para gestionar tu vida digital de forma segura.",
+      "organization": "Carpetas y Etiquetas",
+      "import": "Importar/Exportar",
+      "generator": "Generador",
+      "audit": "Auditoría",
+      "autofill": "Auto-relleno",
+      "customization": "Personalización"
+    },
+    "ready": {
+      "title": "¡Todo listo!",
+      "description": "Crea tu primera bóveda para empezar a proteger tus contraseñas.",
+      "createVault": "Crear mi primera bóveda",
+      "hint": "También puedes importar desde un gestor existente."
+    }
+  },
   "contextMenu": {
     "copy": "Copiar contraseña",
     "saveToVault": "Guardar en bóveda",
@@ -1490,6 +1546,37 @@
       "login": "Inicio de sesión",
       "note": "Nota"
     },
+    "entryInfo": {
+      "lastModified": "Modificado",
+      "strength": "Fuerza",
+      "expiresIn": "Vence en",
+      "expired": "Vencida",
+      "neverExpires": "Nunca vence",
+      "has2FA": "2FA activado",
+      "no2FA": "Sin 2FA",
+      "attachmentsCount": "{count} adjunto(s)",
+      "customFieldsCount": "{count} campo(s) personalizado(s)",
+      "passwordHistory": "Historial disponible",
+      "securityScore": "Puntuación de seguridad",
+      "daysOld": "{count}d",
+      "weeksOld": "{count}sem",
+      "monthsOld": "{count}m",
+      "yearsOld": "{count}a"
+    },
+    "badges": {
+      "favorite": "Favorito",
+      "pinned": "Fijado",
+      "weak": "Débil",
+      "medium": "Media",
+      "strong": "Fuerte",
+      "expired": "Vencida",
+      "expiring": "Por vencer",
+      "reused": "Reutilizada",
+      "compromised": "Comprometida",
+      "old": "Antigua",
+      "new": "Nueva",
+      "has2FA": "2FA"
+    },
     "errors": {
       "exportFailed": "Error de exportación",
       "presetNotFound": "Preset no encontrado",
@@ -1522,7 +1609,14 @@
     },
     "export": {
       "chooseFormat": "Elige el formato de exportación:",
-      "title": "Exportar {count} entrada(s)"
+      "title": "Exportar {count} entrada(s)",
+      "securityWarning": "Advertencia de seguridad",
+      "warnings": {
+        "plaintextGeneric": "Esta exportación contiene contraseñas sin cifrar. Guarde el archivo de forma segura y elimínelo después de usarlo.",
+        "plaintextJson": "La exportación JSON contiene todas las contraseñas en texto plano. Cualquiera con acceso a este archivo puede leer sus contraseñas.",
+        "plaintextCsv": "La exportación CSV contiene todas las contraseñas en texto plano. Cualquiera con acceso a este archivo puede leer sus contraseñas.",
+        "plaintextXml": "La exportación KeePass XML contiene contraseñas. Importe a KeePass y elimine el archivo XML inmediatamente."
+      }
     },
     "exportFormats": {
       "bitwardenDesc": "Compatible con Bitwarden",
@@ -1723,7 +1817,9 @@
         "xmlTooLarge": "El archivo XML es demasiado grande (máx. 10MB)",
         "noFile": "Ningún archivo seleccionado",
         "fileTooLarge": "Archivo demasiado grande (máx. 50MB)",
-        "invalidFormat": "Formato de archivo inválido. Soportados: XML, JSON, CSV"
+        "invalidFormat": "Formato de archivo inválido. Soportados: XML, JSON, CSV",
+        "invalidFilename": "Nombre de archivo inválido. Contiene caracteres no seguros.",
+        "mimeTypeMismatch": "El tipo de archivo no coincide con la extensión. Asegúrese de que el archivo sea XML, JSON o CSV válido."
       },
       "fields": "Campos",
       "folders": "Carpetas",
@@ -2027,6 +2123,7 @@
       "noTags": "Sin etiquetas",
       "notes": "Notas",
       "passwordHealth": "Salud de contraseñas",
+      "presets": "Presets",
       "recent": "Recientes",
       "switchVault": "Cambiar bóveda",
       "tags": "ETIQUETAS"
@@ -2103,7 +2200,19 @@
       "compact": "Vista compacta",
       "compactWidget": "Modo compacto (widget flotante)",
       "exitCompact": "Salir del modo compacto",
-      "modeChanged": "Vista cambiada a {mode}"
+      "modeChanged": "Vista cambiada a {mode}",
+      "grid": "Vista en cuadrícula",
+      "viewMode": "Modo de vista",
+      "sortBy": "Ordenar por",
+      "groupBy": "Agrupar por",
+      "groupByNone": "Sin agrupación",
+      "groupByType": "Por tipo",
+      "groupByFolder": "Por carpeta",
+      "groupByStrength": "Por fuerza",
+      "showDetails": "Mostrar detalles",
+      "hideDetails": "Ocultar detalles",
+      "expandAll": "Expandir todo",
+      "collapseAll": "Contraer todo"
     },
     "generator": {
       "title": "Generador de contraseñas",
@@ -2117,7 +2226,12 @@
       "lowercase": "a-z (minúsculas)",
       "numbers": "0-9 (dígitos)",
       "symbols": "!@#$ (símbolos)",
-      "characterOptions": "Opciones de caracteres"
+      "characterOptions": "Opciones de caracteres",
+      "emptyState": "Aún no se han generado contraseñas",
+      "invalidData": "Datos de contraseña inválidos",
+      "clickToCycle": "Clic para alternar (M → m → T → M)",
+      "blocks": "Bloques:",
+      "manualChange": "Cambio manual"
     },
     "welcome": {
       "createFirst": "Crear mi primera entrada",
@@ -2154,5 +2268,11 @@
   },
   "windowsHello": {
     "verificationRequired": "GenPwd Pro - Verificación requerida"
+  },
+  "crashRecovery": {
+    "sessionRestored": "Sesión anterior restaurada",
+    "unexpectedClose": "La aplicación se cerró inesperadamente",
+    "recoverSession": "¿Restaurar sesión?",
+    "dismiss": "Ignorar"
   }
 }

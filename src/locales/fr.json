@@ -194,6 +194,62 @@
     "verifying": "Vérification...",
     "retry": "Réessayer"
   },
+  "changelog": {
+    "title": "Nouveautés",
+    "releaseNotes": "Notes de version",
+    "gotIt": "Compris !",
+    "viewFullChangelog": "Voir le changelog complet sur GitHub",
+    "highlights": "Points forts",
+    "features": {
+      "uxImprovements": "Améliorations UX",
+      "uxImprovementsDesc": "Accessibilité et expérience utilisateur améliorées",
+      "accessibility": "Accessibilité",
+      "accessibilityDesc": "Améliorations de conformité WCAG 2.1 AA",
+      "i18n": "Internationalisation",
+      "i18nDesc": "Support complet des traductions",
+      "security": "Sécurité",
+      "securityDesc": "Audit de sécurité et mises à jour d'infrastructure"
+    }
+  },
+  "setupWizard": {
+    "skip": "Passer",
+    "back": "Retour",
+    "next": "Suivant",
+    "finish": "Terminer",
+    "welcome": {
+      "title": "Bienvenue sur GenPwd Pro",
+      "description": "Votre gestionnaire de mots de passe sécurisé avec chiffrement de niveau militaire.",
+      "feature1": "Chiffrement AES-256 pour tous vos mots de passe",
+      "feature2": "Organisez avec dossiers, tags et recherche",
+      "feature3": "Importez depuis KeePass, Bitwarden et plus"
+    },
+    "security": {
+      "title": "Votre sécurité compte",
+      "description": "GenPwd Pro est conçu avec la sécurité comme priorité absolue.",
+      "encryption": "Chiffrement AES-256",
+      "encryptionDesc": "Chiffrement standard utilisé par les banques et gouvernements.",
+      "masterPassword": "Mot de passe maître",
+      "masterPasswordDesc": "Vous seul connaissez votre mot de passe maître. Nous ne le stockons jamais.",
+      "zeroKnowledge": "Zéro connaissance",
+      "zeroKnowledgeDesc": "Vos données restent sur votre appareil. Pas de cloud, pas de pistage."
+    },
+    "features": {
+      "title": "Fonctionnalités puissantes",
+      "description": "Tout ce dont vous avez besoin pour gérer votre vie numérique en toute sécurité.",
+      "organization": "Dossiers & Tags",
+      "import": "Import/Export",
+      "generator": "Générateur",
+      "audit": "Audit sécurité",
+      "autofill": "Remplissage auto",
+      "customization": "Personnalisation"
+    },
+    "ready": {
+      "title": "Vous êtes prêt !",
+      "description": "Créez votre premier coffre-fort pour commencer à sécuriser vos mots de passe.",
+      "createVault": "Créer ma première bóveda",
+      "hint": "Vous pouvez aussi importer depuis un gestionnaire existant."
+    }
+  },
   "contextMenu": {
     "copy": "Copier le mot de passe",
     "saveToVault": "Enregistrer dans le coffre",
@@ -1500,26 +1556,6 @@
       "vaultNotAvailable": "Coffre non disponible",
       "vaultUnavailableOrLocked": "Coffre non disponible ou verrouillé"
     },
-    "expiry": {
-      "1year": "1 an",
-      "30days": "30 jours",
-      "60days": "60 jours",
-      "6months": "6 mois",
-      "90days": "90 jours",
-      "custom": "Date personnalisée...",
-      "customDate": "Date personnalisée...",
-      "days30": "30 jours",
-      "days60": "60 jours",
-      "days7": "7 jours",
-      "days90": "90 jours",
-      "expired": "Expiré depuis {days} jour(s)",
-      "expiresIn": "Expire dans {days} jour(s)",
-      "expiresOn": "Expire le {date}",
-      "expiresToday": "Expire aujourd'hui",
-      "months6": "6 mois",
-      "never": "Jamais",
-      "visualReminder": "Rappel visuel pour renouveler le mot de passe"
-    },
     "export": {
       "chooseFormat": "Choisissez le format d'export :",
       "title": "Exporter {count} entrée(s)",
@@ -2176,7 +2212,21 @@
       "expired": "Expiré depuis {days} jour(s)",
       "expiresToday": "Expire aujourd'hui",
       "expiresIn": "Expire dans {days} jour(s)",
-      "expiresOn": "Expire le {date}"
+      "expiresOn": "Expire le {date}",
+      "never": "Jamais",
+      "days7": "7 jours",
+      "days30": "30 jours",
+      "days60": "60 jours",
+      "days90": "90 jours",
+      "months6": "6 mois",
+      "1year": "1 an",
+      "30days": "30 jours",
+      "60days": "60 jours",
+      "90days": "90 jours",
+      "6months": "6 mois",
+      "custom": "Date personnalisée...",
+      "customDate": "Date personnalisée...",
+      "visualReminder": "Rappel visuel pour renouveler le mot de passe"
     },
     "welcome": {
       "createFirst": "Créer ma première entrée",
@@ -2213,5 +2263,11 @@
   },
   "windowsHello": {
     "verificationRequired": "GenPwd Pro - Vérification requise"
+  },
+  "crashRecovery": {
+    "sessionRestored": "Session précédente restaurée",
+    "unexpectedClose": "L'application a été fermée de manière inattendue",
+    "recoverSession": "Restaurer la session ?",
+    "dismiss": "Ignorer"
   }
 }

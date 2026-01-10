@@ -184,20 +184,27 @@ export function validatePasswordMatch(confirmInput, passwordInput, messageEl) {
 }
 
 /**
- * Simple debounce utility
+ * Simple debounce utility with cancel support
  * @param {Function} fn - Function to debounce
  * @param {number} delay - Delay in ms
- * @returns {Function} Debounced function
+ * @returns {Function & { cancel: Function }} Debounced function with cancel method
  */
 function debounce(fn, delay) {
   let timeoutId = null;
-  return function (...args) {
+  const debounced = function (...args) {
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
       fn.apply(this, args);
       timeoutId = null;
     }, delay);
   };
+  debounced.cancel = function () {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+  return debounced;
 }
 
 /**

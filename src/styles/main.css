@@ -1058,3 +1058,134 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   box-shadow: inset 0 0 0 2px var(--accent-cyan, #22d3ee),
               0 0 0 2px rgba(34, 211, 238, 0.25);
 }
+
+/* ============================================================================
+   RTL (Right-to-Left) LANGUAGE SUPPORT
+   Applied when dir="rtl" is set on html or body element
+   ============================================================================ */
+
+[dir="rtl"] {
+  /* Text alignment */
+  text-align: right;
+}
+
+/* Flip horizontal margins and padding */
+[dir="rtl"] .sidebar,
+[dir="rtl"] .panel-sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+[dir="rtl"] .main-content {
+  margin-left: 0;
+  margin-right: var(--sidebar-width, 240px);
+}
+
+/* Mirror icons that indicate direction */
+[dir="rtl"] .icon-arrow-right,
+[dir="rtl"] .icon-chevron-right,
+[dir="rtl"] .breadcrumb-separator {
+  transform: scaleX(-1);
+}
+
+/* Reverse flex direction for specific layouts */
+[dir="rtl"] .input-group,
+[dir="rtl"] .vault-input-group {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .vault-input-group .vault-input-btn {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+[dir="rtl"] .vault-input-group .vault-input {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Modal close button positioning */
+[dir="rtl"] .vault-modal-close,
+[dir="rtl"] .modal-close {
+  left: 1rem;
+  right: auto;
+}
+
+/* Checkbox and radio labels */
+[dir="rtl"] .vault-checkbox-option,
+[dir="rtl"] .vault-radio-option {
+  padding-left: 0;
+  padding-right: 1.75rem;
+}
+
+[dir="rtl"] .vault-checkbox-option input,
+[dir="rtl"] .vault-radio-option input {
+  left: auto;
+  right: 0;
+}
+
+/* Lists with bullets or icons */
+[dir="rtl"] .setup-features-list li,
+[dir="rtl"] .changelog-list li {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+/* Select dropdown arrow */
+[dir="rtl"] select {
+  padding-right: 12px;
+  padding-left: 36px;
+  background-position: left 12px center;
+}
+
+/* Progress steps */
+[dir="rtl"] .progress-steps {
+  flex-direction: row-reverse;
+}
+
+/* Navigation and breadcrumbs */
+[dir="rtl"] .vault-nav-item {
+  padding-left: 0;
+  padding-right: 0.75rem;
+}
+
+/* Tags and badges alignment */
+[dir="rtl"] .vault-tag-chip {
+  margin-left: 0;
+  margin-right: 0.25rem;
+}
+
+/* Entry list actions */
+[dir="rtl"] .vault-entry-actions {
+  left: 0.5rem;
+  right: auto;
+}
+
+/* Sidebar collapse button */
+[dir="rtl"] #sidebar-collapse-btn {
+  left: auto;
+  right: -12px;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Toast notifications */
+[dir="rtl"] .toast {
+  left: 1rem;
+  right: auto;
+}
+
+/* Form labels with required indicator */
+[dir="rtl"] .required {
+  margin-left: 0;
+  margin-right: 0.25rem;
+}
+
+/* Search input clear button */
+[dir="rtl"] .search-clear,
+[dir="rtl"] #btn-clear-search {
+  left: 0.5rem;
+  right: auto;
+}
+
+/* Scrollbar on left side for RTL */
+[dir="rtl"] ::-webkit-scrollbar {
+  direction: rtl;
+}

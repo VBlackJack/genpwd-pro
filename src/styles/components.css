@@ -29,11 +29,22 @@
 select {
   cursor: pointer;
   appearance: none;
-  /* Note: CSS variables don't work in data URLs, hardcoded color required */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.5)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  padding-right: 36px;
+  /*
+   * Dropdown arrow - CSS variables can't be used in data URIs.
+   * Theme-specific colors are set via [data-theme] selectors below.
+   * Dark theme: rgba(255,255,255,0.5), Light theme: rgba(0,0,0,0.5)
+   */
+  --select-arrow-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.5)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  --select-arrow-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(0,0,0,0.5)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-image: var(--select-arrow-dark);
   background-repeat: no-repeat;
   background-position: right 12px center;
-  padding-right: 36px;
+}
+
+/* Light theme dropdown arrow */
+[data-theme="light"] select {
+  background-image: var(--select-arrow-light);
 }
 
 .input:hover, select:hover {
@@ -352,7 +363,8 @@ textarea.field-invalid {
 .btn:disabled,
 .btn[aria-disabled="true"],
 .btn-mini:disabled {
-  opacity: 0.6;
+  /* WCAG AA: 75% opacity provides sufficient contrast for disabled state */
+  opacity: 0.75;
   cursor: not-allowed !important;
   pointer-events: none;
   background: var(--bg-tertiary) !important;
@@ -2098,9 +2110,7 @@ body[data-theme="light"] .input {
 
 body[data-theme="light"] select {
   background-color: white !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(0,0,0,0.5)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
+  /* Arrow color handled by [data-theme="light"] select rule above */
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
   color: var(--text-primary) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;

@@ -38,6 +38,8 @@ import presetManager from './utils/preset-manager.js';
 import historyManager from './utils/history-manager.js';
 import { initializeAllFeatures } from './ui/features-ui.js';
 import pwaManager from './utils/pwa-manager.js';
+import { changelogModal } from './ui/modals/changelog-modal.js';
+import { initCrashRecovery, crashRecovery } from './utils/crash-recovery.js';
 
 // Vault UI (Electron only)
 import { VaultUI } from './vault-ui.js';
@@ -171,6 +173,24 @@ class GenPwdApp {
 
       // 12. Initialize Vault UI (Electron only)
       this.initializeVault();
+
+      // 12.1 Initialize Crash Recovery (session persistence)
+      try {
+        const { didCrash, state } = initCrashRecovery();
+        if (didCrash) {
+          safeLog(`Crash recovery: Previous session detected at ${new Date(state?.timestamp).toISOString()}`);
+        }
+        safeLog('Crash recovery initialized');
+      } catch (crashError) {
+        safeLog(`Crash recovery not available: ${crashError.message}`);
+      }
+
+      // 13. Check and show What's New modal (on version update)
+      setTimeout(() => {
+        if (changelogModal.checkAndShow()) {
+          safeLog('Changelog modal displayed (new version detected)');
+        }
+      }, ANIMATION_DURATION.INITIAL_GENERATION_DELAY + 500);
 
     } catch (error) {
       safeLog(`Critical initialization error: ${error.message}`, 'error');
@@ -384,6 +404,8 @@ window.addEventListener('beforeunload', () => {
     cleanupNativeIntegration();
     // Cleanup keyboard shortcuts event listener
     removeKeyboardShortcuts();
+    // Cleanup crash recovery (clears interval timer)
+    crashRecovery.destroy();
     // Clear any active intervals/timeouts
     safeLog('[App] Cleanup on beforeunload');
   } catch (error) {

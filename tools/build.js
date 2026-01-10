@@ -31,7 +31,7 @@ class GenPwdBuilder {
       'js/utils/helpers.js',
       'js/utils/logger.js',
       'js/utils/toast.js',
-      'js/utils/clipboard.js',
+      'js/utils/secure-clipboard.js',
       'js/core/dictionaries.js',
       'js/core/casing.js',
       'js/core/generators.js',
