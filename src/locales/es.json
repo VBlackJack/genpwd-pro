@@ -191,7 +191,8 @@
     "tests": "Pruebas",
     "uninstall": "Desinstalar",
     "update": "Actualizar",
-    "verifying": "Verificando..."
+    "verifying": "Verificando...",
+    "retry": "Reintentar"
   },
   "contextMenu": {
     "copy": "Copiar contraseña",

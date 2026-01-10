@@ -82,7 +82,8 @@
     "confirmation": "Confirmation",
     "apply": "Apply",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "retry": "Retry"
   },
   "header": {
     "generatorTab": "Generator",

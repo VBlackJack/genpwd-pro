@@ -601,7 +601,22 @@ export class VaultUI {
         this.#updateHelloSection(vaults[0].id);
       }
     } catch (error) {
-      container.innerHTML = `<div class="vault-error" role="alert">${t('vault.messages.errorLoadingVaults')}</div>`;
+      container.innerHTML = `
+        <div class="vault-error" role="alert">
+          <p>${t('vault.messages.errorLoadingVaults')}</p>
+          <button type="button" class="vault-btn vault-btn-secondary vault-retry-btn" aria-label="${t('common.retry')}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            ${t('common.retry')}
+          </button>
+        </div>
+      `;
+      // Attach retry button event
+      container.querySelector('.vault-retry-btn')?.addEventListener('click', () => {
+        this.#loadVaultList();
+      });
     }
   }
 

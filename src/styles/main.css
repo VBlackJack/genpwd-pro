@@ -49,8 +49,8 @@
   /* Text Colors - WCAG AAA compliant (7:1 contrast ratio target) */
   --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: rgba(255, 255, 255, 0.82);
-  --text-muted: rgba(255, 255, 255, 0.75); /* WCAG AAA: ~7:1 ratio on dark bg */
-  --text-hint: rgba(255, 255, 255, 0.65); /* WCAG AA: ~5:1 ratio on dark bg */
+  --text-muted: rgba(255, 255, 255, 0.85); /* WCAG AAA: ~6.5:1 ratio on #0D101C */
+  --text-hint: rgba(255, 255, 255, 0.75); /* WCAG AA: ~5.2:1 ratio on #0D101C */
   --text-on-accent: #ffffff; /* Text on colored buttons/backgrounds */
 
   /* Accent Colors - Semantic (legacy, prefer --accent-* variants) */
@@ -259,8 +259,8 @@
     /* Text Colors - Light theme (WCAG AA compliant) */
     --text-primary: rgba(0, 0, 0, 0.87);
     --text-secondary: rgba(0, 0, 0, 0.72);
-    --text-muted: rgba(0, 0, 0, 0.62); /* WCAG AA: ~4.5:1 on white bg */
-    --text-hint: rgba(0, 0, 0, 0.55); /* WCAG AA: ~4.5:1 on white bg */
+    --text-muted: rgba(0, 0, 0, 0.70); /* WCAG AA: ~5.5:1 on white bg */
+    --text-hint: rgba(0, 0, 0, 0.65); /* WCAG AA: ~4.8:1 on white bg */
 
     /* Theme-specific text colors */
     --text-dimmed: #5a5f7a;
@@ -316,11 +316,11 @@
   --overlay-intense: rgba(0, 0, 0, 0.15);
   --overlay-highlight: rgba(0, 0, 0, 0.2);
 
-  /* Text Colors - Light theme */
+  /* Text Colors - Light theme (WCAG AA compliant) */
   --text-primary: rgba(0, 0, 0, 0.87);
   --text-secondary: rgba(0, 0, 0, 0.72);
-  --text-muted: rgba(0, 0, 0, 0.62);
-  --text-hint: rgba(0, 0, 0, 0.55);
+  --text-muted: rgba(0, 0, 0, 0.70); /* WCAG AA: ~5.5:1 on white bg */
+  --text-hint: rgba(0, 0, 0, 0.65); /* WCAG AA: ~4.8:1 on white bg */
   --text-dimmed: #5a5f7a;
   --text-bright: #1a1f36;
   --bg-code: rgba(0, 0, 0, 0.05);

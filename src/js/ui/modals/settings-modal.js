@@ -70,21 +70,21 @@ export class SettingsModal extends Modal {
                     </div>
                   </div>
                   <div class="setting-group">
-                    <label class="setting-label">${t('settingsModal.appearance.systemTheme')}</label>
-                    <div class="setting-desc">${t('settingsModal.appearance.systemThemeDesc')}</div>
+                    <label class="setting-label" id="label-follow-system">${t('settingsModal.appearance.systemTheme')}</label>
+                    <div class="setting-desc" id="desc-follow-system">${t('settingsModal.appearance.systemThemeDesc')}</div>
                     <div class="setting-control">
                       <label class="toggle-switch">
-                        <input type="checkbox" id="settings-follow-system">
+                        <input type="checkbox" id="settings-follow-system" aria-labelledby="label-follow-system" aria-describedby="desc-follow-system">
                         <span class="toggle-slider"></span>
                       </label>
                     </div>
                   </div>
                   <div class="setting-group electron-only" id="settings-accent-group" style="display: none;">
-                    <label class="setting-label">${t('settingsModal.appearance.accentColor')}</label>
-                    <div class="setting-desc">${t('settingsModal.appearance.accentColorDesc')}</div>
+                    <label class="setting-label" id="label-use-accent">${t('settingsModal.appearance.accentColor')}</label>
+                    <div class="setting-desc" id="desc-use-accent">${t('settingsModal.appearance.accentColorDesc')}</div>
                     <div class="setting-control">
                       <label class="toggle-switch">
-                        <input type="checkbox" id="settings-use-accent" checked>
+                        <input type="checkbox" id="settings-use-accent" checked aria-labelledby="label-use-accent" aria-describedby="desc-use-accent">
                         <span class="toggle-slider"></span>
                       </label>
                     </div>
@@ -148,10 +148,10 @@ export class SettingsModal extends Modal {
                 <!-- Security Tab -->
                 <div class="settings-tab" id="tab-security" role="tabpanel" aria-labelledby="settings-tab-security" aria-hidden="true" hidden>
                    <div class="setting-group">
-                    <label class="setting-label">${t('settingsModal.security.autoLock')}</label>
-                    <div class="setting-desc">${t('settingsModal.security.autoLockDesc')}</div>
+                    <label class="setting-label" for="settings-autolock" id="label-autolock">${t('settingsModal.security.autoLock')}</label>
+                    <div class="setting-desc" id="desc-autolock">${t('settingsModal.security.autoLockDesc')}</div>
                     <div class="setting-control">
-                      <select class="vault-select" id="settings-autolock">
+                      <select class="vault-select" id="settings-autolock" aria-describedby="desc-autolock">
                         <option value="1">${t('settingsModal.security.minute1')}</option>
                         <option value="5">${t('settingsModal.security.minutes5')}</option>
                         <option value="15">${t('settingsModal.security.minutes15')}</option>

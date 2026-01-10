@@ -1,10 +1,19 @@
 /**
  * @fileoverview Form Validation Utilities
  * Real-time field validation with accessibility support
+ *
+ * Validation is debounced to prevent showing errors while user is still typing.
+ * Errors show immediately on blur for faster feedback.
  */
 
 import { t } from '../../utils/i18n.js';
 import { isValidUrl, isValidEmail } from './validators.js';
+
+/**
+ * Default debounce delay for validation (ms)
+ * Shorter than typical typing debounce to feel responsive
+ */
+const VALIDATION_DEBOUNCE_MS = 400;
 
 /**
  * Render validation icon SVG
@@ -172,4 +181,109 @@ export function validatePasswordMatch(confirmInput, passwordInput, messageEl) {
   updateMessageElement(messageEl, confirmInput, message, messageType);
 
   return isValid;
+}
+
+/**
+ * Simple debounce utility
+ * @param {Function} fn - Function to debounce
+ * @param {number} delay - Delay in ms
+ * @returns {Function} Debounced function
+ */
+function debounce(fn, delay) {
+  let timeoutId = null;
+  return function (...args) {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      fn.apply(this, args);
+      timeoutId = null;
+    }, delay);
+  };
+}
+
+/**
+ * Create a debounced field validator
+ * Shows errors after a delay while typing, but immediately on blur.
+ *
+ * @param {HTMLInputElement} input - Input element to validate
+ * @param {HTMLElement} messageEl - Message display element
+ * @param {Object} rules - Validation rules (same as validateField)
+ * @param {number} [debounceMs=400] - Debounce delay for input events
+ * @returns {{ attach: Function, detach: Function, validate: Function }}
+ *
+ * @example
+ * const validator = createDebouncedValidator(input, messageEl, { required: true });
+ * validator.attach();
+ * // Later:
+ * validator.detach();
+ */
+export function createDebouncedValidator(input, messageEl, rules = {}, debounceMs = VALIDATION_DEBOUNCE_MS) {
+  if (!input || !messageEl) {
+    return { attach: () => {}, detach: () => {}, validate: () => true };
+  }
+
+  // Debounced validation for 'input' events (while typing)
+  const debouncedValidate = debounce(() => {
+    validateField(input, messageEl, rules);
+  }, debounceMs);
+
+  // Immediate validation on blur
+  const handleBlur = () => {
+    // Clear any pending debounced validation
+    debouncedValidate.cancel?.();
+    validateField(input, messageEl, rules);
+  };
+
+  // Input event handler
+  const handleInput = () => {
+    // Only show success states while typing, defer error display
+    const value = input.value.trim();
+    if (value && !hasError(input, rules)) {
+      // Valid - can show success immediately
+      validateField(input, messageEl, rules);
+    } else {
+      // May be invalid - debounce to avoid showing error mid-typing
+      debouncedValidate();
+    }
+  };
+
+  /**
+   * Quick check if input currently has validation errors
+   * @param {HTMLInputElement} inp
+   * @param {Object} rls
+   * @returns {boolean}
+   */
+  function hasError(inp, rls) {
+    const val = inp.value.trim();
+    if (rls.required && !val) return true;
+    if (rls.minLength && val.length < rls.minLength) return true;
+    if (rls.maxLength && val.length > rls.maxLength) return true;
+    if (rls.pattern && !rls.pattern.test(val)) return true;
+    if (rls.url && val && !isValidUrl(val)) return true;
+    if (rls.email && val && !isValidEmail(val)) return true;
+    return false;
+  }
+
+  return {
+    /**
+     * Attach validation listeners
+     */
+    attach() {
+      input.addEventListener('input', handleInput);
+      input.addEventListener('blur', handleBlur);
+    },
+    /**
+     * Detach validation listeners
+     */
+    detach() {
+      input.removeEventListener('input', handleInput);
+      input.removeEventListener('blur', handleBlur);
+    },
+    /**
+     * Manually trigger validation
+     * @returns {boolean}
+     */
+    validate() {
+      return validateField(input, messageEl, rules);
+    }
+  };
 }
