@@ -149,6 +149,95 @@ const unlockRateLimiter = {
   /** Max attempts before lockout - matches SECURITY_TIMEOUTS.MAX_FAILED_ATTEMPTS */
   MAX_ATTEMPTS: 5,
 
+  /** Path to encrypted lockout state file */
+  get LOCKOUT_FILE() {
+    return path.join(app.getPath('userData'), '.lockout-state');
+  },
+
+  /**
+   * SECURITY: Save lockout state to encrypted file
+   * Persists lockout count to prevent bypass via app restart
+   */
+  async saveState() {
+    try {
+      // Only save lockout counts (not attempts which reset)
+      const state = {};
+      for (const [vaultId, record] of this.attempts.entries()) {
+        if (record.lockoutCount > 0 || record.lockedUntil > Date.now()) {
+          state[vaultId] = {
+            lockoutCount: record.lockoutCount,
+            lockedUntil: record.lockedUntil
+          };
+        }
+      }
+
+      if (Object.keys(state).length === 0) {
+        // No lockouts to persist - delete file if exists
+        if (fs.existsSync(this.LOCKOUT_FILE)) {
+          fs.unlinkSync(this.LOCKOUT_FILE);
+        }
+        return;
+      }
+
+      const json = JSON.stringify(state);
+      if (safeStorage.isEncryptionAvailable()) {
+        const encrypted = safeStorage.encryptString(json);
+        fs.writeFileSync(this.LOCKOUT_FILE, encrypted);
+      } else {
+        // Fallback: Base64 encode (not secure, but better than plaintext)
+        fs.writeFileSync(this.LOCKOUT_FILE, Buffer.from(json).toString('base64'));
+      }
+      devLog('[RateLimiter] Lockout state persisted');
+    } catch (error) {
+      devWarn('[RateLimiter] Failed to save lockout state:', error.message);
+    }
+  },
+
+  /**
+   * SECURITY: Load lockout state from encrypted file on startup
+   */
+  async loadState() {
+    try {
+      if (!fs.existsSync(this.LOCKOUT_FILE)) {
+        return;
+      }
+
+      const data = fs.readFileSync(this.LOCKOUT_FILE);
+      let json;
+
+      if (safeStorage.isEncryptionAvailable()) {
+        json = safeStorage.decryptString(data);
+      } else {
+        // Fallback: Base64 decode
+        json = Buffer.from(data.toString(), 'base64').toString('utf8');
+      }
+
+      const state = JSON.parse(json);
+      const now = Date.now();
+
+      for (const [vaultId, record] of Object.entries(state)) {
+        // Only restore if lockout is still active or within grace period
+        if (record.lockedUntil > now || record.lockoutCount > 0) {
+          this.attempts.set(vaultId, {
+            attempts: 0,
+            firstAttempt: now,
+            lockoutCount: record.lockoutCount || 0,
+            lockedUntil: record.lockedUntil || 0
+          });
+        }
+      }
+      devLog('[RateLimiter] Lockout state loaded');
+    } catch (error) {
+      devWarn('[RateLimiter] Failed to load lockout state:', error.message);
+      // Delete corrupted file
+      try {
+        if (fs.existsSync(this.LOCKOUT_FILE)) {
+          fs.unlinkSync(this.LOCKOUT_FILE);
+        }
+      } catch { /* ignore */ }
+    }
+  },
+
   /** Base lockout durations in ms (exponential backoff) */
   LOCKOUT_DURATIONS: [
     1 * 60 * 1000,      // 1 minute (first lockout)
@@ -223,6 +312,8 @@ const unlockRateLimiter = {
       this.attempts.set(vaultId, record);
       const lockoutSeconds = Math.ceil(lockoutDuration / 1000);
       devLog(`[RateLimiter] Lockout #${record.lockoutCount} applied: ${lockoutSeconds}s`);
+      // SECURITY: Persist lockout state to prevent bypass via app restart
+      this.saveState();
       return { allowed: false, lockoutSeconds };
     }
 
@@ -240,6 +331,8 @@ const unlockRateLimiter = {
    */
   clearAttempts(vaultId) {
     this.attempts.delete(vaultId);
+    // SECURITY: Update persisted state after successful unlock
+    this.saveState();
   }
 };
 
@@ -259,11 +352,17 @@ const globalIPCRateLimiter = {
   /** Time window in ms */
   WINDOW_MS: 1000,
 
-  /** Channels exempt from rate limiting (high-frequency legitimate operations) */
-  EXEMPT_CHANNELS: new Set([
-    'vault:resetActivity',  // Called on every user interaction
-    'vault:getState'        // Called frequently for UI state
+  /**
+   * High-frequency channels with separate higher limits
+   * SECURITY: No channels are fully exempt - all have rate limits to prevent abuse
+   */
+  HIGH_FREQUENCY_CHANNELS: new Set([
+    'vault:resetActivity',  // Called on user interaction - limit 20/sec
+    'vault:getState'        // Called for UI state - limit 20/sec
   ]),
+
+  /** Higher limit for high-frequency channels */
+  HIGH_FREQUENCY_MAX: 20,
 
   /**
    * Check if request is allowed
@@ -272,13 +371,13 @@ const globalIPCRateLimiter = {
    * @returns {boolean} - True if allowed
    */
   checkRequest(senderId, channel) {
-    // Exempt certain high-frequency channels
-    if (this.EXEMPT_CHANNELS.has(channel)) {
-      return true;
-    }
-
     const now = Date.now();
-    let record = this.requests.get(senderId);
+    const isHighFrequency = this.HIGH_FREQUENCY_CHANNELS.has(channel);
+    const maxRequests = isHighFrequency ? this.HIGH_FREQUENCY_MAX : this.MAX_REQUESTS;
+
+    // Use channel-specific key for high-frequency channels
+    const key = isHighFrequency ? `${senderId}:${channel}` : senderId;
+    let record = this.requests.get(key);
 
     // Initialize or reset window
     if (!record || (now - record.windowStart) > this.WINDOW_MS) {
@@ -286,10 +385,10 @@ const globalIPCRateLimiter = {
     }
 
     record.count++;
-    this.requests.set(senderId, record);
+    this.requests.set(key, record);
 
-    if (record.count > this.MAX_REQUESTS) {
-      devWarn(`[IPCRateLimiter] Rate limit exceeded for sender`);
+    if (record.count > maxRequests) {
+      devWarn(`[IPCRateLimiter] Rate limit exceeded for ${isHighFrequency ? 'high-frequency ' : ''}channel: ${channel}`);
       return false;
     }
 
@@ -406,6 +505,10 @@ export function registerVaultIPC(ipcMain) {
   session = new VaultSessionManager();
   fileManager = new VaultFileManager();
   shareService = new ShareService(fileManager);
+
+  // SECURITY: Load persisted lockout state on startup
+  // Prevents bypassing lockout by restarting the app
+  unlockRateLimiter.loadState();
 
   // Forward sync events to renderer
   fileManager.on('sync:status', (data) => {

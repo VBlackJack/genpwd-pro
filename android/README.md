@@ -218,8 +218,26 @@ GenPwd Pro Android est un **gestionnaire de mots de passe complet** avec coffre-
 
 GenPwd Pro utilise une architecture de sécurité en couches multiples basée sur les standards cryptographiques modernes.
 
-### 1. Master Password → Derived Key (Argon2id)
+### 1. Master Password → Derived Key
 
+> ⚠️ **Note:** Android utilise actuellement **Scrypt** comme KDF. L'implémentation Argon2id est planifiée pour assurer la compatibilité avec Desktop.
+
+**Configuration actuelle (Scrypt):**
+```
+Master Password
+    ↓
+Scrypt (N=32768, r=8, p=1)
+    ↓
+Derived Key (256 bits)
+```
+
+**Paramètres Scrypt :**
+- **Cost (N)** : 32768 (2^15) (résistance aux attaques par force brute)
+- **Block Size (r)** : 8 (résistance aux GPU/ASIC)
+- **Parallelization (p)** : 1 (optimisé pour mobile)
+- **Salt** : 32 bytes aléatoires (unique par vault)
+
+**Configuration cible (Argon2id - Desktop compatible):**
 ```
 Master Password
     ↓
@@ -227,12 +245,6 @@ Argon2id (3 iterations, 64MB memory, 4 threads)
     ↓
 Derived Key (256 bits)
 ```
-
-**Paramètres Argon2id :**
-- **Iterations** : 3 (résistance aux attaques par force brute)
-- **Memory** : 65536 KB (64 MB) (résistance aux GPU/ASIC)
-- **Parallelism** : 4 threads (optimisé pour mobile)
-- **Salt** : 32 bytes aléatoires (unique par vault)
 
 ### 2. Vault Key (AES-256-GCM)
 
@@ -783,6 +795,11 @@ android/
 - [ ] Dark mode refinements
 
 ### Phase 5 : Advanced Security ⏳ TODO (4-5 heures)
+- [ ] **🔴 PRIORITY: Implement Argon2id KDF** (cross-platform compatibility)
+  - Current: Scrypt (2^15) - Desktop: Argon2id (64MB)
+  - Blocks: Desktop ↔ Android vault sync without re-encryption
+  - Implementation: Add Lazysodium/libsodium bindings
+  - Migration: Auto-upgrade on next unlock with master password
 - [ ] Card management UI (full CRUD)
 - [ ] Identity management UI (full CRUD)
 - [ ] Secure attachments (encrypt files)

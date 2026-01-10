@@ -163,24 +163,52 @@ Remplacez `assets/icon.ico` par votre icône personnalisée:
 - Résolution recommandée: 256x256
 - Inclure plusieurs tailles: 16, 32, 48, 64, 128, 256
 
-### Signature de Code
+### Signature de Code (Recommandé pour Production)
 
-Pour signer l'exécutable (recommandé pour distribution):
+> **SÉCURITÉ**: La signature de code est fortement recommandée pour la distribution.
+> Sans signature, Windows SmartScreen bloquera l'application et affichera "Éditeur inconnu".
 
-1. Obtenir un certificat de signature de code
-2. Configurer dans `package.json`:
+#### 1. Obtenir un Certificat
+
+**Options de certificats:**
+- **EV Code Signing Certificate** (Recommandé): Réputation SmartScreen immédiate
+  - Fournisseurs: DigiCert, Sectigo, GlobalSign (~$400-600/an)
+- **Standard Code Signing Certificate**: Moins cher mais nécessite temps pour réputation
+  - Fournisseurs: Sectigo, Comodo (~$70-200/an)
+
+#### 2. Configuration (Variables d'environnement - SÉCURISÉ)
+
+```cmd
+REM Ne jamais committer le mot de passe dans le code!
+set CSC_LINK=path/to/certificate.pfx
+set CSC_KEY_PASSWORD=your-password
+npm run electron:build:win
+```
+
+#### 3. Configuration (package.json - Pour CI/CD)
 
 ```json
 {
   "build": {
     "win": {
-      "certificateFile": "path/to/certificate.pfx",
-      "certificatePassword": "your-password",
+      "certificateFile": "${env.CSC_LINK}",
+      "certificatePassword": "${env.CSC_KEY_PASSWORD}",
+      "signingHashAlgorithms": ["sha256"],
       "signAndEditExecutable": true
     }
   }
 }
 ```
+
+#### 4. GitHub Actions (CI/CD)
+
+```yaml
+env:
+  CSC_LINK: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE }}
+  CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PASSWORD }}
+```
+
+**Note:** Le certificat doit être encodé en Base64 pour les secrets GitHub.
 
 ## 🐛 Dépannage
 

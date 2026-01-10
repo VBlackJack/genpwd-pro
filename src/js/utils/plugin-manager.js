@@ -453,19 +453,32 @@ class PluginManager {
       // Security check: URL validation
       const url = new URL(moduleUrl, window.location.origin);
 
-      // Only allow HTTPS or local file protocol
-      if (!['https:', 'http:', 'file:'].includes(url.protocol)) {
+      // SECURITY: Validate protocol
+      // - HTTPS: Always allowed
+      // - HTTP: Only on localhost for development
+      // - file://: Only in Electron packaged app (not browser)
+      const isElectronApp = typeof window.electronAPI !== 'undefined';
+      const isLocalhost = window.location.hostname === 'localhost';
+
+      if (url.protocol === 'file:') {
+        // SECURITY: file:// only allowed in Electron packaged app
+        // Prevents local file traversal attacks in browser context
+        if (!isElectronApp) {
+          safeLog(`Plugin from ${source}: file:// protocol only allowed in Electron app`);
+          showToast(i18n.t('toast.pluginFileProtocolDenied') || 'File protocol not allowed in browser', 'error');
+          return false;
+        }
+      } else if (url.protocol === 'http:') {
+        // HTTP only on localhost for development
+        if (!isLocalhost) {
+          safeLog(`Plugin from ${source}: HTTP only allowed on localhost`);
+          showToast(i18n.t('toast.pluginHttpsRequired'), 'error');
+          return false;
+        }
+      } else if (url.protocol !== 'https:') {
+        // Unknown protocol - reject
         safeLog(`Plugin from ${source}: Invalid protocol ${url.protocol}`);
         showToast(i18n.t('toast.pluginHttpsRequired'), 'error');
-        return false;
-      }
-
-      // For production, only allow HTTPS (except localhost)
-      if (window.location.hostname !== 'localhost' &&
-        url.protocol !== 'https:' &&
-        url.protocol !== 'file:') {
-        safeLog(`Plugin from ${source}: HTTPS required in production`);
-        showToast(i18n.t('toast.pluginModuleHttpsRequired'), 'error');
         return false;
       }
 

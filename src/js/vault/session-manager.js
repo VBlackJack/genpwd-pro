@@ -5,6 +5,37 @@ function cloneKey(key) {
   return new Uint8Array(key);
 }
 
+/**
+ * Simple async lock to prevent race conditions
+ * SECURITY: Ensures getKey() operations are serialized to prevent TOCTOU attacks
+ */
+class AsyncLock {
+  constructor() {
+    this._locked = false;
+    this._queue = [];
+  }
+
+  async acquire() {
+    return new Promise((resolve) => {
+      if (!this._locked) {
+        this._locked = true;
+        resolve();
+      } else {
+        this._queue.push(resolve);
+      }
+    });
+  }
+
+  release() {
+    if (this._queue.length > 0) {
+      const next = this._queue.shift();
+      next();
+    } else {
+      this._locked = false;
+    }
+  }
+}
+
 export class InMemorySessionManager extends SessionManager {
   constructor({ defaultTtlMs = 5 * 60 * 1000 } = {}) {
     super();
@@ -14,6 +45,7 @@ export class InMemorySessionManager extends SessionManager {
     this.isDuressMode = false; // Flag to indicate if we are in duress mode
     this.expiresAt = 0;
     this.biometricGate = null;
+    this._keyLock = new AsyncLock(); // SECURITY: Prevents race conditions in getKey()
   }
 
   /**
@@ -48,22 +80,28 @@ export class InMemorySessionManager extends SessionManager {
   }
 
   async getKey() {
-    const activeKey = this.isDuressMode ? this.duressKey : this.masterKey;
+    // SECURITY: Acquire lock to prevent race conditions between concurrent getKey() calls
+    await this._keyLock.acquire();
+    try {
+      const activeKey = this.isDuressMode ? this.duressKey : this.masterKey;
 
-    if (!activeKey || this.isExpired()) {
-      return null;
-    }
-    if (this.biometricGate) {
-      const allowed = await this.biometricGate();
-      if (!allowed) {
+      if (!activeKey || this.isExpired()) {
         return null;
       }
-      // SECURITY: Re-check expiration after biometric gate to prevent TOCTOU
-      if (this.isExpired()) {
-        return null;
+      if (this.biometricGate) {
+        const allowed = await this.biometricGate();
+        if (!allowed) {
+          return null;
+        }
+        // SECURITY: Re-check expiration after biometric gate to prevent TOCTOU
+        if (this.isExpired()) {
+          return null;
+        }
       }
+      return cloneKey(activeKey);
+    } finally {
+      this._keyLock.release();
     }
-    return cloneKey(activeKey);
   }
 
   async clear() {
