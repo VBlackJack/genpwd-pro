@@ -18,6 +18,7 @@ import { VaultFileManager } from '../storage/vault-file-manager.js';
 import { WindowsHelloAuth } from '../auth/windows-hello.js';
 import { ShareService } from '../services/share-service.js';
 import { t } from '../../utils/i18n-node.js';
+import auditLogger from '../../security/audit-logger.js';
 
 // SECURITY: Only log in development mode to prevent information disclosure
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -439,8 +440,9 @@ function sanitizeErrorMessage(message) {
     { pattern: /SQLITE_BUSY|SQLITE_LOCKED/i, messageKey: 'errors.database.busy' },
     { pattern: /SQLITE_CORRUPT/i, messageKey: 'errors.database.corrupted' },
     { pattern: /SQLITE_/i, messageKey: 'errors.database.error' },
-    { pattern: /crypto|decrypt|cipher/i, messageKey: 'errors.crypto.encryptionError' },
-    { pattern: /password|incorrect/i, messageKey: 'errors.auth.incorrectPassword' },
+    // SECURITY: Use generic auth error for all password/crypto failures
+    // Prevents attackers from distinguishing between wrong password vs other errors
+    { pattern: /crypto|decrypt|cipher|password|incorrect|invalid.*key/i, messageKey: 'errors.auth.authenticationFailed' },
     { pattern: /timeout|timed out/i, messageKey: 'errors.network.timeout' },
     { pattern: /network|ECONNREFUSED|ETIMEDOUT/i, messageKey: 'errors.network.error' },
     { pattern: /EPERM|operation not permitted/i, messageKey: 'errors.file.operationNotPermitted' },
@@ -585,6 +587,7 @@ export function registerVaultIPC(ipcMain) {
     }
 
     const vaultId = await session.create(name, password, customPath || null);
+    auditLogger.vaultCreated(vaultId);
     return { vaultId, success: true };
   }, 'create'));
 
@@ -699,6 +702,7 @@ export function registerVaultIPC(ipcMain) {
     const rateCheck = unlockRateLimiter.checkAndRecord(vaultId);
     if (!rateCheck.allowed) {
       const minutes = Math.ceil(rateCheck.lockoutSeconds / 60);
+      auditLogger.rateLimitTriggered(vaultId, rateCheck.lockoutSeconds);
       throw new Error(t('errors.auth.tooManyAttempts', { minutes }));
     }
 
@@ -706,10 +710,12 @@ export function registerVaultIPC(ipcMain) {
       await session.unlock(vaultId, password);
       // Clear attempts on successful unlock
       unlockRateLimiter.clearAttempts(vaultId);
+      auditLogger.authSuccess(vaultId, 'password');
+      auditLogger.vaultUnlocked(vaultId);
       return { success: true };
     } catch (error) {
       // SECURITY: Don't leak remaining attempts count to potential attackers
-      // Just throw the original error without attempt information
+      auditLogger.authFailure(vaultId, 'invalid_credentials');
       throw error;
     }
   }, 'unlock'));
@@ -718,7 +724,9 @@ export function registerVaultIPC(ipcMain) {
    * Lock vault
    */
   ipcMain.handle('vault:lock', safeHandler(async () => {
+    const currentVaultId = session.getCurrentVaultId?.() || 'unknown';
     await session.lock();
+    auditLogger.vaultLocked(currentVaultId, 'manual');
     return { success: true };
   }, 'lock'));
 
@@ -916,8 +924,10 @@ export function registerVaultIPC(ipcMain) {
     try {
       await fileManager.exportVault(vaultId, password, exportPath);
       unlockRateLimiter.clearAttempts(`${vaultId}:export`);
+      auditLogger.vaultExported(vaultId, 'json');
       return { success: true };
     } catch (error) {
+      auditLogger.authFailure(vaultId, 'export_failed');
       throw error;
     }
   }, 'export'));
@@ -940,8 +950,10 @@ export function registerVaultIPC(ipcMain) {
     try {
       const { vaultId } = await fileManager.importVault(importPath, password);
       unlockRateLimiter.clearAttempts(`import:${importPath}`);
+      auditLogger.vaultImported(vaultId, 'file');
       return { vaultId, success: true };
     } catch (error) {
+      auditLogger.authFailure('import', 'import_failed');
       throw error;
     }
   }, 'import'));
@@ -964,8 +976,10 @@ export function registerVaultIPC(ipcMain) {
     try {
       await fileManager.changePassword(vaultId, currentPassword, newPassword);
       unlockRateLimiter.clearAttempts(vaultId);
+      auditLogger.passwordChanged(vaultId);
       return { success: true };
     } catch (error) {
+      auditLogger.authFailure(vaultId, 'password_change_failed');
       throw error;
     }
   }, 'changePassword'));
@@ -979,9 +993,11 @@ export function registerVaultIPC(ipcMain) {
     // Lock if this vault is open
     if (session.getState().vaultId === vaultId) {
       await session.lock();
+      auditLogger.vaultLocked(vaultId, 'delete');
     }
 
     await fileManager.deleteVault(vaultId);
+    auditLogger.vaultDeleted(vaultId);
     return { success: true };
   }, 'delete'));
 
@@ -1078,8 +1094,10 @@ export function registerVaultIPC(ipcMain) {
 
       // Clear rate limit on success
       unlockRateLimiter.clearAttempts(vaultId);
+      auditLogger.biometricAuth(vaultId, true);
       return { success: true };
     } catch (error) {
+      auditLogger.biometricAuth(vaultId, false);
       throw error;
     }
   }, 'hello:enable'));
@@ -1150,9 +1168,12 @@ export function registerVaultIPC(ipcMain) {
 
       // Clear attempts on successful unlock
       unlockRateLimiter.clearAttempts(vaultId);
+      auditLogger.authSuccess(vaultId, 'biometric');
+      auditLogger.vaultUnlocked(vaultId);
       return { success: true };
     } catch (error) {
       // Re-throw without leaking attempt count
+      auditLogger.authFailure(vaultId, 'biometric_failed');
       throw error;
     }
   }, 'hello:unlock'));
@@ -1230,6 +1251,7 @@ export function registerVaultIPC(ipcMain) {
     // We'll call session.enableDuressMode which will orchestrate with File Manager
     await session.enableDuressMode(masterPassword, duressPassword, populateDecoy);
 
+    auditLogger.duressActivated(state.vaultId);
     return { success: true };
   }, 'duress:setup'));
 

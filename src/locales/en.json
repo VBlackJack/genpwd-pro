@@ -2072,6 +2072,7 @@
       "noCredentials": "No valid credentials. Please sign in with Google.",
       "accessRevoked": "Access was revoked. Please sign in again.",
       "incorrectPassword": "Incorrect password. Please try again.",
+      "authenticationFailed": "Authentication failed. Please check your credentials.",
       "masterPasswordTooShort": "Master password must be at least 8 characters",
       "tooManyAttempts": "Too many attempts. Try again in {minutes} minute(s).",
       "unauthorized": "Unauthorized access",

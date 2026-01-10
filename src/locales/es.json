@@ -259,7 +259,8 @@
       "oauthFailed": "Error al intercambiar código de autorización",
       "permissionDenied": "Permiso denegado. Por favor re-autorice la aplicación.",
       "tooManyAttempts": "Demasiados intentos. Inténtelo de nuevo en {minutes} minuto(s).",
-      "unauthorized": "Acceso no autorizado"
+      "unauthorized": "Acceso no autorizado",
+      "authenticationFailed": "Error de autenticación. Por favor verifique sus credenciales."
     },
     "config": {
       "saveCloudFailed": "Error al guardar configuración de nube",
