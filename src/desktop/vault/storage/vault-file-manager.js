@@ -50,6 +50,9 @@ export class VaultFileManager extends EventEmitter {
   /** @type {Map<string, {path: string, name: string, isExternal: boolean}>} */
   #vaultRegistry = new Map();
 
+  /** @type {Set<string>} Vault IDs that have been explicitly unregistered (blocklist) */
+  #unregisteredVaults = new Set();
+
   /** @type {Promise<void>} */
   #registryReady;
 
@@ -100,12 +103,14 @@ export class VaultFileManager extends EventEmitter {
       const content = await fs.readFile(this.#registryPath, 'utf-8');
       const data = JSON.parse(content);
       this.#vaultRegistry = new Map(Object.entries(data.vaults || {}));
+      this.#unregisteredVaults = new Set(data.unregistered || []);
     } catch (error) {
       // Registry doesn't exist yet (ENOENT) is expected on first run
       if (error.code !== 'ENOENT') {
         console.warn('[VaultFileManager] Registry load error (using empty):', error.message);
       }
       this.#vaultRegistry = new Map();
+      this.#unregisteredVaults = new Set();
     }
   }
 
@@ -115,8 +120,9 @@ export class VaultFileManager extends EventEmitter {
    */
   async #saveRegistry() {
     const data = {
-      version: '1.0',
-      vaults: Object.fromEntries(this.#vaultRegistry)
+      version: '1.1',
+      vaults: Object.fromEntries(this.#vaultRegistry),
+      unregistered: Array.from(this.#unregisteredVaults)
     };
     await fs.writeFile(this.#registryPath, JSON.stringify(data, null, 2), 'utf-8');
   }
@@ -131,6 +137,8 @@ export class VaultFileManager extends EventEmitter {
   async registerVault(vaultId, vaultPath, name, isExternal = false) {
     await this.#ensureRegistryLoaded();
     this.#vaultRegistry.set(vaultId, { path: vaultPath, name, isExternal });
+    // Remove from blocklist if it was previously unregistered
+    this.#unregisteredVaults.delete(vaultId);
     await this.#saveRegistry();
   }
 
@@ -141,6 +149,8 @@ export class VaultFileManager extends EventEmitter {
   async unregisterVault(vaultId) {
     await this.#ensureRegistryLoaded();
     this.#vaultRegistry.delete(vaultId);
+    // Add to blocklist to prevent auto-discovery from re-adding it
+    this.#unregisteredVaults.add(vaultId);
     await this.#saveRegistry();
   }
 
@@ -796,6 +806,9 @@ export class VaultFileManager extends EventEmitter {
 
         // Skip if already in registry
         if (seenIds.has(vaultId)) continue;
+
+        // Skip if vault was explicitly unregistered (blocklist)
+        if (this.#unregisteredVaults.has(vaultId)) continue;
 
         const stats = await fs.stat(filePath);
 
