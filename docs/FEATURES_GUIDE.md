@@ -1,6 +1,75 @@
-# 🚀 Guide des Nouvelles Fonctionnalités - GenPwd Pro v2.5.1+
+# 🚀 Guide des Nouvelles Fonctionnalités - GenPwd Pro v3.0+
 
 Ce guide présente toutes les nouvelles fonctionnalités ajoutées suite à la revue de code complète.
+
+---
+
+## ⚙️ Paramètres du Coffre (v3.0.3+)
+
+### Description
+Configurez le comportement de verrouillage et les options de sécurité de votre coffre-fort.
+
+### Accès aux Paramètres
+
+#### Via l'icône engrenage
+1. Ouvrez le coffre-fort
+2. Cliquez sur le bouton **⚙️ Paramètres du coffre** sous le sélecteur de coffre
+3. Configurez vos préférences
+4. Cliquez sur **Enregistrer**
+
+#### Via le menu rapide (délai uniquement)
+1. Survolez le compteur de verrouillage automatique
+2. Cliquez sur la petite icône engrenage
+3. Sélectionnez le délai souhaité
+
+### Options de Verrouillage Automatique
+
+| Option | Description |
+|--------|-------------|
+| **Délai de verrouillage** | Désactivé, 1, 2, 5, 10, 15 ou 30 minutes |
+| **Verrouiller à la réduction** | Verrouille quand l'application est minimisée |
+| **Verrouiller au changement de fenêtre** | Verrouille quand vous passez à une autre application |
+| **Verrouiller à l'inactivité système** | Verrouille quand le système devient inactif ou se verrouille |
+
+### Options de Sécurité
+
+| Option | Description |
+|--------|-------------|
+| **Effacement du presse-papiers** | Efface automatiquement les mots de passe copiés (Jamais, 15s, 30s, 1min, 2min) |
+| **Exiger mot de passe pour révéler** | Demande le mot de passe maître avant d'afficher les données sensibles |
+
+### Persistance
+Toutes les préférences sont automatiquement sauvegardées dans le navigateur (localStorage) et synchronisées entre le menu rapide et le modal de paramètres.
+
+### API Programmatique
+
+```javascript
+import { getVaultSettingsService } from './vault/services/vault-settings-service.js';
+
+const settings = getVaultSettingsService();
+
+// Lire un paramètre
+const timeout = settings.get('lockTimeout'); // 300 (secondes)
+
+// Modifier un paramètre
+settings.set('lockOnMinimize', true);
+
+// Lire tous les paramètres
+const all = settings.getAll();
+// {
+//   lockTimeout: 300,
+//   lockOnMinimize: false,
+//   lockOnBlur: false,
+//   lockOnSystemIdle: true,
+//   clipboardClearTimeout: 30,
+//   requirePasswordToReveal: false
+// }
+
+// Écouter les changements
+settings.onChange((key, value, allSettings) => {
+  console.log(`${key} changed to ${value}`);
+});
+```
 
 ---
 

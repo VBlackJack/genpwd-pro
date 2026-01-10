@@ -1,6 +1,6 @@
 {
   "name": "genpwd-pro",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "type": "module",
   "description": "Gestionnaire de mots de passe Desktop sécurisé - Coffre-fort chiffré, TOTP, Import KeePass",
   "main": "electron-main.cjs",

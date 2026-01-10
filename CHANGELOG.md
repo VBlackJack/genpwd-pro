@@ -5,6 +5,34 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [3.0.3] - 2026-01-10
+
+### ⚙️ Vault Settings & Customization
+
+#### Paramètres du Coffre
+- **Nouveau modal de paramètres** accessible via l'icône engrenage sous le sélecteur de coffre
+- **Service de paramètres** (`vault-settings-service.js`) pour la persistence des préférences
+- **Synchronisation** entre le menu rapide (délai) et le modal de paramètres complet
+
+#### Options de Verrouillage Automatique
+- **Délai configurable** : Désactivé, 1, 2, 5, 10, 15 ou 30 minutes
+- **Verrouillage à la réduction** : Verrouiller automatiquement quand l'application est minimisée
+- **Verrouillage au changement de fenêtre** : Verrouiller quand on passe à une autre application
+- **Verrouillage à l'inactivité système** : Verrouiller quand le système devient inactif
+
+#### Options de Sécurité
+- **Effacement du presse-papiers** : Jamais, 15s, 30s, 1min, 2min après copie
+- **Exiger mot de passe pour révéler** : Demander le mot de passe maître avant d'afficher les données sensibles
+
+#### Corrections UI
+- **Menu transparence** : Fond solide (#1a1d2e) pour le popover de délai de verrouillage
+- **Compte à rebours** : Mise à jour immédiate lors du changement de délai
+
+#### Traductions
+- Toutes les nouvelles chaînes traduites en français, anglais et espagnol
+
+---
+
 ## [3.0.2] - 2026-01-10
 
 ### 🔒 Security Audit & Infrastructure (BMAD Implementation)
