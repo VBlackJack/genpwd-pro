@@ -75,14 +75,14 @@
         </div>
         <!-- App Tabs (Electron only) -->
         <nav class="header-tabs" id="app-tabs" data-i18n-aria-label="aria.mainNavigation" aria-label="Main navigation" hidden>
-          <button type="button" class="header-tab" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab"><span aria-hidden="true">🔒</span> <span data-i18n="header.generatorTab">Generator</span></button>
-          <button type="button" class="header-tab active" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab" aria-current="page"><span aria-hidden="true">🗄️</span> <span data-i18n="header.vaultTab">Vault</span></button>
+          <button type="button" class="header-tab" data-tab="generator" data-i18n-aria-label="aria.generatorTab" aria-label="Password Generator Tab"><svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"></path></svg> <span data-i18n="header.generatorTab">Generator</span></button>
+          <button type="button" class="header-tab active" data-tab="vault" data-i18n-aria-label="aria.vaultTab" aria-label="Password Vault Tab" aria-current="page"><svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="12" cy="12" r="4"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg> <span data-i18n="header.vaultTab">Vault</span></button>
         </nav>
 
         <div class="header-right">
           <!-- Vault Status Indicator (Electron only) -->
           <button type="button" class="vault-status-indicator" id="vault-status-indicator" hidden data-i18n-aria-label="header.vaultStatus" aria-label="Vault status" data-i18n-title="header.clickToAccessVault" title="Click to access vault">
-            <span class="vault-status-icon" aria-hidden="true">🔒</span>
+            <svg class="vault-status-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <span class="vault-status-text" data-i18n="header.vaultLocked">Locked</span>
           </button>
           <div class="version-badge" data-i18n-aria-label="app.version" data-i18n-aria-label-options='{"version":"3.0.2"}' aria-label="Version 3.0.2">v3.0.2</div>
@@ -318,13 +318,13 @@
             </div>
           </section>
 
-          <!-- Common Parameters -->
-          <section class="section" aria-labelledby="section-params">
-            <button type="button" class="section-header chevron" aria-expanded="true" aria-controls="section-params-content">
+          <!-- Basic Options (always visible) -->
+          <section class="section" aria-labelledby="section-basic">
+            <button type="button" class="section-header chevron" role="button" aria-expanded="true" aria-controls="section-basic-content">
               <span class="chev" aria-hidden="true">▼</span>
-              <strong id="section-params" data-i18n="sections.commonParameters">Common Parameters</strong>
+              <strong id="section-basic" data-i18n="sections.basicOptions">Basic Options</strong>
             </button>
-            <div class="section-content" id="section-params-content">
+            <div class="section-content" id="section-basic-content">
               <div class="row">
                 <label for="qty" data-i18n="generator.count">Count</label>
                 <div class="grow slider-wrap">
@@ -332,13 +332,6 @@
                   <span class="badge" id="qty-val" aria-live="polite">5</span>
                 </div>
               </div>
-              <div class="row">
-                <label data-i18n="generator.maskDisplay">Mask display</label>
-                <label class="checkbox"><input type="checkbox" id="mask-toggle" checked> <span data-i18n="generator.blurPasswords">Blur passwords</span></label>
-              </div>
-
-              <div class="divider"></div>
-
               <div class="row">
                 <label for="digits-count" data-i18n="generator.digits">Digits</label>
                 <div class="grow slider-wrap">
@@ -354,10 +347,27 @@
                 </div>
               </div>
               <div class="row">
+                <label data-i18n="generator.maskDisplay">Mask display</label>
+                <label class="checkbox"><input type="checkbox" id="mask-toggle" checked> <span data-i18n="generator.blurPasswords">Blur passwords</span></label>
+              </div>
+            </div>
+          </section>
+
+          <!-- Advanced Options (collapsed by default for progressive disclosure - BMAD) -->
+          <section class="section collapsed" aria-labelledby="section-advanced">
+            <button type="button" class="section-header chevron" role="button" aria-expanded="false" aria-controls="section-advanced-content">
+              <span class="chev" aria-hidden="true">▼</span>
+              <strong id="section-advanced" data-i18n="sections.advancedOptions">Advanced Options</strong>
+              <span class="badge hint" data-i18n="sections.advancedHint">placement, case</span>
+            </button>
+            <div class="section-content" id="section-advanced-content">
+              <div class="row">
                 <label for="custom-specials" data-i18n="generator.customSpecials">Custom specials</label>
                 <input id="custom-specials" class="input grow" type="text" value="_+-=.@#%" data-i18n-aria-label="aria.customSpecialsDesc" aria-label="Custom special characters to use in passwords" aria-describedby="custom-specials-desc">
                 <span id="custom-specials-desc" class="sr-only" data-i18n="aria.customSpecialsDesc">Enter the special characters you want to include in generated passwords</span>
               </div>
+
+              <div class="divider"></div>
 
               <div class="row">
                 <label for="place-digits" data-i18n="generator.digitsPlacement">Digits placement</label>
@@ -366,7 +376,7 @@
                   <option value="fin" data-i18n="placement.end">End</option>
                   <option value="milieu" data-i18n="placement.middle">Middle</option>
                   <option value="aleatoire" selected data-i18n="placement.random">Random</option>
-                  <option value="positions" data-i18n="placement.visual">🎯 Visual</option>
+                  <option value="positions" data-i18n="placement.visual">Visual</option>
                 </select>
               </div>
               <div class="row">
@@ -376,12 +386,12 @@
                   <option value="fin" data-i18n="placement.end">End</option>
                   <option value="milieu" data-i18n="placement.middle">Middle</option>
                   <option value="aleatoire" selected data-i18n="placement.random">Random</option>
-                  <option value="positions" data-i18n="placement.visual">🎯 Visual</option>
+                  <option value="positions" data-i18n="placement.visual">Visual</option>
                 </select>
               </div>
 
               <div class="row">
-                <label>🎯 <span data-i18n="sections.visualPlacement">Visual placement</span></label>
+                <label><span data-i18n="sections.visualPlacement">Visual placement</span></label>
                 <div id="placement-visual-container" class="placement-visual-container">
                   <div class="placement-bar-wrapper">
                     <div class="placement-bar" id="placement-bar">
@@ -391,9 +401,9 @@
                     </div>
                   </div>
                   <div class="placement-controls">
-                    <button type="button" class="btn-mini" id="btn-placement-reset" data-i18n-aria-label="generator.resetPositions" aria-label="Reset positions">↻ Reset</button>
-                    <button type="button" class="btn-mini" id="btn-placement-auto" data-i18n-aria-label="generator.autoRandomPlacement" aria-label="Auto random placement">🎲 Auto</button>
-                    <button type="button" class="btn-mini" id="btn-placement-toggle" data-i18n-aria-label="generator.toggleVisualMode" aria-label="Toggle visual/percentage mode">🎯 → 📊</button>
+                    <button type="button" class="btn-mini" id="btn-placement-reset" data-i18n-aria-label="generator.resetPositions" aria-label="Reset positions">Reset</button>
+                    <button type="button" class="btn-mini" id="btn-placement-auto" data-i18n-aria-label="generator.autoRandomPlacement" aria-label="Auto random placement">Auto</button>
+                    <button type="button" class="btn-mini" id="btn-placement-toggle" data-i18n-aria-label="generator.toggleVisualMode" aria-label="Toggle visual/percentage mode">Toggle</button>
                     <span class="placement-mode" id="placement-mode" data-i18n="generator.placementModeAuto">Auto</span>
                   </div>
                 </div>
@@ -421,10 +431,10 @@
                       <button type="button" class="btn-mini" id="btn-all-lower" data-i18n-aria-label="aria.setAllLower" aria-label="Set all blocks to lowercase"><span data-i18n="generator.allLower">All lower</span></button>
                     </div>
                     <div class="block-controls-right">
-                      <button type="button" class="btn-mini" id="btn-block-dec" data-i18n-aria-label="aria.decreaseBlockCount" aria-label="Decrease block count">−</button>
+                      <button type="button" class="btn-mini" id="btn-block-dec" data-i18n-aria-label="aria.decreaseBlockCount" aria-label="Decrease block count">-</button>
                       <span class="hint" id="block-size-label"><span data-i18n="generator.blocks">Blocks</span>: 2</span>
                       <button type="button" class="btn-mini" id="btn-block-inc" data-i18n-aria-label="aria.increaseBlockCount" aria-label="Increase block count">+</button>
-                      <button type="button" class="btn-mini random" id="btn-block-random" data-i18n-aria-label="aria.generateRandomBlocks" aria-label="Generate random blocks">🎲 <span data-i18n="generator.randomBlocks">Random</span></button>
+                      <button type="button" class="btn-mini random" id="btn-block-random" data-i18n-aria-label="aria.generateRandomBlocks" aria-label="Generate random blocks"><span data-i18n="generator.randomBlocks">Random</span></button>
                     </div>
                   </div>
                   <div class="block-sync-toggle">
@@ -472,19 +482,42 @@
       <!-- Results Panel -->
       <section class="results" id="results-panel" role="region" data-i18n-aria-label="aria.resultsPanel" aria-label="Results panel">
         <div class="actions" role="toolbar" data-i18n-aria-label="aria.mainActions" aria-label="Main actions">
-          <button type="button" class="btn primary" id="btn-generate" data-i18n-aria-label="actions.generateShortcut" aria-label="Generate new passwords (Shortcut: Alt+G)">🔒 <span data-i18n="actions.generate">Generate</span></button>
-          <button type="button" class="btn" id="btn-copy-all" data-i18n-aria-label="actions.copyAllShortcut" aria-label="Copy all generated passwords (Shortcut: Alt+C)">📋 <span data-i18n="actions.copyAll">Copy All</span></button>
-          <button type="button" class="btn icon-btn" id="btn-clipboard-settings" data-i18n-title="actions.clipboardSettings" title="Clipboard settings" data-i18n-aria-label="actions.clipboardSettings" aria-label="Configure automatic clipboard clearing">⏱️</button>
-          <button type="button" class="btn" id="btn-export" data-i18n-aria-label="actions.exportResults" aria-label="Export results">📤 <span data-i18n="actions.export">Export</span></button>
-          <button type="button" class="btn danger" id="btn-clear" data-i18n-aria-label="actions.clearAll" aria-label="Clear all results">🗑️ <span data-i18n="actions.clear">Clear</span></button>
+          <button type="button" class="btn primary cta" id="btn-generate" data-i18n-aria-label="actions.generateShortcut" aria-label="Generate new passwords (Shortcut: Alt+G)"><svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"></path></svg> <span data-i18n="actions.generate">Generate</span></button>
+          <button type="button" class="btn secondary" id="btn-copy-all" data-i18n-aria-label="actions.copyAllShortcut" aria-label="Copy all generated passwords (Shortcut: Alt+C)"><svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> <span data-i18n="actions.copyAll">Copy All</span></button>
+          <button type="button" class="btn secondary" id="btn-clear" data-i18n-aria-label="actions.clearAll" aria-label="Clear all results"><svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> <span data-i18n="actions.clear">Clear</span></button>
           <span class="spacer" aria-hidden="true"></span>
-          <button type="button" class="btn ghost" id="btn-run-tests" data-i18n-aria-label="actions.runTests" aria-label="Run validation tests (Shortcut: Alt+R)">🧪 <span data-i18n="actions.tests">Tests</span></button>
+          <!-- Overflow menu for secondary actions -->
+          <div class="toolbar-overflow" id="toolbar-overflow">
+            <button type="button" class="btn ghost icon-btn toolbar-overflow-trigger" id="btn-more-actions" aria-haspopup="menu" aria-expanded="false" data-i18n-aria-label="actions.moreActions" aria-label="More actions">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+            </button>
+            <div class="toolbar-overflow-menu" id="toolbar-overflow-menu" role="menu" hidden>
+              <button type="button" class="toolbar-overflow-item" id="btn-clipboard-settings" role="menuitem" data-i18n-aria-label="actions.clipboardSettings" aria-label="Configure automatic clipboard clearing">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span data-i18n="actions.clipboardSettings">Clipboard Settings</span>
+              </button>
+              <button type="button" class="toolbar-overflow-item" id="btn-export" role="menuitem" data-i18n-aria-label="actions.exportResults" aria-label="Export results">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span data-i18n="actions.export">Export</span>
+              </button>
+              <div class="toolbar-overflow-divider" role="separator"></div>
+              <button type="button" class="toolbar-overflow-item" id="btn-run-tests" role="menuitem" data-i18n-aria-label="actions.runTests" aria-label="Run validation tests (Shortcut: Alt+R)">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 3h6v5l4 9a2 2 0 0 1-1.8 3H6.8a2 2 0 0 1-1.8-3l4-9V3z"></path><path d="M9 3h6"></path><path d="M6 14h12"></path></svg>
+                <span data-i18n="actions.tests">Tests</span>
+              </button>
+              <button type="button" class="toolbar-overflow-item" id="btn-toggle-debug" role="menuitem" data-i18n-aria-label="actions.toggleDebug" aria-label="Toggle debug panel">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 2l1.88 1.88"></path><path d="M14.12 3.88L16 2"></path><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"></path><path d="M12 20v-9"></path></svg>
+                <span data-i18n="actions.debug">Debug</span>
+              </button>
+            </div>
+          </div>
           <span id="test-status" role="status" aria-live="polite"></span>
-          <button type="button" class="btn ghost" id="btn-toggle-debug" data-i18n-aria-label="actions.toggleDebug" aria-label="Toggle debug panel">🔬 <span data-i18n="actions.debug">Debug</span></button>
         </div>
         <div class="results-list" id="results-list" role="region" data-i18n-aria-label="aria.generatedPasswordsList" aria-label="Generated passwords list" aria-live="polite">
           <div class="empty-state">
-            <div class="empty-icon" aria-hidden="true">🔐</div>
+            <div class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"></path></svg>
+            </div>
             <p data-i18n="results.emptyState">Click "Generate" to create your passwords</p>
           </div>
         </div>

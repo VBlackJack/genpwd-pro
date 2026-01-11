@@ -1,0 +1,115 @@
+/* Status Bar Component - BMAD Anxiety Reduction */
+
+.vault-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.2));
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  font-size: 0.75rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  min-height: 32px;
+}
+
+.status-bar-left,
+.status-bar-center,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-bar-left {
+  flex: 1;
+}
+
+.status-bar-center {
+  flex: 0 0 auto;
+}
+
+.status-bar-right {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.status-bar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-bar-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+}
+
+.status-bar-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.status-bar-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sync status states */
+.status-bar-sync.syncing .status-bar-icon svg {
+  animation: save-indicator-spin 1s linear infinite;
+}
+
+.status-bar-sync.synced {
+  color: var(--color-success, #10b981);
+}
+
+.status-bar-sync.offline {
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.status-bar-sync.error {
+  color: var(--color-danger, #ef4444);
+}
+
+/* Save Indicator */
+.save-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.save-indicator[hidden] {
+  display: none;
+}
+
+.save-indicator-icon {
+  display: flex;
+  align-items: center;
+}
+
+.save-indicator-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.save-indicator--saving {
+  color: var(--text-secondary);
+}
+
+.save-indicator--saving .save-indicator-icon svg {
+  animation: save-indicator-spin 1s linear infinite;
+}
+
+.save-indicator--saved {
+  color: var(--color-success, #10b981);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.save-indicator--error {
+  color: var(--color-danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}

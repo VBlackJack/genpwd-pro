@@ -4,18 +4,19 @@
  */
 
 import { escapeHtml } from '../utils/formatter.js';
+import { getIcon } from '../views/icons.js';
 
 /**
  * Health stat card definitions
  * Note: labelKey values are i18n keys resolved at render time via t()
  */
 export const HEALTH_CARDS = [
-  { id: 'total', icon: '📊', labelKey: 'vault.health.totalEntries', cssClass: 'vault-health-total' },
-  { id: 'strong', icon: '✅', labelKey: 'vault.health.strongPasswords', cssClass: 'vault-health-strong', filter: 'strong' },
-  { id: 'weak', icon: '⚠️', labelKey: 'vault.health.weakPasswords', cssClass: 'vault-health-weak', filter: 'weak' },
-  { id: 'reused', icon: '🔄', labelKey: 'vault.health.reusedPasswords', cssClass: 'vault-health-reused', filter: 'reused' },
-  { id: 'old', icon: '📅', labelKey: 'vault.health.oldPasswords', cssClass: 'vault-health-old', filter: 'old' },
-  { id: '2fa', icon: '🛡️', labelKey: 'vault.health.with2FA', cssClass: 'vault-health-2fa' }
+  { id: 'total', iconName: 'dashboard', labelKey: 'vault.health.totalEntries', cssClass: 'vault-health-total' },
+  { id: 'strong', iconName: 'success', labelKey: 'vault.health.strongPasswords', cssClass: 'vault-health-strong', filter: 'strong' },
+  { id: 'weak', iconName: 'alert', labelKey: 'vault.health.weakPasswords', cssClass: 'vault-health-weak', filter: 'weak' },
+  { id: 'reused', iconName: 'sync', labelKey: 'vault.health.reusedPasswords', cssClass: 'vault-health-reused', filter: 'reused' },
+  { id: 'old', iconName: 'calendar', labelKey: 'vault.health.oldPasswords', cssClass: 'vault-health-old', filter: 'old' },
+  { id: '2fa', iconName: 'shield', labelKey: 'vault.health.with2FA', cssClass: 'vault-health-2fa' }
 ];
 
 /**
@@ -71,7 +72,7 @@ export function renderScoreGauge(options = {}) {
 /**
  * Render health stat card
  * @param {Object} options
- * @param {string} options.icon - Card icon
+ * @param {string} options.iconName - Icon name for getIcon()
  * @param {number} options.value - Stat value
  * @param {string} options.label - Card label
  * @param {string} options.cssClass - Additional CSS class
@@ -79,13 +80,14 @@ export function renderScoreGauge(options = {}) {
  * @returns {string} HTML string
  */
 export function renderHealthCard(options = {}) {
-  const { icon, value = 0, label, cssClass = '', filter } = options;
+  const { iconName, value = 0, label, cssClass = '', filter } = options;
   const clickable = filter ? 'clickable' : '';
   const dataFilter = filter ? `data-filter="${filter}"` : '';
+  const iconSvg = getIcon(iconName, { size: 20, className: 'health-card-icon' });
 
   return `
     <div class="vault-health-card ${cssClass} ${clickable}" ${dataFilter}>
-      <div class="vault-health-card-icon">${icon}</div>
+      <div class="vault-health-card-icon">${iconSvg}</div>
       <div class="vault-health-card-value">${value}</div>
       <div class="vault-health-card-label">${label}</div>
     </div>
@@ -104,12 +106,12 @@ export function renderHealthGrid(options = {}) {
   const stats = report.stats || {};
 
   const cards = [
-    { icon: '📊', value: report.totalEntries || 0, label: t('vault.health.totalEntries'), cssClass: 'vault-health-total' },
-    { icon: '✅', value: stats.strongPasswords || 0, label: t('vault.health.strongPasswords'), cssClass: 'vault-health-strong', filter: 'strong' },
-    { icon: '⚠️', value: stats.weakPasswords || 0, label: t('vault.health.weakPasswords'), cssClass: 'vault-health-weak', filter: 'weak' },
-    { icon: '🔄', value: stats.reusedPasswords || 0, label: t('vault.health.reusedPasswords'), cssClass: 'vault-health-reused', filter: 'reused' },
-    { icon: '📅', value: stats.oldPasswords || 0, label: t('vault.health.oldPasswords'), cssClass: 'vault-health-old', filter: 'old' },
-    { icon: '🛡️', value: stats.with2FA || 0, label: t('vault.health.with2FA'), cssClass: 'vault-health-2fa' }
+    { iconName: 'dashboard', value: report.totalEntries || 0, label: t('vault.health.totalEntries'), cssClass: 'vault-health-total' },
+    { iconName: 'success', value: stats.strongPasswords || 0, label: t('vault.health.strongPasswords'), cssClass: 'vault-health-strong', filter: 'strong' },
+    { iconName: 'alert', value: stats.weakPasswords || 0, label: t('vault.health.weakPasswords'), cssClass: 'vault-health-weak', filter: 'weak' },
+    { iconName: 'sync', value: stats.reusedPasswords || 0, label: t('vault.health.reusedPasswords'), cssClass: 'vault-health-reused', filter: 'reused' },
+    { iconName: 'calendar', value: stats.oldPasswords || 0, label: t('vault.health.oldPasswords'), cssClass: 'vault-health-old', filter: 'old' },
+    { iconName: 'shield', value: stats.with2FA || 0, label: t('vault.health.with2FA'), cssClass: 'vault-health-2fa' }
   ];
 
   return `
@@ -147,9 +149,10 @@ export function renderRecommendation(rec) {
  */
 export function renderRecommendations(recommendations = [], t = (k) => k) {
   if (recommendations.length === 0) {
+    const sparklesIcon = getIcon('sparkles', { size: 24, className: 'health-success-icon' });
     return `
       <div class="vault-health-success">
-        <span class="vault-health-success-icon">🎉</span>
+        <span class="vault-health-success-icon">${sparklesIcon}</span>
         <span>${t('vault.health.excellentSecurity')}</span>
       </div>
     `;
@@ -209,9 +212,10 @@ export function renderBreachSection(options = {}) {
  * @returns {string} HTML string
  */
 export function renderBreachResultsSafe(checkedCount, t = (k) => k) {
+  const successIcon = getIcon('success', { size: 20, className: 'breach-safe-icon' });
   return `
     <div class="vault-breach-safe">
-      <span class="vault-breach-icon" aria-hidden="true">✅</span>
+      <span class="vault-breach-icon" aria-hidden="true">${successIcon}</span>
       <span>${t('vault.health.noCompromised', { count: checkedCount })}</span>
     </div>
   `;
@@ -226,9 +230,10 @@ export function renderBreachResultsSafe(checkedCount, t = (k) => k) {
  * @returns {string} HTML string
  */
 export function renderBreachResultsCompromised(compromised, totalChecked, formatCount = (n) => n.toString(), t = (k) => k) {
+  const errorIcon = getIcon('error', { size: 20, className: 'breach-warning-icon' });
   return `
     <div class="vault-breach-warning">
-      <span class="vault-breach-icon" aria-hidden="true">🚨</span>
+      <span class="vault-breach-icon" aria-hidden="true">${errorIcon}</span>
       <span>${t('vault.health.compromisedFound', { count: compromised.length, total: totalChecked })}</span>
     </div>
     <ul class="vault-breach-list">

@@ -927,6 +927,9 @@
   "sections": {
     "casePattern": "Patrón de mayúsculas",
     "commonParameters": "Parámetros comunes",
+    "basicOptions": "Opciones básicas",
+    "advancedOptions": "Opciones avanzadas",
+    "advancedHint": "ubicación, mayúsculas",
     "generationMode": "Modo de generación",
     "helpNotes": "Ayuda y notas",
     "modesAvailable": "{count} modos",
@@ -1788,7 +1791,47 @@
       "breachTimes": "{count} veces",
       "breachTimesPlus": "{count}+ veces",
       "breachTimesK": "{count}K+ veces",
-      "breachTimesM": "{count}M+ veces"
+      "breachTimesM": "{count}M+ veces",
+      "widgetLabel": "Puntuación de seguridad",
+      "widgetTitle": "Clic para abrir el panel de seguridad",
+      "widgetScore": "Puntuación de seguridad: {score}/100",
+      "scoreExcellent": "Excelente",
+      "scoreGood": "Bueno",
+      "scorePoor": "Necesita mejoras"
+    },
+    "status": {
+      "barLabel": "Estado de la bóveda",
+      "saving": "Guardando...",
+      "saved": "Cambios guardados",
+      "error": "Error al guardar",
+      "entries": "{count} entradas"
+    },
+    "sync": {
+      "idle": "Listo para sincronizar",
+      "syncing": "Sincronizando...",
+      "synced": "Sincronizado",
+      "offline": "Sin conexión",
+      "error": "Error de sincronización"
+    },
+    "delete": {
+      "confirmTitle": "Eliminar entrada",
+      "confirm": "¿Eliminar \"{title}\"?",
+      "warning": "Esta acción no se puede deshacer."
+    },
+    "quickActions": {
+      "title": "Comenzar",
+      "addFirst": "Añadir",
+      "addFirstHint": "Crea tu primera contraseña",
+      "import": "Importar",
+      "importHint": "Desde CSV u otro gestor",
+      "generate": "Generar",
+      "generateHint": "Crea una contraseña segura"
+    },
+    "celebration": {
+      "firstEntry": "¡Tu bóveda está lista!",
+      "scoreUp": "¡Seguridad mejorada!",
+      "allStrong": "¡Todas las contraseñas son fuertes!",
+      "milestone": "¡Felicidades por tus {count} entradas!"
     },
     "hints": {
       "autoRefresh": "actualización automática",
@@ -2325,5 +2368,8 @@
     "unexpectedClose": "La aplicación se cerró inesperadamente",
     "recoverSession": "¿Restaurar sesión?",
     "dismiss": "Ignorar"
+  },
+  "actions": {
+    "moreActions": "Más acciones"
   }
 }

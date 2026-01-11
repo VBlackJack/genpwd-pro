@@ -927,6 +927,9 @@
   "sections": {
     "casePattern": "Pattern de casse",
     "commonParameters": "Paramètres communs",
+    "basicOptions": "Options de base",
+    "advancedOptions": "Options avancées",
+    "advancedHint": "placement, casse",
     "generationMode": "Mode de génération",
     "helpNotes": "Aide & Notes",
     "modesAvailable": "{count} modes",
@@ -1737,7 +1740,47 @@
       "breachTimes": "{count} fois",
       "breachTimesPlus": "{count}+ fois",
       "breachTimesK": "{count}K+ fois",
-      "breachTimesM": "{count}M+ fois"
+      "breachTimesM": "{count}M+ fois",
+      "widgetLabel": "Score de sécurité",
+      "widgetTitle": "Cliquez pour ouvrir le tableau de bord",
+      "widgetScore": "Score de sécurité : {score}/100",
+      "scoreExcellent": "Excellent",
+      "scoreGood": "Bon",
+      "scorePoor": "À améliorer"
+    },
+    "status": {
+      "barLabel": "Statut du coffre",
+      "saving": "Enregistrement...",
+      "saved": "Modifications sauvegardées",
+      "error": "Échec de la sauvegarde",
+      "entries": "{count} entrées"
+    },
+    "sync": {
+      "idle": "Prêt à synchroniser",
+      "syncing": "Synchronisation...",
+      "synced": "Synchronisé",
+      "offline": "Hors ligne",
+      "error": "Erreur de synchronisation"
+    },
+    "delete": {
+      "confirmTitle": "Supprimer l'entrée",
+      "confirm": "Supprimer « {title} » ?",
+      "warning": "Cette action est irréversible."
+    },
+    "quickActions": {
+      "title": "Commencer",
+      "addFirst": "Ajouter",
+      "addFirstHint": "Créez votre premier mot de passe",
+      "import": "Importer",
+      "importHint": "Depuis CSV ou autre gestionnaire",
+      "generate": "Générer",
+      "generateHint": "Créez un mot de passe sécurisé"
+    },
+    "celebration": {
+      "firstEntry": "Votre coffre est prêt !",
+      "scoreUp": "Sécurité améliorée !",
+      "allStrong": "Tous vos mots de passe sont forts !",
+      "milestone": "Félicitations pour vos {count} entrées !"
     },
     "hints": {
       "autoRefresh": "actualisation auto",
@@ -2320,5 +2363,8 @@
     "unexpectedClose": "L'application a été fermée de manière inattendue",
     "recoverSession": "Restaurer la session ?",
     "dismiss": "Ignorer"
+  },
+  "actions": {
+    "moreActions": "Plus d'actions"
   }
 }

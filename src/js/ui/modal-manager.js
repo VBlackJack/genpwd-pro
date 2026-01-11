@@ -404,3 +404,101 @@ export function showPrompt(message, options = {}) {
     if (!modal) resolve(null);
   });
 }
+
+/**
+ * Enhanced delete confirmation dialog with countdown timer (BMAD Anxiety reduction)
+ * Shows entry name and requires waiting before deletion can be confirmed
+ * @param {string} entryTitle - Title of the entry being deleted
+ * @param {Object} [options] - Optional configuration
+ * @param {number} [options.countdown] - Countdown seconds before button activates (default: 3)
+ * @param {string} [options.warningMessage] - Custom warning message
+ * @returns {Promise<boolean>} Resolves true if confirmed, false if cancelled
+ */
+export function showDeleteConfirm(entryTitle, options = {}) {
+  return new Promise((resolve) => {
+    const countdown = options.countdown ?? 3;
+    const warningMessage = options.warningMessage || t('vault.delete.warning');
+    const modalId = `delete-confirm-${Date.now()}`;
+
+    let remainingSeconds = countdown;
+    let countdownInterval = null;
+
+    const getConfirmLabel = (seconds) => {
+      if (seconds > 0) {
+        return `${t('common.delete')} (${seconds})`;
+      }
+      return t('common.delete');
+    };
+
+    const modal = createModal({
+      id: modalId,
+      title: t('vault.delete.confirmTitle'),
+      content: `
+        <div class="delete-confirm-content">
+          <div class="delete-confirm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <p class="delete-confirm-title">
+            ${t('vault.delete.confirm', { title: escapeHtml(entryTitle) })}
+          </p>
+          <p class="delete-confirm-warning">${escapeHtml(warningMessage)}</p>
+        </div>
+      `,
+      size: 'small',
+      actions: [
+        {
+          id: 'cancel',
+          label: t('common.cancel'),
+          className: 'btn-secondary',
+          onClick: (e, modalEl) => {
+            if (countdownInterval) clearInterval(countdownInterval);
+            closeModalInstance(modalEl, null);
+            resolve(false);
+          }
+        },
+        {
+          id: 'confirm',
+          label: getConfirmLabel(remainingSeconds),
+          className: 'btn-danger delete-confirm-btn',
+          onClick: (e, modalEl) => {
+            // Only allow if countdown finished
+            if (remainingSeconds > 0) return;
+            if (countdownInterval) clearInterval(countdownInterval);
+            closeModalInstance(modalEl, null);
+            resolve(true);
+          }
+        }
+      ],
+      onOpen: (modalEl) => {
+        const confirmBtn = modalEl.querySelector('[data-action="confirm"]');
+        if (confirmBtn && countdown > 0) {
+          confirmBtn.disabled = true;
+          confirmBtn.setAttribute('aria-disabled', 'true');
+
+          countdownInterval = setInterval(() => {
+            remainingSeconds--;
+            confirmBtn.textContent = getConfirmLabel(remainingSeconds);
+
+            if (remainingSeconds <= 0) {
+              clearInterval(countdownInterval);
+              countdownInterval = null;
+              confirmBtn.disabled = false;
+              confirmBtn.removeAttribute('aria-disabled');
+              confirmBtn.classList.add('delete-confirm-btn--active');
+            }
+          }, 1000);
+        }
+      },
+      onClose: () => {
+        if (countdownInterval) clearInterval(countdownInterval);
+        resolve(false);
+      }
+    });
+
+    if (!modal) resolve(false);
+  });
+}

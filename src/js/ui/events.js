@@ -112,12 +112,113 @@ function bindMainActions() {
   // Clipboard settings
   addEventListener(getElement('#btn-clipboard-settings'), 'click', showClipboardSettings);
 
+  // Toolbar overflow menu
+  bindToolbarOverflowMenu();
+
   // Debug actions (btn-run-tests handled by test-integration.js)
   addEventListener(getElement('#btn-toggle-debug'), 'click', () => {
     const isVisible = toggleDebugPanel();
     setUIState('debugVisible', isVisible);
   });
   addEventListener(getElement('#btn-clear-logs'), 'click', clearLogs);
+}
+
+/**
+ * Binds the toolbar overflow menu toggle behavior
+ * Handles click, keyboard navigation, and click-outside
+ */
+function bindToolbarOverflowMenu() {
+  const trigger = getElement('#btn-more-actions');
+  const menu = getElement('#toolbar-overflow-menu');
+
+  if (!trigger || !menu) return;
+
+  const signal = eventsController?.signal;
+
+  const openMenu = () => {
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    // Focus first menu item
+    const firstItem = menu.querySelector('.toolbar-overflow-item');
+    if (firstItem) {
+      requestAnimationFrame(() => firstItem.focus());
+    }
+  };
+
+  const closeMenu = () => {
+    menu.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+  };
+
+  const toggleMenu = () => {
+    const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+    if (isExpanded) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  };
+
+  // Toggle menu on trigger click
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  }, { signal });
+
+  // Keyboard navigation
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      openMenu();
+    }
+  }, { signal });
+
+  // Menu item keyboard navigation
+  menu.addEventListener('keydown', (e) => {
+    const items = Array.from(menu.querySelectorAll('.toolbar-overflow-item'));
+    const currentIndex = items.indexOf(document.activeElement);
+
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        closeMenu();
+        trigger.focus();
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (currentIndex < items.length - 1) {
+          items[currentIndex + 1]?.focus();
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (currentIndex > 0) {
+          items[currentIndex - 1]?.focus();
+        } else {
+          closeMenu();
+          trigger.focus();
+        }
+        break;
+      case 'Tab':
+        closeMenu();
+        break;
+    }
+  }, { signal });
+
+  // Close on click outside
+  document.addEventListener('click', (e) => {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== trigger) {
+      closeMenu();
+    }
+  }, { signal });
+
+  // Close on Escape anywhere
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !menu.hidden) {
+      closeMenu();
+      trigger.focus();
+    }
+  }, { signal });
 }
 
 function bindModeAndSettings() {

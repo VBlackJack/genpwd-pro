@@ -166,6 +166,9 @@
   "sections": {
     "generationMode": "Generation Mode",
     "commonParameters": "Common Parameters",
+    "basicOptions": "Basic Options",
+    "advancedOptions": "Advanced Options",
+    "advancedHint": "placement, case",
     "visualPlacement": "Visual Placement",
     "casePattern": "Case Pattern",
     "helpNotes": "Help & Notes",
@@ -1042,7 +1045,57 @@
       "breachTimes": "{count} times",
       "breachTimesPlus": "{count}+ times",
       "breachTimesK": "{count}K+ times",
-      "breachTimesM": "{count}M+ times"
+      "breachTimesM": "{count}M+ times",
+      "widgetLabel": "Security score",
+      "widgetTitle": "Click to open security dashboard",
+      "widgetScore": "Security score: {score}/100",
+      "scoreExcellent": "Excellent",
+      "scoreGood": "Good",
+      "scorePoor": "Needs improvement"
+    },
+    "status": {
+      "barLabel": "Vault status",
+      "saving": "Saving...",
+      "saved": "All changes saved",
+      "error": "Save failed",
+      "entries": "{count} entries"
+    },
+    "sync": {
+      "idle": "Ready to sync",
+      "syncing": "Syncing...",
+      "synced": "Synced",
+      "offline": "Offline",
+      "error": "Sync error"
+    },
+    "delete": {
+      "confirmTitle": "Delete Entry",
+      "confirm": "Delete \"{title}\"?",
+      "warning": "This action cannot be undone."
+    },
+    "quickActions": {
+      "title": "Get Started",
+      "addFirst": "Add Entry",
+      "addFirstHint": "Create your first password",
+      "import": "Import",
+      "importHint": "From CSV or other manager",
+      "generate": "Generate",
+      "generateHint": "Create a secure password"
+    },
+    "celebration": {
+      "firstEntry": "Your vault is ready!",
+      "scoreUp": "Security improved!",
+      "allStrong": "All passwords are strong!",
+      "milestone": "{count} entries milestone!"
+    },
+    "import": {
+      "previewTitle": "Import Preview",
+      "entriesFound": "entries found",
+      "confirmImport": "Import {count} entries",
+      "columnMapping": "Column mapping",
+      "notDetected": "Not detected",
+      "untitled": "Untitled entry",
+      "andMore": "...and {count} more",
+      "warning": "Existing entries with the same title will not be overwritten"
     },
     "expiry": {
       "expired": "Expired {days} day(s) ago",
@@ -2332,5 +2385,8 @@
     "unexpectedClose": "The application was closed unexpectedly",
     "recoverSession": "Recover session?",
     "dismiss": "Dismiss"
+  },
+  "actions": {
+    "moreActions": "More actions"
   }
 }

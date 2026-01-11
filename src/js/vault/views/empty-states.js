@@ -56,23 +56,48 @@ export function renderEmptyState({ searchQuery = '', t = (k) => k } = {}) {
       </div>
       <h3 class="vault-empty-title">${t('vault.welcome.title')}</h3>
       <p class="vault-empty-text">${t('vault.welcome.subtitle')}</p>
-      <div class="vault-empty-actions vault-welcome-layout">
-        <button class="vault-btn vault-btn-primary vault-full-width" id="btn-welcome-create">
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          ${t('vault.welcome.createFirst')}
-        </button>
-        <button class="vault-btn vault-btn-outline vault-full-width" id="btn-welcome-import">
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          ${t('vault.welcome.import')}
-        </button>
+
+      <!-- Quick Actions Grid (BMAD Enhancement) -->
+      <div class="vault-quick-actions" role="group" aria-label="${t('vault.quickActions.title')}">
+        <h4 class="vault-quick-actions-title">${t('vault.quickActions.title')}</h4>
+        <div class="vault-quick-actions-grid">
+          <button class="vault-quick-action" id="btn-welcome-create">
+            <span class="vault-quick-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+            </span>
+            <span class="vault-quick-action-label">${t('vault.quickActions.addFirst')}</span>
+            <span class="vault-quick-action-hint">${t('vault.quickActions.addFirstHint')}</span>
+          </button>
+
+          <button class="vault-quick-action" id="btn-welcome-import">
+            <span class="vault-quick-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </span>
+            <span class="vault-quick-action-label">${t('vault.quickActions.import')}</span>
+            <span class="vault-quick-action-hint">${t('vault.quickActions.importHint')}</span>
+          </button>
+
+          <button class="vault-quick-action" id="btn-welcome-generate">
+            <span class="vault-quick-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"></path>
+              </svg>
+            </span>
+            <span class="vault-quick-action-label">${t('vault.quickActions.generate')}</span>
+            <span class="vault-quick-action-hint">${t('vault.quickActions.generateHint')}</span>
+          </button>
+        </div>
       </div>
+
       <div class="vault-empty-tips">
         <span class="vault-empty-tip">${t('vault.tips.quickAdd')}</span>
         <span class="vault-empty-tip">${t('vault.tips.autoFill')}</span>

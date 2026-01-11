@@ -28,6 +28,10 @@
 @import 'components/_entries.css';
 @import 'components/_detail-panel.css';
 
+/* BMAD Enhancement Components */
+@import 'components/_status-bar.css';
+@import 'components/_health-widget.css';
+
 /* ==================== ACCESSIBILITY ==================== */
 /* Skip to main content link */
 .vault-skip-link {

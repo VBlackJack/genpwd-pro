@@ -82,6 +82,23 @@ export const ICON_ACTIVITY = `<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"
 export const ICON_SORT_ASC = `<line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline>`;
 export const ICON_SORT_DESC = `<line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline>`;
 
+// BMAD Enhancement Icons
+export const ICON_GENERATE = `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"></path>`;
+export const ICON_CLIPBOARD = `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>`;
+export const ICON_TIMER = `<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline><path d="M12 2v2"></path><path d="M12 20v2"></path>`;
+export const ICON_TRASH = `<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>`;
+export const ICON_FLASK = `<path d="M9 3h6v5l4 9a2 2 0 0 1-1.8 3H6.8a2 2 0 0 1-1.8-3l4-9V3z"></path><path d="M9 3h6"></path><path d="M6 14h12"></path>`;
+export const ICON_BUG = `<path d="M8 2l1.88 1.88"></path><path d="M14.12 3.88L16 2"></path><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"></path><path d="M12 20v-9"></path><path d="M6.53 9C4.6 8.8 3 7.1 3 5"></path><path d="M6 13H2"></path><path d="M3 21c0-2.1 1.7-3.9 3.8-4"></path><path d="M17.47 9c1.93-.2 3.53-1.9 3.53-4"></path><path d="M22 13h-4"></path><path d="M21 21c0-2.1-1.7-3.9-3.8-4"></path>`;
+export const ICON_VAULT = `<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="12" cy="12" r="4"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path>`;
+export const ICON_MORE = `<circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>`;
+export const ICON_MORE_VERTICAL = `<circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle>`;
+export const ICON_SAVE = `<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>`;
+export const ICON_SYNC = `<path d="M21.5 2v6h-6"></path><path d="M2.5 22v-6h6"></path><path d="M22 11.5A10 10 0 0 0 3.2 7.2"></path><path d="M2 12.5a10 10 0 0 0 18.8 4.2"></path>`;
+export const ICON_DASHBOARD = `<rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>`;
+export const ICON_SPARKLES = `<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"></path><path d="M5 19l1 3 1-3 3-1-3-1-1-3-1 3-3 1 3 1z"></path><path d="M19 10l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5.5-1.5z"></path>`;
+export const ICON_CALENDAR = `<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>`;
+export const ICON_LIGHTBULB = `<path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z"></path>`;
+
 /**
  * Get icon SVG by name
  * @param {string} name - Icon name
@@ -135,7 +152,23 @@ export function getIcon(name, options = {}) {
     heart: ICON_HEART,
     activity: ICON_ACTIVITY,
     sortAsc: ICON_SORT_ASC,
-    sortDesc: ICON_SORT_DESC
+    sortDesc: ICON_SORT_DESC,
+    // BMAD Enhancement Icons
+    generate: ICON_GENERATE,
+    clipboard: ICON_CLIPBOARD,
+    timer: ICON_TIMER,
+    trash: ICON_TRASH,
+    flask: ICON_FLASK,
+    bug: ICON_BUG,
+    vault: ICON_VAULT,
+    more: ICON_MORE,
+    moreVertical: ICON_MORE_VERTICAL,
+    save: ICON_SAVE,
+    sync: ICON_SYNC,
+    dashboard: ICON_DASHBOARD,
+    sparkles: ICON_SPARKLES,
+    calendar: ICON_CALENDAR,
+    lightbulb: ICON_LIGHTBULB
   };
 
   const path = icons[name];

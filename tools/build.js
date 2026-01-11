@@ -46,7 +46,20 @@ class GenPwdBuilder {
       'styles/main.css',
       'styles/components.css',
       'styles/layout.css',
-      'styles/modal.css'
+      'styles/modal.css',
+      'styles/test-modal.css',
+      'styles/features.css',
+      'styles/dynamic-modals.css',
+      'styles/utilities.css',
+      'styles/save-modal.css',
+      // Vault CSS modules (order matters)
+      'styles/vault/_legacy.css',
+      'styles/vault/layout/_sidebar.css',
+      'styles/vault/components/_entries.css',
+      'styles/vault/components/_detail-panel.css',
+      'styles/vault/components/_status-bar.css',
+      'styles/vault/components/_health-widget.css',
+      'styles/vault/_animations.css'
     ];
   }
 

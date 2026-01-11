@@ -35,11 +35,20 @@ header::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: 
+  background:
     radial-gradient(600px circle at 0% 0%, rgba(0, 212, 255, 0.15), transparent 50%),
     radial-gradient(400px circle at 100% 100%, rgba(139, 92, 246, 0.15), transparent 50%);
-  animation: aurora 8s ease-in-out infinite;
+  /* BMAD: Aurora off by default, toggle with data-aurora="true" on header */
+  animation: none;
+  opacity: 0.5;
   pointer-events: none;
+  transition: opacity 0.5s ease-out;
+}
+
+/* Aurora animation enabled via data attribute */
+header[data-aurora="true"]::before {
+  animation: aurora 8s ease-in-out infinite;
+  opacity: 1;
 }
 
 .header-inner {
