@@ -54,7 +54,8 @@
     "runTests": "Lancer les tests de validation (Raccourci : Alt+R)",
     "tests": "Tests",
     "toggleDebug": "Basculer le panneau de debug",
-    "moreActions": "Plus d'actions"
+    "moreActions": "Plus d'actions",
+    "copyingPasswords": "Copie des mots de passe..."
   },
   "aliasModal": {
     "apiKey": "Clé API / Token",
@@ -2275,7 +2276,12 @@
       "lowercase": "a-z (minuscules)",
       "numbers": "0-9 (chiffres)",
       "symbols": "!@#$ (symboles)",
-      "characterOptions": "Options de caractères"
+      "characterOptions": "Options de caractères",
+      "blocks": "Blocs :",
+      "clickToCycle": "Cliquez pour changer (U → l → T → U)",
+      "emptyState": "Aucun mot de passe généré",
+      "invalidData": "Données de mot de passe invalides",
+      "manualChange": "Modification manuelle"
     },
     "entryInfo": {
       "lastModified": "Modifié",

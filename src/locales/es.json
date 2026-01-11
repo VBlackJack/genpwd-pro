@@ -54,7 +54,8 @@
     "runTests": "Ejecutar pruebas de validación (Atajo: Alt+R)",
     "tests": "Pruebas",
     "toggleDebug": "Alternar panel de debug",
-    "moreActions": "Más acciones"
+    "moreActions": "Más acciones",
+    "copyingPasswords": "Copiando contraseñas..."
   },
   "aliasModal": {
     "apiKey": "Clave API / Token",
