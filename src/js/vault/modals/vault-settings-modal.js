@@ -24,17 +24,20 @@ import {
   LOCK_TIMEOUT_OPTIONS,
   CLIPBOARD_TIMEOUT_OPTIONS
 } from '../services/vault-settings-service.js';
+import { getBackupService, BACKUP_STATUS } from '../services/backup-service.js';
 
 /**
  * Show vault settings modal
  * @param {Object} options
  * @param {Function} options.onSave - Callback when settings are saved
  * @param {Function} options.onSuccess - Callback on successful save (message)
+ * @param {Function} options.onExport - Callback to trigger vault export
  * @param {Function} options.t - Translation function
  * @returns {HTMLElement} The modal element
  */
 export function showVaultSettingsModal(options = {}) {
-  const { onSave, onSuccess, t = (k) => k } = options;
+  const { onSave, onSuccess, onExport, t = (k) => k } = options;
+  const backupService = getBackupService();
 
   // Remove existing modal
   document.getElementById('vault-settings-modal')?.remove();
@@ -142,6 +145,20 @@ export function showVaultSettingsModal(options = {}) {
           </div>
         </div>
 
+        <!-- Backup Section -->
+        <div class="vault-settings-section">
+          <h4 class="vault-settings-section-title">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            ${t('vault.settings.backupSection')}
+          </h4>
+
+          ${renderBackupStatus(backupService, t, onExport)}
+        </div>
+
         <div class="vault-modal-actions">
           <button type="button" class="vault-btn vault-btn-secondary" data-close-modal>${t('vault.common.cancel')}</button>
           <button type="button" class="vault-btn vault-btn-primary" id="save-vault-settings">
@@ -206,8 +223,74 @@ export function showVaultSettingsModal(options = {}) {
     closeModal();
   });
 
+  // Backup button handler
+  modal.querySelector('#backup-now-btn')?.addEventListener('click', () => {
+    closeModal();
+    if (onExport) {
+      onExport();
+    }
+  });
+
   // Focus first interactive element
   modal.querySelector('#setting-lock-timeout')?.focus();
 
   return modal;
+}
+
+/**
+ * Render backup status section
+ * @param {Object} backupService - Backup service instance
+ * @param {Function} t - Translation function
+ * @param {Function} onExport - Export callback
+ * @returns {string} HTML string
+ */
+function renderBackupStatus(backupService, t, onExport) {
+  const status = backupService.getBackupStatus();
+  const lastBackupText = backupService.formatLastBackup('default', t);
+  const backupData = backupService.getLastBackupData();
+
+  const statusConfig = {
+    [BACKUP_STATUS.NEVER]: {
+      className: 'backup-status--warning',
+      iconPath: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+    },
+    [BACKUP_STATUS.RECOMMENDED]: {
+      className: 'backup-status--warning',
+      iconPath: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+    },
+    [BACKUP_STATUS.RECENT]: {
+      className: 'backup-status--success',
+      iconPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig[BACKUP_STATUS.NEVER];
+  const showButton = status !== BACKUP_STATUS.RECENT || !onExport;
+
+  return `
+    <div class="vault-backup-status ${config.className}">
+      <div class="backup-status-info">
+        <svg class="backup-status-icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="${config.iconPath}"></path>
+        </svg>
+        <div class="backup-status-text">
+          <span class="backup-status-label">${lastBackupText}</span>
+          ${backupData?.format ? `<span class="backup-status-format">${t('vault.backup.format', { format: backupData.format.toUpperCase() })}</span>` : ''}
+        </div>
+      </div>
+      ${onExport ? `
+        <button type="button" class="vault-btn vault-btn-sm ${status === BACKUP_STATUS.RECENT ? 'vault-btn-secondary' : 'vault-btn-primary'}" id="backup-now-btn">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          ${t('vault.backup.createNow')}
+        </button>
+      ` : ''}
+    </div>
+    ${status !== BACKUP_STATUS.RECENT ? `
+      <p class="vault-settings-hint vault-settings-hint--warning">${t('vault.backup.reminder')}</p>
+    ` : ''}
+  `;
 }

@@ -16,6 +16,7 @@ function getShortcutCategories() {
       title: t('vault.shortcuts.general'),
       shortcuts: [
         { keys: ['Ctrl', 'L'], description: t('settingsModal.shortcuts.lockVault') },
+        { keys: ['Ctrl', 'K'], description: t('vault.shortcuts.commandSearch') },
         { keys: ['Ctrl/Alt', 'F'], description: t('vault.shortcuts.focusSearch') },
         { keys: ['?'], description: t('vault.shortcuts.showShortcuts') },
         { keys: ['Esc'], description: t('settingsModal.shortcuts.closeModal') }
@@ -25,6 +26,9 @@ function getShortcutCategories() {
       title: t('vault.shortcuts.entries'),
       shortcuts: [
         { keys: ['Ctrl/Alt', 'N'], description: t('vault.shortcuts.newEntry') },
+        { keys: ['E'], description: t('vault.shortcuts.quickEdit') },
+        { keys: ['T'], description: t('vault.shortcuts.quickTag') },
+        { keys: ['M'], description: t('vault.shortcuts.quickMove') },
         { keys: ['Ctrl', 'E'], description: t('vault.shortcuts.editEntry') },
         { keys: ['Ctrl', 'D'], description: t('vault.shortcuts.duplicateEntry') },
         { keys: ['Delete'], alt: ['Alt', 'D'], description: t('vault.shortcuts.deleteEntry') },

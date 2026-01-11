@@ -3,12 +3,26 @@
 .vault-app {
   display: grid;
   grid-template-columns: 280px minmax(300px, 400px) 1fr;
+  grid-template-rows: 1fr auto; /* Main content + status bar */
   height: 100%;
   width: 100%;
   min-height: 0; /* Important for grid children to respect height */
   /* Removed opaque background, handled by main keyframes/body */
   gap: 0;
   padding: 0;
+}
+
+/* Status bar container - spans all columns at bottom */
+#vault-status-bar-container {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+/* Main panels stay in first row */
+.vault-sidebar,
+.vault-list-panel,
+.vault-detail-panel {
+  grid-row: 1;
 }
 
 .vault-app > * {

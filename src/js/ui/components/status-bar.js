@@ -51,6 +51,7 @@ export class StatusBar {
       showSaveIndicator: true,
       showSyncStatus: true,
       showEntryCount: true,
+      showEncryptionStatus: true,
       ...options
     };
 
@@ -88,11 +89,25 @@ export class StatusBar {
         <!-- Save indicator will be injected here -->
       </div>
       <div class="status-bar-center">
+        ${this.options.showEncryptionStatus ? this.#renderEncryptionStatus() : ''}
         ${this.options.showEntryCount ? this.#renderEntryCount() : ''}
       </div>
       <div class="status-bar-right">
         ${this.options.showSyncStatus ? this.#renderSyncStatus() : ''}
       </div>
+    `;
+  }
+
+  #renderEncryptionStatus() {
+    const icon = getIcon('lock', { size: 14 });
+    const label = t('vault.encryption.aes256');
+    const details = t('vault.encryption.details');
+
+    return `
+      <span class="status-bar-item status-bar-encryption" title="${details}">
+        <span class="status-bar-icon encryption-icon" aria-hidden="true">${icon}</span>
+        <span class="status-bar-text">${label}</span>
+      </span>
     `;
   }
 
@@ -180,6 +195,24 @@ export class StatusBar {
    */
   showSaveError() {
     this.saveIndicator?.showError();
+  }
+
+  /**
+   * Show saved state with fade out animation
+   * @param {number} delay - Delay before fade (default: 3000ms)
+   */
+  showSavedWithFade(delay = 3000) {
+    this.saveIndicator?.showSavedWithFade(delay);
+  }
+
+  /**
+   * Show persistent error with retry option
+   * @param {Object} options - Error options
+   * @param {string} options.message - Custom error message
+   * @param {Function} options.onRetry - Retry callback
+   */
+  showPersistentError(options = {}) {
+    this.saveIndicator?.showPersistentStatus(SAVE_STATES.ERROR, options);
   }
 
   /**

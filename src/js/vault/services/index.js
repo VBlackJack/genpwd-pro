@@ -37,3 +37,10 @@ export {
   createBreachCheckService,
   getBreachCheckService
 } from './breach-check-service.js';
+
+// Backup tracking service
+export {
+  getBackupService,
+  createBackupService,
+  BACKUP_STATUS
+} from './backup-service.js';

@@ -2106,7 +2106,28 @@
       "clipboard30s": "30 secondes",
       "requirePasswordReveal": "Demander le mot de passe pour afficher les entrées",
       "requirePasswordRevealHint": "Demander le mot de passe maître avant d'afficher les données sensibles",
-      "saved": "Paramètres enregistrés"
+      "saved": "Paramètres enregistrés",
+      "backupSection": "Sauvegarde"
+    },
+    "backup": {
+      "never": "Jamais sauvegardé",
+      "today": "Sauvegardé aujourd'hui",
+      "yesterday": "Sauvegardé hier",
+      "daysAgo": "Sauvegardé il y a {days} jours",
+      "lastBackup": "Dernière sauvegarde : {date}",
+      "format": "Format : {format}",
+      "createNow": "Sauvegarder maintenant",
+      "reminder": "Des sauvegardes régulières protègent contre la perte de données. Pensez à sauvegarder votre coffre."
+    },
+    "delete": {
+      "confirmTitle": "Supprimer l'entrée",
+      "confirm": "Supprimer",
+      "lastModified": "Dernière modification : {date}",
+      "permanentWarning": "Cette action est irréversible. L'entrée sera définitivement supprimée."
+    },
+    "encryption": {
+      "aes256": "AES-256",
+      "details": "Votre coffre est protégé par un chiffrement AES-256-GCM et une dérivation de clé Argon2id"
     },
     "share": {
       "copyEncrypted": "Copier le texte chiffré",
@@ -2150,12 +2171,16 @@
       "editEntry": "Modifier l'entrée",
       "entries": "Entrées",
       "focusSearch": "Rechercher",
+      "commandSearch": "Recherche rapide (sélectionner)",
       "general": "Général",
       "navigate": "Naviguer",
       "newEntry": "Nouvelle entrée",
       "quickActions": "Actions Rapides",
       "showShortcuts": "Afficher les raccourcis",
-      "title": "Raccourcis Clavier"
+      "title": "Raccourcis Clavier",
+      "quickEdit": "Modifier rapidement",
+      "quickTag": "Gérer les tags",
+      "quickMove": "Déplacer dans un dossier"
     },
     "sidebar": {
       "all": "Tout",
@@ -2187,7 +2212,9 @@
     },
     "status": {
       "locked": "Verrouillé",
-      "unlocked": "Déverrouillé"
+      "unlocked": "Déverrouillé",
+      "barLabel": "Barre de statut du coffre",
+      "entries": "{count} entrées"
     },
     "sync": {
       "cloudSync": "Synchronisation Cloud",
@@ -2243,7 +2270,25 @@
       "passwordsMatch": "Les mots de passe correspondent",
       "passwordsNoMatch": "Les mots de passe ne correspondent pas",
       "tooWeak": "Mot de passe trop faible",
-      "valid": "Valide"
+      "valid": "Valide",
+      "suggestProtocol": "Ajoutez https:// pour une URL complète",
+      "validUrl": "URL valide",
+      "validEmail": "Format email valide"
+    },
+    "masterPassword": {
+      "strengthLabel": "Force du mot de passe",
+      "strength": {
+        "weak": "Faible - non recommandé",
+        "fair": "Correct - préférez plus long",
+        "strong": "Fort",
+        "excellent": "Excellent"
+      },
+      "req": {
+        "length": "Au moins 12 caractères",
+        "mixed": "Mélangez majuscules et minuscules",
+        "numbers": "Incluez des chiffres",
+        "special": "Ajoutez des caractères spéciaux"
+      }
     },
     "view": {
       "comfortable": "Vue confortable",

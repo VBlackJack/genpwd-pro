@@ -180,6 +180,73 @@ export class SaveIndicator {
   }
 
   /**
+   * Show saved state with fade out animation after delay
+   * @param {number} delay - Delay before starting fade (default: 3000ms)
+   */
+  showSavedWithFade(delay = 3000) {
+    this.show(SAVE_STATES.SAVED);
+
+    // Clear any existing timeout
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+    }
+
+    // Start fade animation after delay
+    this.hideTimeout = setTimeout(() => {
+      if (this.element) {
+        this.element.classList.add('save-indicator--fading');
+        // Remove after animation completes
+        setTimeout(() => this.hide(), 300);
+      }
+    }, delay);
+  }
+
+  /**
+   * Show persistent status message (for errors with retry)
+   * @param {string} state - One of SAVE_STATES values
+   * @param {Object} options - Additional options
+   * @param {string} options.message - Custom message to display
+   * @param {Function} options.onRetry - Callback for retry action
+   */
+  showPersistentStatus(state, options = {}) {
+    if (!this.element) return;
+
+    this.currentState = state;
+    const config = STATE_CONFIG[state];
+
+    const icon = config.iconName ? getIcon(config.iconName, { size: 16 }) : '';
+    const message = options.message || (config.labelKey ? t(config.labelKey) : '');
+
+    let retryButton = '';
+    if (options.onRetry && state === SAVE_STATES.ERROR) {
+      retryButton = `
+        <button class="save-indicator-retry" type="button" aria-label="${t('common.retry')}">
+          ${t('common.retry')}
+        </button>
+      `;
+    }
+
+    this.element.innerHTML = `
+      <span class="save-indicator-icon" aria-hidden="true">${icon}</span>
+      <span class="save-indicator-label">${message}</span>
+      ${retryButton}
+    `;
+
+    this.element.className = `save-indicator save-indicator--persistent ${config.className}`;
+    this.element.hidden = false;
+
+    // Bind retry handler
+    if (options.onRetry) {
+      const retryBtn = this.element.querySelector('.save-indicator-retry');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+          options.onRetry();
+        }, { once: true });
+      }
+    }
+  }
+
+  /**
    * Destroy the component
    */
   destroy() {

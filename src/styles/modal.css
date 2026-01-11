@@ -573,13 +573,10 @@ h2.modal-title {
    ============================================================================ */
 
 .pwd {
-  /* Flexbox: row layout with centered alignment */
+  /* Flexbox: column layout for password and breach status */
   display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important; /* Center password text with action buttons */
-  justify-content: space-between !important;
-  gap: 12px;
-  flex-wrap: nowrap;
+  flex-direction: column !important;
+  gap: 8px;
   position: relative;
 
   /* Sizing */
@@ -609,18 +606,11 @@ h2.modal-title {
   box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
 }
 
-/* Password value - full visibility with multi-line wrapping */
+/* Password value - full width display */
 .pwd .value {
-  flex: 1 1 auto;
-  min-width: 0; /* CRITICAL: allows flex item to shrink below content size */
-  /* Multi-line wrapping for full password visibility */
-  word-break: break-all;
-  overflow-wrap: break-word;
-  white-space: normal;
+  /* Full width since actions are now in header */
+  width: 100%;
   line-height: 1.4;
-  /* Allow vertical expansion */
-  max-height: none;
-  overflow: visible;
   filter: none;
   transition: filter var(--transition-normal);
   /* RTL/LTR auto-detection for international passwords */
@@ -630,6 +620,9 @@ h2.modal-title {
   font-family: var(--font-mono);
   font-size: 0.95em;
   letter-spacing: 0.5px;
+  /* Allow wrapping for long passwords */
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .pwd.masked .value {
@@ -657,21 +650,9 @@ h2.modal-title {
   padding-left: 32px;
 }
 
-/* Actions container - stays on the right, never shrinks */
-.pwd .actions {
-  flex: 0 0 auto; /* Never grow or shrink */
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-/* Breach status below */
+/* Breach status - appears below password */
 .pwd .breach-status {
   width: 100%;
-  flex-basis: 100%;
-  margin-top: 4px;
 }
 
 /* ============================================================================

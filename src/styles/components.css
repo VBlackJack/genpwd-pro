@@ -635,6 +635,50 @@ textarea.field-invalid {
   background: var(--overlay-subtle);
 }
 
+/* Header actions - buttons moved from password row */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.header-actions .action-btn {
+  min-width: 32px;
+  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--overlay-medium);
+  background: var(--overlay-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.header-actions .action-btn:hover {
+  background: var(--overlay-medium);
+  color: var(--text-primary);
+  border-color: var(--overlay-strong);
+}
+
+.header-actions .action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Override specific button styles when in header */
+.header-actions .breach-check-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.header-actions .breach-check-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 .id {
   color: var(--accent-blue);
   font-weight: 700;

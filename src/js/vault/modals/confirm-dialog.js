@@ -3,9 +3,10 @@
  * Reusable confirmation dialog component
  */
 
-import { escapeHtml } from '../utils/formatter.js';
-import { ICON_ALERT } from '../views/icons.js';
+import { escapeHtml, formatDate } from '../utils/formatter.js';
+import { ICON_ALERT, getIcon } from '../views/icons.js';
 import { t } from '../../utils/i18n.js';
+import { ENTRY_TYPES } from '../../config/entry-types.js';
 
 /**
  * Render confirm dialog HTML
@@ -364,5 +365,136 @@ export async function showPromptDialog(message, options = {}) {
     closeBtn?.addEventListener('click', handleCancel);
     backdrop?.addEventListener('click', handleCancel);
     modal.addEventListener('keydown', handleKeydown);
+  });
+}
+
+/**
+ * Show enhanced delete preview dialog
+ * (BMAD Phase 3B - Enhanced delete confirmation with entry preview)
+ * @param {Object} entry - Entry to delete
+ * @param {Object} options - Dialog options
+ * @param {string} options.folderName - Name of the folder the entry is in
+ * @returns {Promise<boolean>} User's choice
+ */
+export async function showDeletePreview(entry, options = {}) {
+  const { folderName = '' } = options;
+
+  // Get entry type configuration
+  const entryType = ENTRY_TYPES[entry.type] || ENTRY_TYPES.login;
+  const typeIcon = getIcon(entryType.icon || 'key', { size: 24 });
+
+  // Format the last modified date
+  const lastModified = entry.modifiedAt || entry.updatedAt || entry.createdAt;
+  const formattedDate = lastModified ? formatDate(lastModified) : t('common.unknown');
+
+  // Get identifier (username, email, or other relevant field)
+  const identifier = entry.data?.username || entry.data?.email || '';
+
+  return new Promise((resolve) => {
+    const modalId = 'delete-preview-modal';
+    const previouslyFocused = document.activeElement;
+
+    // Remove existing if present
+    let modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+
+    // Create modal element
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'vault-modal';
+    modal.innerHTML = `
+      <div class="vault-modal-backdrop"></div>
+      <div class="vault-modal-content vault-modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="delete-preview-title" aria-describedby="delete-preview-desc">
+        <div class="vault-modal-header">
+          <h3 id="delete-preview-title" class="vault-modal-title">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--color-danger)" stroke-width="2" class="modal-icon-warning">
+              ${ICON_ALERT}
+            </svg>
+            ${escapeHtml(t('vault.delete.confirmTitle'))}
+          </h3>
+        </div>
+        <div class="vault-modal-body">
+          <div class="delete-preview">
+            <div class="delete-preview-icon">${typeIcon}</div>
+            <div class="delete-preview-info">
+              <strong class="delete-preview-title">${escapeHtml(entry.title)}</strong>
+              ${identifier ? `<span class="delete-preview-identifier">${escapeHtml(identifier)}</span>` : ''}
+              ${folderName ? `<span class="delete-preview-folder"><span class="folder-badge">${escapeHtml(folderName)}</span></span>` : ''}
+              <span class="delete-preview-date">${t('vault.delete.lastModified', { date: formattedDate })}</span>
+            </div>
+          </div>
+          <p id="delete-preview-desc" class="delete-warning">${t('vault.delete.permanentWarning')}</p>
+        </div>
+        <div class="vault-modal-actions">
+          <button type="button" class="vault-btn vault-btn-secondary" id="delete-preview-cancel">${escapeHtml(t('vault.common.cancel'))}</button>
+          <button type="button" class="vault-btn vault-btn-danger" id="delete-preview-confirm">${escapeHtml(t('vault.delete.confirm'))}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Show modal
+    requestAnimationFrame(() => {
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      // Focus cancel button for safety (WCAG)
+      modal.querySelector('#delete-preview-cancel')?.focus();
+    });
+
+    // Event handlers
+    const confirmBtn = modal.querySelector('#delete-preview-confirm');
+    const cancelBtn = modal.querySelector('#delete-preview-cancel');
+    const backdrop = modal.querySelector('.vault-modal-backdrop');
+
+    const handleConfirm = () => {
+      cleanupAndClose();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      cleanupAndClose();
+      resolve(false);
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        handleCancel();
+      } else if (e.key === 'Tab') {
+        // Focus trap
+        const focusable = modal.querySelectorAll('button:not([disabled])');
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    const cleanupAndClose = () => {
+      confirmBtn?.removeEventListener('click', handleConfirm);
+      cancelBtn?.removeEventListener('click', handleCancel);
+      backdrop?.removeEventListener('click', handleCancel);
+      document.removeEventListener('keydown', handleKeydown);
+
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      setTimeout(() => {
+        modal.remove();
+        if (previouslyFocused?.focus && document.body.contains(previouslyFocused)) {
+          previouslyFocused.focus();
+        }
+      }, 300);
+    };
+
+    // Attach event listeners
+    confirmBtn?.addEventListener('click', handleConfirm);
+    cancelBtn?.addEventListener('click', handleCancel);
+    backdrop?.addEventListener('click', handleCancel);
+    document.addEventListener('keydown', handleKeydown);
   });
 }

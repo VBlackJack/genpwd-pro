@@ -114,6 +114,56 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* Persistent save indicator (fixed position) */
+.save-indicator--persistent {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+/* Fade out animation */
+.save-indicator--fading {
+  animation: save-indicator-fadeout 0.3s ease-out forwards;
+}
+
+@keyframes save-indicator-fadeout {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Retry button for error state */
+.save-indicator-retry {
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm, 4px);
+  color: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.save-indicator-retry:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.save-indicator-retry:focus-visible {
+  outline: 2px solid var(--accent-blue, #6366f1);
+  outline-offset: 2px;
+}
+
 /* Clipboard Countdown Toast */
 .toast-clipboard-countdown {
   display: flex;

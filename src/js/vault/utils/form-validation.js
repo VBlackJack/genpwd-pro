@@ -17,12 +17,15 @@ const VALIDATION_DEBOUNCE_MS = 400;
 
 /**
  * Render validation icon SVG
- * @param {string} type - 'error' or 'success'
+ * @param {string} type - 'error', 'success', or 'hint'
  * @returns {string} SVG HTML
  */
 function getValidationIcon(type) {
   if (type === 'error') {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+  }
+  if (type === 'hint') {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
   }
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 }
@@ -131,20 +134,36 @@ export function validateField(input, messageEl, rules = {}) {
   // URL check
   else if (rules.url && value && !isValidUrl(value)) {
     isValid = false;
-    message = rules.urlMessage || t('vault.validation.invalidUrl');
+    // Show helpful hint if missing protocol
+    if (value && !value.match(/^https?:\/\//i) && value.includes('.')) {
+      message = rules.urlHintMessage || t('vault.validation.suggestProtocol');
+      messageType = 'hint';
+    } else {
+      message = rules.urlMessage || t('vault.validation.invalidUrl');
+    }
   }
   // Email check
   else if (rules.email && value && !isValidEmail(value)) {
     isValid = false;
     message = rules.emailMessage || t('vault.validation.invalidEmail');
   }
-  // Valid
-  else if (value && rules.showSuccess) {
-    message = rules.successMessage || t('vault.validation.valid');
-    messageType = 'success';
+  // Valid with optional success hints
+  else if (value) {
+    if (rules.url && isValidUrl(value)) {
+      message = t('vault.validation.validUrl');
+      messageType = 'success';
+    } else if (rules.email && isValidEmail(value)) {
+      message = t('vault.validation.validEmail');
+      messageType = 'success';
+    } else if (rules.showSuccess) {
+      message = rules.successMessage || t('vault.validation.valid');
+      messageType = 'success';
+    }
   }
 
-  updateInputState(input, isValid, !!value);
+  // For hints, don't mark input as invalid (it's just a suggestion)
+  const showAsInvalid = messageType === 'error';
+  updateInputState(input, !showAsInvalid || isValid, !!value);
   updateMessageElement(messageEl, input, message, messageType);
 
   return isValid;

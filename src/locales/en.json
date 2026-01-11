@@ -478,7 +478,9 @@
   "vault": {
     "status": {
       "unlocked": "Unlocked",
-      "locked": "Locked"
+      "locked": "Locked",
+      "barLabel": "Vault status bar",
+      "entries": "{count} entries"
     },
     "errors": {
       "vaultNotAvailable": "Vault not available",
@@ -511,10 +513,14 @@
       "duplicateEntry": "Duplicate entry",
       "deleteEntry": "Delete entry",
       "focusSearch": "Focus search",
+      "commandSearch": "Quick search (select all)",
       "showShortcuts": "Show shortcuts",
       "copyUsername": "Copy username",
       "copyPassword": "Copy password",
-      "autoFill": "Auto-fill form"
+      "autoFill": "Auto-fill form",
+      "quickEdit": "Quick edit entry",
+      "quickTag": "Manage tags",
+      "quickMove": "Move to folder"
     },
     "placeholders": {
       "password": "Enter password",
@@ -858,7 +864,25 @@
       "passwordsNoMatch": "Passwords do not match",
       "passwordsMatch": "Passwords match",
       "tooWeak": "Password is too weak",
-      "valid": "Valid"
+      "valid": "Valid",
+      "suggestProtocol": "Add https:// for full URL",
+      "validUrl": "Valid URL",
+      "validEmail": "Valid email format"
+    },
+    "masterPassword": {
+      "strengthLabel": "Password strength",
+      "strength": {
+        "weak": "Weak - not recommended",
+        "fair": "Fair - consider longer",
+        "strong": "Strong",
+        "excellent": "Excellent"
+      },
+      "req": {
+        "length": "At least 12 characters",
+        "mixed": "Mix upper and lowercase",
+        "numbers": "Include numbers",
+        "special": "Add special characters"
+      }
     },
     "messages": {
       "fileNotFound": "File not found",
@@ -1382,7 +1406,28 @@
       "clipboard30s": "30 seconds",
       "requirePasswordReveal": "Require password to reveal entries",
       "requirePasswordRevealHint": "Ask for master password before showing sensitive data",
-      "saved": "Settings saved"
+      "saved": "Settings saved",
+      "backupSection": "Backup"
+    },
+    "backup": {
+      "never": "Never backed up",
+      "today": "Backed up today",
+      "yesterday": "Backed up yesterday",
+      "daysAgo": "Backed up {days} days ago",
+      "lastBackup": "Last backup: {date}",
+      "format": "Format: {format}",
+      "createNow": "Back up now",
+      "reminder": "Regular backups protect against data loss. Consider backing up your vault."
+    },
+    "delete": {
+      "confirmTitle": "Delete Entry",
+      "confirm": "Delete",
+      "lastModified": "Last modified: {date}",
+      "permanentWarning": "This action cannot be undone. The entry will be permanently deleted."
+    },
+    "encryption": {
+      "aes256": "AES-256",
+      "details": "Your vault is protected with AES-256-GCM encryption and Argon2id key derivation"
     },
     "generator": {
       "title": "Password generator",

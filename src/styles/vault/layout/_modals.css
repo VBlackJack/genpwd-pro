@@ -109,3 +109,99 @@
   padding-top: 1rem;
   border-top: 1px solid var(--vault-border);
 }
+
+/* ==================== RESPONSIVE MODALS ==================== */
+
+/* Mobile-first responsive design */
+@media (max-width: 600px) {
+  .vault-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .vault-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+  }
+
+  .vault-modal-overlay.active .vault-modal {
+    transform: translateY(0);
+  }
+
+  .vault-modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--vault-bg-primary);
+    border-radius: 16px 16px 0 0;
+    padding: 1rem;
+  }
+
+  .vault-modal-body {
+    padding: 1rem;
+    max-height: calc(92vh - 140px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vault-modal-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: var(--vault-bg-primary);
+    flex-direction: column;
+    gap: 8px;
+    padding: 1rem;
+    margin-top: 0;
+    border-top: 1px solid var(--vault-border);
+  }
+
+  .vault-modal-actions .vault-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Form layout on mobile */
+  .vault-form-row {
+    flex-direction: column;
+  }
+
+  .vault-form-group {
+    width: 100%;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .vault-modal {
+    width: 90%;
+    max-width: 600px;
+  }
+
+  .vault-modal-lg {
+    max-width: 700px;
+  }
+}
+
+/* Desktop modal sizes */
+@media (min-width: 1025px) {
+  .vault-modal-sm {
+    max-width: 360px;
+  }
+
+  .vault-modal {
+    max-width: 420px;
+  }
+
+  .vault-modal-lg {
+    max-width: 600px;
+  }
+
+  .vault-modal-xl {
+    max-width: 800px;
+  }
+}

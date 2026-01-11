@@ -113,13 +113,14 @@ function createPasswordCard(item, id, mask) {
     `${dictionary.charAt(0).toUpperCase() + dictionary.slice(1)}` :
     mode || 'unknown';
 
-  // Vault save button (only visible in Electron)
+  // Vault save button (only visible in Electron) - floppy disk icon
   const vaultAvailable = VaultBridge.isAvailable();
   const saveToVaultBtn = vaultAvailable ? `
     <button class="action-btn save-to-vault-btn" type="button" data-password="${escapeHtml(value)}" title="${t('common.save')}" aria-label="${t('vault.actions.saveToVault')}">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
       </svg>
     </button>
   ` : '';
@@ -131,26 +132,26 @@ function createPasswordCard(item, id, mask) {
   card.innerHTML = `
     <div class="card-sec card-header">
       <div class="id">#${id}</div>
+      <div class="header-actions">
+        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton')}" aria-label="${t('breach.checkButton')}">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </button>
+        ${saveToVaultBtn}
+        <button class="action-btn copy-btn" type="button" title="${t('common.copy')}" aria-label="${t('toast.copyPassword')}">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
       <span class="spacer"></span>
       <div class="stat"><span class="dot"></span><strong>${(entropy || 0).toFixed(1)}</strong>&nbsp;bits</div>
       <div class="len">${total} chars</div>
     </div>
     <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="${t('results.clickToCopyHint')}" role="button" tabindex="0" aria-label="${t('results.passwordAriaLabel', { id })}">
       <div class="value mono">${escapeHtml(value)}</div>
-      <div class="actions">
-        <button class="action-btn breach-check-btn" type="button" data-password="${escapeHtml(value)}" title="${t('breach.checkButton')}" aria-label="${t('breach.checkButton')}">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </button>
-        ${saveToVaultBtn}
-        <button class="action-btn copy-btn" type="button" title="${t('common.copy')}" aria-label="${t('toast.copyPassword')}">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        </button>
-      </div>
       <div class="breach-status" role="status" hidden></div>
     </div>
     <div class="card-sec comp">
@@ -352,7 +353,9 @@ function bindCopyButtons() {
       e.preventDefault();
       e.stopPropagation();
 
-      const pwdEl = btn.closest('.pwd');
+      // Find parent card, then get pwd element within it
+      const card = btn.closest('.card');
+      const pwdEl = card?.querySelector('.pwd');
       const password = pwdEl?.getAttribute('data-password');
 
       if (password) {
@@ -396,9 +399,10 @@ function bindBreachCheckButtons() {
       const password = btn.getAttribute('data-password');
       if (!password) return;
 
-      // Get the status element in the same card
-      const card = btn.closest('.pwd');
-      const statusEl = card?.querySelector('.breach-status');
+      // Get the status element in the same card (button is in header, status is in pwd)
+      const card = btn.closest('.card');
+      const pwdEl = card?.querySelector('.pwd');
+      const statusEl = pwdEl?.querySelector('.breach-status');
       if (!statusEl) return;
 
       // Show loading state with ARIA attributes for accessibility

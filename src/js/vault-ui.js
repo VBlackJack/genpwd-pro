@@ -65,6 +65,8 @@ import { SecurityDashboard } from './ui/views/security-dashboard.js';
 import { ShareModal } from './ui/modals/share-modal.js';
 import { DuressSetupModal } from './ui/modals/duress-setup-modal.js';
 import { setupWizardModal } from './ui/modals/setup-wizard-modal.js';
+import { StatusBar } from './ui/components/status-bar.js';
+import { celebrate, CELEBRATION_TYPES } from './ui/components/celebration.js';
 // QR code generation moved to totp-qr-modal.js
 
 // Vault utility imports (Phase 6 modularization)
@@ -87,7 +89,9 @@ import { showAutotypeModal } from './vault/modals/autotype-modal.js';
 import { showTOTPQRModal } from './vault/modals/totp-qr-modal.js';
 import { showSecureShareModal, showOpenShareModal } from './vault/modals/secure-share-modal.js';
 import { showVaultSettingsModal } from './vault/modals/vault-settings-modal.js';
+import { showDeletePreview } from './vault/modals/confirm-dialog.js';
 import { getVaultSettingsService } from './vault/services/vault-settings-service.js';
+import { getBackupService } from './vault/services/backup-service.js';
 import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.js';
 
 // Vault views imports (Phase 6 modularization)
@@ -195,6 +199,8 @@ export class VaultUI {
   #keyboardHandler = null; // Global keyboard shortcut handler
   /** @type {AbortController|null} AbortController for main view event cleanup */
   #mainViewAbortController = null;
+  /** @type {StatusBar|null} Status bar component */
+  #statusBar = null;
 
   /** @type {Object} */
   #duressSetupModal;
@@ -551,6 +557,27 @@ export class VaultUI {
       this.#renderLockScreen();
     } else {
       this.#renderMainView();
+    }
+  }
+
+  /**
+   * Initialize status bar component (BMAD - Anxiety reduction)
+   */
+  #initStatusBar() {
+    // Destroy previous instance if exists
+    if (this.#statusBar) {
+      this.#statusBar.destroy();
+      this.#statusBar = null;
+    }
+
+    const container = document.getElementById('vault-status-bar-container');
+    if (container) {
+      this.#statusBar = new StatusBar(container, {
+        showSaveIndicator: true,
+        showSyncStatus: false, // Enable when sync is implemented
+        showEntryCount: true
+      });
+      this.#statusBar.updateEntryCount(this.#entries.length);
     }
   }
 
@@ -1582,6 +1609,9 @@ export class VaultUI {
                role="complementary" aria-label="${t('vault.aria.entryDetails')}">
           ${this.#selectedEntry ? this.#renderEntryDetail() : renderNoSelection({ t })}
         </aside>
+
+        <!-- Status Bar Container -->
+        <div id="vault-status-bar-container"></div>
       </div>
       ${renderAddEntryModal({ entryTypes: getEntryTypes(), folders: this.#folders, tags: this.#tags, templateGridHtml: renderTemplateGrid(), t })}
       ${renderAddFolderModal({ t })}
@@ -2607,6 +2637,9 @@ export class VaultUI {
       const { content, filename, mimeType } = performExport(entries, format, this.#folders);
       downloadExport(content, filename, mimeType);
       showToast(t('vault.messages.entriesExported', { count: entries.length, format: format.toUpperCase() }), 'success');
+
+      // Record backup timestamp (BMAD Phase 3B - visible backup status)
+      getBackupService().recordBackup('default', format);
     } catch (err) {
       showToast(t('vault.messages.exportFailed'), 'error');
     }
@@ -3021,6 +3054,7 @@ export class VaultUI {
         }
       },
       onSuccess: (message) => showToast(message, 'success'),
+      onExport: () => this.#exportEntries(this.#entries),
       t
     });
   }
@@ -3147,6 +3181,9 @@ export class VaultUI {
     }
     this.#mainViewAbortController = new AbortController();
     const signal = this.#mainViewAbortController.signal;
+
+    // Initialize Status Bar (BMAD - Anxiety reduction)
+    this.#initStatusBar();
 
     // Welcome Screen Actions
     document.getElementById('btn-welcome-create')?.addEventListener('click', () => {
@@ -3908,10 +3945,8 @@ export class VaultUI {
         await this.#toggleEntryPin(entry);
         break;
       case 'delete': {
-        const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: entry.title }), {
-          type: 'danger',
-          confirmLabel: t('common.delete'),
-        });
+        const folderName = entry.folderId ? this.#folders.find(f => f.id === entry.folderId)?.name : '';
+        const confirmed = await showDeletePreview(entry, { folderName });
         if (confirmed) this.#deleteEntryWithUndo(entry);
         break;
       }
@@ -3946,6 +3981,29 @@ export class VaultUI {
     } catch (error) {
       showToast(t('vault.messages.updateError'), 'error');
     }
+  }
+
+  /**
+   * Show tag picker for a single entry (keyboard shortcut T)
+   */
+  #showTagPickerForEntry(entry) {
+    if (!entry) return;
+    // Use bulk tag modal with single entry
+    this.#selectedEntries.clear();
+    this.#selectedEntries.add(entry.id);
+    this.#showBulkTagModal();
+  }
+
+  /**
+   * Show move folder picker for a single entry (keyboard shortcut M)
+   */
+  #showMoveFolderForEntry(entry) {
+    if (!entry) return;
+    // Use move folder modal with single entry
+    this.#selectedEntries.clear();
+    this.#selectedEntries.add(entry.id);
+    document.getElementById('move-folder-modal').outerHTML = renderMoveFolderModal({ folders: this.#folders, t });
+    this.#openModal('move-folder-modal');
   }
 
   #updateBulkActionsUI() {
@@ -4248,10 +4306,8 @@ export class VaultUI {
     // Delete entry (with confirmation + undo)
     document.getElementById('btn-delete-entry')?.addEventListener('click', async () => {
       if (!this.#selectedEntry) return;
-      const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
-        type: 'danger',
-        confirmLabel: t('common.delete'),
-      });
+      const folderName = this.#selectedEntry.folderId ? this.#folders.find(f => f.id === this.#selectedEntry.folderId)?.name : '';
+      const confirmed = await showDeletePreview(this.#selectedEntry, { folderName });
       if (confirmed) {
         this.#deleteEntryWithUndo(this.#selectedEntry);
       }
@@ -4807,12 +4863,20 @@ export class VaultUI {
         data.fields = customFields;
       }
 
+      // Show saving indicator
+      this.#statusBar?.showSaving();
+
       try {
         await window.vault.entries.update(entry.id, { title, folderId, data, notes });
         this.#hasDirtyForm = false;
         this.#closeModal('edit-entry-modal');
+        this.#statusBar?.showSavedWithFade();
         showToast(t('vault.messages.entryModified'), 'success');
       } catch (error) {
+        this.#statusBar?.showPersistentError({
+          message: t('vault.status.saveFailed'),
+          onRetry: () => document.getElementById('edit-entry-form')?.dispatchEvent(new Event('submit'))
+        });
         showToast(error.message || t('vault.common.error'), 'error');
       }
     });
@@ -4950,14 +5014,33 @@ export class VaultUI {
       btn.disabled = true;
       btn.innerHTML = '<span class="vault-spinner-small"></span>';
 
+      // Show saving indicator
+      this.#statusBar?.showSaving();
+
       try {
+        // Check if this is the first entry (for celebration)
+        const isFirstEntry = this.#entries.length === 0;
+
         const newEntry = await window.vault.entries.add(type, title, { ...data, folderId, tagIds: selectedTags });
         this.#closeModal('add-entry-modal');
         this.#selectedEntry = newEntry;
-        showToast(t('vault.messages.entryAdded'), 'success');
+        this.#statusBar?.updateEntryCount(this.#entries.length + 1);
+        this.#statusBar?.showSavedWithFade();
+
+        // Celebrate first entry (BMAD - Motivation)
+        if (isFirstEntry) {
+          celebrate(CELEBRATION_TYPES.FIRST_ENTRY, { entryTitle: title });
+        } else {
+          showToast(t('vault.messages.entryAdded'), 'success');
+        }
+
         // Reset form
         document.getElementById('add-entry-form')?.reset();
       } catch (error) {
+        this.#statusBar?.showPersistentError({
+          message: t('vault.status.saveFailed'),
+          onRetry: () => e.target.dispatchEvent(new Event('submit'))
+        });
         showToast(error.message || t('vault.common.error'), 'error');
         btn.disabled = false;
         btn.textContent = t('vault.common.add');
@@ -5560,9 +5643,18 @@ export class VaultUI {
 
   // ==================== MODAL HELPERS ====================
 
+  /** @type {Map<string, number>} Scroll positions for modal context restoration */
+  #modalScrollPositions = new Map();
+
   #openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
+
+    // Save scroll position for context restoration (BMAD - Anxiety reduction)
+    const scrollContainer = document.querySelector('.vault-list-content');
+    if (scrollContainer) {
+      this.#modalScrollPositions.set(modalId, scrollContainer.scrollTop);
+    }
 
     this.#lastFocusedElement = document.activeElement;
     modal.classList.add('active');
@@ -5596,6 +5688,18 @@ export class VaultUI {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
     modal.removeAttribute('aria-modal');
+
+    // Restore scroll position (BMAD - Anxiety reduction)
+    const savedScroll = this.#modalScrollPositions.get(modalId);
+    if (savedScroll !== undefined) {
+      const scrollContainer = document.querySelector('.vault-list-content');
+      if (scrollContainer) {
+        requestAnimationFrame(() => {
+          scrollContainer.scrollTop = savedScroll;
+        });
+      }
+      this.#modalScrollPositions.delete(modalId);
+    }
 
     // Restore focus
     if (this.#lastFocusedElement && this.#lastFocusedElement.focus) {
@@ -6221,10 +6325,8 @@ export class VaultUI {
       // Delete or Alt+D - Delete selected entry (with confirmation)
       if ((e.key === 'Delete' || (e.altKey && e.key === 'd')) && !e.target.matches('input, textarea, select') && this.#selectedEntry) {
         e.preventDefault();
-        const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
-          type: 'danger',
-          confirmLabel: t('common.delete'),
-        });
+        const folderName = this.#selectedEntry.folderId ? this.#folders.find(f => f.id === this.#selectedEntry.folderId)?.name : '';
+        const confirmed = await showDeletePreview(this.#selectedEntry, { folderName });
         if (confirmed) this.#deleteEntryWithUndo(this.#selectedEntry);
       }
 
@@ -6250,6 +6352,37 @@ export class VaultUI {
       if (e.ctrlKey && e.shiftKey && e.key === 'U' && this.#selectedEntry?.type === 'login') {
         e.preventDefault();
         this.#executeAutotype(this.#selectedEntry);
+      }
+
+      // Ctrl+K - Command palette style search (focus and select)
+      if (e.ctrlKey && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('vault-search');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+
+      // Quick actions on selected entry (E, T, M - only when not in input)
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && !e.target.matches('input, textarea, select')) {
+        // E - Quick edit
+        if (e.key === 'e' && this.#selectedEntry) {
+          e.preventDefault();
+          this.#openEditModal(this.#selectedEntry);
+        }
+
+        // T - Tag picker
+        if (e.key === 't' && this.#selectedEntry) {
+          e.preventDefault();
+          this.#showTagPickerForEntry(this.#selectedEntry);
+        }
+
+        // M - Move to folder
+        if (e.key === 'm' && this.#selectedEntry) {
+          e.preventDefault();
+          this.#showMoveFolderForEntry(this.#selectedEntry);
+        }
       }
 
       // Arrow keys for entry navigation
