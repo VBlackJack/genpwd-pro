@@ -57,6 +57,32 @@ export function renderEmptyState({ searchQuery = '', t = (k) => k } = {}) {
       <h3 class="vault-empty-title">${t('vault.welcome.title')}</h3>
       <p class="vault-empty-text">${t('vault.welcome.subtitle')}</p>
 
+      <!-- Benefits Section (BMAD Motivation) -->
+      <ul class="vault-benefits" role="list" aria-label="${t('vault.benefits.title')}">
+        <li class="vault-benefit">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>${t('vault.benefits.secure')}</span>
+        </li>
+        <li class="vault-benefit">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          <span>${t('vault.benefits.autofill')}</span>
+        </li>
+        <li class="vault-benefit">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>${t('vault.benefits.sync')}</span>
+        </li>
+      </ul>
+
       <!-- Quick Actions Grid (BMAD Enhancement) -->
       <div class="vault-quick-actions" role="group" aria-label="${t('vault.quickActions.title')}">
         <h4 class="vault-quick-actions-title">${t('vault.quickActions.title')}</h4>

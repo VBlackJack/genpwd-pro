@@ -51,6 +51,7 @@
 
 import { getInactivityManager } from './utils/inactivity-manager.js';
 import { getSecureClipboard } from './utils/secure-clipboard.js';
+import { initClipboardCountdown } from './ui/components/clipboard-countdown.js';
 import { showToast } from './utils/toast.js';
 import { safeLog } from './utils/logger.js';
 import { t } from './utils/i18n.js';
@@ -157,6 +158,7 @@ export class VaultUI {
   #vaultMetadata = null;
   #searchQuery = '';
   #sortBy = 'modified-desc';
+  #isLoading = false;
   #autoLockTimer = null;
   #autoLockTimeout = 300; // Default 5 minutes, loaded from localStorage
   #autoLockSeconds = 300;
@@ -273,6 +275,9 @@ export class VaultUI {
 
     // Visual protection on window blur (if enabled)
     this.#initVisualProtection();
+
+    // Initialize clipboard countdown for secure copy feedback
+    initClipboardCountdown();
 
     // Initialize Global Auto-Type (KeePass Killer)
     this.#initGlobalAutoType();
@@ -474,6 +479,8 @@ export class VaultUI {
 
   async #loadData() {
     try {
+      this.#setLoadingState(true);
+
       const [entries, folders, tags, metadata] = await Promise.all([
         window.vault.entries.getAll(),
         window.vault.folders.getAll(),
@@ -487,9 +494,56 @@ export class VaultUI {
 
       // Preload favicons in background
       preloadFavicons(this.#entries, this.#faviconCache);
+
+      this.#setLoadingState(false);
     } catch (error) {
       safeLog('[VaultUI] Load error:', error);
+      this.#setLoadingState(false);
     }
+  }
+
+  /**
+   * Set loading state and update aria-busy
+   * @param {boolean} isLoading - Loading state
+   * @private
+   */
+  #setLoadingState(isLoading) {
+    this.#isLoading = isLoading;
+
+    const container = document.getElementById('vault-entries');
+    if (container) {
+      container.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    }
+
+    // Announce to screen readers
+    if (isLoading) {
+      this.#announceToScreenReader(t('vault.aria.loading'));
+    } else {
+      this.#announceToScreenReader(t('vault.aria.loaded'));
+    }
+  }
+
+  /**
+   * Announce message to screen readers via live region
+   * @param {string} message - Message to announce
+   * @private
+   */
+  #announceToScreenReader(message) {
+    let announcer = document.getElementById('sr-announcer');
+    if (!announcer) {
+      announcer = document.createElement('div');
+      announcer.id = 'sr-announcer';
+      announcer.className = 'sr-only';
+      announcer.setAttribute('role', 'status');
+      announcer.setAttribute('aria-live', 'polite');
+      announcer.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(announcer);
+    }
+    // Clear and set to trigger announcement
+    announcer.textContent = '';
+    requestAnimationFrame(() => {
+      announcer.textContent = message;
+    });
   }
 
   #render() {
@@ -1374,7 +1428,11 @@ export class VaultUI {
           <div class="vault-list-header">
             <div class="vault-list-header-top">
               ${this.#renderBreadcrumb()}
-              <span class="vault-list-count">${t('vault.misc.entryCount', { count: filteredEntries.length })}</span>
+              <span class="vault-list-count" id="search-result-count" role="status" aria-live="polite">
+                ${this.#searchQuery
+                  ? t('vault.search.resultCount', { count: filteredEntries.length, total: this.#entries.length })
+                  : t('vault.misc.entryCount', { count: filteredEntries.length })}
+              </span>
             </div>
             <div class="vault-list-toolbar">
               <div class="vault-sort-dropdown">
@@ -6135,14 +6193,14 @@ export class VaultUI {
         this.#lock();
       }
 
-      // Ctrl+F - Focus search
-      if (e.ctrlKey && e.key === 'f') {
+      // Ctrl+F or Alt+F - Focus search
+      if ((e.ctrlKey || e.altKey) && e.key === 'f') {
         e.preventDefault();
         document.getElementById('vault-search')?.focus();
       }
 
-      // Ctrl+N - New entry
-      if (e.ctrlKey && e.key === 'n') {
+      // Ctrl+N or Alt+N - New entry
+      if ((e.ctrlKey || e.altKey) && e.key === 'n') {
         e.preventDefault();
         this.#openModal('add-entry-modal');
         this.#updateEntryTypeFields();
@@ -6160,8 +6218,8 @@ export class VaultUI {
         this.#duplicateEntry(this.#selectedEntry);
       }
 
-      // Delete - Delete selected entry (with confirmation)
-      if (e.key === 'Delete' && !e.target.matches('input, textarea, select') && this.#selectedEntry) {
+      // Delete or Alt+D - Delete selected entry (with confirmation)
+      if ((e.key === 'Delete' || (e.altKey && e.key === 'd')) && !e.target.matches('input, textarea, select') && this.#selectedEntry) {
         e.preventDefault();
         const confirmed = await showConfirm(t('vault.messages.deleteEntryConfirm', { title: this.#selectedEntry.title }), {
           type: 'danger',

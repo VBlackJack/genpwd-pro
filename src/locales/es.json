@@ -53,7 +53,8 @@
     "generateShortcut": "Generar nuevas contraseñas (Atajo: Alt+G)",
     "runTests": "Ejecutar pruebas de validación (Atajo: Alt+R)",
     "tests": "Pruebas",
-    "toggleDebug": "Alternar panel de debug"
+    "toggleDebug": "Alternar panel de debug",
+    "moreActions": "Más acciones"
   },
   "aliasModal": {
     "apiKey": "Clave API / Token",
@@ -155,7 +156,10 @@
     "autoClearDesc": "Borrar el portapapeles automáticamente después de copiar",
     "autoClearTitle": "⏱️ Borrado automático",
     "setAutoClearTo": "Establecer borrado automático a {time}",
-    "settingsAriaLabel": "Configuración de borrado automático del portapapeles"
+    "settingsAriaLabel": "Configuración de borrado automático del portapapeles",
+    "countdown": "Portapapeles se borra en {seconds}s",
+    "cleared": "Portapapeles borrado por seguridad",
+    "clearNow": "Borrar ahora"
   },
   "common": {
     "about": "Acerca de",
@@ -1375,7 +1379,9 @@
       "passwordStrength": "Indicador de fortaleza de contraseña",
       "autotypeSteps": "Pasos de auto-completar",
       "entryPreview": "Vista previa de entrada",
-      "statusIndicators": "Indicadores de estado"
+      "statusIndicators": "Indicadores de estado",
+      "loading": "Cargando entradas...",
+      "loaded": "Entradas cargadas"
     },
     "attachments": {
       "dropOrBrowse": "Suelte sus archivos aquí o {browse}",
@@ -2358,6 +2364,16 @@
       "unlockVault": "GenPwd Pro - Desbloquear bóveda",
       "verificationFailed": "Verificación de Windows Hello fallida",
       "verificationRequired": "Verificación requerida"
+    },
+    "search": {
+      "resultCount": "{count} de {total} entradas",
+      "noResults": "Ninguna entrada coincide con tu búsqueda"
+    },
+    "benefits": {
+      "title": "¿Por qué usar GenPwd Pro?",
+      "secure": "Cifrado AES de 256 bits protege tus datos",
+      "autofill": "Autocompletar contraseñas en cualquier navegador",
+      "sync": "Sincroniza en todos tus dispositivos"
     }
   },
   "windowsHello": {
@@ -2368,8 +2384,5 @@
     "unexpectedClose": "La aplicación se cerró inesperadamente",
     "recoverSession": "¿Restaurar sesión?",
     "dismiss": "Ignorar"
-  },
-  "actions": {
-    "moreActions": "Más acciones"
   }
 }

@@ -16,7 +16,7 @@ function getShortcutCategories() {
       title: t('vault.shortcuts.general'),
       shortcuts: [
         { keys: ['Ctrl', 'L'], description: t('settingsModal.shortcuts.lockVault') },
-        { keys: ['Ctrl', 'F'], description: t('vault.shortcuts.focusSearch') },
+        { keys: ['Ctrl/Alt', 'F'], description: t('vault.shortcuts.focusSearch') },
         { keys: ['?'], description: t('vault.shortcuts.showShortcuts') },
         { keys: ['Esc'], description: t('settingsModal.shortcuts.closeModal') }
       ]
@@ -24,10 +24,10 @@ function getShortcutCategories() {
     {
       title: t('vault.shortcuts.entries'),
       shortcuts: [
-        { keys: ['Ctrl', 'N'], description: t('vault.shortcuts.newEntry') },
+        { keys: ['Ctrl/Alt', 'N'], description: t('vault.shortcuts.newEntry') },
         { keys: ['Ctrl', 'E'], description: t('vault.shortcuts.editEntry') },
         { keys: ['Ctrl', 'D'], description: t('vault.shortcuts.duplicateEntry') },
-        { keys: ['Delete'], description: t('vault.shortcuts.deleteEntry') },
+        { keys: ['Delete'], alt: ['Alt', 'D'], description: t('vault.shortcuts.deleteEntry') },
         { keys: ['↑', '↓'], description: t('settingsModal.shortcuts.navigate') }
       ]
     },
@@ -55,15 +55,19 @@ function renderKey(key) {
  * Render keyboard shortcut row
  * @param {Object} shortcut - Shortcut definition
  * @param {Array} shortcut.keys - Key combination
+ * @param {Array} [shortcut.alt] - Alternative key combination
  * @param {string} shortcut.description - Shortcut description
  * @returns {string} HTML string
  */
 function renderShortcutRow(shortcut) {
   const keysHtml = shortcut.keys.map(renderKey).join('<span class="vault-shortcut-plus">+</span>');
+  const altHtml = shortcut.alt
+    ? `<span class="vault-shortcut-or">/</span>${shortcut.alt.map(renderKey).join('<span class="vault-shortcut-plus">+</span>')}`
+    : '';
 
   return `
     <div class="vault-shortcut-row">
-      <div class="vault-shortcut-keys">${keysHtml}</div>
+      <div class="vault-shortcut-keys">${keysHtml}${altHtml}</div>
       <div class="vault-shortcut-desc">${shortcut.description}</div>
     </div>
   `;

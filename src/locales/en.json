@@ -2388,5 +2388,26 @@
   },
   "actions": {
     "moreActions": "More actions"
+  },
+  "clipboard": {
+    "countdown": "Clipboard clears in {seconds}s",
+    "cleared": "Clipboard cleared for security",
+    "clearNow": "Clear now"
+  },
+  "vault": {
+    "search": {
+      "resultCount": "{count} of {total} entries",
+      "noResults": "No entries match your search"
+    },
+    "aria": {
+      "loading": "Loading entries...",
+      "loaded": "Entries loaded"
+    },
+    "benefits": {
+      "title": "Why use GenPwd Pro?",
+      "secure": "256-bit AES encryption protects your data",
+      "autofill": "Auto-fill passwords in any browser",
+      "sync": "Sync across all your devices"
+    }
   }
 }

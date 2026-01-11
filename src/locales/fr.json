@@ -53,7 +53,8 @@
     "generateShortcut": "Générer de nouveaux mots de passe (Raccourci : Alt+G)",
     "runTests": "Lancer les tests de validation (Raccourci : Alt+R)",
     "tests": "Tests",
-    "toggleDebug": "Basculer le panneau de debug"
+    "toggleDebug": "Basculer le panneau de debug",
+    "moreActions": "Plus d'actions"
   },
   "aliasModal": {
     "apiKey": "Clé API / Token",
@@ -155,7 +156,10 @@
     "autoClearDesc": "Effacer le presse-papiers automatiquement après copie",
     "autoClearTitle": "⏱️ Effacement auto",
     "setAutoClearTo": "Définir l'effacement auto à {time}",
-    "settingsAriaLabel": "Paramètres d'effacement automatique du presse-papiers"
+    "settingsAriaLabel": "Paramètres d'effacement automatique du presse-papiers",
+    "countdown": "Presse-papiers vidé dans {seconds}s",
+    "cleared": "Presse-papiers vidé pour la sécurité",
+    "clearNow": "Vider maintenant"
   },
   "common": {
     "about": "À propos",
@@ -1375,7 +1379,9 @@
       "passwordStrength": "Indicateur de force du mot de passe",
       "autotypeSteps": "Étapes de saisie automatique",
       "entryPreview": "Aperçu de l'entrée",
-      "statusIndicators": "Indicateurs d'état"
+      "statusIndicators": "Indicateurs d'état",
+      "loading": "Chargement des entrées...",
+      "loaded": "Entrées chargées"
     },
     "attachments": {
       "dropOrBrowse": "Déposez vos fichiers ici ou {browse}",
@@ -2353,6 +2359,16 @@
       "unlockVault": "GenPwd Pro - Déverrouiller le coffre",
       "verificationFailed": "Vérification Windows Hello échouée",
       "verificationRequired": "Vérification requise"
+    },
+    "search": {
+      "resultCount": "{count} sur {total} entrées",
+      "noResults": "Aucune entrée ne correspond à votre recherche"
+    },
+    "benefits": {
+      "title": "Pourquoi utiliser GenPwd Pro ?",
+      "secure": "Chiffrement AES 256 bits pour protéger vos données",
+      "autofill": "Remplissage automatique dans tous les navigateurs",
+      "sync": "Synchronisation sur tous vos appareils"
     }
   },
   "windowsHello": {
@@ -2363,8 +2379,5 @@
     "unexpectedClose": "L'application a été fermée de manière inattendue",
     "recoverSession": "Restaurer la session ?",
     "dismiss": "Ignorer"
-  },
-  "actions": {
-    "moreActions": "Plus d'actions"
   }
 }

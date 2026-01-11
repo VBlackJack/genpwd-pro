@@ -311,3 +311,34 @@
   flex: 1;
   text-align: right;
 }
+
+/* Benefits Section - Empty State Motivation */
+.vault-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0 24px;
+  padding: 0;
+  list-style: none;
+  max-width: 320px;
+}
+
+.vault-benefit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.vault-benefit svg {
+  flex-shrink: 0;
+  color: var(--accent-blue, #6366f1);
+}
+
+.vault-benefit span {
+  flex: 1;
+}

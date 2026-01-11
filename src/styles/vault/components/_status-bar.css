@@ -113,3 +113,41 @@
   color: var(--color-danger, #ef4444);
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* Clipboard Countdown Toast */
+.toast-clipboard-countdown {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.toast-clipboard-countdown .toast-icon {
+  flex-shrink: 0;
+}
+
+.toast-clipboard-countdown .clipboard-countdown-message {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.toast-clipboard-countdown .clipboard-countdown-clear {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.toast-clipboard-countdown .clipboard-countdown-clear:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toast-clipboard-countdown .clipboard-countdown-clear:focus-visible {
+  outline: 2px solid var(--accent-blue, #6366f1);
+  outline-offset: 2px;
+}
