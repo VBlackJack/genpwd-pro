@@ -24,6 +24,7 @@ import dagger.assisted.AssistedInject
  * - Respect des contraintes réseau (Wi-Fi uniquement par défaut)
  * - Politique de retry limitée pour les erreurs transitoires
  */
+@Suppress("RestrictedApi") // Result.Success/Failure/Retry pattern matching is intentional
 @HiltWorker
 class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,

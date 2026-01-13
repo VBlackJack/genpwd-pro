@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 @Suppress("TooManyFunctions") // Activity coordinates camera, gallery, and manual flows in a single lifecycle scope.
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 class OtpQrScannerActivity : SecureBaseActivity() {
 
     private lateinit var previewView: PreviewView
