@@ -54,9 +54,10 @@ function handleKeyboardShortcut(event) {
   }
 
   // Only handle shortcuts when generator tab is active (not in vault)
-  const isInVault = document.querySelector('.vault-app') !== null ||
-                    document.querySelector('.vault-container') !== null;
-  if (isInVault) {
+  // Check if vault tab is currently visible/active
+  const vaultContainer = document.getElementById('vault-container');
+  const isVaultActive = vaultContainer && !vaultContainer.hidden && vaultContainer.offsetParent !== null;
+  if (isVaultActive) {
     return;
   }
 

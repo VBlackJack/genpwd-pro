@@ -97,6 +97,17 @@ export class Onboarding {
           ]
         },
         {
+          id: 'presets',
+          title: t('onboarding.main.presets.title'),
+          text: t('onboarding.main.presets.text'),
+          attachTo: '#quick-presets-container',
+          position: 'bottom',
+          buttons: [
+            { text: t('onboarding.buttons.back'), action: () => this.prev(), secondary: true },
+            { text: t('onboarding.buttons.next'), action: () => this.next() }
+          ]
+        },
+        {
           id: 'vault',
           title: t('onboarding.main.vault.title'),
           text: t('onboarding.main.vault.text'),

@@ -593,7 +593,7 @@ function updatePresetDropdown() {
   presets.forEach(preset => {
     const option = document.createElement('option');
     option.value = preset.id;
-    option.textContent = `${preset.name}${preset.isDefault ? ' ⭐' : ''}`;
+    option.textContent = `${presetManager.getPresetDisplayName(preset)}${preset.isDefault ? ' ⭐' : ''}`;
     presetSelect.appendChild(option);
   });
 }
@@ -621,8 +621,8 @@ function updateSaveButtonState() {
   if (currentLoadedPresetId) {
     const preset = presetManager.getPreset(currentLoadedPresetId);
     if (preset) {
-      btnSavePreset.innerHTML = `🔄 ${i18n.t('presets.update')} "${preset.name}"`;
-      btnSavePreset.title = i18n.t('presets.updateTooltip', { name: preset.name });
+      btnSavePreset.innerHTML = `🔄 ${i18n.t('presets.update')} "${presetManager.getPresetDisplayName(preset)}"`;
+      btnSavePreset.title = i18n.t('presets.updateTooltip', { name: presetManager.getPresetDisplayName(preset) });
       return;
     }
   }
@@ -649,7 +649,7 @@ function bindPresetEvents() {
           const currentConfig = getCurrentGeneratorConfig();
           const success = await presetManager.updatePreset(currentLoadedPresetId, { config: currentConfig });
           if (success) {
-            showToast(`"${preset.name}" ${i18n.t('presets.updated')}!`, 'success');
+            showToast(`"${presetManager.getPresetDisplayName(preset)}" ${i18n.t('presets.updated')}!`, 'success');
           } else {
             showToast(i18n.t('presets.updateFailed'), 'error');
           }
@@ -1003,7 +1003,7 @@ function loadPreset(event) {
     }
   }
 
-  showToast(i18n.t('presets.loaded', { name: preset.name }), 'success');
+  showToast(i18n.t('presets.loaded', { name: presetManager.getPresetDisplayName(preset) }), 'success');
   safeLog(`Preset loaded: ${preset.id}`);
 }
 
@@ -1056,7 +1056,7 @@ function showManagePresetsModal() {
             <div class="preset-manager-item" data-preset-id="${preset.id}">
               <div class="preset-manager-info">
                 <div class="preset-manager-name">
-                  ${escapeHtml(preset.name)} ${preset.isDefault ? '<span class="text-yellow">⭐</span>' : ''}
+                  ${escapeHtml(presetManager.getPresetDisplayName(preset))} ${preset.isDefault ? '<span class="text-yellow">⭐</span>' : ''}
                 </div>
                 <div class="preset-manager-summary">
                   ${preset.config.mode || 'standard'} • ${preset.config.length || 20} ${i18n.t('presets.config.chars')} • ${preset.config.digits || 0} ${i18n.t('presets.config.digits').toLowerCase()} • ${preset.config.specials || 0} ${i18n.t('presets.config.specials').toLowerCase()}
@@ -1116,8 +1116,8 @@ function bindPresetModalEvents(modal) {
 
         if (preset) {
           const matchesSearch =
-            preset.name.toLowerCase().includes(searchTerm) ||
-            (preset.description && preset.description.toLowerCase().includes(searchTerm));
+            presetManager.getPresetDisplayName(preset).toLowerCase().includes(searchTerm) ||
+            (preset.description && presetManager.getPresetDisplayDescription(preset).toLowerCase().includes(searchTerm));
 
           // CSP-compliant: use class toggle instead of inline style
           item.classList.toggle('d-none', !matchesSearch);
@@ -1247,7 +1247,7 @@ function bindPresetModalEvents(modal) {
           if (preset) {
             updatePresetDropdown();
             modal.remove();
-            showToast(i18n.t('toast.presetImported', { name: preset.name }), 'success');
+            showToast(i18n.t('toast.presetImported', { name: presetManager.getPresetDisplayName(preset) }), 'success');
           } else {
             showToast(i18n.t('toast.vaultLockedToImport'), 'error');
           }
@@ -1323,7 +1323,7 @@ function showEditPresetModal(presetId) {
   modal.innerHTML = sanitizeHTML(`
     <div class="modal modal-md">
       <div class="modal-header">
-        <div class="modal-title">${i18n.t('presets.dialog.editTitle', { name: escapeHtml(preset.name) })}</div>
+        <div class="modal-title">${i18n.t('presets.dialog.editTitle', { name: escapeHtml(presetManager.getPresetDisplayName(preset)) })}</div>
         <button class="modal-close" id="close-edit-modal" aria-label="${i18n.t('common.close')}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1335,7 +1335,7 @@ function showEditPresetModal(presetId) {
         <!-- Info section -->
         <div class="form-group">
           <label for="edit-preset-name">${i18n.t('presets.dialog.nameLabel')} <span class="text-red">*</span></label>
-          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(preset.name)}" required maxlength="50">
+          <input type="text" id="edit-preset-name" class="input-field" value="${escapeHtml(presetManager.getPresetDisplayName(preset))}" required maxlength="50">
           <span class="error-msg" id="edit-name-error" role="alert"></span>
         </div>
 
@@ -1436,7 +1436,7 @@ function showEditPresetModal(presetId) {
     const preset = presetManager.getPreset(presetId);
     if (!preset) return;
 
-    const confirmed = await showConfirm(i18n.t('presets.replaceConfirm', { name: preset.name }), {
+    const confirmed = await showConfirm(i18n.t('presets.replaceConfirm', { name: presetManager.getPresetDisplayName(preset) }), {
       title: i18n.t('presets.updateTitle'),
       confirmLabel: i18n.t('common.update')
     });
@@ -2780,33 +2780,11 @@ function showAdvancedImportModal() {
 
 /**
  * Initialize HIBP (Have I Been Pwned) Breach Checker UI
+ * Note: Toolbar button removed - breach check available on individual password cards
  */
 export function initializeHIBPUI() {
-  // Add HIBP Check button to actions toolbar
-  const actionsToolbar = document.querySelector('.actions');
-  if (!actionsToolbar) return;
-
-  // Check if button already exists
-  if (document.getElementById('btn-hibp-check')) return;
-
-  // Create HIBP check button
-  const hibpBtn = document.createElement('button');
-  hibpBtn.className = 'btn';
-  hibpBtn.id = 'btn-hibp-check';
-  hibpBtn.setAttribute('aria-label', i18n.t('aria.checkBreaches'));
-  hibpBtn.innerHTML = sanitizeHTML('🔍 Check Breaches');
-
-  // Insert after Export button
-  const exportBtn = document.getElementById('btn-export');
-  if (exportBtn) {
-    exportBtn.after(hibpBtn);
-  } else {
-    actionsToolbar.appendChild(hibpBtn);
-  }
-
-  // Bind click event
-  hibpBtn.addEventListener('click', () => showHIBPCheckModal());
-
+  // Breach check is available per-password via the shield button on each card
+  // The bulk check button was removed as it was confusing (wrong selector)
   safeLog('HIBP UI initialized');
 }
 

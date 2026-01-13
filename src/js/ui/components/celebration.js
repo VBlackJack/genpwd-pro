@@ -27,7 +27,8 @@ export const CELEBRATION_TYPES = {
   FIRST_ENTRY: 'firstEntry',
   SCORE_UP: 'scoreUp',
   ALL_STRONG: 'allStrong',
-  MILESTONE: 'milestone'
+  MILESTONE: 'milestone',
+  STRONG_PASSWORD: 'strongPassword'  // BMAD: Triggered when entropy > 128 bits
 };
 
 /** Confetti colors */
@@ -85,7 +86,8 @@ export class Celebration {
       [CELEBRATION_TYPES.FIRST_ENTRY]: t('vault.celebration.firstEntry'),
       [CELEBRATION_TYPES.SCORE_UP]: t('vault.celebration.scoreUp'),
       [CELEBRATION_TYPES.ALL_STRONG]: t('vault.celebration.allStrong'),
-      [CELEBRATION_TYPES.MILESTONE]: t('vault.celebration.milestone', { count: options.count || 10 })
+      [CELEBRATION_TYPES.MILESTONE]: t('vault.celebration.milestone', { count: options.count || 10 }),
+      [CELEBRATION_TYPES.STRONG_PASSWORD]: t('celebration.strongPassword')
     };
 
     const message = messages[type] || options.message;

@@ -55,6 +55,7 @@
     "tests": "Pruebas",
     "toggleDebug": "Alternar panel de debug",
     "moreActions": "Más acciones",
+    "stats": "Estadísticas",
     "copyingPasswords": "Copiando contraseñas..."
   },
   "aliasModal": {
@@ -247,6 +248,10 @@
       "audit": "Auditoría",
       "autofill": "Auto-relleno",
       "customization": "Personalización"
+    },
+    "presets": {
+      "title": "Elige tu estilo",
+      "description": "Selecciona tu estilo de generación preferido. Puedes cambiarlo más tarde."
     },
     "ready": {
       "title": "¡Todo listo!",
@@ -717,6 +722,10 @@
       "results": {
         "text": "Verifica la <strong>entropía</strong> (aleatoriedad) de tu contraseña. ¡Cuanto más alta, mejor! Apunta a 60+ bits.",
         "title": "📊 Fortaleza de la contraseña"
+      },
+      "presets": {
+        "title": "⚡ Presets rápidos",
+        "text": "¡Usa <strong>presets</strong> para casos comunes: Contraseñas fuertes, claves API, bancarias, o frases simples!"
       },
       "vault": {
         "text": "Guarda contraseñas de forma segura en tu <strong>bóveda</strong> cifrada. Cifrado AES-256-GCM, derivación de clave Argon2id.",
@@ -2385,5 +2394,168 @@
     "unexpectedClose": "La aplicación se cerró inesperadamente",
     "recoverSession": "¿Restaurar sesión?",
     "dismiss": "Ignorar"
+  },
+  "quickPresets": {
+    "strong": "Fuerte",
+    "strongDesc": "24 caracteres, mayúsculas mixtas con símbolos",
+    "simple": "Simple",
+    "simpleDesc": "Frase de 4 palabras, fácil de recordar",
+    "maximum": "Máximo",
+    "maximumDesc": "32 caracteres, entropía máxima",
+    "apiKey": "Clave API",
+    "apiKeyDesc": "32 caracteres, alfanumérico, compatible API",
+    "banking": "Bancario",
+    "bankingDesc": "24 caracteres, compatible con bancos",
+    "applied": "¡Preset \"{name}\" aplicado!"
+  },
+  "saveSuggestion": {
+    "prompt": "¿Guardar esta contraseña en tu bóveda?",
+    "action": "Guardar en bóveda"
+  },
+  "copyHistory": {
+    "title": "Copias recientes",
+    "empty": "Sin copias recientes",
+    "clear": "Borrar historial",
+    "recall": "Copiar de nuevo",
+    "copied": "¡Contraseña copiada!",
+    "cleared": "Historial borrado",
+    "recalled": "Contraseña copiada",
+    "justNow": "Ahora mismo",
+    "minutesAgo": "Hace {count}m",
+    "hoursAgo": "Hace {count}h",
+    "daysAgo": "Hace {count}d"
+  },
+  "tooltips": {
+    "entropy": "La entropía mide la aleatoriedad de la contraseña en bits. Mayor = más fuerte. 80+ bits es excelente.",
+    "policy": "La política de caracteres define qué caracteres se pueden usar (letras, dígitos, símbolos).",
+    "leet": "El leet speak reemplaza letras con números/símbolos similares (ej: A→4, E→3).",
+    "syllables": "Genera contraseñas pronunciables alternando consonantes y vocales.",
+    "passphrase": "Varias palabras aleatorias unidas. Fácil de recordar, muy seguro.",
+    "blocks": "Aplicar diferentes estilos de mayúsculas (MAYÚSCULA, minúscula, Título) a segmentos de la contraseña.",
+    "configProfiles": "Guarda tu configuración actual como perfil para cambiar rápidamente entre diferentes configuraciones.",
+    "apiKeyPreset": "Genera contraseñas compatibles con API sin caracteres especiales que puedan causar problemas de codificación.",
+    "bankingPreset": "Crea contraseñas que cumplen con la mayoría de los requisitos de seguridad bancaria.",
+    "usageStats": "Consulta tus estadísticas de generación de contraseñas e información de seguridad."
+  },
+  "celebration": {
+    "strongPassword": "¡Contraseña ultra-segura generada!"
+  },
+  "sound": {
+    "title": "Retroalimentación sonora",
+    "enable": "Activar sonidos",
+    "description": "Reproducir sonidos al copiar, generar y guardar"
+  },
+  "stats": {
+    "title": "Tus estadísticas de generación",
+    "totalGenerated": "Contraseñas generadas",
+    "totalCopied": "Veces copiadas",
+    "totalSaved": "Guardadas en bóveda",
+    "avgEntropy": "Entropía promedio",
+    "strongestPassword": "Más fuerte generada",
+    "modeBreakdown": "Modos de generación",
+    "modeBreakdownChart": "Gráfico de anillo mostrando la distribución de modos de generación",
+    "securityMetrics": "Métricas de seguridad",
+    "memberSince": "Miembro desde",
+    "reset": "Reiniciar",
+    "confirmReset": "¿Reiniciar todas las estadísticas? Esta acción no se puede deshacer.",
+    "total": "Total",
+    "recentActivity": "Actividad reciente",
+    "generated": "generadas",
+    "days": {
+      "sun": "Dom",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb"
+    }
+  },
+  "milestones": {
+    "reached": "¡Hito alcanzado! ¡{{count}} contraseñas generadas!"
+  },
+  "progress": {
+    "exporting": "Exportando...",
+    "importing": "Importando...",
+    "processing": "Procesando {current} de {total}...",
+    "complete": "¡Completado!",
+    "error": "Se produjo un error",
+    "cancel": "Cancelar"
+  },
+  "aria": {
+    "quickPresets": "Presets rápidos"
+  },
+  "achievements": {
+    "title": "Logros",
+    "unlocked": "¡Logro desbloqueado!",
+    "of": "de",
+    "firstPassword": {
+      "name": "Primeros pasos",
+      "desc": "Genera tu primera contraseña"
+    },
+    "generator10": {
+      "name": "Empezando",
+      "desc": "Genera 10 contraseñas"
+    },
+    "generator100": {
+      "name": "Experto en contraseñas",
+      "desc": "Genera 100 contraseñas"
+    },
+    "strongPassword": {
+      "name": "Campeón de seguridad",
+      "desc": "Genera una contraseña con 128+ bits de entropía"
+    },
+    "vaultSaver": {
+      "name": "Maestro de la bóveda",
+      "desc": "Guarda 10 contraseñas en la bóveda"
+    },
+    "copyMaster": {
+      "name": "Experto en copiar",
+      "desc": "Copia 50 contraseñas"
+    },
+    "allModes": {
+      "name": "Explorador de modos",
+      "desc": "Usa los tres modos de generación"
+    }
+  },
+  "entropyPreview": {
+    "weak": "Débil",
+    "fair": "Aceptable",
+    "good": "Bueno",
+    "strong": "Fuerte",
+    "veryStrong": "Muy fuerte",
+    "bits": "{{count}} bits"
+  },
+  "commandPalette": {
+    "title": "Paleta de comandos",
+    "placeholder": "Escribe un comando...",
+    "noResults": "No hay comandos coincidentes",
+    "navigate": "Navegar",
+    "select": "Seleccionar",
+    "close": "Cerrar",
+    "commands": {
+      "generate": "Generar contraseñas",
+      "copyAll": "Copiar todo",
+      "clear": "Limpiar resultados",
+      "stats": "Ver estadísticas",
+      "presetStrong": "Aplicar preset Fuerte",
+      "presetSimple": "Aplicar preset Simple",
+      "presetMaximum": "Aplicar preset Máximo",
+      "presetApiKey": "Aplicar preset Clave API",
+      "presetBanking": "Aplicar preset Bancario",
+      "theme": "Cambiar tema",
+      "vault": "Abrir bóveda",
+      "help": "Mostrar ayuda"
+    }
+  },
+  "customPresets": {
+    "save": "Guardar",
+    "namePrompt": "Nombre del preset:",
+    "saved": "¡Preset guardado!",
+    "deleted": "Preset eliminado"
+  },
+  "easterEggs": {
+    "konami": "🎮 ¡Código Konami activado!",
+    "credits": "✨ Creado con pasión por Julien Bombled"
   }
 }

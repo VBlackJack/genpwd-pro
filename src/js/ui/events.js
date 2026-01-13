@@ -30,6 +30,28 @@ import { ANIMATION_DURATION } from '../config/ui-constants.js';
 import { renderResults, updateMaskDisplay, renderEmptyState } from './render.js';
 import { initVisualPlacement, getVisualPlacement } from './placement.js';
 import { createModal, showConfirm } from './modal-manager.js';
+import { initQuickPresets } from './components/quick-presets.js';
+import { initContextualTooltips } from './components/contextual-tooltips.js';
+import { initCopyHistoryButton } from '../utils/copy-history.js';
+import { VaultBridge, VaultState } from './vault-bridge.js';
+import { SaveToVaultModal } from './save-to-vault-modal.js';
+import { Celebration, CELEBRATION_TYPES } from './components/celebration.js';
+import { statsModal } from './modals/stats-modal.js';
+import { recordGeneration, recordCopy } from '../utils/usage-stats.js';
+import { initAchievements, checkAchievements } from '../utils/achievement-manager.js';
+import { initAchievementDisplay } from './components/achievement-display.js';
+import { initEntropyPreview } from './components/entropy-preview.js';
+import { initCommandPalette } from './components/command-palette.js';
+import { initEasterEggs } from './easter-eggs.js';
+
+// Singleton celebration instance
+let celebration = null;
+function getCelebration() {
+  if (!celebration) {
+    celebration = new Celebration();
+  }
+  return celebration;
+}
 
 let previewTimeout = null;
 let blockSyncTimeout = null;
@@ -101,6 +123,22 @@ export function bindEventHandlers() {
 }
 
 function bindMainActions() {
+  // Initialize Quick Presets - BMAD UX
+  initQuickPresets();
+
+  // Initialize Contextual Tooltips - BMAD UX
+  initContextualTooltips();
+
+  // Initialize Copy History Button - BMAD UX
+  initCopyHistoryButton();
+
+  // Initialize BMAD Phase 5 features
+  initAchievements();
+  initAchievementDisplay();
+  initEntropyPreview();
+  initCommandPalette();
+  initEasterEggs();
+
   // Main action: generate
   addEventListener(getElement('#btn-generate'), 'click', generatePasswords);
 
@@ -121,6 +159,11 @@ function bindMainActions() {
     setUIState('debugVisible', isVisible);
   });
   addEventListener(getElement('#btn-clear-logs'), 'click', clearLogs);
+
+  // Stats button - BMAD Phase 4
+  addEventListener(getElement('#btn-stats'), 'click', () => {
+    statsModal.show();
+  });
 }
 
 /**
@@ -599,7 +642,7 @@ async function generateSinglePassword(mode, commonConfig, settings) {
  * @param {Array} results - Array of generated passwords
  * @param {Object} settings - Current settings
  */
-function handleGenerationResults(results, settings) {
+async function handleGenerationResults(results, settings) {
   if (results.length === 0) {
     showToast(t('toast.generationError'), 'error');
     return;
@@ -607,6 +650,18 @@ function handleGenerationResults(results, settings) {
 
   setResults(results);
   renderResults(results, settings.mask);
+
+  // BMAD Phase 4: Record generation statistics
+  results.forEach(result => {
+    recordGeneration({
+      mode: result.mode || settings.mode,
+      entropy: result.entropy || 0,
+      count: 1
+    });
+  });
+
+  // BMAD Phase 5: Check achievements after recording stats
+  checkAchievements();
 
   const dictText = settings.mode === 'passphrase'
     ? ` (${settings.specific.dictionary})`
@@ -616,6 +671,71 @@ function handleGenerationResults(results, settings) {
     t('toast.passwordsGenerated', { count: results.length, dict: dictText }),
     'success'
   );
+
+  // BMAD UX: Confetti for strong passwords (entropy > 128 bits)
+  checkAndCelebrateStrongPassword(results);
+
+  // BMAD UX: Save suggestion - Show toast with action to save to vault
+  await showSaveSuggestion(results);
+}
+
+/**
+ * Check if any password has entropy > 128 bits and trigger celebration
+ * @param {Array} results - Generated passwords with entropy values
+ */
+function checkAndCelebrateStrongPassword(results) {
+  const STRONG_ENTROPY_THRESHOLD = 128;
+
+  // Check if any password exceeds the threshold
+  const strongPasswords = results.filter(result =>
+    result?.entropy && result.entropy >= STRONG_ENTROPY_THRESHOLD
+  );
+
+  if (strongPasswords.length > 0) {
+    // Trigger celebration!
+    getCelebration().celebrate(CELEBRATION_TYPES.STRONG_PASSWORD, {
+      count: strongPasswords.length
+    });
+  }
+}
+
+/**
+ * Show a save suggestion toast if vault is available and unlocked
+ * @param {Array} results - Generated passwords
+ */
+async function showSaveSuggestion(results) {
+  // Only suggest if vault is available
+  if (!VaultBridge.isAvailable()) {
+    return;
+  }
+
+  // Check if vault is unlocked
+  const isUnlocked = await VaultBridge.isUnlocked();
+  if (!isUnlocked) {
+    return;
+  }
+
+  // Get the first password (usually the one user wants to save)
+  const firstResult = results[0];
+  if (!firstResult?.value) {
+    return;
+  }
+
+  // Show save suggestion toast with action (with slight delay for better UX)
+  setTimeout(() => {
+    showToast(
+      t('saveSuggestion.prompt'),
+      'info',
+      {
+        action: {
+          label: t('saveSuggestion.action'),
+          onClick: () => {
+            SaveToVaultModal.open(firstResult.value);
+          }
+        }
+      }
+    );
+  }, 800);
 }
 
 /**
@@ -743,6 +863,11 @@ async function copyAllPasswords() {
 
     if (success) {
       safeLog(`Bulk copy: ${count} entries`);
+      // BMAD Phase 5: Record copy and check achievements
+      for (let i = 0; i < count; i++) {
+        recordCopy();
+      }
+      checkAchievements();
     }
   } finally {
     // Restore button state

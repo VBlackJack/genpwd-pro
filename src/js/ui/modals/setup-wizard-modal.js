@@ -21,6 +21,7 @@
 
 import { Modal } from './modal.js';
 import { t } from '../../utils/i18n.js';
+import { applyQuickPreset, QUICK_PRESETS } from '../components/quick-presets.js';
 
 const STORAGE_KEY = 'genpwd-setup-completed';
 
@@ -29,8 +30,9 @@ const STORAGE_KEY = 'genpwd-setup-completed';
  */
 export class SetupWizardModal extends Modal {
   #currentStep = 0;
-  #totalSteps = 4;
+  #totalSteps = 5;
   #onComplete = null;
+  #selectedPreset = 'strong'; // BMAD: Default preset
 
   constructor() {
     super('setup-wizard-modal');
@@ -85,6 +87,7 @@ export class SetupWizardModal extends Modal {
       this.#renderWelcomeStep(),
       this.#renderSecurityStep(),
       this.#renderFeaturesStep(),
+      this.#renderPresetsStep(),
       this.#renderReadyStep()
     ];
     return steps[step] || steps[0];
@@ -205,6 +208,38 @@ export class SetupWizardModal extends Modal {
     `;
   }
 
+  #renderPresetsStep() {
+    return `
+      <div class="setup-step setup-step-presets">
+        <div class="setup-icon setup-icon-presets">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <h2 class="setup-title">${t('setupWizard.presets.title')}</h2>
+        <p class="setup-description">${t('setupWizard.presets.description')}</p>
+        <div class="setup-presets-grid">
+          <button type="button" class="setup-preset-card ${this.#selectedPreset === 'strong' ? 'selected' : ''}" data-preset="strong">
+            <span class="preset-icon">${QUICK_PRESETS.strong.icon}</span>
+            <span class="preset-name">${t('quickPresets.strong')}</span>
+            <span class="preset-desc">${t('quickPresets.strongDesc')}</span>
+          </button>
+          <button type="button" class="setup-preset-card ${this.#selectedPreset === 'simple' ? 'selected' : ''}" data-preset="simple">
+            <span class="preset-icon">${QUICK_PRESETS.simple.icon}</span>
+            <span class="preset-name">${t('quickPresets.simple')}</span>
+            <span class="preset-desc">${t('quickPresets.simpleDesc')}</span>
+          </button>
+          <button type="button" class="setup-preset-card ${this.#selectedPreset === 'maximum' ? 'selected' : ''}" data-preset="maximum">
+            <span class="preset-icon">${QUICK_PRESETS.maximum.icon}</span>
+            <span class="preset-name">${t('quickPresets.maximum')}</span>
+            <span class="preset-desc">${t('quickPresets.maximumDesc')}</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   #renderReadyStep() {
     return `
       <div class="setup-step setup-step-ready">
@@ -308,6 +343,10 @@ export class SetupWizardModal extends Modal {
         const createBtn = content.querySelector('#setup-create-vault');
         createBtn?.addEventListener('click', () => this.#complete());
       }
+      // Bind preset card selection on presets step (step 3)
+      if (this.#currentStep === 3) {
+        this.#bindPresetCards();
+      }
     }
 
     if (nextBtn) {
@@ -330,6 +369,20 @@ export class SetupWizardModal extends Modal {
     }
   }
 
+  #bindPresetCards() {
+    const cards = this.element?.querySelectorAll('.setup-preset-card');
+    cards?.forEach(card => {
+      card.addEventListener('click', () => {
+        // Remove selection from all cards
+        cards.forEach(c => c.classList.remove('selected'));
+        // Select clicked card
+        card.classList.add('selected');
+        // Store selection
+        this.#selectedPreset = card.dataset.preset;
+      });
+    });
+  }
+
   #skip() {
     this.markCompleted();
     this.hide();
@@ -338,6 +391,12 @@ export class SetupWizardModal extends Modal {
   #complete() {
     this.markCompleted();
     this.hide();
+
+    // Apply selected preset - BMAD UX
+    if (this.#selectedPreset) {
+      applyQuickPreset(this.#selectedPreset, { silent: true });
+    }
+
     if (typeof this.#onComplete === 'function') {
       this.#onComplete();
     }

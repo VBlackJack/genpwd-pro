@@ -462,9 +462,25 @@ header[data-aurora="true"]::before {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  padding: 12px;
+  align-items: center;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, var(--overlay-subtle), transparent);
+}
+
+/* Group main action buttons together */
+.actions > .btn.cta {
+  margin-right: 4px;
+}
+
+/* Secondary buttons group */
+.actions > .btn.secondary {
+  padding: 8px 12px;
+}
+
+/* Better spacing between presets and main buttons */
+.actions > .quick-presets-container + .btn {
+  margin-left: 8px;
 }
 
 .results-list {

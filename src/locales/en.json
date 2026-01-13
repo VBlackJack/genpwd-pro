@@ -134,6 +134,10 @@
       "autofill": "Auto-fill",
       "customization": "Customization"
     },
+    "presets": {
+      "title": "Choose Your Style",
+      "description": "Select your preferred password generation style. You can change this later."
+    },
     "ready": {
       "title": "You're All Set!",
       "description": "Create your first vault to start securing your passwords.",
@@ -2215,6 +2219,10 @@
         "title": "📊 Password Strength",
         "text": "Check your password's <strong>entropy</strong> (randomness). Higher is better! Aim for 60+ bits."
       },
+      "presets": {
+        "title": "⚡ Quick Presets",
+        "text": "Use <strong>presets</strong> for common use cases: Strong passwords, API keys, banking, or simple passphrases!"
+      },
       "vault": {
         "title": "🗄️ Vault Storage",
         "text": "Save passwords securely in your encrypted <strong>Vault</strong>. AES-256-GCM encryption, Argon2id key derivation."
@@ -2432,7 +2440,8 @@
     "dismiss": "Dismiss"
   },
   "actions": {
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "stats": "Statistics"
   },
   "clipboard": {
     "countdown": "Clipboard clears in {seconds}s",
@@ -2454,5 +2463,168 @@
       "autofill": "Auto-fill passwords in any browser",
       "sync": "Sync across all your devices"
     }
+  },
+  "quickPresets": {
+    "strong": "Strong",
+    "strongDesc": "24 characters, mixed case with symbols",
+    "simple": "Simple",
+    "simpleDesc": "4 words passphrase, easy to remember",
+    "maximum": "Maximum",
+    "maximumDesc": "32 characters, maximum entropy",
+    "apiKey": "API Key",
+    "apiKeyDesc": "32 characters, alphanumeric, API-safe",
+    "banking": "Banking",
+    "bankingDesc": "24 characters, banking compliant",
+    "applied": "Preset \"{name}\" applied!"
+  },
+  "saveSuggestion": {
+    "prompt": "Save this password to your vault?",
+    "action": "Save to Vault"
+  },
+  "copyHistory": {
+    "title": "Recent Copies",
+    "empty": "No recent copies",
+    "clear": "Clear History",
+    "recall": "Copy again",
+    "copied": "Password copied!",
+    "cleared": "History cleared",
+    "recalled": "Password copied",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  },
+  "tooltips": {
+    "entropy": "Entropy measures password randomness in bits. Higher = stronger. 80+ bits is excellent.",
+    "policy": "Character policy defines which characters can be used (letters, digits, symbols).",
+    "leet": "Leet speak replaces letters with similar-looking numbers/symbols (e.g., A→4, E→3).",
+    "syllables": "Generates pronounceable passwords by alternating consonants and vowels.",
+    "passphrase": "Multiple random words joined together. Easy to remember, very secure.",
+    "blocks": "Apply different case styles (UPPER, lower, Title) to segments of the password.",
+    "configProfiles": "Save your current settings as a profile to quickly switch between different configurations.",
+    "apiKeyPreset": "Generates API-safe passwords without special characters that could cause encoding issues.",
+    "bankingPreset": "Creates passwords that comply with most banking security requirements.",
+    "usageStats": "View your password generation statistics and security insights."
+  },
+  "celebration": {
+    "strongPassword": "Ultra-secure password generated!"
+  },
+  "sound": {
+    "title": "Sound Feedback",
+    "enable": "Enable sounds",
+    "description": "Play sounds on copy, generate, and save actions"
+  },
+  "stats": {
+    "title": "Your Generation Stats",
+    "totalGenerated": "Passwords Generated",
+    "totalCopied": "Times Copied",
+    "totalSaved": "Saved to Vault",
+    "avgEntropy": "Average Entropy",
+    "strongestPassword": "Strongest Generated",
+    "modeBreakdown": "Generation Modes",
+    "modeBreakdownChart": "Donut chart showing password generation mode breakdown",
+    "securityMetrics": "Security Metrics",
+    "memberSince": "Member since",
+    "reset": "Reset Stats",
+    "confirmReset": "Reset all statistics? This action cannot be undone.",
+    "total": "Total",
+    "recentActivity": "Recent Activity",
+    "generated": "generated",
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  },
+  "milestones": {
+    "reached": "Milestone! {{count}} passwords generated!"
+  },
+  "progress": {
+    "exporting": "Exporting...",
+    "importing": "Importing...",
+    "processing": "Processing {current} of {total}...",
+    "complete": "Complete!",
+    "error": "An error occurred",
+    "cancel": "Cancel"
+  },
+  "aria": {
+    "quickPresets": "Quick presets"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "unlocked": "Achievement Unlocked!",
+    "of": "of",
+    "firstPassword": {
+      "name": "First Steps",
+      "desc": "Generate your first password"
+    },
+    "generator10": {
+      "name": "Getting Started",
+      "desc": "Generate 10 passwords"
+    },
+    "generator100": {
+      "name": "Password Pro",
+      "desc": "Generate 100 passwords"
+    },
+    "strongPassword": {
+      "name": "Security Champion",
+      "desc": "Generate a password with 128+ bits entropy"
+    },
+    "vaultSaver": {
+      "name": "Vault Master",
+      "desc": "Save 10 passwords to vault"
+    },
+    "copyMaster": {
+      "name": "Copy Expert",
+      "desc": "Copy 50 passwords"
+    },
+    "allModes": {
+      "name": "Mode Explorer",
+      "desc": "Use all three generation modes"
+    }
+  },
+  "entropyPreview": {
+    "weak": "Weak",
+    "fair": "Fair",
+    "good": "Good",
+    "strong": "Strong",
+    "veryStrong": "Very Strong",
+    "bits": "{{count}} bits"
+  },
+  "commandPalette": {
+    "title": "Command Palette",
+    "placeholder": "Type a command...",
+    "noResults": "No matching commands",
+    "navigate": "Navigate",
+    "select": "Select",
+    "close": "Close",
+    "commands": {
+      "generate": "Generate Passwords",
+      "copyAll": "Copy All",
+      "clear": "Clear Results",
+      "stats": "View Statistics",
+      "presetStrong": "Apply Strong Preset",
+      "presetSimple": "Apply Simple Preset",
+      "presetMaximum": "Apply Maximum Preset",
+      "presetApiKey": "Apply API Key Preset",
+      "presetBanking": "Apply Banking Preset",
+      "theme": "Change Theme",
+      "vault": "Open Vault",
+      "help": "Show Help"
+    }
+  },
+  "customPresets": {
+    "save": "Save",
+    "namePrompt": "Enter preset name:",
+    "saved": "Preset saved!",
+    "deleted": "Preset deleted"
+  },
+  "easterEggs": {
+    "konami": "🎮 Konami Code Activated!",
+    "credits": "✨ Made with passion by Julien Bombled"
   }
 }

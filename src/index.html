@@ -85,7 +85,9 @@
             <svg class="vault-status-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <span class="vault-status-text" data-i18n="header.vaultLocked">Locked</span>
           </button>
-          <div class="version-badge" data-i18n-aria-label="app.version" data-i18n-aria-label-options='{"version":"3.0.4"}' aria-label="Version 3.0.4">v3.0.4</div>
+          <!-- Achievement Badge - BMAD Phase 6 -->
+          <div id="header-achievement-container"></div>
+          <div class="version-badge" data-i18n-aria-label="app.version" data-i18n-aria-label-options='{"version":"3.0.5"}' aria-label="Version 3.0.5">v3.0.5</div>
           <button type="button" class="about-btn" id="btn-about" data-i18n-aria-label="aria.showAbout" aria-label="Show information about GenPwd Pro">
             <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
@@ -256,14 +258,14 @@
               <!-- Syllables options -->
               <div id="mode-syllables-opts" aria-label="Syllables mode options">
                 <div class="row">
-                  <label for="syll-len" id="syll-len-label" data-i18n="generator.length">Length</label>
+                  <label for="syll-len" id="syll-len-label" data-i18n="generator.length" data-tooltip-key="syllables">Length</label>
                   <div class="grow slider-wrap">
                     <input type="range" id="syll-len" class="slider" min="6" max="64" value="20" data-i18n-aria-label="aria.passwordLength" aria-label="Password length" aria-describedby="syll-len-val" aria-valuemin="6" aria-valuemax="64" aria-valuenow="20">
                     <span class="badge" id="syll-len-val" aria-live="polite">20</span>
                   </div>
                 </div>
                 <div class="row">
-                  <label for="policy-select" data-i18n="generator.policy">Policy</label>
+                  <label for="policy-select" data-i18n="generator.policy" data-tooltip-key="policy">Policy</label>
                   <select id="policy-select" class="grow" data-i18n-aria-label="aria.characterPolicy" aria-label="Character policy">
                     <option value="standard" selected data-i18n="policy.standard">Standard (all characters)</option>
                     <option value="standard-layout" data-i18n="policy.standardLayout">Standard Layout-Safe (AZERTY/QWERTY)</option>
@@ -276,7 +278,7 @@
               <!-- Passphrase options -->
               <div id="mode-passphrase-opts" class="hidden">
                 <div class="row">
-                  <label for="pp-count" data-i18n="generator.wordCount">Word count</label>
+                  <label for="pp-count" data-i18n="generator.wordCount" data-tooltip-key="passphrase">Word count</label>
                   <div class="grow slider-wrap">
                     <input type="range" id="pp-count" class="slider" min="2" max="8" value="5" data-i18n-aria-label="aria.numberOfWords" aria-label="Number of words in passphrase" aria-describedby="pp-count-val" aria-valuemin="2" aria-valuemax="8" aria-valuenow="5">
                     <span class="badge" id="pp-count-val" aria-live="polite">5</span>
@@ -310,7 +312,7 @@
               <!-- Leet options -->
               <div id="mode-leet-opts" class="hidden">
                 <div class="row">
-                  <label for="leet-input" data-i18n="generator.wordToTransform">Word to transform</label>
+                  <label for="leet-input" data-i18n="generator.wordToTransform" data-tooltip-key="leet">Word to transform</label>
                   <input id="leet-input" class="input grow" type="text" value="password" data-i18n-aria-label="aria.leetWordDesc" aria-label="Word to transform into leet speak" aria-describedby="leet-input-desc">
                   <span id="leet-input-desc" class="sr-only" data-i18n="aria.leetWordDesc">Enter a word to convert to leet speak format</span>
                 </div>
@@ -352,6 +354,15 @@
               </div>
             </div>
           </section>
+
+          <!-- Real-time Entropy Preview - BMAD Phase 5 -->
+          <div class="entropy-preview" id="entropy-preview" aria-live="polite">
+            <div class="entropy-bar">
+              <div class="entropy-fill" id="entropy-fill"></div>
+            </div>
+            <span class="entropy-label" id="entropy-label" data-i18n="entropyPreview.bits" data-i18n-options='{"count": 0}'>0 bits</span>
+            <span class="entropy-strength" id="entropy-strength">--</span>
+          </div>
 
           <!-- Advanced Options (collapsed by default for progressive disclosure - BMAD) -->
           <section class="section collapsed" aria-labelledby="section-advanced">
@@ -412,7 +423,7 @@
               <div class="divider"></div>
 
               <div class="row">
-                <label for="case-mode-select" data-i18n="generator.caseManagement">Case management</label>
+                <label for="case-mode-select" data-i18n="generator.caseManagement" data-tooltip-key="blocks">Case management</label>
                 <select id="case-mode-select" class="grow" data-i18n-aria-label="aria.caseManagement" aria-label="Uppercase/lowercase management mode">
                   <option value="mixte" data-i18n="case.mixed">Mixed (random)</option>
                   <option value="upper" data-i18n="case.upper">UPPERCASE</option>
@@ -472,7 +483,7 @@
 
                 <strong>🎯 <span data-i18n="help.visualPlacement">Visual placement</span>:</strong> <span data-i18n="help.visualPlacementContent">Select "Visual" in placement dropdowns for interactive position control.</span><br><br>
 
-                <strong>📊 <span data-i18n="help.entropy">Entropy</span>:</strong> <span data-i18n="help.entropyContent">Generated passwords reach up to 140 bits of entropy for maximum security.</span>
+                <strong>📊 <span data-i18n="help.entropy" data-tooltip-key="entropy">Entropy</span>:</strong> <span data-i18n="help.entropyContent">Generated passwords reach up to 140 bits of entropy for maximum security.</span>
               </p>
             </div>
           </section>
@@ -482,6 +493,8 @@
       <!-- Results Panel -->
       <section class="results" id="results-panel" role="region" data-i18n-aria-label="aria.resultsPanel" aria-label="Results panel">
         <div class="actions" role="toolbar" data-i18n-aria-label="aria.mainActions" aria-label="Main actions">
+          <!-- Quick Presets - BMAD UX -->
+          <div class="quick-presets-container" id="quick-presets-container" role="group" data-i18n-aria-label="aria.quickPresets" aria-label="Quick presets"></div>
           <button type="button" class="btn primary cta" id="btn-generate" data-i18n-aria-label="actions.generateShortcut" aria-label="Generate new passwords (Shortcut: Alt+G)"><svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M13 6l-1.5 3-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" fill="currentColor" stroke="none"></path></svg> <span data-i18n="actions.generate">Generate</span></button>
           <button type="button" class="btn secondary" id="btn-copy-all" data-i18n-aria-label="actions.copyAllShortcut" aria-label="Copy all generated passwords (Shortcut: Alt+C)"><svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> <span data-i18n="actions.copyAll">Copy All</span></button>
           <button type="button" class="btn secondary" id="btn-clear" data-i18n-aria-label="actions.clearAll" aria-label="Clear all results"><svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> <span data-i18n="actions.clear">Clear</span></button>
@@ -508,6 +521,11 @@
               <button type="button" class="toolbar-overflow-item" id="btn-toggle-debug" role="menuitem" data-i18n-aria-label="actions.toggleDebug" aria-label="Toggle debug panel">
                 <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 2l1.88 1.88"></path><path d="M14.12 3.88L16 2"></path><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"></path><path d="M12 20v-9"></path></svg>
                 <span data-i18n="actions.debug">Debug</span>
+              </button>
+              <div class="toolbar-overflow-divider" role="separator"></div>
+              <button type="button" class="toolbar-overflow-item" id="btn-stats" role="menuitem" data-i18n-aria-label="actions.stats" aria-label="View usage statistics" data-tooltip-key="usageStats">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                <span data-i18n="actions.stats">Statistics</span>
               </button>
             </div>
           </div>

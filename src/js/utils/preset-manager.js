@@ -229,13 +229,14 @@ class PresetManager {
 
   /**
    * Ensure default preset exists
+   * Note: Uses fixed name/description - translate at display time via getPresetDisplayName()
    */
   ensureDefaultPreset() {
     if (!this.presets.has(DEFAULT_PRESET_ID)) {
       const defaultPreset = {
         id: DEFAULT_PRESET_ID,
-        name: i18n.t('presets.defaults.name'),
-        description: i18n.t('presets.defaults.description'),
+        name: '__default__', // Special marker - translated at display time
+        description: '__default_desc__',
         config: {
           mode: 'syllables',
           length: 20,
@@ -255,6 +256,36 @@ class PresetManager {
       this.presets.set(DEFAULT_PRESET_ID, defaultPreset);
       this.savePresets();
     }
+  }
+
+  /**
+   * Get display name for a preset (handles i18n for default preset)
+   * @param {Preset} preset - The preset object
+   * @returns {string} Display name
+   */
+  getPresetDisplayName(preset) {
+    if (!preset) return '';
+    // Translate default preset name
+    if (preset.isDefault || preset.id === DEFAULT_PRESET_ID ||
+        preset.name === '__default__' || preset.name?.startsWith('presets.default')) {
+      return i18n.t('presets.defaults.name');
+    }
+    return preset.name;
+  }
+
+  /**
+   * Get display description for a preset (handles i18n for default preset)
+   * @param {Preset} preset - The preset object
+   * @returns {string} Display description
+   */
+  getPresetDisplayDescription(preset) {
+    if (!preset) return '';
+    // Translate default preset description
+    if (preset.isDefault || preset.id === DEFAULT_PRESET_ID ||
+        preset.description === '__default_desc__' || preset.description?.startsWith('presets.default')) {
+      return i18n.t('presets.defaults.description');
+    }
+    return preset.description || '';
   }
 
   /**

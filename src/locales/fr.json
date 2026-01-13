@@ -55,6 +55,7 @@
     "tests": "Tests",
     "toggleDebug": "Basculer le panneau de debug",
     "moreActions": "Plus d'actions",
+    "stats": "Statistiques",
     "copyingPasswords": "Copie des mots de passe..."
   },
   "aliasModal": {
@@ -117,7 +118,8 @@
     "specialsPlacement": "Placement des caractères spéciaux",
     "unsavedChanges": "Modifications non sauvegardées",
     "vaultTab": "Onglet Coffre",
-    "wordSeparator": "Séparateur de mots"
+    "wordSeparator": "Séparateur de mots",
+    "quickPresets": "Préréglages rapides"
   },
   "breach": {
     "breachesCount": "{count} fuites détectées",
@@ -247,6 +249,10 @@
       "audit": "Audit sécurité",
       "autofill": "Remplissage auto",
       "customization": "Personnalisation"
+    },
+    "presets": {
+      "title": "Choisissez votre style",
+      "description": "Sélectionnez votre style de génération préféré. Vous pouvez le modifier plus tard."
     },
     "ready": {
       "title": "Vous êtes prêt !",
@@ -717,6 +723,10 @@
       "results": {
         "text": "Vérifiez l'<strong>entropie</strong> (aléatoire) de votre mot de passe. Plus c'est élevé, mieux c'est ! Visez 60+ bits.",
         "title": "📊 Force du mot de passe"
+      },
+      "presets": {
+        "title": "⚡ Préréglages rapides",
+        "text": "Utilisez les <strong>préréglages</strong> pour les cas d'usage courants : Mots de passe forts, clés API, bancaires, ou phrases de passe simples !"
       },
       "vault": {
         "text": "Sauvegardez vos mots de passe en toute sécurité dans votre <strong>coffre</strong> chiffré. Chiffrement AES-256-GCM, dérivation de clé Argon2id.",
@@ -2430,5 +2440,165 @@
     "unexpectedClose": "L'application a été fermée de manière inattendue",
     "recoverSession": "Restaurer la session ?",
     "dismiss": "Ignorer"
+  },
+  "quickPresets": {
+    "strong": "Fort",
+    "strongDesc": "24 caractères, casse mixte avec symboles",
+    "simple": "Simple",
+    "simpleDesc": "Passphrase de 4 mots, facile à retenir",
+    "maximum": "Maximum",
+    "maximumDesc": "32 caractères, entropie maximale",
+    "apiKey": "Clé API",
+    "apiKeyDesc": "32 caractères, alphanumérique, compatible API",
+    "banking": "Bancaire",
+    "bankingDesc": "24 caractères, conforme aux banques",
+    "applied": "Préréglage \"{name}\" appliqué !"
+  },
+  "saveSuggestion": {
+    "prompt": "Enregistrer ce mot de passe dans votre coffre ?",
+    "action": "Enregistrer dans le coffre"
+  },
+  "copyHistory": {
+    "title": "Copies récentes",
+    "empty": "Aucune copie récente",
+    "clear": "Effacer l'historique",
+    "recall": "Copier à nouveau",
+    "copied": "Mot de passe copié !",
+    "cleared": "Historique effacé",
+    "recalled": "Mot de passe copié",
+    "justNow": "À l'instant",
+    "minutesAgo": "Il y a {count}m",
+    "hoursAgo": "Il y a {count}h",
+    "daysAgo": "Il y a {count}j"
+  },
+  "tooltips": {
+    "entropy": "L'entropie mesure le caractère aléatoire du mot de passe en bits. Plus c'est élevé, plus c'est fort. 80+ bits est excellent.",
+    "policy": "La politique de caractères définit quels caractères peuvent être utilisés (lettres, chiffres, symboles).",
+    "leet": "Le leet speak remplace les lettres par des chiffres/symboles similaires (ex : A→4, E→3).",
+    "syllables": "Génère des mots de passe prononçables en alternant consonnes et voyelles.",
+    "passphrase": "Plusieurs mots aléatoires joints ensemble. Facile à retenir, très sécurisé.",
+    "blocks": "Appliquer différents styles de casse (MAJUSCULE, minuscule, Titre) aux segments du mot de passe.",
+    "configProfiles": "Enregistrez vos paramètres actuels comme profil pour basculer rapidement entre différentes configurations.",
+    "apiKeyPreset": "Génère des mots de passe compatibles API sans caractères spéciaux pouvant causer des problèmes d'encodage.",
+    "bankingPreset": "Crée des mots de passe conformes à la plupart des exigences de sécurité bancaire.",
+    "usageStats": "Consultez vos statistiques de génération de mots de passe et vos indicateurs de sécurité."
+  },
+  "celebration": {
+    "strongPassword": "Mot de passe ultra-sécurisé généré !"
+  },
+  "sound": {
+    "title": "Retour sonore",
+    "enable": "Activer les sons",
+    "description": "Jouer des sons lors de la copie, génération et sauvegarde"
+  },
+  "stats": {
+    "title": "Vos statistiques de génération",
+    "totalGenerated": "Mots de passe générés",
+    "totalCopied": "Fois copiés",
+    "totalSaved": "Enregistrés dans le coffre",
+    "avgEntropy": "Entropie moyenne",
+    "strongestPassword": "Le plus fort généré",
+    "modeBreakdown": "Modes de génération",
+    "modeBreakdownChart": "Graphique en anneau montrant la répartition des modes de génération",
+    "securityMetrics": "Métriques de sécurité",
+    "memberSince": "Membre depuis",
+    "reset": "Réinitialiser",
+    "confirmReset": "Réinitialiser toutes les statistiques ? Cette action est irréversible.",
+    "total": "Total",
+    "recentActivity": "Activité récente",
+    "generated": "générés",
+    "days": {
+      "sun": "Dim",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam"
+    }
+  },
+  "milestones": {
+    "reached": "Jalon atteint ! {{count}} mots de passe générés !"
+  },
+  "progress": {
+    "exporting": "Exportation...",
+    "importing": "Importation...",
+    "processing": "Traitement {current} sur {total}...",
+    "complete": "Terminé !",
+    "error": "Une erreur s'est produite",
+    "cancel": "Annuler"
+  },
+  "achievements": {
+    "title": "Succès",
+    "unlocked": "Succès débloqué !",
+    "of": "sur",
+    "firstPassword": {
+      "name": "Premiers pas",
+      "desc": "Générez votre premier mot de passe"
+    },
+    "generator10": {
+      "name": "Bien commencer",
+      "desc": "Générez 10 mots de passe"
+    },
+    "generator100": {
+      "name": "Expert en mots de passe",
+      "desc": "Générez 100 mots de passe"
+    },
+    "strongPassword": {
+      "name": "Champion de la sécurité",
+      "desc": "Générez un mot de passe avec 128+ bits d'entropie"
+    },
+    "vaultSaver": {
+      "name": "Maître du coffre",
+      "desc": "Enregistrez 10 mots de passe dans le coffre"
+    },
+    "copyMaster": {
+      "name": "Expert de la copie",
+      "desc": "Copiez 50 mots de passe"
+    },
+    "allModes": {
+      "name": "Explorateur de modes",
+      "desc": "Utilisez les trois modes de génération"
+    }
+  },
+  "entropyPreview": {
+    "weak": "Faible",
+    "fair": "Moyen",
+    "good": "Bon",
+    "strong": "Fort",
+    "veryStrong": "Très fort",
+    "bits": "{{count}} bits"
+  },
+  "commandPalette": {
+    "title": "Palette de commandes",
+    "placeholder": "Tapez une commande...",
+    "noResults": "Aucune commande trouvée",
+    "navigate": "Naviguer",
+    "select": "Sélectionner",
+    "close": "Fermer",
+    "commands": {
+      "generate": "Générer des mots de passe",
+      "copyAll": "Tout copier",
+      "clear": "Effacer les résultats",
+      "stats": "Voir les statistiques",
+      "presetStrong": "Appliquer préréglage Fort",
+      "presetSimple": "Appliquer préréglage Simple",
+      "presetMaximum": "Appliquer préréglage Maximum",
+      "presetApiKey": "Appliquer préréglage Clé API",
+      "presetBanking": "Appliquer préréglage Bancaire",
+      "theme": "Changer de thème",
+      "vault": "Ouvrir le coffre",
+      "help": "Afficher l'aide"
+    }
+  },
+  "customPresets": {
+    "save": "Sauver",
+    "namePrompt": "Nom du préréglage :",
+    "saved": "Préréglage enregistré !",
+    "deleted": "Préréglage supprimé"
+  },
+  "easterEggs": {
+    "konami": "🎮 Code Konami activé !",
+    "credits": "✨ Créé avec passion par Julien Bombled"
   }
 }

@@ -16,6 +16,7 @@
 // src/js/ui/render.js - Results and cards rendering
 import { getElement } from './dom.js';
 import { copyToClipboard } from '../utils/secure-clipboard.js';
+import { addToCopyHistory } from '../utils/copy-history.js';
 import { showToast } from '../utils/toast.js';
 import { t } from '../utils/i18n.js';
 import { compositionCounts, escapeHtml } from '../utils/helpers.js';
@@ -220,6 +221,11 @@ function bindPasswordClickEvents() {
 
             const success = await copyToClipboard(password);
             if (success) {
+              addToCopyHistory(password);
+              // Add pulse animation for visual feedback
+              el.classList.add('copy-success-pulse');
+              // BMAD Phase 6: Enhanced copy highlight
+              highlightCopiedPassword(el);
               showToast(t('toast.passwordCopied'), 'success');
               safeLog(`Copied: ${password.substring(0, 8)}...`);
             } else {
@@ -228,6 +234,7 @@ function bindPasswordClickEvents() {
 
             setTimeout(() => {
               el.classList.remove('copying');
+              el.classList.remove('copy-success-pulse');
             }, 600);
           }
         } catch (err) {
@@ -258,11 +265,18 @@ function bindPasswordClickEvents() {
           el.classList.add('copying');
           const success = await copyToClipboard(password);
           if (success) {
+            addToCopyHistory(password);
+            el.classList.add('copy-success-pulse');
+            // BMAD Phase 6: Enhanced copy highlight
+            highlightCopiedPassword(el);
             showToast(t('toast.passwordCopied'), 'success');
           } else {
             showToast(t('toast.copyFailed'), 'error');
           }
-          setTimeout(() => el.classList.remove('copying'), 600);
+          setTimeout(() => {
+            el.classList.remove('copying');
+            el.classList.remove('copy-success-pulse');
+          }, 600);
         }
       } else if (e.key === ' ') {
         // Space: toggle mask
@@ -363,6 +377,10 @@ function bindCopyButtons() {
 
         const success = await copyToClipboard(password);
         if (success) {
+          addToCopyHistory(password);
+          pwdEl.classList.add('copy-success-pulse');
+          // BMAD Phase 6: Enhanced copy highlight
+          highlightCopiedPassword(pwdEl);
           showToast(t('toast.passwordCopied'), 'success');
           btn.classList.add('copied');
           // Update aria-label for screen readers
@@ -379,6 +397,7 @@ function bindCopyButtons() {
 
         setTimeout(() => {
           pwdEl.classList.remove('copying');
+          pwdEl.classList.remove('copy-success-pulse');
         }, 600);
       }
     }, { signal: eventController.signal });
@@ -519,6 +538,9 @@ function showContextMenu(e, password) {
     menuItems[0].focus();
   }
 
+  // Get the password element for highlighting
+  const pwdElement = e.target.closest('.pwd');
+
   // Execute menu action
   const executeAction = async (item) => {
     const action = item.getAttribute('data-action');
@@ -526,6 +548,10 @@ function showContextMenu(e, password) {
     if (action === 'copy') {
       const success = await copyToClipboard(password);
       if (success) {
+        // BMAD Phase 6: Enhanced copy highlight
+        if (pwdElement) {
+          highlightCopiedPassword(pwdElement);
+        }
         showToast(t('toast.passwordCopied'), 'success');
       } else {
         showToast(t('toast.copyFailed'), 'error');
@@ -641,4 +667,17 @@ export function renderEmptyState() {
       document.getElementById('btn-generate')?.click();
     }, { signal: eventController.signal });
   }
+}
+
+/**
+ * Highlight a password item after copy - BMAD Phase 6
+ * @param {HTMLElement} passwordElement - The password item element
+ */
+export function highlightCopiedPassword(passwordElement) {
+  if (!passwordElement) return;
+
+  passwordElement.classList.add('copy-highlight');
+  setTimeout(() => {
+    passwordElement.classList.remove('copy-highlight');
+  }, 800);
 }
