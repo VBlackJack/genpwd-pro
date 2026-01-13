@@ -1,5 +1,6 @@
 package com.genpwd.storage.crypto
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -47,7 +48,7 @@ class TokenCrypto @Inject constructor() {
             KEYSTORE_PROVIDER
         )
 
-        val keyGenSpec = KeyGenParameterSpec.Builder(
+        val keyGenSpecBuilder = KeyGenParameterSpec.Builder(
             KEY_ALIAS,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         )
@@ -57,11 +58,20 @@ class TokenCrypto @Inject constructor() {
             // SECURITY: Require biometric/device credential authentication for token decryption
             // This prevents malicious apps from extracting tokens even if keystore is compromised
             .setUserAuthenticationRequired(true)
-            .setUserAuthenticationParameters(
+
+        // Use appropriate API based on SDK version
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            keyGenSpecBuilder.setUserAuthenticationParameters(
                 300, // 5 minutes validity after authentication
                 KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL
             )
-            // Invalidate key if new biometric is enrolled (security enhancement)
+        } else {
+            @Suppress("DEPRECATION")
+            keyGenSpecBuilder.setUserAuthenticationValidityDurationSeconds(300)
+        }
+
+        // Invalidate key if new biometric is enrolled (security enhancement)
+        val keyGenSpec = keyGenSpecBuilder
             .setInvalidatedByBiometricEnrollment(true)
             .build()
 
