@@ -97,7 +97,8 @@ android {
         disable += setOf(
             "NewApi",              // API level checks - many false positives with @RequiresApi
             "MissingTranslation",  // Allow missing translations for some languages
-            "ExtraTranslation"     // Allow extra translations
+            "ExtraTranslation",    // Allow extra translations
+            "InvalidPackage"       // Third-party libs (bouncycastle, jna, httpclient) reference non-Android packages
         )
 
         // Don't abort build on errors (we're using baseline)
