@@ -85,6 +85,77 @@
     "expand": "Expand",
     "retry": "Retry"
   },
+  "actions": {
+    "clear": "Clear",
+    "clearAll": "Clear all results",
+    "clearLogs": "Clear debug logs",
+    "clearResults": "Clear results",
+    "clipboardSettings": "Configure automatic clipboard clearing",
+    "closeDebug": "Close",
+    "copyAll": "Copy All",
+    "copyAllShortcut": "Copy all generated passwords (Shortcut: Alt+C)",
+    "debug": "Debug",
+    "export": "Export",
+    "exportResults": "Export results",
+    "exportingPasswords": "Exporting passwords...",
+    "generate": "Generate",
+    "generateNow": "Generate now",
+    "generateShortcut": "Generate new passwords (Shortcut: Alt+G)",
+    "runTests": "Run validation tests (Shortcut: Alt+R)",
+    "tests": "Tests",
+    "toggleDebug": "Toggle debug panel",
+    "moreActions": "More actions",
+    "stats": "Statistics",
+    "copyingPasswords": "Copying passwords..."
+  },
+  "aria": {
+    "appLabel": "GenPwd Pro - Secure Password Manager",
+    "caseManagement": "Case management mode",
+    "characterPolicy": "Character policy",
+    "checkBreaches": "Check passwords against breach database",
+    "configPanel": "Configuration panel",
+    "customSpecialsDesc": "Enter the special characters you want to include in generated passwords",
+    "debugPanel": "Debug panel",
+    "decreaseBlockCount": "Decrease block count",
+    "dictionarySelection": "Dictionary selection",
+    "digitsPlacement": "Digits placement in password",
+    "generateRandomBlocks": "Generate random blocks",
+    "generatedPasswordsList": "List of generated passwords",
+    "generatorTab": "Password Generator tab",
+    "increaseBlockCount": "Increase block count",
+    "leetWordDesc": "Enter a word to convert to leet speak format",
+    "mainActions": "Main actions",
+    "mainNavigation": "Main navigation",
+    "numberOfDigits": "Number of digits",
+    "numberOfPasswords": "Number of passwords",
+    "numberOfSpecials": "Number of special characters",
+    "numberOfWords": "Number of words in passphrase",
+    "passwordLength": "Password length",
+    "resultsPanel": "Results panel",
+    "sectionCollapsed": "{name} collapsed",
+    "sectionExpanded": "{name} expanded",
+    "selectGenerationMode": "Select generation mode",
+    "setAllLower": "Set all blocks to lowercase",
+    "setAllTitle": "Set all blocks to Title Case",
+    "setAllUpper": "Set all blocks to uppercase",
+    "showAbout": "Show information about GenPwd Pro",
+    "showTestConsole": "Show test console",
+    "showTestResults": "Show test results",
+    "specialsPlacement": "Special characters placement",
+    "unsavedChanges": "Unsaved changes",
+    "vaultTab": "Vault tab",
+    "wordSeparator": "Word separator",
+    "quickPresets": "Quick presets"
+  },
+  "clipboard": {
+    "autoClearDesc": "Automatically clear clipboard after copying sensitive data",
+    "autoClearTitle": "Auto-clear clipboard",
+    "setAutoClearTo": "Set auto-clear to {seconds} seconds",
+    "settingsAriaLabel": "Clipboard settings",
+    "countdown": "Clipboard clears in {seconds}s",
+    "cleared": "Clipboard cleared for security",
+    "clearNow": "Clear now"
+  },
   "changelog": {
     "title": "What's New",
     "releaseNotes": "Release notes",
@@ -318,26 +389,6 @@
     "clickToCopyHint": "Click to copy • Double-click to show/hide",
     "passwordAriaLabel": "Password {id}: Click to copy, double-click to reveal"
   },
-  "actions": {
-    "generate": "Generate",
-    "generateShortcut": "Generate new passwords (Shortcut: Alt+G)",
-    "generateNow": "Generate now",
-    "copyAll": "Copy All",
-    "copyAllShortcut": "Copy all generated passwords (Shortcut: Alt+C)",
-    "clipboardSettings": "Configure automatic clipboard clearing",
-    "export": "Export",
-    "exportResults": "Export results",
-    "clear": "Clear",
-    "clearAll": "Clear all results",
-    "clearResults": "Clear results",
-    "tests": "Tests",
-    "runTests": "Run validation tests (Shortcut: Alt+R)",
-    "debug": "Debug",
-    "toggleDebug": "Toggle debug panel",
-    "clearLogs": "Clear debug logs",
-    "closeDebug": "Close",
-    "exportingPasswords": "Exporting passwords..."
-  },
   "modal": {
     "closeEsc": "Close (Esc)",
     "confirmation": "Confirmation",
@@ -431,44 +482,6 @@
     "visualPlacementContent": "Select \"Visual\" in placement dropdowns for interactive position control.",
     "entropy": "Entropy",
     "entropyContent": "Generated passwords reach up to 140 bits of entropy for maximum security."
-  },
-  "aria": {
-    "sectionCollapsed": "{name} collapsed",
-    "sectionExpanded": "{name} expanded",
-    "appLabel": "GenPwd Pro - Secure Password Manager",
-    "configPanel": "Configuration panel",
-    "resultsPanel": "Results panel",
-    "debugPanel": "Debug panel",
-    "mainActions": "Main actions",
-    "generatedPasswordsList": "Generated passwords list",
-    "passwordLength": "Password length",
-    "numberOfPasswords": "Number of passwords",
-    "numberOfDigits": "Number of digits",
-    "numberOfSpecials": "Number of special characters",
-    "selectGenerationMode": "Select generation mode",
-    "characterPolicy": "Character policy",
-    "customSpecialsDesc": "Enter the special characters you want to include in generated passwords",
-    "digitsPlacement": "Digits placement in password",
-    "specialsPlacement": "Special characters placement",
-    "caseManagement": "Uppercase/lowercase management mode",
-    "numberOfWords": "Number of words in passphrase",
-    "wordSeparator": "Word separator",
-    "dictionarySelection": "Dictionary selection",
-    "leetWordDesc": "Enter a word to convert to leet speak format",
-    "decreaseBlockCount": "Decrease block count",
-    "increaseBlockCount": "Increase block count",
-    "generateRandomBlocks": "Generate random blocks",
-    "setAllTitle": "Set all blocks to Title Case",
-    "setAllUpper": "Set all blocks to uppercase",
-    "setAllLower": "Set all blocks to lowercase",
-    "showAbout": "Show information about GenPwd Pro",
-    "generatorTab": "Password Generator Tab",
-    "vaultTab": "Password Vault Tab",
-    "mainNavigation": "Main navigation",
-    "showTestResults": "Show test results",
-    "showTestConsole": "Show test console",
-    "checkBreaches": "Check passwords against breach database",
-    "unsavedChanges": "Unsaved changes"
   },
   "vault": {
     "status": {
@@ -589,7 +602,9 @@
       "passwordStrength": "Password strength indicator",
       "autotypeSteps": "Auto-fill steps",
       "entryPreview": "Entry preview",
-      "statusIndicators": "Status indicators"
+      "statusIndicators": "Status indicators",
+      "loading": "Loading entries...",
+      "loaded": "Entries loaded"
     },
     "tooltips": {
       "lock": "Lock (Ctrl+L)",
@@ -1073,11 +1088,23 @@
       "scorePoor": "Needs improvement"
     },
     "status": {
+      "unlocked": "Unlocked",
+      "locked": "Locked",
       "barLabel": "Vault status",
       "saving": "Saving...",
       "saved": "All changes saved",
       "error": "Save failed",
       "entries": "{count} entries"
+    },
+    "search": {
+      "resultCount": "{count} of {total} entries",
+      "noResults": "No entries match your search"
+    },
+    "benefits": {
+      "title": "Why use GenPwd Pro?",
+      "secure": "256-bit AES encryption protects your data",
+      "autofill": "Auto-fill passwords in any browser",
+      "sync": "Sync across all your devices"
     },
     "sync": {
       "idle": "Ready to sync",
@@ -1285,6 +1312,7 @@
       "cryptoWallet": "Crypto Wallet"
     },
     "form": {
+      "required": "required",
       "filePassword": "File password",
       "filePasswordHint": "This password protects the exported file. It can be different from the vault password.",
       "confirmPassword": "Confirm password",
@@ -1436,7 +1464,12 @@
       "regenerate": "Regenerate",
       "regenerateLabel": "Generate new password",
       "length": "Length",
-      "usePassword": "Use this password"
+      "usePassword": "Use this password",
+      "uppercase": "A-Z (uppercase)",
+      "lowercase": "a-z (lowercase)",
+      "numbers": "0-9 (digits)",
+      "symbols": "!@#$ (symbols)",
+      "characterOptions": "Character options"
     },
     "colors": {
       "default": "Default",
@@ -1648,7 +1681,26 @@
     "cloudProvider": "Cloud Provider",
     "chooseProvider": "Choose where to sync your vault",
     "disabled": "Disabled (Local only)",
+    "onedrive": "Microsoft OneDrive",
+    "dropbox": "Dropbox",
     "webdav": "WebDAV / Nextcloud / OwnCloud",
+    "onedriveTitle": "Microsoft OneDrive",
+    "onedriveDesc": "Sync your vault securely with OneDrive. Your data is encrypted before upload.",
+    "dropboxTitle": "Dropbox",
+    "dropboxDesc": "Sync your vault securely with Dropbox. Your data is encrypted before upload.",
+    "connectMicrosoft": "Sign in with Microsoft",
+    "connectDropbox": "Sign in with Dropbox",
+    "disconnect": "Disconnect",
+    "disconnecting": "Disconnecting...",
+    "connecting": "Connecting...",
+    "waitingAuth": "Waiting for authorization...",
+    "connectedAs": "Connected as {account}",
+    "notConnected": "Not connected",
+    "onedriveConnected": "Connected to OneDrive",
+    "onedriveDisconnected": "Disconnected from OneDrive",
+    "dropboxConnected": "Connected to Dropbox",
+    "dropboxDisconnected": "Disconnected from Dropbox",
+    "connectFailed": "Connection failed: {error}",
     "serverUrl": "Server URL",
     "serverUrlHint": "e.g., https://cloud.example.com/remote.php/dav/files/user/",
     "username": "Username",
@@ -2000,12 +2052,6 @@
       "unknownMode": "Unknown mode"
     }
   },
-  "clipboard": {
-    "settingsAriaLabel": "Clipboard auto-clear settings",
-    "autoClearTitle": "⏱️ Auto-clear",
-    "autoClearDesc": "Clear clipboard automatically after copy",
-    "setAutoClearTo": "Set auto-clear to {time}"
-  },
   "export": {
     "title": "📤 Advanced Export",
     "simpleTitle": "Choose export format",
@@ -2352,6 +2398,14 @@
       "quotaExceeded": "Storage quota exceeded.",
       "rateLimitedShort": "Too many requests. Please slow down."
     },
+    "oauth": {
+      "unsupportedProvider": "Unsupported OAuth provider",
+      "missingClientId": "OAuth client ID not configured for {provider}",
+      "encryptionNotAvailable": "System encryption not available for token storage",
+      "serverFailed": "Failed to start OAuth callback server",
+      "tokenExchangeFailed": "Failed to exchange authorization code for tokens",
+      "refreshFailed": "Failed to refresh access token"
+    },
     "validation": {
       "pathTraversal": "Invalid path: path traversal not allowed",
       "absolutePathRequired": "Invalid path: must be an absolute path",
@@ -2451,31 +2505,6 @@
     "recoverSession": "Recover session?",
     "dismiss": "Dismiss"
   },
-  "actions": {
-    "moreActions": "More actions",
-    "stats": "Statistics"
-  },
-  "clipboard": {
-    "countdown": "Clipboard clears in {seconds}s",
-    "cleared": "Clipboard cleared for security",
-    "clearNow": "Clear now"
-  },
-  "vault": {
-    "search": {
-      "resultCount": "{count} of {total} entries",
-      "noResults": "No entries match your search"
-    },
-    "aria": {
-      "loading": "Loading entries...",
-      "loaded": "Entries loaded"
-    },
-    "benefits": {
-      "title": "Why use GenPwd Pro?",
-      "secure": "256-bit AES encryption protects your data",
-      "autofill": "Auto-fill passwords in any browser",
-      "sync": "Sync across all your devices"
-    }
-  },
   "quickPresets": {
     "strong": "Strong",
     "strongDesc": "24 characters, mixed case with symbols",
@@ -2562,9 +2591,6 @@
     "complete": "Complete!",
     "error": "An error occurred",
     "cancel": "Cancel"
-  },
-  "aria": {
-    "quickPresets": "Quick presets"
   },
   "achievements": {
     "title": "Achievements",

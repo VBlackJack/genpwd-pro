@@ -389,6 +389,14 @@
       "rateLimitedShort": "Trop de requêtes. Veuillez ralentir.",
       "timeout": "Délai d'attente dépassé. Vérifiez votre connexion et réessayez."
     },
+    "oauth": {
+      "unsupportedProvider": "Fournisseur OAuth non pris en charge",
+      "missingClientId": "Identifiant client OAuth non configuré pour {provider}",
+      "encryptionNotAvailable": "Chiffrement système non disponible pour le stockage des jetons",
+      "serverFailed": "Échec du démarrage du serveur de rappel OAuth",
+      "tokenExchangeFailed": "Échec de l'échange du code d'autorisation contre des jetons",
+      "refreshFailed": "Échec du renouvellement du jeton d'accès"
+    },
     "session": {
       "locked": "Le coffre est verrouillé. Veuillez d'abord le déverrouiller.",
       "timeout": "Délai d'attente dépassé. Veuillez réessayer."
@@ -1135,11 +1143,32 @@
     }
   },
   "syncModal": {
-    "chooseProvider": "Choisissez où synchroniser votre coffre",
+    "title": "Paramètres de synchronisation",
     "cloudProvider": "Fournisseur cloud",
+    "chooseProvider": "Choisissez où synchroniser votre coffre",
+    "disabled": "Désactivé (local uniquement)",
+    "onedrive": "Microsoft OneDrive",
+    "dropbox": "Dropbox",
+    "webdav": "WebDAV / Nextcloud / OwnCloud",
+    "onedriveTitle": "Microsoft OneDrive",
+    "onedriveDesc": "Synchronisez votre coffre en toute sécurité avec OneDrive. Vos données sont chiffrées avant l'envoi.",
+    "dropboxTitle": "Dropbox",
+    "dropboxDesc": "Synchronisez votre coffre en toute sécurité avec Dropbox. Vos données sont chiffrées avant l'envoi.",
+    "connectMicrosoft": "Se connecter avec Microsoft",
+    "connectDropbox": "Se connecter avec Dropbox",
+    "disconnect": "Déconnecter",
+    "disconnecting": "Déconnexion...",
+    "connecting": "Connexion...",
+    "waitingAuth": "En attente d'autorisation...",
+    "connectedAs": "Connecté en tant que {account}",
+    "notConnected": "Non connecté",
+    "onedriveConnected": "Connecté à OneDrive",
+    "onedriveDisconnected": "Déconnecté de OneDrive",
+    "dropboxConnected": "Connecté à Dropbox",
+    "dropboxDisconnected": "Déconnecté de Dropbox",
+    "connectFailed": "Échec de connexion : {error}",
     "connectionFailed": "Échec : {message}",
     "connectionSuccess": "Connexion réussie !",
-    "disabled": "Désactivé (local uniquement)",
     "fillAllFields": "Veuillez remplir tous les champs requis",
     "passwordHint": "Utilisez un token d'application si disponible",
     "passwordToken": "Mot de passe / Token d'application",
@@ -1149,10 +1178,8 @@
     "serverUrlHint": "ex. https://cloud.example.com/remote.php/dav/files/user/",
     "testConnection": "Tester la connexion",
     "testing": "Connexion...",
-    "title": "Paramètres de synchronisation",
     "username": "Nom d'utilisateur",
-    "usernameHint": "Votre identifiant de connexion WebDAV",
-    "webdav": "WebDAV / Nextcloud / OwnCloud"
+    "usernameHint": "Votre identifiant de connexion WebDAV"
   },
   "testResults": {
     "closeResults": "Fermer les résultats des tests",

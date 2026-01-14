@@ -1228,6 +1228,347 @@ export function registerVaultIPC(ipcMain) {
     }
   }, 'getCloudConfig'));
 
+  // ==================== OAUTH PROVIDERS (OneDrive, Dropbox) ====================
+
+  /**
+   * OAuth configuration for cloud providers
+   */
+  const OAUTH_CONFIG = {
+    onedrive: {
+      clientId: process.env.ONEDRIVE_CLIENT_ID || '',
+      authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+      tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      scopes: ['Files.ReadWrite.AppFolder', 'offline_access', 'User.Read'],
+      redirectUri: 'http://localhost:8457/oauth/callback'
+    },
+    dropbox: {
+      clientId: process.env.DROPBOX_CLIENT_ID || '',
+      authUrl: 'https://www.dropbox.com/oauth2/authorize',
+      tokenUrl: 'https://api.dropboxapi.com/oauth2/token',
+      scopes: [],
+      redirectUri: 'http://localhost:8457/oauth/callback'
+    }
+  };
+
+  /** Active OAuth servers by provider */
+  const oauthServers = new Map();
+
+  /**
+   * Generate PKCE code verifier and challenge
+   * @returns {{verifier: string, challenge: string}}
+   */
+  function generatePKCE() {
+    const { randomBytes, createHash } = require('crypto');
+    const verifier = randomBytes(32).toString('base64url');
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+    return { verifier, challenge };
+  }
+
+  /**
+   * Get OAuth token storage path for a provider
+   * @param {string} provider - Provider name
+   * @returns {string} Path to token file
+   */
+  function getOAuthTokenPath(provider) {
+    return path.join(app.getPath('userData'), `oauth-${provider}.enc`);
+  }
+
+  /**
+   * Save OAuth tokens securely
+   * @param {string} provider - Provider name
+   * @param {object} tokens - Token data
+   */
+  async function saveOAuthTokens(provider, tokens) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error(t('errors.oauth.encryptionNotAvailable'));
+    }
+    const tokenPath = getOAuthTokenPath(provider);
+    const encrypted = safeStorage.encryptString(JSON.stringify(tokens));
+    await fs.promises.writeFile(tokenPath, encrypted);
+  }
+
+  /**
+   * Load OAuth tokens securely
+   * @param {string} provider - Provider name
+   * @returns {object|null} Token data or null
+   */
+  async function loadOAuthTokens(provider) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      return null;
+    }
+    try {
+      const tokenPath = getOAuthTokenPath(provider);
+      const encrypted = await fs.promises.readFile(tokenPath);
+      return JSON.parse(safeStorage.decryptString(encrypted));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error(`[OAuth] Error loading ${provider} tokens:`, error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Delete OAuth tokens
+   * @param {string} provider - Provider name
+   */
+  async function deleteOAuthTokens(provider) {
+    try {
+      const tokenPath = getOAuthTokenPath(provider);
+      await fs.promises.unlink(tokenPath);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error(`[OAuth] Error deleting ${provider} tokens:`, error);
+      }
+    }
+  }
+
+  /**
+   * Start OAuth authentication flow
+   * Opens browser for user authorization and starts local callback server
+   */
+  ipcMain.handle('vault:startOAuth', safeHandler(async (event, provider) => {
+    if (!['onedrive', 'dropbox'].includes(provider)) {
+      throw new Error(t('errors.oauth.unsupportedProvider'));
+    }
+
+    const config = OAUTH_CONFIG[provider];
+    if (!config.clientId) {
+      throw new Error(t('errors.oauth.missingClientId', { provider }));
+    }
+
+    // Generate PKCE challenge
+    const pkce = generatePKCE();
+
+    // Build authorization URL
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      response_type: 'code',
+      redirect_uri: config.redirectUri,
+      code_challenge: pkce.challenge,
+      code_challenge_method: 'S256',
+      state: require('crypto').randomBytes(16).toString('hex')
+    });
+
+    if (provider === 'onedrive') {
+      params.set('scope', config.scopes.join(' '));
+    } else if (provider === 'dropbox') {
+      params.set('token_access_type', 'offline');
+    }
+
+    const authUrl = `${config.authUrl}?${params.toString()}`;
+
+    // Start local HTTP server for OAuth callback
+    const http = require('http');
+
+    return new Promise((resolve, reject) => {
+      // Stop existing server for this provider if any
+      if (oauthServers.has(provider)) {
+        oauthServers.get(provider).close();
+      }
+
+      const server = http.createServer(async (req, res) => {
+        const url = new URL(req.url, 'http://localhost:8457');
+
+        if (url.pathname === '/oauth/callback') {
+          const code = url.searchParams.get('code');
+          const error = url.searchParams.get('error');
+
+          if (error) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(`
+              <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
+                <h2>Authentication Failed</h2>
+                <p>${error}</p>
+                <p>You can close this window.</p>
+              </body></html>
+            `);
+            server.close();
+            oauthServers.delete(provider);
+            resolve({ success: false, error });
+            return;
+          }
+
+          if (code) {
+            try {
+              // Exchange code for tokens
+              const tokenResponse = await fetch(config.tokenUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                  client_id: config.clientId,
+                  code,
+                  redirect_uri: config.redirectUri,
+                  grant_type: 'authorization_code',
+                  code_verifier: pkce.verifier
+                }).toString()
+              });
+
+              if (!tokenResponse.ok) {
+                throw new Error(`Token exchange failed: ${tokenResponse.status}`);
+              }
+
+              const tokens = await tokenResponse.json();
+
+              // Get user info for display
+              let userInfo = {};
+              if (provider === 'onedrive') {
+                const userResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+                  headers: { Authorization: `Bearer ${tokens.access_token}` }
+                });
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  userInfo = { email: userData.mail || userData.userPrincipalName, name: userData.displayName };
+                }
+              } else if (provider === 'dropbox') {
+                const userResponse = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${tokens.access_token}` }
+                });
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  userInfo = { email: userData.email, name: userData.name?.display_name };
+                }
+              }
+
+              // Save tokens with user info
+              await saveOAuthTokens(provider, {
+                ...tokens,
+                userInfo,
+                provider,
+                savedAt: Date.now()
+              });
+
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(`
+                <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
+                  <h2>✓ Authentication Successful</h2>
+                  <p>Connected as ${userInfo.email || userInfo.name || 'Unknown'}</p>
+                  <p>You can close this window and return to GenPwd Pro.</p>
+                </body></html>
+              `);
+
+              server.close();
+              oauthServers.delete(provider);
+              resolve({ success: true, userInfo });
+
+            } catch (tokenError) {
+              console.error('[OAuth] Token exchange error:', tokenError);
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(`
+                <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
+                  <h2>Authentication Error</h2>
+                  <p>${tokenError.message}</p>
+                  <p>You can close this window.</p>
+                </body></html>
+              `);
+              server.close();
+              oauthServers.delete(provider);
+              resolve({ success: false, error: tokenError.message });
+            }
+          }
+        }
+      });
+
+      server.listen(8457, '127.0.0.1', () => {
+        oauthServers.set(provider, server);
+        // Open browser for authentication
+        const { shell } = require('electron');
+        shell.openExternal(authUrl);
+      });
+
+      server.on('error', (err) => {
+        console.error('[OAuth] Server error:', err);
+        reject(new Error(t('errors.oauth.serverFailed')));
+      });
+
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        if (oauthServers.has(provider)) {
+          server.close();
+          oauthServers.delete(provider);
+          resolve({ success: false, error: 'timeout' });
+        }
+      }, 5 * 60 * 1000);
+    });
+  }, 'startOAuth'));
+
+  /**
+   * Check OAuth connection status for a provider
+   */
+  ipcMain.handle('vault:checkOAuthStatus', safeHandler(async (event, provider) => {
+    if (!['onedrive', 'dropbox'].includes(provider)) {
+      return { connected: false };
+    }
+
+    const tokens = await loadOAuthTokens(provider);
+    if (!tokens) {
+      return { connected: false };
+    }
+
+    // Check if token is expired (with 5 min buffer)
+    const expiresAt = tokens.savedAt + (tokens.expires_in * 1000) - (5 * 60 * 1000);
+    const isExpired = Date.now() > expiresAt;
+
+    if (isExpired && tokens.refresh_token) {
+      // Try to refresh token
+      try {
+        const config = OAUTH_CONFIG[provider];
+        const refreshResponse = await fetch(config.tokenUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: config.clientId,
+            refresh_token: tokens.refresh_token,
+            grant_type: 'refresh_token'
+          }).toString()
+        });
+
+        if (refreshResponse.ok) {
+          const newTokens = await refreshResponse.json();
+          await saveOAuthTokens(provider, {
+            ...newTokens,
+            userInfo: tokens.userInfo,
+            provider,
+            savedAt: Date.now()
+          });
+          return {
+            connected: true,
+            userInfo: tokens.userInfo
+          };
+        }
+      } catch (refreshError) {
+        console.error('[OAuth] Token refresh failed:', refreshError);
+        return { connected: false, expired: true };
+      }
+    }
+
+    return {
+      connected: !isExpired || !!tokens.refresh_token,
+      userInfo: tokens.userInfo
+    };
+  }, 'checkOAuthStatus'));
+
+  /**
+   * Disconnect OAuth provider (clear tokens)
+   */
+  ipcMain.handle('vault:disconnectOAuth', safeHandler(async (event, provider) => {
+    if (!['onedrive', 'dropbox'].includes(provider)) {
+      throw new Error(t('errors.oauth.unsupportedProvider'));
+    }
+
+    // Stop any pending OAuth server
+    if (oauthServers.has(provider)) {
+      oauthServers.get(provider).close();
+      oauthServers.delete(provider);
+    }
+
+    // Delete stored tokens
+    await deleteOAuthTokens(provider);
+
+    return { success: true };
+  }, 'disconnectOAuth'));
+
   // ==================== DURESS MODE ====================
 
   /**

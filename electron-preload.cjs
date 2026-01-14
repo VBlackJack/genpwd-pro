@@ -197,7 +197,11 @@ contextBridge.exposeInMainWorld('vault', {
   // ==================== CLOUD SYNC ====================
   cloud: {
     saveConfig: (config) => ipcRenderer.invoke('vault:saveCloudConfig', config),
-    getConfig: () => ipcRenderer.invoke('vault:getCloudConfig')
+    getConfig: () => ipcRenderer.invoke('vault:getCloudConfig'),
+    // OAuth providers (OneDrive, Dropbox)
+    startOAuth: (provider) => ipcRenderer.invoke('vault:startOAuth', provider),
+    checkOAuthStatus: (provider) => ipcRenderer.invoke('vault:checkOAuthStatus', provider),
+    disconnectOAuth: (provider) => ipcRenderer.invoke('vault:disconnectOAuth', provider)
   },
 
   // ==================== DURESS MODE ====================
