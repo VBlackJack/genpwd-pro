@@ -30,7 +30,8 @@ const {
   globalShortcut,
   powerMonitor,
   crashReporter,
-  nativeTheme
+  nativeTheme,
+  session
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -139,6 +140,9 @@ const translations = {
     errorPathNotFile: 'Path is not a file',
     errorFileNotFound: 'File not found',
     errorAutoTypeWindows: 'Auto-type currently only supported on Windows',
+    errorAutoTypeMacAccessibility: 'Accessibility permission required. Enable GenPwd Pro in System Settings > Privacy & Security > Accessibility.',
+    errorAutoTypeLinuxToolMissing: 'Auto-type requires xdotool (X11) or ydotool (Wayland). Install via package manager.',
+    errorAutoTypePlatformUnsupported: 'Auto-type is not supported on this platform',
     errorMissingSequence: 'Missing sequence or data',
     errorAutoTypeWindowDetect: 'Could not detect target window. Auto-type cancelled for security.',
     errorAutoTypeTimeout: 'Auto-type timed out',
@@ -251,6 +255,9 @@ const translations = {
     errorPathNotFile: 'Le chemin n\'est pas un fichier',
     errorFileNotFound: 'Fichier non trouvé',
     errorAutoTypeWindows: 'Saisie automatique uniquement supportée sur Windows actuellement',
+    errorAutoTypeMacAccessibility: 'Permission d\'accessibilité requise. Activez GenPwd Pro dans Réglages Système > Confidentialité et sécurité > Accessibilité.',
+    errorAutoTypeLinuxToolMissing: 'La saisie automatique nécessite xdotool (X11) ou ydotool (Wayland). Installez via le gestionnaire de paquets.',
+    errorAutoTypePlatformUnsupported: 'La saisie automatique n\'est pas supportée sur cette plateforme',
     errorMissingSequence: 'Séquence ou données manquantes',
     errorAutoTypeWindowDetect: 'Impossible de détecter la fenêtre cible. Saisie automatique annulée par sécurité.',
     errorAutoTypeTimeout: 'Délai de saisie automatique expiré',
@@ -363,6 +370,9 @@ const translations = {
     errorPathNotFile: 'La ruta no es un archivo',
     errorFileNotFound: 'Archivo no encontrado',
     errorAutoTypeWindows: 'Escritura automática solo soportada en Windows actualmente',
+    errorAutoTypeMacAccessibility: 'Se requiere permiso de accesibilidad. Habilite GenPwd Pro en Configuración del Sistema > Privacidad y Seguridad > Accesibilidad.',
+    errorAutoTypeLinuxToolMissing: 'La escritura automática requiere xdotool (X11) o ydotool (Wayland). Instale mediante el gestor de paquetes.',
+    errorAutoTypePlatformUnsupported: 'La escritura automática no está soportada en esta plataforma',
     errorMissingSequence: 'Secuencia o datos faltantes',
     errorAutoTypeWindowDetect: 'No se pudo detectar ventana objetivo. Escritura automática cancelada por seguridad.',
     errorAutoTypeTimeout: 'Tiempo de escritura automática agotado',
@@ -2415,172 +2425,211 @@ function buildAutoTypePowerShell(actions) {
   return lines.join('\n');
 }
 
-// Perform auto-type operation
+// Perform auto-type operation (cross-platform: Windows, macOS, Linux)
 ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, targetWindowTitle }) => {
   validateOrigin(event);
   const t = getMainTranslations();
-  try {
-    // Only supported on Windows currently
-    if (process.platform !== 'win32') {
-      return { success: false, error: t.errorAutoTypeWindows };
-    }
 
-    // Validate inputs
-    if (!sequence || !data) {
-      return { success: false, error: t.errorMissingSequence };
-    }
-
-    // Parse the sequence
-    const actions = parseAutoTypeSequence(sequence, data);
-    if (actions.length === 0) {
-      return { success: false, error: 'No valid actions in sequence' };
-    }
-
-    // Minimize our window to focus the previous window
-    // Check window state to avoid race conditions
-    if (mainWindow && !mainWindow.isMinimized() && !mainWindow.isDestroyed()) {
-      mainWindow.minimize();
-    }
-
-    // Wait for window switch
-    // 1500ms delay for window focus stabilization (Windows animations)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Helper to safely restore window with guaranteed focus (Windows-specific)
-    const safeRestore = () => {
-      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
-        mainWindow.restore();
+  // Helper to safely restore window with guaranteed focus
+  const safeRestore = () => {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
+      mainWindow.restore();
+      if (process.platform === 'win32') {
         // Use setAlwaysOnTop temporarily to guarantee window comes to front on Windows
         mainWindow.setAlwaysOnTop(true);
         mainWindow.focus();
         mainWindow.moveTop();
-        // Remove always-on-top after brief delay to allow focus to settle
         setTimeout(() => {
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.setAlwaysOnTop(false);
           }
         }, 100);
+      } else {
+        mainWindow.focus();
       }
-    };
+    }
+  };
 
-    // SECURITY: Verify foreground window before typing sensitive data
-    const foregroundTitle = await getActiveWindowTitle();
-    if (!foregroundTitle) {
-      safeRestore();
-      return { success: false, error: t.errorAutoTypeWindowDetect };
+  try {
+    // Validate inputs
+    if (!sequence || !data) {
+      return { success: false, error: t.errorMissingSequence };
     }
 
-    // Check for dangerous target windows (command prompts, terminals, system tools)
-    // SECURITY: Prevent auto-typing into shells or admin tools where data could be executed
-    const dangerousPatterns = [
-      /cmd\.exe/i,
-      /powershell/i,
-      /terminal/i,
-      /command prompt/i,
-      /windows powershell/i,
-      /pwsh/i,
-      /bash/i,
-      /git bash/i,
-      /mintty/i,
-      /conemu/i,
-      /cmder/i,
-      /administrator:/i,
-      /regedit/i,           // Registry Editor
-      /gpedit/i,            // Group Policy Editor
-      /mmc\.exe/i,          // Microsoft Management Console
-      /wscript/i,           // Windows Script Host
-      /cscript/i,           // Console Script Host
-      /run dialog/i         // Run dialog (Win+R)
-    ];
-
-    const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
-    if (isDangerous) {
-      console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
-      const t = getMainTranslations();
-
-      // Notify renderer to show toast notification
-      if (mainWindow && mainWindow.webContents) {
-        mainWindow.webContents.send('autotype:blocked', {
-          reason: 'security',
-          windowTitle: foregroundTitle,
-          message: t.autoTypeBlocked
-        });
-      }
-
-      safeRestore();
-      return {
-        success: false,
-        error: t.autoTypeBlocked,
-        blockedWindow: foregroundTitle
-      };
+    // Minimize our window to focus the previous window
+    if (mainWindow && !mainWindow.isMinimized() && !mainWindow.isDestroyed()) {
+      mainWindow.minimize();
     }
 
-    // If a target window title was provided, verify it matches (partial match)
-    if (targetWindowTitle && !foregroundTitle.toLowerCase().includes(targetWindowTitle.toLowerCase())) {
-      console.warn('[GenPwd Pro] Auto-type target mismatch. Expected:', targetWindowTitle, 'Got:', foregroundTitle);
-      safeRestore();
-      return {
-        success: false,
-        error: `Target window mismatch. Expected "${targetWindowTitle}" but found "${foregroundTitle}".`,
-        actualWindow: foregroundTitle
-      };
-    }
+    // Wait for window switch (platform-specific delay)
+    const focusDelay = process.platform === 'win32' ? 1500 : 500;
+    await new Promise(resolve => setTimeout(resolve, focusDelay));
 
-    devLog('[GenPwd Pro] Auto-type target verified:', foregroundTitle);
+    // ==================== PLATFORM-SPECIFIC AUTO-TYPE ====================
+    let result;
 
-    // Build and execute PowerShell script using Base64 encoding for security
-    // This prevents command injection attacks by encoding the entire script
-    const psScript = buildAutoTypePowerShell(actions);
-    const encodedScript = Buffer.from(psScript, 'utf16le').toString('base64');
+    if (process.platform === 'darwin') {
+      // macOS: Use AppleScript via darwin-autotype module
+      try {
+        const darwinAutoType = require('./src/electron/autotype/darwin-autotype.cjs');
+        result = await darwinAutoType.performAutoType(sequence, data, { targetWindowTitle }, t);
 
-    return new Promise((resolve) => {
-      const ps = spawn('powershell.exe', [
-        '-NoProfile',
-        '-NonInteractive',
-        '-ExecutionPolicy', 'Bypass',
-        '-EncodedCommand', encodedScript
-      ], {
-        windowsHide: true
-      });
-
-      let stderr = '';
-
-      ps.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      ps.on('close', (code) => {
-        // Always restore the main window after auto-type completes
-        safeRestore();
-
-        if (code === 0) {
-          devLog('[GenPwd Pro] Auto-type completed successfully');
-          resolve({ success: true });
-        } else {
-          devError('[GenPwd Pro] Auto-type failed:', stderr);
-          resolve({ success: false, error: stderr || `Process exited with code ${code}` });
+        // Handle blocked notification
+        if (result.blocked && mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('autotype:blocked', {
+            reason: 'security',
+            windowTitle: result.windowTitle,
+            message: t.autoTypeBlocked
+          });
         }
+      } catch (error) {
+        devError('[GenPwd Pro] macOS auto-type module error:', error.message);
+        result = { success: false, error: error.message };
+      }
+
+    } else if (process.platform === 'linux') {
+      // Linux: Use xdotool/ydotool via linux-autotype module
+      try {
+        const linuxAutoType = require('./src/electron/autotype/linux-autotype.cjs');
+        result = await linuxAutoType.performAutoType(sequence, data, { targetWindowTitle }, t);
+
+        // Handle blocked notification
+        if (result.blocked && mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('autotype:blocked', {
+            reason: 'security',
+            windowTitle: result.windowTitle,
+            message: t.autoTypeBlocked
+          });
+        }
+      } catch (error) {
+        devError('[GenPwd Pro] Linux auto-type module error:', error.message);
+        result = { success: false, error: error.message };
+      }
+
+    } else if (process.platform === 'win32') {
+      // Windows: Use PowerShell SendKeys (existing implementation)
+      const actions = parseAutoTypeSequence(sequence, data);
+      if (actions.length === 0) {
+        safeRestore();
+        return { success: false, error: 'No valid actions in sequence' };
+      }
+
+      // SECURITY: Verify foreground window before typing sensitive data
+      const foregroundTitle = await getActiveWindowTitle();
+      if (!foregroundTitle) {
+        safeRestore();
+        return { success: false, error: t.errorAutoTypeWindowDetect };
+      }
+
+      // Check for dangerous target windows (command prompts, terminals, system tools)
+      const dangerousPatterns = [
+        /cmd\.exe/i,
+        /powershell/i,
+        /terminal/i,
+        /command prompt/i,
+        /windows powershell/i,
+        /pwsh/i,
+        /bash/i,
+        /git bash/i,
+        /mintty/i,
+        /conemu/i,
+        /cmder/i,
+        /administrator:/i,
+        /regedit/i,
+        /gpedit/i,
+        /mmc\.exe/i,
+        /wscript/i,
+        /cscript/i,
+        /run dialog/i
+      ];
+
+      const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
+      if (isDangerous) {
+        console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
+
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('autotype:blocked', {
+            reason: 'security',
+            windowTitle: foregroundTitle,
+            message: t.autoTypeBlocked
+          });
+        }
+
+        safeRestore();
+        return {
+          success: false,
+          error: t.autoTypeBlocked,
+          blockedWindow: foregroundTitle
+        };
+      }
+
+      // Verify target window if specified
+      if (targetWindowTitle && !foregroundTitle.toLowerCase().includes(targetWindowTitle.toLowerCase())) {
+        console.warn('[GenPwd Pro] Auto-type target mismatch. Expected:', targetWindowTitle, 'Got:', foregroundTitle);
+        safeRestore();
+        return {
+          success: false,
+          error: `Target window mismatch. Expected "${targetWindowTitle}" but found "${foregroundTitle}".`,
+          actualWindow: foregroundTitle
+        };
+      }
+
+      devLog('[GenPwd Pro] Auto-type target verified:', foregroundTitle);
+
+      // Build and execute PowerShell script using Base64 encoding for security
+      const psScript = buildAutoTypePowerShell(actions);
+      const encodedScript = Buffer.from(psScript, 'utf16le').toString('base64');
+
+      result = await new Promise((resolve) => {
+        const ps = spawn('powershell.exe', [
+          '-NoProfile',
+          '-NonInteractive',
+          '-ExecutionPolicy', 'Bypass',
+          '-EncodedCommand', encodedScript
+        ], {
+          windowsHide: true
+        });
+
+        let stderr = '';
+
+        ps.stderr.on('data', (chunk) => {
+          stderr += chunk.toString();
+        });
+
+        ps.on('close', (code) => {
+          if (code === 0) {
+            devLog('[GenPwd Pro] Auto-type completed successfully');
+            resolve({ success: true });
+          } else {
+            devError('[GenPwd Pro] Auto-type failed:', stderr);
+            resolve({ success: false, error: stderr || `Process exited with code ${code}` });
+          }
+        });
+
+        ps.on('error', (error) => {
+          devError('[GenPwd Pro] Auto-type spawn error:', error.message);
+          resolve({ success: false, error: error.message });
+        });
+
+        // Timeout after 30 seconds
+        setTimeout(() => {
+          ps.kill();
+          resolve({ success: false, error: t.errorAutoTypeTimeout });
+        }, 30000);
       });
 
-      ps.on('error', (error) => {
-        devError('[GenPwd Pro] Auto-type spawn error:', error.message);
-        safeRestore();
-        resolve({ success: false, error: error.message });
-      });
+    } else {
+      // Unsupported platform
+      result = { success: false, error: t.errorAutoTypePlatformUnsupported };
+    }
 
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        ps.kill();
-        safeRestore();
-        resolve({ success: false, error: t.errorAutoTypeTimeout });
-      }, 30000);
-    });
+    // Always restore window after auto-type
+    safeRestore();
+    return result;
+
   } catch (error) {
     devError('[GenPwd Pro] automation:perform-auto-type error:', error.message);
-    // Can't use safeRestore here as it's defined inside the try block
-    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized()) {
-      mainWindow.restore();
-    }
+    safeRestore();
     return { success: false, error: error.message };
   }
 });
@@ -2598,6 +2647,60 @@ const startHidden = process.argv.includes('--hidden');
 app.whenReady().then(async () => {
   // Initialize crash reporter first (before any other code)
   initCrashReporter();
+
+  // ==================== SECURITY HEADERS CONFIGURATION ====================
+  // Set Content Security Policy and other security headers
+  const ses = session.defaultSession;
+
+  // Set security headers on all responses
+  ses.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        // Content Security Policy - strict but allows app functionality
+        'Content-Security-Policy': [
+          "default-src 'self'; " +
+          "script-src 'self' 'unsafe-inline'; " + // Needed for inline event handlers
+          "style-src 'self' 'unsafe-inline'; " +  // Needed for dynamic styles
+          "img-src 'self' data: blob:; " +        // Allow data URIs for icons
+          "font-src 'self' data:; " +             // Allow embedded fonts
+          "connect-src 'self' https://api.github.com https://graph.microsoft.com https://api.dropboxapi.com https://content.dropboxapi.com https://www.googleapis.com https://oauth2.googleapis.com https://api.pwnedpasswords.com; " + // API endpoints for sync and HIBP
+          "frame-ancestors 'none'; " +            // Prevent framing (clickjacking)
+          "form-action 'self'; " +                // Restrict form submissions
+          "base-uri 'self'; " +                   // Restrict base URI
+          "object-src 'none'"                     // Block plugins
+        ],
+        // Prevent MIME type sniffing
+        'X-Content-Type-Options': ['nosniff'],
+        // Prevent clickjacking
+        'X-Frame-Options': ['DENY'],
+        // Enable XSS filter (legacy browsers)
+        'X-XSS-Protection': ['1; mode=block'],
+        // Referrer policy - don't leak URLs
+        'Referrer-Policy': ['strict-origin-when-cross-origin'],
+        // Permissions policy - disable unnecessary features
+        'Permissions-Policy': [
+          'accelerometer=(), ' +
+          'camera=(), ' +
+          'geolocation=(), ' +
+          'gyroscope=(), ' +
+          'magnetometer=(), ' +
+          'microphone=(), ' +
+          'payment=(), ' +
+          'usb=()'
+        ]
+      }
+    });
+  });
+
+  // Restrict navigation to app protocol only
+  ses.setPermissionRequestHandler((webContents, permission, callback) => {
+    // Only allow clipboard-read permission (needed for paste functionality)
+    const allowedPermissions = ['clipboard-read'];
+    callback(allowedPermissions.includes(permission));
+  });
+
+  devLog('[GenPwd Pro] Security headers configured');
 
   // Check for admin mode and warn user (security risk for vault files)
   if (isRunningAsAdmin()) {
@@ -3069,9 +3172,34 @@ app.on('will-quit', () => {
   }
 });
 
-// Sécurité: désactiver la création de nouvelles fenêtres
+// Sécurité: désactiver la création de nouvelles fenêtres et restreindre la navigation
 app.on('web-contents-created', (event, contents) => {
+  // Block new windows
   contents.on('new-window', (event, url) => {
+    event.preventDefault();
+  });
+
+  // Restrict navigation to app URLs only
+  contents.on('will-navigate', (event, url) => {
+    const parsedUrl = new URL(url);
+    // Only allow file:// protocol (local app) and specific OAuth callbacks
+    const allowedProtocols = ['file:'];
+    const allowedOAuthHosts = [
+      'accounts.google.com',
+      'login.microsoftonline.com',
+      'www.dropbox.com'
+    ];
+
+    if (!allowedProtocols.includes(parsedUrl.protocol) &&
+        !allowedOAuthHosts.includes(parsedUrl.host)) {
+      event.preventDefault();
+      // Open external links in default browser
+      shell.openExternal(url);
+    }
+  });
+
+  // Block webview creation
+  contents.on('will-attach-webview', (event) => {
     event.preventDefault();
   });
 

@@ -541,15 +541,6 @@
     "themeMenu": "Menu de sélection du thème",
     "themeSwitched": "Thème changé"
   },
-  "themes": {
-    "system": "Système",
-    "dark": "Sombre",
-    "light": "Clair",
-    "highContrast": "Contraste élevé",
-    "high-contrast": "Contraste élevé",
-    "ocean": "Océan",
-    "forest": "Forêt"
-  },
   "health": {
     "checkingProgress": "Vérification {checked}/{total}..."
   },
@@ -819,7 +810,28 @@
       "unloaded": "Plugin « {name} » déchargé",
       "validationFailed": "La validation du plugin a échoué : {error}"
     },
-    "uninstallTitle": "Désinstaller Plugin"
+    "uninstallTitle": "Désinstaller Plugin",
+    "manager": {
+      "title": "Gestionnaire de plugins",
+      "totalPlugins": "Total des plugins",
+      "enabledPlugins": "Activés",
+      "activeHooks": "Hooks actifs",
+      "installPlugin": "Installer un plugin",
+      "urlPlaceholder": "Entrez l'URL du plugin (https://...)",
+      "install": "Installer",
+      "securityWarning": "N'installez que des plugins provenant de sources fiables. Les plugins ont accès aux données de votre coffre.",
+      "installedPlugins": "Plugins installés",
+      "noPlugins": "Aucun plugin installé.",
+      "version": "v{version}",
+      "author": "par {author}",
+      "hooks": "Hooks : {hooks}",
+      "source": "Source : {source}",
+      "uninstall": "Désinstaller",
+      "confirmUninstall": "Désinstaller le plugin « {name} » ? Cette action est irréversible.",
+      "urlRequired": "Veuillez entrer l'URL du plugin",
+      "invalidUrl": "Veuillez entrer une URL valide",
+      "httpsRequired": "L'URL du plugin doit utiliser HTTPS pour la sécurité"
+    }
   },
   "policy": {
     "alphanumeric": "Alphanumérique (lettres + chiffres)",
@@ -2600,5 +2612,250 @@
   "easterEggs": {
     "konami": "🎮 Code Konami activé !",
     "credits": "✨ Créé avec passion par Julien Bombled"
+  },
+  "enterprise": {
+    "title": "Mode Entreprise",
+    "managedBy": "Géré par {organization}",
+    "policyApplied": "Politique d'entreprise appliquée",
+    "settingDisabled": "Ce paramètre est contrôlé par la politique de votre organisation.",
+    "featureDisabled": "Cette fonctionnalité a été désactivée par votre organisation.",
+    "contactAdmin": "Contactez votre administrateur informatique pour plus d'informations.",
+    "syncRequired": "La synchronisation cloud est requise par votre organisation.",
+    "providerRestricted": "Seuls les fournisseurs cloud approuvés peuvent être utilisés.",
+    "passwordPolicy": {
+      "title": "Exigences de mot de passe",
+      "minLength": "Minimum {length} caractères requis",
+      "complexity": "Doit inclure majuscules, minuscules, chiffres et symboles"
+    },
+    "autoLock": {
+      "forced": "Le verrouillage automatique est imposé par votre organisation",
+      "maxTimeout": "Délai maximum : {minutes} minutes"
+    }
+  },
+  "privacy": {
+    "title": "Confidentialité et analyse",
+    "consent": {
+      "title": "Aidez à améliorer GenPwd Pro",
+      "description": "Nous souhaitons collecter des rapports d'erreur anonymes et des statistiques d'utilisation pour améliorer l'application. Vos données ne sont jamais partagées avec des tiers.",
+      "whatWeCollect": "Ce que nous collectons :",
+      "crashReports": "Rapports d'erreur et journaux",
+      "usageStats": "Statistiques d'utilisation anonymes",
+      "performanceData": "Métriques de performance",
+      "whatWeNever": "Ce que nous ne collectons JAMAIS :",
+      "passwords": "Vos mots de passe ou données du coffre",
+      "personalInfo": "Informations personnelles ou identifiants",
+      "browsingHistory": "Historique de navigation ou URLs",
+      "accept": "Activer l'analyse",
+      "decline": "Non merci",
+      "canChange": "Vous pouvez modifier ceci à tout moment dans les Paramètres."
+    },
+    "settings": {
+      "analyticsEnabled": "Analyse anonyme activée",
+      "analyticsDisabled": "Analyse désactivée",
+      "toggle": "Activer l'analyse anonyme",
+      "description": "Aidez à améliorer GenPwd Pro en partageant des rapports d'erreur anonymes"
+    }
+  },
+  "themes": {
+    "system": "Système",
+    "dark": "Sombre",
+    "light": "Clair",
+    "highContrast": "Contraste élevé",
+    "high-contrast": "Contraste élevé",
+    "ocean": "Océan",
+    "forest": "Forêt",
+    "custom": {
+      "title": "Thèmes personnalisés",
+      "create": "Créer un thème",
+      "edit": "Modifier le thème",
+      "duplicate": "Dupliquer le thème",
+      "delete": "Supprimer le thème",
+      "export": "Exporter le thème",
+      "import": "Importer un thème",
+      "editor": {
+        "title": "Éditeur de thème",
+        "name": "Nom du thème",
+        "namePlaceholder": "Mon thème personnalisé",
+        "icon": "Icône du thème",
+        "preview": "Aperçu en direct",
+        "categories": {
+          "background": "Couleurs de fond",
+          "accent": "Couleurs d'accent",
+          "text": "Couleurs de texte",
+          "border": "Couleurs de bordure"
+        },
+        "save": "Enregistrer le thème",
+        "cancel": "Annuler",
+        "reset": "Réinitialiser par défaut"
+      },
+      "validation": {
+        "nameRequired": "Le nom du thème est requis",
+        "nameTooLong": "Le nom du thème doit faire 50 caractères ou moins",
+        "invalidColor": "Valeur de couleur invalide pour {variable}"
+      },
+      "toast": {
+        "created": "Thème « {name} » créé",
+        "updated": "Thème « {name} » mis à jour",
+        "deleted": "Thème « {name} » supprimé",
+        "exported": "Thème exporté dans le presse-papiers",
+        "imported": "Thème « {name} » importé",
+        "applied": "Thème « {name} » appliqué"
+      },
+      "confirmDelete": "Supprimer le thème « {name} » ? Cette action est irréversible.",
+      "importError": "Échec de l'importation du thème : {error}",
+      "exportError": "Échec de l'exportation du thème"
+    }
+  },
+  "cloudSync": {
+    "providers": {
+      "googleDrive": {
+        "name": "Google Drive",
+        "description": "Synchroniser avec votre compte Google Drive"
+      },
+      "oneDrive": {
+        "name": "Microsoft OneDrive",
+        "description": "Synchroniser avec votre compte Microsoft OneDrive"
+      },
+      "dropbox": {
+        "name": "Dropbox",
+        "description": "Synchroniser avec votre compte Dropbox"
+      },
+      "webdav": {
+        "name": "WebDAV",
+        "description": "Synchroniser avec n'importe quel serveur compatible WebDAV"
+      },
+      "enterprise": {
+        "name": "Serveur d'entreprise",
+        "description": "Synchroniser avec le serveur de votre organisation"
+      }
+    },
+    "auth": {
+      "signIn": "Se connecter",
+      "signOut": "Se déconnecter",
+      "connecting": "Connexion...",
+      "connected": "Connecté en tant que {email}",
+      "disconnected": "Non connecté",
+      "authRequired": "Authentification requise",
+      "authFailed": "Échec de l'authentification. Veuillez réessayer.",
+      "permissionDenied": "Permission refusée. Veuillez accorder l'accès.",
+      "tokenExpired": "Session expirée. Veuillez vous reconnecter."
+    },
+    "sync": {
+      "lastSync": "Dernière sync : {time}",
+      "neverSynced": "Jamais synchronisé",
+      "syncNow": "Synchroniser maintenant",
+      "autoSync": "Synchronisation auto",
+      "autoSyncDesc": "Synchroniser automatiquement les modifications vers le cloud"
+    }
+  },
+  "autoType": {
+    "errors": {
+      "macAccessibility": "Permission d'accessibilité requise. Allez dans Préférences Système > Confidentialité et sécurité > Accessibilité et activez GenPwd Pro.",
+      "macPermissionDenied": "Permission d'accessibilité refusée. Veuillez l'activer dans les Préférences Système.",
+      "linuxNoTool": "La saisie automatique nécessite xdotool (X11) ou ydotool/wtype (Wayland). Veuillez installer l'outil approprié.",
+      "linuxXdotoolNotFound": "xdotool non trouvé. Installez avec : sudo apt install xdotool",
+      "linuxYdotoolNotFound": "ydotool non trouvé pour Wayland. Installez avec : sudo apt install ydotool",
+      "linuxWtypeNotFound": "wtype non trouvé pour Wayland. Installez avec : sudo apt install wtype",
+      "linuxDisplayUnknown": "Impossible de détecter le serveur d'affichage (X11/Wayland)",
+      "unsupportedPlatform": "La saisie automatique n'est pas prise en charge sur cette plateforme",
+      "executionFailed": "Échec de la saisie automatique : {error}",
+      "timeout": "Délai d'attente de la saisie automatique dépassé"
+    },
+    "status": {
+      "performing": "Saisie automatique en cours...",
+      "complete": "Saisie automatique terminée",
+      "checkingPermissions": "Vérification des permissions..."
+    }
+  },
+  "webauthn": {
+    "title": "Clés de sécurité",
+    "description": "Utilisez des clés de sécurité matérielles pour une authentification sans mot de passe",
+    "register": {
+      "title": "Enregistrer une clé de sécurité",
+      "prompt": "Insérez votre clé de sécurité et touchez-la lorsque demandé",
+      "name": "Nom de la clé",
+      "namePlaceholder": "Ma YubiKey",
+      "success": "Clé de sécurité enregistrée avec succès",
+      "error": "Échec de l'enregistrement de la clé de sécurité : {error}"
+    },
+    "authenticate": {
+      "title": "Authentification avec clé de sécurité",
+      "prompt": "Touchez votre clé de sécurité pour déverrouiller",
+      "waiting": "En attente de la clé de sécurité...",
+      "success": "Authentification réussie",
+      "error": "Échec de l'authentification : {error}",
+      "timeout": "Délai d'authentification dépassé. Veuillez réessayer."
+    },
+    "manage": {
+      "title": "Gérer les clés de sécurité",
+      "noKeys": "Aucune clé de sécurité enregistrée",
+      "registered": "{count} clé(s) enregistrée(s)",
+      "lastUsed": "Dernière utilisation : {date}",
+      "neverUsed": "Jamais utilisée",
+      "rename": "Renommer",
+      "delete": "Supprimer",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette clé de sécurité ?",
+      "deleted": "Clé de sécurité supprimée"
+    },
+    "errors": {
+      "notSupported": "WebAuthn n'est pas pris en charge sur cet appareil",
+      "notAvailable": "Le stockage sécurisé n'est pas disponible",
+      "noCredentials": "Aucune clé de sécurité enregistrée pour ce coffre",
+      "invalidResponse": "Réponse de clé de sécurité invalide",
+      "replayAttack": "Erreur de sécurité : Compteur de signature invalide détecté"
+    }
+  },
+  "offlineSync": {
+    "title": "File d'attente de synchronisation hors ligne",
+    "status": {
+      "online": "En ligne",
+      "offline": "Hors ligne - Les modifications seront synchronisées une fois connecté",
+      "syncing": "Synchronisation des modifications en attente..."
+    },
+    "queue": {
+      "title": "Opérations en attente",
+      "empty": "Aucune opération en attente",
+      "pending": "{count} opération(s) en attente",
+      "upload": "Téléversement",
+      "download": "Téléchargement",
+      "delete": "Suppression",
+      "retry": "Réessayer",
+      "cancel": "Annuler",
+      "clearAll": "Tout effacer"
+    },
+    "operations": {
+      "queued": "Opération mise en file d'attente pour la synchronisation",
+      "processing": "Traitement de la file d'attente de synchronisation...",
+      "completed": "File d'attente de synchronisation traitée",
+      "failed": "Opération échouée après {attempts} tentatives",
+      "cancelled": "Opération annulée"
+    },
+    "network": {
+      "restored": "Connexion réseau rétablie",
+      "lost": "Connexion réseau perdue",
+      "retrying": "Nouvelle tentative dans {seconds} secondes..."
+    }
+  },
+  "syncEncryption": {
+    "title": "Chiffrement de bout en bout",
+    "description": "Votre coffre est chiffré avant de quitter votre appareil",
+    "status": {
+      "encrypting": "Chiffrement pour la synchronisation cloud...",
+      "decrypting": "Déchiffrement depuis le cloud...",
+      "verified": "Intégrité vérifiée"
+    },
+    "errors": {
+      "encryptionFailed": "Échec du chiffrement des données pour la synchronisation",
+      "decryptionFailed": "Échec du déchiffrement des données synchronisées",
+      "checksumMismatch": "Vérification de l'intégrité échouée - le fichier peut être corrompu",
+      "unsupportedVersion": "Version du format de chiffrement non prise en charge",
+      "invalidEnvelope": "Format de données chiffrées invalide"
+    }
+  },
+  "secureMemory": {
+    "errors": {
+      "wipeWarning": "Les données sensibles peuvent ne pas avoir été entièrement effacées de la mémoire",
+      "allocationFailed": "Échec de l'allocation du tampon mémoire sécurisé"
+    }
   }
 }

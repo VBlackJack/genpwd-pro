@@ -158,15 +158,6 @@
     "themeMenu": "Theme selection menu",
     "themeSwitched": "Theme changed"
   },
-  "themes": {
-    "system": "System",
-    "dark": "Dark",
-    "light": "Light",
-    "highContrast": "High Contrast",
-    "high-contrast": "High Contrast",
-    "ocean": "Ocean",
-    "forest": "Forest"
-  },
   "sections": {
     "generationMode": "Generation Mode",
     "commonParameters": "Common Parameters",
@@ -2171,6 +2162,27 @@
       "unloaded": "Plugin \"{name}\" unloaded",
       "enabled": "Plugin \"{name}\" enabled",
       "disabled": "Plugin \"{name}\" disabled"
+    },
+    "manager": {
+      "title": "Plugin Manager",
+      "totalPlugins": "Total Plugins",
+      "enabledPlugins": "Enabled",
+      "activeHooks": "Active Hooks",
+      "installPlugin": "Install Plugin",
+      "urlPlaceholder": "Enter plugin URL (https://...)",
+      "install": "Install",
+      "securityWarning": "Only install plugins from trusted sources. Plugins have access to your vault data.",
+      "installedPlugins": "Installed Plugins",
+      "noPlugins": "No plugins installed yet.",
+      "version": "v{version}",
+      "author": "by {author}",
+      "hooks": "Hooks: {hooks}",
+      "source": "Source: {source}",
+      "uninstall": "Uninstall",
+      "confirmUninstall": "Uninstall plugin \"{name}\"? This action cannot be undone.",
+      "urlRequired": "Please enter a plugin URL",
+      "invalidUrl": "Please enter a valid URL",
+      "httpsRequired": "Plugin URL must use HTTPS for security"
     }
   },
   "pwa": {
@@ -2626,5 +2638,250 @@
   "easterEggs": {
     "konami": "🎮 Konami Code Activated!",
     "credits": "✨ Made with passion by Julien Bombled"
+  },
+  "enterprise": {
+    "title": "Enterprise Mode",
+    "managedBy": "Managed by {organization}",
+    "policyApplied": "Enterprise Policy Applied",
+    "settingDisabled": "This setting is controlled by your organization's policy.",
+    "featureDisabled": "This feature has been disabled by your organization.",
+    "contactAdmin": "Contact your IT administrator for more information.",
+    "syncRequired": "Cloud sync is required by your organization.",
+    "providerRestricted": "Only approved cloud providers can be used.",
+    "passwordPolicy": {
+      "title": "Password Requirements",
+      "minLength": "Minimum {length} characters required",
+      "complexity": "Must include uppercase, lowercase, numbers, and symbols"
+    },
+    "autoLock": {
+      "forced": "Auto-lock is enforced by your organization",
+      "maxTimeout": "Maximum timeout: {minutes} minutes"
+    }
+  },
+  "privacy": {
+    "title": "Privacy & Analytics",
+    "consent": {
+      "title": "Help Improve GenPwd Pro",
+      "description": "We'd like to collect anonymous crash reports and usage statistics to improve the app. Your data is never shared with third parties.",
+      "whatWeCollect": "What we collect:",
+      "crashReports": "Crash reports and error logs",
+      "usageStats": "Anonymous usage statistics",
+      "performanceData": "Performance metrics",
+      "whatWeNever": "What we NEVER collect:",
+      "passwords": "Your passwords or vault data",
+      "personalInfo": "Personal information or identifiers",
+      "browsingHistory": "Browsing history or URLs",
+      "accept": "Enable Analytics",
+      "decline": "No Thanks",
+      "canChange": "You can change this anytime in Settings."
+    },
+    "settings": {
+      "analyticsEnabled": "Anonymous analytics enabled",
+      "analyticsDisabled": "Analytics disabled",
+      "toggle": "Enable anonymous analytics",
+      "description": "Help improve GenPwd Pro by sharing anonymous crash reports"
+    }
+  },
+  "themes": {
+    "system": "System",
+    "dark": "Dark",
+    "light": "Light",
+    "highContrast": "High Contrast",
+    "high-contrast": "High Contrast",
+    "ocean": "Ocean",
+    "forest": "Forest",
+    "custom": {
+      "title": "Custom Themes",
+      "create": "Create Theme",
+      "edit": "Edit Theme",
+      "duplicate": "Duplicate Theme",
+      "delete": "Delete Theme",
+      "export": "Export Theme",
+      "import": "Import Theme",
+      "editor": {
+        "title": "Theme Editor",
+        "name": "Theme Name",
+        "namePlaceholder": "My Custom Theme",
+        "icon": "Theme Icon",
+        "preview": "Live Preview",
+        "categories": {
+          "background": "Background Colors",
+          "accent": "Accent Colors",
+          "text": "Text Colors",
+          "border": "Border Colors"
+        },
+        "save": "Save Theme",
+        "cancel": "Cancel",
+        "reset": "Reset to Default"
+      },
+      "validation": {
+        "nameRequired": "Theme name is required",
+        "nameTooLong": "Theme name must be 50 characters or less",
+        "invalidColor": "Invalid color value for {variable}"
+      },
+      "toast": {
+        "created": "Theme \"{name}\" created",
+        "updated": "Theme \"{name}\" updated",
+        "deleted": "Theme \"{name}\" deleted",
+        "exported": "Theme exported to clipboard",
+        "imported": "Theme \"{name}\" imported",
+        "applied": "Theme \"{name}\" applied"
+      },
+      "confirmDelete": "Delete theme \"{name}\"? This action cannot be undone.",
+      "importError": "Failed to import theme: {error}",
+      "exportError": "Failed to export theme"
+    }
+  },
+  "cloudSync": {
+    "providers": {
+      "googleDrive": {
+        "name": "Google Drive",
+        "description": "Sync with your Google Drive account"
+      },
+      "oneDrive": {
+        "name": "Microsoft OneDrive",
+        "description": "Sync with your Microsoft OneDrive account"
+      },
+      "dropbox": {
+        "name": "Dropbox",
+        "description": "Sync with your Dropbox account"
+      },
+      "webdav": {
+        "name": "WebDAV",
+        "description": "Sync with any WebDAV-compatible server"
+      },
+      "enterprise": {
+        "name": "Enterprise Server",
+        "description": "Sync with your organization's server"
+      }
+    },
+    "auth": {
+      "signIn": "Sign In",
+      "signOut": "Sign Out",
+      "connecting": "Connecting...",
+      "connected": "Connected as {email}",
+      "disconnected": "Not connected",
+      "authRequired": "Authentication required",
+      "authFailed": "Authentication failed. Please try again.",
+      "permissionDenied": "Permission denied. Please grant access.",
+      "tokenExpired": "Session expired. Please sign in again."
+    },
+    "sync": {
+      "lastSync": "Last sync: {time}",
+      "neverSynced": "Never synced",
+      "syncNow": "Sync Now",
+      "autoSync": "Auto-sync",
+      "autoSyncDesc": "Automatically sync changes to cloud"
+    }
+  },
+  "autoType": {
+    "errors": {
+      "macAccessibility": "Accessibility permission required. Go to System Preferences > Privacy & Security > Accessibility and enable GenPwd Pro.",
+      "macPermissionDenied": "Accessibility permission denied. Please enable it in System Preferences.",
+      "linuxNoTool": "Auto-type requires xdotool (X11) or ydotool/wtype (Wayland). Please install the appropriate tool.",
+      "linuxXdotoolNotFound": "xdotool not found. Install with: sudo apt install xdotool",
+      "linuxYdotoolNotFound": "ydotool not found for Wayland. Install with: sudo apt install ydotool",
+      "linuxWtypeNotFound": "wtype not found for Wayland. Install with: sudo apt install wtype",
+      "linuxDisplayUnknown": "Could not detect display server (X11/Wayland)",
+      "unsupportedPlatform": "Auto-type is not supported on this platform",
+      "executionFailed": "Auto-type execution failed: {error}",
+      "timeout": "Auto-type timed out"
+    },
+    "status": {
+      "performing": "Performing auto-type...",
+      "complete": "Auto-type complete",
+      "checkingPermissions": "Checking permissions..."
+    }
+  },
+  "webauthn": {
+    "title": "Security Keys",
+    "description": "Use hardware security keys for passwordless authentication",
+    "register": {
+      "title": "Register Security Key",
+      "prompt": "Insert your security key and touch it when prompted",
+      "name": "Key Name",
+      "namePlaceholder": "My YubiKey",
+      "success": "Security key registered successfully",
+      "error": "Failed to register security key: {error}"
+    },
+    "authenticate": {
+      "title": "Authenticate with Security Key",
+      "prompt": "Touch your security key to unlock",
+      "waiting": "Waiting for security key...",
+      "success": "Authentication successful",
+      "error": "Authentication failed: {error}",
+      "timeout": "Authentication timed out. Please try again."
+    },
+    "manage": {
+      "title": "Manage Security Keys",
+      "noKeys": "No security keys registered",
+      "registered": "{count} key(s) registered",
+      "lastUsed": "Last used: {date}",
+      "neverUsed": "Never used",
+      "rename": "Rename",
+      "delete": "Delete",
+      "deleteConfirm": "Are you sure you want to remove this security key?",
+      "deleted": "Security key removed"
+    },
+    "errors": {
+      "notSupported": "WebAuthn is not supported on this device",
+      "notAvailable": "Secure storage is not available",
+      "noCredentials": "No security keys registered for this vault",
+      "invalidResponse": "Invalid security key response",
+      "replayAttack": "Security error: Invalid signature counter detected"
+    }
+  },
+  "offlineSync": {
+    "title": "Offline Sync Queue",
+    "status": {
+      "online": "Online",
+      "offline": "Offline - Changes will sync when connected",
+      "syncing": "Syncing queued changes..."
+    },
+    "queue": {
+      "title": "Pending Operations",
+      "empty": "No pending operations",
+      "pending": "{count} operation(s) pending",
+      "upload": "Upload",
+      "download": "Download",
+      "delete": "Delete",
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "clearAll": "Clear All"
+    },
+    "operations": {
+      "queued": "Operation queued for sync",
+      "processing": "Processing sync queue...",
+      "completed": "Sync queue processed",
+      "failed": "Operation failed after {attempts} attempts",
+      "cancelled": "Operation cancelled"
+    },
+    "network": {
+      "restored": "Network connection restored",
+      "lost": "Network connection lost",
+      "retrying": "Retrying in {seconds} seconds..."
+    }
+  },
+  "syncEncryption": {
+    "title": "End-to-End Encryption",
+    "description": "Your vault is encrypted before leaving your device",
+    "status": {
+      "encrypting": "Encrypting for cloud sync...",
+      "decrypting": "Decrypting from cloud...",
+      "verified": "Integrity verified"
+    },
+    "errors": {
+      "encryptionFailed": "Failed to encrypt data for sync",
+      "decryptionFailed": "Failed to decrypt synced data",
+      "checksumMismatch": "Data integrity check failed - file may be corrupted",
+      "unsupportedVersion": "Unsupported encryption format version",
+      "invalidEnvelope": "Invalid encrypted data format"
+    }
+  },
+  "secureMemory": {
+    "errors": {
+      "wipeWarning": "Sensitive data may not have been fully cleared from memory",
+      "allocationFailed": "Failed to allocate secure memory buffer"
+    }
   }
 }

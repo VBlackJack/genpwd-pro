@@ -40,7 +40,7 @@ export const SENTRY_CONFIG = {
   environment: (typeof process !== 'undefined' && process.env?.NODE_ENV) || 'development',
 
   // Release version (synchronized with package.json)
-  release: 'genpwd-pro@3.0.1',
+  release: 'genpwd-pro@3.0.5',
 
   // Sample rate for performance monitoring (0.0 to 1.0)
   tracesSampleRate: 0.1,
