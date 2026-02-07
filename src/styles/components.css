@@ -2338,6 +2338,23 @@ body[data-theme="light"] .placement-visual-container .placement-controls .btn-mi
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15) !important;
 }
 
+body[data-theme="light"] .placement-bar .bar-label {
+  color: rgba(30, 40, 80, 0.6) !important;
+  text-shadow: none !important;
+}
+
+body[data-theme="light"] .placement-bar .bar-label:first-child,
+body[data-theme="light"] .placement-bar .bar-label:last-child {
+  color: rgba(30, 40, 80, 0.75) !important;
+}
+
+/* Light theme: cursor tooltip background */
+body[data-theme="light"] .cursor-tooltip {
+  background: rgba(240, 242, 248, 0.98) !important;
+  color: var(--text-primary) !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
 /* Buttons */
 [data-theme="light"] .btn {
   background: rgba(255, 255, 255, 0.9);

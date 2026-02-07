@@ -148,6 +148,57 @@ h2.modal-title {
   color: var(--text-primary);
 }
 
+/* Light theme: softer overlay backdrop */
+[data-theme="light"] .modal-overlay {
+  background: rgba(100, 110, 140, 0.45);
+}
+
+/* Light theme: author credit card */
+[data-theme="light"] .author-credit {
+  background: linear-gradient(135deg,
+    rgba(139, 92, 246, 0.08),
+    rgba(99, 102, 241, 0.05));
+  border-color: rgba(139, 92, 246, 0.18);
+}
+
+[data-theme="light"] .author-credit::before {
+  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.1), transparent 70%);
+}
+
+/* Light theme: about hero */
+[data-theme="light"] .about-hero {
+  background: linear-gradient(180deg,
+    rgba(99, 102, 241, 0.05) 0%,
+    rgba(139, 92, 246, 0.02) 50%,
+    transparent 100%);
+}
+
+[data-theme="light"] .about-hero::before {
+  background: radial-gradient(ellipse, rgba(99, 102, 241, 0.08), transparent 70%);
+}
+
+/* Light theme: about tech card */
+[data-theme="light"] .about-tech {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Light theme: modal body ambient glow */
+[data-theme="light"] .modal-body {
+  background: linear-gradient(180deg,
+    rgba(99, 102, 241, 0.02) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(139, 92, 246, 0.01) 100%);
+}
+
+/* Light theme: singleton tooltip */
+[data-theme="light"] #app-tooltip {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
 .modal-title svg {
   color: var(--accent-cyan);
   -webkit-text-fill-color: var(--accent-cyan);

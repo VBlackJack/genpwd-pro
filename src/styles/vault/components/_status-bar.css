@@ -106,12 +106,12 @@
 
 .save-indicator--saved {
   color: var(--color-success, #10b981);
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(var(--accent-green-rgb, 16, 185, 129), 0.1);
 }
 
 .save-indicator--error {
   color: var(--color-danger, #ef4444);
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(var(--accent-red-rgb, 239, 68, 68), 0.1);
 }
 
 /* Persistent save indicator (fixed position) */

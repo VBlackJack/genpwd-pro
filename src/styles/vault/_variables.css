@@ -43,13 +43,13 @@
   --accent-blue-rgb: 59, 130, 246;
   --accent-primary-rgb: 99, 102, 241;
 
-  /* Entry type colors */
-  --vault-type-login: #60a5fa;
-  --vault-type-note: #fbbf24;
-  --vault-type-card: #f472b6;
-  --vault-type-identity: #a78bfa;
-  --vault-type-ssh: #34d399;
-  --vault-type-preset: #94a3b8;
+  /* Entry type colors (derived from accent tokens) */
+  --vault-type-login: var(--accent-blue, #60a5fa);
+  --vault-type-note: var(--accent-yellow, #fbbf24);
+  --vault-type-card: var(--accent-pink, #f472b6);
+  --vault-type-identity: var(--accent-purple, #a78bfa);
+  --vault-type-ssh: var(--accent-green, #34d399);
+  --vault-type-preset: var(--text-muted, #94a3b8);
 
   /* Transitions and shadows */
   --vault-transition: 0.15s ease;
@@ -62,7 +62,7 @@
 
   /* Focus ring */
   --vault-focus-ring: 0 0 0 2px var(--vault-primary);
-  --vault-focus-ring-offset: 0 0 0 4px rgba(99, 102, 241, 0.25);
+  --vault-focus-ring-offset: 0 0 0 4px rgba(var(--accent-primary-rgb, 99, 102, 241), 0.25);
 
   /* Typography scale */
   --vault-font-xs: 0.6875rem;   /* 11px */

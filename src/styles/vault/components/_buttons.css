@@ -39,7 +39,7 @@
 }
 
 .vault-btn:hover {
-  background: var(--vault-border);
+  background: var(--vault-surface-hover);
   transform: translateY(-1px);
 }
 
