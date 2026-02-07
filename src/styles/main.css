@@ -260,7 +260,7 @@
     --text-primary: rgba(0, 0, 0, 0.87);
     --text-secondary: rgba(0, 0, 0, 0.72);
     --text-muted: rgba(0, 0, 0, 0.70); /* WCAG AA: ~5.5:1 on white bg */
-    --text-hint: rgba(0, 0, 0, 0.65); /* WCAG AA: ~4.8:1 on white bg */
+    --text-hint: rgba(0, 0, 0, 0.58); /* WCAG AA: ~4.6:1 on white bg — bumped for body tint */
 
     /* Theme-specific text colors */
     --text-dimmed: #5a5f7a;
@@ -320,7 +320,7 @@
   --text-primary: rgba(0, 0, 0, 0.87);
   --text-secondary: rgba(0, 0, 0, 0.72);
   --text-muted: rgba(0, 0, 0, 0.70); /* WCAG AA: ~5.5:1 on white bg */
-  --text-hint: rgba(0, 0, 0, 0.65); /* WCAG AA: ~4.8:1 on white bg */
+  --text-hint: rgba(0, 0, 0, 0.58); /* WCAG AA: ~4.6:1 on white bg — bumped for body tint */
   --text-dimmed: #5a5f7a;
   --text-bright: #1a1f36;
   --bg-code: rgba(0, 0, 0, 0.05);
@@ -354,7 +354,6 @@ body {
     radial-gradient(ellipse 50% 50% at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
     /* Base gradient */
     linear-gradient(135deg, hsl(225, 40%, 6%) 0%, hsl(225, 35%, 10%) 50%, hsl(240, 30%, 8%) 100%);
-  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-family);
   font-size: var(--body-font-size);
@@ -497,6 +496,66 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* ==================== PERFORMANCE: REDUCE GPU LAYERS ==================== */
+
+/* G-1: Disable heavy backdrop-filter on background panels when a modal is open
+   to avoid stacking too many compositing layers (improves frame-rate on iGPU). */
+body.no-scroll .glass-panel,
+body.no-scroll .glass-elevated,
+body.no-scroll .glass-frosted {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* P-2: Pause decorative glow animation when the tab/window is not visible */
+.logo-badge {
+  animation-play-state: running;
+}
+
+body.no-scroll .logo-badge,
+.logo-badge.animation-paused {
+  animation-play-state: paused;
+}
+
+/* ==================== APP LOADER ==================== */
+
+.app-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: var(--bg-deep);
+  transition: opacity 0.3s ease;
+}
+
+.app-loader.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--glass-border);
+  border-top-color: var(--accent-cyan);
+  border-radius: var(--radius-full);
+  animation: spin var(--animation-spin);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ==================== HIGH CONTRAST MODE (Windows) ==================== */
@@ -764,12 +823,10 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   from {
     opacity: 0;
     transform: scale(0.95) translateY(10px);
-    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -1044,6 +1101,25 @@ h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
   .vault-input-btn {
     min-width: 60px;
     min-height: 60px;
+  }
+}
+
+/* ============================================================================
+   VERY SMALL SCREEN SUPPORT (320px)
+   ============================================================================ */
+@media (max-width: 320px) {
+  :root {
+    --body-font-size: 14px;
+  }
+  .main {
+    padding: 0 var(--space-xs);
+  }
+  .panel-body {
+    padding: var(--space-xs);
+  }
+  .modal {
+    margin: var(--space-xs);
+    max-width: calc(100vw - var(--space-sm));
   }
 }
 

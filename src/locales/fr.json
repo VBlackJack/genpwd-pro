@@ -946,6 +946,10 @@
   "results": {
     "allCopied": "Tous les mots de passe copiés !",
     "clickToCopyHint": "Cliquer pour copier • Double-clic pour afficher/masquer",
+    "units": {
+      "bits": "{count} bits",
+      "chars": "{count} car."
+    },
     "composition": {
       "cliSafe": "CLI-Safe",
       "digits": "chiffres",

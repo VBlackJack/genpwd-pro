@@ -58,9 +58,24 @@ class GenPwdApp {
     this.vaultUI = null;
   }
 
+  applyRuntimeClasses() {
+    const body = document.body;
+    if (!body) return;
+
+    const isElectron = Boolean(window.electronAPI?.isElectron);
+    const platform = window.electronAPI?.platform;
+
+    body.classList.toggle('platform-electron', isElectron);
+    body.classList.toggle('platform-web', !isElectron);
+    body.classList.toggle('platform-windows', platform === 'win32');
+    body.classList.toggle('platform-macos', platform === 'darwin');
+    body.classList.toggle('platform-linux', platform === 'linux');
+  }
+
   async init() {
     try {
       safeLog(`Starting GenPwd Pro v${this.version} - Modular architecture`);
+      this.applyRuntimeClasses();
 
       // 0. Initialize theme system (first for UI)
       initThemeSystem();
@@ -347,6 +362,9 @@ class GenPwdApp {
           if (debugPanel) debugPanel.setAttribute('hidden', '');
           if (appContainer) appContainer.classList.add('vault-mode');
         }
+
+        // Scroll to top on tab switch for consistent navigation
+        window.scrollTo(0, 0);
       });
     });
 

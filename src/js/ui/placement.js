@@ -397,6 +397,11 @@ function createCursorElement(type, index) {
   button.dataset.type = type;
   button.dataset.index = String(index);
   button.setAttribute('tabindex', '0');
+  // A-3: ARIA slider semantics for assistive technologies
+  button.setAttribute('role', 'slider');
+  button.setAttribute('aria-valuemin', '0');
+  button.setAttribute('aria-valuemax', '100');
+  button.setAttribute('aria-valuenow', '50');
   button.innerHTML = sanitizeHTML('<span class="cursor-label"></span>');
 
   addEventListener(button, 'pointerdown', handlePointerDown);
@@ -420,6 +425,7 @@ function updateCursorElement(element, type, index) {
   }
 
   const readablePercent = formatPercent(item.percent);
+  element.setAttribute('aria-valuenow', String(roundPercent(item.percent)));
   element.setAttribute('aria-valuetext', `${type === 'digits' ? 'Digit' : 'Special'} ${readablePercent}`);
   element.setAttribute('aria-label', `${type === 'digits' ? 'Digit position' : 'Special position'} ${readablePercent}`);
   element.setAttribute('data-tooltip', `${type === 'digits' ? 'Digit' : 'Special'} • ${readablePercent}`);

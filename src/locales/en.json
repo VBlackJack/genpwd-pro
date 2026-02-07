@@ -378,6 +378,10 @@
     "emptyState": "Click \"Generate\" to create your passwords",
     "copied": "Password copied!",
     "allCopied": "All passwords copied!",
+    "units": {
+      "bits": "{count} bits",
+      "chars": "{count} chars"
+    },
     "composition": {
       "upper": "upper",
       "lower": "lower",

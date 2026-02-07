@@ -165,11 +165,16 @@ class I18n {
       return key;
     }
 
-    // Interpolate parameters
+    // Interpolate parameters with HTML escaping for safety
     let result = value;
     for (const [param, replacement] of Object.entries(params)) {
       const regex = new RegExp(`\\{${param}\\}`, 'g');
-      result = result.replace(regex, String(replacement));
+      const safeValue = String(replacement)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+      result = result.replace(regex, safeValue);
     }
 
     return result;
@@ -387,6 +392,13 @@ class I18n {
     // Update HTML lang attribute
     if (root === document) {
       document.documentElement.lang = this.currentLocale;
+      const appTitle = this.t('app.title');
+      const appSubtitle = this.t('app.subtitle');
+      if (appTitle && appTitle !== 'app.title') {
+        document.title = appSubtitle && appSubtitle !== 'app.subtitle'
+          ? `${appTitle} - ${appSubtitle}`
+          : appTitle;
+      }
     }
 
     safeLog(`[i18n] Translated ${count} elements`);

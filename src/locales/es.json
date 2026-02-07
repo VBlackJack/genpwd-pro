@@ -925,6 +925,10 @@
   "results": {
     "allCopied": "¡Todas las contraseñas copiadas!",
     "clickToCopyHint": "Clic para copiar • Doble clic para mostrar/ocultar",
+    "units": {
+      "bits": "{count} bits",
+      "chars": "{count} car."
+    },
     "composition": {
       "cliSafe": "CLI-Safe",
       "digits": "dígitos",

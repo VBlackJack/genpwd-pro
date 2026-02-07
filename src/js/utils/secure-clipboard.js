@@ -148,7 +148,9 @@ class SecureClipboard {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const value = parseInt(stored, 10);
-        if (!isNaN(value) && value >= 0) {
+        // Validate against allowed options to prevent unexpected values
+        const isValidOption = !isNaN(value) && CLIPBOARD_TIMEOUT_OPTIONS.some(opt => opt.value === value);
+        if (isValidOption) {
           this.#timeoutMs = value * 1000;
         }
       }

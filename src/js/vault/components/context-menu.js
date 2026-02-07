@@ -132,19 +132,9 @@ export function showContextMenu({ entry, x, y, getEntryTypes, t = (k) => k, onAc
   menu.style.top = `${posY}px`;
 
   // Event handlers
-  const closeMenu = () => menu.remove();
-
-  menu.querySelectorAll('.vault-ctx-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const action = item.dataset.action;
-      closeMenu();
-      if (onAction) onAction(action, entry);
-    });
-  });
-
-  // Centralized cleanup for guaranteed listener removal
   let clickHandler = null;
   let escHandler = null;
+  let menuKeyHandler = null;
   let setupTimeoutId = null;
 
   const cleanupListeners = () => {
@@ -160,6 +150,10 @@ export function showContextMenu({ entry, x, y, getEntryTypes, t = (k) => k, onAc
       document.removeEventListener('keydown', escHandler);
       escHandler = null;
     }
+    if (menuKeyHandler) {
+      menu.removeEventListener('keydown', menuKeyHandler);
+      menuKeyHandler = null;
+    }
   };
 
   const closeAndCleanup = () => {
@@ -171,6 +165,60 @@ export function showContextMenu({ entry, x, y, getEntryTypes, t = (k) => k, onAc
 
   // Store cleanup on menu element for external access
   menu._cleanup = closeAndCleanup;
+
+  const menuItems = Array.from(menu.querySelectorAll('.vault-ctx-item'));
+  let activeIndex = -1;
+
+  const setActiveItem = (newIndex) => {
+    if (!menuItems.length) return;
+    activeIndex = Math.max(0, Math.min(newIndex, menuItems.length - 1));
+    menuItems.forEach((item, idx) => {
+      item.setAttribute('tabindex', idx === activeIndex ? '0' : '-1');
+    });
+    menuItems[activeIndex].focus();
+  };
+
+  // Click handlers for actions
+  menuItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const action = item.dataset.action;
+      closeAndCleanup();
+      if (onAction) onAction(action, entry);
+    });
+  });
+
+  // Keyboard navigation for role="menu"
+  if (menuItems.length) {
+    setActiveItem(0);
+    menuKeyHandler = (e) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setActiveItem(activeIndex + 1 >= menuItems.length ? 0 : activeIndex + 1);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setActiveItem(activeIndex - 1 < 0 ? menuItems.length - 1 : activeIndex - 1);
+          break;
+        case 'Home':
+          e.preventDefault();
+          setActiveItem(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setActiveItem(menuItems.length - 1);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          closeAndCleanup();
+          break;
+        case 'Tab':
+          closeAndCleanup();
+          break;
+      }
+    };
+    menu.addEventListener('keydown', menuKeyHandler);
+  }
 
   // Close on click outside or Escape
   setupTimeoutId = setTimeout(() => {

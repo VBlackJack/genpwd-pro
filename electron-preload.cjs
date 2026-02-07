@@ -16,6 +16,7 @@
 
 // electron-preload.js - Secure preload script
 const { contextBridge, ipcRenderer } = require('electron');
+const { version: APP_VERSION } = require('./package.json');
 
 // Expose secure API to renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -23,7 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
 
   // Application version
-  version: '3.0.2',
+  version: APP_VERSION,
 
   // Check if running in Electron
   isElectron: true,
@@ -153,6 +154,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_, data) => callback(data);
     ipcRenderer.on('automation:global-autotype', handler);
     return () => ipcRenderer.removeListener('automation:global-autotype', handler);
+  },
+
+  // ==================== SYSTEM THEME SYNC ====================
+  // Listen for system dark/light mode changes (from nativeTheme)
+  onThemeChanged: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('system:theme-changed', handler);
+    return () => ipcRenderer.removeListener('system:theme-changed', handler);
   },
 
   // ==================== VISUAL PROTECTION (Blur/Focus) ====================
@@ -295,6 +304,15 @@ contextBridge.exposeInMainWorld('vault', {
       const handler = (_, data) => callback(data);
       ipcRenderer.on('update:downloaded', handler);
       return () => ipcRenderer.removeListener('update:downloaded', handler);
+    },
+
+    /**
+     * Listen for update error event
+     */
+    onUpdateError: (callback) => {
+      const handler = (_, data) => callback(data);
+      ipcRenderer.on('update:error', handler);
+      return () => ipcRenderer.removeListener('update:error', handler);
     }
   },
 

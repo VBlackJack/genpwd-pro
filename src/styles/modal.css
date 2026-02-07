@@ -74,6 +74,18 @@
   opacity: 1;
 }
 
+/* M-3: Exit animation — mirror of entrance */
+.modal-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-overlay.closing .modal {
+  transform: scale(0.95) translateY(15px);
+  opacity: 0;
+  filter: blur(2px);
+}
+
 .modal-header {
   position: relative;
   padding: 1.5rem 1.75rem 1.25rem;
@@ -110,6 +122,8 @@ h2.modal-title {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  /* Fallback color for accessibility when gradient text is unsupported */
+  color: var(--accent-cyan);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -695,8 +709,8 @@ h2.modal-title {
 }
 
 .pwd .action-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Copy button - Cyan */
@@ -852,7 +866,7 @@ h2.modal-title {
   display: flex !important;
   flex-direction: column !important;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .comp-bar {
@@ -892,7 +906,7 @@ h2.modal-title {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -900,6 +914,7 @@ h2.modal-title {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-height: 24px;
 }
 
 .legend-dot {
@@ -932,10 +947,12 @@ h2.modal-title {
   opacity: 1 !important;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   min-height: 24px;
   gap: 10px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* ============================================================================

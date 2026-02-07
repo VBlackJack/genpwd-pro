@@ -101,29 +101,23 @@ export function updateVisibilityByMode() {
 
   const syllEl = getElement('#mode-syllables-opts');
   if (syllEl) {
-    if (mode === 'syllables') {
-      syllEl.classList.remove('hidden');
-    } else {
-      syllEl.classList.add('hidden');
-    }
+    const isActive = mode === 'syllables';
+    syllEl.classList.toggle('hidden', !isActive);
+    syllEl.setAttribute('aria-hidden', String(!isActive));
   }
 
   const ppEl = getElement('#mode-passphrase-opts');
   if (ppEl) {
-    if (mode === 'passphrase') {
-      ppEl.classList.remove('hidden');
-    } else {
-      ppEl.classList.add('hidden');
-    }
+    const isActive = mode === 'passphrase';
+    ppEl.classList.toggle('hidden', !isActive);
+    ppEl.setAttribute('aria-hidden', String(!isActive));
   }
 
   const leetEl = getElement('#mode-leet-opts');
   if (leetEl) {
-    if (mode === 'leet') {
-      leetEl.classList.remove('hidden');
-    } else {
-      leetEl.classList.add('hidden');
-    }
+    const isActive = mode === 'leet';
+    leetEl.classList.toggle('hidden', !isActive);
+    leetEl.setAttribute('aria-hidden', String(!isActive));
   }
   safeLog(`Display mode: ${mode}`);
 }
@@ -142,12 +136,12 @@ export function ensureBlockVisible() {
     const prev = getElement('#case-preview-row');
 
     if (row) {
-      if (show) row.classList.remove('hidden');
-      else row.classList.add('hidden');
+      row.classList.toggle('hidden', !show);
+      row.setAttribute('aria-hidden', String(!show));
     }
     if (prev) {
-      if (show) prev.classList.remove('hidden');
-      else prev.classList.add('hidden');
+      prev.classList.toggle('hidden', !show);
+      prev.setAttribute('aria-hidden', String(!show));
     }
   } catch (e) {
     safeLog('ensureBlockVisible error: ' + (e?.message || e));

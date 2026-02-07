@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,7 +24,7 @@
   <!-- In Electron, frame embedding is controlled by webPreferences in BrowserWindow -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self'; child-src 'none'; upgrade-insecure-requests">
 
-  <title>GenPwd Pro – Secure Password Generator</title>
+  <title>GenPwd Pro</title>
   <meta name="author" content="Julien Bombled">
   <meta name="description" content="Professional password manager with encrypted vault - Secure password generator with modular ES6 architecture">
 
@@ -36,8 +36,6 @@
   <meta name="apple-mobile-web-app-title" content="GenPwd Pro">
 
   <!-- Resource Hints for Performance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="prefetch" href="dictionaries/french.json" as="fetch" crossorigin>
   <link rel="preload" href="styles/main.css" as="style">
   <link rel="preload" href="styles/components.css" as="style">
@@ -59,7 +57,7 @@
   <!-- Skip Navigation Link for Accessibility -->
   <a href="#main-content" class="skip-link" data-i18n="common.skipToMain">Skip to main content</a>
 
-  <div class="app vault-mode" data-i18n-aria-label="aria.appLabel" aria-label="GenPwd Pro - Secure Password Manager">
+  <div class="app" data-i18n-aria-label="aria.appLabel" aria-label="GenPwd Pro - Secure Password Manager">
     <header id="app-header" role="banner">
       <div class="header-inner">
         <div class="logo">
@@ -85,6 +83,13 @@
           <button type="button" class="vault-status-indicator" id="vault-status-indicator" hidden data-i18n-aria-label="header.vaultStatus" aria-label="Vault status" data-i18n-title="header.clickToAccessVault" title="Click to access vault">
             <svg class="vault-status-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <span class="vault-status-text" data-i18n="header.vaultLocked">Locked</span>
+          </button>
+          <!-- Settings Button -->
+          <button type="button" class="about-btn" id="btn-settings" data-i18n-aria-label="aria.openSettings" aria-label="Open settings">
+            <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
           </button>
           <!-- Achievement Badge - BMAD Phase 6 -->
           <div id="header-achievement-container"></div>
@@ -218,21 +223,26 @@
             <!-- Détails des tests -->
           </div>
 
-          <div id="test-console" class="test-console hidden">
+          <div id="test-console" class="test-console hidden" aria-hidden="true">
             <pre id="test-console-output"></pre>
           </div>
 
         </div>
         <div class="modal-footer">
-          <button type="button" id="btn-rerun-tests" class="btn" data-i18n-aria-label="testResults.rerunTests" aria-label="Rerun all tests">🔄 <span data-i18n="common.rerun">Rerun</span></button>
-          <button type="button" id="btn-export-test-results" class="btn" data-i18n-aria-label="testResults.exportJson" aria-label="Export results as JSON">📤 <span data-i18n="testResults.exportButton">Export JSON</span></button>
+          <button type="button" id="btn-rerun-tests" class="btn" data-i18n-aria-label="testResults.rerunTests" aria-label="Rerun all tests"><span aria-hidden="true">🔄</span> <span data-i18n="common.rerun">Rerun</span></button>
+          <button type="button" id="btn-export-test-results" class="btn" data-i18n-aria-label="testResults.exportJson" aria-label="Export results as JSON"><span aria-hidden="true">📤</span> <span data-i18n="testResults.exportButton">Export JSON</span></button>
           <button type="button" class="btn danger" id="close-test-results-footer" data-i18n-aria-label="testResults.closeWindow" aria-label="Close results window"><span data-i18n="common.close">Close</span></button>
         </div>
       </div>
     </div>
 
     <!-- Vault Container (shown by default in Electron) -->
-    <div id="vault-container"></div>
+    <div id="vault-container" role="region" aria-label="Password vault"></div>
+
+    <!-- Loading skeleton (visible until JS initializes) -->
+    <div id="app-loader" class="app-loader" aria-live="polite" aria-label="Loading application">
+      <div class="loader-spinner" role="status"><span class="sr-only">Loading...</span></div>
+    </div>
 
     <main class="main" id="main-content" hidden>
       <!-- Configuration Panel -->
@@ -257,7 +267,7 @@
               </div>
 
               <!-- Syllables options -->
-              <div id="mode-syllables-opts" aria-label="Syllables mode options">
+              <div id="mode-syllables-opts" role="group" aria-label="Syllables mode options">
                 <div class="row">
                   <label for="syll-len" id="syll-len-label" data-i18n="generator.length" data-tooltip-key="syllables">Length</label>
                   <div class="grow slider-wrap">
@@ -277,7 +287,7 @@
               </div>
 
               <!-- Passphrase options -->
-              <div id="mode-passphrase-opts" class="hidden">
+              <div id="mode-passphrase-opts" class="hidden" aria-hidden="true">
                 <div class="row">
                   <label for="pp-count" data-i18n="generator.wordCount" data-tooltip-key="passphrase">Word count</label>
                   <div class="grow slider-wrap">
@@ -302,7 +312,7 @@
                       <option value="english" data-i18n="dictionaries.english">🇬🇧 English</option>
                       <option value="latin" data-i18n="dictionaries.latin">🏛️ Latin</option>
                     </select>
-                    <div class="dict-status" id="dict-status">--</div>
+                    <div class="dict-status" id="dict-status" role="status" aria-live="polite">--</div>
                   </div>
                 </div>
                 <div class="row">
@@ -311,7 +321,7 @@
               </div>
 
               <!-- Leet options -->
-              <div id="mode-leet-opts" class="hidden">
+              <div id="mode-leet-opts" class="hidden" aria-hidden="true">
                 <div class="row">
                   <label for="leet-input" data-i18n="generator.wordToTransform" data-tooltip-key="leet">Word to transform</label>
                   <input id="leet-input" class="input grow" type="text" value="password" data-i18n-aria-label="aria.leetWordDesc" aria-label="Word to transform into leet speak" aria-describedby="leet-input-desc">
@@ -323,7 +333,7 @@
 
           <!-- Basic Options (always visible) -->
           <section class="section" aria-labelledby="section-basic">
-            <button type="button" class="section-header chevron" role="button" aria-expanded="true" aria-controls="section-basic-content">
+            <button type="button" class="section-header chevron" aria-expanded="true" aria-controls="section-basic-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-basic" data-i18n="sections.basicOptions">Basic Options</strong>
             </button>
@@ -367,7 +377,7 @@
 
           <!-- Advanced Options (collapsed by default for progressive disclosure - BMAD) -->
           <section class="section collapsed" aria-labelledby="section-advanced">
-            <button type="button" class="section-header chevron" role="button" aria-expanded="false" aria-controls="section-advanced-content">
+            <button type="button" class="section-header chevron" aria-expanded="false" aria-controls="section-advanced-content">
               <span class="chev" aria-hidden="true">▼</span>
               <strong id="section-advanced" data-i18n="sections.advancedOptions">Advanced Options</strong>
               <span class="badge hint" data-i18n="sections.advancedHint">placement, case</span>
@@ -404,6 +414,7 @@
 
               <div class="row">
                 <label><span data-i18n="sections.visualPlacement">Visual placement</span></label>
+                <p class="hint placement-hint" data-i18n="help.placementHint">Drag cursors to choose where digits and specials appear in your password.</p>
                 <div id="placement-visual-container" class="placement-visual-container">
                   <div class="placement-bar-wrapper">
                     <div class="placement-bar" id="placement-bar">
@@ -412,7 +423,7 @@
                       <div class="bar-labels" id="bar-labels"></div>
                     </div>
                   </div>
-                  <div class="placement-controls">
+                  <div class="placement-controls" role="toolbar" aria-label="Placement controls">
                     <button type="button" class="btn-mini" id="btn-placement-reset" data-i18n-aria-label="generator.resetPositions" aria-label="Reset positions">Reset</button>
                     <button type="button" class="btn-mini" id="btn-placement-auto" data-i18n-aria-label="generator.autoRandomPlacement" aria-label="Auto random placement">Auto</button>
                     <button type="button" class="btn-mini" id="btn-placement-toggle" data-i18n-aria-label="generator.toggleVisualMode" aria-label="Toggle visual/percentage mode">Toggle</button>
@@ -434,7 +445,7 @@
                 </select>
               </div>
 
-              <div class="row" id="blocks-editor-row" class="hidden">
+              <div class="row hidden" id="blocks-editor-row" aria-hidden="true">
                 <div class="grow blocks-wrap">
                   <div class="block-controls">
                     <div class="block-controls-left">
@@ -459,7 +470,7 @@
                 </div>
               </div>
 
-              <div class="row" id="case-preview-row" class="hidden">
+              <div class="row hidden" id="case-preview-row" aria-hidden="true">
                 <label class="hint" data-i18n="generator.preview">Preview</label>
                 <div class="hint mono" id="case-preview"></div>
               </div>
@@ -556,7 +567,7 @@
     </aside>
 
     <!-- Toast Container -->
-    <div class="toasts" id="toasts" role="alert" aria-live="assertive" aria-atomic="true"></div>
+    <div class="toasts" id="toasts" role="log" aria-live="off" aria-relevant="additions"></div>
   </main>
 
   <!-- JavaScript modulaire ES6 -->

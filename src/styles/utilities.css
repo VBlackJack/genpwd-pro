@@ -101,7 +101,10 @@
   flex-shrink: 0;
   background: transparent;
   border: none;
-  padding: 4px;
+  /* WCAG 2.1 compliant touch target - 44px minimum */
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
   cursor: pointer;
   color: var(--text-muted);
   border-radius: var(--radius-xs);

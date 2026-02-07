@@ -14,7 +14,13 @@ import { safeLog } from './logger.js';
  */
 function escapeCSV(value) {
   if (!value) return '';
-  const str = String(value);
+  let str = String(value);
+
+  // Prevent CSV formula injection in spreadsheet software
+  if (/^[\t\r\n ]*[=+\-@]/.test(str)) {
+    str = `'${str}`;
+  }
+
   // Escape quotes and wrap in quotes if contains comma, newline, or quote
   if (str.includes(',') || str.includes('\n') || str.includes('"')) {
     return `"${str.replace(/"/g, '""')}"`;

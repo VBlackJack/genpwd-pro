@@ -279,6 +279,32 @@ function initAccentColorIntegration() {
 }
 
 /**
+ * Initialize system theme sync
+ * Listens for dark/light mode changes from the OS
+ */
+function initThemeSyncIntegration() {
+  if (!window.electronAPI?.onThemeChanged) {
+    return;
+  }
+
+  window.electronAPI.onThemeChanged(({ dark }) => {
+    const targetTheme = dark ? 'dark' : 'light';
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+
+    // Only apply if user hasn't manually overridden the theme
+    const userOverride = localStorage.getItem('genpwd_theme_override');
+    if (userOverride) return;
+
+    if (currentTheme !== targetTheme) {
+      document.documentElement.setAttribute('data-theme', targetTheme);
+      safeLog(`System theme synced: ${targetTheme}`);
+    }
+  });
+
+  safeLog('Theme sync integration initialized');
+}
+
+/**
  * Initialize Vault File Open Handler
  * Handles .gpdb file association (double-click to open)
  */
@@ -421,6 +447,12 @@ async function initQuickUnlockIntegration() {
 function initTrayRestoreBehavior(signal) {
   // When window is restored from tray, refresh UI state
   document.addEventListener('visibilitychange', () => {
+    // P-2: Pause decorative animations when tab is hidden to save GPU cycles
+    const badge = document.querySelector('.logo-badge');
+    if (badge) {
+      badge.classList.toggle('animation-paused', document.hidden);
+    }
+
     if (document.visibilityState === 'visible') {
       // Dispatch event for components to refresh
       window.dispatchEvent(new CustomEvent('app:restored'));
@@ -576,6 +608,7 @@ export function initNativeIntegration() {
   initClipboardIntegration(signal);
   initAutoTypeNotifications();
   initAccentColorIntegration();
+  initThemeSyncIntegration();
   initVaultFileOpenHandler();
   // Fire-and-forget with error handling - quick unlock init is optional
   initQuickUnlockIntegration().catch(error => {

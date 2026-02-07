@@ -100,6 +100,7 @@ export class SaveToVaultModal {
     }
 
     setMainContentInert(false);
+    document.body.classList.remove('no-scroll');
 
     const overlay = document.getElementById('save-to-vault-modal');
     if (overlay) {
@@ -269,6 +270,7 @@ export class SaveToVaultModal {
     const overlay = document.getElementById('save-to-vault-modal');
     if (overlay) {
       setMainContentInert(true);
+      document.body.classList.add('no-scroll');
       // Trigger animation
       requestAnimationFrame(() => {
         overlay.classList.add('active');

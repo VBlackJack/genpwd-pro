@@ -720,7 +720,7 @@ let isCompactMode = false;
 let normalBounds = null; // Store normal window bounds before compact mode
 
 // Global hotkey configuration (Boss Key)
-const GLOBAL_HOTKEY = 'CommandOrControl+Shift+P';
+const GLOBAL_HOTKEY = 'CommandOrControl+Alt+P';
 
 // Clipboard auto-clear timers
 const clipboardTimers = new Map();
@@ -852,6 +852,13 @@ const rateLimiter = {
  */
 function validateOrigin(event) {
   const webContents = event.sender;
+
+  // Verify the sender is our main window's webContents
+  if (mainWindow && webContents.id !== mainWindow.webContents.id) {
+    console.error('[GenPwd Pro] Blocked IPC from unknown webContents');
+    throw new Error('Unauthorized IPC origin');
+  }
+
   const url = webContents.getURL();
 
   // Allow only file:// protocol (our app)
@@ -925,7 +932,7 @@ function createWindow() {
       ...SECURITY_CONFIG,
       preload: path.join(__dirname, 'electron-preload.cjs')
     },
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
     show: false // Afficher seulement quand prêt
   };
 
@@ -959,6 +966,11 @@ function createWindow() {
   }
 
   mainWindow = new BrowserWindow(windowOptions);
+
+  // Keep native menu accessible via Alt key, but avoid duplicate chrome with custom header.
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    mainWindow.setMenuBarVisibility(false);
+  }
 
   // Restore maximized state
   if (savedState?.isMaximized) {
@@ -1009,16 +1021,35 @@ function createWindow() {
   // For password managers, keeping in tray is a security feature
 
   // Load saved close behavior preference
-  let closeBehavior = 'ask'; // 'ask', 'minimize', 'quit'
+  let closeBehavior = 'minimize'; // 'ask', 'minimize', 'quit'
   try {
     const prefsPath = path.join(app.getPath('userData'), 'close-behavior.json');
     if (fs.existsSync(prefsPath)) {
       const prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf8'));
-      closeBehavior = prefs.behavior || 'ask';
+      closeBehavior = prefs.behavior || 'minimize';
     }
   } catch (e) {
     devLog('[GenPwd Pro] No saved close behavior preference');
   }
+
+  const notifyTrayMinimize = () => {
+    // Show notification (first 3 times per session to educate users)
+    if (!mainWindow._trayNotificationCount) {
+      mainWindow._trayNotificationCount = 0;
+    }
+    if (mainWindow._trayNotificationCount < 3 && Notification.isSupported()) {
+      const t = getMainTranslations();
+      new Notification({
+        title: 'GenPwd Pro',
+        body: mainWindow._trayNotificationCount === 0
+          ? t.trayNotifyFirst
+          : t.trayNotifyRepeat,
+        icon: path.join(__dirname, 'assets', 'icon.ico'),
+        silent: true
+      }).show();
+      mainWindow._trayNotificationCount++;
+    }
+  };
 
   mainWindow.on('close', async (event) => {
     if (!isQuitting) {
@@ -1027,6 +1058,7 @@ function createWindow() {
       // Apply saved preference
       if (closeBehavior === 'minimize') {
         mainWindow.hide();
+        notifyTrayMinimize();
         return false;
       } else if (closeBehavior === 'quit') {
         isQuitting = true;
@@ -1071,23 +1103,7 @@ function createWindow() {
 
       // Minimize to tray
       mainWindow.hide();
-
-      // Show notification (first 3 times per session to educate users)
-      if (!mainWindow._trayNotificationCount) {
-        mainWindow._trayNotificationCount = 0;
-      }
-      if (mainWindow._trayNotificationCount < 3 && Notification.isSupported()) {
-        const t = getMainTranslations();
-        new Notification({
-          title: 'GenPwd Pro',
-          body: mainWindow._trayNotificationCount === 0
-            ? t.trayNotifyFirst
-            : t.trayNotifyRepeat,
-          icon: path.join(__dirname, 'assets', 'icon.ico'),
-          silent: true
-        }).show();
-        mainWindow._trayNotificationCount++;
-      }
+      notifyTrayMinimize();
 
       return false;
     }
@@ -1260,8 +1276,12 @@ function initAutoUpdater() {
   autoUpdater.on('error', (error) => {
     devError('[AutoUpdater] Error:', error.message);
 
-    // Don't show errors to user in production (silent fail)
-    // Log for debugging purposes only
+    // Notify renderer so user can see update errors
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('update:error', {
+        message: error.message || 'Update check failed'
+      });
+    }
   });
 
   // Check for updates after a short delay (don't block startup)
@@ -2660,7 +2680,7 @@ app.whenReady().then(async () => {
         // Content Security Policy - strict but allows app functionality
         'Content-Security-Policy': [
           "default-src 'self'; " +
-          "script-src 'self' 'unsafe-inline'; " + // Needed for inline event handlers
+          "script-src 'self' 'wasm-unsafe-eval'; " + // Required for hash-wasm, blocks inline script execution
           "style-src 'self' 'unsafe-inline'; " +  // Needed for dynamic styles
           "img-src 'self' data: blob:; " +        // Allow data URIs for icons
           "font-src 'self' data:; " +             // Allow embedded fonts
@@ -2974,13 +2994,28 @@ app.whenReady().then(async () => {
     devLog('[GenPwd Pro] Started hidden (auto-start mode)');
   }
 
-  // Send Windows accent color to renderer after window is ready
+  // Send Windows accent color and theme to renderer after window is ready
   if (mainWindow && process.platform === 'win32') {
     mainWindow.webContents.on('did-finish-load', async () => {
       const colors = await getWindowsAccentColor();
       if (colors) {
         mainWindow.webContents.send('system:accent-color', colors);
         devLog('[GenPwd Pro] Sent Windows accent color:', colors.accent);
+      }
+
+      // Sync system dark mode preference
+      mainWindow.webContents.send('system:theme-changed', {
+        dark: nativeTheme.shouldUseDarkColors
+      });
+    });
+
+    // Listen for system theme changes (dark/light mode toggle)
+    nativeTheme.on('updated', () => {
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('system:theme-changed', {
+          dark: nativeTheme.shouldUseDarkColors
+        });
+        devLog(`[GenPwd Pro] System theme changed: ${nativeTheme.shouldUseDarkColors ? 'dark' : 'light'}`);
       }
     });
   }
@@ -3005,6 +3040,15 @@ app.whenReady().then(async () => {
       console.log(`[GenPwd Pro] Global hotkey registered: ${GLOBAL_HOTKEY}`);
     } else {
       console.error(`[GenPwd Pro] Failed to register global hotkey: ${GLOBAL_HOTKEY}`);
+      // Notify user that hotkey is unavailable (likely used by another app)
+      if (Notification.isSupported()) {
+        const t = getMainTranslations();
+        new Notification({
+          title: t.securityWarning || 'Hotkey Unavailable',
+          body: `${GLOBAL_HOTKEY} is already in use by another application.`,
+          icon: path.join(__dirname, 'assets', 'icon.ico')
+        }).show();
+      }
     }
   } catch (error) {
     devError('[GenPwd Pro] Global hotkey registration error:', error.message);
@@ -3206,7 +3250,7 @@ app.on('web-contents-created', (event, contents) => {
   // ==================== NATIVE CONTEXT MENU ====================
   // Add standard cut/copy/paste context menu to all text inputs
   contents.on('context-menu', (e, params) => {
-    const { editFlags, isEditable, selectionText } = params;
+    const { editFlags = {}, isEditable, selectionText } = params;
     const t = getMainTranslations();
 
     // Build context menu items based on context
@@ -3218,39 +3262,39 @@ app.on('web-contents-created', (event, contents) => {
         {
           label: t.undo || 'Undo',
           accelerator: 'CmdOrCtrl+Z',
-          enabled: editFlags.canUndo,
+          enabled: editFlags.canUndo !== false,
           click: () => contents.undo()
         },
         {
           label: t.redo || 'Redo',
           accelerator: 'CmdOrCtrl+Y',
-          enabled: editFlags.canRedo,
+          enabled: editFlags.canRedo !== false,
           click: () => contents.redo()
         },
         { type: 'separator' },
         {
           label: t.cut || 'Cut',
           accelerator: 'CmdOrCtrl+X',
-          enabled: editFlags.canCut,
+          enabled: editFlags.canCut !== false,
           click: () => contents.cut()
         },
         {
           label: t.copy || 'Copy',
           accelerator: 'CmdOrCtrl+C',
-          enabled: editFlags.canCopy,
+          enabled: editFlags.canCopy !== false,
           click: () => contents.copy()
         },
         {
           label: t.paste || 'Paste',
           accelerator: 'CmdOrCtrl+V',
-          enabled: editFlags.canPaste,
+          enabled: editFlags.canPaste !== false,
           click: () => contents.paste()
         },
         { type: 'separator' },
         {
           label: t.selectAll || 'Select All',
           accelerator: 'CmdOrCtrl+A',
-          enabled: editFlags.canSelectAll,
+          enabled: editFlags.canSelectAll !== false,
           click: () => contents.selectAll()
         }
       );

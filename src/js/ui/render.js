@@ -113,6 +113,8 @@ function createPasswordCard(item, id, mask) {
   const dictInfo = mode === 'passphrase' && dictionary ?
     `${dictionary.charAt(0).toUpperCase() + dictionary.slice(1)}` :
     mode || 'unknown';
+  const entropyLabel = t('results.units.bits', { count: (entropy || 0).toFixed(1) });
+  const lengthLabel = t('results.units.chars', { count: total });
 
   // Vault save button (only visible in Electron) - floppy disk icon
   const vaultAvailable = VaultBridge.isAvailable();
@@ -148,8 +150,8 @@ function createPasswordCard(item, id, mask) {
         </button>
       </div>
       <span class="spacer"></span>
-      <div class="stat"><span class="dot"></span><strong>${(entropy || 0).toFixed(1)}</strong>&nbsp;bits</div>
-      <div class="len">${total} chars</div>
+      <div class="stat"><span class="dot"></span><strong>${escapeHtml(entropyLabel)}</strong></div>
+      <div class="len">${escapeHtml(lengthLabel)}</div>
     </div>
     <div class="card-sec pwd ${mask ? 'masked' : ''}" data-index="${id-1}" data-password="${escapeHtml(value)}" title="${t('results.clickToCopyHint')}" role="button" tabindex="0" aria-label="${t('results.passwordAriaLabel', { id })}">
       <div class="value mono">${escapeHtml(value)}</div>

@@ -28,6 +28,8 @@
 
 select {
   cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
   padding-right: 36px;
   /*
@@ -40,11 +42,15 @@ select {
   background-image: var(--select-arrow-dark);
   background-repeat: no-repeat;
   background-position: right 12px center;
+  background-size: 12px 12px;
 }
 
 /* Light theme dropdown arrow */
 [data-theme="light"] select {
   background-image: var(--select-arrow-light);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
 }
 
 .input:hover, select:hover {
@@ -632,6 +638,7 @@ textarea.field-invalid {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 60px;
   background: var(--overlay-subtle);
 }
 
@@ -639,15 +646,15 @@ textarea.field-invalid {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   margin-left: 8px;
 }
 
 .header-actions .action-btn {
-  min-width: 32px;
-  min-height: 32px;
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
   padding: 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--overlay-medium);
@@ -664,25 +671,28 @@ textarea.field-invalid {
 }
 
 .header-actions .action-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
 }
 
 /* Override specific button styles when in header */
 .header-actions .breach-check-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
 }
 
 .header-actions .breach-check-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
 }
 
 .id {
   color: var(--accent-blue);
   font-weight: 700;
   font-size: var(--text-sm);
+  min-width: 2.25rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat {
@@ -690,7 +700,9 @@ textarea.field-invalid {
   gap: 10px;
   align-items: center;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .stat .dot {
@@ -703,7 +715,14 @@ textarea.field-invalid {
 
 .len {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat strong {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================================
@@ -1269,8 +1288,8 @@ textarea.field-invalid {
   min-width: 44px;
   min-height: 44px;
   padding: 10px;
-  background: rgba(96, 165, 250, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.4);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-normal);
@@ -1720,7 +1739,7 @@ textarea.field-invalid {
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
-  min-height: 36px;
+  min-height: 44px;
 }
 
 .theme-toggle-btn:hover {
@@ -2155,12 +2174,24 @@ body[data-theme="light"] .input {
 body[data-theme="light"] select {
   background-color: white !important;
   /* Arrow color handled by [data-theme="light"] select rule above */
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 12px 12px !important;
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
   color: var(--text-primary) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   padding-right: 36px !important;
+}
+
+/* Windows light mode: fallback to native arrow to avoid Chromium select artifacting */
+body.platform-windows[data-theme="light"] select {
+  -webkit-appearance: auto !important;
+  -moz-appearance: auto !important;
+  appearance: auto !important;
+  background-image: none !important;
+  padding-right: 12px !important;
 }
 
 body[data-theme="light"] .input:hover,

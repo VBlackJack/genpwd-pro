@@ -100,6 +100,7 @@ export function createModal(options) {
   `);
 
   document.body.appendChild(overlay);
+  document.body.classList.add('no-scroll');
 
   const closeModalFn = () => closeModalInstance(overlay, onClose);
 
@@ -194,6 +195,7 @@ export function createModal(options) {
 function closeModalInstance(modal, onClose) {
   if (!modal || !modal.parentNode) return;
   modal.classList.remove('show');
+  document.body.classList.remove('no-scroll');
 
   if (modal._escapeHandler) {
     document.removeEventListener('keydown', modal._escapeHandler);

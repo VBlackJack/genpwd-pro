@@ -98,6 +98,7 @@ export function showToast(message, type = 'info', options = {}) {
     div.className = `toast toast-${type}`;
     div.setAttribute('role', 'alert');
     div.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+    div.setAttribute('aria-atomic', 'true');
 
     // Set CSS variable for progress bar animation duration (sync with JS timeout)
     const displayTime = type === 'error' ? ANIMATION_DURATION.TOAST_DISPLAY_ERROR : ANIMATION_DURATION.TOAST_DISPLAY;

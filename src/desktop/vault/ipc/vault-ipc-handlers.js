@@ -10,8 +10,10 @@
  *   registerVaultIPC(ipcMain);
  */
 
-import { app, dialog, safeStorage } from 'electron';
+import { app, dialog, safeStorage, shell } from 'electron';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { VaultSessionManager } from '../session/vault-session.js';
 import { VaultFileManager } from '../storage/vault-file-manager.js';
@@ -1252,13 +1254,74 @@ export function registerVaultIPC(ipcMain) {
 
   /** Active OAuth servers by provider */
   const oauthServers = new Map();
+  /** Active OAuth state by provider (for CSRF protection) */
+  const oauthStates = new Map();
+  /** OAuth state validity duration */
+  const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+
+  /**
+   * Escape text for safe HTML rendering in OAuth callback page
+   * @param {string} text
+   * @returns {string}
+   */
+  function escapeHtml(text) {
+    return String(text ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Save OAuth state for a provider
+   * @param {string} provider
+   * @param {string} state
+   */
+  function storeOAuthState(provider, state) {
+    oauthStates.set(provider, { state, createdAt: Date.now() });
+  }
+
+  /**
+   * Delete OAuth state for a provider
+   * @param {string} provider
+   */
+  function clearOAuthState(provider) {
+    oauthStates.delete(provider);
+  }
+
+  /**
+   * Validate OAuth state using timing-safe comparison
+   * @param {string} provider
+   * @param {string} receivedState
+   * @returns {boolean}
+   */
+  function validateOAuthState(provider, receivedState) {
+    const record = oauthStates.get(provider);
+    if (!record || typeof receivedState !== 'string') {
+      return false;
+    }
+
+    if ((Date.now() - record.createdAt) > OAUTH_STATE_TTL_MS) {
+      clearOAuthState(provider);
+      return false;
+    }
+
+    const expectedBuf = Buffer.from(record.state, 'utf8');
+    const receivedBuf = Buffer.from(receivedState, 'utf8');
+
+    if (expectedBuf.length !== receivedBuf.length) {
+      return false;
+    }
+
+    return timingSafeEqual(expectedBuf, receivedBuf);
+  }
 
   /**
    * Generate PKCE code verifier and challenge
    * @returns {{verifier: string, challenge: string}}
    */
   function generatePKCE() {
-    const { randomBytes, createHash } = require('crypto');
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     return { verifier, challenge };
@@ -1337,35 +1400,35 @@ export function registerVaultIPC(ipcMain) {
       throw new Error(t('errors.oauth.missingClientId', { provider }));
     }
 
-    // Generate PKCE challenge
-    const pkce = generatePKCE();
-
-    // Build authorization URL
-    const params = new URLSearchParams({
-      client_id: config.clientId,
-      response_type: 'code',
-      redirect_uri: config.redirectUri,
-      code_challenge: pkce.challenge,
-      code_challenge_method: 'S256',
-      state: require('crypto').randomBytes(16).toString('hex')
-    });
-
-    if (provider === 'onedrive') {
-      params.set('scope', config.scopes.join(' '));
-    } else if (provider === 'dropbox') {
-      params.set('token_access_type', 'offline');
-    }
-
-    const authUrl = `${config.authUrl}?${params.toString()}`;
-
-    // Start local HTTP server for OAuth callback
-    const http = require('http');
-
     return new Promise((resolve, reject) => {
       // Stop existing server for this provider if any
       if (oauthServers.has(provider)) {
         oauthServers.get(provider).close();
+        oauthServers.delete(provider);
       }
+
+      // Generate PKCE challenge
+      const pkce = generatePKCE();
+      const oauthState = randomBytes(16).toString('hex');
+      storeOAuthState(provider, oauthState);
+
+      // Build authorization URL
+      const params = new URLSearchParams({
+        client_id: config.clientId,
+        response_type: 'code',
+        redirect_uri: config.redirectUri,
+        code_challenge: pkce.challenge,
+        code_challenge_method: 'S256',
+        state: oauthState
+      });
+
+      if (provider === 'onedrive') {
+        params.set('scope', config.scopes.join(' '));
+      } else if (provider === 'dropbox') {
+        params.set('token_access_type', 'offline');
+      }
+
+      const authUrl = `${config.authUrl}?${params.toString()}`;
 
       const server = http.createServer(async (req, res) => {
         const url = new URL(req.url, 'http://localhost:8457');
@@ -1373,19 +1436,38 @@ export function registerVaultIPC(ipcMain) {
         if (url.pathname === '/oauth/callback') {
           const code = url.searchParams.get('code');
           const error = url.searchParams.get('error');
+          const state = url.searchParams.get('state');
 
-          if (error) {
+          if (!validateOAuthState(provider, state)) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(`
               <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
                 <h2>Authentication Failed</h2>
-                <p>${error}</p>
+                <p>Invalid or expired OAuth state.</p>
                 <p>You can close this window.</p>
               </body></html>
             `);
             server.close();
             oauthServers.delete(provider);
-            resolve({ success: false, error });
+            clearOAuthState(provider);
+            resolve({ success: false, error: 'invalid_state' });
+            return;
+          }
+
+          if (error) {
+            const safeError = escapeHtml(error);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(`
+              <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
+                <h2>Authentication Failed</h2>
+                <p>${safeError}</p>
+                <p>You can close this window.</p>
+              </body></html>
+            `);
+            server.close();
+            oauthServers.delete(provider);
+            clearOAuthState(provider);
+            resolve({ success: false, error: safeError });
             return;
           }
 
@@ -1439,32 +1521,36 @@ export function registerVaultIPC(ipcMain) {
                 savedAt: Date.now()
               });
 
+              const safeAccount = escapeHtml(userInfo.email || userInfo.name || 'Unknown');
               res.writeHead(200, { 'Content-Type': 'text/html' });
               res.end(`
                 <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
                   <h2>✓ Authentication Successful</h2>
-                  <p>Connected as ${userInfo.email || userInfo.name || 'Unknown'}</p>
+                  <p>Connected as ${safeAccount}</p>
                   <p>You can close this window and return to GenPwd Pro.</p>
                 </body></html>
               `);
 
               server.close();
               oauthServers.delete(provider);
+              clearOAuthState(provider);
               resolve({ success: true, userInfo });
 
             } catch (tokenError) {
+              const safeError = escapeHtml(tokenError.message || 'Authentication error');
               console.error('[OAuth] Token exchange error:', tokenError);
               res.writeHead(200, { 'Content-Type': 'text/html' });
               res.end(`
                 <html><body style="font-family: system-ui; text-align: center; padding: 50px;">
                   <h2>Authentication Error</h2>
-                  <p>${tokenError.message}</p>
+                  <p>${safeError}</p>
                   <p>You can close this window.</p>
                 </body></html>
               `);
               server.close();
               oauthServers.delete(provider);
-              resolve({ success: false, error: tokenError.message });
+              clearOAuthState(provider);
+              resolve({ success: false, error: safeError });
             }
           }
         }
@@ -1473,12 +1559,14 @@ export function registerVaultIPC(ipcMain) {
       server.listen(8457, '127.0.0.1', () => {
         oauthServers.set(provider, server);
         // Open browser for authentication
-        const { shell } = require('electron');
-        shell.openExternal(authUrl);
+        void shell.openExternal(authUrl).catch((openError) => {
+          console.error('[OAuth] Failed to open external browser:', openError);
+        });
       });
 
       server.on('error', (err) => {
         console.error('[OAuth] Server error:', err);
+        clearOAuthState(provider);
         reject(new Error(t('errors.oauth.serverFailed')));
       });
 
@@ -1487,6 +1575,7 @@ export function registerVaultIPC(ipcMain) {
         if (oauthServers.has(provider)) {
           server.close();
           oauthServers.delete(provider);
+          clearOAuthState(provider);
           resolve({ success: false, error: 'timeout' });
         }
       }, 5 * 60 * 1000);
@@ -1562,6 +1651,7 @@ export function registerVaultIPC(ipcMain) {
       oauthServers.get(provider).close();
       oauthServers.delete(provider);
     }
+    clearOAuthState(provider);
 
     // Delete stored tokens
     await deleteOAuthTokens(provider);

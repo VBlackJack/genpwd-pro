@@ -31,6 +31,11 @@ header {
   position: relative;
 }
 
+/* Slightly denser top bar for desktop shell integrations */
+body.platform-windows header {
+  padding: var(--space-lg) 0;
+}
+
 header::before {
   content: '';
   position: absolute;
@@ -383,7 +388,7 @@ header[data-aurora="true"]::before {
 }
 
 .section-header strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.3px;
   color: var(--text-primary);
@@ -391,8 +396,8 @@ header[data-aurora="true"]::before {
 }
 
 .section-header .badge {
-  font-size: 11px;
-  padding: 4px 10px;
+  font-size: 12px;
+  padding: 5px 10px;
   background: rgba(0, 212, 255, 0.12);
   border: 1px solid rgba(0, 212, 255, 0.25);
   color: var(--accent-cyan);
@@ -415,7 +420,7 @@ header[data-aurora="true"]::before {
 }
 
 .section-content {
-  padding: 12px;
+  padding: 14px 12px;
   display: block;
 }
 
@@ -428,18 +433,21 @@ header[data-aurora="true"]::before {
    ============================================================================ */
 
 .row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(120px, 32%) minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 8px;
+  align-items: start;
   margin: 10px 0;
-  flex-wrap: wrap;
 }
 
 .row label {
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.35;
   color: var(--text-muted);
-  min-width: 160px;
+  min-width: 0;
   font-weight: 500;
+  padding-top: 0.35rem;
 }
 
 .row .inline {
@@ -447,6 +455,21 @@ header[data-aurora="true"]::before {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.row > :only-child {
+  grid-column: 1 / -1;
+}
+
+.row > .grow,
+.row > .slider-wrap,
+.row > .dict-selector,
+.row > .checkbox,
+.row > .hint,
+.row > select,
+.row > input,
+.row > .blocks-wrap {
+  min-width: 0;
 }
 
 /* ============================================================================
@@ -605,6 +628,15 @@ header[data-aurora="true"]::before {
     grid-template-columns: minmax(380px, 450px) 1fr;
     gap: 16px;
   }
+
+  .row {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .row label {
+    padding-top: 0;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -618,7 +650,14 @@ header[data-aurora="true"]::before {
     min-height: 400px;
   }
 
-  /* Single column on tablets for full-width password cards */
+  /* Two columns on tablets for better space usage */
+  .results-list {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  /* Single column on narrow tablets and phones */
   .results-list {
     grid-template-columns: 1fr;
   }
@@ -703,8 +742,7 @@ header[data-aurora="true"]::before {
   }
 
   .row {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
     gap: 8px;
   }
 
@@ -734,17 +772,19 @@ header[data-aurora="true"]::before {
 /* Note: Most overrides removed - CSS variables (--overlay-*) now handle theme switching automatically */
 
 [data-theme="light"] header {
-  background: linear-gradient(135deg,
-    rgba(59, 130, 246, 0.08) 0%,
-    rgba(139, 92, 246, 0.08) 50%,
-    rgba(16, 185, 129, 0.06) 100%);
+  background:
+    linear-gradient(135deg,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(248, 250, 255, 0.92) 55%,
+      rgba(241, 245, 255, 0.9) 100%);
   border-bottom-color: var(--border);
 }
 
 [data-theme="light"] header::before {
   background:
-    radial-gradient(600px circle at 0% 0%, rgba(59, 130, 246, 0.1), transparent 50%),
-    radial-gradient(400px circle at 100% 100%, rgba(139, 92, 246, 0.08), transparent 50%);
+    radial-gradient(600px circle at 0% 0%, rgba(59, 130, 246, 0.09), transparent 50%),
+    radial-gradient(400px circle at 100% 100%, rgba(139, 92, 246, 0.07), transparent 50%);
+  opacity: 0.75;
 }
 
 [data-theme="light"] .header-tab.active {

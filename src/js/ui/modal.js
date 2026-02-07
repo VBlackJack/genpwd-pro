@@ -47,16 +47,28 @@ export function showAboutModal() {
 export function hideAboutModal() {
   const modal = getElement('#about-modal');
   if (modal) {
-    modal.classList.remove('show');
+    // M-3: Animate exit before removing
+    modal.classList.add('closing');
 
-    // Restore body scroll
-    document.body.classList.remove('no-scroll');
+    const onEnd = () => {
+      modal.classList.remove('show', 'closing');
+      document.body.classList.remove('no-scroll');
 
-    // Return focus to button
-    const aboutBtn = getElement('#btn-about');
-    if (aboutBtn) aboutBtn.focus();
+      const aboutBtn = getElement('#btn-about');
+      if (aboutBtn) aboutBtn.focus();
 
-    safeLog('About modal closed');
+      safeLog('About modal closed');
+    };
+
+    // Respect reduced-motion: skip animation
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      onEnd();
+    } else {
+      modal.addEventListener('transitionend', onEnd, { once: true });
+      // Safety fallback if transitionend never fires
+      setTimeout(onEnd, 400);
+    }
   }
 }
 

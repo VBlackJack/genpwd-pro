@@ -20,17 +20,15 @@
 /* This contains all styles - uncomment modules above and remove from _legacy.css to migrate */
 @import '_legacy.css';
 
-/* ==================== LAYOUT ==================== */
-@import 'layout/_sidebar.css';
-
-/* ==================== NEW COMPONENTS ==================== */
-/* View modes and enhanced entry styling */
-@import 'components/_entries.css';
-@import 'components/_detail-panel.css';
-
-/* BMAD Enhancement Components */
-@import 'components/_status-bar.css';
-@import 'components/_health-widget.css';
+/* Keep modular imports disabled while legacy stylesheet is active.
+ * This avoids conflicting selectors and inconsistent rendering.
+ * Re-enable modules only after removing corresponding legacy blocks.
+ */
+/* @import 'layout/_sidebar.css'; */
+/* @import 'components/_entries.css'; */
+/* @import 'components/_detail-panel.css'; */
+/* @import 'components/_status-bar.css'; */
+/* @import 'components/_health-widget.css'; */
 
 /* ==================== ACCESSIBILITY ==================== */
 /* Skip to main content link */

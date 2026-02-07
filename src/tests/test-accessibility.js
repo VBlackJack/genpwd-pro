@@ -112,10 +112,16 @@ async function runAccessibilityTests() {
       await page.waitForTimeout(200);
     }
 
-    // Test vault page if accessible
-    const vaultLink = page.locator('a[href*="vault"]');
-    if (await vaultLink.count() > 0) {
-      await vaultLink.first().click();
+    // Test vault view if accessible (tab-based navigation in current UI)
+    const vaultTab = page.locator('button[data-tab="vault"]');
+    const vaultContainer = page.locator('#vault-container');
+    if (await vaultTab.count() > 0) {
+      const tab = vaultTab.first();
+      if (await tab.isVisible()) {
+        await tab.click();
+      }
+    }
+    if (await vaultContainer.count() > 0 && await vaultContainer.first().isVisible()) {
       await page.waitForLoadState('networkidle');
       results.push(await auditPage(page, 'Vault Page'));
     }

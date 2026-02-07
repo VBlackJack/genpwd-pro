@@ -5,7 +5,7 @@
 
 import { Modal } from './modal.js';
 import { showToast } from '../../utils/toast.js';
-import { WebDAVProvider, getOneDriveProvider, getDropboxProvider } from '../../core/sync/index.js';
+import { WebDAVProvider } from '../../core/sync/index.js';
 import { safeLog } from '../../utils/logger.js';
 import { t } from '../../utils/i18n.js';
 
@@ -409,6 +409,15 @@ export class SyncSettingsModal extends Modal {
     element.style.color = type === 'error' ? 'var(--highlight-color)' : 'var(--success-color)';
   }
 
+  #setStatus(statusDiv, className, message, withCheck = false) {
+    if (!statusDiv) return;
+    statusDiv.textContent = '';
+    const span = document.createElement('span');
+    span.className = className;
+    span.textContent = withCheck ? `✓ ${message}` : message;
+    statusDiv.appendChild(span);
+  }
+
   async _loadCurrentConfig() {
     try {
       const config = await window.vault.cloud.getConfig();
@@ -453,18 +462,19 @@ export class SyncSettingsModal extends Modal {
 
       if (result?.connected) {
         this.#oneDriveConnected = true;
-        statusDiv.innerHTML = `<span class="sync-status-connected">✓ ${t('syncModal.connectedAs', { account: result.email || 'Microsoft Account' })}</span>`;
+        const account = result?.userInfo?.email || result?.userInfo?.name || 'Microsoft Account';
+        this.#setStatus(statusDiv, 'sync-status-connected', t('syncModal.connectedAs', { account }), true);
         connectBtn.hidden = true;
         disconnectBtn.hidden = false;
       } else {
         this.#oneDriveConnected = false;
-        statusDiv.innerHTML = `<span class="sync-status-disconnected">${t('syncModal.notConnected', 'Not connected')}</span>`;
+        this.#setStatus(statusDiv, 'sync-status-disconnected', t('syncModal.notConnected', 'Not connected'));
         connectBtn.hidden = false;
         disconnectBtn.hidden = true;
       }
     } catch (error) {
       safeLog(`[SyncSettingsModal] OneDrive status check failed: ${error.message}`);
-      statusDiv.innerHTML = `<span class="sync-status-disconnected">${t('syncModal.notConnected', 'Not connected')}</span>`;
+      this.#setStatus(statusDiv, 'sync-status-disconnected', t('syncModal.notConnected', 'Not connected'));
       connectBtn.hidden = false;
       disconnectBtn.hidden = true;
     }
@@ -477,7 +487,7 @@ export class SyncSettingsModal extends Modal {
     try {
       btn.disabled = true;
       btn.innerHTML = `<span class="vault-spinner"></span> ${t('syncModal.connecting', 'Connecting...')}`;
-      statusDiv.innerHTML = `<span class="sync-status-pending">${t('syncModal.waitingAuth', 'Waiting for authorization...')}</span>`;
+      this.#setStatus(statusDiv, 'sync-status-pending', t('syncModal.waitingAuth', 'Waiting for authorization...'));
 
       // Call Electron main process to start OAuth flow
       const result = await window.vault?.cloud?.startOAuth?.('onedrive');
@@ -492,7 +502,7 @@ export class SyncSettingsModal extends Modal {
     } catch (error) {
       safeLog(`[SyncSettingsModal] OneDrive connect failed: ${error.message}`);
       showToast(t('syncModal.connectFailed', { error: error.message }), 'error');
-      statusDiv.innerHTML = `<span class="sync-status-error">${error.message}</span>`;
+      this.#setStatus(statusDiv, 'sync-status-error', error.message || t('vault.common.error'));
     } finally {
       btn.disabled = false;
       btn.innerHTML = `
@@ -540,18 +550,19 @@ export class SyncSettingsModal extends Modal {
 
       if (result?.connected) {
         this.#dropboxConnected = true;
-        statusDiv.innerHTML = `<span class="sync-status-connected">✓ ${t('syncModal.connectedAs', { account: result.email || 'Dropbox Account' })}</span>`;
+        const account = result?.userInfo?.email || result?.userInfo?.name || 'Dropbox Account';
+        this.#setStatus(statusDiv, 'sync-status-connected', t('syncModal.connectedAs', { account }), true);
         connectBtn.hidden = true;
         disconnectBtn.hidden = false;
       } else {
         this.#dropboxConnected = false;
-        statusDiv.innerHTML = `<span class="sync-status-disconnected">${t('syncModal.notConnected', 'Not connected')}</span>`;
+        this.#setStatus(statusDiv, 'sync-status-disconnected', t('syncModal.notConnected', 'Not connected'));
         connectBtn.hidden = false;
         disconnectBtn.hidden = true;
       }
     } catch (error) {
       safeLog(`[SyncSettingsModal] Dropbox status check failed: ${error.message}`);
-      statusDiv.innerHTML = `<span class="sync-status-disconnected">${t('syncModal.notConnected', 'Not connected')}</span>`;
+      this.#setStatus(statusDiv, 'sync-status-disconnected', t('syncModal.notConnected', 'Not connected'));
       connectBtn.hidden = false;
       disconnectBtn.hidden = true;
     }
@@ -564,7 +575,7 @@ export class SyncSettingsModal extends Modal {
     try {
       btn.disabled = true;
       btn.innerHTML = `<span class="vault-spinner"></span> ${t('syncModal.connecting', 'Connecting...')}`;
-      statusDiv.innerHTML = `<span class="sync-status-pending">${t('syncModal.waitingAuth', 'Waiting for authorization...')}</span>`;
+      this.#setStatus(statusDiv, 'sync-status-pending', t('syncModal.waitingAuth', 'Waiting for authorization...'));
 
       const result = await window.vault?.cloud?.startOAuth?.('dropbox');
 
@@ -578,7 +589,7 @@ export class SyncSettingsModal extends Modal {
     } catch (error) {
       safeLog(`[SyncSettingsModal] Dropbox connect failed: ${error.message}`);
       showToast(t('syncModal.connectFailed', { error: error.message }), 'error');
-      statusDiv.innerHTML = `<span class="sync-status-error">${error.message}</span>`;
+      this.#setStatus(statusDiv, 'sync-status-error', error.message || t('vault.common.error'));
     } finally {
       btn.disabled = false;
       btn.innerHTML = `
