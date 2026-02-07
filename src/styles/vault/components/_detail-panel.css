@@ -25,7 +25,7 @@
   gap: var(--vault-space-4);
   padding: var(--vault-space-5, 1.5rem);
   border-bottom: 1px solid var(--vault-border);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--overlay-subtle);
 }
 
 .vault-detail-icon {
@@ -192,9 +192,9 @@
   align-items: center;
   gap: var(--vault-space-2, 0.5rem);
   padding: var(--vault-space-2, 0.5rem) var(--vault-space-3, 0.75rem);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-subtle);
   border-radius: var(--vault-radius-sm, 6px);
-  border-left: 3px solid var(--vault-border, rgba(255, 255, 255, 0.1));
+  border-left: 3px solid var(--vault-border);
   flex: 0 0 auto;
   white-space: nowrap;
 }

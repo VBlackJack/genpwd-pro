@@ -347,6 +347,17 @@ header[data-aurora="true"]::before {
   background: var(--accent-cyan);
 }
 
+/* Touch devices: wider scrollbars for WCAG 2.1 AA touch targets */
+@media (pointer: coarse) {
+  .panel-body::-webkit-scrollbar {
+    width: 14px;
+  }
+
+  .panel-body::-webkit-scrollbar-thumb {
+    min-height: 44px;
+  }
+}
+
 /* ============================================================================
    SECTIONS
    ============================================================================ */
@@ -546,6 +557,18 @@ header[data-aurora="true"]::before {
 
 .results-list::-webkit-scrollbar-corner {
   background: var(--bg-secondary);
+}
+
+/* Touch devices: wider scrollbars for WCAG 2.1 AA touch targets */
+@media (pointer: coarse) {
+  .results-list::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+
+  .results-list::-webkit-scrollbar-thumb {
+    min-height: 44px;
+  }
 }
 
 /* ============================================================================

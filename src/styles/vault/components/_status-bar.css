@@ -146,7 +146,7 @@
 .save-indicator-retry {
   margin-left: 8px;
   padding: 2px 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
   border: 1px solid currentColor;
   border-radius: var(--radius-sm, 4px);
   color: inherit;
@@ -156,7 +156,7 @@
 }
 
 .save-indicator-retry:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-intense);
 }
 
 .save-indicator-retry:focus-visible {
@@ -194,7 +194,7 @@
 
 .toast-clipboard-countdown .clipboard-countdown-clear:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-strong);
 }
 
 .toast-clipboard-countdown .clipboard-countdown-clear:focus-visible {
