@@ -97,7 +97,7 @@ import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
 import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.js';
-import { onboarding } from '../ui/onboarding.js';
+import { onboarding } from './ui/onboarding.js';
 import { renderEntryRow } from './vault/views/entry-row-renderer.js';
 import { renderFolderTree } from './vault/views/folder-tree-renderer.js';
 import { renderEntryDetail, renderEntryFields } from './vault/views/entry-detail-renderer.js';
@@ -240,31 +240,39 @@ export class VaultUI {
     });
 
     this.#unsubscribeUnlocked = window.vault.on('unlocked', async () => {
-      this.#currentView = 'main';
-      await this.#loadData();
-      this.#startAutoLockTimer();
-      this.#render();
+      try {
+        this.#currentView = 'main';
+        await this.#loadData();
+        this.#startAutoLockTimer();
+        this.#render();
 
-      // Show vault onboarding for first-time users (empty vault)
-      if (this.#entries.length === 0) {
-        setTimeout(() => onboarding.start('vault'), 500);
-      }
+        // Show vault onboarding for first-time users (empty vault)
+        if (this.#entries.length === 0) {
+          setTimeout(() => onboarding.start('vault'), 500);
+        }
 
-      // Check for breaches in background if enabled
-      const autoCheckBreaches = localStorage.getItem('genpwd-vault-auto-breach-check') !== 'false';
-      if (autoCheckBreaches) {
-        // Delay to not block UI
-        setTimeout(() => this.#checkBreaches(true), 2000);
+        // Check for breaches in background if enabled
+        const autoCheckBreaches = localStorage.getItem('genpwd-vault-auto-breach-check') !== 'false';
+        if (autoCheckBreaches) {
+          // Delay to not block UI
+          setTimeout(() => this.#checkBreaches(true), 2000);
+        }
+      } catch (err) {
+        safeLog('[VaultUI] Error handling vault unlock:', err);
       }
     });
 
     this.#unsubscribeChanged = window.vault.on('changed', async () => {
-      await this.#loadData();
-      // Refresh selected entry if it still exists
-      if (this.#selectedEntry) {
-        this.#selectedEntry = this.#entries.find(e => e.id === this.#selectedEntry.id) || null;
+      try {
+        await this.#loadData();
+        // Refresh selected entry if it still exists
+        if (this.#selectedEntry) {
+          this.#selectedEntry = this.#entries.find(e => e.id === this.#selectedEntry.id) || null;
+        }
+        this.#render();
+      } catch (err) {
+        safeLog('[VaultUI] Error handling vault change:', err);
       }
-      this.#render();
     });
 
     // Check initial state
@@ -1716,11 +1724,15 @@ export class VaultUI {
       btn.addEventListener('drop', async (e) => {
         e.preventDefault();
         btn.classList.remove('drag-over');
-        const folderId = btn.dataset.folder;
-        if (this.#selectedEntries.size > 0) {
-          await this.#moveEntriesToFolder([...this.#selectedEntries], folderId);
-        } else if (this.#draggedEntry) {
-          await this.#moveEntriesToFolder([this.#draggedEntry.id], folderId);
+        try {
+          const folderId = btn.dataset.folder;
+          if (this.#selectedEntries.size > 0) {
+            await this.#moveEntriesToFolder([...this.#selectedEntries], folderId);
+          } else if (this.#draggedEntry) {
+            await this.#moveEntriesToFolder([this.#draggedEntry.id], folderId);
+          }
+        } catch (err) {
+          safeLog('[VaultUI] Error moving entries to folder:', err);
         }
       });
     });
@@ -2334,7 +2346,11 @@ export class VaultUI {
     });
 
     modal.querySelector('#bulk-tag-apply')?.addEventListener('click', async () => {
-      await this.#applyBulkTags(modal);
+      try {
+        await this.#applyBulkTags(modal);
+      } catch (err) {
+        safeLog('[VaultUI] Error applying bulk tags:', err);
+      }
     });
 
     // Handle checkbox click to clear indeterminate
@@ -2715,7 +2731,13 @@ export class VaultUI {
     });
 
     // Confirm button
-    confirmBtn?.addEventListener('click', () => this.#confirmImport());
+    confirmBtn?.addEventListener('click', async () => {
+      try {
+        await this.#confirmImport();
+      } catch (err) {
+        safeLog('[VaultUI] Error confirming import:', err);
+      }
+    });
   }
 
   /**
@@ -3574,8 +3596,12 @@ export class VaultUI {
     });
 
     // Health dashboard button (toolbar)
-    document.getElementById('health-dashboard')?.addEventListener('click', () => {
-      this.#openHealthDashboard();
+    document.getElementById('health-dashboard')?.addEventListener('click', async () => {
+      try {
+        await this.#openHealthDashboard();
+      } catch (err) {
+        safeLog('[VaultUI] Error opening health dashboard:', err);
+      }
     });
 
     // Bulk actions
@@ -3872,14 +3898,18 @@ export class VaultUI {
       folder.addEventListener('drop', async (e) => {
         e.preventDefault();
         folder.classList.remove('drag-over');
-        const folderId = folder.dataset.folder;
+        try {
+          const folderId = folder.dataset.folder;
 
-        if (this.#selectedEntries.size > 0) {
-          // Move all selected entries
-          await this.#moveEntriesToFolder([...this.#selectedEntries], folderId);
-        } else if (this.#draggedEntry) {
-          // Move single dragged entry
-          await this.#moveEntriesToFolder([this.#draggedEntry.id], folderId);
+          if (this.#selectedEntries.size > 0) {
+            // Move all selected entries
+            await this.#moveEntriesToFolder([...this.#selectedEntries], folderId);
+          } else if (this.#draggedEntry) {
+            // Move single dragged entry
+            await this.#moveEntriesToFolder([this.#draggedEntry.id], folderId);
+          }
+        } catch (err) {
+          safeLog('[VaultUI] Error moving entries to folder:', err);
         }
       });
     });

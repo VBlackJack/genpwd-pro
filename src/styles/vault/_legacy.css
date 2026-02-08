@@ -4348,7 +4348,7 @@ kbd {
   position: fixed;
   max-width: 300px;
   padding: 1rem;
-  background: #1a1d2e;
+  background: var(--bg-secondary);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--vault-radius);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -4862,7 +4862,7 @@ kbd {
   left: 0;
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: #1a1d2e;
+  background: var(--bg-secondary);
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);

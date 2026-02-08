@@ -61,6 +61,11 @@
   --color-warning: hsl(var(--hue-warning), 100%, 65%);
   --color-danger: hsl(var(--hue-danger), 90%, 65%);
 
+  /* Aliases for vault sync status indicators */
+  --success-color: var(--color-success);
+  --warning-color: var(--color-warning);
+  --highlight-color: var(--color-danger);
+
   /* Accent Colors - Named */
   --accent-primary: hsl(var(--hue-primary), 100%, 70%);
   --accent-cyan: hsl(185, 80%, 55%);
@@ -507,6 +512,7 @@ body.no-scroll .glass-elevated,
 body.no-scroll .glass-frosted {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  background: var(--bg-secondary);
 }
 
 /* P-2: Pause decorative glow animation when the tab/window is not visible */

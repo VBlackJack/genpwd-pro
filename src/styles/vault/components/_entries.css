@@ -401,7 +401,7 @@
   justify-content: space-between;
   padding: var(--vault-space-2) var(--vault-space-3);
   border-top: 1px solid var(--vault-border);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--vault-surface);
 }
 
 .vault-card-meta {

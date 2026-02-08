@@ -85,9 +85,13 @@ class PresetManager {
 
       // Listen for vault unlock via IPC bridge (works with context isolation)
       this.#unsubscribeUnlocked = window.vault.on('unlocked', async () => {
-        safeLog('[PresetManager] Vault unlocked - loading custom presets');
-        await this.loadCustomPresetsFromVault();
-        this.notifyUIUpdate();
+        try {
+          safeLog('[PresetManager] Vault unlocked - loading custom presets');
+          await this.loadCustomPresetsFromVault();
+          this.notifyUIUpdate();
+        } catch (err) {
+          safeLog('[PresetManager] Error loading custom presets:', err);
+        }
       });
 
       // Listen for vault lock
