@@ -373,8 +373,13 @@ textarea.field-invalid {
   color: var(--text-primary);
 }
 
+[data-theme="dark"] .btn.secondary {
+  background: hsl(220, 25%, 18%);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 [data-theme="dark"] .btn.secondary:hover {
-  background: var(--bg-quaternary);
+  background: hsl(220, 22%, 24%);
   border-color: rgba(99, 102, 241, 0.5);
   color: var(--text-primary);
 }
@@ -2417,6 +2422,18 @@ body[data-theme="light"] .cursor-tooltip {
   border-color: rgba(0, 0, 0, 0.2);
 }
 
+[data-theme="light"] .btn.secondary {
+  background: rgb(245, 245, 248);
+  border-color: rgba(0, 0, 0, 0.1);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+[data-theme="light"] .btn.secondary:hover {
+  background: white;
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
 [data-theme="light"] .btn.primary {
   background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
   border-color: transparent;
@@ -2479,16 +2496,24 @@ body[data-theme="light"] .cursor-tooltip {
   box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
 }
 
-/* Secondary Button - Complementary actions */
+/* Secondary Button - Complementary actions (opaque, no glass blur) */
 .btn.secondary {
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   color: var(--text-primary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.btn.secondary::before {
+  display: none;
 }
 
 .btn.secondary:hover {
-  background: var(--bg-quaternary);
-  border-color: var(--border-hover);
+  background: hsl(220, 20%, 24%);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: none;
+  box-shadow: none;
 }
 
 /* Toolbar Overflow Menu */
@@ -2594,6 +2619,21 @@ body.no-blur .btn {
   -webkit-backdrop-filter: none;
   background: linear-gradient(135deg, rgb(45, 55, 90), rgb(35, 42, 70));
   border-color: rgba(255, 255, 255, 0.18);
+}
+
+body.no-blur .btn.secondary {
+  background: var(--bg-tertiary);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.no-blur .btn.secondary:hover {
+  background: hsl(220, 20%, 24%);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.no-blur[data-theme="light"] .btn.secondary:hover {
+  background: white;
+  border-color: rgba(0, 0, 0, 0.18);
 }
 
 body.no-blur .btn.ghost {

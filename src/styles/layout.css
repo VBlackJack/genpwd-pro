@@ -457,6 +457,45 @@ header[data-aurora="true"]::before {
   display: none;
 }
 
+/* Sidebar buttons — opaque backgrounds, no glass blur, toned-down hover */
+.section-content .btn {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.section-content .btn::before {
+  display: none;
+}
+
+.section-content .btn:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+[data-theme="light"] .section-content .btn {
+  background: rgb(245, 245, 248);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .section-content .btn:hover {
+  background: white;
+  border-color: rgba(0, 0, 0, 0.18);
+  transform: none;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .section-content .btn {
+  background: linear-gradient(135deg, rgb(38, 48, 80), rgb(30, 37, 62));
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .section-content .btn:hover {
+  background: linear-gradient(135deg, rgb(48, 58, 95), rgb(38, 46, 78));
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: none;
+  box-shadow: none;
+}
+
 /* ============================================================================
    RANGÉES ET CONTRÔLES
    ============================================================================ */
@@ -487,6 +526,11 @@ header[data-aurora="true"]::before {
 }
 
 .row > :only-child {
+  grid-column: 1 / -1;
+}
+
+.row > .placement-visual-container,
+.row > .placement-hint {
   grid-column: 1 / -1;
 }
 

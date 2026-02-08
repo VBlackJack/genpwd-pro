@@ -538,12 +538,12 @@ export function initializePresetsUI() {
         <button class="btn-icon d-none" id="btn-clear-preset" title="${i18n.t('presets.clearSelection')}" aria-label="${i18n.t('presets.clearSelection')}">✕</button>
       </div>
       <div class="d-flex gap-8">
-        <button class="btn secondary flex-1" id="btn-save-preset">
+        <button class="btn flex-1" id="btn-save-preset">
           💾 ${i18n.t('presets.save')}
         </button>
-        <button class="btn secondary" id="btn-new-preset" title="${i18n.t('presets.createNew')}" aria-label="${i18n.t('presets.createNew')}">➕</button>
+        <button class="btn" id="btn-new-preset" title="${i18n.t('presets.createNew')}" aria-label="${i18n.t('presets.createNew')}">➕</button>
       </div>
-      <button class="btn secondary w-full" id="btn-manage-presets">
+      <button class="btn w-full" id="btn-manage-presets">
         🗂️ ${i18n.t('presets.manage')}
       </button>
       <button class="btn-icon d-none" id="btn-quick-save-preset" aria-label="${i18n.t('presets.quickSave')}"><span aria-hidden="true">💾</span></button>
