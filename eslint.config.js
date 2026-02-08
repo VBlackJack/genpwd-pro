@@ -79,7 +79,8 @@ export default [
         CustomEvent: 'readonly',
         Image: 'readonly',
         prompt: 'readonly',
-        alert: 'readonly'
+        alert: 'readonly',
+        CSS: 'readonly'
       }
     },
     rules: {
@@ -211,7 +212,8 @@ export default [
         Uint8Array: 'readonly',
         ArrayBuffer: 'readonly',
         crypto: 'readonly',
-        AbortController: 'readonly'
+        AbortController: 'readonly',
+        localStorage: 'readonly'
       }
     },
     rules: {

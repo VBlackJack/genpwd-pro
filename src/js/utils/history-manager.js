@@ -165,7 +165,7 @@ class HistoryManager {
         </div>
         <div class="modal-footer">
           <button id="security-warning-understood" class="btn btn-primary">${t('history.securityWarning.understand')}</button>
-          <button id="security-warning-cancel" class="btn">${t('history.securityWarning.cancelDisable')}</button>
+          <button id="security-warning-cancel" class="btn secondary">${t('history.securityWarning.cancelDisable')}</button>
         </div>
       </div>
     `);

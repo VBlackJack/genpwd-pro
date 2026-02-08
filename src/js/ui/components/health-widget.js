@@ -20,7 +20,6 @@
  */
 
 import { t } from '../../utils/i18n.js';
-import { getIcon } from '../../vault/views/icons.js';
 
 /** Score color thresholds */
 const SCORE_COLORS = {

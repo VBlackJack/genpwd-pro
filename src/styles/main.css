@@ -347,6 +347,65 @@ body[data-theme="light"] {
     var(--bg-deep);
 }
 
+/* Manual dark theme toggle - re-asserts dark values when OS prefers light but user explicitly selects dark.
+   Without this, @media (prefers-color-scheme: light) overrides :root and dark mode breaks on light-OS systems. */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-deep: hsl(var(--hue-bg), 40%, 8%);
+  --bg-surface: hsl(var(--hue-bg), 30%, 12%);
+  --bg-primary: hsl(var(--hue-bg), 35%, 10%);
+  --bg-secondary: hsl(var(--hue-bg), 30%, 14%);
+  --bg-tertiary: hsl(var(--hue-bg), 25%, 18%);
+  --bg-quaternary: hsl(var(--hue-bg), 20%, 22%);
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-error: rgba(244, 67, 54, 0.1);
+  --bg-input-hover: rgba(20, 25, 45, 0.7);
+  --bg-input-focus: rgba(20, 25, 45, 0.8);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --bg-surface-alpha: rgba(13, 16, 28, 0.8);
+
+  /* Semantic Overlay System */
+  --overlay-subtle: rgba(255, 255, 255, 0.03);
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.08);
+  --overlay-strong: rgba(255, 255, 255, 0.12);
+  --overlay-intense: rgba(255, 255, 255, 0.2);
+  --overlay-highlight: rgba(255, 255, 255, 0.25);
+
+  /* Text Colors */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.82);
+  --text-muted: rgba(255, 255, 255, 0.85);
+  --text-hint: rgba(255, 255, 255, 0.75);
+  --text-dimmed: #8c94ca;
+  --text-bright: #d6dcff;
+
+  /* Code background */
+  --bg-code: rgba(0, 0, 0, 0.3);
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+
+  /* Shadows */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 85% 75%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
+    linear-gradient(135deg, hsl(225, 40%, 6%) 0%, hsl(225, 35%, 10%) 50%, hsl(240, 30%, 8%) 100%);
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -513,6 +572,33 @@ body.no-scroll .glass-frosted {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--bg-secondary);
+}
+
+/* G-2: Opaque fallbacks when backdrop-filter unavailable (VMs, software GPU) */
+body.no-blur {
+  --glass-bg: var(--bg-secondary);
+  --glass-blur: none;
+  --bg-surface-alpha: var(--bg-secondary);
+  --overlay-subtle: rgba(255, 255, 255, 0.08);
+  --overlay-light: rgba(255, 255, 255, 0.15);
+}
+
+body.no-blur[data-theme="light"] {
+  --overlay-subtle: rgba(0, 0, 0, 0.06);
+  --overlay-light: rgba(0, 0, 0, 0.10);
+}
+
+body.no-blur .glass-panel,
+body.no-blur .glass-elevated,
+body.no-blur .glass-frosted,
+body.no-blur .glass-subtle {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.no-blur .glass-elevated,
+body.no-blur .glass-subtle {
+  background: var(--bg-tertiary);
 }
 
 /* P-2: Pause decorative glow animation when the tab/window is not visible */

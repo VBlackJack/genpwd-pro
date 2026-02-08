@@ -23,7 +23,7 @@ import { t } from '../../utils/i18n.js';
 import { applyQuickPreset } from './quick-presets.js';
 import { statsModal } from '../modals/stats-modal.js';
 import { cycleTheme } from '../../utils/theme-manager.js';
-import { showToast } from '../../utils/toast.js';
+
 
 /**
  * Available commands in the palette

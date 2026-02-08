@@ -4,7 +4,6 @@
  */
 
 // Track active popover state for cleanup
-let activePopover = null;
 let activeAbortController = null;
 let setupTimeoutId = null;
 
@@ -24,7 +23,6 @@ function cleanupListeners() {
     activeAbortController = null;
   }
 
-  activePopover = null;
 }
 
 /**
@@ -77,8 +75,6 @@ export function showTimeoutSettings(options = {}) {
   `;
 
   targetElement.appendChild(popover);
-  activePopover = popover;
-
   // Create AbortController for all event listeners
   activeAbortController = new AbortController();
   const { signal } = activeAbortController;

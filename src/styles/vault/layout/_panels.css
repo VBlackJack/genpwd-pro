@@ -1001,3 +1001,9 @@ kbd {
   font-size: 0.8rem;
   color: var(--vault-text-muted);
 }
+
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur .vault-lock-content {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}

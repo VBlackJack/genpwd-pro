@@ -156,6 +156,12 @@ header[data-aurora="true"]::before {
     inset 0 1px 0 var(--overlay-light);
 }
 
+/* Dark theme — boost header tabs visibility */
+[data-theme="dark"] .header-tabs {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
 .header-tab {
   position: relative;
   display: flex;
@@ -263,6 +269,18 @@ header[data-aurora="true"]::before {
   user-select: none;
   color: var(--text-secondary);
   text-decoration: none;
+}
+
+/* Dark theme — boost about button visibility */
+[data-theme="dark"] .about-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .about-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: var(--text-primary);
 }
 
 .about-btn:hover {
@@ -616,6 +634,26 @@ header[data-aurora="true"]::before {
 /* ============================================================================
    TOASTS - Consolidated in utilities.css (use #toasts container)
    ============================================================================ */
+
+/* ============================================================================
+   G-2: NO-BLUR FALLBACKS (VMs, software GPU)
+   ============================================================================ */
+
+body.no-blur header {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}
+
+body.no-blur .header-tabs {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-tertiary);
+}
+
+body.no-blur .about-btn {
+  backdrop-filter: none;
+  background: var(--bg-tertiary);
+}
 
 /* ============================================================================
    REDUCED MOTION

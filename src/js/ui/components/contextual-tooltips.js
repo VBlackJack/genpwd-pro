@@ -54,7 +54,6 @@ const TOOLTIP_TITLES = {
 };
 
 let tooltipElement = null;
-let currentTarget = null;
 let showTimeout = null;
 let hideTimeout = null;
 
@@ -102,8 +101,6 @@ function showTooltip(target, key) {
 
   showTimeout = setTimeout(() => {
     const tooltip = ensureTooltipElement();
-    currentTarget = target;
-
     // Update content
     const title = TOOLTIP_TITLES[key] || key;
     const content = t(TOOLTIP_KEYS[key]);
@@ -132,7 +129,6 @@ function hideTooltip() {
       tooltipElement.classList.remove('visible');
       tooltipElement.setAttribute('aria-hidden', 'true');
     }
-    currentTarget = null;
   }, HIDE_DELAY);
 }
 

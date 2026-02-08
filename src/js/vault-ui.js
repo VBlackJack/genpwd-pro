@@ -111,7 +111,7 @@ import { showColorPicker, getFolderColor, setFolderColor } from './vault/compone
 import { showEntryPreview, updateEntryPreviewPosition, hideEntryPreview } from './vault/components/entry-preview.js';
 import { renderTagsList } from './vault/components/tags-display.js';
 import { showHelloSettingsPopover, updateHelloButtonState, showPasswordPrompt } from './vault/components/hello-settings.js';
-import { getTotpSecret, clearTotpSecret, clearAllTotpSecrets } from './vault/components/entry-fields.js';
+import { getTotpSecret, clearAllTotpSecrets } from './vault/components/entry-fields.js';
 
 // Vault services imports (Phase 6 modularization)
 import { performExport, downloadExport } from './vault/services/export-service.js';
@@ -4224,7 +4224,6 @@ export class VaultUI {
       btn.addEventListener('click', () => {
         const field = btn.closest('.vault-field');
         const textEl = field?.querySelector('.vault-field-text');
-        const revealedEl = field?.querySelector('.vault-field-revealed');
         const contentEl = field?.querySelector('.vault-password-card-content, .vault-reveal-on-hover');
         if (!textEl) return;
 

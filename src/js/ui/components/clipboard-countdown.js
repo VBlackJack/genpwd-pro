@@ -125,7 +125,7 @@ export class ClipboardCountdown {
    * @private
    * @param {string} label - What was copied
    */
-  #createToast(label) {
+  #createToast(_label) {
     // Remove existing toast
     this.#removeToast();
 

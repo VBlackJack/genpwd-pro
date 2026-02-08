@@ -531,23 +531,21 @@ export function initializePresetsUI() {
       <span class="badge">${presetManager.getAllPresets().length}</span>
     </div>
     <div class="section-content">
-      <div class="row gap-8 items-center">
-        <select id="preset-select" class="grow flex-1">
+      <div class="d-flex gap-8 items-center">
+        <select id="preset-select" class="flex-1">
           <option value="">${i18n.t('presets.select')}</option>
         </select>
         <button class="btn-icon d-none" id="btn-clear-preset" title="${i18n.t('presets.clearSelection')}" aria-label="${i18n.t('presets.clearSelection')}">✕</button>
       </div>
-      <div class="row gap-8">
-        <button class="btn flex-1" id="btn-save-preset">
+      <div class="d-flex gap-8">
+        <button class="btn secondary flex-1" id="btn-save-preset">
           💾 ${i18n.t('presets.save')}
         </button>
-        <button class="btn px-12" id="btn-new-preset" title="${i18n.t('presets.createNew')}" aria-label="${i18n.t('presets.createNew')}">➕</button>
+        <button class="btn secondary" id="btn-new-preset" title="${i18n.t('presets.createNew')}" aria-label="${i18n.t('presets.createNew')}">➕</button>
       </div>
-      <div class="row">
-        <button class="btn full-width" id="btn-manage-presets">
-          🗂️ ${i18n.t('presets.manage')}
-        </button>
-      </div>
+      <button class="btn secondary w-full" id="btn-manage-presets">
+        🗂️ ${i18n.t('presets.manage')}
+      </button>
       <button class="btn-icon d-none" id="btn-quick-save-preset" aria-label="${i18n.t('presets.quickSave')}"><span aria-hidden="true">💾</span></button>
       <button class="btn-icon d-none" id="btn-refresh-presets" aria-label="${i18n.t('presets.refreshFromVault')}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
     </div>
@@ -824,8 +822,8 @@ function showSavePresetDialog() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-save-preset-confirm">💾 ${i18n.t('common.save')}</button>
-        <button class="btn" id="btn-cancel-save">${i18n.t('common.cancel')}</button>
+        <button class="btn primary" id="btn-save-preset-confirm">💾 ${i18n.t('common.save')}</button>
+        <button class="btn secondary" id="btn-cancel-save">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -1073,9 +1071,9 @@ function showManagePresetsModal() {
         </div>
       </div>
       <div class="modal-footer flex-wrap gap-8">
-        <button class="btn" id="btn-import-preset">${i18n.t('presets.dialog.import')}</button>
-        <button class="btn" id="btn-export-all-presets">${i18n.t('presets.dialog.exportAll')}</button>
-        <button class="btn ${window.vault ? '' : 'd-none'}" id="btn-vault-sync-presets">🗄️ Vault</button>
+        <button class="btn secondary" id="btn-import-preset">${i18n.t('presets.dialog.import')}</button>
+        <button class="btn secondary" id="btn-export-all-presets">${i18n.t('presets.dialog.exportAll')}</button>
+        <button class="btn secondary ${window.vault ? '' : 'd-none'}" id="btn-vault-sync-presets">🗄️ Vault</button>
         <button class="btn danger" id="close-presets-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
@@ -1389,7 +1387,7 @@ function showEditPresetModal(presetId) {
       </div>
       <div class="modal-footer">
         <button class="btn bg-blue-alpha" id="btn-edit-preset-confirm">💾 ${i18n.t('common.save')}</button>
-        <button class="btn" id="btn-cancel-edit">${i18n.t('common.cancel')}</button>
+        <button class="btn secondary" id="btn-cancel-edit">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -1568,7 +1566,7 @@ async function showVaultPresetSyncModal() {
         `}
       </div>
       <div class="modal-footer">
-        <button class="btn" id="close-vault-sync-footer">${i18n.t('common.close')}</button>
+        <button class="btn secondary" id="close-vault-sync-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -1744,7 +1742,7 @@ export function initializeHistoryUI() {
 
   // Add history button
   const btnHistory = document.createElement('button');
-  btnHistory.className = 'btn';
+  btnHistory.className = 'btn secondary';
   btnHistory.id = 'btn-history';
   btnHistory.innerHTML = sanitizeHTML('📜 ' + escapeHtml(i18n.t('history.title')));
 
@@ -1858,9 +1856,9 @@ async function showHistoryModal() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-export-history">${i18n.t('history.export')}</button>
+        <button class="btn secondary" id="btn-export-history">${i18n.t('history.export')}</button>
         <button class="btn danger" id="btn-clear-history">${i18n.t('history.clearAll')}</button>
-        <button class="btn" id="close-history-modal-footer">${i18n.t('common.close')}</button>
+        <button class="btn secondary" id="close-history-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2197,9 +2195,9 @@ function showPluginManagerModal() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="btn-install-plugin-file">📁 ${i18n.t('plugins.installFromFile')}</button>
+        <button class="btn secondary" id="btn-install-plugin-file">📁 ${i18n.t('plugins.installFromFile')}</button>
         <button class="btn btn-red" id="btn-clear-all-plugins">🗑️ ${i18n.t('plugins.clearAll')}</button>
-        <button class="btn" id="close-plugins-modal-footer">${i18n.t('common.close')}</button>
+        <button class="btn secondary" id="close-plugins-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2346,7 +2344,7 @@ function showPluginSettingsModal(pluginName) {
         <div id="plugin-settings-container"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="close-plugin-settings-footer">${i18n.t('common.close')}</button>
+        <button class="btn secondary" id="close-plugin-settings-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);
@@ -2405,7 +2403,7 @@ export function initializeAdvancedImportExportUI() {
     const existingImportBtn = document.getElementById('btn-import-advanced');
     if (!existingImportBtn) {
       const importBtn = document.createElement('button');
-      importBtn.className = 'btn';
+      importBtn.className = 'btn secondary';
       importBtn.id = 'btn-import-advanced';
       importBtn.innerHTML = sanitizeHTML('📥 Import');
 
@@ -2507,7 +2505,7 @@ function showAdvancedExportModal() {
         <button class="btn btn-green" id="btn-export-download">
           ${i18n.t('export.download')}
         </button>
-        <button class="btn" id="close-export-modal-footer">${i18n.t('common.cancel')}</button>
+        <button class="btn secondary" id="close-export-modal-footer">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -2635,7 +2633,7 @@ function showAdvancedImportModal() {
         <button class="btn btn-green" id="btn-import-execute" disabled>
           ✅ ${i18n.t('import.importPasswords')}
         </button>
-        <button class="btn" id="close-import-modal-footer">${i18n.t('common.cancel')}</button>
+        <button class="btn secondary" id="close-import-modal-footer">${i18n.t('common.cancel')}</button>
       </div>
     </div>
   `);
@@ -2791,7 +2789,7 @@ export function initializeHIBPUI() {
 /**
  * Show HIBP Check Modal
  */
-function showHIBPCheckModal() {
+function _showHIBPCheckModal() {
   // Get all generated passwords from results list
   const passwordItems = document.querySelectorAll('.password-item');
 
@@ -2845,7 +2843,7 @@ function showHIBPCheckModal() {
       </div>
 
       <div class="modal-footer">
-        <button class="btn" id="close-hibp-modal-footer">${i18n.t('common.close')}</button>
+        <button class="btn secondary" id="close-hibp-modal-footer">${i18n.t('common.close')}</button>
       </div>
     </div>
   `);

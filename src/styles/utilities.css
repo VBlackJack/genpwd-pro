@@ -697,6 +697,17 @@ kbd {
   }
 }
 
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur [aria-busy="true"]::after {
+  backdrop-filter: none;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+body.no-blur .loading-overlay {
+  backdrop-filter: none;
+  background: rgba(0, 0, 0, 0.5);
+}
+
 [data-theme="light"] kbd {
   background: linear-gradient(180deg, #fff, #f0f0f0);
   border-color: rgba(0, 0, 0, 0.15);

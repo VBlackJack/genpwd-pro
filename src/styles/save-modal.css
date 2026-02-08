@@ -828,6 +828,17 @@
   }
 }
 
+/* ==================== G-2: NO-BLUR FALLBACKS (VMs, software GPU) ==================== */
+body.no-blur .save-vault-modal-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.no-blur .quick-unlock-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* ==================== REDUCED MOTION SUPPORT ==================== */
 @media (prefers-reduced-motion: reduce) {
   .save-vault-modal-overlay,

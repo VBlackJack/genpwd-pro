@@ -223,7 +223,7 @@ export class WebAuthnManager {
    * @param {string} expectedChallenge - Original challenge
    * @returns {{success: boolean, credentialId: string, vaultId: string}}
    */
-  async verifyAuthentication(response, expectedChallenge) {
+  async verifyAuthentication(response, _expectedChallenge) {
     if (!response || !response.id) {
       throw new Error('Invalid authentication response');
     }

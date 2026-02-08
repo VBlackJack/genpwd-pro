@@ -494,3 +494,8 @@
     padding: 1rem 1.5rem;
   }
 }
+
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur .setup-preset-card {
+  background: var(--bg-tertiary);
+}

@@ -3,8 +3,6 @@
  * Modal for manual auto-fill fallback
  */
 
-import { escapeHtml } from '../utils/formatter.js';
-
 /**
  * Render close button
  * @param {Function} t - Translation function

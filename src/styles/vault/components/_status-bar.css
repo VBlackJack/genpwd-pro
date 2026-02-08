@@ -224,3 +224,8 @@
 [data-theme="light"] .toast-clipboard-countdown .clipboard-countdown-clear:focus-visible {
   outline-color: var(--accent-blue, #4f46e5);
 }
+
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur .save-indicator--persistent {
+  backdrop-filter: none;
+}

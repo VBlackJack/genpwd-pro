@@ -58,6 +58,39 @@ class GenPwdApp {
     this.vaultUI = null;
   }
 
+  #detectBlurSupport() {
+    // Respect OS "reduce transparency" preference
+    if (window.matchMedia?.('(prefers-reduced-transparency: reduce)')?.matches) {
+      return false;
+    }
+    // Check CSS parser support
+    if (!CSS.supports?.('backdrop-filter', 'blur(1px)') &&
+        !CSS.supports?.('-webkit-backdrop-filter', 'blur(1px)')) {
+      return false;
+    }
+    // Probe WebGL for software renderer
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return false;
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '';
+        const combined = `${renderer} ${vendor}`.toLowerCase();
+        const SOFTWARE = ['swiftshader', 'llvmpipe', 'softpipe', 'mesa software',
+                          'microsoft basic render', 'basic render driver', 'software rasterizer'];
+        if (SOFTWARE.some(sw => combined.includes(sw))) {
+          safeLog(`[GPU] Software renderer detected: ${renderer}`);
+          return false;
+        }
+      }
+      const ext = gl.getExtension('WEBGL_lose_context');
+      if (ext) ext.loseContext();
+    } catch { return false; }
+    return true;
+  }
+
   applyRuntimeClasses() {
     const body = document.body;
     if (!body) return;
@@ -70,6 +103,7 @@ class GenPwdApp {
     body.classList.toggle('platform-windows', platform === 'win32');
     body.classList.toggle('platform-macos', platform === 'darwin');
     body.classList.toggle('platform-linux', platform === 'linux');
+    body.classList.toggle('no-blur', !this.#detectBlurSupport());
   }
 
   async init() {

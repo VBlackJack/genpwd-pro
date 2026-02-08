@@ -158,7 +158,6 @@ class CrashRecovery {
    * @private
    */
   #getCurrentTab() {
-    const generatorTab = document.getElementById('generator-view');
     const vaultTab = document.getElementById('vault-view');
 
     if (vaultTab && !vaultTab.hidden) {

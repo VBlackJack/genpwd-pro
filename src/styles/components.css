@@ -362,6 +362,46 @@ textarea.field-invalid {
   outline-offset: 2px;
 }
 
+/* Dark theme — boost button boundary visibility (overlay-strong at 12% is faint) */
+[data-theme="dark"] .btn {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .btn:hover {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: linear-gradient(135deg, rgba(55, 65, 110, 0.95), rgba(45, 52, 90, 0.95));
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn.secondary:hover {
+  background: var(--bg-quaternary);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn.primary:hover {
+  background: linear-gradient(135deg, hsl(220, 90%, 55%), hsl(270, 80%, 55%));
+  border-color: rgba(139, 92, 246, 0.6);
+  color: white;
+}
+
+[data-theme="dark"] select,
+[data-theme="dark"] .input {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark theme — ghost buttons need visible boundary for discoverability */
+[data-theme="dark"] .btn.ghost {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text-primary);
+}
+
 /* ============================================================================
    DISABLED STATES - Enhanced visibility
    ============================================================================ */
@@ -2544,3 +2584,40 @@ body[data-theme="light"] .cursor-tooltip {
 [data-theme="light"] .toolbar-overflow-divider {
   background: rgba(0, 0, 0, 0.08);
 }
+
+/* ============================================================================
+   G-2: NO-BLUR FALLBACKS (VMs, software GPU)
+   ============================================================================ */
+
+body.no-blur .btn {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(135deg, rgb(45, 55, 90), rgb(35, 42, 70));
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+body.no-blur .btn.ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.no-blur .btn.primary {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.no-blur .btn.danger {
+  background: linear-gradient(135deg, var(--danger-bg-hover), var(--danger-bg));
+}
+
+body.no-blur .input,
+body.no-blur select {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-tertiary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.no-blur .version-badge { backdrop-filter: none; }
+body.no-blur .placement-visual-container { backdrop-filter: none; }
+body.no-blur .cursor { backdrop-filter: none; }

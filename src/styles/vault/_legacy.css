@@ -21,9 +21,39 @@
   --vault-warning: var(--accent-yellow, #eab308);
   --vault-danger: var(--accent-red, #ef4444);
   --vault-error: var(--vault-danger);
+  /* Vault layout backgrounds (dark theme) */
+  --vault-bg-primary: var(--bg-secondary);
+  --vault-bg-secondary: var(--bg-tertiary);
+  --vault-sidebar-bg: rgba(13, 16, 28, 0.6);
+  --vault-panel-bg: rgba(13, 16, 28, 0.8);
+  --vault-bg-elevated: rgba(8, 12, 28, 0.98);
+  --vault-item-bg: rgba(255, 255, 255, 0.02);
+  --vault-item-hover-bg: rgba(255, 255, 255, 0.05);
+  --vault-surface-active: rgba(255, 255, 255, 0.1);
   /* Transitions and shadows */
   --vault-transition: 0.15s ease;
   --vault-shadow-lg: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.3));
+}
+
+/* Dark theme re-assertion - :root var() references compute with @media light values
+   on light-OS systems. Use explicit values to guarantee correct dark theme rendering. */
+[data-theme="dark"] {
+  --vault-surface: rgba(255, 255, 255, 0.05);
+  --vault-surface-hover: rgba(255, 255, 255, 0.08);
+  --vault-border: rgba(255, 255, 255, 0.1);
+  --vault-border-light: rgba(255, 255, 255, 0.2);
+  --vault-text: rgba(255, 255, 255, 0.95);
+  --vault-text-muted: rgba(255, 255, 255, 0.82);
+  --vault-text-dim: rgba(255, 255, 255, 0.5);
+  --vault-bg-primary: hsl(225, 30%, 14%);
+  --vault-bg-secondary: hsl(225, 25%, 18%);
+  --vault-sidebar-bg: rgba(13, 16, 28, 0.6);
+  --vault-panel-bg: rgba(13, 16, 28, 0.8);
+  --vault-bg-elevated: rgba(8, 12, 28, 0.98);
+  --vault-item-bg: rgba(255, 255, 255, 0.02);
+  --vault-item-hover-bg: rgba(255, 255, 255, 0.05);
+  --vault-surface-active: rgba(255, 255, 255, 0.1);
+  --vault-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 /* ==================== LIGHT THEME SUPPORT ==================== */
@@ -6819,6 +6849,48 @@ kbd {
   }
 }
 
+/* ==================== G-2: NO-BLUR FALLBACKS (VMs, software GPU) ==================== */
+
+body.no-blur .vault-sidebar {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}
+
+body.no-blur .field-group {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-tertiary);
+}
+
+body.no-blur .action-btn {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-tertiary);
+}
+
+body.no-blur .vault-lock-content {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}
+
+body.no-blur .vault-modal {
+  background: var(--bg-secondary);
+}
+
+body.no-blur .vault-modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.no-blur .vault-toast { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.no-blur .vault-loading-overlay { backdrop-filter: none; }
+
+body.no-blur .vault-switcher-dropdown {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}
+
+body.no-blur .vault-app[data-blurred="true"]::before {
+  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.7);
+}
+
 /* ==================== MOBILE & TOUCH IMPROVEMENTS ==================== */
 
 /* Touch targets minimum 44x44px (WCAG 2.5.5 Target Size) */
@@ -8431,7 +8503,7 @@ body.mode-compact .vault-empty-text {
 .vault-settings-hint {
   margin: 4px 0 0 24px;
   font-size: 12px;
-  color: var(--vault-text-tertiary);
+  color: var(--vault-text-dim);
   line-height: 1.4;
 }
 

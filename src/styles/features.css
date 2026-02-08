@@ -1401,6 +1401,22 @@ input:checked + .toggle-slider::before {
   font-weight: 600;
 }
 
+/* Dark theme — boost visibility (overlay-light at 5% is near-invisible on dark bg) */
+[data-theme="dark"] .quick-preset-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+[data-theme="dark"] .quick-preset-btn:hover {
+  background: rgba(99, 102, 241, 0.24);
+  border-color: var(--accent-cyan);
+}
+
+[data-theme="dark"] .quick-preset-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.26), rgba(139, 92, 246, 0.22));
+  border-color: var(--accent-purple);
+}
+
 /* Light theme adjustments */
 [data-theme="light"] .quick-preset-btn {
   background: rgba(99, 102, 241, 0.08);
@@ -1487,6 +1503,17 @@ input:checked + .toggle-slider::before {
   font-weight: 600;
   line-height: 18px;
   text-align: center;
+}
+
+/* Dark theme — boost visibility */
+[data-theme="dark"] .copy-history-btn {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .copy-history-btn:hover {
+  background: rgba(99, 102, 241, 0.28);
+  border-color: var(--accent-cyan);
 }
 
 .copy-history-popover {
@@ -2537,12 +2564,23 @@ input:checked + .toggle-slider::before {
 
 .quick-preset-btn.save-preset {
   border-style: dashed;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .quick-preset-btn.save-preset:hover {
   opacity: 1;
   border-style: solid;
+}
+
+[data-theme="dark"] .quick-preset-btn.save-preset {
+  opacity: 0.9;
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .quick-preset-btn.save-preset:hover {
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.25);
 }
 
 .quick-preset-btn.custom-preset {
@@ -2591,6 +2629,25 @@ input:checked + .toggle-slider::before {
   .command-palette {
     max-width: 100%;
   }
+}
+
+/* ============================================================================
+   G-2: NO-BLUR FALLBACKS (VMs, software GPU)
+   ============================================================================ */
+
+body.no-blur .progress-overlay { backdrop-filter: none; }
+body.no-blur .command-palette-overlay { backdrop-filter: none; }
+
+body.no-blur .quick-preset-btn {
+  background: var(--bg-tertiary);
+}
+
+body.no-blur .copy-history-btn {
+  background: var(--bg-tertiary);
+}
+
+body.no-blur .copy-history-header {
+  background: var(--bg-tertiary);
 }
 
 /* ============================================================================

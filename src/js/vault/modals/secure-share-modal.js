@@ -651,7 +651,7 @@ export function showOpenShareModal(options = {}) {
  * @param {Function} onCopy - Copy callback
  * @returns {string} HTML string
  */
-function renderDecryptedFields(shareData, t, onCopy) {
+function renderDecryptedFields(shareData, t, _onCopy) {
   const fields = [];
   const data = shareData.data || {};
 

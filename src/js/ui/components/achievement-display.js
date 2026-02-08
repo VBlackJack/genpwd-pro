@@ -21,7 +21,6 @@
 
 import { t } from '../../utils/i18n.js';
 import {
-  ACHIEVEMENTS,
   getAllAchievements,
   getAchievementProgress,
   getUnlockedCount,

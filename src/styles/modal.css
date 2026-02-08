@@ -219,6 +219,12 @@ h2.modal-title {
   color: var(--text-muted);
 }
 
+/* Dark theme — boost close button visibility */
+[data-theme="dark"] .modal-close {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
 .modal-close svg {
   transition: transform var(--transition-smooth);
 }
@@ -835,6 +841,28 @@ h2.modal-title {
   0% { background: transparent; }
   30% { background: rgba(0, 212, 255, 0.15); }
   100% { background: transparent; }
+}
+
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur .modal-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.no-blur .modal {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.no-blur .modal-footer {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-tertiary);
+}
+
+body.no-blur .author-credit {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Reduced motion support */

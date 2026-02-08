@@ -100,3 +100,9 @@
   color: var(--vault-text-muted);
   line-height: 1.4;
 }
+
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur .vault-toast {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

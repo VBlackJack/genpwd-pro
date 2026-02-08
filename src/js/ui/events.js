@@ -1168,13 +1168,13 @@ function promptExportFormat() {
   return new Promise((resolve) => {
     const content = `
       <div class="export-modal-buttons">
-        <button id="export-txt" class="btn export-modal-button">
+        <button id="export-txt" class="btn secondary export-modal-button">
           ${t('export.txtButton')}
         </button>
-        <button id="export-json" class="btn export-modal-button">
+        <button id="export-json" class="btn secondary export-modal-button">
           ${t('export.jsonButton')}
         </button>
-        <button id="export-csv" class="btn export-modal-button">
+        <button id="export-csv" class="btn secondary export-modal-button">
           ${t('export.csvButton')}
         </button>
       </div>

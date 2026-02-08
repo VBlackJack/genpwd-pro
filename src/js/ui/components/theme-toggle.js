@@ -89,7 +89,7 @@ export class ThemeToggle {
     if (!this.button) return;
 
     // Click: cycle through quick themes
-    this.button.addEventListener('click', (e) => {
+    this.button.addEventListener('click', () => {
       if (this.isDropdownOpen) {
         this.#closeDropdown();
         return;
@@ -104,7 +104,7 @@ export class ThemeToggle {
     });
 
     // Long press for mobile: show dropdown
-    this.button.addEventListener('pointerdown', (e) => {
+    this.button.addEventListener('pointerdown', () => {
       this.longPressTimer = setTimeout(() => {
         this.#toggleDropdown();
       }, 500);

@@ -376,7 +376,7 @@ export function watchSystemThemeChanges() {
 
   systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-  systemThemeChangeHandler = (e) => {
+  systemThemeChangeHandler = () => {
     // Only change if in system mode
     if (currentMode === THEME_MODES.SYSTEM) {
       const newTheme = getSystemPreferredTheme();

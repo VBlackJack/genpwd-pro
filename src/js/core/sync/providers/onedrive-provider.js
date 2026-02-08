@@ -307,7 +307,7 @@ export class OneDriveProvider extends CloudProvider {
    * @param {Object} options - Upload options
    * @returns {Promise<CloudResult<string>>} - File ID on success
    */
-  async uploadVault(vaultId, encryptedData, options = {}) {
+  async uploadVault(vaultId, encryptedData, _options = {}) {
     safeLog(`OneDrive: Uploading vault ${vaultId}...`);
 
     // Validate encrypted data
@@ -359,7 +359,7 @@ export class OneDriveProvider extends CloudProvider {
    * @param {string} fileId - Cloud file ID (optional)
    * @returns {Promise<CloudResult<VaultSyncData>>}
    */
-  async downloadVault(vaultId, fileId = null) {
+  async downloadVault(vaultId, _fileId = null) {
     safeLog(`OneDrive: Downloading vault ${vaultId}...`);
 
     // Ensure authenticated

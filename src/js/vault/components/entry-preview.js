@@ -147,8 +147,6 @@ export function showEntryPreview(options = {}) {
 
   if (!entry) return null;
 
-  // Validate entry data shape
-  const data = entry.data || {};
   const type = getEntryTypes()[entry.type] || ENTRY_TYPES.login;
   const preview = document.createElement('div');
   preview.className = 'vault-entry-preview';

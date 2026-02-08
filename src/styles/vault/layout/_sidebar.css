@@ -550,3 +550,14 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+
+/* G-2: No-blur fallbacks (VMs, software GPU) */
+body.no-blur .vault-sidebar {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}
+
+body.no-blur .vault-switcher-dropdown {
+  backdrop-filter: none;
+  background: var(--bg-secondary);
+}

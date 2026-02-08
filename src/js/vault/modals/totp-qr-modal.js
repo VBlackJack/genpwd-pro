@@ -151,7 +151,6 @@ export function showTOTPQRModal(options = {}) {
   // Build otpauth URI and generate QR with robust error handling
   const uri = buildOTPAuthURI(secret, issuer, account);
   let qrSvg;
-  let hasError = false;
   try {
     qrSvg = generateQRCodeSVG(uri, { size: 200 });
     // Verify QR was actually generated (check for SVG content)
@@ -165,7 +164,6 @@ export function showTOTPQRModal(options = {}) {
     // Sanitize SVG to remove dangerous attributes/elements
     qrSvg = sanitizeSVG(qrSvg);
   } catch {
-    hasError = true;
     qrSvg = `<div class="vault-qr-error" role="alert">${escapeHtml(t('vault.totp.qrError'))}</div>`;
   }
 

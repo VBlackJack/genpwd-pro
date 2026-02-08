@@ -265,8 +265,6 @@ function renderBackupStatus(backupService, t, onExport) {
   };
 
   const config = statusConfig[status] || statusConfig[BACKUP_STATUS.NEVER];
-  const showButton = status !== BACKUP_STATUS.RECENT || !onExport;
-
   return `
     <div class="vault-backup-status ${config.className}">
       <div class="backup-status-info">
