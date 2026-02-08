@@ -442,7 +442,7 @@ input:checked + .toggle-slider::before {
 
 .import-password-display {
   font-family: monospace;
-  background: white;
+  background: var(--bg-tertiary);
   padding: 8px;
   border-radius: var(--radius-xs, 4px);
   margin-top: 8px;

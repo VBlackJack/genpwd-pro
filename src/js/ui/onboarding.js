@@ -327,9 +327,10 @@ export class Onboarding {
     tooltip.style.cssText = `
       position: fixed;
       max-width: 400px;
-      background: white;
+      background: var(--bg-secondary);
+      border: 1px solid var(--glass-border-light);
       border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
       padding: 24px;
       z-index: 9999;
       animation: fadeIn 0.3s ease;
@@ -342,7 +343,7 @@ export class Onboarding {
       margin: 0 0 12px 0;
       font-size: 20px;
       font-weight: 600;
-      color: #1a1a1a;
+      color: var(--text-primary);
     `;
 
     // Text
@@ -352,7 +353,7 @@ export class Onboarding {
       margin: 0 0 20px 0;
       font-size: 15px;
       line-height: 1.6;
-      color: #4a4a4a;
+      color: var(--text-secondary);
     `;
 
     // Buttons container
@@ -372,9 +373,9 @@ export class Onboarding {
       if (buttonConfig.secondary) {
         button.style.cssText = `
           padding: 10px 20px;
-          border: 1px solid #ddd;
-          background: white;
-          color: #4a4a4a;
+          border: 1px solid var(--glass-border-light);
+          background: var(--bg-tertiary);
+          color: var(--text-secondary);
           border-radius: 6px;
           cursor: pointer;
           font-size: 14px;
@@ -383,10 +384,10 @@ export class Onboarding {
         `;
 
         button.onmouseenter = () => {
-          button.style.background = '#f5f5f5';
+          button.style.background = 'var(--overlay-strong)';
         };
         button.onmouseleave = () => {
-          button.style.background = 'white';
+          button.style.background = 'var(--bg-tertiary)';
         };
       } else {
         button.style.cssText = `
@@ -419,9 +420,9 @@ export class Onboarding {
     progress.style.cssText = `
       margin-top: 16px;
       padding-top: 16px;
-      border-top: 1px solid #e0e0e0;
+      border-top: 1px solid var(--glass-border);
       font-size: 12px;
-      color: #999;
+      color: var(--text-muted);
       text-align: center;
     `;
     const tours = this.getTours();
