@@ -30,7 +30,7 @@ import { initThemeToggle } from './ui/components/theme-toggle.js';
 import { isDevelopment } from './utils/environment.js';
 import { initKeyboardShortcuts, removeKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
 
-// Feature imports (v3.0.5)
+// Feature imports (v3.1.0)
 import { i18n } from './utils/i18n.js';
 import { initSentry, captureException } from './config/sentry-config.js';
 import analytics from './utils/analytics.js';
@@ -54,7 +54,7 @@ import { initTooltips } from './ui/tooltip-manager.js';
 class GenPwdApp {
   constructor() {
     this.initialized = false;
-    this.version = '3.0.5';
+    this.version = '3.1.0';
     this.vaultUI = null;
   }
 
@@ -189,11 +189,14 @@ class GenPwdApp {
       // 12. Initialize Vault UI (Electron only)
       this.initializeVault();
 
-      // 12.1 Initialize Crash Recovery (session persistence)
+      // 12.1 Dismiss app loader and reveal content
+      this.dismissLoader();
+
+      // 12.2 Initialize Crash Recovery (session persistence)
       try {
         const { didCrash, state } = initCrashRecovery();
-        if (didCrash) {
-          safeLog(`Crash recovery: Previous session detected at ${new Date(state?.timestamp).toISOString()}`);
+        if (didCrash && state?.timestamp) {
+          safeLog(`Crash recovery: Previous session detected at ${new Date(state.timestamp).toISOString()}`);
         }
         safeLog('Crash recovery initialized');
       } catch (crashError) {
@@ -211,10 +214,13 @@ class GenPwdApp {
       safeLog(`Critical initialization error: ${error.message}`, 'error');
       reportError(error, { phase: 'initialization' });
 
-      // NEW: Report to Sentry
+      // Report to Sentry
       if (typeof captureException === 'function') {
         captureException(error, { phase: 'initialization' });
       }
+
+      // Dismiss loader even on failure so the user sees the error toast
+      this.dismissLoader();
 
       // Use i18n if available, fallback to English
       showToast(i18n?.t?.('toast.criticalStartupError') || 'Critical startup error', 'error');
@@ -295,6 +301,30 @@ class GenPwdApp {
 
     safeLog('Environment validated successfully');
     return true;
+  }
+
+  /**
+   * Dismiss the app-loader overlay and reveal the appropriate content.
+   * In Electron the vault tab is active by default; in browser mode
+   * the main generator content is shown directly.
+   */
+  dismissLoader() {
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+      loader.classList.add('hidden');
+      // Remove from DOM after fade-out; fallback timer for reduced-motion
+      const remove = () => loader.remove();
+      loader.addEventListener('transitionend', remove, { once: true });
+      setTimeout(remove, 400);
+    }
+
+    // In browser mode (no vault), show the generator immediately
+    if (!window.vault) {
+      const mainContent = document.getElementById('main-content');
+      if (mainContent) mainContent.removeAttribute('hidden');
+    }
+
+    safeLog('App loader dismissed');
   }
 
   /**

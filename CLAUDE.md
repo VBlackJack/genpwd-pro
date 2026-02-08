@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GenPwd Pro is a multi-platform secure password manager and generator (v3.0.5). It ships as:
+GenPwd Pro is a multi-platform secure password manager and generator (v3.1.0). It ships as:
 - **Web/PWA** — standalone `src/index.html` with ES6 modules
 - **Electron desktop** — Windows/macOS/Linux (`electron-main.cjs` + `electron-preload.cjs`)
 - **Browser extensions** — Chrome (Manifest V3) and Firefox (Manifest V2) under `extensions/`
@@ -22,12 +22,20 @@ npm test                 # Run all tests (custom test runner, not Jest)
 npm run test:fast        # Fast tests only (FAST_ONLY=1)
 npm run test:slow        # Slow tests only (SLOW_ONLY=1)
 npm run test:coverage    # Tests with c8 coverage (HTML + text + lcov)
+npm run test:watch       # Watch mode via nodemon (re-runs on src/ or tools/ changes)
+npm run test:a11y        # Accessibility tests (Playwright + axe-core)
+npm run test:fuzz        # Import fuzzing tests (--experimental-vm-modules)
 npm run lint             # ESLint v9 flat config (src/**/*.js, tools/**/*.js)
 npm run lint:circular    # Circular dependency detection via madge
+npm run security:audit   # npm audit (moderate+ level)
+npm run security:sri     # Generate SRI hashes
 npm run electron         # Launch Electron app
 npm run electron:dev     # Launch Electron in dev mode
 npm run electron:build:win  # Build Windows installer (NSIS + portable + ZIP)
+node check-i18n.cjs      # Check for missing i18n keys (fr.json vs en.json)
 ```
+
+No single-test filter flag exists. The custom test runner (`tools/run_tests.cjs`) runs the full suite from `src/tests/test-suite.js`. Use `FAST_ONLY=1` or `SLOW_ONLY=1` env vars to narrow scope. For Android, `--tests "TestClassName"` works with `./gradlew testDebugUnitTest`.
 
 ### Android (from `android/` directory)
 
@@ -35,10 +43,13 @@ npm run electron:build:win  # Build Windows installer (NSIS + portable + ZIP)
 ./gradlew assembleDebug              # Debug APK
 ./gradlew assembleRelease            # Release APK
 ./gradlew testDebugUnitTest          # Unit tests
+./gradlew testDebugUnitTest --tests "com.julien.genpwdpro.SomeTest"  # Single test class
 ./gradlew lint detekt ktlintCheck testDebugUnitTest --console=plain  # Full CI verification
 ./gradlew dependencyUpdates          # Check dependency versions
 ./gradlew --write-verification-metadata sha256  # Update dependency checksums
 ```
+
+Note: `ktlintCheck` is temporarily skipped in Gradle due to existing formatting violations. The task is kept in the pipeline signature and will be re-enabled after a mass-formatting pass.
 
 ### CLI (from `cli/` directory)
 
@@ -67,7 +78,12 @@ Three generation modes: **syllables** (consonant/vowel alternation), **passphras
 - `js/vault/` — Encrypted vault: `crypto-engine.js` (Tink AES-256-GCM), `kdf-service.js` (Scrypt), `models.js`, `in-memory-repository.js`
 - `js/utils/` — Helpers, `i18n.js`, `logger.js`, `plugin-manager.js`, `pwa-manager.js`
 - `locales/` — Translation files: `fr.json`, `en.json`, `es.json`
-- `desktop/` — Electron-specific: vault crypto (Argon2, XChaCha20), Windows Hello auth, cloud sync
+- `desktop/` — Electron-specific modules:
+  - `main/` — Electron main process helpers
+  - `vault/` — Desktop vault crypto (Argon2, XChaCha20-Poly1305)
+  - `security/` — Windows Hello biometric auth
+  - `utils/` — Desktop utilities including `i18n-node.js`
+  - `native-host/` — Native messaging host for browser extensions (CommonJS)
 
 ### Vault Crypto Stack
 
@@ -89,7 +105,7 @@ The build (`tools/build.js`) bundles all JS modules and CSS into a single self-c
 
 ### Test Framework
 
-Custom test runner in `tools/run_tests.cjs` (not Jest/Mocha). It stubs browser APIs (DOM, fetch, crypto, DOMPurify) for Node.js execution. Test files live in `src/tests/`. Uses seeded PRNG for deterministic tests.
+Custom test runner in `tools/run_tests.cjs` (not Jest/Mocha). It stubs browser APIs (DOM, fetch, crypto, DOMPurify) for Node.js execution. Test files live in `src/tests/`. Uses seeded PRNG for deterministic tests. The test suite is defined in `src/tests/test-suite.js` and individual test files cannot be run in isolation (they depend on the stubs set up by the runner).
 
 ## i18n
 
@@ -100,6 +116,8 @@ Custom test runner in `tools/run_tests.cjs` (not Jest/Mocha). It stubs browser A
 **Interpolation:** `{paramName}` syntax — e.g., `"app.loaded": "GenPwd Pro v{version} loaded"`.
 
 **Locale files:** `src/locales/fr.json`, `en.json`, `es.json`. Default locale is French. Detection: localStorage (`genpwd_locale`) → `navigator.language` → `'fr'`.
+
+**Checking coverage:** `node check-i18n.cjs` compares `fr.json` against `en.json` to find missing keys.
 
 **Extensions use:** Chrome's native `chrome.i18n.getMessage()` with `_locales/` directories. Firefox uses a custom wrapper.
 
@@ -115,7 +133,7 @@ Custom test runner in `tools/run_tests.cjs` (not Jest/Mocha). It stubs browser A
 
 ## Plugin System
 
-Event-based hooks architecture. Plugins are ES6 modules with hooks: `onGenerate`, `onExport`, `onImport`, `onUIRender`, `onPasswordValidate`, `onPasswordStrength`. Strict validation, 100KB max size, no `eval`/`new Function`.
+Event-based hooks architecture. Plugins are ES6 modules with hooks: `onGenerate`, `onExport`, `onImport`, `onUIRender`, `onPasswordValidate`, `onPasswordStrength`. Strict validation, 100KB max size, no `eval`/`new Function`. Template in `templates/plugin-template/`.
 
 ## Android Specifics
 
@@ -126,6 +144,7 @@ Event-based hooks architecture. Plugins are ES6 modules with hooks: `onGenerate`
 - Min SDK 24, target SDK 34
 - Dependency verification: strict mode via `gradle/verification-metadata.xml`
 - Static analysis baselines in `config/lint-baseline.xml` and `config/detekt/detekt-baseline.xml` (temporary, to be shrunk)
+- After fixing a baselined issue, regenerate with `./gradlew :app:lint --update-baseline` or `./gradlew detektBaseline`
 
 ## Code Style
 
@@ -135,3 +154,4 @@ Event-based hooks architecture. Plugins are ES6 modules with hooks: `onGenerate`
 - License header: Apache 2.0, Copyright Julien Bombled (required on all new files)
 - All code, comments, and commit messages in English
 - `.gpdb` is the vault file extension (GenPwd Pro Database)
+- Node.js >= 20.0.0 required
