@@ -3,7 +3,7 @@
  * Implements accessibility keyboard shortcuts for GenPwd Pro
  *
  * @module keyboard-shortcuts
- * @version 3.0.5
+ * @version 3.1.0
  * @description Provides keyboard navigation and shortcuts for accessibility
  *
  * Shortcuts (Generator tab only):

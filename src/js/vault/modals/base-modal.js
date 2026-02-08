@@ -131,13 +131,16 @@ export function renderFormInput(options = {}) {
     value = '',
     required = false,
     maxLength,
-    message
+    message,
+    t = (k) => k
   } = options;
+
+  const requiredLabel = t('vault.forms.required');
 
   return `
     <div class="vault-form-group">
       <label class="vault-label" for="${id}">
-        ${label}${required ? ' <span class="required" aria-label="required">*</span>' : ''}
+        ${label}${required ? ` <span class="required" aria-label="${requiredLabel}">*</span>` : ''}
       </label>
       <input type="${type}" class="vault-input" id="${id}"
              placeholder="${placeholder}"

@@ -298,10 +298,16 @@ export class OfflineSyncQueue extends EventEmitter {
         if (syncHandler) {
           await syncHandler(entry);
         } else {
-          // Default: emit event for external handling
-          await new Promise((resolve, reject) => {
-            this.emit('execute', entry, resolve, reject);
-          });
+          // Default: emit event for external handling (with timeout)
+          const SYNC_TIMEOUT = 30000;
+          await Promise.race([
+            new Promise((resolve, reject) => {
+              this.emit('execute', entry, resolve, reject);
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Sync operation timed out')), SYNC_TIMEOUT)
+            )
+          ]);
         }
 
         entry.status = OperationStatus.COMPLETED;

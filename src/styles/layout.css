@@ -679,13 +679,6 @@ header[data-aurora="true"]::before {
   }
 }
 
-@media (max-width: 768px) {
-  /* Single column on narrow tablets and phones */
-  .results-list {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 640px) {
   /* Mobile: single column with reduced padding */
   .results-list {
@@ -696,6 +689,11 @@ header[data-aurora="true"]::before {
 }
 
 @media (max-width: 768px) {
+  /* Single column on narrow tablets and phones */
+  .results-list {
+    grid-template-columns: 1fr;
+  }
+
   .header-inner {
     padding: 0 16px;
     gap: 12px;

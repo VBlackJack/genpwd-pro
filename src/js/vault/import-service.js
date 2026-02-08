@@ -844,6 +844,23 @@ function validateBitwardenSchema(data) {
 }
 
 // ============================================================================
+// BITWARDEN CONSTANTS
+// ============================================================================
+
+/**
+ * Bitwarden item type whitelist
+ * @see https://bitwarden.com/help/condition-bitwarden-import/
+ */
+const BITWARDEN_ITEM_TYPES = Object.freeze({
+  LOGIN: 1,
+  SECURE_NOTE: 2,
+  CARD: 3,
+  IDENTITY: 4
+});
+
+const BITWARDEN_VALID_TYPES = new Set(Object.values(BITWARDEN_ITEM_TYPES));
+
+// ============================================================================
 // BITWARDEN PARSER
 // ============================================================================
 
@@ -904,11 +921,21 @@ export function parseBitwardenJSON(jsonContent) {
         result.stats.totalEntries++;
 
         try {
+          // Validate Bitwarden item type against whitelist
+          const itemType = item.type;
+          if (itemType !== undefined && !BITWARDEN_VALID_TYPES.has(itemType)) {
+            result.stats.skippedEntries++;
+            result.warnings.push(
+              i18n.t('import.warnings.unknownBitwardenType', { type: String(itemType), name: item.name || '?' })
+            );
+            continue;
+          }
+
           // Map Bitwarden type to our type
           let type = ENTRY_TYPES.LOGIN;
-          if (item.type === 2) type = ENTRY_TYPES.SECURE_NOTE;
-          if (item.type === 3) type = ENTRY_TYPES.CREDIT_CARD;
-          if (item.type === 4) type = ENTRY_TYPES.IDENTITY;
+          if (itemType === BITWARDEN_ITEM_TYPES.SECURE_NOTE) type = ENTRY_TYPES.SECURE_NOTE;
+          if (itemType === BITWARDEN_ITEM_TYPES.CARD) type = ENTRY_TYPES.CREDIT_CARD;
+          if (itemType === BITWARDEN_ITEM_TYPES.IDENTITY) type = ENTRY_TYPES.IDENTITY;
 
           const login = item.login || {};
           const card = item.card || {};

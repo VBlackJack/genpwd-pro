@@ -42,7 +42,7 @@
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   padding: 0.875rem;
-  animation: slideIn 0.2s ease;
+  animation: fade-slide-in 0.2s ease;
 }
 
 .vault-custom-field-header {

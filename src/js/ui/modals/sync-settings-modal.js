@@ -72,7 +72,7 @@ export class SyncSettingsModal extends Modal {
               <div class="vault-form-group">
                 <label class="vault-label" for="webdav-username">${t('syncModal.username')} <span class="required" aria-label="${t('syncModal.required')}">*</span></label>
                 <input type="text" id="webdav-username" class="vault-input"
-                       placeholder="your-username"
+                       placeholder="${t('syncModal.usernamePlaceholder')}"
                        autocomplete="username"
                        aria-required="true"
                        aria-describedby="webdav-username-hint">

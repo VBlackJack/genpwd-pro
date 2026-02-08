@@ -123,6 +123,12 @@ class ImportExportService {
   parseCSV(csv, delimiter = ',') {
     if (!csv || !csv.trim()) return [];
 
+    // Size limit to prevent UI freeze on very large files
+    const MAX_CSV_SIZE = 10 * 1024 * 1024; // 10MB
+    if (csv.length > MAX_CSV_SIZE) {
+      throw new Error(i18n.t('vault.import.errors.fileTooLarge'));
+    }
+
     // Parse all rows first (respects quotes for multiline fields)
     const allRows = this.parseCSVRows(csv, delimiter);
     if (allRows.length === 0) return [];
@@ -134,6 +140,7 @@ class ImportExportService {
     // Convert remaining rows to objects
     for (let i = 1; i < allRows.length; i++) {
       const values = allRows[i];
+      if (!values || values.length === 0) continue;
       if (values.length === headers.length) {
         const row = {};
         headers.forEach((header, index) => {
@@ -292,8 +299,13 @@ class ImportExportService {
       // SECURITY: Strip any DOCTYPE declarations entirely
       xmlContent = xmlContent.replace(/<!DOCTYPE[^>]*>/gi, '');
 
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+      let xmlDoc;
+      try {
+        const parser = new DOMParser();
+        xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+      } catch (parseErr) {
+        throw new Error(i18n.t('vault.import.errors.invalidXml'));
+      }
 
       const parseError = xmlDoc.querySelector('parsererror');
       if (parseError) {
@@ -602,6 +614,12 @@ class ImportExportService {
   // ========== BITWARDEN ==========
 
   /**
+   * Known Bitwarden item types
+   * 1=Login, 2=SecureNote, 3=Card, 4=Identity
+   */
+  static BITWARDEN_VALID_TYPES = new Set([1, 2, 3, 4]);
+
+  /**
    * Import from Bitwarden JSON format
    * @param {string} jsonContent - JSON file content
    * @returns {Array<PasswordEntry>} - Array of password entries
@@ -614,8 +632,15 @@ class ImportExportService {
       const items = data.items || [];
 
       items.forEach(item => {
-        // Only process login items
-        if (item.type === 1 || !item.type) { // Type 1 = Login
+        // Validate item type against whitelist of known Bitwarden types
+        const itemType = item.type;
+        if (itemType !== undefined && !ImportExportService.BITWARDEN_VALID_TYPES.has(itemType)) {
+          safeLog(`Bitwarden JSON: Skipping item "${item.name || '?'}" with unknown type ${itemType}`);
+          return;
+        }
+
+        // Process login items (type 1 or unset)
+        if (itemType === 1 || !itemType) {
           const login = item.login || {};
 
           entries.push({

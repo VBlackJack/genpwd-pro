@@ -41,7 +41,10 @@
   --vault-panel-bg: rgba(255, 255, 255, 0.9);
   --vault-item-bg: rgba(0, 0, 0, 0.02);
   --vault-item-hover-bg: rgba(0, 0, 0, 0.05);
+  --vault-surface-active: rgba(0, 0, 0, 0.1);
+  --vault-text-muted: var(--text-secondary, rgba(0, 0, 0, 0.55));
   --vault-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --vault-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
 /* ==================== LAYOUT: 3-PANE GLASS ==================== */
@@ -1550,7 +1553,7 @@
 /* Copy success animation */
 .vault-quick-btn.copied {
   background: var(--vault-success);
-  animation: vault-copy-success 0.6s ease;
+  animation: copy-success 0.6s ease;
 }
 
 /* vault-copy-success animation moved to _animations.css */
@@ -2082,7 +2085,7 @@ kbd {
       transparent 0%,
       var(--overlay-highlight) 50%,
       transparent 100%);
-  animation: vault-strength-shimmer 1.5s ease-in-out infinite;
+  animation: shimmer-translate 1.5s ease-in-out infinite;
 }
 
 /* vault-strength-shimmer animation moved to _animations.css */
@@ -2316,10 +2319,10 @@ kbd {
 
 .vault-input:focus-visible {
   outline: none;
-  border-color: var(--vault-primary);
+  border-color: var(--accent-cyan, #22d3ee);
   box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.15),
-    0 2px 8px rgba(59, 130, 246, 0.1);
+    0 0 0 3px rgba(34, 211, 238, 0.15),
+    0 2px 8px rgba(34, 211, 238, 0.1);
   background: var(--bg-input-focus);
 }
 
@@ -2448,7 +2451,7 @@ kbd {
   border: 1px solid var(--vault-border);
   border-radius: var(--vault-radius);
   padding: 0.875rem;
-  animation: slideIn 0.2s ease;
+  animation: fade-slide-in 0.2s ease;
 }
 
 /* slideIn animation moved to _animations.css */
@@ -2648,6 +2651,7 @@ kbd {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
+  min-height: 44px;
   background: var(--vault-surface-hover);
   border: none;
   border-radius: var(--vault-radius);
@@ -2689,12 +2693,13 @@ kbd {
 }
 
 .vault-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--vault-primary), 0 0 0 4px rgba(59, 130, 246, 0.2);
+  outline: 2px solid var(--accent-cyan, #22d3ee);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.15);
 }
 
 .vault-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.75;
   cursor: not-allowed;
   transform: none;
   filter: grayscale(40%);
@@ -2938,7 +2943,7 @@ kbd {
       var(--vault-surface-hover) 50%,
       var(--vault-surface) 75%);
   background-size: 200% 100%;
-  animation: vault-skeleton-loading 1.5s ease-in-out infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--vault-radius-sm);
 }
 
@@ -2946,14 +2951,14 @@ kbd {
 
 /* Fade in animation for new entries */
 .vault-fade-in {
-  animation: vault-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: content-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* vault-fade-in animation moved to _animations.css */
 
 /* Stagger animation for lists */
 .vault-stagger>* {
-  animation: vault-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: content-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .vault-stagger>*:nth-child(1) {
@@ -2998,7 +3003,7 @@ kbd {
   background: var(--vault-success);
   border-radius: var(--radius-full);
   color: white;
-  animation: vault-check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* vault-check-pop animation moved to _animations.css */
@@ -4115,7 +4120,7 @@ kbd {
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);
   z-index: var(--z-header);
-  animation: vault-slide-down 0.2s ease;
+  animation: fade-slide-in 0.2s ease;
 }
 
 /* vault-slide-down animation moved to _animations.css */
@@ -4259,7 +4264,7 @@ kbd {
   border-radius: var(--vault-radius);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.1);
   z-index: var(--z-tooltip);
-  animation: vault-ctx-appear 0.15s ease;
+  animation: fade-scale-in 0.15s ease;
   backdrop-filter: none;
 }
 
@@ -4349,7 +4354,7 @@ kbd {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   z-index: var(--z-header);
   pointer-events: none;
-  animation: vault-preview-appear 0.2s ease;
+  animation: preview-appear 0.2s ease;
 }
 
 /* vault-preview-appear animation moved to _animations.css */
@@ -4863,7 +4868,7 @@ kbd {
   box-shadow: var(--vault-shadow-lg);
   z-index: var(--z-header);
   min-width: 150px;
-  animation: vault-slide-down 0.2s ease;
+  animation: fade-slide-in 0.2s ease;
 }
 
 .vault-timeout-header {
@@ -4952,7 +4957,7 @@ kbd {
   border-radius: var(--vault-radius);
   box-shadow: var(--vault-shadow-lg);
   z-index: var(--z-tooltip);
-  animation: vault-ctx-appear 0.15s ease;
+  animation: fade-scale-in 0.15s ease;
 }
 
 .vault-color-picker-header {
@@ -5215,7 +5220,7 @@ kbd {
 .dirty-indicator {
   color: var(--vault-warning);
   font-weight: bold;
-  animation: pulse-dirty 1.5s ease-in-out infinite;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 /* pulse-dirty animation moved to _animations.css */
@@ -6494,7 +6499,7 @@ kbd {
 }
 
 .vault-expiry-badge.expired {
-  animation: pulse-danger 2s ease-in-out infinite;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .vault-expiry-badge.today {
@@ -7496,7 +7501,7 @@ kbd {
   inset: -10px;
   border: 2px dashed var(--vault-border-light);
   border-radius: var(--radius-full);
-  animation: vault-empty-rotate 20s linear infinite;
+  animation: rotate 20s linear infinite;
 }
 
 /* vault-empty-rotate animation moved to _animations.css */
@@ -7509,7 +7514,7 @@ kbd {
       var(--vault-surface-hover) 50%,
       var(--vault-surface) 75%);
   background-size: 200% 100%;
-  animation: vault-skeleton-pulse 1.5s ease-in-out infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--vault-radius-sm);
 }
 

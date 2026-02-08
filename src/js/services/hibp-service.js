@@ -58,7 +58,7 @@ class HIBPService {
       const prefix = hashUpper.substring(0, 5);
       const suffix = hashUpper.substring(5);
 
-      safeLog(`Checking password hash prefix: ${prefix}`);
+      safeLog('Checking password against HIBP database');
 
       // 3. Check cache first
       const cached = this.getCached(prefix);
@@ -147,7 +147,7 @@ class HIBPService {
     return fetch(url, {
       method: 'GET',
       headers: {
-        'User-Agent': 'GenPwd-Pro-v3.0.5',
+        'User-Agent': 'GenPwd-Pro-v3.1.0',
         'Add-Padding': 'true' // Request padding for additional privacy
       }
     });

@@ -12,6 +12,10 @@
  * - IP addresses (only domain names allowed)
  */
 
+import { i18n } from '../../utils/i18n.js';
+
+const t = (key, params) => i18n.t(key, params);
+
 /**
  * Check if a domain is potentially unsafe (SSRF protection)
  * @param {string} domain - Domain to check
@@ -156,7 +160,7 @@ export function getDefaultFaviconSvg() {
  */
 export function renderFaviconImg(url, size = 20) {
   const domain = extractDomain(url);
-  const placeholder = `<span class="vault-favicon-placeholder" role="img" aria-label="Website icon" data-favicon-size="${size}">${getDefaultFaviconSvg()}</span>`;
+  const placeholder = `<span class="vault-favicon-placeholder" role="img" aria-label="${t('vault.favicon.websiteIcon')}" data-favicon-size="${size}">${getDefaultFaviconSvg()}</span>`;
 
   if (!domain) {
     return placeholder;
@@ -175,7 +179,7 @@ export function renderFaviconImg(url, size = 20) {
                data-favicon-fallback="true"
                alt=""
                loading="lazy">
-          <span class="vault-favicon-placeholder vault-favicon-hidden" role="img" aria-label="Website icon" data-favicon-size="${size}">${getDefaultFaviconSvg()}</span>`;
+          <span class="vault-favicon-placeholder vault-favicon-hidden" role="img" aria-label="${t('vault.favicon.websiteIcon')}" data-favicon-size="${size}">${getDefaultFaviconSvg()}</span>`;
 }
 
 /**

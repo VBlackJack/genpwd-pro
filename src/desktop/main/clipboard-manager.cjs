@@ -69,7 +69,11 @@ class ClipboardManager {
     this.clearTimer && clearTimeout(this.clearTimer);
 
     // Copy to clipboard
-    clipboard.writeText(text);
+    try {
+      clipboard.writeText(text);
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
     this.copiedContent = text;
     this.currentTTL = ttlMs;
     this.startTime = Date.now();
@@ -99,11 +103,15 @@ class ClipboardManager {
    */
   clear(isAutomatic = false) {
     // Only clear if we were the ones who set the clipboard
-    const currentContent = clipboard.readText();
-    const wasOurContent = currentContent === this.copiedContent;
+    try {
+      const currentContent = clipboard.readText();
+      const wasOurContent = currentContent === this.copiedContent;
 
-    if (wasOurContent || !isAutomatic) {
-      clipboard.clear();
+      if (wasOurContent || !isAutomatic) {
+        clipboard.clear();
+      }
+    } catch (_err) {
+      // Clipboard access failed — still clear state below
     }
 
     // Clear timer

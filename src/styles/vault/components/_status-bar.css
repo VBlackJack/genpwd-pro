@@ -201,3 +201,26 @@
   outline: 2px solid var(--accent-blue, #6366f1);
   outline-offset: 2px;
 }
+
+/* ==================== LIGHT THEME OVERRIDES ==================== */
+[data-theme="light"] .vault-status-bar {
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.04));
+  border-top-color: var(--border-color, rgba(0, 0, 0, 0.1));
+  color: var(--text-secondary, rgba(0, 0, 0, 0.6));
+}
+
+[data-theme="light"] .status-bar-sync.offline {
+  color: var(--text-tertiary, rgba(0, 0, 0, 0.4));
+}
+
+[data-theme="light"] .save-indicator--persistent {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .save-indicator-retry:focus-visible {
+  outline-color: var(--accent-blue, #4f46e5);
+}
+
+[data-theme="light"] .toast-clipboard-countdown .clipboard-countdown-clear:focus-visible {
+  outline-color: var(--accent-blue, #4f46e5);
+}

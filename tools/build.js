@@ -94,7 +94,8 @@ class GenPwdBuilder {
   async buildJavaScript() {
     console.log('📦 Consolidating JavaScript...');
     
-    let output = `// GenPwd Pro v3.0.1 - Build automatique ${new Date().toISOString()}
+    const pkg = JSON.parse(fs.readFileSync(path.join(this.projectRoot, 'package.json'), 'utf-8'));
+    let output = `// GenPwd Pro v${pkg.version} - Build automatique ${new Date().toISOString()}
 (function() {
 "use strict";
 
@@ -111,8 +112,7 @@ const GenPwdModules = {};
       const fullPath = path.join(this.sourceDir, modulePath);
       
       if (!fs.existsSync(fullPath)) {
-        console.warn(`⚠️  Missing module: ${modulePath}`);
-        continue;
+        throw new Error(`Build failed: missing required module: ${modulePath}`);
       }
       
       const moduleContent = fs.readFileSync(fullPath, 'utf8');

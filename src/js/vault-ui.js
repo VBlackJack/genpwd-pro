@@ -97,6 +97,7 @@ import { parseOTPUri, generateTOTP as totpGenerate } from './vault/totp-service.
 // Vault views imports (Phase 6 modularization)
 import { renderLockScreen } from './vault/views/lock-screen.js';
 import { renderEmptyState, renderNoSelection } from './vault/views/empty-states.js';
+import { onboarding } from '../ui/onboarding.js';
 import { renderEntryRow } from './vault/views/entry-row-renderer.js';
 import { renderFolderTree } from './vault/views/folder-tree-renderer.js';
 import { renderEntryDetail, renderEntryFields } from './vault/views/entry-detail-renderer.js';
@@ -243,6 +244,11 @@ export class VaultUI {
       await this.#loadData();
       this.#startAutoLockTimer();
       this.#render();
+
+      // Show vault onboarding for first-time users (empty vault)
+      if (this.#entries.length === 0) {
+        setTimeout(() => onboarding.start('vault'), 500);
+      }
 
       // Check for breaches in background if enabled
       const autoCheckBreaches = localStorage.getItem('genpwd-vault-auto-breach-check') !== 'false';
@@ -1873,7 +1879,8 @@ export class VaultUI {
       isSelected: this.#selectedEntry?.id === entry.id,
       isMultiSelected: this.#selectedEntries.has(entry.id),
       entries: this.#entries,
-      tags: this.#tags
+      tags: this.#tags,
+      searchQuery: this.#searchQuery
     });
   }
 
@@ -3112,7 +3119,7 @@ export class VaultUI {
 
     // Show toast
     showToast(
-      compact ? 'Compact mode enabled (Always on Top)' : 'Normal mode',
+      compact ? t('vault.messages.compactMode') : t('vault.messages.normalMode'),
       'info'
     );
   }
@@ -3411,6 +3418,8 @@ export class VaultUI {
         sortMenu.hidden = true;
         sortBtn?.setAttribute('aria-expanded', 'false');
         this.#updateEntryList();
+        const sortLabel = getSortOptions().find(s => s.id === this.#sortBy)?.label || this.#sortBy;
+        this.#announceToScreenReader(t('vault.aria.sortedBy', { sort: sortLabel, count: this.#getFilteredEntries().length }));
       }, { signal });
 
       // Keyboard navigation within sort options
@@ -3463,6 +3472,7 @@ export class VaultUI {
         this.#searchFilters.type = chip.dataset.filterType || null;
         this.#updateFilterUI();
         this.#updateEntryList();
+        this.#announceToScreenReader(t('vault.aria.filteredResults', { count: this.#getFilteredEntries().length }));
       }, { signal });
     });
 
@@ -3472,6 +3482,7 @@ export class VaultUI {
         this.#searchFilters.strength = chip.dataset.filterStrength || null;
         this.#updateFilterUI();
         this.#updateEntryList();
+        this.#announceToScreenReader(t('vault.aria.filteredResults', { count: this.#getFilteredEntries().length }));
       }, { signal });
     });
 
@@ -3481,6 +3492,7 @@ export class VaultUI {
         this.#searchFilters.age = chip.dataset.filterAge || null;
         this.#updateFilterUI();
         this.#updateEntryList();
+        this.#announceToScreenReader(t('vault.aria.filteredResults', { count: this.#getFilteredEntries().length }));
       }, { signal });
     });
 
@@ -3489,6 +3501,7 @@ export class VaultUI {
       this.#searchFilters = { type: null, strength: null, age: null };
       this.#updateFilterUI();
       this.#updateEntryList();
+      this.#announceToScreenReader(t('vault.aria.filtersCleared', { count: this.#getFilteredEntries().length }));
     });
 
     // Entry rows
@@ -4034,14 +4047,41 @@ export class VaultUI {
 
   async #moveEntriesToFolder(entryIds, folderId) {
     try {
+      // Store previous folder IDs for undo
+      const previousFolders = new Map();
+      for (const id of entryIds) {
+        const entry = this.#entries.find(e => e.id === id);
+        if (entry) previousFolders.set(id, entry.folderId || null);
+      }
+
+      // Apply move
       for (const id of entryIds) {
         await window.vault.entries.update(id, { folderId: folderId || null });
         const entry = this.#entries.find(e => e.id === id);
         if (entry) entry.folderId = folderId || null;
       }
       this.#selectedEntries.clear();
-      showToast(t('vault.messages.entriesMoved', { count: entryIds.length }), 'success');
       this.#render();
+
+      // Show toast with undo
+      this.#showToastWithUndo(
+        t('vault.messages.entriesMoved', { count: entryIds.length }),
+        async () => {
+          // Undo: restore previous folder assignments
+          try {
+            for (const [id, prevFolder] of previousFolders) {
+              await window.vault.entries.update(id, { folderId: prevFolder });
+              const entry = this.#entries.find(e => e.id === id);
+              if (entry) entry.folderId = prevFolder;
+            }
+            this.#render();
+            showToast(t('vault.messages.restored'), 'success');
+          } catch (_err) {
+            showToast(t('vault.messages.moveError'), 'error');
+          }
+        },
+        () => { /* Confirm: already persisted */ }
+      );
     } catch (error) {
       showToast(t('vault.messages.moveError'), 'error');
     }
@@ -4266,6 +4306,7 @@ export class VaultUI {
       btn.addEventListener('click', async () => {
         if (!this.#selectedEntry) return;
         const index = parseInt(btn.dataset.index, 10);
+        if (isNaN(index) || index < 0) return;
         await this.#restorePasswordFromHistory(index);
       });
     });

@@ -29,7 +29,7 @@ export class QuickUnlockDialog {
    * @returns {Promise<boolean>} - Resolves true if unlocked, false if cancelled
    */
   static show(options = {}) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if (this.#isOpen) {
         resolve(false);
         return;
@@ -54,9 +54,13 @@ export class QuickUnlockDialog {
       // Save previously focused element before any DOM changes
       this.#previouslyFocusedElement = document.activeElement;
       // IMPORTANT: await render to ensure DOM is ready before showing
-      await this.#render(options);
-      this.#show();
-      this.#bindEvents();
+      this.#render(options).then(() => {
+        this.#show();
+        this.#bindEvents();
+      }).catch((error) => {
+        this.#isOpen = false;
+        reject(error);
+      });
     });
   }
 

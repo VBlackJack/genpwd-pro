@@ -29,7 +29,8 @@
       "escape": "Fermer les modales",
       "export": "Exporter les résultats",
       "generate": "Générer des mots de passe",
-      "test": "Lancer les tests de sécurité"
+      "test": "Lancer les tests de sécurité",
+      "help": "Afficher cette aide"
     },
     "tagline": "Gestionnaire de mots de passe professionnel avec coffre chiffré",
     "techStack": "Stack Technique",
@@ -641,6 +642,9 @@
       "lastpassCsv": "LastPass CSV",
       "onepasswordCsv": "1Password CSV"
     },
+    "warnings": {
+      "unknownBitwardenType": "Entrée \"{name}\" ignorée : type Bitwarden inconnu {type}"
+    },
     "formats": {
       "bitwardenJson": "Import depuis l'export JSON Bitwarden. Complet avec dossiers et horodatages.",
       "genericCsv": "Import depuis un CSV générique avec les champs : titre, nom d'utilisateur, mot de passe, url, notes.",
@@ -1183,6 +1187,7 @@
     "testConnection": "Tester la connexion",
     "testing": "Connexion...",
     "username": "Nom d'utilisateur",
+    "usernamePlaceholder": "votre-identifiant",
     "usernameHint": "Votre identifiant de connexion WebDAV"
   },
   "testResults": {
@@ -1435,7 +1440,10 @@
       "entryPreview": "Aperçu de l'entrée",
       "statusIndicators": "Indicateurs d'état",
       "loading": "Chargement des entrées...",
-      "loaded": "Entrées chargées"
+      "loaded": "Entrées chargées",
+      "sortedBy": "Trié par {sort}. {count} entrées",
+      "filteredResults": "Filtré : {count} entrées",
+      "filtersCleared": "Filtres effacés. {count} entrées"
     },
     "attachments": {
       "dropOrBrowse": "Déposez vos fichiers ici ou {browse}",
@@ -2213,7 +2221,14 @@
       "noPassphrase": "Veuillez entrer la phrase de passe",
       "decrypted": "Partage déchiffré avec succès",
       "decryptFailed": "Échec du déchiffrement - phrase de passe invalide ou données corrompues",
-      "expired": "Ce partage a expiré"
+      "expired": "Ce partage a expiré",
+      "formatPlaceholder": "GENPWD:1:..."
+    },
+    "favicon": {
+      "websiteIcon": "Icône du site"
+    },
+    "forms": {
+      "required": "obligatoire"
     },
     "shortcuts": {
       "autoFill": "Remplissage auto",

@@ -33,7 +33,7 @@ import { createModal, showConfirm } from './modal-manager.js';
 import { initQuickPresets } from './components/quick-presets.js';
 import { initContextualTooltips } from './components/contextual-tooltips.js';
 import { initCopyHistoryButton } from '../utils/copy-history.js';
-import { VaultBridge, VaultState } from './vault-bridge.js';
+import { VaultBridge } from './vault-bridge.js';
 import { SaveToVaultModal } from './save-to-vault-modal.js';
 import { Celebration, CELEBRATION_TYPES } from './components/celebration.js';
 import { statsModal } from './modals/stats-modal.js';
@@ -514,6 +514,22 @@ function bindDebugActions() {
       closeAboutModal();
     }
   });
+
+  // Open keyboard shortcuts via "?" key (when not typing in an input)
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '?') return;
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const modal = getElement('#about-modal');
+    if (modal && !modal.classList.contains('show')) {
+      aboutModalPreviousFocus = document.activeElement;
+      modal.classList.add('show');
+      setMainContentInert(true);
+      requestAnimationFrame(() => {
+        modal.querySelector('.modal-close')?.focus();
+      });
+    }
+  }, { signal: eventsController?.signal });
 
   // Section headers - collapsible with keyboard support
   // Uses eventsController.signal for proper cleanup on page unload
@@ -1073,7 +1089,7 @@ async function exportPasswords() {
       case 'json':
         content = JSON.stringify({
           exported: new Date().toISOString(),
-          generator: 'GenPwd Pro v3.0.5', // Synchronized with package.json
+          generator: 'GenPwd Pro v3.1.0', // Synchronized with package.json
           count: results.length,
           passwords: results.map(r => ({
             value: r.value,

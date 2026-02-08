@@ -23,6 +23,9 @@ const DEFAULT_AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 // Warning before auto-lock (30 seconds before)
 const AUTO_LOCK_WARNING_MS = 30 * 1000;
 
+// Minimum auto-lock timeout (60 seconds) to prevent accidental or malicious instant-lock
+const MIN_AUTO_LOCK_MS = 60 * 1000;
+
 /**
  * Sanitize error messages to prevent information disclosure
  * Maps internal error patterns to user-friendly messages
@@ -596,10 +599,15 @@ export class VaultSessionManager extends EventEmitter {
       this.#autoLockWarningTimer = null;
     }
 
-    if (this.#autoLockMs > 0) {
+    // Enforce minimum auto-lock timeout to prevent bypass
+    const effectiveLockMs = this.#autoLockMs > 0
+      ? Math.max(this.#autoLockMs, MIN_AUTO_LOCK_MS)
+      : MIN_AUTO_LOCK_MS;
+
+    if (effectiveLockMs > 0) {
       // Set warning timer (30 seconds before lock)
-      const warningDelay = Math.max(0, this.#autoLockMs - AUTO_LOCK_WARNING_MS);
-      if (warningDelay > 0 && this.#autoLockMs > AUTO_LOCK_WARNING_MS) {
+      const warningDelay = Math.max(0, effectiveLockMs - AUTO_LOCK_WARNING_MS);
+      if (warningDelay > 0 && effectiveLockMs > AUTO_LOCK_WARNING_MS) {
         this.#autoLockWarningTimer = setTimeout(() => {
           this.emit('autoLockWarning', { secondsRemaining: AUTO_LOCK_WARNING_MS / 1000 });
         }, warningDelay);
@@ -608,7 +616,7 @@ export class VaultSessionManager extends EventEmitter {
       // Set lock timer
       this.#autoLockTimer = setTimeout(() => {
         this.lock();
-      }, this.#autoLockMs);
+      }, effectiveLockMs);
     }
   }
 
@@ -629,7 +637,8 @@ export class VaultSessionManager extends EventEmitter {
    * @param {number} minutes - Minutes until auto-lock (0 to disable)
    */
   setAutoLockMinutes(minutes) {
-    this.#autoLockMs = minutes * 60 * 1000;
+    const requestedMs = minutes * 60 * 1000;
+    this.#autoLockMs = requestedMs > 0 ? Math.max(requestedMs, MIN_AUTO_LOCK_MS) : MIN_AUTO_LOCK_MS;
     if (this.isUnlocked()) {
       this.#resetAutoLockTimer();
     }
@@ -697,8 +706,17 @@ export class VaultSessionManager extends EventEmitter {
   async enableDuressMode(masterPassword, duressPassword, populateDecoy) {
     if (!this.isUnlocked()) throw new Error(t('errors.vault.locked'));
 
-    // Verify master password matches current key (sanity check)
-    // Actually we are already unlocked, we trust the intent.
+    // C3: Verify master password before allowing migration to duress mode.
+    // Even though the vault is already unlocked, re-verify the caller's
+    // password to prevent unauthorized duress mode enablement (e.g. if
+    // someone gains access to an already-unlocked session).
+    const { vaultData: _verified, key: verifiedKey } =
+      await this.#fileManager.openVault(this.#vaultId, masterPassword);
+    this.#crypto.wipeKey(verifiedKey);
+
+    // H7: Create a pre-migration backup so the vault can be restored
+    // if the V3 migration fails or produces a corrupted file.
+    await this.#fileManager.backupVault(this.#vaultId, '.pre-duress.bak');
 
     await this.#fileManager.migrateToV3(
       this.#vaultId,

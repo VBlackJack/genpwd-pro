@@ -36,7 +36,7 @@ const {
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
-const { execSync, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 const { version: APP_VERSION } = require('./package.json');
 
@@ -138,6 +138,7 @@ const translations = {
     errorNotInAllowedDir: 'Invalid path: not in allowed directory',
     errorInvalidExtension: 'Invalid file extension. Allowed: {extensions}',
     errorPathNotFile: 'Path is not a file',
+    errorFileTooLarge: 'Vault file exceeds maximum allowed size (100 MB)',
     errorFileNotFound: 'File not found',
     errorAutoTypeWindows: 'Auto-type currently only supported on Windows',
     errorAutoTypeMacAccessibility: 'Accessibility permission required. Enable GenPwd Pro in System Settings > Privacy & Security > Accessibility.',
@@ -156,7 +157,16 @@ const translations = {
     updateLater: 'Later',
     updateChecking: 'Checking for updates...',
     updateNotAvailable: 'You are using the latest version.',
-    updateError: 'Update error: {message}'
+    updateError: 'Update error: {message}',
+    // Security dialogs
+    suspiciousUrlTitle: 'Suspicious URL Blocked',
+    suspiciousUrlMessage: 'This URL contains non-standard characters in its hostname and has been blocked for security reasons.',
+    suspiciousUrlDetail: 'Hostname: {hostname}\n\nThis may be a phishing attempt using lookalike characters (homoglyph attack).',
+    // Hotkey
+    hotkeyInUse: '{hotkey} is already in use by another application.',
+    updateCheckFailed: 'Update check failed',
+    // App name
+    appName: 'GenPwd Pro'
   },
   fr: {
     // Tray menu
@@ -253,6 +263,7 @@ const translations = {
     errorNotInAllowedDir: 'Chemin invalide : pas dans le répertoire autorisé',
     errorInvalidExtension: 'Extension de fichier invalide. Autorisées : {extensions}',
     errorPathNotFile: 'Le chemin n\'est pas un fichier',
+    errorFileTooLarge: 'Le fichier du coffre dépasse la taille maximale autorisée (100 Mo)',
     errorFileNotFound: 'Fichier non trouvé',
     errorAutoTypeWindows: 'Saisie automatique uniquement supportée sur Windows actuellement',
     errorAutoTypeMacAccessibility: 'Permission d\'accessibilité requise. Activez GenPwd Pro dans Réglages Système > Confidentialité et sécurité > Accessibilité.',
@@ -271,7 +282,16 @@ const translations = {
     updateLater: 'Plus tard',
     updateChecking: 'Vérification des mises à jour...',
     updateNotAvailable: 'Vous utilisez la dernière version.',
-    updateError: 'Erreur de mise à jour : {message}'
+    updateError: 'Erreur de mise à jour : {message}',
+    // Security dialogs
+    suspiciousUrlTitle: 'URL suspecte bloquée',
+    suspiciousUrlMessage: 'Cette URL contient des caractères non standards dans son nom d\'hôte et a été bloquée pour des raisons de sécurité.',
+    suspiciousUrlDetail: 'Nom d\'hôte : {hostname}\n\nCela peut être une tentative de phishing utilisant des caractères similaires (attaque homoglyphe).',
+    // Hotkey
+    hotkeyInUse: '{hotkey} est déjà utilisé par une autre application.',
+    updateCheckFailed: 'Échec de la vérification des mises à jour',
+    // App name
+    appName: 'GenPwd Pro'
   },
   es: {
     // Tray menu
@@ -368,6 +388,7 @@ const translations = {
     errorNotInAllowedDir: 'Ruta inválida: no está en directorio permitido',
     errorInvalidExtension: 'Extensión de archivo inválida. Permitidas: {extensions}',
     errorPathNotFile: 'La ruta no es un archivo',
+    errorFileTooLarge: 'El archivo del cofre excede el tamaño máximo permitido (100 MB)',
     errorFileNotFound: 'Archivo no encontrado',
     errorAutoTypeWindows: 'Escritura automática solo soportada en Windows actualmente',
     errorAutoTypeMacAccessibility: 'Se requiere permiso de accesibilidad. Habilite GenPwd Pro en Configuración del Sistema > Privacidad y Seguridad > Accesibilidad.',
@@ -386,7 +407,16 @@ const translations = {
     updateLater: 'Más tarde',
     updateChecking: 'Buscando actualizaciones...',
     updateNotAvailable: 'Está usando la última versión.',
-    updateError: 'Error de actualización: {message}'
+    updateError: 'Error de actualización: {message}',
+    // Security dialogs
+    suspiciousUrlTitle: 'URL sospechosa bloqueada',
+    suspiciousUrlMessage: 'Esta URL contiene caracteres no estándar en su nombre de host y ha sido bloqueada por razones de seguridad.',
+    suspiciousUrlDetail: 'Nombre de host: {hostname}\n\nEsto puede ser un intento de phishing usando caracteres similares (ataque homoglifo).',
+    // Hotkey
+    hotkeyInUse: '{hotkey} ya está en uso por otra aplicación.',
+    updateCheckFailed: 'Error al verificar actualizaciones',
+    // App name
+    appName: 'GenPwd Pro'
   }
 };
 
@@ -463,16 +493,27 @@ async function getWindowsAccentColor() {
  * Check if running with elevated (admin) privileges
  * @returns {boolean}
  */
-function isRunningAsAdmin() {
+async function isRunningAsAdmin() {
   if (process.platform !== 'win32') return false;
 
-  try {
-    // Try to access a protected registry key that requires admin
-    execSync('net session', { stdio: 'ignore', windowsHide: true });
-    return true;
-  } catch {
-    return false;
-  }
+  return new Promise((resolve) => {
+    const ps = spawn('cmd', ['/c', 'net', 'session'], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+    const timeout = setTimeout(() => {
+      ps.kill();
+      resolve(false);
+    }, 3000);
+    ps.on('close', (code) => {
+      clearTimeout(timeout);
+      resolve(code === 0);
+    });
+    ps.on('error', () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+  });
 }
 
 // ==================== DEVELOPMENT LOGGING ====================
@@ -494,6 +535,57 @@ function devLog(...args) {
 function devError(...args) {
   if (!app.isPackaged || process.env.NODE_ENV === 'development') {
     console.error(...args);
+  }
+}
+
+/**
+ * Safely send IPC message to renderer, checking window is valid and not destroyed
+ * @param {string} channel - IPC channel name
+ * @param {...any} args - Arguments to send
+ */
+function safeSend(channel, ...args) {
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
+    mainWindow.webContents.send(channel, ...args);
+  }
+}
+
+/**
+ * Safely open an external URL in the default browser with IDN/homoglyph validation.
+ * Blocks URLs with non-ASCII hostnames to prevent homograph phishing attacks
+ * (e.g., "аpple.com" using Cyrillic "а" instead of Latin "a").
+ * @param {string} url - The URL to open
+ * @returns {Promise<void>}
+ */
+async function safeOpenExternal(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname;
+
+    // Block non-ASCII hostnames (IDN homoglyph attack prevention)
+    // Only pure ASCII hostnames are allowed to prevent mixed-script phishing
+    if (!/^[\x00-\x7F]*$/.test(hostname)) {
+      devError('[Security] Blocked openExternal: non-ASCII hostname detected:', hostname);
+      const { dialog: dlg } = require('electron');
+      const t = getMainTranslations();
+      dlg.showMessageBox({
+        type: 'warning',
+        title: t.suspiciousUrlTitle,
+        message: t.suspiciousUrlMessage,
+        detail: t.suspiciousUrlDetail.replace('{hostname}', hostname),
+        buttons: ['OK']
+      });
+      return;
+    }
+
+    // Only allow http/https protocols for external URLs
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      devError('[Security] Blocked openExternal: disallowed protocol:', parsedUrl.protocol);
+      return;
+    }
+
+    await shell.openExternal(url);
+  } catch (err) {
+    devError('[Security] Failed to open external URL:', err.message);
   }
 }
 
@@ -550,12 +642,12 @@ function setAutoStartEnabled(enable) {
     const verified = settings.openAtLogin === enable;
 
     if (!verified) {
-      console.warn(`[GenPwd Pro] Auto-start verification failed: expected ${enable}, got ${settings.openAtLogin}`);
+      devLog(`[GenPwd Pro] Auto-start verification failed: expected ${enable}, got ${settings.openAtLogin}`);
       const t = getMainTranslations();
       return { success: false, verified: false, error: t.errorAutoStartFailed };
     }
 
-    console.log(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'} (verified)`);
+    devLog(`[GenPwd Pro] Auto-start ${enable ? 'enabled' : 'disabled'} (verified)`);
     return { success: true, verified: true };
   } catch (error) {
     devError('[GenPwd Pro] Failed to set auto-start:', error);
@@ -853,9 +945,14 @@ const rateLimiter = {
 function validateOrigin(event) {
   const webContents = event.sender;
 
+  // Reject IPC before main window is initialized
+  if (!mainWindow) {
+    throw new Error('Unauthorized IPC origin: main window not initialized');
+  }
+
   // Verify the sender is our main window's webContents
-  if (mainWindow && webContents.id !== mainWindow.webContents.id) {
-    console.error('[GenPwd Pro] Blocked IPC from unknown webContents');
+  if (webContents.id !== mainWindow.webContents.id) {
+    devError('[GenPwd Pro] Blocked IPC from unknown webContents');
     throw new Error('Unauthorized IPC origin');
   }
 
@@ -864,7 +961,7 @@ function validateOrigin(event) {
   // Allow only file:// protocol (our app)
   // devtools:// removed for security - prevents IPC access from DevTools console
   if (!url.startsWith('file://')) {
-    console.error(`[GenPwd Pro] Blocked IPC from unauthorized origin: ${url}`);
+    devError(`[GenPwd Pro] Blocked IPC from unauthorized origin: ${url}`);
     throw new Error('Unauthorized IPC origin');
   }
 }
@@ -908,11 +1005,11 @@ function createWindow() {
   // If screen is too small for base minimum, scale down proportionally
   if (workArea.width < baseMinWidth + 100) {
     adjustedMinWidth = Math.max(600, workArea.width - 50);
-    console.log(`[GenPwd Pro] Adjusted minWidth for small screen: ${adjustedMinWidth}`);
+    devLog(`[GenPwd Pro] Adjusted minWidth for small screen: ${adjustedMinWidth}`);
   }
   if (workArea.height < baseMinHeight + 100) {
     adjustedMinHeight = Math.max(500, workArea.height - 50);
-    console.log(`[GenPwd Pro] Adjusted minHeight for small screen: ${adjustedMinHeight}`);
+    devLog(`[GenPwd Pro] Adjusted minHeight for small screen: ${adjustedMinHeight}`);
   }
 
   // Apply scale factor for high-DPI displays (125%, 150%, 200%)
@@ -1011,7 +1108,7 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     // Ouvrir les liens externes dans le navigateur par défaut
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      shell.openExternal(url);
+      safeOpenExternal(url);
     }
     return { action: 'deny' };
   });
@@ -1021,12 +1118,12 @@ function createWindow() {
   // For password managers, keeping in tray is a security feature
 
   // Load saved close behavior preference
-  let closeBehavior = 'minimize'; // 'ask', 'minimize', 'quit'
+  let closeBehavior = 'ask'; // 'ask', 'minimize', 'quit'
   try {
     const prefsPath = path.join(app.getPath('userData'), 'close-behavior.json');
     if (fs.existsSync(prefsPath)) {
       const prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf8'));
-      closeBehavior = prefs.behavior || 'minimize';
+      closeBehavior = prefs.behavior || 'ask';
     }
   } catch (e) {
     devLog('[GenPwd Pro] No saved close behavior preference');
@@ -1040,7 +1137,7 @@ function createWindow() {
     if (mainWindow._trayNotificationCount < 3 && Notification.isSupported()) {
       const t = getMainTranslations();
       new Notification({
-        title: 'GenPwd Pro',
+        title: t.appName,
         body: mainWindow._trayNotificationCount === 0
           ? t.trayNotifyFirst
           : t.trayNotifyRepeat,
@@ -1072,15 +1169,15 @@ function createWindow() {
       const { response } = await dialog.showMessageBox(mainWindow, {
         type: 'question',
         buttons: [
-          t.minimizeToTray || 'Minimize to Tray',
-          t.quitApp || 'Quit Application',
-          t.alwaysMinimize || 'Always Minimize (Remember)'
+          t.minimizeToTray,
+          t.quitApp,
+          t.alwaysMinimize
         ],
         defaultId: 0,
         cancelId: 0,
-        title: 'GenPwd Pro',
-        message: t.closePromptTitle || 'Close GenPwd Pro?',
-        detail: t.closePromptDetail || 'GenPwd Pro can run in the background to keep your vault accessible. Choose "Quit" to completely close the application.',
+        title: t.appName,
+        message: t.closePromptTitle,
+        detail: t.closePromptDetail,
         icon: path.join(__dirname, 'assets', 'icon.ico')
       });
 
@@ -1217,12 +1314,10 @@ function initAutoUpdater() {
     }
 
     // Notify renderer
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('update:available', {
-        version: info.version,
-        releaseNotes: info.releaseNotes
-      });
-    }
+    safeSend('update:available', {
+      version: info.version,
+      releaseNotes: info.releaseNotes
+    });
   });
 
   // Event: No update available
@@ -1235,14 +1330,12 @@ function initAutoUpdater() {
     devLog(`[AutoUpdater] Download progress: ${Math.round(progress.percent)}%`);
 
     // Notify renderer of progress
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('update:progress', {
-        percent: progress.percent,
-        bytesPerSecond: progress.bytesPerSecond,
-        transferred: progress.transferred,
-        total: progress.total
-      });
-    }
+    safeSend('update:progress', {
+      percent: progress.percent,
+      bytesPerSecond: progress.bytesPerSecond,
+      transferred: progress.transferred,
+      total: progress.total
+    });
   });
 
   // Event: Update downloaded
@@ -1265,11 +1358,9 @@ function initAutoUpdater() {
     });
 
     // Notify renderer
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('update:downloaded', {
-        version: info.version
-      });
-    }
+    safeSend('update:downloaded', {
+      version: info.version
+    });
   });
 
   // Event: Error
@@ -1277,9 +1368,9 @@ function initAutoUpdater() {
     devError('[AutoUpdater] Error:', error.message);
 
     // Notify renderer so user can see update errors
-    if (mainWindow && mainWindow.webContents) {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
       mainWindow.webContents.send('update:error', {
-        message: error.message || 'Update check failed'
+        message: error.message || getMainTranslations().updateCheckFailed
       });
     }
   });
@@ -1300,6 +1391,11 @@ function initAutoUpdater() {
 
   devLog('[AutoUpdater] Initialized');
 }
+
+// IPC handler for preload to retrieve app version (sandbox blocks require('./package.json'))
+ipcMain.on('get-app-version', (event) => {
+  event.returnValue = APP_VERSION;
+});
 
 // IPC handler for manual update check
 ipcMain.handle('app:checkForUpdates', async () => {
@@ -1618,13 +1714,13 @@ function createApplicationMenu() {
         {
           label: t.menuDocumentation,
           click: async () => {
-            await shell.openExternal('https://github.com/VBlackJack/genpwd-pro');
+            await safeOpenExternal('https://github.com/VBlackJack/genpwd-pro');
           }
         },
         {
           label: t.menuReportBug,
           click: async () => {
-            await shell.openExternal('https://github.com/VBlackJack/genpwd-pro/issues');
+            await safeOpenExternal('https://github.com/VBlackJack/genpwd-pro/issues');
           }
         },
         { type: 'separator' },
@@ -1902,10 +1998,10 @@ ipcMain.handle('app:get-accent-color', async (event) => {
 });
 
 // Get system info (admin status, platform details)
-ipcMain.handle('app:get-system-info', (event) => {
+ipcMain.handle('app:get-system-info', async (event) => {
   validateOrigin(event);
   return {
-    isAdmin: isRunningAsAdmin(),
+    isAdmin: await isRunningAsAdmin(),
     platform: process.platform,
     arch: process.arch,
     electronVersion: process.versions.electron,
@@ -2046,6 +2142,9 @@ ipcMain.handle('fs:show-open-dialog', async (event, options = {}) => {
 
 const ALLOWED_EXTENSIONS = ['.gpdb', '.gpd', '.json'];
 
+// Maximum vault file size (100 MB) — prevents memory exhaustion on corrupt/oversized files
+const MAX_VAULT_FILE_SIZE = 100 * 1024 * 1024;
+
 // Allowed directories for vault operations
 // SECURITY: Restricted to specific folders to prevent accidental file placement
 // - userData: App data folder (default vault location)
@@ -2182,9 +2281,11 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
     // Atomic rename
     await fs.promises.rename(tempPath, filePath);
 
-    console.log(`[GenPwd Pro] vaultIO:save - Saved to ${filePath}`);
+    devLog(`[GenPwd Pro] vaultIO:save - Saved to ${filePath}`);
     return { success: true, filePath };
   } catch (error) {
+    // Clean up partial temp file to avoid orphan files
+    try { await fs.promises.unlink(tempPath); } catch { /* Already gone or never created */ }
     devError('[GenPwd Pro] vaultIO:save error:', error.message);
     return { success: false, error: error.message };
   }
@@ -2209,10 +2310,13 @@ ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
       return { success: false, error: t.errorInvalidExtension.replace('{extensions}', ALLOWED_EXTENSIONS.join(', ')) };
     }
 
-    // Check file exists
+    // Check file exists and validate size
     const stats = await fs.promises.stat(filePath);
     if (!stats.isFile()) {
       return { success: false, error: t.errorPathNotFile };
+    }
+    if (stats.size > MAX_VAULT_FILE_SIZE) {
+      return { success: false, error: t.errorFileTooLarge };
     }
 
     // Read file
@@ -2222,11 +2326,11 @@ ipcMain.handle('vaultIO:load', async (event, { filePath }) => {
     try {
       const content = buffer.toString('utf-8');
       const data = JSON.parse(content);
-      console.log(`[GenPwd Pro] vaultIO:load - Loaded JSON from ${filePath}`);
+      devLog(`[GenPwd Pro] vaultIO:load - Loaded JSON from ${filePath}`);
       return { success: true, data, format: 'json', size: buffer.length };
     } catch {
       // Not JSON, return as buffer (for binary formats)
-      console.log(`[GenPwd Pro] vaultIO:load - Loaded binary from ${filePath}`);
+      devLog(`[GenPwd Pro] vaultIO:load - Loaded binary from ${filePath}`);
       return { success: true, data: buffer, format: 'binary', size: buffer.length };
     }
   } catch (error) {
@@ -2565,7 +2669,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
 
       const isDangerous = dangerousPatterns.some(pattern => pattern.test(foregroundTitle));
       if (isDangerous) {
-        console.warn('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
+        devLog('[GenPwd Pro] Auto-type blocked: dangerous target window detected:', foregroundTitle);
 
         if (mainWindow && mainWindow.webContents) {
           mainWindow.webContents.send('autotype:blocked', {
@@ -2585,7 +2689,7 @@ ipcMain.handle('automation:perform-auto-type', async (event, { sequence, data, t
 
       // Verify target window if specified
       if (targetWindowTitle && !foregroundTitle.toLowerCase().includes(targetWindowTitle.toLowerCase())) {
-        console.warn('[GenPwd Pro] Auto-type target mismatch. Expected:', targetWindowTitle, 'Got:', foregroundTitle);
+        devLog('[GenPwd Pro] Auto-type target mismatch. Expected:', targetWindowTitle, 'Got:', foregroundTitle);
         safeRestore();
         return {
           success: false,
@@ -2672,45 +2776,65 @@ app.whenReady().then(async () => {
   // Set Content Security Policy and other security headers
   const ses = session.defaultSession;
 
-  // Set security headers on all responses
+  // CSP policy string shared between HTTP headers and file:// meta tag injection
+  const CSP_POLICY =
+    "default-src 'self'; " +
+    "script-src 'self' 'wasm-unsafe-eval'; " + // Required for hash-wasm, blocks inline script execution
+    "style-src 'self' 'unsafe-inline'; " +  // Needed for dynamic styles
+    "img-src 'self' data: blob:; " +        // Allow data URIs for icons
+    "font-src 'self' data:; " +             // Allow embedded fonts
+    "connect-src 'self' https://api.github.com https://graph.microsoft.com https://api.dropboxapi.com https://content.dropboxapi.com https://www.googleapis.com https://oauth2.googleapis.com https://api.pwnedpasswords.com; " + // API endpoints for sync and HIBP
+    "frame-ancestors 'none'; " +            // Prevent framing (clickjacking)
+    "form-action 'self'; " +                // Restrict form submissions
+    "base-uri 'self'; " +                   // Restrict base URI
+    "object-src 'none'";                    // Block plugins
+
+  // Set security headers on all responses (HTTP/HTTPS)
   ses.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        // Content Security Policy - strict but allows app functionality
-        'Content-Security-Policy': [
-          "default-src 'self'; " +
-          "script-src 'self' 'wasm-unsafe-eval'; " + // Required for hash-wasm, blocks inline script execution
-          "style-src 'self' 'unsafe-inline'; " +  // Needed for dynamic styles
-          "img-src 'self' data: blob:; " +        // Allow data URIs for icons
-          "font-src 'self' data:; " +             // Allow embedded fonts
-          "connect-src 'self' https://api.github.com https://graph.microsoft.com https://api.dropboxapi.com https://content.dropboxapi.com https://www.googleapis.com https://oauth2.googleapis.com https://api.pwnedpasswords.com; " + // API endpoints for sync and HIBP
-          "frame-ancestors 'none'; " +            // Prevent framing (clickjacking)
-          "form-action 'self'; " +                // Restrict form submissions
-          "base-uri 'self'; " +                   // Restrict base URI
-          "object-src 'none'"                     // Block plugins
-        ],
-        // Prevent MIME type sniffing
-        'X-Content-Type-Options': ['nosniff'],
-        // Prevent clickjacking
-        'X-Frame-Options': ['DENY'],
-        // Enable XSS filter (legacy browsers)
-        'X-XSS-Protection': ['1; mode=block'],
-        // Referrer policy - don't leak URLs
-        'Referrer-Policy': ['strict-origin-when-cross-origin'],
-        // Permissions policy - disable unnecessary features
-        'Permissions-Policy': [
-          'accelerometer=(), ' +
-          'camera=(), ' +
-          'geolocation=(), ' +
-          'gyroscope=(), ' +
-          'magnetometer=(), ' +
-          'microphone=(), ' +
-          'payment=(), ' +
-          'usb=()'
-        ]
-      }
-    });
+    const responseHeaders = {
+      ...details.responseHeaders,
+      // Prevent MIME type sniffing
+      'X-Content-Type-Options': ['nosniff'],
+      // Prevent clickjacking
+      'X-Frame-Options': ['DENY'],
+      // Enable XSS filter (legacy browsers)
+      'X-XSS-Protection': ['1; mode=block'],
+      // Referrer policy - don't leak URLs
+      'Referrer-Policy': ['strict-origin-when-cross-origin'],
+      // Permissions policy - disable unnecessary features
+      'Permissions-Policy': [
+        'accelerometer=(), ' +
+        'camera=(), ' +
+        'geolocation=(), ' +
+        'gyroscope=(), ' +
+        'magnetometer=(), ' +
+        'payment=(), ' +
+        'usb=()'
+      ]
+    };
+
+    // Apply CSP header for HTTP/HTTPS and file:// protocols
+    if (details.url.startsWith('http://') ||
+        details.url.startsWith('https://') ||
+        details.url.startsWith('file://')) {
+      responseHeaders['Content-Security-Policy'] = [CSP_POLICY];
+    }
+
+    callback({ responseHeaders });
+  });
+
+  // Inject CSP meta tag for file:// protocol (onHeadersReceived may not fire for file://)
+  ses.webRequest.onCompleted({ urls: ['file://*'] }, (details) => {
+    if (details.resourceType === 'mainFrame' && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript(`
+        if (!document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+          const meta = document.createElement('meta');
+          meta.httpEquiv = 'Content-Security-Policy';
+          meta.content = ${JSON.stringify(CSP_POLICY)};
+          document.head.prepend(meta);
+        }
+      `).catch(() => { /* Window may have been closed */ });
+    }
   });
 
   // Restrict navigation to app protocol only
@@ -2723,8 +2847,8 @@ app.whenReady().then(async () => {
   devLog('[GenPwd Pro] Security headers configured');
 
   // Check for admin mode and warn user (security risk for vault files)
-  if (isRunningAsAdmin()) {
-    console.warn('[GenPwd Pro] ⚠️ Running with administrator privileges');
+  if (await isRunningAsAdmin()) {
+    devLog('[GenPwd Pro] Running with administrator privileges');
     const t = getMainTranslations();
     dialog.showMessageBox({
       type: 'warning',
@@ -2803,9 +2927,12 @@ app.whenReady().then(async () => {
     });
 
     pipeServer.listen(PIPE_NAME, () => {
-      console.log('[GenPwd Pro] Native messaging pipe server started');
+      devLog('[GenPwd Pro] Native messaging pipe server started');
     });
   }
+
+  // Pipe server input limits (mirrors INPUT_LIMITS from vault-ipc-handlers.js)
+  const PIPE_LIMITS = { DOMAIN_MAX: 255, QUERY_MAX: 500, ID_MAX: 100 };
 
   async function handlePipeRequest(request) {
     const { requestId, action, ...data } = request;
@@ -2860,6 +2987,9 @@ app.whenReady().then(async () => {
             return { requestId, success: false, error: 'Vault is locked' };
           }
           const { domain } = data;
+          if (typeof domain !== 'string' || domain.length === 0 || domain.length > PIPE_LIMITS.DOMAIN_MAX) {
+            return { requestId, success: false, error: 'Invalid domain parameter' };
+          }
           const entries = session.getEntries();
           // Filter entries by domain
           const matches = entries.filter(e => {
@@ -2891,6 +3021,9 @@ app.whenReady().then(async () => {
             return { requestId, success: false, error: 'Vault is locked' };
           }
           const { query } = data;
+          if (typeof query !== 'string' || query.length === 0 || query.length > PIPE_LIMITS.QUERY_MAX) {
+            return { requestId, success: false, error: 'Invalid search query' };
+          }
           const results = session.searchEntries(query);
           const sanitized = results.map(e => ({
             id: e.id,
@@ -2910,6 +3043,9 @@ app.whenReady().then(async () => {
             return { requestId, success: false, error: 'Vault is locked' };
           }
           const { id } = data;
+          if (typeof id !== 'string' || id.length === 0 || id.length > PIPE_LIMITS.ID_MAX) {
+            return { requestId, success: false, error: 'Invalid entry ID' };
+          }
           const entry = session.getEntry(id);
           if (!entry) {
             return { requestId, success: false, error: 'Entry not found' };
@@ -2938,6 +3074,9 @@ app.whenReady().then(async () => {
             return { requestId, success: false, error: 'Vault is locked' };
           }
           const { id } = data;
+          if (typeof id !== 'string' || id.length === 0 || id.length > PIPE_LIMITS.ID_MAX) {
+            return { requestId, success: false, error: 'Invalid entry ID' };
+          }
           const entry = session.getEntry(id);
           if (!entry || !entry.totp) {
             return { requestId, success: false, error: 'No TOTP configured' };
@@ -3037,15 +3176,15 @@ app.whenReady().then(async () => {
     });
 
     if (registered) {
-      console.log(`[GenPwd Pro] Global hotkey registered: ${GLOBAL_HOTKEY}`);
+      devLog(`[GenPwd Pro] Global hotkey registered: ${GLOBAL_HOTKEY}`);
     } else {
-      console.error(`[GenPwd Pro] Failed to register global hotkey: ${GLOBAL_HOTKEY}`);
+      devError(`[GenPwd Pro] Failed to register global hotkey: ${GLOBAL_HOTKEY}`);
       // Notify user that hotkey is unavailable (likely used by another app)
       if (Notification.isSupported()) {
         const t = getMainTranslations();
         new Notification({
-          title: t.securityWarning || 'Hotkey Unavailable',
-          body: `${GLOBAL_HOTKEY} is already in use by another application.`,
+          title: t.securityWarning,
+          body: t.hotkeyInUse.replace('{hotkey}', GLOBAL_HOTKEY),
           icon: path.join(__dirname, 'assets', 'icon.ico')
         }).show();
       }
@@ -3063,7 +3202,7 @@ app.whenReady().then(async () => {
 
       // Get Active Window Title
       const title = await getActiveWindowTitle();
-      console.log(`[GenPwd Pro] Active Window: "${title}"`);
+      devLog(`[GenPwd Pro] Active Window: "${title}"`);
 
       if (title && mainWindow) {
         // Bring our window to invalid state (hidden) but notify renderer
@@ -3072,7 +3211,7 @@ app.whenReady().then(async () => {
         mainWindow.webContents.send('automation:global-autotype', { title });
       }
     });
-    console.log(`[GenPwd Pro] Global Auto-Type registered: ${GLOBAL_AUTOTYPE}`);
+    devLog(`[GenPwd Pro] Global Auto-Type registered: ${GLOBAL_AUTOTYPE}`);
   } catch (error) {
     devError('[GenPwd Pro] Auto-Type registration error:', error);
   }
@@ -3085,9 +3224,7 @@ app.whenReady().then(async () => {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
         await session.lock();
-        if (mainWindow && mainWindow.webContents) {
-          mainWindow.webContents.send('vault:locked', { reason: 'screen-lock' });
-        }
+        safeSend('vault:locked', { reason: 'screen-lock' });
         // Show notification so user knows vault was locked
         if (Notification.isSupported()) {
           const t = getMainTranslations();
@@ -3108,9 +3245,7 @@ app.whenReady().then(async () => {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
         await session.lock();
-        if (mainWindow && mainWindow.webContents) {
-          mainWindow.webContents.send('vault:locked', { reason: 'suspend' });
-        }
+        safeSend('vault:locked', { reason: 'suspend' });
         // Show notification on resume (user won't see it during suspend)
         if (Notification.isSupported()) {
           const t = getMainTranslations();
@@ -3128,9 +3263,7 @@ app.whenReady().then(async () => {
   powerMonitor.on('resume', () => {
     devLog('[GenPwd Pro] System resumed from sleep');
     // Vault already locked on suspend, notify renderer to show unlock screen
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('vault:require-reauth', { reason: 'resume' });
-    }
+    safeSend('vault:require-reauth', { reason: 'resume' });
   });
 
   // Handle system shutdown - lock vault before quitting
@@ -3144,17 +3277,29 @@ app.whenReady().then(async () => {
     }
   });
 
-  // Handle app quit - ensure vault is locked
+  // Handle app quit - ensure vault is locked and listeners are cleaned up
+  let isLockingBeforeQuit = false;
   app.on('before-quit', async (event) => {
+    if (isLockingBeforeQuit) return;
     if (vaultModule) {
       const session = vaultModule.getSession();
       if (session && session.isUnlocked()) {
+        isLockingBeforeQuit = true;
         devLog('[GenPwd Pro] App quitting - locking vault');
         event.preventDefault();
-        await session.lock();
+        try {
+          await session.lock();
+        } catch (err) {
+          devError('[GenPwd Pro] Failed to lock vault on quit:', err.message);
+        }
         app.quit();
       }
     }
+
+    // Clean up persistent event listeners to prevent memory leaks
+    autoUpdater.removeAllListeners();
+    nativeTheme.removeAllListeners();
+    powerMonitor.removeAllListeners();
   });
 
   // Set main window for vault events
@@ -3197,9 +3342,12 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   isQuitting = true;
 
-  // Clear all clipboard timers
-  for (const [key, { timer }] of clipboardTimers) {
-    clearTimeout(timer);
+  // Clear all clipboard timers and wipe sensitive data
+  for (const [_key, entry] of clipboardTimers) {
+    clearTimeout(entry.timer);
+    if (entry.text) {
+      entry.text = '';
+    }
   }
   clipboardTimers.clear();
 });
@@ -3238,7 +3386,7 @@ app.on('web-contents-created', (event, contents) => {
         !allowedOAuthHosts.includes(parsedUrl.host)) {
       event.preventDefault();
       // Open external links in default browser
-      shell.openExternal(url);
+      safeOpenExternal(url);
     }
   });
 
@@ -3315,11 +3463,11 @@ app.on('web-contents-created', (event, contents) => {
   });
 });
 
-// Error logging
+// Error logging (dev-only to prevent information disclosure in production)
 process.on('uncaughtException', (error) => {
-  console.error('[GenPwd Pro] Uncaught exception:', error);
+  devError('[GenPwd Pro] Uncaught exception:', error);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[GenPwd Pro] Unhandled rejection:', reason);
+process.on('unhandledRejection', (reason, _promise) => {
+  devError('[GenPwd Pro] Unhandled rejection:', reason);
 });

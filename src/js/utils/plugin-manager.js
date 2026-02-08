@@ -418,11 +418,17 @@ class PluginManager {
       return [];
     }
 
+    const HOOK_TIMEOUT_MS = 5000;
     const results = [];
 
     for (const hook of this.hooks[hookName]) {
       try {
-        const result = await hook.fn(...args);
+        const result = await Promise.race([
+          hook.fn(...args),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Hook execution timed out')), HOOK_TIMEOUT_MS)
+          )
+        ]);
         results.push({
           plugin: hook.plugin,
           success: true,

@@ -77,6 +77,6 @@
       var(--vault-surface-hover) 50%,
       var(--vault-surface) 75%);
   background-size: 200% 100%;
-  animation: vault-skeleton-loading 1.5s ease-in-out infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--vault-radius-sm);
 }

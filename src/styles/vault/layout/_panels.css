@@ -654,7 +654,7 @@
 /* Copy success animation */
 .vault-quick-btn.copied {
   background: var(--vault-success);
-  animation: vault-copy-success 0.6s ease;
+  animation: copy-success 0.6s ease;
 }
 
 /* ==================== DETAIL PANEL ==================== */
@@ -917,7 +917,7 @@ kbd {
       transparent 0%,
       rgba(255, 255, 255, 0.3) 50%,
       transparent 100%);
-  animation: vault-strength-shimmer 1.5s ease-in-out infinite;
+  animation: shimmer-translate 1.5s ease-in-out infinite;
 }
 
 .vault-strength-fill.weak {

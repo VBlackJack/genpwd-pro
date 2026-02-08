@@ -542,3 +542,43 @@
     flex-wrap: wrap;
   }
 }
+
+/* ==================== SEARCH HIGHLIGHTING ==================== */
+.vault-entry-title mark,
+.vault-entry-subtitle mark,
+.vault-card-title mark,
+.vault-card-subtitle mark {
+  background: rgba(var(--accent-yellow-rgb, 251, 191, 36), 0.3);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+[data-theme="light"] .vault-entry-title mark,
+[data-theme="light"] .vault-entry-subtitle mark,
+[data-theme="light"] .vault-card-title mark,
+[data-theme="light"] .vault-card-subtitle mark {
+  background: rgba(var(--accent-yellow-rgb, 251, 191, 36), 0.4);
+}
+
+/* ==================== DRAG & DROP FEEDBACK ==================== */
+.vault-entry-row.dragging {
+  opacity: 0.4;
+  outline: 2px dashed var(--vault-primary);
+  outline-offset: -2px;
+}
+
+.vault-entry-row[draggable="true"] {
+  cursor: grab;
+}
+
+.vault-entry-row[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.vault-nav-item.drag-over {
+  background: rgba(var(--accent-primary-rgb, 99, 102, 241), 0.15);
+  outline: 2px solid var(--vault-primary);
+  outline-offset: -2px;
+  border-radius: var(--vault-radius-sm);
+}

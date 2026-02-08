@@ -21,7 +21,7 @@
  *   const decrypted = engine.decrypt(encrypted, key);
  */
 
-import { randomFillSync, createHash } from 'node:crypto';
+import { randomFillSync } from 'node:crypto';
 import { deriveKey, generateSalt, DEFAULT_PARAMS } from './argon2-kdf.js';
 import {
   encryptObject,
@@ -109,17 +109,34 @@ export class CryptoEngine {
     }
 
     const key = await this.deriveVaultKey(password, keyData);
-    const expectedVerifier = this.#base64ToArray(keyData.verifier);
+    const storedVerifier = this.#base64ToArray(keyData.verifier);
 
-    if (expectedVerifier.length !== 32) {
+    // Support both legacy (32-byte SHA-256) and current (64-byte Argon2id) verifiers
+    if (storedVerifier.length === 64) {
+      // Current format: first 32 bytes = verifier salt, last 32 bytes = Argon2id hash
+      const verifierSalt = storedVerifier.subarray(0, 32);
+      const expectedHash = storedVerifier.subarray(32, 64);
+      const actualHash = await this.#recomputeVerifierHash(key, verifierSalt);
+
+      const valid = this.#constantTimeCompare(expectedHash, actualHash);
+      if (!valid) {
+        wipeKey(key);
+        return { valid: false, key: null };
+      }
+      return { valid: true, key };
+    }
+
+    if (storedVerifier.length !== 32) {
       wipeKey(key);
       throw new Error(t('errors.crypto.verifierInvalidSize'));
     }
 
-    const actualVerifier = await this.#createVerifier(key);
+    // Legacy fallback: 32-byte verifier created with SHA-256 (pre-migration vaults)
+    const { createHash } = await import('node:crypto');
+    const legacyHash = createHash('sha256').update(key).digest();
+    const legacyVerifier = new Uint8Array(legacyHash);
 
-    // Constant-time comparison
-    const valid = this.#constantTimeCompare(expectedVerifier, actualVerifier);
+    const valid = this.#constantTimeCompare(storedVerifier, legacyVerifier);
 
     if (!valid) {
       wipeKey(key);
@@ -192,15 +209,51 @@ export class CryptoEngine {
   }
 
   /**
-   * Create verifier hash from key (used to validate password)
+   * Argon2id parameters for verifier derivation.
+   * Lower memory than main KDF to keep verification responsive,
+   * but still computationally expensive to resist offline brute-force.
+   * @type {import('./argon2-kdf.js').KdfParams}
+   */
+  static #VERIFIER_KDF_PARAMS = Object.freeze({
+    memory: 16384,    // 16 MB
+    iterations: 3,
+    parallelism: 2,
+    hashLength: 32    // 256 bits
+  });
+
+  /**
+   * Create verifier from key using Argon2id with a dedicated salt.
+   * Produces a 64-byte result: 32 bytes verifier salt + 32 bytes Argon2id hash.
    * @private
    * @param {Uint8Array} key - Encryption key
-   * @returns {Promise<Uint8Array>} Verifier hash
+   * @returns {Promise<Uint8Array>} Verifier (salt || hash, 64 bytes total)
    */
   async #createVerifier(key) {
-    // Use SHA-256 hash of the key as verifier (Node.js crypto)
-    const hash = createHash('sha256').update(key).digest();
-    return new Uint8Array(hash);
+    const verifierSalt = generateSalt(32);
+    const keyHex = Array.from(key)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    const hash = await deriveKey(keyHex, verifierSalt, CryptoEngine.#VERIFIER_KDF_PARAMS);
+
+    // Concatenate: verifierSalt (32) + hash (32) = 64 bytes
+    const combined = new Uint8Array(64);
+    combined.set(verifierSalt, 0);
+    combined.set(hash, 32);
+    return combined;
+  }
+
+  /**
+   * Recompute verifier hash from key using the stored verifier salt.
+   * @private
+   * @param {Uint8Array} key - Encryption key
+   * @param {Uint8Array} verifierSalt - The 32-byte salt extracted from stored verifier
+   * @returns {Promise<Uint8Array>} 32-byte Argon2id hash
+   */
+  async #recomputeVerifierHash(key, verifierSalt) {
+    const keyHex = Array.from(key)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    return deriveKey(keyHex, verifierSalt, CryptoEngine.#VERIFIER_KDF_PARAMS);
   }
 
   /**

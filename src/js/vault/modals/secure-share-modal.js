@@ -495,7 +495,7 @@ export function showOpenShareModal(options = {}) {
 
         <div class="vault-form-group">
           <label class="vault-label">${t('vault.openShare.encryptedData')}</label>
-          <textarea class="vault-input vault-textarea" id="open-share-input" rows="4" placeholder="GENPWD:1:..."></textarea>
+          <textarea class="vault-input vault-textarea" id="open-share-input" rows="4" placeholder="${t('vault.openShare.formatPlaceholder')}"></textarea>
         </div>
 
         <div class="vault-form-group">

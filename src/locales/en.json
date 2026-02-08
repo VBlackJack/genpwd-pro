@@ -460,7 +460,8 @@
       "copy": "Copy all passwords",
       "test": "Run security tests",
       "export": "Export results",
-      "escape": "Close modals"
+      "escape": "Close modals",
+      "help": "Show this help"
     },
     "author": "Julien Bombled",
     "license": "Open Source under Apache 2.0 License"
@@ -608,7 +609,10 @@
       "entryPreview": "Entry preview",
       "statusIndicators": "Status indicators",
       "loading": "Loading entries...",
-      "loaded": "Entries loaded"
+      "loaded": "Entries loaded",
+      "sortedBy": "Sorted by {sort}. {count} entries",
+      "filteredResults": "Filtered: {count} entries",
+      "filtersCleared": "Filters cleared. {count} entries"
     },
     "tooltips": {
       "lock": "Lock (Ctrl+L)",
@@ -1374,7 +1378,14 @@
       "noPassphrase": "Please enter the passphrase",
       "decrypted": "Share decrypted successfully",
       "decryptFailed": "Decryption failed - invalid passphrase or corrupted data",
-      "expired": "This share has expired"
+      "expired": "This share has expired",
+      "formatPlaceholder": "GENPWD:1:..."
+    },
+    "favicon": {
+      "websiteIcon": "Website icon"
+    },
+    "forms": {
+      "required": "required"
     },
     "windowsHello": {
       "title": "Windows Hello",
@@ -1708,6 +1719,7 @@
     "serverUrl": "Server URL",
     "serverUrlHint": "e.g., https://cloud.example.com/remote.php/dav/files/user/",
     "username": "Username",
+    "usernamePlaceholder": "your-username",
     "usernameHint": "Your WebDAV login username",
     "passwordToken": "Password / App Token",
     "passwordHint": "Use an app token if available",
@@ -2144,6 +2156,9 @@
       "onepasswordCsv": "1Password CSV",
       "genericJson": "Generic JSON",
       "genericCsv": "Generic CSV"
+    },
+    "warnings": {
+      "unknownBitwardenType": "Skipped item \"{name}\": unknown Bitwarden type {type}"
     }
   },
   "breach": {

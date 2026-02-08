@@ -10,7 +10,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(5, 8, 20, 0.7);
+  background: var(--modal-backdrop, rgba(5, 8, 20, 0.7));
   backdrop-filter: blur(12px) saturate(120%);
   -webkit-backdrop-filter: blur(12px) saturate(120%);
   z-index: var(--z-modal-backdrop);
@@ -36,7 +36,7 @@
   border: 1px solid var(--overlay-strong);
   border-radius: var(--radius-xl);
   box-shadow:
-    0 25px 50px rgba(0, 0, 0, 0.5),
+    var(--shadow-xl, 0 25px 50px -12px rgba(0, 0, 0, 0.6)),
     0 0 0 1px var(--overlay-light),
     inset 0 1px 0 var(--overlay-strong),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
@@ -150,7 +150,7 @@ h2.modal-title {
 
 /* Light theme: softer overlay backdrop */
 [data-theme="light"] .modal-overlay {
-  background: rgba(100, 110, 140, 0.45);
+  background: var(--modal-backdrop-light, rgba(100, 110, 140, 0.45));
 }
 
 /* Light theme: author credit card */

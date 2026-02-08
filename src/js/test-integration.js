@@ -18,6 +18,7 @@
 /* global GenPwdTestSuite */
 
 import { sanitizeHTML } from './utils/dom-sanitizer.js';
+import { escapeHtml } from './utils/helpers.js';
 import { t } from './utils/i18n.js';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -135,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
           ${results.passed} passed • ${results.failed} failed • ${duration}s
         </div>
         <div class="test-score-version">
-          ${total} tests executed on GenPwd Pro v3.0.5
+          ${total} tests executed on GenPwd Pro v3.1.0
         </div>
       `);
     }
@@ -148,13 +149,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const configErrors = test.configErrors || 0;
         html += `
           <div class="test-item success">
-            <div class="test-item-title">✅ ${test.test}</div>
+            <div class="test-item-title">✅ ${escapeHtml(test.test)}</div>
             <div class="test-item-info">
               ${test.count} passwords generated${configErrors > 0 ? ` • ${configErrors} elements not found` : ''}
             </div>
             ${test.passwords[0] ? `
               <div class="test-item-example">
-                "${test.passwords[0].password}" (${test.passwords[0].entropy})
+                "${escapeHtml(test.passwords[0].password)}" (${escapeHtml(String(test.passwords[0].entropy))})
               </div>
             ` : ''}
           </div>
@@ -165,9 +166,9 @@ document.addEventListener('DOMContentLoaded', function () {
       results.errors.forEach((error) => {
         html += `
           <div class="test-item error">
-            <div class="test-item-title-error">❌ ${error.test}</div>
+            <div class="test-item-title-error">❌ ${escapeHtml(error.test)}</div>
             <div class="test-item-error-message">
-              Error: ${error.error}
+              Error: ${escapeHtml(error.error)}
             </div>
           </div>
         `;

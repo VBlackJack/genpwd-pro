@@ -16,7 +16,21 @@
 
 // electron-preload.js - Secure preload script
 const { contextBridge, ipcRenderer } = require('electron');
-const { version: APP_VERSION } = require('./package.json');
+let APP_VERSION;
+try {
+  APP_VERSION = ipcRenderer.sendSync('get-app-version');
+} catch (_e) {
+  APP_VERSION = '0.0.0';
+}
+
+// Whitelist of allowed vault event names to prevent arbitrary IPC channel subscription
+const ALLOWED_VAULT_EVENTS = [
+  'unlocked', 'locked', 'changed', 'error',
+  'state-changed', 'entries-updated',
+  'folders-updated', 'tags-updated', 'sync:status', 'sync-started',
+  'sync-completed', 'sync-error', 'auto-lock', 'require-reauth',
+  'session-warning', 'duress-activated', 'migration-complete'
+];
 
 // Expose secure API to renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -377,12 +391,18 @@ contextBridge.exposeInMainWorld('vault', {
 
   // ==================== EVENTS ====================
   on: (event, callback) => {
+    if (!ALLOWED_VAULT_EVENTS.includes(event)) {
+      throw new Error(`Vault event not allowed: ${event}`);
+    }
     const channel = `vault:${event}`;
     const handler = (_, data) => callback(data);
     ipcRenderer.on(channel, handler);
     return () => ipcRenderer.removeListener(channel, handler);
   },
   once: (event, callback) => {
+    if (!ALLOWED_VAULT_EVENTS.includes(event)) {
+      throw new Error(`Vault event not allowed: ${event}`);
+    }
     const channel = `vault:${event}`;
     const handler = (_, data) => callback(data);
     ipcRenderer.once(channel, handler);

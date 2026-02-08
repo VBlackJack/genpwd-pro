@@ -8,7 +8,7 @@ title GenPwd Pro - Build Windows
 
 echo.
 echo ============================================================
-echo   GenPwd Pro v2.5.2 - Build Windows
+echo   GenPwd Pro v3.1.0 - Build Windows
 echo   Creation de l'executable et de l'installeur
 echo ============================================================
 echo.

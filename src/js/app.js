@@ -177,7 +177,7 @@ class GenPwdApp {
       showToast(i18n.t('app.loaded', { version: this.version }), 'success');
 
       // 10. Initialize Vault Bridge (for Generator-Vault communication)
-      VaultBridge.init();
+      await VaultBridge.init();
       safeLog('VaultBridge initialized');
 
       // 11. Initialize Native Integration (Electron only - Phase 4)

@@ -18,6 +18,7 @@
 
 import { safeGetItem, safeSetItem } from './storage-helper.js';
 import { safeLog } from './logger.js';
+import { sanitizeHTML } from './dom-sanitizer.js';
 
 /**
  * @typedef {Object} I18nConfig
@@ -312,13 +313,14 @@ class I18n {
     }
 
     // Translate innerHTML via data-i18n-html (for content with markup)
+    // SECURITY: Sanitize translations before innerHTML to prevent XSS via compromised locale files
     const htmlElements = root.querySelectorAll('[data-i18n-html]');
     for (const el of htmlElements) {
       const key = el.getAttribute('data-i18n-html');
       if (key) {
         const translation = this.t(key);
         if (translation !== key) {
-          el.innerHTML = translation;
+          el.innerHTML = typeof sanitizeHTML === 'function' ? sanitizeHTML(translation) : translation;
           count++;
         }
       }

@@ -74,6 +74,7 @@ export function renderResults(results, mask) {
     const fragment = document.createDocumentFragment();
 
     results.forEach((item, idx) => {
+      if (!item) return;
       const { value } = item;
       if (typeof value !== 'string') return;
 
@@ -570,11 +571,13 @@ function showContextMenu(e, password) {
     item.addEventListener('click', () => executeAction(item));
   });
 
+  // AbortController for menu document listeners (prevents leak)
+  const menuController = new AbortController();
+
   // Cleanup function to remove all menu listeners
   const cleanupMenu = () => {
+    menuController.abort();
     menu.remove();
-    document.removeEventListener('click', closeMenu);
-    document.removeEventListener('keydown', keyHandler);
   };
 
   // Close on click outside
@@ -614,8 +617,8 @@ function showContextMenu(e, password) {
   };
 
   setTimeout(() => {
-    document.addEventListener('click', closeMenu);
-    document.addEventListener('keydown', keyHandler);
+    document.addEventListener('click', closeMenu, { signal: menuController.signal });
+    document.addEventListener('keydown', keyHandler, { signal: menuController.signal });
   }, 0);
 }
 

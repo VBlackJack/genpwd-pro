@@ -31,7 +31,7 @@ export class VaultBridge {
   /**
    * Initialize the vault bridge (call once at app startup)
    */
-  static init() {
+  static async init() {
     if (this.#initialized) return;
 
     if (!this.isAvailable()) {
@@ -56,7 +56,7 @@ export class VaultBridge {
     }
 
     // Check initial state
-    this.#refreshState();
+    await this.#refreshState();
     this.#initialized = true;
   }
 
@@ -309,8 +309,8 @@ export class VaultBridge {
 // Auto-initialize when module loads (if in browser context)
 if (typeof window !== 'undefined') {
   // Defer initialization to allow vault API to be set up
-  const initVaultBridge = () => {
-    VaultBridge.init();
+  const initVaultBridge = async () => {
+    await VaultBridge.init();
     VaultBridge.updateStatusIndicator();
     VaultBridge.bindStatusIndicatorClick();
   };

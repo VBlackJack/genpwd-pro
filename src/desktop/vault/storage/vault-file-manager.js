@@ -231,6 +231,20 @@ export class VaultFileManager extends EventEmitter {
   }
 
   /**
+   * Create a backup of the vault file before a destructive operation
+   * @param {string} vaultId - Vault ID
+   * @param {string} [suffix='.bak'] - Backup file suffix
+   * @returns {Promise<string>} Backup file path
+   * @throws {Error} If the vault file cannot be read or copied
+   */
+  async backupVault(vaultId, suffix = '.bak') {
+    const vaultPath = this.getRegisteredVaultPath(vaultId);
+    const backupPath = `${vaultPath}${suffix}`;
+    await fs.copyFile(vaultPath, backupPath);
+    return backupPath;
+  }
+
+  /**
    * Create a new vault
    * @param {string} name - Vault name
    * @param {string} password - Master password

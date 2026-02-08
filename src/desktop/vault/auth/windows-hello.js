@@ -398,8 +398,37 @@ export class WindowsHelloAuth {
         devLog('[WindowsHello] Legacy credential format detected');
       }
 
-      // Legacy format: return as-is (no TTL enforcement for old credentials)
-      devLog('[WindowsHello] Credential retrieved successfully');
+      // Legacy format: enforce maximum age of 30 days to prevent indefinite use
+      // Without an envelope timestamp, fall back to a stored migration marker
+      const legacyKey = `${CREDENTIAL_PREFIX}${vaultId}_legacy_ts`;
+      let legacyTimestamp = null;
+
+      try {
+        const storedTs = localStorage.getItem(legacyKey);
+        if (storedTs) {
+          legacyTimestamp = parseInt(storedTs, 10);
+        } else {
+          // First retrieval of this legacy credential - mark the timestamp now
+          legacyTimestamp = Date.now();
+          localStorage.setItem(legacyKey, String(legacyTimestamp));
+        }
+      } catch {
+        // localStorage may not be available in all contexts
+        // Without a timestamp, treat as expired for safety
+        devLog('[WindowsHello] Cannot track legacy credential age, deleting credential');
+        await this.deleteCredential(vaultId);
+        return null;
+      }
+
+      const legacyAge = Date.now() - legacyTimestamp;
+      if (legacyAge > WINDOWS_HELLO.CREDENTIAL_TTL_MS) {
+        devLog('[WindowsHello] Legacy credential expired, deleting...');
+        await this.deleteCredential(vaultId);
+        try { localStorage.removeItem(legacyKey); } catch { /* ignore */ }
+        return null;
+      }
+
+      devLog('[WindowsHello] Credential retrieved successfully (legacy, TTL valid)');
       return credential;
     } catch (error) {
       devError('[WindowsHello] Failed to retrieve credential:', error.message);

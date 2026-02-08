@@ -187,6 +187,17 @@
   }
 }
 
+/* ==================== LIGHT THEME OVERRIDES ==================== */
+[data-theme="light"] .vault-modal-overlay {
+  background: var(--modal-backdrop-light, rgba(100, 110, 140, 0.45));
+}
+
+[data-theme="light"] .vault-modal {
+  background: var(--vault-panel-bg, rgba(255, 255, 255, 0.95));
+  border-color: var(--vault-border, rgba(0, 0, 0, 0.1));
+  box-shadow: var(--vault-shadow-lg);
+}
+
 /* Desktop modal sizes */
 @media (min-width: 1025px) {
   .vault-modal-sm {

@@ -270,13 +270,13 @@ function setupBenchmarks(runner) {
     50 // 50ms
   );
 
-  // Benchmark 7: Generate layout-safe password (< 50ms)
+  // Benchmark 7: Generate standard-layout password (< 50ms)
   runner.addBenchmark(
-    'Generate layout-safe password',
+    'Generate standard-layout password',
     () => {
       generateSyllables({
         length: 18,
-        policy: 'layout-safe',
+        policy: 'standard-layout',
         digits: 2,
         specials: 1,
         customSpecials: '',

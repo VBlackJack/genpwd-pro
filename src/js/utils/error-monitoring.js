@@ -108,7 +108,7 @@ async function sendErrorToMonitoring(error) {
         error: sanitized,
         app: {
           name: 'GenPwd Pro',
-          version: '3.0.5', // Synchronized with package.json
+          version: '3.1.0', // Synchronized with package.json
           environment: isDevelopment() ? 'development' : 'production'
         }
       })
@@ -136,7 +136,11 @@ export function reportError(error, context = {}) {
   // Send to monitoring service (fire-and-forget with minimal logging on failure)
   sendErrorToMonitoring(error).catch((monitoringError) => {
     // Log monitoring failure locally but don't break the app
-    logErrorLocally(new Error(`Monitoring service failed: ${monitoringError.message}`));
+    try {
+      logErrorLocally(new Error(`Monitoring service failed: ${monitoringError.message}`));
+    } catch (_e) {
+      console.warn('Error monitoring: both remote and local logging failed');
+    }
   });
 }
 

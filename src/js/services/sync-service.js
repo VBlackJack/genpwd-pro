@@ -87,6 +87,10 @@ class SyncService {
     // Event listeners
     this._eventListeners = new Map();
 
+    // Operation guard for safe lock transitions
+    this._activeOperations = 0;
+    this._lockPending = false;
+
     // Crypto configuration now delegated to vault-crypto.js
     // Argon2id: iterations=3, memory=64MB, parallelism=4
     // AES-256-GCM: ivLength=12, tagLength=128
@@ -149,14 +153,31 @@ class SyncService {
   /**
    * Lock sync service
    * Clears encryption key from memory
+   * Waits for any active crypto operations to complete before clearing the key
    */
-  lock() {
+  async lock() {
+    this._lockPending = true;
+
+    // Wait for active encrypt/decrypt operations to finish
+    const MAX_LOCK_WAIT_MS = 10000;
+    const POLL_INTERVAL_MS = 50;
+    let waited = 0;
+    while (this._activeOperations > 0 && waited < MAX_LOCK_WAIT_MS) {
+      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+      waited += POLL_INTERVAL_MS;
+    }
+
+    if (this._activeOperations > 0) {
+      safeLog(`SyncService lock forced after ${MAX_LOCK_WAIT_MS}ms with ${this._activeOperations} active operations`);
+    }
+
     // Wipe encryption key if it's a Buffer
     if (this.encryptionKey && Buffer.isBuffer(this.encryptionKey)) {
       vaultCrypto.wipeBuffer(this.encryptionKey);
     }
     this.encryptionKey = null;
     this.isLocked = true;
+    this._lockPending = false;
 
     this.stopAutoSync();
 
@@ -185,51 +206,63 @@ class SyncService {
    * Encrypt data with AES-256-GCM (via vault-crypto)
    *
    * Uses the same encryption format as Android VaultCryptoManager.
+   * Protected by an operation guard to prevent key wipe during encryption.
    */
   async encrypt(data) {
-    if (this.isLocked) {
+    if (this._lockPending || this.isLocked) {
       throw new Error(t('errors.sync.locked'));
     }
 
-    // Generate random IV using vault-crypto
-    const iv = vaultCrypto.generateIV();
+    this._activeOperations++;
+    try {
+      // Generate random IV using vault-crypto
+      const iv = vaultCrypto.generateIV();
 
-    // Prepare data as JSON
-    const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
+      // Prepare data as JSON
+      const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
 
-    // Encrypt using vault-crypto (AES-256-GCM)
-    const encrypted = vaultCrypto.encryptAESGCM(plaintext, this.encryptionKey, iv);
+      // Encrypt using vault-crypto (AES-256-GCM)
+      const encrypted = vaultCrypto.encryptAESGCM(plaintext, this.encryptionKey, iv);
 
-    // Package encrypted data (compatible with Android format)
-    return {
-      iv: Array.from(iv),
-      data: Array.from(encrypted),
-      version: '2.0',  // v2.0 = Argon2id crypto engine
-      timestamp: Date.now(),
-      deviceId: this.deviceId
-    };
+      // Package encrypted data (compatible with Android format)
+      return {
+        iv: Array.from(iv),
+        data: Array.from(encrypted),
+        version: '2.0',  // v2.0 = Argon2id crypto engine
+        timestamp: Date.now(),
+        deviceId: this.deviceId
+      };
+    } finally {
+      this._activeOperations--;
+    }
   }
 
   /**
    * Decrypt data with AES-256-GCM (via vault-crypto)
    *
    * Uses the same decryption format as Android VaultCryptoManager.
+   * Protected by an operation guard to prevent key wipe during decryption.
    */
   async decrypt(encryptedPackage) {
-    if (this.isLocked) {
+    if (this._lockPending || this.isLocked) {
       throw new Error(t('errors.sync.locked'));
     }
 
-    // Extract IV and encrypted data as Buffers
-    const iv = Buffer.from(encryptedPackage.iv);
-    const encrypted = Buffer.from(encryptedPackage.data);
+    this._activeOperations++;
+    try {
+      // Extract IV and encrypted data as Buffers
+      const iv = Buffer.from(encryptedPackage.iv);
+      const encrypted = Buffer.from(encryptedPackage.data);
 
-    // Decrypt using vault-crypto (AES-256-GCM)
-    const decrypted = vaultCrypto.decryptAESGCM(encrypted, this.encryptionKey, iv);
+      // Decrypt using vault-crypto (AES-256-GCM)
+      const decrypted = vaultCrypto.decryptAESGCM(encrypted, this.encryptionKey, iv);
 
-    // Parse JSON
-    const plaintext = decrypted.toString('utf8');
-    return JSON.parse(plaintext);
+      // Parse JSON
+      const plaintext = decrypted.toString('utf8');
+      return JSON.parse(plaintext);
+    } finally {
+      this._activeOperations--;
+    }
   }
 
   /**
@@ -731,23 +764,27 @@ class SyncService {
     }
 
     this.syncTimer = setInterval(async () => {
-      // Skip if already syncing
-      if (this.syncState === SyncState.SYNCING) {
-        safeLog('Auto-sync skipped: sync already in progress');
-        return;
-      }
-
-      const result = await this.sync();
-
-      // Handle result
-      if (result.isError) {
-        safeLog(`Auto-sync failed: ${result.message}`);
-
-        // If auth expired, stop auto-sync
-        if (result.requiresReauth()) {
-          this.stopAutoSync();
-          safeLog('Auto-sync stopped: authentication required');
+      try {
+        // Skip if already syncing
+        if (this.syncState === SyncState.SYNCING) {
+          safeLog('Auto-sync skipped: sync already in progress');
+          return;
         }
+
+        const result = await this.sync();
+
+        // Handle result
+        if (result.isError) {
+          safeLog(`Auto-sync failed: ${result.message}`);
+
+          // If auth expired, stop auto-sync
+          if (result.requiresReauth()) {
+            this.stopAutoSync();
+            safeLog('Auto-sync stopped: authentication required');
+          }
+        }
+      } catch (e) {
+        safeLog(`Auto-sync error: ${e.message}`);
       }
     }, this.syncInterval);
 

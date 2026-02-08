@@ -12,6 +12,19 @@ import { t } from '../../utils/i18n.js';
 import { VIEW_MODES, getViewMode } from '../components/view-mode-switcher.js';
 
 /**
+ * Highlight matching text in an already-escaped string
+ * @param {string} escapedText - HTML-escaped text
+ * @param {string} query - Raw search query
+ * @returns {string} Text with matches wrapped in <mark>
+ */
+function highlightMatch(escapedText, query) {
+  if (!query || !escapedText) return escapedText;
+  const escapedQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  return escapedText.replace(regex, '<mark>$1</mark>');
+}
+
+/**
  * Get entry metadata for enhanced display
  * @param {Object} entry - Entry object
  * @param {Array} entries - All entries (for duplicate check)
@@ -119,9 +132,10 @@ function renderMetadataLine(entry, metadata) {
  * @param {Array} options.entries - All entries (for duplicate check)
  * @param {Array} options.tags - All tags
  * @param {string} [options.viewMode] - Override view mode
+ * @param {string} [options.searchQuery] - Active search query for highlighting
  * @returns {string} HTML string
  */
-export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entries, tags, viewMode }) {
+export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entries, tags, viewMode, searchQuery }) {
   const mode = viewMode || getViewMode();
   const metadata = getEntryMetadata(entry, entries);
   const { type, strength, isDuplicate, expiryStatus } = metadata;
@@ -145,9 +159,13 @@ export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entr
     metadata.has2FA ? 'has-2fa' : ''
   ].filter(Boolean).join(' ');
 
+  // Prepare highlighted text for search
+  const titleHtml = searchQuery ? highlightMatch(escapeHtml(entry.title), searchQuery) : escapeHtml(entry.title);
+  const subtitleHtml = searchQuery ? highlightMatch(escapeHtml(subtitle), searchQuery) : escapeHtml(subtitle);
+
   // Grid view uses a card layout
   if (mode === VIEW_MODES.GRID) {
-    return renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metadata, cssClasses, type, subtitle, isFavorite, isPinned, strength, isDuplicate, expiryStatus });
+    return renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metadata, cssClasses, type, subtitle, isFavorite, isPinned, _strength: strength, _isDuplicate: isDuplicate, _expiryStatus: expiryStatus, titleHtml, subtitleHtml });
   }
 
   // Compact and Comfortable modes use row layout
@@ -179,11 +197,11 @@ export function renderEntryRow({ entry, index, isSelected, isMultiSelected, entr
         <div class="vault-entry-title-row">
           <span class="vault-entry-title">
             ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.entryCard.pinned')}"><span aria-hidden="true">📌</span></span>` : ''}
-            ${escapeHtml(entry.title)}
+            ${titleHtml}
           </span>
           ${mode === VIEW_MODES.COMPACT ? renderCompactIndicators(strength, isDuplicate, expiryStatus, metadata.has2FA) : ''}
         </div>
-        <div class="vault-entry-subtitle">${escapeHtml(subtitle)}</div>
+        <div class="vault-entry-subtitle">${subtitleHtml}</div>
         ${mode === VIEW_MODES.COMFORTABLE ? `
           <div class="vault-entry-badges">${renderStatusBadges(metadata)}</div>
           ${renderMetadataLine(entry, metadata)}
@@ -236,7 +254,7 @@ function renderCompactIndicators(strength, isDuplicate, expiryStatus, has2FA) {
  * @param {Object} options - Render options
  * @returns {string} HTML string
  */
-function renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metadata, cssClasses, type, subtitle, isFavorite, isPinned, strength, isDuplicate, expiryStatus }) {
+function renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metadata, cssClasses, type, subtitle, isFavorite, isPinned, _strength, _isDuplicate, _expiryStatus, titleHtml, subtitleHtml }) {
   return `
     <div class="${cssClasses}"
          data-entry-id="${entry.id}"
@@ -266,9 +284,9 @@ function renderGridCard({ entry, index, isSelected, isMultiSelected, tags, metad
       <div class="vault-card-body">
         <div class="vault-card-title">
           ${isPinned ? `<span class="vault-pin-badge" role="img" aria-label="${t('vault.entryCard.pinned')}"><span aria-hidden="true">📌</span></span>` : ''}
-          ${escapeHtml(entry.title)}
+          ${titleHtml || escapeHtml(entry.title)}
         </div>
-        <div class="vault-card-subtitle">${escapeHtml(subtitle)}</div>
+        <div class="vault-card-subtitle">${subtitleHtml || escapeHtml(subtitle)}</div>
         <div class="vault-card-badges">${renderStatusBadges(metadata)}</div>
         ${renderTagsInRow({ entry, tags, maxVisible: 3 })}
       </div>

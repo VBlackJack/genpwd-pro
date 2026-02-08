@@ -56,7 +56,7 @@ export class PasswordService {
       let result;
       switch (mode) {
         case 'syllables':
-          result = generateSyllables(config);
+          result = await generateSyllables(config);
           break;
 
         case 'passphrase':
@@ -64,7 +64,7 @@ export class PasswordService {
           break;
 
         case 'leet':
-          result = generateLeet(config);
+          result = await generateLeet(config);
           break;
 
         default:

@@ -93,8 +93,8 @@ export function showImportPreview(options) {
  * @param {Object} options
  * @returns {string} HTML content
  */
-function renderPreviewContent(options) {
-  const { entries, previewEntries, hasMore, source, columns } = options;
+function renderPreviewContent(options = {}) {
+  const { entries = [], previewEntries = [], hasMore = false, source = '', columns = [] } = options;
 
   const sourceIcon = getIcon('upload', { size: 20 });
   const sourceLabel = getSourceLabel(source);

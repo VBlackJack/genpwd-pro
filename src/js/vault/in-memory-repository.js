@@ -153,6 +153,10 @@ export class InMemoryVaultRepository extends VaultRepository {
   }
 
   async deleteEntry(entryId) {
+    const entry = this.entries.get(entryId);
+    if (entry && typeof entry.wipe === 'function') {
+      try { entry.wipe(); } catch (_) { /* frozen entries may throw */ }
+    }
     this.entries.delete(entryId);
   }
 

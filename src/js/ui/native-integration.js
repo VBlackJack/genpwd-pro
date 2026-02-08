@@ -33,6 +33,7 @@ const SETTINGS_KEY = 'genpwd_native_settings';
 let nativeIntegrationController = null;
 // Vault event unsubscribers
 let unsubscribeVaultLocked = null;
+let unsubscribeAccentColor = null;
 
 const DEFAULT_SETTINGS = {
   minimizeToTray: true,
@@ -266,12 +267,12 @@ function initAccentColorIntegration() {
   };
 
   // Listen for accent color changes (sent on app start)
-  window.electronAPI.onAccentColorChanged(applyAccentColor);
+  unsubscribeAccentColor = window.electronAPI.onAccentColorChanged(applyAccentColor);
 
   // Also fetch initial color on load
   if (window.electronAPI?.getAccentColor) {
-    window.electronAPI.getAccentColor().then(applyAccentColor).catch(() => {
-      // Fallback is already in CSS
+    window.electronAPI.getAccentColor().then(applyAccentColor).catch((err) => {
+      safeLog(`Accent color fetch failed: ${err.message || err}`);
     });
   }
 
@@ -583,6 +584,10 @@ export function cleanupNativeIntegration() {
   if (unsubscribeVaultLocked) {
     unsubscribeVaultLocked();
     unsubscribeVaultLocked = null;
+  }
+  if (unsubscribeAccentColor) {
+    unsubscribeAccentColor();
+    unsubscribeAccentColor = null;
   }
   safeLog('Native integration cleaned up');
 }

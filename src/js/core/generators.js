@@ -139,11 +139,7 @@ export function generateSyllables(config) {
 
   } catch (error) {
     safeLog(`generateSyllables error: ${error.message}`);
-    return {
-      value: `error-syllables-${Date.now()}`,
-      entropy: 10,
-      mode: 'syllables'
-    };
+    throw error;
   }
 }
 
@@ -261,11 +257,7 @@ export async function generatePassphrase(config) {
 
   } catch (error) {
     safeLog(`generatePassphrase error: ${error.message}`);
-    return {
-      value: `error-passphrase-${Date.now()}`,
-      entropy: 15,
-      mode: 'passphrase'
-    };
+    throw error;
   }
 }
 
@@ -334,11 +326,7 @@ export function generateLeet(config) {
 
   } catch (error) {
     safeLog(`generateLeet error: ${error.message}`);
-    return {
-      value: `error-leet-${Date.now()}`,
-      entropy: 8,
-      mode: 'leet'
-    };
+    throw error;
   }
 }
 
@@ -462,12 +450,14 @@ export async function ensureMinimumEntropy(generatorFn, config, minBits = 100) {
 }
 
 function generateRandomString(length, alphabet) {
+  if (!alphabet?.length) throw new Error('generateRandomString: alphabet must not be empty');
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
   return Array.from(array, byte => alphabet[byte % alphabet.length]).join('');
 }
 
 function applyLeetTransformation(word) {
+  if (typeof word !== 'string') return '';
   return word.split('').map(char => LEET_SUBSTITUTIONS[char] || char).join('');
 }
 
