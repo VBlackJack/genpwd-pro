@@ -79,25 +79,70 @@
   --vault-leading-relaxed: 1.625;
 }
 
-/* Dark theme re-assertion - Required because :root var() references are computed
-   with @media (prefers-color-scheme: light) values on light-OS systems.
-   body[data-theme="dark"] re-sets --text-primary etc., but :root-computed
-   --vault-text (= var(--text-primary)) won't re-resolve. We must re-declare here. */
+/* Dark theme overrides — with [data-theme] on <html> (= :root), var() references
+   resolve correctly against the same element's theme variables. Text vars can
+   use var() instead of hardcoded rgba values. */
 [data-theme="dark"] {
   --vault-surface: rgba(255, 255, 255, 0.05);
   --vault-surface-hover: rgba(255, 255, 255, 0.08);
   --vault-surface-active: rgba(255, 255, 255, 0.12);
   --vault-border: rgba(255, 255, 255, 0.1);
   --vault-border-light: rgba(255, 255, 255, 0.2);
-  /* Explicit values — var() references resolve on :root with @media light overrides,
-     producing dark-text-on-dark-bg. Use literal dark theme values instead. */
-  --vault-text: rgba(255, 255, 255, 0.95);
-  --vault-text-muted: rgba(255, 255, 255, 0.82);
-  --vault-text-dim: rgba(255, 255, 255, 0.5);
+  --vault-text: var(--text-primary);
+  --vault-text-muted: var(--text-secondary);
+  --vault-text-dim: var(--text-hint, rgba(255, 255, 255, 0.5));
   --vault-shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
   --vault-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
   --vault-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --vault-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* High-contrast theme overrides */
+[data-theme="high-contrast"] {
+  --vault-surface: rgba(255, 255, 255, 0.08);
+  --vault-surface-hover: rgba(255, 255, 255, 0.14);
+  --vault-surface-active: rgba(255, 255, 255, 0.2);
+  --vault-border: rgba(255, 255, 255, 0.6);
+  --vault-border-light: rgba(255, 255, 255, 0.8);
+  --vault-text: var(--text-primary);
+  --vault-text-muted: var(--text-secondary);
+  --vault-text-dim: var(--text-hint, rgba(255, 255, 255, 0.7));
+  --vault-shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --vault-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --vault-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --vault-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Ocean theme overrides */
+[data-theme="ocean"] {
+  --vault-surface: rgba(96, 165, 250, 0.06);
+  --vault-surface-hover: rgba(96, 165, 250, 0.1);
+  --vault-surface-active: rgba(96, 165, 250, 0.15);
+  --vault-border: rgba(71, 85, 105, 0.6);
+  --vault-border-light: rgba(100, 116, 139, 0.5);
+  --vault-text: var(--text-primary);
+  --vault-text-muted: var(--text-secondary);
+  --vault-text-dim: var(--text-hint, rgba(148, 163, 184, 0.7));
+  --vault-shadow-sm: 0 4px 6px rgba(15, 23, 42, 0.15);
+  --vault-shadow-md: 0 4px 6px rgba(15, 23, 42, 0.2), 0 2px 4px rgba(15, 23, 42, 0.15);
+  --vault-shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.4);
+  --vault-shadow-xl: 0 25px 50px -12px rgba(15, 23, 42, 0.7);
+}
+
+/* Forest theme overrides */
+[data-theme="forest"] {
+  --vault-surface: rgba(74, 222, 128, 0.05);
+  --vault-surface-hover: rgba(74, 222, 128, 0.08);
+  --vault-surface-active: rgba(74, 222, 128, 0.12);
+  --vault-border: rgba(52, 211, 153, 0.3);
+  --vault-border-light: rgba(110, 231, 183, 0.3);
+  --vault-text: var(--text-primary);
+  --vault-text-muted: var(--text-secondary);
+  --vault-text-dim: var(--text-hint, rgba(167, 243, 208, 0.6));
+  --vault-shadow-sm: 0 4px 6px rgba(20, 41, 30, 0.15);
+  --vault-shadow-md: 0 4px 6px rgba(20, 41, 30, 0.2), 0 2px 4px rgba(20, 41, 30, 0.15);
+  --vault-shadow-lg: 0 8px 32px rgba(20, 41, 30, 0.4);
+  --vault-shadow-xl: 0 25px 50px -12px rgba(20, 41, 30, 0.7);
 }
 
 /* Light theme overrides */

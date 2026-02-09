@@ -129,17 +129,6 @@ h2.modal-title {
   gap: 12px;
 }
 
-/* Light mode: use solid color for better contrast (WCAG AA compliance) */
-@media (prefers-color-scheme: light) {
-  .modal-title {
-    background: none;
-    -webkit-background-clip: unset;
-    background-clip: unset;
-    -webkit-text-fill-color: unset;
-    color: var(--text-primary);
-  }
-}
-
 [data-theme="light"] .modal-title {
   background: none;
   -webkit-background-clip: unset;

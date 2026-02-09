@@ -172,7 +172,6 @@ export function applyTheme(themeName, animate = true) {
   }
 
   const root = document.documentElement;
-  const variables = THEMES[themeName].variables;
 
   // Add transition class for smooth theme change (unless reduced motion or no animation)
   const shouldAnimate = animate && !prefersReducedMotion();
@@ -180,9 +179,11 @@ export function applyTheme(themeName, animate = true) {
     document.body.classList.add('theme-transitioning');
   }
 
-  // Apply all CSS variables
-  Object.entries(variables).forEach(([property, value]) => {
-    root.style.setProperty(property, value);
+  // Clear any inline CSS variables from a previous custom theme.
+  // Built-in themes rely on CSS [data-theme] selectors — no inline styles needed.
+  const allVarKeys = Object.keys(THEMES.dark.variables);
+  allVarKeys.forEach((property) => {
+    root.style.removeProperty(property);
   });
 
   // Save choice
@@ -193,8 +194,8 @@ export function applyTheme(themeName, animate = true) {
     safeLog('Unable to save theme to localStorage');
   }
 
-  // Update data-theme attribute for advanced CSS
-  document.body.setAttribute('data-theme', themeName);
+  // Update data-theme attribute on <html> for CSS [data-theme] selectors
+  document.documentElement.setAttribute('data-theme', themeName);
 
   // Remove transition class after animation completes
   if (shouldAnimate) {

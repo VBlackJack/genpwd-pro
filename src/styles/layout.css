@@ -899,7 +899,7 @@ body.no-blur .about-btn {
 }
 
 /* Light Theme Sections - Premium Clean Design */
-body[data-theme="light"] .section {
+[data-theme="light"] body .section {
   background: white !important;
   border: 1px solid rgba(99, 102, 241, 0.12) !important;
   border-left: 4px solid rgba(99, 102, 241, 0.5) !important;
@@ -907,45 +907,45 @@ body[data-theme="light"] .section {
   transition: all var(--transition-normal) !important;
 }
 
-body[data-theme="light"] .section:hover {
+[data-theme="light"] body .section:hover {
   border-color: rgba(99, 102, 241, 0.18) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 8px 20px rgba(99, 102, 241, 0.08) !important;
 }
 
-body[data-theme="light"] .section-header {
+[data-theme="light"] body .section-header {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.02) 100%) !important;
   border: none !important;
   border-bottom: 1px solid rgba(99, 102, 241, 0.1) !important;
   width: 100% !important;
 }
 
-body[data-theme="light"] .section-header:hover {
+[data-theme="light"] body .section-header:hover {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
   border-bottom-color: rgba(99, 102, 241, 0.12) !important;
 }
 
-body[data-theme="light"] .section-header:focus-visible {
+[data-theme="light"] body .section-header:focus-visible {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.06) 100%) !important;
   outline: 2px solid var(--accent-purple) !important;
   outline-offset: -2px !important;
 }
 
-body[data-theme="light"] .section-header .badge {
+[data-theme="light"] body .section-header .badge {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08)) !important;
   border: 1px solid rgba(99, 102, 241, 0.2) !important;
   color: var(--accent-purple) !important;
 }
 
-body[data-theme="light"] .section-header .chev {
+[data-theme="light"] body .section-header .chev {
   color: rgba(99, 102, 241, 0.4) !important;
 }
 
-body[data-theme="light"] .section-header:hover .chev {
+[data-theme="light"] body .section-header:hover .chev {
   color: var(--accent-purple) !important;
   opacity: 1 !important;
 }
 
-body[data-theme="light"] .section-content {
+[data-theme="light"] body .section-content {
   background: rgba(99, 102, 241, 0.01) !important;
 }
 

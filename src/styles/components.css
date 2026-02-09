@@ -1541,22 +1541,6 @@ textarea.field-invalid {
   background: rgba(59, 130, 246, 0.25);
 }
 
-/* Light mode support */
-@media (prefers-color-scheme: light) {
-  .clipboard-settings-popover {
-    background: var(--bg-secondary);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  }
-
-  .clipboard-settings-header {
-    background: rgba(0, 0, 0, 0.04);
-  }
-
-  .clipboard-option:hover {
-    background: rgba(0, 0, 0, 0.06);
-  }
-}
-
 [data-theme="light"] .clipboard-settings-popover {
   background: var(--bg-secondary);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -2213,7 +2197,7 @@ textarea.field-invalid {
    ============================================================================ */
 
 /* Inputs and Selects - Light Theme */
-body[data-theme="light"] .input {
+[data-theme="light"] body .input {
   background-color: white !important;
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
   color: var(--text-primary) !important;
@@ -2222,7 +2206,7 @@ body[data-theme="light"] .input {
   -webkit-backdrop-filter: none !important;
 }
 
-body[data-theme="light"] select {
+[data-theme="light"] body select {
   background-color: white !important;
   /* Arrow color handled by [data-theme="light"] select rule above */
   background-repeat: no-repeat !important;
@@ -2237,7 +2221,7 @@ body[data-theme="light"] select {
 }
 
 /* Windows light mode: fallback to native arrow to avoid Chromium select artifacting */
-body.platform-windows[data-theme="light"] select {
+[data-theme="light"] body.platform-windows select {
   -webkit-appearance: auto !important;
   -moz-appearance: auto !important;
   appearance: auto !important;
@@ -2245,20 +2229,20 @@ body.platform-windows[data-theme="light"] select {
   padding-right: 12px !important;
 }
 
-body[data-theme="light"] .input::placeholder {
+[data-theme="light"] body .input::placeholder {
   color: rgba(0, 0, 0, 0.5);
   opacity: 1;
 }
 
-body[data-theme="light"] .input:hover,
-body[data-theme="light"] select:hover {
+[data-theme="light"] body .input:hover,
+[data-theme="light"] body select:hover {
   border-color: rgba(99, 102, 241, 0.4) !important;
   background-color: white !important;
   box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1) !important;
 }
 
-body[data-theme="light"] .input:focus,
-body[data-theme="light"] select:focus {
+[data-theme="light"] body .input:focus,
+[data-theme="light"] body select:focus {
   background-color: white !important;
   border-color: var(--accent-purple, #7c3aed) !important;
   box-shadow:
@@ -2357,55 +2341,55 @@ body[data-theme="light"] select:focus {
 }
 
 /* Placement visual container */
-body[data-theme="light"] .placement-visual-container {
+[data-theme="light"] body .placement-visual-container {
   background: linear-gradient(135deg, rgba(240, 242, 248, 0.98), rgba(230, 234, 245, 0.95)) !important;
   border-color: rgba(99, 102, 241, 0.2) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 24px rgba(99, 102, 241, 0.1) !important;
 }
 
-body[data-theme="light"] .placement-visual-container .placement-bar-wrapper {
+[data-theme="light"] body .placement-visual-container .placement-bar-wrapper {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.98)) !important;
   border-color: rgba(99, 102, 241, 0.15) !important;
 }
 
-body[data-theme="light"] .placement-bar .bar-base {
+[data-theme="light"] body .placement-bar .bar-base {
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(59, 130, 246, 0.1) 100%) !important;
   border-color: rgba(99, 102, 241, 0.3) !important;
 }
 
-body[data-theme="light"] .placement-bar .bar-base::before {
+[data-theme="light"] body .placement-bar .bar-base::before {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.85), rgba(248, 250, 255, 0.9)) !important;
   box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.08) !important;
 }
 
-body[data-theme="light"] .placement-bar .bar-base::after {
+[data-theme="light"] body .placement-bar .bar-base::after {
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.04), rgba(139, 92, 246, 0.06), rgba(99, 102, 241, 0.04)) !important;
 }
 
-body[data-theme="light"] .placement-visual-container .placement-controls .btn-mini {
+[data-theme="light"] body .placement-visual-container .placement-controls .btn-mini {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(99, 102, 241, 0.2) !important;
   color: var(--text-primary) !important;
 }
 
-body[data-theme="light"] .placement-visual-container .placement-controls .btn-mini:hover {
+[data-theme="light"] body .placement-visual-container .placement-controls .btn-mini:hover {
   border-color: rgba(99, 102, 241, 0.4) !important;
   background: white !important;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15) !important;
 }
 
-body[data-theme="light"] .placement-bar .bar-label {
+[data-theme="light"] body .placement-bar .bar-label {
   color: rgba(30, 40, 80, 0.6) !important;
   text-shadow: none !important;
 }
 
-body[data-theme="light"] .placement-bar .bar-label:first-child,
-body[data-theme="light"] .placement-bar .bar-label:last-child {
+[data-theme="light"] body .placement-bar .bar-label:first-child,
+[data-theme="light"] body .placement-bar .bar-label:last-child {
   color: rgba(30, 40, 80, 0.75) !important;
 }
 
 /* Light theme: cursor tooltip background */
-body[data-theme="light"] .cursor-tooltip {
+[data-theme="light"] body .cursor-tooltip {
   background: rgba(240, 242, 248, 0.98) !important;
   color: var(--text-primary) !important;
   border-color: rgba(99, 102, 241, 0.2) !important;
@@ -2631,7 +2615,7 @@ body.no-blur .btn.secondary:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-body.no-blur[data-theme="light"] .btn.secondary:hover {
+[data-theme="light"] body.no-blur .btn.secondary:hover {
   background: white;
   border-color: rgba(0, 0, 0, 0.18);
 }

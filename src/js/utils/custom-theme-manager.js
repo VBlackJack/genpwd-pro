@@ -395,12 +395,19 @@ export function applyCustomTheme(theme) {
   if (!theme?.variables) return;
 
   const root = document.documentElement;
+
+  // Clear previous inline variables before applying new ones
+  for (const varDef of THEME_VARIABLES) {
+    root.style.removeProperty(varDef.key);
+  }
+
+  // Custom themes have no CSS [data-theme] blocks — apply via inline styles
   for (const [key, value] of Object.entries(theme.variables)) {
     root.style.setProperty(key, value);
   }
 
-  // Set theme attribute for CSS selectors
-  document.body.setAttribute('data-theme', theme.id);
+  // Set theme attribute on <html> for CSS selectors
+  document.documentElement.setAttribute('data-theme', theme.id);
 
   safeLog(`CustomThemes: Applied theme "${theme.name}"`);
 }

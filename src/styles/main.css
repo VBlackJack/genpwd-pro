@@ -243,57 +243,7 @@
 }
 
 /* ==================== LIGHT THEME ==================== */
-@media (prefers-color-scheme: light) {
-  :root {
-    /* Backgrounds - Light variants */
-    --bg-deep: hsl(220, 20%, 96%);
-    --bg-surface: hsl(220, 15%, 98%);
-    --bg-primary: hsl(220, 20%, 97%);
-    --bg-secondary: hsl(220, 15%, 94%);
-    --bg-tertiary: hsl(220, 10%, 90%);
-    --bg-quaternary: hsl(220, 8%, 86%);
-    --bg-hover: rgba(0, 0, 0, 0.04);
-    --bg-error: rgba(244, 67, 54, 0.08);
-
-    /* Glassmorphism - Light (improved visibility on white backgrounds) */
-    --glass-bg: rgba(255, 255, 255, 0.85);
-    --glass-border: rgba(0, 0, 0, 0.12);
-    --glass-border-light: rgba(0, 0, 0, 0.18);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
-
-    /* Text Colors - Light theme (WCAG AA compliant) */
-    --text-primary: rgba(0, 0, 0, 0.87);
-    --text-secondary: rgba(0, 0, 0, 0.72);
-    --text-muted: rgba(0, 0, 0, 0.70); /* WCAG AA: ~5.5:1 on white bg */
-    --text-hint: rgba(0, 0, 0, 0.58); /* WCAG AA: ~4.6:1 on white bg — bumped for body tint */
-
-    /* Theme-specific text colors */
-    --text-dimmed: #5a5f7a;
-    --text-bright: #1a1f36;
-
-    /* Code background */
-    --bg-code: rgba(0, 0, 0, 0.05);
-
-    /* Borders - Light theme */
-    --border: rgba(0, 0, 0, 0.1);
-    --border-color: rgba(0, 0, 0, 0.1);
-    --border-hover: rgba(0, 0, 0, 0.2);
-
-    /* Shadows - Light theme */
-    --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  }
-
-  body {
-    background:
-      radial-gradient(circle at 10% 20%, rgba(93, 130, 240, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(240, 100, 180, 0.06) 0%, transparent 40%),
-      var(--bg-deep);
-  }
-}
-
-/* Manual theme toggle - mirrors @media (prefers-color-scheme: light) for user override
-   Note: Duplication is intentional - @media handles system preference, [data-theme] handles manual toggle */
+/* Theme handled by [data-theme] attribute set on <html> by theme-init.js */
 [data-theme="light"] {
   --bg-deep: hsl(220, 20%, 96%);
   --bg-surface: hsl(220, 15%, 98%);
@@ -340,15 +290,15 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
-body[data-theme="light"] {
+[data-theme="light"] body {
   background:
     radial-gradient(circle at 10% 20%, rgba(93, 130, 240, 0.08) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(240, 100, 180, 0.06) 0%, transparent 40%),
     var(--bg-deep);
 }
 
-/* Manual dark theme toggle - re-asserts dark values when OS prefers light but user explicitly selects dark.
-   Without this, @media (prefers-color-scheme: light) overrides :root and dark mode breaks on light-OS systems. */
+/* Dark theme - re-asserts dark values over :root defaults.
+   Applied via [data-theme="dark"] on <html>, set by theme-init.js before CSS loads. */
 [data-theme="dark"] {
   /* Backgrounds */
   --bg-deep: hsl(var(--hue-bg), 40%, 8%);
@@ -398,12 +348,204 @@ body[data-theme="light"] {
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-body[data-theme="dark"] {
+[data-theme="dark"] body {
   background:
     radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
     radial-gradient(ellipse 60% 80% at 85% 75%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
     radial-gradient(ellipse 50% 50% at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
     linear-gradient(135deg, hsl(225, 40%, 6%) 0%, hsl(225, 35%, 10%) 50%, hsl(240, 30%, 8%) 100%);
+}
+
+/* ==================== HIGH CONTRAST THEME ==================== */
+[data-theme="high-contrast"] {
+  /* Backgrounds */
+  --bg-deep: #000000;
+  --bg-surface: #1a1a1a;
+  --bg-primary: #000000;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #262626;
+  --bg-quaternary: #0d0d0d;
+  --bg-hover: rgba(255, 255, 255, 0.1);
+  --bg-error: rgba(255, 0, 0, 0.15);
+  --bg-input-hover: rgba(255, 255, 255, 0.08);
+  --bg-input-focus: rgba(255, 255, 255, 0.1);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-light: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  --bg-surface-alpha: rgba(0, 0, 0, 0.9);
+
+  /* Semantic Overlay System */
+  --overlay-subtle: rgba(255, 255, 255, 0.05);
+  --overlay-light: rgba(255, 255, 255, 0.08);
+  --overlay-medium: rgba(255, 255, 255, 0.12);
+  --overlay-strong: rgba(255, 255, 255, 0.18);
+  --overlay-intense: rgba(255, 255, 255, 0.25);
+  --overlay-highlight: rgba(255, 255, 255, 0.35);
+
+  /* Text Colors — maximum contrast */
+  --text-primary: #ffffff;
+  --text-secondary: #f0f0f0;
+  --text-muted: #d0d0d0;
+  --text-hint: #b0b0b0;
+  --text-dimmed: #a0a0a0;
+  --text-bright: #ffffff;
+
+  /* Code background */
+  --bg-code: rgba(255, 255, 255, 0.08);
+
+  /* Accent Colors — high saturation */
+  --accent-cyan: #00ffff;
+  --accent-purple: #ff00ff;
+  --accent-green: #00ff00;
+  --accent-yellow: #ffff00;
+  --accent-red: #ff0000;
+  --accent-blue: #0000ff;
+
+  /* Borders — high visibility */
+  --border: rgba(255, 255, 255, 0.3);
+  --border-color: rgba(255, 255, 255, 0.3);
+  --border-hover: #ffff00;
+
+  /* Shadows */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="high-contrast"] body {
+  background: #000000;
+}
+
+/* ==================== OCEAN THEME ==================== */
+[data-theme="ocean"] {
+  /* Backgrounds */
+  --bg-deep: #0a1120;
+  --bg-surface: #0f172a;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-quaternary: #1a2332;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-error: rgba(248, 113, 113, 0.1);
+  --bg-input-hover: rgba(15, 23, 42, 0.7);
+  --bg-input-focus: rgba(15, 23, 42, 0.8);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  --bg-surface-alpha: rgba(15, 23, 42, 0.85);
+
+  /* Semantic Overlay System */
+  --overlay-subtle: rgba(255, 255, 255, 0.03);
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.08);
+  --overlay-strong: rgba(255, 255, 255, 0.12);
+  --overlay-intense: rgba(255, 255, 255, 0.2);
+  --overlay-highlight: rgba(255, 255, 255, 0.25);
+
+  /* Text Colors */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-hint: #64748b;
+  --text-dimmed: #475569;
+  --text-bright: #e2e8f0;
+
+  /* Code background */
+  --bg-code: rgba(0, 0, 0, 0.3);
+
+  /* Accent Colors */
+  --accent-cyan: #06b6d4;
+  --accent-purple: #a78bfa;
+  --accent-green: #34d399;
+  --accent-yellow: #fbbf24;
+  --accent-red: #f87171;
+  --accent-blue: #60a5fa;
+
+  /* Borders */
+  --border: rgba(71, 85, 105, 0.6);
+  --border-color: rgba(71, 85, 105, 0.6);
+  --border-hover: rgba(100, 116, 139, 0.8);
+
+  /* Shadows */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="ocean"] body {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 85% 75%, rgba(167, 139, 250, 0.08) 0%, transparent 50%),
+    linear-gradient(135deg, #0a1120 0%, #0f172a 50%, #0c1425 100%);
+}
+
+/* ==================== FOREST THEME ==================== */
+[data-theme="forest"] {
+  /* Backgrounds */
+  --bg-deep: #0a1a10;
+  --bg-surface: #14291e;
+  --bg-primary: #14291e;
+  --bg-secondary: #1a3a2b;
+  --bg-tertiary: #234a38;
+  --bg-quaternary: #0f1f17;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-error: rgba(251, 113, 133, 0.1);
+  --bg-input-hover: rgba(20, 41, 30, 0.7);
+  --bg-input-focus: rgba(20, 41, 30, 0.8);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  --bg-surface-alpha: rgba(20, 41, 30, 0.85);
+
+  /* Semantic Overlay System */
+  --overlay-subtle: rgba(255, 255, 255, 0.03);
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.08);
+  --overlay-strong: rgba(255, 255, 255, 0.12);
+  --overlay-intense: rgba(255, 255, 255, 0.2);
+  --overlay-highlight: rgba(255, 255, 255, 0.25);
+
+  /* Text Colors */
+  --text-primary: #ecfdf5;
+  --text-secondary: #d1fae5;
+  --text-muted: #a7f3d0;
+  --text-hint: #6ee7b7;
+  --text-dimmed: #34d399;
+  --text-bright: #ecfdf5;
+
+  /* Code background */
+  --bg-code: rgba(0, 0, 0, 0.3);
+
+  /* Accent Colors */
+  --accent-cyan: #2dd4bf;
+  --accent-purple: #c084fc;
+  --accent-green: #4ade80;
+  --accent-yellow: #fcd34d;
+  --accent-red: #fb7185;
+  --accent-blue: #38bdf8;
+
+  /* Borders */
+  --border: rgba(52, 211, 153, 0.3);
+  --border-color: rgba(52, 211, 153, 0.3);
+  --border-hover: rgba(110, 231, 183, 0.5);
+
+  /* Shadows */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="forest"] body {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(45, 212, 191, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 85% 75%, rgba(192, 132, 252, 0.06) 0%, transparent 50%),
+    linear-gradient(135deg, #0a1a10 0%, #14291e 50%, #0f1f17 100%);
 }
 
 body {
@@ -583,7 +725,7 @@ body.no-blur {
   --overlay-light: rgba(255, 255, 255, 0.15);
 }
 
-body.no-blur[data-theme="light"] {
+[data-theme="light"] body.no-blur {
   --overlay-subtle: rgba(0, 0, 0, 0.06);
   --overlay-light: rgba(0, 0, 0, 0.10);
 }

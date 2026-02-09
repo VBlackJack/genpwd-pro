@@ -226,7 +226,18 @@ if (document.readyState === 'loading') {
       .replace(/<script[^>]*type="module"[^>]*>.*?<\/script>/gs, '')
       .replace(/<script[^>]*src="js\/app\.js"[^>]*><\/script>/g, '');
 
-    // Injection CSS dans <head>
+    // Inline theme-init.js (anti-FOUC script) — must run before CSS
+    const themeInitPath = path.join(this.sourceDir, 'js', 'theme-init.js');
+    if (fs.existsSync(themeInitPath)) {
+      const themeInitContent = fs.readFileSync(themeInitPath, 'utf8');
+      // Remove the external script tag
+      htmlContent = htmlContent.replace(/<script[^>]*src="js\/theme-init\.js"[^>]*><\/script>\s*/g, '');
+      // Inject inlined script before </head>, before CSS
+      const themeInitInjection = `  <script>${themeInitContent}</script>\n`;
+      htmlContent = htmlContent.replace('</head>', themeInitInjection + '</head>');
+    }
+
+    // Injection CSS dans <head> (after theme-init script)
     const cssInjection = `  <style>\n${css}  </style>\n</head>`;
     htmlContent = htmlContent.replace('</head>', cssInjection);
 

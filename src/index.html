@@ -35,6 +35,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GenPwd Pro">
 
+  <!-- Anti-FOUC: set [data-theme] on <html> before CSS loads -->
+  <script src="js/theme-init.js"></script>
+
   <!-- Resource Hints for Performance -->
   <link rel="prefetch" href="dictionaries/french.json" as="fetch" crossorigin>
   <link rel="preload" href="styles/main.css" as="style">
