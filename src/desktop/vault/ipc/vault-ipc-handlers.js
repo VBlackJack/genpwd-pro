@@ -1812,7 +1812,7 @@ function validateObject(value, name) {
 /**
  * Valid entry types
  */
-const VALID_ENTRY_TYPES = ['login', 'card', 'note', 'identity'];
+const VALID_ENTRY_TYPES = ['login', 'card', 'note', 'identity', 'preset'];
 
 /**
  * Allowed fields per entry type (whitelist)
@@ -1821,7 +1821,8 @@ const ALLOWED_ENTRY_FIELDS = {
   login: ['username', 'password', 'url', 'totp', 'notes', 'folderId', 'favorite', 'tagIds'],
   card: ['holder', 'number', 'expiry', 'cvv', 'notes', 'folderId', 'favorite', 'tagIds'],
   note: ['content', 'notes', 'folderId', 'favorite', 'tagIds'],
-  identity: ['fullName', 'email', 'phone', 'address', 'notes', 'folderId', 'favorite', 'tagIds']
+  identity: ['fullName', 'email', 'phone', 'address', 'notes', 'folderId', 'favorite', 'tagIds'],
+  preset: ['presetId', 'description', 'config', 'savedAt', 'notes', 'folderId', 'favorite', 'tagIds']
 };
 
 /**
