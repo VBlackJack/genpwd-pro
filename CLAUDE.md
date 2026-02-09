@@ -9,7 +9,7 @@ GenPwd Pro is a multi-platform secure password manager and generator (v3.1.0). I
 - **Electron desktop** — Windows/macOS/Linux (`electron-main.cjs` + `electron-preload.cjs`)
 - **Browser extensions** — Chrome (Manifest V3) and Firefox (Manifest V2) under `extensions/`
 - **CLI** — Node.js tool under `cli/` (Commander.js)
-- **Android** — Kotlin native app under `android/` (Hilt DI, Room DB, Jetpack Compose)
+- **Android** — Kotlin native app under `android/` (Hilt DI, file-based `.gpv` vault, Jetpack Compose)
 
 ## Common Commands
 
@@ -139,12 +139,36 @@ Event-based hooks architecture. Plugins are ES6 modules with hooks: `onGenerate`
 
 - Package: `com.julien.genpwdpro`
 - DI: Hilt + KSP
-- DB: Room (encrypted via SQLCipher)
 - Compose UI with Material3
 - Min SDK 24, target SDK 34
 - Dependency verification: strict mode via `gradle/verification-metadata.xml`
 - Static analysis baselines in `config/lint-baseline.xml` and `config/detekt/detekt-baseline.xml` (temporary, to be shrunk)
 - After fixing a baselined issue, regenerate with `./gradlew :app:lint --update-baseline` or `./gradlew detektBaseline`
+
+### Android Vault Architecture (file-based, post-migration)
+
+The Android vault has migrated from Room-based storage to file-based `.gpv` (GenPwd Vault) files. Room is **only** used for metadata (`vault_registry` and `password_history` tables).
+
+```
+UI Layer (Compose + ViewModels)
+        ↓
+FileVaultRepository  (high-level API for ViewModels)
+        ↓
+VaultSessionManager  (single source of truth, in-memory sessions)
+        ↓
+VaultFileManager (I/O)  +  VaultCryptoManager (Argon2id → AES-256-GCM)
+        ↓
+.gpv files (encrypted JSON on filesystem or SAF)
+```
+
+Key rules:
+- Use `FileVaultRepository` in new ViewModels (not the legacy `VaultRepository`)
+- `.gpv` files are portable, cloud-sync-compatible encrypted JSON
+- Master password is never stored; biometric unlock uses Android Keystore-encrypted master password
+
+### Android Cloud Sync
+
+Production providers: **Google Drive** (OAuth2, API v3), **WebDAV** (Nextcloud/ownCloud/Synology). OneDrive/pCloud/ProtonDrive have partial templates. Conflict resolution supports LOCAL_WINS, REMOTE_WINS, NEWEST_WINS, SMART_MERGE, and MANUAL modes.
 
 ## Code Style
 
@@ -153,5 +177,12 @@ Event-based hooks architecture. Plugins are ES6 modules with hooks: `onGenerate`
 - Unused vars pattern: prefix with `_` to suppress warnings
 - License header: Apache 2.0, Copyright Julien Bombled (required on all new files)
 - All code, comments, and commit messages in English
-- `.gpdb` is the vault file extension (GenPwd Pro Database)
+- Web vault file extension: `.gpdb` (GenPwd Pro Database); Android vault file extension: `.gpv` (GenPwd Vault)
 - Node.js >= 20.0.0 required
+
+## CI/CD
+
+- **Web:** `.github/workflows/web-ci.yml` — lint, test (fast + full + coverage + compat on Node 20/22), build, security audit. Triggers on `main` and `claude/**` branches.
+- **Android:** `.github/workflows/android-ci.yml` — lint, detekt, ktlintCheck, unit tests. JDK 17 required.
+- **Security:** `.github/workflows/android-security.yml`, `security-scan.yml`, `electron-cve-monitor.yml`, `sbom-generation.yml`
+- Devcontainer available at `.devcontainer/devcontainer.json` for Android SDK setup.
