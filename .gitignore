@@ -186,3 +186,7 @@ full_test_output*.txt
 
 # BMAD development methodology (local only)
 .bmad/
+
+# Claude Code temp files
+tmpclaude-*
+nul
