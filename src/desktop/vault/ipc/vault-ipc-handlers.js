@@ -1875,7 +1875,7 @@ function validateEntryData(type, data) {
       throw new Error(t('errors.validation.mustBeString', { field: key }));
     } else {
       // SECURITY: Validate string field length to prevent memory exhaustion
-      const maxLength = (key === 'notes' || key === 'content')
+      const maxLength = (key === 'notes' || key === 'content' || key === 'config')
         ? INPUT_LIMITS.CONTENT_MAX
         : INPUT_LIMITS.NAME_MAX;
       if (value.length > maxLength) {

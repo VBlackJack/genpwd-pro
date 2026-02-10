@@ -127,12 +127,15 @@ class PresetManager {
         const data = entry.data;
         if (!data?.config) continue;
 
+        // Parse config if stored as JSON string
+        const config = typeof data.config === 'string' ? JSON.parse(data.config) : data.config;
+
         // Create preset from vault entry
         const preset = {
           id: entry.id, // Use vault entry ID as preset ID for sync
           name: entry.title,
           description: data.description || '',
-          config: { ...data.config },
+          config: { ...config },
           createdAt: new Date(entry.createdAt || Date.now()),
           updatedAt: new Date(entry.modifiedAt || Date.now()),
           isDefault: false,
@@ -197,8 +200,8 @@ class PresetManager {
     try {
       const entryData = {
         presetId: preset.id,
-        description: preset.description,
-        config: preset.config,
+        description: preset.description || '',
+        config: JSON.stringify(preset.config),
         savedAt: new Date().toISOString()
       };
 
@@ -227,7 +230,7 @@ class PresetManager {
       return true;
     } catch (error) {
       safeLog(`[PresetManager] Error saving to vault: ${error.message}`);
-      return false;
+      throw error;
     }
   }
 
@@ -694,7 +697,7 @@ class PresetManager {
       const entryData = {
         presetId: preset.id,
         description: preset.description,
-        config: preset.config,
+        config: JSON.stringify(preset.config),
         exportedAt: new Date().toISOString()
       };
 
@@ -796,11 +799,12 @@ class PresetManager {
       }
 
       // Create new preset from vault data
+      const parsedConfig = typeof data.config === 'string' ? JSON.parse(data.config) : data.config;
       const preset = {
         id: this.generateId(),
         name: entry.title,
         description: data.description || '',
-        config: { ...data.config },
+        config: { ...parsedConfig },
         createdAt: new Date(),
         updatedAt: new Date(),
         isDefault: false
