@@ -148,7 +148,7 @@ function buildCSVRow(fields) {
  */
 export function exportToJSON(entries) {
   const exportData = {
-    version: '3.1.0',
+    version: '3.1.1',
     exportedAt: new Date().toISOString(),
     entries: entries.map(e => ({
       type: e.type,

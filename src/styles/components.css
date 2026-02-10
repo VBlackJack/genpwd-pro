@@ -407,6 +407,18 @@ textarea.field-invalid {
   color: var(--text-primary);
 }
 
+/* Light theme — ghost buttons with subtle dark boundary */
+[data-theme="light"] .btn.ghost {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .btn.ghost:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
+}
+
 /* ============================================================================
    DISABLED STATES - Enhanced visibility
    ============================================================================ */

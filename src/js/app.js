@@ -30,7 +30,7 @@ import { initThemeToggle } from './ui/components/theme-toggle.js';
 import { isDevelopment } from './utils/environment.js';
 import { initKeyboardShortcuts, removeKeyboardShortcuts } from './utils/keyboard-shortcuts.js';
 
-// Feature imports (v3.1.0)
+// Feature imports (v3.1.1)
 import { i18n } from './utils/i18n.js';
 import { initSentry, captureException } from './config/sentry-config.js';
 import analytics from './utils/analytics.js';
@@ -54,7 +54,7 @@ import { initTooltips } from './ui/tooltip-manager.js';
 class GenPwdApp {
   constructor() {
     this.initialized = false;
-    this.version = '3.1.0';
+    this.version = '3.1.1';
     this.vaultUI = null;
   }
 

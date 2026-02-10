@@ -162,6 +162,12 @@ header[data-aurora="true"]::before {
   border-color: rgba(255, 255, 255, 0.14);
 }
 
+/* Light theme — subtle solid background */
+[data-theme="light"] .header-tabs {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
 .header-tab {
   position: relative;
   display: flex;
@@ -280,6 +286,18 @@ header[data-aurora="true"]::before {
 [data-theme="dark"] .about-btn:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(99, 102, 241, 0.5);
+  color: var(--text-primary);
+}
+
+/* Light theme — subtle solid background */
+[data-theme="light"] .about-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .about-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(99, 102, 241, 0.4);
   color: var(--text-primary);
 }
 

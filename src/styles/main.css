@@ -287,7 +287,22 @@
 
   /* Shadows - Light theme */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  --shadow-primary: 0 4px 12px rgba(var(--rgb-primary), 0.2);
+  --focus-ring-shadow: 0 0 0 3px rgba(var(--rgb-primary), 0.1);
+
+  /* Danger button - Light theme */
+  --danger-bg: hsl(350, 85%, 95%);
+  --danger-bg-dark: hsl(350, 80%, 92%);
+  --danger-bg-hover: hsl(350, 85%, 90%);
+  --danger-border: hsl(350, 70%, 65%);
+  --danger-text: hsl(350, 80%, 35%);
+
+  /* Modal backdrop - Light theme */
+  --modal-backdrop: rgba(0, 0, 0, 0.35);
+  --modal-backdrop-heavy: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="light"] body {
@@ -412,6 +427,13 @@
   /* Shadows */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* Danger button — maximum contrast */
+  --danger-bg: hsl(350, 100%, 15%);
+  --danger-bg-dark: hsl(350, 100%, 10%);
+  --danger-bg-hover: hsl(350, 100%, 20%);
+  --danger-border: #ff0000;
+  --danger-text: #ffffff;
 }
 
 [data-theme="high-contrast"] body {

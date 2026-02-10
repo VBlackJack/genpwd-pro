@@ -1074,9 +1074,9 @@ input:checked + .toggle-slider::before {
 }
 
 .error-box {
-  background: var(--bg-error, #FFEBEE);
+  background: var(--bg-error);
   border: 1px solid var(--accent-red);
-  color: var(--accent-red-dark, #B71C1C);
+  color: var(--accent-red-dark);
   padding: 15px 20px;
   border-radius: var(--radius-sm);
 }
@@ -1085,6 +1085,12 @@ input:checked + .toggle-slider::before {
   background: var(--bg-error);
   border-color: var(--accent-red-dark);
   color: var(--accent-red-light);
+}
+
+[data-theme="light"] .error-box {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: var(--accent-red);
+  color: hsl(350, 80%, 35%);
 }
 
 .error-box strong {
@@ -1514,6 +1520,17 @@ input:checked + .toggle-slider::before {
 [data-theme="dark"] .copy-history-btn:hover {
   background: rgba(99, 102, 241, 0.28);
   border-color: var(--accent-cyan);
+}
+
+/* Light theme — subtle tinted background */
+[data-theme="light"] .copy-history-btn {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="light"] .copy-history-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
 }
 
 .copy-history-popover {
