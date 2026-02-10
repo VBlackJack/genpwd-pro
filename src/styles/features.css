@@ -219,15 +219,27 @@ input:checked + .toggle-slider::before {
   width: 100%;
   padding: 10px;
   border-radius: var(--radius-sm, 6px);
-  border: 1px solid var(--border-color, #374151);
-  background: var(--bg-input, #1f2937);
-  color: var(--text-primary, #e5e7eb);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface-alpha);
+  color: var(--text-primary);
+  transition: all var(--transition-smooth);
 }
 
 .input-field:focus-visible {
-  outline: 2px solid var(--accent-cyan, #00d4ff);
+  outline: 2px solid var(--accent-cyan);
   outline-offset: 2px;
-  border-color: var(--accent-blue, #3b82f6);
+  border-color: var(--accent-blue);
+}
+
+[data-theme="light"] .input-field {
+  background: white;
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .input-field:focus-visible {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
 /* Error message component */
