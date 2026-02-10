@@ -1,136 +1,136 @@
-# 📱 Guide d'Utilisation - Système de Presets
+# User Guide - Preset System
 
-Guide rapide pour utiliser le système de presets dans GenPwd Pro Android.
+Quick guide for using the preset system in GenPwd Pro Android.
 
-## 🎯 Workflow du Système de Presets
+## Preset System Workflow
 
-### 1. Création d'un Vault
-Lors de la création d'un nouveau vault, un **preset par défaut** est automatiquement créé avec les paramètres suivants :
-- **Mode** : Syllables (par défaut)
-- **Longueur** : 20 caractères
-- **Chiffres** : 2
-- **Spéciaux** : 2
-- **Icône** : 🔐
-- **Non modifiable** : Ce preset système ne peut pas être supprimé
+### 1. Creating a Vault
+When creating a new vault, a **default preset** is automatically created with the following settings:
+- **Mode**: Syllables (default)
+- **Length**: 20 characters
+- **Digits**: 2
+- **Specials**: 2
+- **Icon**: Lock
+- **Non-deletable**: This system preset cannot be deleted
 
-### 2. Utilisation des Presets dans le Générateur
+### 2. Using Presets in the Generator
 
-#### Dashboard (Écran d'accueil)
-Le **générateur rapide** du Dashboard utilise des paramètres par défaut simples :
-- Mode : Syllables
-- Longueur : 16 caractères
-- Chiffres : 2
-- Spéciaux : 2
+#### Dashboard (Home Screen)
+The **quick generator** on the Dashboard uses simple default settings:
+- Mode: Syllables
+- Length: 16 characters
+- Digits: 2
+- Specials: 2
 
-**Note** : Le générateur rapide n'utilise pas de presets car il n'est pas lié à un vault spécifique.
+**Note**: The quick generator does not use presets because it is not linked to a specific vault.
 
-#### Générateur Complet (Onglet "Générateur")
+#### Full Generator ("Generator" Tab)
 
-**Pour utiliser vos presets :**
-1. ✅ Déverrouillez un vault (via l'onglet "Coffres")
-2. ✅ Allez dans l'onglet "Générateur" (bottom navigation)
-3. ✅ Le **sélecteur de presets** apparaît automatiquement
-4. ✅ Le **preset par défaut** est automatiquement sélectionné
-5. ✅ Cliquez sur le sélecteur pour choisir un autre preset
+**To use your presets:**
+1. Unlock a vault (via the "Vaults" tab)
+2. Go to the "Generator" tab (bottom navigation)
+3. The **preset selector** appears automatically
+4. The **default preset** is automatically selected
+5. Click on the selector to choose a different preset
 
-### 3. Gestion des Presets
+### 3. Managing Presets
 
-#### Créer un Preset Personnalisé
-1. Déverrouillez un vault
-2. Allez dans "Générateur"
-3. Configurez vos paramètres souhaités
-4. Cliquez sur "Enregistrer comme preset"
-5. Donnez un nom et choisissez une icône (15 disponibles)
-6. Option : Cochez "Définir comme défaut"
+#### Creating a Custom Preset
+1. Unlock a vault
+2. Go to "Generator"
+3. Configure your desired settings
+4. Click "Save as preset"
+5. Give it a name and choose an icon (15 available)
+6. Option: Check "Set as default"
 
-**Limite** : Maximum **3 presets personnalisés** par mode (Syllables et Passphrase)
+**Limit**: Maximum **3 custom presets** per mode (Syllables and Passphrase)
 
-#### Gérer vos Presets Existants
-1. Depuis le Dashboard, cliquez sur "Gérer les presets" d'un vault
-   OU
-2. Depuis le sélecteur de presets, cliquez sur "Gérer"
+#### Managing Your Existing Presets
+1. From the Dashboard, click "Manage presets" on a vault
+   OR
+2. From the preset selector, click "Manage"
 
-**Actions disponibles :**
-- ✏️ Modifier le nom et l'icône
-- ⭐ Définir comme défaut
-- 🗑️ Supprimer (sauf preset système)
-- 📊 Voir les statistiques d'utilisation
+**Available actions:**
+- Edit the name and icon
+- Set as default
+- Delete (except system preset)
+- View usage statistics
 
-### 4. Icônes de Presets Disponibles
+### 4. Available Preset Icons
 
-Lors de la création/modification d'un preset, 15 icônes sont disponibles :
+When creating/editing a preset, 15 icons are available:
 ```
-🔐 🔑 🛡️ ⚡ 🎯
-🌟 💎 🚀 🔥 ⭐
-💪 🎨 🎭 🎪 🎬
+Lock, Key, Shield, Lightning, Target,
+Star, Diamond, Rocket, Fire, Star,
+Strength, Palette, Masks, Tent, Clapperboard
 ```
 
-### 5. Statistiques de Presets
+### 5. Preset Statistics
 
-Chaque preset track :
-- **Nombre d'utilisations** : Incrémenté à chaque génération
-- **Dernière utilisation** : Timestamp mis à jour automatiquement
+Each preset tracks:
+- **Usage count**: Incremented with each generation
+- **Last used**: Timestamp updated automatically
 
-Ces stats sont visibles dans l'écran de gestion des presets.
+These stats are visible in the preset management screen.
 
-## 🔐 Sécurité
+## Security
 
-- ✅ **Presets chiffrés** : Stockés avec AES-256-GCM
-- ✅ **Liés aux vaults** : Chaque preset appartient à un vault
-- ✅ **Clé du vault** : Utilisée pour chiffrer/déchiffrer les presets
-- ✅ **Cascade delete** : Si vous supprimez un vault, ses presets sont aussi supprimés
+- **Encrypted presets**: Stored with AES-256-GCM
+- **Linked to vaults**: Each preset belongs to a vault
+- **Vault key**: Used to encrypt/decrypt presets
+- **Cascade delete**: If you delete a vault, its presets are also deleted
 
-## 🎨 Navigation dans l'App
+## App Navigation
 
-### Bottom Navigation (Barre du bas)
-3 onglets principaux (icônes seulement pour gagner de l'espace) :
-- 🏠 **Accueil** : Dashboard avec générateur rapide
-- 🔑 **Générateur** : Générateur complet avec presets
-- 🔒 **Coffres** : Gestion des vaults
+### Bottom Navigation (Bottom Bar)
+3 main tabs (icons only to save space):
+- **Home**: Dashboard with quick generator
+- **Generator**: Full generator with presets
+- **Vaults**: Vault management
 
-### Dashboard (Accueil)
-- **Générateur rapide** : Génération instantanée (sans preset)
-- **Liste des coffres** : Statistiques et accès rapide
-- **Outils rapides** : Analyzer, Historique, Phrases personnalisées
+### Dashboard (Home)
+- **Quick generator**: Instant generation (without preset)
+- **Vault list**: Statistics and quick access
+- **Quick tools**: Analyzer, History, Custom phrases
 
-## ❓ FAQ
+## FAQ
 
-**Q : Pourquoi je ne vois pas le sélecteur de presets ?**
-R : Il faut d'abord déverrouiller un vault. Le sélecteur apparaît uniquement dans l'onglet "Générateur" quand un vault est déverrouillé.
+**Q: Why don't I see the preset selector?**
+A: You need to unlock a vault first. The selector only appears in the "Generator" tab when a vault is unlocked.
 
-**Q : Puis-je utiliser des presets dans le générateur rapide du Dashboard ?**
-R : Non, le générateur rapide utilise des paramètres par défaut simples. Pour utiliser vos presets, allez dans l'onglet "Générateur" après avoir déverrouillé un vault.
+**Q: Can I use presets in the Dashboard quick generator?**
+A: No, the quick generator uses simple default settings. To use your presets, go to the "Generator" tab after unlocking a vault.
 
-**Q : Combien de presets puis-je créer ?**
-R : Maximum 3 presets personnalisés par mode (Syllables et Passphrase), plus 1 preset système par défaut non supprimable.
+**Q: How many presets can I create?**
+A: Maximum 3 custom presets per mode (Syllables and Passphrase), plus 1 non-deletable default system preset.
 
-**Q : Puis-je modifier le preset par défaut ?**
-R : Le preset "Défaut" système ne peut pas être modifié ou supprimé. Vous pouvez créer vos propres presets et les marquer comme "défaut" pour les utiliser automatiquement.
+**Q: Can I edit the default preset?**
+A: The system "Default" preset cannot be edited or deleted. You can create your own presets and mark them as "default" to use them automatically.
 
-**Q : Les presets sont-ils synchronisés ?**
-R : Les presets sont stockés localement dans chaque vault. Si vous utilisez la synchronisation cloud, les presets sont inclus dans le vault chiffré.
+**Q: Are presets synchronized?**
+A: Presets are stored locally in each vault. If you use cloud synchronization, presets are included in the encrypted vault.
 
-## 🔄 Workflow Complet Exemple
+## Full Example Workflow
 
-1. **Lancement de l'app** → Dashboard visible
-2. **Créer un nouveau vault** → Preset par défaut créé automatiquement
-3. **Déverrouiller le vault** → VaultSessionManager garde la session en mémoire
-4. **Aller dans "Générateur"** → Preset par défaut chargé automatiquement
-5. **Cliquer sur "Générer"** → Mot de passe généré avec preset
-6. **Modifier les paramètres** → Ajuster selon vos besoins
-7. **"Enregistrer comme preset"** → Créer un preset personnalisé
-8. **Sélectionner le nouveau preset** → Utiliser vos paramètres personnalisés
-9. **Marquer comme défaut** → Utilisé automatiquement au prochain lancement
+1. **Launch the app** - Dashboard visible
+2. **Create a new vault** - Default preset created automatically
+3. **Unlock the vault** - VaultSessionManager keeps the session in memory
+4. **Go to "Generator"** - Default preset loaded automatically
+5. **Click "Generate"** - Password generated with preset
+6. **Modify settings** - Adjust according to your needs
+7. **"Save as preset"** - Create a custom preset
+8. **Select the new preset** - Use your custom settings
+9. **Mark as default** - Used automatically on next launch
 
-## 📝 Notes Techniques
+## Technical Notes
 
-- **VaultSessionManager** : Garde en mémoire le vault déverrouillé et gère le timeout
-- **GeneratorViewModel** : Charge automatiquement les presets du vault actif
-- **PresetRepository** : Gère le chiffrement/déchiffrement
-- **Database Migration** : v4 → v5 ajoute la table presets
-- **Material Design 3** : UI moderne et cohérente
+- **VaultSessionManager**: Keeps the unlocked vault in memory and manages timeout
+- **GeneratorViewModel**: Automatically loads presets from the active vault
+- **PresetRepository**: Manages encryption/decryption
+- **Database Migration**: v4 to v5 adds the presets table
+- **Material Design 3**: Modern and consistent UI
 
 ---
 
-**Version** : 2.5.2
-**Documentation** : Complète et à jour
+**Version**: 2.5.2
+**Documentation**: Complete and up to date

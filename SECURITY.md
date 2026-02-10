@@ -3,9 +3,9 @@
 ## Supported Versions
 | Version | Supported |
 |---------|-----------|
-| 1.1.x   | ✅
-| 1.0.x   | ⚠️ Security fixes only for critical issues
-| < 1.0   | ❌
+| 1.1.x   | Yes |
+| 1.0.x   | Security fixes only for critical issues |
+| < 1.0   | No |
 
 We align support windows with the latest minor release train. Once a new minor ships, the previous line only receives high-priority security patches for 90 days.
 
@@ -30,11 +30,11 @@ GenPwd Pro safeguards user secrets across several surfaces:
 - Widgets and notifications default to redacted states while the device is locked.
 - Network stack pins to system trust anchors with custom overrides only for debug builds.
 
-## Data handling guarantees
-- **Clés Tink protégées par Keystore** : le `CryptoEngine` s’appuie sur `AndroidKeysetManager` et un URI maître `android-keystore://genpwdpro_master_key`. Les clés symétriques ne quittent jamais le keystore matériel.
-- **SessionStore volatile** : aucune donnée secrète (mots de passe, OTP) n’est persistée dans `SessionStore`. Les sessions ne contiennent que des identifiants opaques.
-- **SQLCipher** : la base Room applique les PRAGMA `cipher_page_size`, `cipher_memory_security` et `cipher_plaintext_header_size` pour renforcer le stockage chiffré.
-- **Presse-papiers & FLAG_SECURE** : le contenu copié est effacé automatiquement, masqué dans les notifications et toutes les surfaces sensibles appliquent `FLAG_SECURE` (y compris les feuilles, dialogues et activités OTP).
+## Data Handling Guarantees
+- **Tink keys protected by Keystore**: the `CryptoEngine` relies on `AndroidKeysetManager` and a master URI `android-keystore://genpwdpro_master_key`. Symmetric keys never leave the hardware keystore.
+- **Volatile SessionStore**: no secret data (passwords, OTPs) is persisted in `SessionStore`. Sessions contain only opaque identifiers.
+- **SQLCipher**: the Room database applies the `cipher_page_size`, `cipher_memory_security`, and `cipher_plaintext_header_size` PRAGMAs to strengthen encrypted storage.
+- **Clipboard & FLAG_SECURE**: copied content is automatically cleared, hidden in notifications, and all sensitive surfaces apply `FLAG_SECURE` (including sheets, dialogs, and OTP activities).
 
 Known trade-offs:
 - Clipboard auto-clear relies on platform timers; some OEMs may ignore scheduled clears.

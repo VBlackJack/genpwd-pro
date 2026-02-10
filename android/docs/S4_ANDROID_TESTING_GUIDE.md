@@ -1,14 +1,14 @@
 # Sprint S4: Android Testing & Release Guide
 
 **Status**: Ready for Testing
-**Version**: 1.2.0-alpha.34 → 1.2.0-RC1
+**Version**: 1.2.0-alpha.34 -> 1.2.0-RC1
 **Target**: Google Play Store (Closed Testing)
 
-## 🎯 Overview
+## Overview
 
 This guide provides step-by-step instructions for testing, building, and publishing the GenPwd Pro Android app to the Google Play Store.
 
-## ⚙️ Prerequisites
+## Prerequisites
 
 ### Required Software
 - **Android Studio**: Hedgehog (2023.1.1) or later
@@ -25,7 +25,7 @@ This guide provides step-by-step instructions for testing, building, and publish
 
 ---
 
-## 📋 Phase 1: Unit Testing
+## Phase 1: Unit Testing
 
 ### Step 1.1: Run Unit Tests
 
@@ -82,7 +82,7 @@ open app/build/reports/coverage/test/debug/index.html
 
 ---
 
-## 🤖 Phase 2: Instrumented Testing (Optional)
+## Phase 2: Instrumented Testing (Optional)
 
 ### Step 2.1: Start Emulator
 
@@ -120,38 +120,38 @@ open app/build/reports/androidTests/connected/index.html
 On emulator or physical device:
 
 1. **Generate Password**:
-   - ✅ Syllables mode (length 12-32)
-   - ✅ Passphrase mode (4-8 words)
-   - ✅ Leet mode
-   - ✅ Copy to clipboard
+   - Syllables mode (length 12-32)
+   - Passphrase mode (4-8 words)
+   - Leet mode
+   - Copy to clipboard
 
 2. **Vault System**:
-   - ✅ Create vault
-   - ✅ Add passwords
-   - ✅ Search/filter
-   - ✅ Edit/delete
-   - ✅ Export to JSON/CSV
+   - Create vault
+   - Add passwords
+   - Search/filter
+   - Edit/delete
+   - Export to JSON/CSV
 
 3. **Security**:
-   - ✅ App lock (PIN/Pattern/Biometric)
-   - ✅ Auto-lock (30s timeout)
-   - ✅ Vault encryption
+   - App lock (PIN/Pattern/Biometric)
+   - Auto-lock (30s timeout)
+   - Vault encryption
 
 4. **Cloud Sync** (if configured):
-   - ✅ OAuth2 login
-   - ✅ Upload vault
-   - ✅ Download vault
-   - ✅ Conflict resolution
+   - OAuth2 login
+   - Upload vault
+   - Download vault
+   - Conflict resolution
 
 5. **Import/Export**:
-   - ✅ Import 1Password CSV
-   - ✅ Import LastPass CSV
-   - ✅ Import KeePass KDBX
-   - ✅ Export JSON
+   - Import 1Password CSV
+   - Import LastPass CSV
+   - Import KeePass KDBX
+   - Export JSON
 
 ---
 
-## 🚀 Phase 3: Performance Testing
+## Phase 3: Performance Testing
 
 ### Step 3.1: Startup Time Profiling
 
@@ -165,7 +165,7 @@ adb shell am start -W -n com.julien.genpwdpro/.MainActivity
 
 **Expected Output**:
 ```
-TotalTime: 1850  # <2000ms ✅
+TotalTime: 1850  # <2000ms
 ```
 
 ### Step 3.2: Password Generation Benchmark
@@ -180,13 +180,13 @@ fun benchmarkPasswordGeneration() {
         passwordGenerator.generateSyllables(16)
     }
     val endTime = System.nanoTime()
-    val avgTime = (endTime - startTime) / 1000 / 1000 // μs
-    println("Average: $avgTime μs")
-    assertTrue(avgTime < 100) // <100μs per generation
+    val avgTime = (endTime - startTime) / 1000 / 1000 // us
+    println("Average: $avgTime us")
+    assertTrue(avgTime < 100) // <100us per generation
 }
 ```
 
-**Target**: <100μs per generation
+**Target**: <100us per generation
 
 ### Step 3.3: Memory Profiling
 
@@ -217,7 +217,7 @@ adb shell dumpsys batterystats | grep "com.julien.genpwdpro"
 
 ---
 
-## 🔑 Phase 4: Release Build Preparation
+## Phase 4: Release Build Preparation
 
 ### Step 4.1: Create Release Keystore (First Time Only)
 
@@ -234,9 +234,9 @@ keytool -genkey -v \
 ```
 
 **Important**:
-- ⚠️ **BACKUP THIS FILE** - Store in secure location (password manager, encrypted drive)
-- ⚠️ **NEVER COMMIT TO GIT** - Already in `.gitignore`
-- ⚠️ If lost, you cannot update the app on Play Store
+- **BACKUP THIS FILE** - Store in secure location (password manager, encrypted drive)
+- **NEVER COMMIT TO GIT** - Already in `.gitignore`
+- If lost, you cannot update the app on Play Store
 
 ### Step 4.2: Create keystore.properties
 
@@ -319,7 +319,7 @@ adb install apks/universal.apk
 
 ---
 
-## 📦 Phase 5: Play Store Submission
+## Phase 5: Play Store Submission
 
 ### Step 5.1: Create Google Play Console Account
 
@@ -350,51 +350,51 @@ adb install apks/universal.apk
 
   Generate strong, memorable passwords without internet connection. Your security, your control.
 
-  🔐 GENERATION MODES
-  • Syllables: Pronounceable passwords (ex: "TakLabMurPix12")
-  • Passphrase: Diceware-style phrases (ex: "correct-horse-battery-staple")
-  • Leet Mode: Replace letters with numbers (ex: "P@ssw0rd")
-  • Customizable length, complexity, and special characters
+  GENERATION MODES
+  - Syllables: Pronounceable passwords (ex: "TakLabMurPix12")
+  - Passphrase: Diceware-style phrases (ex: "correct-horse-battery-staple")
+  - Leet Mode: Replace letters with numbers (ex: "P@ssw0rd")
+  - Customizable length, complexity, and special characters
 
-  🗄️ VAULT SYSTEM
-  • Encrypted password storage (AES-256-GCM + Argon2id)
-  • Organize with categories and tags
-  • Search and filter passwords
-  • Import from 1Password, LastPass, KeePass
-  • Export to JSON, CSV, KDBX
+  VAULT SYSTEM
+  - Encrypted password storage (AES-256-GCM + Argon2id)
+  - Organize with categories and tags
+  - Search and filter passwords
+  - Import from 1Password, LastPass, KeePass
+  - Export to JSON, CSV, KDBX
 
-  🔒 SECURITY FEATURES
-  • 100% offline - no data collection, no internet required
-  • App lock: PIN, Pattern, Fingerprint, Face ID
-  • Auto-lock after 30 seconds
-  • Secure clipboard (auto-clear after 30s)
-  • Zero-knowledge encryption
+  SECURITY FEATURES
+  - 100% offline - no data collection, no internet required
+  - App lock: PIN, Pattern, Fingerprint, Face ID
+  - Auto-lock after 30 seconds
+  - Secure clipboard (auto-clear after 30s)
+  - Zero-knowledge encryption
 
-  ☁️ CLOUD SYNC (OPTIONAL)
-  • End-to-end encrypted sync to Google Drive, Dropbox, OneDrive
-  • OAuth2 authentication
-  • Conflict resolution
-  • Auto-sync on changes
+  CLOUD SYNC (OPTIONAL)
+  - End-to-end encrypted sync to Google Drive, Dropbox, OneDrive
+  - OAuth2 authentication
+  - Conflict resolution
+  - Auto-sync on changes
 
-  📱 FEATURES
-  • Password strength meter
-  • Entropy calculator
-  • Breach checker (offline database)
-  • TOTP 2FA generator
-  • Password history
-  • Dark mode
+  FEATURES
+  - Password strength meter
+  - Entropy calculator
+  - Breach checker (offline database)
+  - TOTP 2FA generator
+  - Password history
+  - Dark mode
 
-  🌐 OPEN SOURCE
-  • MIT License
-  • Auditable code: github.com/VBlackJack/genpwd-pro
-  • Community-driven
-  • No tracking, no ads, no subscriptions
+  OPEN SOURCE
+  - MIT License
+  - Auditable code: github.com/VBlackJack/genpwd-pro
+  - Community-driven
+  - No tracking, no ads, no subscriptions
 
-  ⚡ PRIVACY-FIRST
-  • No internet permission required (except for optional cloud sync)
-  • No analytics or telemetry
-  • No data collection
-  • All processing on-device
+  PRIVACY-FIRST
+  - No internet permission required (except for optional cloud sync)
+  - No analytics or telemetry
+  - No data collection
+  - All processing on-device
 
   Perfect for security professionals, privacy advocates, and anyone who values their digital security.
 
@@ -422,9 +422,9 @@ adb install apks/universal.apk
 - Optional cloud sync: user-initiated, encrypted end-to-end
 
 **Security practices**:
-- ✅ Data encrypted in transit (HTTPS for cloud sync)
-- ✅ Data encrypted at rest (AES-256-GCM + Argon2id)
-- ✅ Users can request data deletion (delete vault)
+- Data encrypted in transit (HTTPS for cloud sync)
+- Data encrypted at rest (AES-256-GCM + Argon2id)
+- Users can request data deletion (delete vault)
 
 ### Step 5.5: Content Rating
 
@@ -452,35 +452,35 @@ Complete IARC questionnaire:
 
 ### Step 5.9: Upload AAB
 
-1. Go to **Production** → **Create new release**
+1. Go to **Production** -> **Create new release**
 2. Choose **Closed testing** first
 3. Upload `genpwd-pro-v1.2.0-RC1-release.aab`
 4. **Release name**: "1.2.0-RC1 - Initial Closed Testing"
 5. **Release notes**:
    ```
-   🎉 GenPwd Pro 1.2.0 - Release Candidate 1
+   GenPwd Pro 1.2.0 - Release Candidate 1
 
    NEW FEATURES:
-   ✅ Syllables password generator
-   ✅ Passphrase generator (Diceware)
-   ✅ Encrypted vault system
-   ✅ Cloud sync (Google Drive, Dropbox, OneDrive)
-   ✅ Import/Export (1Password, LastPass, KeePass)
-   ✅ TOTP 2FA generator
-   ✅ Biometric app lock
+   - Syllables password generator
+   - Passphrase generator (Diceware)
+   - Encrypted vault system
+   - Cloud sync (Google Drive, Dropbox, OneDrive)
+   - Import/Export (1Password, LastPass, KeePass)
+   - TOTP 2FA generator
+   - Biometric app lock
 
    SECURITY:
-   🔐 AES-256-GCM encryption
-   🔐 Argon2id key derivation
-   🔐 100% offline (no internet required)
-   🔐 Open source (MIT License)
+   - AES-256-GCM encryption
+   - Argon2id key derivation
+   - 100% offline (no internet required)
+   - Open source (MIT License)
 
    Please report bugs: github.com/VBlackJack/genpwd-pro/issues
    ```
 
 ### Step 5.10: Create Testers List
 
-1. Go to **Testing** → **Closed testing** → **Testers**
+1. Go to **Testing** -> **Closed testing** -> **Testers**
 2. **Create email list**: "GenPwd Pro Beta Testers"
 3. Add 10-100 email addresses
 4. **Copy opt-in URL** and share with testers
@@ -499,7 +499,7 @@ Complete IARC questionnaire:
 
 ---
 
-## ✅ Phase 6: Post-Publication Checklist
+## Phase 6: Post-Publication Checklist
 
 ### Step 6.1: Verify Installation
 
@@ -510,7 +510,7 @@ Complete IARC questionnaire:
 
 ### Step 6.2: Monitor Crashes
 
-1. Go to **Quality** → **Crashes & ANRs**
+1. Go to **Quality** -> **Crashes & ANRs**
 2. Check crash-free users rate (target: >99%)
 3. Fix critical crashes immediately
 
@@ -533,7 +533,7 @@ Complete IARC questionnaire:
 
 ---
 
-## 🐛 Common Issues & Solutions
+## Common Issues & Solutions
 
 ### Issue 1: Tests Fail - "Argon2 native library not available"
 
@@ -595,35 +595,35 @@ buildTypes {
 
 ---
 
-## 📊 Success Metrics
+## Success Metrics
 
 ### Testing Phase
-- ✅ All unit tests pass (0 failures)
-- ✅ Instrumented tests pass (0 failures)
-- ✅ Code coverage >70%
-- ✅ Startup time <2s
-- ✅ Password generation <100ms
-- ✅ Memory usage <150MB
-- ✅ Battery drain <2%/hour
+- All unit tests pass (0 failures)
+- Instrumented tests pass (0 failures)
+- Code coverage >70%
+- Startup time <2s
+- Password generation <100ms
+- Memory usage <150MB
+- Battery drain <2%/hour
 
 ### Publication Phase
-- ✅ AAB signed and verified
-- ✅ App uploaded to Play Store
-- ✅ Closed testing approved by Google
-- ✅ 50+ beta testers recruited
-- ✅ Crash-free rate >99%
-- ✅ Average rating >4.0/5.0
+- AAB signed and verified
+- App uploaded to Play Store
+- Closed testing approved by Google
+- 50+ beta testers recruited
+- Crash-free rate >99%
+- Average rating >4.0/5.0
 
 ### Production Phase (Sprint S5)
-- ✅ Promoted to Production
-- ✅ 1000+ downloads in first week
-- ✅ Featured in "New & Updated" (if selected by Google)
-- ✅ Average rating >4.5/5.0
-- ✅ <1% uninstall rate
+- Promoted to Production
+- 1000+ downloads in first week
+- Featured in "New & Updated" (if selected by Google)
+- Average rating >4.5/5.0
+- <1% uninstall rate
 
 ---
 
-## 🔗 Useful Resources
+## Useful Resources
 
 - **Android Developers**: https://developer.android.com/studio/publish
 - **Play Console Help**: https://support.google.com/googleplay/android-developer
@@ -633,7 +633,7 @@ buildTypes {
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
 After successful Closed Testing:
 

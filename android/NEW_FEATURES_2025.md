@@ -1,63 +1,63 @@
-# Nouvelles Fonctionnalités GenPwd Pro - 2025
+# New Features GenPwd Pro - 2025
 
-## 📅 Date de mise à jour
-**5 novembre 2025**
+## Last Updated
+**November 5, 2025**
 
 ---
 
-## 📱 Améliorations Interface & UX
+## Interface & UX Improvements
 
-### 1. Accessibilité Améliorée ♿
+### 1. Improved Accessibility
 
-**Fichier**: `presentation/accessibility/AccessibilityUtils.kt`
+**File**: `presentation/accessibility/AccessibilityUtils.kt`
 
-#### Fonctionnalités
-- **Support complet des lecteurs d'écran** (TalkBack, Voice Assistant)
-- **Descriptions de contenu enrichies** pour tous les composants
-- **Annonces vocales** pour les actions importantes
-- **Navigation au clavier** améliorée
-- **Contraste élevé** optionnel
-- **Indicateurs de focus** visuels
+#### Features
+- **Full screen reader support** (TalkBack, Voice Assistant)
+- **Rich content descriptions** for all components
+- **Voice announcements** for important actions
+- **Improved keyboard navigation**
+- **Optional high contrast** mode
+- **Visual focus indicators**
 
-#### Modifiers d'accessibilité
+#### Accessibility Modifiers
 ```kotlin
-// Champ sensible (mot de passe)
+// Sensitive field (password)
 Modifier.sensitiveContent("Mot de passe", isVisible = false)
 
-// Entrée de coffre-fort
+// Vault entry
 Modifier.vaultEntry(title = "Gmail", type = "Login", isFavorite = true)
 
-// Bouton d'action avec état
+// Action button with state
 Modifier.actionButton("Copier", state = "Disponible")
 
-// Code TOTP avec compte à rebours
+// TOTP code with countdown
 Modifier.totpCode(code = "123456", remainingSeconds = 25, period = 30)
 
-// Champ validé
+// Validated field
 Modifier.validatedField("Email", isValid = true)
 ```
 
-#### Conformité
-✅ WCAG 2.1 niveau AA
-✅ Android Accessibility Scanner
-✅ Support TalkBack complet
+#### Compliance
+- WCAG 2.1 Level AA
+- Android Accessibility Scanner
+- Full TalkBack support
 
 ---
 
-### 2. Support Tablettes & Écrans Pliables 📱💻
+### 2. Tablet & Foldable Screen Support
 
-**Fichier**: `presentation/adaptive/AdaptiveLayout.kt`
+**File**: `presentation/adaptive/AdaptiveLayout.kt`
 
-#### Détection d'appareil
-- **PHONE**: Smartphones standard
-- **TABLET**: Tablettes 7-10"
-- **FOLDABLE**: Appareils pliables (Galaxy Fold, Pixel Fold)
-- **LARGE_TABLET**: Grandes tablettes 10"+
+#### Device Detection
+- **PHONE**: Standard smartphones
+- **TABLET**: 7-10" tablets
+- **FOLDABLE**: Foldable devices (Galaxy Fold, Pixel Fold)
+- **LARGE_TABLET**: Large 10"+ tablets
 
-#### Layouts adaptatifs
+#### Adaptive Layouts
 
 ```kotlin
-// Master-Detail pour tablettes
+// Master-Detail for tablets
 AdaptiveMasterDetail(
     showDetail = selectedEntry != null,
     onBackFromDetail = { selectedEntry = null },
@@ -65,40 +65,40 @@ AdaptiveMasterDetail(
     detailContent = { EntryDetailScreen() }
 )
 
-// Grille adaptative
+// Adaptive grid
 AdaptiveGrid(items = entries) { entry ->
     EntryCard(entry)
 }
 
-// Container avec largeur max
+// Container with max width
 AdaptiveContentContainer {
-    // Contenu centré sur grands écrans
+    // Centered content on large screens
 }
 ```
 
-#### Caractéristiques
-- **Mode deux panneaux** automatique sur tablettes en paysage
-- **Grilles adaptatives** (1-4 colonnes selon taille)
-- **Espacements dynamiques** proportionnels à la taille
-- **Navigation adaptative**:
-  - Bottom bar sur téléphones
-  - Rail de navigation sur tablettes
-  - Drawer permanent sur grandes tablettes
+#### Characteristics
+- **Automatic two-pane mode** on tablets in landscape
+- **Adaptive grids** (1-4 columns depending on size)
+- **Dynamic spacing** proportional to size
+- **Adaptive navigation**:
+  - Bottom bar on phones
+  - Navigation rail on tablets
+  - Permanent drawer on large tablets
 
-#### Support des pliables
-- Détection de l'état plié/déplié
-- Mode "tabletop" pour pliables
-- Gestion des charnières
+#### Foldable Support
+- Folded/unfolded state detection
+- "Tabletop" mode for foldables
+- Hinge management
 
 ---
 
-### 3. Animations & Transitions Avancées ✨
+### 3. Advanced Animations & Transitions
 
-**Fichier**: `presentation/animations/TransitionAnimations.kt`
+**File**: `presentation/animations/TransitionAnimations.kt`
 
-#### Animations d'écrans
+#### Screen Animations
 ```kotlin
-// Navigation entre écrans
+// Screen navigation
 slideInFromRight() + slideOutToLeft()
 slideInFromLeft() + slideOutToRight()
 
@@ -108,60 +108,60 @@ scaleIn() + scaleOut()
 // Bottom sheets
 slideInFromBottom() + slideOutToBottom()
 
-// Éléments de liste (avec stagger)
+// List elements (with stagger)
 listItemEnter(index = 0, staggerDelay = 50)
 ```
 
-#### Animations spéciales
+#### Special Animations
 ```kotlin
-// Pulsation (élément important)
+// Pulse (important element)
 PulseAnimation { scale ->
     Icon(modifier = Modifier.scale(scale))
 }
 
-// Shake (erreur)
+// Shake (error)
 ShakeAnimation(trigger = hasError) { offsetX ->
     TextField(modifier = Modifier.offset(x = offsetX.dp))
 }
 
-// Rotation (chargement)
+// Rotation (loading)
 RotateAnimation(isRotating = true) { rotation ->
     Icon(modifier = Modifier.rotate(rotation))
 }
 ```
 
-#### Caractéristiques
-- **Courbes d'easing** personnalisées (Material Design 3)
-- **Durées optimisées** (150ms/300ms/500ms)
-- **Spring animations** pour interactions tactiles
-- **Shared element transitions** (prêt pour Compose 1.6+)
+#### Characteristics
+- **Custom easing curves** (Material Design 3)
+- **Optimized durations** (150ms/300ms/500ms)
+- **Spring animations** for touch interactions
+- **Shared element transitions** (ready for Compose 1.6+)
 
 ---
 
-### 4. Système de Thèmes Avancé 🎨
+### 4. Advanced Theme System
 
-**Fichier**: `presentation/theme/ThemeManager.kt`
+**File**: `presentation/theme/ThemeManager.kt`
 
-#### Modes de thème
-- **SYSTEM**: Suit le thème système
-- **LIGHT**: Toujours clair
-- **DARK**: Toujours sombre
-- **AUTO**: Automatique selon l'heure (à implémenter)
+#### Theme Modes
+- **SYSTEM**: Follows system theme
+- **LIGHT**: Always light
+- **DARK**: Always dark
+- **AUTO**: Automatic based on time of day (to be implemented)
 
-#### 10 thèmes prédéfinis
+#### 10 Predefined Themes
 
-1. **DEFAULT** - Cyan/Gray-Blue/Green (actuel)
-2. **OCEAN** - Bleu océan profond
-3. **FOREST** - Vert forêt naturel
-4. **SUNSET** - Orange/Rouge chaud
-5. **LAVENDER** - Violet/Lavande élégant
-6. **MONOCHROME** - Noir & Blanc minimaliste
-7. **CYBERPUNK** - Néon cyan/magenta
-8. **NORD** - Palette Nord (bleu arctique)
-9. **DRACULA** - Thème Dracula populaire
-10. **CUSTOM** - Personnalisé (à implémenter)
+1. **DEFAULT** - Cyan/Gray-Blue/Green (current)
+2. **OCEAN** - Deep ocean blue
+3. **FOREST** - Natural forest green
+4. **SUNSET** - Warm orange/red
+5. **LAVENDER** - Elegant violet/lavender
+6. **MONOCHROME** - Minimalist black & white
+7. **CYBERPUNK** - Neon cyan/magenta
+8. **NORD** - Nord palette (arctic blue)
+9. **DRACULA** - Popular Dracula theme
+10. **CUSTOM** - Custom (to be implemented)
 
-#### Utilisation
+#### Usage
 ```kotlin
 @Composable
 fun App() {
@@ -169,107 +169,107 @@ fun App() {
     val preferences by themeManager.themePreferences.collectAsState()
 
     EnhancedTheme(preferences) {
-        // Votre app
+        // Your app
     }
 }
 
-// Changer de thème
+// Change theme
 themeManager.setThemePreset(ThemePreset.OCEAN)
 themeManager.setThemeMode(ThemeMode.DARK)
 themeManager.setHighContrast(true)
 ```
 
 #### Options
-- ✅ Material You (couleurs dynamiques Android 12+)
-- ✅ Contraste élevé
-- ✅ Persistance des préférences (DataStore)
-- ✅ Transitions fluides entre thèmes
+- Material You (dynamic colors Android 12+)
+- High contrast
+- Preference persistence (DataStore)
+- Smooth transitions between themes
 
 ---
 
-## 🔒 Nouvelles Fonctionnalités de Sécurité
+## New Security Features
 
-### 5. Import KeePass KDBX 🔑
+### 5. KeePass KDBX Import
 
-**Fichier**: `data/import/KeePassImporter.kt`
+**File**: `data/import/KeePassImporter.kt`
 
 #### Support
-- ✅ **KDBX 3.1** (AES, ChaCha20, Twofish)
-- ✅ **KDBX 4.0** (Argon2, AES-256-GCM)
-- ✅ Groupes et sous-groupes
-- ✅ Tous types d'entrées
-- ✅ Champs personnalisés
-- ✅ Historique des mots de passe
-- ✅ Fichiers clés (keyfiles)
-- ✅ Pièces jointes (binaires)
+- **KDBX 3.1** (AES, ChaCha20, Twofish)
+- **KDBX 4.0** (Argon2, AES-256-GCM)
+- Groups and subgroups
+- All entry types
+- Custom fields
+- Password history
+- Key files (keyfiles)
+- Attachments (binaries)
 
-#### Utilisation
+#### Usage
 ```kotlin
 val importer = KeePassImporter()
 
-// Import simple
+// Simple import
 val database = importer.import(
     inputStream = kdbxFile.inputStream(),
     password = "masterPassword"
 )
 
-// Import avec keyfile
+// Import with keyfile
 val database = importer.import(
     inputStream = kdbxFile.inputStream(),
     password = "masterPassword",
     keyFile = keyFile.inputStream()
 )
 
-// Accès aux données
+// Access data
 database.entries.forEach { entry ->
     println("${entry.title}: ${entry.username}")
 }
 ```
 
-#### Sécurité
-- ✅ Support Argon2id (KDBX 4)
-- ✅ Support AES-KDF (KDBX 3)
-- ✅ Vérification d'intégrité (HMAC-SHA256)
-- ✅ Déchiffrement par blocs (mémoire optimisée)
-- ✅ Pas de données sensibles en logs
+#### Security
+- Argon2id support (KDBX 4)
+- AES-KDF support (KDBX 3)
+- Integrity verification (HMAC-SHA256)
+- Block-level decryption (optimized memory)
+- No sensitive data in logs
 
 ---
 
-### 6. Pièces Jointes Sécurisées 📎
+### 6. Secure Attachments
 
-**Fichier**: `data/attachments/SecureAttachmentManager.kt`
+**File**: `data/attachments/SecureAttachmentManager.kt`
 
-#### Fonctionnalités
-- **Chiffrement AES-256-GCM** de tous les fichiers
-- **Stockage sécurisé** dans le répertoire privé de l'app
-- **Vérification d'intégrité** (SHA-256)
-- **Gestion de quota** (500 MB max total, 50 MB par fichier)
-- **Miniatures** pour les images
-- **Suppression sécurisée** (overwrite 3x)
+#### Features
+- **AES-256-GCM encryption** for all files
+- **Secure storage** in the app's private directory
+- **Integrity verification** (SHA-256)
+- **Quota management** (500 MB max total, 50 MB per file)
+- **Thumbnails** for images
+- **Secure deletion** (3x overwrite)
 
-#### Types de fichiers autorisés
+#### Allowed File Types
 - Images: JPEG, PNG, GIF, WebP
 - Documents: PDF, TXT, CSV, JSON
 - Archives: ZIP
 
-#### Utilisation
+#### Usage
 ```kotlin
 val manager: SecureAttachmentManager = hiltViewModel()
 
-// Ajouter une pièce jointe
+// Add an attachment
 val attachment = manager.addAttachment(
     entryId = "entry-123",
     uri = fileUri,
     encryptionKey = vaultKey
 )
 
-// Récupérer une pièce jointe
+// Retrieve an attachment
 val data = manager.getAttachment(attachment, vaultKey)
 
-// Supprimer (suppression sécurisée)
+// Delete (secure deletion)
 manager.deleteAttachment(attachment)
 
-// Générer une miniature
+// Generate a thumbnail
 val thumbnail = manager.generateThumbnail(
     attachment = attachment,
     encryptionKey = vaultKey,
@@ -277,32 +277,32 @@ val thumbnail = manager.generateThumbnail(
 )
 ```
 
-#### Sécurité
-- ✅ Chiffrement par chunk (8 KB)
-- ✅ Hachage SHA-256 pour intégrité
-- ✅ Suppression sécurisée (DoD 5220.22-M)
-- ✅ Types MIME validés
-- ✅ Pas de métadonnées exposées
+#### Security
+- Chunk-based encryption (8 KB)
+- SHA-256 hashing for integrity
+- Secure deletion (DoD 5220.22-M)
+- Validated MIME types
+- No exposed metadata
 
 ---
 
-### 7. Support Passkey/WebAuthn 🔐
+### 7. Passkey/WebAuthn Support
 
-**Fichier**: `data/webauthn/PasskeyManager.kt`
+**File**: `data/webauthn/PasskeyManager.kt`
 
-#### Fonctionnalités
-- **Passkeys** conformes WebAuthn Level 2
-- **FIDO2** pour authentification sans mot de passe
-- **Biométrie** intégrée (Touch ID/Face ID)
-- **Clés résidentes** (stockage sécurisé Android)
-- **Multi-algorithmes** (ES256, RS256)
+#### Features
+- **Passkeys** compliant with WebAuthn Level 2
+- **FIDO2** for passwordless authentication
+- **Integrated biometrics** (Touch ID/Face ID)
+- **Resident keys** (secure Android storage)
+- **Multi-algorithm** support (ES256, RS256)
 
-#### Utilisation
+#### Usage
 
 ```kotlin
 val passkeyManager: PasskeyManager = hiltViewModel()
 
-// Créer une passkey
+// Create a passkey
 val result = passkeyManager.createPasskey(
     relyingPartyId = "example.com",
     userId = "user@example.com",
@@ -312,14 +312,14 @@ val result = passkeyManager.createPasskey(
 
 when (result) {
     is PasskeyCreationResult.Success -> {
-        // Stocker credentialId et publicKey
+        // Store credentialId and publicKey
     }
     is PasskeyCreationResult.Cancelled -> {
-        // Utilisateur a annulé
+        // User cancelled
     }
 }
 
-// Authentifier avec une passkey
+// Authenticate with a passkey
 val authResult = passkeyManager.authenticateWithPasskey(
     relyingPartyId = "example.com",
     allowedCredentials = listOf("credId1", "credId2")
@@ -327,22 +327,22 @@ val authResult = passkeyManager.authenticateWithPasskey(
 
 when (authResult) {
     is PasskeyAuthenticationResult.Success -> {
-        // Vérifier la signature
+        // Verify signature
     }
     is PasskeyAuthenticationResult.NoCredentials -> {
-        // Aucune passkey disponible
+        // No passkey available
     }
 }
 ```
 
-#### Caractéristiques
-- ✅ Android Credential Manager API
-- ✅ Découverte automatique de credentials
-- ✅ Protection replay (challenge/response)
-- ✅ Attestation optionnelle
-- ✅ Resident keys (synchro via Google)
+#### Characteristics
+- Android Credential Manager API
+- Automatic credential discovery
+- Replay protection (challenge/response)
+- Optional attestation
+- Resident keys (synced via Google)
 
-#### Dépendance requise
+#### Required Dependency
 ```gradle
 implementation("androidx.credentials:credentials:1.2.0")
 implementation("androidx.credentials:credentials-play-services-auth:1.2.0")
@@ -350,30 +350,30 @@ implementation("androidx.credentials:credentials-play-services-auth:1.2.0")
 
 ---
 
-### 8. Partage Sécurisé d'Entrées 🔗
+### 8. Secure Entry Sharing
 
-**Fichier**: `data/sharing/SecureEntrySharing.kt`
+**File**: `data/sharing/SecureEntrySharing.kt`
 
-#### Méthodes de partage
+#### Sharing Methods
 
-1. **FILE** - Fichier chiffré (.gpvshare)
-2. **QR_CODE** - QR code avec lien et clé
+1. **FILE** - Encrypted file (.gpvshare)
+2. **QR_CODE** - QR code with link and key
 3. **LINK** - Deep link (genpwd://share/...)
-4. **DIRECT** - Intent Android direct
+4. **DIRECT** - Direct Android Intent
 
-#### Options de sécurité
-- **Expiration temporelle** (défaut 24h)
-- **Limite d'accès** (max 10 utilisations)
-- **Protection par mot de passe** optionnelle
-- **Révocation** manuelle
-- **Message personnalisé**
+#### Security Options
+- **Time-based expiration** (default 24h)
+- **Access limit** (max 10 uses)
+- **Optional password protection**
+- **Manual revocation**
+- **Custom message**
 
-#### Utilisation
+#### Usage
 
 ```kotlin
 val sharingManager: SecureEntrySharing = hiltViewModel()
 
-// Partager une entrée
+// Share an entry
 val shareResult = sharingManager.shareEntry(
     entry = vaultEntry,
     options = ShareOptions(
@@ -388,24 +388,24 @@ val shareResult = sharingManager.shareEntry(
 
 when (shareResult) {
     is ShareResult.QRCode -> {
-        // Afficher le QR code
+        // Display the QR code
         displayQRCode(shareResult.qrData)
     }
     is ShareResult.Link -> {
-        // Partager le lien
+        // Share the link
         shareLink(shareResult.link)
     }
     is ShareResult.File -> {
-        // Partager le fichier
+        // Share the file
         shareFile(shareResult.file, shareResult.shareKey)
     }
     is ShareResult.Intent -> {
-        // Lancer l'intent de partage
+        // Launch the share intent
         startActivity(shareResult.intent)
     }
 }
 
-// Importer une entrée partagée
+// Import a shared entry
 val importResult = sharingManager.importSharedEntry(
     shareData = fileData,
     shareKey = "abc123...",
@@ -414,7 +414,7 @@ val importResult = sharingManager.importSharedEntry(
 
 when (importResult) {
     is ImportResult.Success -> {
-        // Ajouter au coffre
+        // Add to vault
         addToVault(importResult.entry)
     }
     ImportResult.Expired -> {
@@ -425,178 +425,178 @@ when (importResult) {
     }
 }
 
-// Révoquer un partage
+// Revoke a share
 sharingManager.revokeShare(shareId)
 
-// Nettoyer les partages expirés
+// Clean expired shares
 sharingManager.cleanExpiredShares()
 ```
 
-#### Sécurité
-- ✅ Chiffrement AES-256-GCM
-- ✅ Clé de partage aléatoire (256 bits)
-- ✅ Zero-knowledge (GenPwd ne voit pas les données)
-- ✅ Expiration automatique
-- ✅ Révocation manuelle
-- ✅ Associated data pour authentification
+#### Security
+- AES-256-GCM encryption
+- Random share key (256 bits)
+- Zero-knowledge (GenPwd never sees the data)
+- Automatic expiration
+- Manual revocation
+- Associated data for authentication
 
 ---
 
-## ☁️ Nouveaux Providers Cloud
+## New Cloud Providers
 
-### 9. Microsoft OneDrive (Microsoft Graph) ☁️
+### 9. Microsoft OneDrive (Microsoft Graph)
 
-**Fichier**: `provider-graph/src/main/kotlin/com/genpwd/provider/graph/GraphCloudProvider.kt`
+**File**: `provider-graph/src/main/kotlin/com/genpwd/provider/graph/GraphCloudProvider.kt`
 
-#### Fonctionnalités
-- ✅ Authentification OAuth2 (MSAL)
-- ✅ Stockage dans dossier app spécial
-- ✅ API Microsoft Graph v1.0
-- ✅ Delta queries pour synchronisation
-- ✅ Support des conflits (ETags)
-- ✅ Gestion des erreurs et retry
+#### Features
+- OAuth2 authentication (MSAL)
+- Storage in a special app folder
+- Microsoft Graph API v1.0
+- Delta queries for synchronization
+- Conflict support (ETags)
+- Error handling and retry
 
 #### Configuration
 ```kotlin
-// Nécessite un enregistrement Azure AD
-// 1. Créer une app Azure AD
-// 2. Configurer redirect URI: msauth://com.julien.genpwdpro/...
-// 3. Ajouter permission Files.ReadWrite
+// Requires Azure AD registration
+// 1. Create an Azure AD app
+// 2. Configure redirect URI: msauth://com.julien.genpwdpro/...
+// 3. Add Files.ReadWrite permission
 ```
 
 #### API
-- Espace de stockage: 5 GB gratuit
-- Quota API: Pas de limite stricte
-- Synchronisation: Delta queries efficaces
+- Storage space: 5 GB free
+- API quota: No strict limit
+- Synchronization: Efficient delta queries
 
 ---
 
-### 10. pCloud ☁️
+### 10. pCloud
 
-**Fichier**: `provider-pcloud/src/main/kotlin/com/genpwd/provider/pcloud/PCloudProvider.kt`
+**File**: `provider-pcloud/src/main/kotlin/com/genpwd/provider/pcloud/PCloudProvider.kt`
 
-#### Fonctionnalités
-- ✅ Authentification OAuth2
-- ✅ Régions US et EU
-- ✅ Dossier app dédié (GenPwdPro/)
-- ✅ Upload/Download direct
-- ✅ Gestion des conflits
-- ✅ API REST simple
+#### Features
+- OAuth2 authentication
+- US and EU regions
+- Dedicated app folder (GenPwdPro/)
+- Direct upload/download
+- Conflict management
+- Simple REST API
 
-#### Caractéristiques
-- **Espace gratuit**: 10 GB
-- **Régions**: US (api.pcloud.com) et EU (eapi.pcloud.com)
-- **Limites**: Pas de limite stricte
-- **Chiffrement**: Client-side (GenPwd Pro)
+#### Characteristics
+- **Free space**: 10 GB
+- **Regions**: US (api.pcloud.com) and EU (eapi.pcloud.com)
+- **Limits**: No strict limit
+- **Encryption**: Client-side (GenPwd Pro)
 
 #### Configuration
 ```kotlin
-// 1. Créer une app pCloud: https://docs.pcloud.com/
-// 2. Obtenir Client ID et Client Secret
-// 3. Configurer redirect URI
+// 1. Create a pCloud app: https://docs.pcloud.com/
+// 2. Obtain Client ID and Client Secret
+// 3. Configure redirect URI
 ```
 
 #### API Support
-- ✅ `listfolder` - Liste les fichiers
-- ✅ `downloadfile` - Télécharge un fichier
-- ✅ `uploadfile` - Upload un fichier
-- ✅ `createfolder` - Crée un dossier
-- ✅ `deletefile` - Supprime un fichier
+- `listfolder` - List files
+- `downloadfile` - Download a file
+- `uploadfile` - Upload a file
+- `createfolder` - Create a folder
+- `deletefile` - Delete a file
 
 ---
 
-## 📊 Récapitulatif des Améliorations
+## Improvements Summary
 
 ### Interface & UX
-| Fonctionnalité | Fichier | Statut |
+| Feature | File | Status |
 |---|---|---|
-| Accessibilité | `AccessibilityUtils.kt` | ✅ Complet |
-| Tablettes/Pliables | `AdaptiveLayout.kt` | ✅ Complet |
-| Animations | `TransitionAnimations.kt` | ✅ Complet |
-| Thèmes avancés | `ThemeManager.kt` | ✅ Complet |
+| Accessibility | `AccessibilityUtils.kt` | Complete |
+| Tablets/Foldables | `AdaptiveLayout.kt` | Complete |
+| Animations | `TransitionAnimations.kt` | Complete |
+| Advanced themes | `ThemeManager.kt` | Complete |
 
-### Sécurité & Import/Export
-| Fonctionnalité | Fichier | Statut |
+### Security & Import/Export
+| Feature | File | Status |
 |---|---|---|
-| KeePass KDBX | `KeePassImporter.kt` | ✅ Complet |
-| Pièces jointes | `SecureAttachmentManager.kt` | ✅ Complet |
-| Passkey/WebAuthn | `PasskeyManager.kt` | ✅ Complet |
-| Partage sécurisé | `SecureEntrySharing.kt` | ✅ Complet |
+| KeePass KDBX | `KeePassImporter.kt` | Complete |
+| Attachments | `SecureAttachmentManager.kt` | Complete |
+| Passkey/WebAuthn | `PasskeyManager.kt` | Complete |
+| Secure sharing | `SecureEntrySharing.kt` | Complete |
 
-### Providers Cloud
-| Provider | Fichier | Statut |
+### Cloud Providers
+| Provider | File | Status |
 |---|---|---|
-| OneDrive | `GraphCloudProvider.kt` | ✅ Complet |
-| pCloud | `PCloudProvider.kt` | ✅ Complet |
-| Google Drive | `DriveCloudProvider.kt` | ✅ Existant |
-| WebDAV | `WebDAVCloudProvider.kt` | ✅ Existant |
+| OneDrive | `GraphCloudProvider.kt` | Complete |
+| pCloud | `PCloudProvider.kt` | Complete |
+| Google Drive | `DriveCloudProvider.kt` | Existing |
+| WebDAV | `WebDAVCloudProvider.kt` | Existing |
 
 ---
 
-## 🚀 Prochaines Étapes
+## Next Steps
 
-### Tests nécessaires
-1. ✅ Tests unitaires pour chaque nouvelle fonctionnalité
-2. ✅ Tests d'intégration pour les providers cloud
-3. ⏳ Tests sur vrais appareils (téléphones, tablettes, pliables)
-4. ⏳ Tests d'accessibilité (TalkBack, Switch Access)
-5. ⏳ Tests de performance (grandes bases, nombreuses pièces jointes)
+### Required Testing
+1. Unit tests for each new feature
+2. Integration tests for cloud providers
+3. Testing on real devices (phones, tablets, foldables)
+4. Accessibility testing (TalkBack, Switch Access)
+5. Performance testing (large databases, many attachments)
 
-### Documentation à compléter
-1. ⏳ Guide utilisateur (screenshots, vidéos)
-2. ⏳ Guide développeur (architecture, API)
-3. ⏳ Notes de version pour Play Store
-4. ✅ Documentation technique (ce fichier)
+### Documentation to Complete
+1. User guide (screenshots, videos)
+2. Developer guide (architecture, API)
+3. Release notes for Play Store
+4. Technical documentation (this file)
 
-### Dépendances à ajouter (optionnel)
+### Dependencies to Add (optional)
 ```gradle
-// Pour Passkey support
+// For Passkey support
 implementation("androidx.credentials:credentials:1.2.0")
 implementation("androidx.credentials:credentials-play-services-auth:1.2.0")
 
-// Pour OneDrive
+// For OneDrive
 implementation("com.microsoft.identity.client:msal:4.+")
 
-// Déjà ajouté pour KeePass
+// Already added for KeePass
 implementation("org.bouncycastle:bcprov-jdk15on:1.70")
 ```
 
 ---
 
-## 📝 Notes de Migration
+## Migration Notes
 
-### Pour les utilisateurs
-- ✅ **Rétrocompatible** avec les coffres existants
-- ✅ **Import KeePass** préserve toutes les données
-- ✅ **Nouveaux thèmes** ne modifient pas les données
-- ✅ **Pièces jointes** optionnelles (coffres sans pièces jointes fonctionnent normalement)
+### For Users
+- **Backward compatible** with existing vaults
+- **KeePass import** preserves all data
+- **New themes** do not modify data
+- **Attachments** are optional (vaults without attachments work normally)
 
-### Pour les développeurs
-- ✅ Toutes les nouvelles fonctionnalités sont **optionnelles**
-- ✅ API **rétrocompatible**
-- ✅ Modules **indépendants** (providers cloud)
-- ✅ Injection de dépendances **Hilt** partout
+### For Developers
+- All new features are **optional**
+- **Backward compatible** API
+- **Independent modules** (cloud providers)
+- **Hilt** dependency injection throughout
 
 ---
 
-## 💡 Exemples d'Utilisation Avancée
+## Advanced Usage Examples
 
-### Workflow complet: Import KeePass + Sync Cloud
+### Full Workflow: KeePass Import + Cloud Sync
 
 ```kotlin
-// 1. Importer depuis KeePass
+// 1. Import from KeePass
 val kdbxDatabase = keepassImporter.import(
     inputStream = kdbxFile.inputStream(),
     password = "oldMasterPassword"
 )
 
-// 2. Créer un nouveau coffre GenPwd
+// 2. Create a new GenPwd vault
 val vault = vaultManager.createVault(
     name = kdbxDatabase.name,
     masterPassword = "newMasterPassword"
 )
 
-// 3. Ajouter toutes les entrées
+// 3. Add all entries
 kdbxDatabase.entries.forEach { kpEntry ->
     vault.addEntry(
         type = EntryType.LOGIN,
@@ -608,7 +608,7 @@ kdbxDatabase.entries.forEach { kpEntry ->
     )
 }
 
-// 4. Configurer la sync pCloud
+// 4. Configure pCloud sync
 val account = pCloudProvider.authenticate()
 syncManager.enableSync(
     vaultId = vault.id,
@@ -617,17 +617,17 @@ syncManager.enableSync(
     autoSync = true
 )
 
-// 5. Première synchronisation
+// 5. First synchronization
 syncManager.syncNow(vault.id)
 ```
 
-### Workflow: Partage sécurisé avec QR code
+### Workflow: Secure Sharing with QR Code
 
 ```kotlin
-// 1. Sélectionner une entrée à partager
+// 1. Select an entry to share
 val entry = vault.getEntry("netflix-login")
 
-// 2. Créer un partage sécurisé
+// 2. Create a secure share
 val shareResult = sharingManager.shareEntry(
     entry = entry,
     options = ShareOptions(
@@ -637,7 +637,7 @@ val shareResult = sharingManager.shareEntry(
     )
 )
 
-// 3. Afficher le QR code
+// 3. Display the QR code
 when (shareResult) {
     is ShareResult.QRCode -> {
         QRCodeScreen(
@@ -647,7 +647,7 @@ when (shareResult) {
     }
 }
 
-// 4. Côté récepteur: Scanner le QR
+// 4. Receiver side: Scan the QR code
 val qrData = scanQRCode()
 val importResult = sharingManager.importFromQRCode(qrData)
 
@@ -664,9 +664,9 @@ when (importResult) {
 
 ---
 
-## 🎓 Ressources
+## Resources
 
-### Documentation externe
+### External Documentation
 - [Material Design 3](https://m3.material.io/)
 - [WebAuthn Specification](https://www.w3.org/TR/webauthn-2/)
 - [KeePass Format](https://keepass.info/help/kb/kdbx_4.html)
@@ -674,14 +674,14 @@ when (importResult) {
 - [pCloud API](https://docs.pcloud.com/)
 - [WCAG 2.1](https://www.w3.org/WAI/WCAG21/quickref/)
 
-### Ressources internes
-- `android/README.md` - Documentation principale
-- `android/ARCHITECTURE.md` - Architecture système
-- `android/CLOUD_SYNC_README.md` - Synchronisation cloud
-- `android/SECURITY_AUDIT.md` - Audit de sécurité
+### Internal Resources
+- `android/README.md` - Main documentation
+- `android/ARCHITECTURE.md` - System architecture
+- `android/CLOUD_SYNC_README.md` - Cloud synchronization
+- `android/SECURITY_AUDIT.md` - Security audit
 
 ---
 
-**Date**: 5 novembre 2025
-**Version**: 1.3.0 (à venir)
-**Statut**: ✅ Développement terminé, tests en cours
+**Date**: November 5, 2025
+**Version**: 1.3.0 (upcoming)
+**Status**: Development complete, testing in progress

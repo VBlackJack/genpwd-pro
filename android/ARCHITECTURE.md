@@ -1,24 +1,24 @@
-# Architecture GenPwd Pro Android - État Actuel (Post-Migration)
+# GenPwd Pro Android Architecture - Current State (Post-Migration)
 
-**Dernière mise à jour :** 2025-10-30
-**Branche :** `android`
-**Version :** 1.1.0
-
----
-
-## ⚠️ IMPORTANT : Migration Terminée
-
-**La migration du système Room vers les fichiers .gpv est TERMINÉE.**
-
-- ❌ **NE PLUS référencer le système Room-based comme architecture principale**
-- ✅ **Le système file-based (.gpv) est l'architecture de production**
-- ⚠️ **Room est utilisé uniquement pour les métadonnées (registre, historique)**
+**Last updated:** 2025-10-30
+**Branch:** `android`
+**Version:** 1.1.0
 
 ---
 
-## 🏗️ Architecture Actuelle
+## IMPORTANT: Migration Complete
 
-### Vue d'Ensemble
+**The migration from the Room system to .gpv files is COMPLETE.**
+
+- **DO NOT reference the Room-based system as the main architecture anymore**
+- **The file-based (.gpv) system is the production architecture**
+- **Room is used only for metadata (registry, history)**
+
+---
+
+## Current Architecture
+
+### Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -36,9 +36,9 @@
 │                   DATA LAYER                                 │
 │  ┌────────────────────────┐  ┌─────────────────────────┐    │
 │  │ FileVaultRepository    │  │ Room Database           │    │
-│  │ (Données sensibles)    │  │ (Métadonnées)           │    │
+│  │ (Sensitive data)       │  │ (Metadata)              │    │
 │  │                        │  │                         │    │
-│  │ - Fichiers .gpv        │  │ - VaultRegistryEntry    │    │
+│  │ - .gpv files           │  │ - VaultRegistryEntry    │    │
 │  │ - VaultFileManager     │  │ - PasswordHistoryEntity │    │
 │  │ - VaultCryptoManager   │  │                         │    │
 │  └────────────────────────┘  └─────────────────────────┘    │
@@ -47,19 +47,19 @@
 
 ---
 
-## 📂 Système de Stockage des Vaults
+## Vault Storage System
 
-### Format .gpv (GenPwd Vault)
+### .gpv Format (GenPwd Vault)
 
-**Fichier :** `MonCoffre.gpv`
+**File:** `MyVault.gpv`
 
-**Structure (chiffrée) :**
+**Structure (encrypted):**
 ```json
 {
   "version": "1.0",
-  "id": "uuid-du-vault",
-  "name": "Mon Coffre",
-  "description": "Description optionnelle",
+  "id": "vault-uuid",
+  "name": "My Vault",
+  "description": "Optional description",
   "kdf": {
     "algorithm": "argon2id",
     "iterations": 3,
@@ -76,7 +76,7 @@
     {
       "id": "uuid-entry",
       "type": "LOGIN|NOTE|CARD|IDENTITY",
-      "title": "Titre",
+      "title": "Title",
       "folderId": "uuid-folder",
       "tags": ["tag1", "tag2"],
       "encryptedData": "base64...",
@@ -91,51 +91,51 @@
 }
 ```
 
-**Avantages :**
-- ✅ Portable (copie de fichier = sauvegarde)
-- ✅ Compatible cloud sync (Dropbox, Drive, WebDAV)
-- ✅ Indépendant de la plateforme (iOS/Desktop futur)
-- ✅ Lisible (JSON chiffré)
-- ✅ Versionnable
+**Advantages:**
+- Portable (file copy = backup)
+- Compatible with cloud sync (Dropbox, Drive, WebDAV)
+- Platform-independent (future iOS/Desktop)
+- Readable (encrypted JSON)
+- Versionable
 
 ---
 
-## 🗄️ Room Database - Rôle Actuel
+## Room Database - Current Role
 
-### Entités Actives (Production)
+### Active Entities (Production)
 
 #### 1. VaultRegistryEntry
-**Table :** `vault_registry`
-**Rôle :** Registre des coffres (métadonnées)
+**Table:** `vault_registry`
+**Role:** Vault registry (metadata)
 
 ```kotlin
 @Entity(tableName = "vault_registry")
 data class VaultRegistryEntry(
-    val id: String,                    // UUID du vault
-    val name: String,                  // Nom affiché
-    val filePath: String,              // Chemin vers le .gpv
+    val id: String,                    // Vault UUID
+    val name: String,                  // Display name
+    val filePath: String,              // Path to the .gpv file
     val storageStrategy: StorageStrategy, // FILE | SAF | CLOUD
-    val fileSize: Long,                // Taille en bytes
-    val lastModified: Long,            // Timestamp modification
-    val lastAccessed: Long?,           // Dernier déverrouillage
-    val isDefault: Boolean,            // Coffre par défaut
-    val isLoaded: Boolean,             // Chargé en mémoire
-    val statistics: VaultStatistics,   // Stats (nb entrées, etc.)
+    val fileSize: Long,                // Size in bytes
+    val lastModified: Long,            // Modification timestamp
+    val lastAccessed: Long?,           // Last unlock
+    val isDefault: Boolean,            // Default vault
+    val isLoaded: Boolean,             // Loaded in memory
+    val statistics: VaultStatistics,   // Stats (entry count, etc.)
     val biometricUnlockEnabled: Boolean,
-    val encryptedMasterPassword: ByteArray?, // Pour biométrie
+    val encryptedMasterPassword: ByteArray?, // For biometrics
     val masterPasswordIv: ByteArray?
 )
 ```
 
-**Usage :**
-- Liste des coffres dans l'UI
-- Statistiques du dashboard
-- Configuration biométrique
-- Suivi des fichiers .gpv
+**Usage:**
+- Vault list in the UI
+- Dashboard statistics
+- Biometric configuration
+- Tracking of .gpv files
 
 #### 2. PasswordHistoryEntity
-**Table :** `password_history`
-**Rôle :** Historique des mots de passe générés
+**Table:** `password_history`
+**Role:** Generated password history
 
 ```kotlin
 @Entity(tableName = "password_history")
@@ -152,38 +152,38 @@ data class PasswordHistoryEntity(
 )
 ```
 
-**Usage :**
-- Écran Historique
-- Générateur rapide du Dashboard
-- Statistiques de génération
+**Usage:**
+- History screen
+- Dashboard quick generator
+- Generation statistics
 
-### Entités Legacy (SUPPRIMÉES - 2025-11-01)
+### Legacy Entities (REMOVED - 2025-11-01)
 
-Les artefacts Room historiques ont été **complètement supprimés** du code source :
+The historical Room artifacts have been **completely removed** from the source code:
 
-- `VaultEntity` - ✅ SUPPRIMÉ
-- `VaultEntryEntity` - ✅ SUPPRIMÉ
-- `VaultEntryEntityExt` - ✅ SUPPRIMÉ
-- `FolderEntity` - ✅ SUPPRIMÉ
-- `TagEntity` - ✅ SUPPRIMÉ
-- `PresetEntity` - ✅ SUPPRIMÉ
-- `VaultDao` - ✅ SUPPRIMÉ
-- `VaultEntryDao` - ✅ SUPPRIMÉ
-- `FolderDao` - ✅ SUPPRIMÉ
-- `TagDao` - ✅ SUPPRIMÉ
-- `PresetDao` - ✅ SUPPRIMÉ
-- `VaultRepository` (legacy Room) - ✅ SUPPRIMÉ
+- `VaultEntity` - REMOVED
+- `VaultEntryEntity` - REMOVED
+- `VaultEntryEntityExt` - REMOVED
+- `FolderEntity` - REMOVED
+- `TagEntity` - REMOVED
+- `PresetEntity` - REMOVED
+- `VaultDao` - REMOVED
+- `VaultEntryDao` - REMOVED
+- `FolderDao` - REMOVED
+- `TagDao` - REMOVED
+- `PresetDao` - REMOVED
+- `VaultRepository` (legacy Room) - REMOVED
 
-**Raison :** Le système file-based (.gpv) fonctionne parfaitement. Suppression du code legacy pour éliminer toute ambiguïté pour les analyseurs de code et les IA.
+**Reason:** The file-based (.gpv) system works perfectly. Legacy code was removed to eliminate any ambiguity for code analyzers and AI tools.
 
 ---
 
-## 🔑 Flux de Gestion des Vaults
+## Vault Management Flows
 
-### 1. Création d'un Vault
+### 1. Creating a Vault
 
 ```
-User Input (nom + master password)
+User Input (name + master password)
          ↓
 VaultSessionManager.createVault()
          ↓
@@ -193,19 +193,19 @@ Generate vault encryption key (AES-256)
          ↓
 Encrypt vault key with derived key
          ↓
-VaultFileManager.saveToFile("MonCoffre.gpv")
+VaultFileManager.saveToFile("MyVault.gpv")
          ↓
 VaultRegistryDao.insert(VaultRegistryEntry)
 ```
 
-### 2. Déverrouillage d'un Vault
+### 2. Unlocking a Vault
 
 ```
-User Input (master password) OU Biometric Auth
+User Input (master password) OR Biometric Auth
          ↓
 [Biometric] → KeystoreManager.decrypt(encryptedMasterPassword)
          ↓
-VaultFileManager.loadFromFile("MonCoffre.gpv")
+VaultFileManager.loadFromFile("MyVault.gpv")
          ↓
 VaultCryptoManager.deriveKey(password, argon2id)
          ↓
@@ -216,7 +216,7 @@ VaultSessionManager.unlockVault(vaultKey) → Keep in memory
 VaultRegistryDao.update(lastAccessed, isLoaded = true)
 ```
 
-### 3. Lecture/Écriture d'Entrées
+### 3. Reading/Writing Entries
 
 ```
 VaultSessionManager.getEntry(entryId)
@@ -230,7 +230,7 @@ VaultCryptoManager.decrypt(encryptedData, vaultKey)
 Return EntryData to UI
 ```
 
-**Sauvegarde :**
+**Saving:**
 ```
 VaultSessionManager.saveEntry(entry)
          ↓
@@ -238,12 +238,12 @@ Update VaultData in memory
          ↓
 VaultCryptoManager.encrypt(entryData, vaultKey)
          ↓
-VaultFileManager.saveToFile("MonCoffre.gpv")
+VaultFileManager.saveToFile("MyVault.gpv")
          ↓
 VaultRegistryDao.update(statistics, lastModified)
 ```
 
-### 4. Verrouillage
+### 4. Locking
 
 ```
 VaultSessionManager.lockVault(vaultId)
@@ -257,20 +257,20 @@ VaultRegistryDao.update(isLoaded = false)
 
 ---
 
-## 🧩 Composants Clés
+## Key Components
 
 ### VaultSessionManager
-**Localisation :** `domain/session/VaultSessionManager.kt`
-**Rôle :** Single Source of Truth pour les vaults file-based
+**Location:** `domain/session/VaultSessionManager.kt`
+**Role:** Single Source of Truth for file-based vaults
 
-**Responsabilités :**
-- Gestion des sessions en mémoire
-- Chargement/déchargement des vaults
-- CRUD sur les entrées/dossiers/tags/presets
-- Coordination avec VaultFileManager
+**Responsibilities:**
+- In-memory session management
+- Loading/unloading vaults
+- CRUD operations on entries/folders/tags/presets
+- Coordination with VaultFileManager
 - Auto-lock management
 
-**API Principale :**
+**Main API:**
 ```kotlin
 suspend fun createVault(name: String, password: String, strategy: StorageStrategy): Result<String>
 suspend fun unlockVault(vaultId: String, password: String): Result<Unit>
@@ -282,86 +282,86 @@ suspend fun deleteEntry(vaultId: String, entryId: String): Result<Unit>
 ```
 
 ### FileVaultRepository
-**Localisation :** `data/repository/FileVaultRepository.kt`
-**Rôle :** Couche d'abstraction entre UI et VaultSessionManager
+**Location:** `data/repository/FileVaultRepository.kt`
+**Role:** Abstraction layer between UI and VaultSessionManager
 
-**Responsabilités :**
-- Fournir une API haut niveau pour les ViewModels
-- Transformer les données pour l'UI (Flows, StateFlow)
-- Gestion des erreurs et logging
-- Intégration avec VaultRegistry
+**Responsibilities:**
+- Provide a high-level API for ViewModels
+- Transform data for the UI (Flows, StateFlow)
+- Error handling and logging
+- Integration with VaultRegistry
 
-**Injection :**
+**Injection:**
 ```kotlin
 @HiltViewModel
 class MyViewModel @Inject constructor(
-    private val fileVaultRepository: FileVaultRepository  // ✅ Utiliser celui-ci
-    // PAS: private val vaultRepository: VaultRepository  // ❌ Legacy
+    private val fileVaultRepository: FileVaultRepository  // Use this one
+    // NOT: private val vaultRepository: VaultRepository  // Legacy
 )
 ```
 
 ### VaultFileManager
-**Localisation :** `data/vault/VaultFileManager.kt`
-**Rôle :** Gestion I/O des fichiers .gpv
+**Location:** `data/vault/VaultFileManager.kt`
+**Role:** I/O management for .gpv files
 
-**Responsabilités :**
-- Lecture/écriture des fichiers .gpv
-- Support Storage Access Framework (SAF)
-- Gestion des permissions
-- Validation de l'intégrité des fichiers
+**Responsibilities:**
+- Reading/writing .gpv files
+- Storage Access Framework (SAF) support
+- Permission management
+- File integrity validation
 
 ### VaultCryptoManager
-**Localisation :** `data/crypto/VaultCryptoManager.kt`
-**Rôle :** Opérations cryptographiques
+**Location:** `data/crypto/VaultCryptoManager.kt`
+**Role:** Cryptographic operations
 
-**Responsabilités :**
-- Dérivation de clés (Argon2id)
-- Chiffrement/déchiffrement (AES-256-GCM)
-- Génération de clés aléatoires
-- Gestion des IVs
+**Responsibilities:**
+- Key derivation (Argon2id)
+- Encryption/decryption (AES-256-GCM)
+- Random key generation
+- IV management
 
 ---
 
-## 🔐 Sécurité
+## Security
 
-### Chiffrement en Couches
+### Layered Encryption
 
-1. **Master Password → Derived Key (Argon2id)**
+1. **Master Password -> Derived Key (Argon2id)**
    - 3 iterations
    - 64 MB memory
    - 4 threads parallelism
-   - Salt unique par vault
+   - Unique salt per vault
 
-2. **Derived Key → Vault Key (AES-256-GCM)**
-   - Vault key générée aléatoirement
-   - Chiffrée avec la derived key
-   - Stockée dans le fichier .gpv
+2. **Derived Key -> Vault Key (AES-256-GCM)**
+   - Vault key generated randomly
+   - Encrypted with the derived key
+   - Stored in the .gpv file
 
-3. **Vault Key → Entry Data (AES-256-GCM)**
-   - Chaque champ sensible chiffré individuellement
-   - IV unique par champ
-   - Authentification GCM
+3. **Vault Key -> Entry Data (AES-256-GCM)**
+   - Each sensitive field encrypted individually
+   - Unique IV per field
+   - GCM authentication
 
 ### Zero-Knowledge
 
-- ❌ Master password **jamais stocké** (ni en clair ni haché)
-- ❌ Derived key **jamais stockée**
-- ✅ Vault key **en mémoire uniquement** (pendant session)
-- ✅ Biométrie : Master password chiffré avec Android Keystore (hardware-backed)
+- Master password is **never stored** (neither in plaintext nor hashed)
+- Derived key is **never stored**
+- Vault key is **in memory only** (during session)
+- Biometrics: Master password encrypted with Android Keystore (hardware-backed)
 
-### Protection Mémoire
+### Memory Protection
 
 ```kotlin
-// Effacement sécurisé au verrouillage
+// Secure wipe on lock
 unlockedKeys.remove(vaultId)?.destroy()
 loadedVaults.remove(vaultId)
 ```
 
 ---
 
-## 📊 Statistiques et Métadonnées
+## Statistics and Metadata
 
-### VaultStatistics (Embedded dans VaultRegistryEntry)
+### VaultStatistics (Embedded in VaultRegistryEntry)
 
 ```kotlin
 data class VaultStatistics(
@@ -378,16 +378,16 @@ data class VaultStatistics(
 )
 ```
 
-**Mise à jour :**
-- Après chaque modification du vault
-- Au chargement initial
-- Affichées dans le Dashboard
+**Updates:**
+- After each vault modification
+- On initial load
+- Displayed in the Dashboard
 
 ---
 
-## 🌐 Synchronisation Cloud
+## Cloud Synchronization
 
-### Architecture Sync
+### Sync Architecture
 
 ```
 FileVaultRepository
@@ -397,89 +397,89 @@ CloudProviderSyncRepository
 ┌────────────────┬──────────────┬──────────────┐
 │ GoogleDrive    │ WebDAV       │ OneDrive     │
 │ Provider       │ Provider     │ Provider     │
-│ (✅ Prod)      │ (✅ Prod)    │ (⏳ Template)│
+│ (Prod)         │ (Prod)       │ (Template)   │
 └────────────────┴──────────────┴──────────────┘
          ↓
 VaultFileManager (upload/download .gpv files)
 ```
 
-**Statut des Providers :**
-- ✅ **Google Drive** : Production (OAuth2, API v3)
-- ✅ **WebDAV** : Production (Nextcloud, ownCloud, Synology)
-- ⏳ **OneDrive** : Template 40% (guide d'implémentation disponible)
-- ⏳ **pCloud** : Template 40%
-- ⏳ **ProtonDrive** : Template 40%
+**Provider Status:**
+- **Google Drive**: Production (OAuth2, API v3)
+- **WebDAV**: Production (Nextcloud, ownCloud, Synology)
+- **OneDrive**: Template 40% (implementation guide available)
+- **pCloud**: Template 40%
+- **ProtonDrive**: Template 40%
 
-**Résolution de Conflits :**
-- `LOCAL_WINS` - Garder la version locale
-- `REMOTE_WINS` - Garder la version distante
-- `NEWEST_WINS` - Garder la plus récente (par timestamp)
-- `SMART_MERGE` - Fusion intelligente (merge entries)
-- `MANUAL` - Demander à l'utilisateur
+**Conflict Resolution:**
+- `LOCAL_WINS` - Keep the local version
+- `REMOTE_WINS` - Keep the remote version
+- `NEWEST_WINS` - Keep the most recent (by timestamp)
+- `SMART_MERGE` - Intelligent merge (merge entries)
+- `MANUAL` - Ask the user
 
 ---
 
-## 🧪 Tests
+## Tests
 
-### Stratégie de Test
+### Test Strategy
 
-**Unit Tests :**
+**Unit Tests:**
 - `VaultSessionManagerTest.kt`
 - `VaultCryptoManagerTest.kt`
 - `FileVaultRepositoryTest.kt`
 
-**Integration Tests :**
+**Integration Tests:**
 - `VaultFileManagerTest.kt`
 - `CloudSyncIntegrationTest.kt`
 
-**Instrumented Tests :**
+**Instrumented Tests:**
 - `EncryptedAppDatabaseTest.kt`
 - `SecureFlagInstrumentationTest.kt`
 - `BiometricAuthTest.kt`
 
-**Couverture :** ~85-90% sur les composants critiques
+**Coverage:** ~85-90% on critical components
 
 ---
 
-## 🚀 Migration des Anciennes Données
+## Legacy Data Migration
 
-### Pour les utilisateurs existants (Room → .gpv)
+### For existing users (Room -> .gpv)
 
-**Outil :** `LegacyVaultMigrationTool` (en développement)
+**Tool:** `LegacyVaultMigrationTool` (in development)
 
-**Processus :**
-1. Détection des vaults Room au premier lancement
-2. Affichage d'une notification de migration
-3. Export des données Room vers format .gpv
-4. Création des VaultRegistryEntry
-5. Archivage des anciennes données
-6. Suppression après confirmation
+**Process:**
+1. Detection of Room vaults on first launch
+2. Display a migration notification
+3. Export Room data to .gpv format
+4. Create VaultRegistryEntry records
+5. Archive old data
+6. Delete after confirmation
 
-**Statut :** ⏳ En cours d'implémentation
+**Status:** Implementation in progress
 
 ---
 
-## 📝 Checklist d'Intégration
+## Integration Checklist
 
-### Pour ajouter une nouvelle fonctionnalité vault :
+### To add a new vault feature:
 
-- [ ] Modifier `VaultData` (domain model) si nécessaire
-- [ ] Ajouter la méthode dans `VaultSessionManager`
-- [ ] Exposer via `FileVaultRepository` pour l'UI
-- [ ] Mettre à jour le JSON serialization/deserialization
-- [ ] Gérer le chiffrement si données sensibles
-- [ ] Mettre à jour `VaultStatistics` si applicable
-- [ ] Tester avec fichiers .gpv existants (rétrocompatibilité)
-- [ ] Documenter dans les commentaires
+- [ ] Modify `VaultData` (domain model) if necessary
+- [ ] Add the method in `VaultSessionManager`
+- [ ] Expose via `FileVaultRepository` for the UI
+- [ ] Update JSON serialization/deserialization
+- [ ] Handle encryption if the data is sensitive
+- [ ] Update `VaultStatistics` if applicable
+- [ ] Test with existing .gpv files (backward compatibility)
+- [ ] Document in comments
 
-### Pour ajouter un nouveau ViewModel :
+### To add a new ViewModel:
 
 ```kotlin
 @HiltViewModel
 class MyNewViewModel @Inject constructor(
-    private val fileVaultRepository: FileVaultRepository,  // ✅ Correct
-    private val vaultSessionManager: VaultSessionManager   // ✅ Aussi possible
-    // private val vaultRepository: VaultRepository        // ❌ Ne plus utiliser
+    private val fileVaultRepository: FileVaultRepository,  // Correct
+    private val vaultSessionManager: VaultSessionManager   // Also acceptable
+    // private val vaultRepository: VaultRepository        // Do not use
 ) : ViewModel() {
     // Implementation
 }
@@ -487,12 +487,12 @@ class MyNewViewModel @Inject constructor(
 
 ---
 
-## 🔍 Références Rapides
+## Quick References
 
-### Fichiers Clés
+### Key Files
 
-| Composant | Fichier |
-|-----------|---------|
+| Component | File |
+|-----------|------|
 | Session Manager | `domain/session/VaultSessionManager.kt` |
 | Repository | `data/repository/FileVaultRepository.kt` |
 | File I/O | `data/vault/VaultFileManager.kt` |
@@ -504,58 +504,58 @@ class MyNewViewModel @Inject constructor(
 
 ### Documentation
 
-- `/android/README.md` - Documentation principale Android
-- `/android/CLOUD_SYNC_README.md` - Guide synchronisation cloud
-- `/android/OAUTH2_SETUP_GUIDE.md` - Configuration OAuth2
-- `/android/PRESET_USER_GUIDE.md` - Guide des presets
-- `/docs/` - Documentation technique générale
+- `/android/README.md` - Main Android documentation
+- `/android/CLOUD_SYNC_README.md` - Cloud synchronization guide
+- `/android/OAUTH2_SETUP_GUIDE.md` - OAuth2 setup guide
+- `/android/PRESET_USER_GUIDE.md` - Presets user guide
+- `/docs/` - General technical documentation
 
 ---
 
-## ❓ FAQ pour Futures Sessions
+## FAQ for Future Sessions
 
-### Q: Quel repository dois-je utiliser dans un nouveau ViewModel ?
-**R:** `FileVaultRepository` - C'est le repository de production.
+### Q: Which repository should I use in a new ViewModel?
+**A:** `FileVaultRepository` - This is the production repository.
 
-### Q: Room est-il encore utilisé pour les vaults ?
-**R:** Non. Room stocke uniquement le registre (`VaultRegistryEntry`) et l'historique (`PasswordHistoryEntity`).
+### Q: Is Room still used for vaults?
+**A:** No. Room only stores the registry (`VaultRegistryEntry`) and the history (`PasswordHistoryEntity`).
 
-### Q: Où sont stockées les données des vaults ?
-**R:** Dans des fichiers `.gpv` (JSON chiffré) sur le filesystem ou via SAF.
+### Q: Where is the vault data stored?
+**A:** In `.gpv` files (encrypted JSON) on the filesystem or via SAF.
 
-### Q: Que fait `VaultRepository` (sans "File") ?
-**R:** C'est l'ancien système legacy, actif uniquement en mode DEBUG pour compatibilité.
+### Q: What does `VaultRepository` (without "File") do?
+**A:** It is the old legacy system, active only in DEBUG mode for compatibility.
 
-### Q: Comment ajouter une entrée à un vault ?
-**R:** Via `VaultSessionManager.saveEntry()` ou `FileVaultRepository.saveEntry()`.
+### Q: How do I add an entry to a vault?
+**A:** Via `VaultSessionManager.saveEntry()` or `FileVaultRepository.saveEntry()`.
 
-### Q: Les données sont-elles chiffrées en base de données ?
-**R:** Les métadonnées dans Room ne sont pas sensibles (pas besoin de chiffrement). Les données sensibles sont dans les fichiers .gpv (chiffrés).
+### Q: Is the data encrypted in the database?
+**A:** The metadata in Room is not sensitive (no encryption needed). Sensitive data is in the .gpv files (encrypted).
 
-### Q: Comment fonctionne le déverrouillage biométrique ?
-**R:** Le master password est chiffré avec Android Keystore et stocké dans `VaultRegistryEntry.encryptedMasterPassword`.
+### Q: How does biometric unlock work?
+**A:** The master password is encrypted with Android Keystore and stored in `VaultRegistryEntry.encryptedMasterPassword`.
 
 ---
 
-## 🎯 Résumé pour Futures Sessions
+## Summary for Future Sessions
 
 ```
-✅ SYSTÈME ACTUEL : Fichiers .gpv (file-based)
-❌ ANCIEN SYSTÈME : Room vaults (deprecated, DEBUG only)
+CURRENT SYSTEM: .gpv files (file-based)
+OLD SYSTEM: Room vaults (deprecated, DEBUG only)
 
-✅ UTILISER : FileVaultRepository, VaultSessionManager
-❌ NE PLUS UTILISER : VaultRepository (legacy)
+USE: FileVaultRepository, VaultSessionManager
+DO NOT USE: VaultRepository (legacy)
 
-✅ ROOM POUR : Registre des vaults (VaultRegistryEntry) + Historique (PasswordHistoryEntity)
-❌ ROOM POUR : Stocker les entrées de vault (obsolète)
+ROOM FOR: Vault registry (VaultRegistryEntry) + History (PasswordHistoryEntity)
+NOT ROOM FOR: Storing vault entries (obsolete)
 
-✅ FORMAT : JSON chiffré dans fichiers .gpv
-❌ FORMAT : Données dans SQLite (obsolète)
+FORMAT: Encrypted JSON in .gpv files
+NOT FORMAT: Data in SQLite (obsolete)
 ```
 
 ---
 
-**Date de création :** 2025-10-30
-**Auteur :** Documentation automatisée
-**Branche :** android
-**Dernière révision :** 2025-10-30
+**Created:** 2025-10-30
+**Author:** Julien Bombled
+**Branch:** android
+**Last revision:** 2025-10-30
