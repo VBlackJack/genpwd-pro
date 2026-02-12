@@ -30,7 +30,9 @@
     "nativeMessaging"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -38,7 +40,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
       "js": ["content-scripts/content-main.js"],
       "css": ["styles/content.css"],
       "run_at": "document_idle"
@@ -47,7 +49,7 @@
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],
-      "matches": ["<all_urls>"]
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"]
     }
   ],
   "content_security_policy": {

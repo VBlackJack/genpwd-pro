@@ -43,6 +43,7 @@ export class ThemeToggle {
     this.isDropdownOpen = false;
     this.longPressTimer = null;
     this.abortController = new AbortController();
+    this.onThemeChanged = () => this.#updateButtonState();
 
     this.#init();
   }
@@ -53,7 +54,7 @@ export class ThemeToggle {
     this.#updateButtonState();
 
     // Listen for theme changes from other sources
-    window.addEventListener('theme:changed', () => this.#updateButtonState());
+    window.addEventListener('theme:changed', this.onThemeChanged);
   }
 
   #injectButton() {
@@ -300,7 +301,7 @@ export class ThemeToggle {
       this.button.remove();
     }
     this.#closeDropdown();
-    window.removeEventListener('theme:changed', this.#updateButtonState);
+    window.removeEventListener('theme:changed', this.onThemeChanged);
   }
 }
 

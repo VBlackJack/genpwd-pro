@@ -181,12 +181,7 @@ export function mountHeaderBadge() {
   // Bind click handler to open stats modal
   const badge = document.getElementById('achievement-header-badge');
   if (badge) {
-    badge.addEventListener('click', () => {
-      // Dynamic import to avoid circular dependency
-      import('../modals/stats-modal.js').then(({ statsModal }) => {
-        statsModal.show();
-      });
-    });
+    badge.addEventListener('click', requestStatsModalOpen);
   }
 }
 
@@ -203,11 +198,7 @@ export function refreshHeaderBadge() {
   // Re-bind click handler
   const badge = document.getElementById('achievement-header-badge');
   if (badge) {
-    badge.addEventListener('click', () => {
-      import('../modals/stats-modal.js').then(({ statsModal }) => {
-        statsModal.show();
-      });
-    });
+    badge.addEventListener('click', requestStatsModalOpen);
   }
 }
 
@@ -222,6 +213,14 @@ export function pulseHeaderBadge() {
   setTimeout(() => {
     badge.classList.remove('pulse');
   }, 1500);
+}
+
+/**
+ * Request opening the stats modal without importing it here.
+ * This keeps achievement display decoupled from modal modules.
+ */
+function requestStatsModalOpen() {
+  window.dispatchEvent(new CustomEvent('ui:open-stats-modal'));
 }
 
 /**

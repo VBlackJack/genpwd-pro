@@ -21,6 +21,9 @@ import { showToast } from './toast.js';
 import { sanitizeHTML } from './dom-sanitizer.js';
 import { i18n } from './i18n.js';
 
+const INSTALL_DISMISS_KEY = 'pwa-install-dismissed';
+const INSTALL_DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
 /**
  * PWA Manager - Handles Service Worker registration and PWA installation
  */
@@ -164,8 +167,8 @@ class PWAManager {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: #4CAF50;
-      color: white;
+      background: var(--accent-green, #4CAF50);
+      color: var(--text-on-accent, #070b14);
       padding: 15px 20px;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
@@ -216,7 +219,9 @@ class PWAManager {
       safeLog('Install prompt ready');
 
       // Show custom install UI
-      this.showInstallUI();
+      if (!this.isInstallPromptDismissed()) {
+        this.showInstallUI();
+      }
     }, { signal });
 
     // Listen for successful installation
@@ -233,6 +238,7 @@ class PWAManager {
   showInstallUI() {
     // Check if already showing install UI
     if (document.getElementById('pwa-install-banner')) return;
+    if (this.isInstallPromptDismissed()) return;
 
     const installBanner = document.createElement('div');
     installBanner.id = 'pwa-install-banner';
@@ -242,7 +248,7 @@ class PWAManager {
       left: 50%;
       transform: translateX(-50%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      color: var(--text-on-windows-hello, #ffffff);
       padding: 15px 25px;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -297,7 +303,7 @@ class PWAManager {
       installBanner.remove();
 
       // Don't show again for 7 days
-      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+      this.markInstallPromptDismissed();
     });
 
     // Auto-dismiss after 10 seconds
@@ -306,6 +312,35 @@ class PWAManager {
         installBanner.remove();
       }
     }, 10000);
+  }
+
+  /**
+   * Check whether install prompt has been dismissed recently
+   * @returns {boolean}
+   */
+  isInstallPromptDismissed() {
+    try {
+      const dismissedAtRaw = localStorage.getItem(INSTALL_DISMISS_KEY);
+      if (!dismissedAtRaw) return false;
+      const dismissedAt = Number.parseInt(dismissedAtRaw, 10);
+      if (!Number.isFinite(dismissedAt) || dismissedAt <= 0) {
+        return false;
+      }
+      return (Date.now() - dismissedAt) < INSTALL_DISMISS_DURATION_MS;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Persist dismiss timestamp for install prompt
+   */
+  markInstallPromptDismissed() {
+    try {
+      localStorage.setItem(INSTALL_DISMISS_KEY, Date.now().toString());
+    } catch {
+      // Ignore storage failures
+    }
   }
 
   /**

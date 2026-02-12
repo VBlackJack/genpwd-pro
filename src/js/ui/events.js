@@ -164,6 +164,11 @@ function bindMainActions() {
   addEventListener(getElement('#btn-stats'), 'click', () => {
     statsModal.show();
   });
+
+  // Decoupled event used by header achievement badge
+  window.addEventListener('ui:open-stats-modal', () => {
+    statsModal.show();
+  }, { signal: eventsController?.signal });
 }
 
 /**

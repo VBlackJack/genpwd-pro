@@ -8,7 +8,7 @@
  * - Main content inert state
  */
 
-import { setMainContentInert } from '../events.js';
+import { setMainContentInert } from '../a11y-utils.js';
 
 export class Modal {
   #escapeHandler = null;

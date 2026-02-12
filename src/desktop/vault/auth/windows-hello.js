@@ -11,6 +11,9 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { app } from 'electron';
 import { WINDOWS_HELLO } from '../../../js/config/crypto-constants.js';
 import { t } from '../../utils/i18n-node.js';
 
@@ -50,6 +53,84 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 // Base64 regex for encryptedKey validation (standard Base64 with optional padding)
 const BASE64_REGEX = /^[A-Za-z0-9+/]+=*$/;
+
+/**
+ * Get legacy credential timestamp file path (main process safe location)
+ * @returns {string}
+ */
+function getLegacyTimestampFilePath() {
+  return path.join(app.getPath('userData'), 'windows-hello-legacy-timestamps.json');
+}
+
+/**
+ * Read legacy timestamp map from disk
+ * @returns {Record<string, number>}
+ */
+function readLegacyTimestampMap() {
+  try {
+    const filePath = getLegacyTimestampFilePath();
+    if (!fs.existsSync(filePath)) {
+      return {};
+    }
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch (error) {
+    devError('[WindowsHello] Failed to read legacy timestamp map:', error.message);
+    return {};
+  }
+}
+
+/**
+ * Persist legacy timestamp map to disk
+ * @param {Record<string, number>} map
+ * @returns {boolean}
+ */
+function writeLegacyTimestampMap(map) {
+  try {
+    const filePath = getLegacyTimestampFilePath();
+    fs.writeFileSync(filePath, JSON.stringify(map, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    devError('[WindowsHello] Failed to write legacy timestamp map:', error.message);
+    return false;
+  }
+}
+
+/**
+ * Get legacy timestamp for a vault
+ * @param {string} vaultId
+ * @returns {number|null}
+ */
+function getLegacyCredentialTimestamp(vaultId) {
+  const map = readLegacyTimestampMap();
+  const ts = Number.parseInt(String(map[vaultId] ?? ''), 10);
+  return Number.isFinite(ts) && ts > 0 ? ts : null;
+}
+
+/**
+ * Set legacy timestamp for a vault
+ * @param {string} vaultId
+ * @param {number} timestamp
+ * @returns {boolean}
+ */
+function setLegacyCredentialTimestamp(vaultId, timestamp) {
+  const map = readLegacyTimestampMap();
+  map[vaultId] = timestamp;
+  return writeLegacyTimestampMap(map);
+}
+
+/**
+ * Clear legacy timestamp for a vault
+ * @param {string} vaultId
+ */
+function clearLegacyCredentialTimestamp(vaultId) {
+  const map = readLegacyTimestampMap();
+  if (Object.prototype.hasOwnProperty.call(map, vaultId)) {
+    delete map[vaultId];
+    writeLegacyTimestampMap(map);
+  }
+}
 
 /**
  * Validate vaultId is a valid UUID to prevent command injection
@@ -400,31 +481,26 @@ export class WindowsHelloAuth {
 
       // Legacy format: enforce maximum age of 30 days to prevent indefinite use
       // Without an envelope timestamp, fall back to a stored migration marker
-      const legacyKey = `${CREDENTIAL_PREFIX}${vaultId}_legacy_ts`;
       let legacyTimestamp = null;
 
-      try {
-        const storedTs = localStorage.getItem(legacyKey);
-        if (storedTs) {
-          legacyTimestamp = parseInt(storedTs, 10);
-        } else {
-          // First retrieval of this legacy credential - mark the timestamp now
-          legacyTimestamp = Date.now();
-          localStorage.setItem(legacyKey, String(legacyTimestamp));
+      legacyTimestamp = getLegacyCredentialTimestamp(vaultId);
+      if (!legacyTimestamp) {
+        // First retrieval of this legacy credential - mark the timestamp now
+        legacyTimestamp = Date.now();
+        const persisted = setLegacyCredentialTimestamp(vaultId, legacyTimestamp);
+        if (!persisted) {
+          // Without a persisted timestamp, treat as expired for safety
+          devLog('[WindowsHello] Cannot persist legacy credential age, deleting credential');
+          await this.deleteCredential(vaultId);
+          return null;
         }
-      } catch {
-        // localStorage may not be available in all contexts
-        // Without a timestamp, treat as expired for safety
-        devLog('[WindowsHello] Cannot track legacy credential age, deleting credential');
-        await this.deleteCredential(vaultId);
-        return null;
       }
 
       const legacyAge = Date.now() - legacyTimestamp;
       if (legacyAge > WINDOWS_HELLO.CREDENTIAL_TTL_MS) {
         devLog('[WindowsHello] Legacy credential expired, deleting...');
         await this.deleteCredential(vaultId);
-        try { localStorage.removeItem(legacyKey); } catch { /* ignore */ }
+        clearLegacyCredentialTimestamp(vaultId);
         return null;
       }
 
@@ -463,6 +539,7 @@ export class WindowsHelloAuth {
         { timeout: WINDOWS_HELLO.CREDENTIAL_TIMEOUT }
       );
 
+      clearLegacyCredentialTimestamp(vaultId);
       devLog('[WindowsHello] Credential deleted successfully');
       return true;
     } catch (error) {

@@ -51,7 +51,7 @@
   --text-secondary: rgba(255, 255, 255, 0.82);
   --text-muted: rgba(255, 255, 255, 0.85); /* WCAG AAA: ~6.5:1 ratio on #0D101C */
   --text-hint: rgba(255, 255, 255, 0.75); /* WCAG AA: ~5.2:1 ratio on #0D101C */
-  --text-on-accent: #ffffff; /* Text on colored buttons/backgrounds */
+  --text-on-accent: #070b14; /* Text on colored buttons/backgrounds */
 
   /* Accent Colors - Semantic (legacy, prefer --accent-* variants) */
   /* @deprecated Use --accent-primary instead */
@@ -60,6 +60,7 @@
   --color-success: hsl(var(--hue-success), 80%, 60%);
   --color-warning: hsl(var(--hue-warning), 100%, 65%);
   --color-danger: hsl(var(--hue-danger), 90%, 65%);
+  --color-info: hsl(205, 95%, 60%);
 
   /* Aliases for vault sync status indicators */
   --success-color: var(--color-success);
@@ -71,9 +72,9 @@
   --accent-cyan: hsl(185, 80%, 55%);
   --accent-cyan-light: hsl(185, 85%, 65%);
   --accent-blue: hsl(220, 90%, 65%);
-  --accent-blue-light: hsl(220, 85%, 55%);
+  --accent-blue-light: hsl(220, 85%, 59%);
   --accent-blue-dark: hsl(220, 85%, 50%);
-  --accent-blue-darker: hsl(220, 80%, 42%);
+  --accent-blue-darker: hsl(220, 80%, 57%);
   --accent-green: hsl(150, 70%, 50%);
   --accent-green-light: hsl(150, 70%, 65%);
   --accent-red: hsl(350, 85%, 60%);
@@ -95,6 +96,12 @@
   --windows-hello-blue: #0078d4;
   --windows-hello-blue-hover: #0063b1;
   --windows-hello-blue-active: #004a85;
+  --text-on-windows-hello: #ffffff;
+  --text-on-brand-blue: #ffffff;
+  --surface-contrast: #ffffff;
+  --surface-contrast-hover: #f3f4f6;
+  --text-on-surface-contrast: #070b14;
+  --toggle-thumb-bg: var(--surface-contrast);
 
   /* Windows System Accent Color (set dynamically via JS, fallback to Windows blue) */
   --windows-accent: var(--windows-accent-dynamic, #0078d4);
@@ -113,6 +120,23 @@
 
   /* Code background (centralized) */
   --bg-code: rgba(0, 0, 0, 0.3);
+
+  /* Surface aliases used by feature modules */
+  --surface-card: var(--bg-secondary);
+  --surface-elevated: var(--bg-tertiary);
+  --border-subtle: var(--border-color);
+  --border-strong: var(--border-hover);
+  --accent-secondary: var(--accent-purple);
+  --bg-disabled: var(--bg-quaternary);
+  --bg-input: var(--bg-tertiary);
+  --text-light: var(--text-secondary);
+  --text-slate: var(--text-muted);
+  --tooltip-bg: var(--bg-surface-alpha);
+  --tooltip-text: var(--text-primary);
+  --accent-cyan-bg: rgba(34, 211, 238, 0.16);
+  --accent-purple-glow: hsla(270, 80%, 65%, 0.15);
+  --card-bg: var(--bg-secondary);
+  --hover-bg: var(--bg-hover);
 
   /* Borders */
   --border: rgba(255, 255, 255, 0.1);
@@ -276,9 +300,11 @@
   --text-secondary: rgba(0, 0, 0, 0.72);
   --text-muted: rgba(0, 0, 0, 0.70); /* WCAG AA: ~5.5:1 on white bg */
   --text-hint: rgba(0, 0, 0, 0.58); /* WCAG AA: ~4.6:1 on white bg — bumped for body tint */
+  --text-on-accent: #070b14;
   --text-dimmed: #5a5f7a;
   --text-bright: #1a1f36;
   --bg-code: rgba(0, 0, 0, 0.05);
+  --color-info: hsl(205, 85%, 42%);
 
   /* Borders - Light theme */
   --border: rgba(0, 0, 0, 0.1);
@@ -303,6 +329,7 @@
   /* Modal backdrop - Light theme */
   --modal-backdrop: rgba(0, 0, 0, 0.35);
   --modal-backdrop-heavy: rgba(0, 0, 0, 0.5);
+  --modal-backdrop-light: rgba(100, 110, 140, 0.45);
 }
 
 [data-theme="light"] body {
@@ -347,6 +374,7 @@
   --text-secondary: rgba(255, 255, 255, 0.82);
   --text-muted: rgba(255, 255, 255, 0.85);
   --text-hint: rgba(255, 255, 255, 0.75);
+  --text-on-accent: #070b14;
   --text-dimmed: #8c94ca;
   --text-bright: #d6dcff;
 
@@ -405,6 +433,7 @@
   --text-secondary: #f0f0f0;
   --text-muted: #d0d0d0;
   --text-hint: #b0b0b0;
+  --text-on-accent: #ffffff;
   --text-dimmed: #a0a0a0;
   --text-bright: #ffffff;
 
@@ -418,6 +447,7 @@
   --accent-yellow: #ffff00;
   --accent-red: #ff0000;
   --accent-blue: #0000ff;
+  --color-info: #00ffff;
 
   /* Borders — high visibility */
   --border: rgba(255, 255, 255, 0.3);
@@ -473,7 +503,8 @@
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  --text-hint: #64748b;
+  --text-hint: #94a3b8;
+  --text-on-accent: #070b14;
   --text-dimmed: #475569;
   --text-bright: #e2e8f0;
 
@@ -539,6 +570,7 @@
   --text-secondary: #d1fae5;
   --text-muted: #a7f3d0;
   --text-hint: #6ee7b7;
+  --text-on-accent: #070b14;
   --text-dimmed: #34d399;
   --text-bright: #ecfdf5;
 
@@ -1386,7 +1418,7 @@ body.no-scroll .logo-badge,
 
 .modal-close:focus-visible,
 .vault-modal-close:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
   box-shadow: inset 0 0 0 2px var(--accent-cyan, #22d3ee),
               0 0 0 2px rgba(34, 211, 238, 0.25);
 }

@@ -24,6 +24,21 @@ async function runBrowserTests() {
     process.exit(1);
   }
 
+  const strictBrowserRequirement = process.env.PLAYWRIGHT_REQUIRE_BROWSER === '1';
+  const browserExecutable = chromium.executablePath();
+  if (!existsSync(browserExecutable)) {
+    const msg = `⚠️ Playwright browser executable not found: ${browserExecutable}`;
+    if (strictBrowserRequirement) {
+      console.error(msg);
+      process.exit(1);
+      return;
+    }
+    console.warn(msg);
+    console.warn('ℹ️ Skipping browser tests. Run "npx playwright install chromium" to enable.');
+    process.exit(0);
+    return;
+  }
+
   let browser;
   let passed = 0;
   let failed = 0;

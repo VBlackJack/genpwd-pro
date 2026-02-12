@@ -1694,12 +1694,10 @@ export function registerVaultIPC(ipcMain) {
 /** @type {Electron.BrowserWindow|null} */
 let mainWindow = null;
 
-/** Trusted origins for IPC validation */
-const TRUSTED_ORIGINS = [
-  'file://',      // Local file (app)
-  'app://',       // Electron app protocol
-  'localhost'     // Dev server
-];
+/** Trusted IPC URL protocols (production + app protocol) */
+const TRUSTED_PROTOCOLS = new Set(['file:', 'app:']);
+/** Trusted development hosts */
+const TRUSTED_DEV_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
 /**
  * Validate IPC event origin
@@ -1720,8 +1718,17 @@ function validateOrigin(event) {
     throw new Error(t('errors.auth.unauthorized'));
   }
 
-  // Check against trusted origins
-  const isTrusted = TRUSTED_ORIGINS.some(origin => url.startsWith(origin));
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    console.error(`[Vault] Invalid IPC origin URL: ${url}`);
+    throw new Error(t('errors.auth.unauthorized'));
+  }
+
+  const isDevHttpOrigin = (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:')
+    && TRUSTED_DEV_HOSTS.has(parsedUrl.hostname);
+  const isTrusted = TRUSTED_PROTOCOLS.has(parsedUrl.protocol) || isDevHttpOrigin;
 
   if (!isTrusted) {
     console.error(`[Vault] Untrusted IPC origin: ${url}`);
