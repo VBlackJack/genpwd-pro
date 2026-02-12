@@ -12,6 +12,9 @@ on:
       - '.github/workflows/sbom-generation.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   generate-sbom:
     name: Generate Software Bill of Materials
