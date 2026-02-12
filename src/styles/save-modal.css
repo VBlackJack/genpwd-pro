@@ -67,7 +67,7 @@
   height: 40px;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
   border-radius: var(--radius-md);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .save-vault-header h3 {
@@ -160,7 +160,7 @@
 .save-vault-copy-btn:hover {
   background: var(--accent-primary, #3b82f6);
   border-color: var(--accent-primary, #3b82f6);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .save-vault-copy-btn:focus-visible {
@@ -175,7 +175,7 @@
 .save-vault-copy-btn.copied {
   background: var(--accent-green, #10b981);
   border-color: var(--accent-green, #10b981);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 /* ==================== FORM GROUPS ==================== */
@@ -335,7 +335,7 @@
 
 .save-vault-btn-primary {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue-light));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   box-shadow: 0 4px 15px -3px rgba(var(--rgb-primary), 0.4);
 }
 
@@ -361,7 +361,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: currentColor;
   border-radius: var(--radius-full);
   animation: spin var(--animation-spin);
 }
@@ -422,7 +422,7 @@
 
 .pwd-ctx-item:focus {
   background: rgba(var(--rgb-primary), 0.15);
-  outline: none;
+  outline: 2px solid transparent;
 }
 
 .pwd-ctx-item:focus-visible {
@@ -440,7 +440,7 @@
 .pwd .actions .save-to-vault-btn:hover {
   background: var(--accent-primary, #3b82f6);
   border-color: var(--accent-primary, #3b82f6);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .pwd .actions .save-to-vault-btn:active {
@@ -457,7 +457,7 @@
 .pwd .actions .copy-btn.copied {
   background: var(--accent-green, #10b981);
   border-color: var(--accent-green, #10b981);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 /* ==================== QUICK UNLOCK DIALOG ==================== */
@@ -711,7 +711,7 @@
 
 .quick-unlock-btn-primary {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue-light));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   box-shadow: 0 4px 15px -3px rgba(var(--rgb-primary), 0.4);
 }
 
@@ -732,7 +732,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: currentColor;
   border-radius: var(--radius-full);
   animation: spin var(--animation-spin);
 }
@@ -762,7 +762,7 @@
 .quick-unlock-btn-hello {
   width: 100%;
   background: linear-gradient(135deg, var(--windows-hello-blue), var(--windows-hello-blue-hover));
-  color: white;
+  color: var(--text-on-windows-hello, #ffffff);
   box-shadow: 0 4px 15px -3px rgba(0, 120, 212, 0.4);
 }
 

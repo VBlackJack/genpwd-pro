@@ -164,11 +164,12 @@ function prefersReducedMotion() {
  * @param {boolean} animate - Whether to animate the transition (default: true)
  */
 export function applyTheme(themeName, animate = true) {
-  const theme = THEMES[themeName];
+  let theme = THEMES[themeName];
 
   if (!theme) {
     safeLog(`Unknown theme: ${themeName}, falling back to 'dark'`);
     themeName = 'dark';
+    theme = THEMES.dark;
   }
 
   const root = document.documentElement;

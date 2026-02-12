@@ -9,10 +9,17 @@
   --vault-surface-active: rgba(255, 255, 255, 0.12);
   --vault-border: rgba(255, 255, 255, 0.1);
   --vault-border-light: rgba(255, 255, 255, 0.2);
+  --vault-border-hover: var(--vault-border-light);
   --vault-text: var(--text-primary);
   --vault-text-muted: var(--text-secondary);
   --vault-text-dim: var(--text-hint, rgba(255, 255, 255, 0.35));
+  --vault-text-secondary: var(--vault-text-muted);
+  --vault-muted: var(--vault-text-muted);
+  --vault-hover: var(--vault-surface-hover);
+  --vault-input-bg: var(--vault-surface);
   --vault-primary: var(--accent-primary);
+  --vault-primary-hover: var(--accent-blue-dark, #2563eb);
+  --vault-font: var(--font-family, 'Segoe UI', system-ui, sans-serif);
 
   /* Spacing scale (4px base) */
   --vault-space-1: 0.25rem;  /* 4px */
@@ -59,13 +66,23 @@
   --vault-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
   --vault-shadow-lg: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.3));
   --vault-shadow-xl: var(--shadow-xl, 0 25px 50px -12px rgba(0, 0, 0, 0.6));
+  --vault-shadow: var(--vault-shadow-md);
+  --vault-bg-rgb: 13, 16, 28;
+  --bg-qr: var(--bg-secondary);
+  --bg-surface-light: var(--bg-surface);
+  --border-light: var(--border-color);
+  --text-primary-light: var(--text-primary);
+  --text-tertiary: var(--text-muted);
+  --type-color: var(--accent-blue, #3b82f6);
+  --type-color-rgb: 59, 130, 246;
+  --tag-color: var(--accent-cyan, #22d3ee);
 
   /* Focus ring */
   --vault-focus-ring: 0 0 0 2px var(--vault-primary);
   --vault-focus-ring-offset: 0 0 0 4px rgba(var(--accent-primary-rgb, 99, 102, 241), 0.25);
 
   /* Typography scale */
-  --vault-font-xs: 0.6875rem;   /* 11px */
+  --vault-font-xs: 0.75rem;   /* 11px */
   --vault-font-sm: 0.75rem;     /* 12px */
   --vault-font-base: 0.8125rem; /* 13px */
   --vault-font-md: 0.875rem;    /* 14px */
@@ -160,3 +177,4 @@
   --vault-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
   --vault-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
+

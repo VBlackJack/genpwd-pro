@@ -150,7 +150,7 @@
   border: 1px solid currentColor;
   border-radius: var(--radius-sm, 4px);
   color: inherit;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -229,3 +229,4 @@
 body.no-blur .save-indicator--persistent {
   backdrop-filter: none;
 }
+

@@ -393,8 +393,8 @@ export class Onboarding {
         button.style.cssText = `
           padding: 10px 20px;
           border: none;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue-light));
+          color: var(--text-on-accent, #070b14);
           border-radius: 6px;
           cursor: pointer;
           font-size: 14px;

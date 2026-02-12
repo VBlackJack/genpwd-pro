@@ -57,7 +57,7 @@
 
 .vault-view-btn.active {
   background: var(--vault-primary);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 /* Group By Dropdown */
@@ -246,7 +246,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -582,3 +582,4 @@
   outline-offset: -2px;
   border-radius: var(--vault-radius-sm);
 }
+

@@ -36,6 +36,7 @@ const {
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
+const { randomBytes, timingSafeEqual } = require('crypto');
 const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 const { version: APP_VERSION } = require('./package.json');
@@ -708,8 +709,8 @@ if (!gotTheLock) {
         handleDeepLink(deepLink);
       }
 
-      // Check for .gpdb vault file in command line (file association)
-      const vaultFile = commandLine.find(arg => arg.endsWith('.gpdb'));
+      // Check for vault file association (.gpdb and legacy .gpd)
+      const vaultFile = commandLine.find(arg => /\.gpd(b)?$/i.test(arg));
       if (vaultFile && fs.existsSync(vaultFile)) {
         devLog('[GenPwd Pro] Opening vault from file association:', vaultFile);
         mainWindow.webContents.send('vault:open-file', vaultFile);
@@ -1394,11 +1395,13 @@ function initAutoUpdater() {
 
 // IPC handler for preload to retrieve app version (sandbox blocks require('./package.json'))
 ipcMain.on('get-app-version', (event) => {
+  validateOrigin(event);
   event.returnValue = APP_VERSION;
 });
 
 // IPC handler for manual update check
-ipcMain.handle('app:checkForUpdates', async () => {
+ipcMain.handle('app:checkForUpdates', async (event) => {
+  validateOrigin(event);
   if (process.env.NODE_ENV === 'development') {
     return { available: false, message: 'Updates disabled in development' };
   }
@@ -1416,8 +1419,10 @@ ipcMain.handle('app:checkForUpdates', async () => {
 });
 
 // IPC handler to trigger update install
-ipcMain.handle('app:installUpdate', async () => {
+ipcMain.handle('app:installUpdate', async (event) => {
+  validateOrigin(event);
   autoUpdater.quitAndInstall(false, true);
+  return { success: true };
 });
 
 // ==================== WINDOWS JUMP LIST ====================
@@ -2238,6 +2243,7 @@ function validateVaultPath(filePath) {
 ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
   validateOrigin(event);
   const t = getMainTranslations();
+  let tempPath = null;
   try {
     // Validate path for security (directory traversal protection)
     const pathValidation = validateVaultPath(filePath);
@@ -2255,7 +2261,7 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
     await fs.promises.mkdir(dir, { recursive: true });
 
     // Atomic write: write to temp file, then rename
-    const tempPath = `${filePath}.tmp.${Date.now()}`;
+    tempPath = `${filePath}.tmp.${Date.now()}`;
 
     // Handle both Buffer and string data
     if (Buffer.isBuffer(data)) {
@@ -2285,7 +2291,9 @@ ipcMain.handle('vaultIO:save', async (event, { data, filePath }) => {
     return { success: true, filePath };
   } catch (error) {
     // Clean up partial temp file to avoid orphan files
-    try { await fs.promises.unlink(tempPath); } catch { /* Already gone or never created */ }
+    if (tempPath) {
+      try { await fs.promises.unlink(tempPath); } catch { /* Already gone or never created */ }
+    }
     devError('[GenPwd Pro] vaultIO:save error:', error.message);
     return { success: false, error: error.message };
   }
@@ -2870,36 +2878,151 @@ app.whenReady().then(async () => {
   }
 
   // ==================== NATIVE MESSAGING PIPE SERVER ====================
-  // Named pipe server for Chrome extension native messaging host
-  const PIPE_NAME = '\\\\.\\pipe\\genpwd-pro';
+  // Named pipe server for browser native messaging host
   let pipeServer = null;
+  const PIPE_RUNTIME_DIR = path.join(app.getPath('userData'), 'runtime');
+  const PIPE_CONFIG_FILE = path.join(PIPE_RUNTIME_DIR, 'native-messaging.json');
+  const PIPE_INSTANCE_ID = randomBytes(8).toString('hex');
+  const PIPE_AUTH_TOKEN = randomBytes(32).toString('hex');
+  const PIPE_NAME = `\\\\.\\pipe\\genpwd-pro-${PIPE_INSTANCE_ID}`;
+
+  // Pipe server limits
+  const PIPE_LIMITS = {
+    DOMAIN_MAX: 255,
+    QUERY_MAX: 500,
+    ID_MAX: 100,
+    MAX_MESSAGE_BYTES: 64 * 1024,
+    MAX_BUFFER_BYTES: 256 * 1024,
+    MAX_REQUESTS_PER_CONNECTION: 250,
+    CONNECTION_IDLE_TIMEOUT_MS: 60_000
+  };
+
+  async function writePipeConfig() {
+    const payload = {
+      pipeName: PIPE_NAME,
+      authToken: PIPE_AUTH_TOKEN,
+      pid: process.pid,
+      version: APP_VERSION,
+      createdAt: new Date().toISOString()
+    };
+
+    await fs.promises.mkdir(PIPE_RUNTIME_DIR, { recursive: true });
+    await fs.promises.writeFile(
+      PIPE_CONFIG_FILE,
+      JSON.stringify(payload, null, 2),
+      { encoding: 'utf-8', mode: 0o600 }
+    );
+
+    // Best effort on Windows; unsupported platforms may ignore chmod semantics.
+    try {
+      await fs.promises.chmod(PIPE_CONFIG_FILE, 0o600);
+    } catch {
+      // Ignore chmod failures on platforms/filesystems that do not support unix-style modes.
+    }
+  }
+
+  async function cleanupPipeConfig() {
+    try {
+      await fs.promises.unlink(PIPE_CONFIG_FILE);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  }
+
+  function isAuthorizedPipeClient(token) {
+    if (typeof token !== 'string') {
+      return false;
+    }
+    const expected = Buffer.from(PIPE_AUTH_TOKEN, 'utf8');
+    const actual = Buffer.from(token, 'utf8');
+    if (expected.length !== actual.length) {
+      return false;
+    }
+
+    return timingSafeEqual(expected, actual);
+  }
+
+  function makePipeErrorResponse(requestId, error) {
+    return {
+      requestId: requestId ?? null,
+      success: false,
+      error
+    };
+  }
 
   function startPipeServer() {
     pipeServer = net.createServer((client) => {
       devLog('[Pipe Server] Client connected');
       let dataBuffer = '';
+      let requestCount = 0;
 
-      client.on('data', async (data) => {
-        dataBuffer += data.toString('utf8');
+      client.setEncoding('utf8');
+      client.setTimeout(PIPE_LIMITS.CONNECTION_IDLE_TIMEOUT_MS);
+
+      const sendError = (requestId, error) => {
+        try {
+          client.write(`${JSON.stringify(makePipeErrorResponse(requestId, error))}\n`);
+        } catch {
+          // Ignore write failures on closed clients.
+        }
+      };
+
+      client.on('timeout', () => {
+        devLog('[Pipe Server] Client timed out');
+        client.destroy();
+      });
+
+      client.on('data', async (chunk) => {
+        if (Buffer.byteLength(chunk, 'utf8') > PIPE_LIMITS.MAX_MESSAGE_BYTES) {
+          sendError(null, 'Message too large');
+          client.destroy();
+          return;
+        }
+
+        dataBuffer += chunk;
+
+        if (Buffer.byteLength(dataBuffer, 'utf8') > PIPE_LIMITS.MAX_BUFFER_BYTES) {
+          sendError(null, 'Buffer overflow');
+          client.destroy();
+          return;
+        }
 
         // Messages are newline-delimited JSON
         const lines = dataBuffer.split('\n');
         dataBuffer = lines.pop(); // Keep incomplete line in buffer
 
         for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const request = JSON.parse(line);
-              const response = await handlePipeRequest(request);
-              client.write(JSON.stringify(response) + '\n');
-            } catch (e) {
-              devError('[Pipe Server] Invalid JSON:', line);
-              client.write(JSON.stringify({
-                requestId: null,
-                success: false,
-                error: 'Invalid JSON'
-              }) + '\n');
+          const trimmed = line.trim();
+          if (!trimmed) {
+            continue;
+          }
+
+          if (Buffer.byteLength(trimmed, 'utf8') > PIPE_LIMITS.MAX_MESSAGE_BYTES) {
+            sendError(null, 'Message too large');
+            client.destroy();
+            return;
+          }
+
+          requestCount++;
+          if (requestCount > PIPE_LIMITS.MAX_REQUESTS_PER_CONNECTION) {
+            sendError(null, 'Too many requests');
+            client.destroy();
+            return;
+          }
+
+          try {
+            const request = JSON.parse(trimmed);
+            if (!request || typeof request !== 'object' || Array.isArray(request)) {
+              sendError(null, 'Invalid request');
+              continue;
             }
+            const response = await handlePipeRequest(request);
+            client.write(`${JSON.stringify(response)}\n`);
+          } catch (error) {
+            devError('[Pipe Server] Invalid JSON payload:', error.message);
+            sendError(null, 'Invalid JSON');
           }
         }
       });
@@ -2914,16 +3037,7 @@ app.whenReady().then(async () => {
     });
 
     pipeServer.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        // Pipe already exists, try to unlink and restart
-        devLog('[Pipe Server] Pipe in use, retrying...');
-        setTimeout(() => {
-          pipeServer.close();
-          startPipeServer();
-        }, 1000);
-      } else {
-        devError('[Pipe Server] Server error:', err.message);
-      }
+      devError('[Pipe Server] Server error:', err.message);
     });
 
     pipeServer.listen(PIPE_NAME, () => {
@@ -2931,14 +3045,19 @@ app.whenReady().then(async () => {
     });
   }
 
-  // Pipe server input limits (mirrors INPUT_LIMITS from vault-ipc-handlers.js)
-  const PIPE_LIMITS = { DOMAIN_MAX: 255, QUERY_MAX: 500, ID_MAX: 100 };
-
   async function handlePipeRequest(request) {
-    const { requestId, action, ...data } = request;
+    const { requestId, action, authToken, ...data } = request;
+
+    if (!isAuthorizedPipeClient(authToken)) {
+      return makePipeErrorResponse(requestId, 'Unauthorized');
+    }
+
+    if (typeof action !== 'string' || action.length === 0) {
+      return makePipeErrorResponse(requestId, 'Invalid action');
+    }
 
     if (!vaultModule) {
-      return { requestId, success: false, error: 'Vault module not loaded' };
+      return makePipeErrorResponse(requestId, 'Vault module not loaded');
     }
 
     const session = vaultModule.getSession();
@@ -3096,6 +3215,10 @@ app.whenReady().then(async () => {
         case 'fillEntry': {
           // This action is used to notify the app that an entry was filled
           // Can be used for audit logging in the future
+          const { id } = data;
+          if (typeof id !== 'string' || id.length === 0 || id.length > PIPE_LIMITS.ID_MAX) {
+            return { requestId, success: false, error: 'Invalid entry ID' };
+          }
           devLog('[Pipe Server] Entry filled:', data.id);
           return { requestId, success: true };
         }
@@ -3109,8 +3232,15 @@ app.whenReady().then(async () => {
     }
   }
 
-  // Start the pipe server
-  startPipeServer();
+  // Start the pipe server only where native messaging host is supported
+  if (process.platform === 'win32') {
+    try {
+      await writePipeConfig();
+      startPipeServer();
+    } catch (error) {
+      devError('[Pipe Server] Failed to initialize:', error.message);
+    }
+  }
 
   // Clean up on app quit
   app.on('before-quit', () => {
@@ -3118,6 +3248,9 @@ app.whenReady().then(async () => {
       pipeServer.close();
       devLog('[Pipe Server] Server closed');
     }
+    cleanupPipeConfig().catch((error) => {
+      devError('[Pipe Server] Failed to remove runtime config:', error.message);
+    });
   });
 
   createWindow();

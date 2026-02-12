@@ -3,9 +3,9 @@
 ## Supported Versions
 | Version | Supported |
 |---------|-----------|
-| 1.1.x   | Yes |
-| 1.0.x   | Security fixes only for critical issues |
-| < 1.0   | No |
+| 3.1.x   | Yes |
+| 3.0.x   | Security fixes only for critical issues |
+| < 3.0   | No |
 
 We align support windows with the latest minor release train. Once a new minor ships, the previous line only receives high-priority security patches for 90 days.
 

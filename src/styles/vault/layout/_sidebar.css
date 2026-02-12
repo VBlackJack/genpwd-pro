@@ -45,7 +45,7 @@
 .vault-sidebar-collapse:hover {
   background: var(--vault-primary);
   border-color: var(--vault-primary);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .vault-sidebar-collapse svg {
@@ -151,7 +151,7 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md, 8px);
-  color: white;
+  color: var(--icon-fg, #ffffff);
 }
 
 .vault-current-info {
@@ -210,7 +210,7 @@
 
 .vault-switcher-label {
   padding: 0.375rem 0.625rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -238,7 +238,7 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  color: white;
+  color: var(--icon-fg, #ffffff);
 }
 
 .vault-switcher-name {
@@ -401,7 +401,7 @@
 
 .vault-nav-title {
   padding: 0.5rem 0.75rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -526,7 +526,7 @@
   padding: 0.125rem 0.375rem;
   background: var(--vault-bg);
   border-radius: var(--radius-md);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
   text-align: center;
 }
@@ -561,3 +561,4 @@ body.no-blur .vault-switcher-dropdown {
   backdrop-filter: none;
   background: var(--bg-secondary);
 }
+

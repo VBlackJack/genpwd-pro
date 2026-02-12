@@ -205,7 +205,7 @@ header[data-aurora="true"]::before {
 
 .header-tab.active {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.2));
-  color: white;
+  color: var(--text-primary);
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.4),
     0 4px 12px rgba(99, 102, 241, 0.2),

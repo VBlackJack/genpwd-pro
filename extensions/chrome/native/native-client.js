@@ -181,7 +181,7 @@ async function sendRequest(type, data = {}) {
 
   return new Promise((resolve, reject) => {
     const requestId = ++requestIdCounter;
-    const message = { type, ...data };
+    const message = { requestId, type, ...data };
 
     const timeout = setTimeout(() => {
       pendingRequests.delete(requestId);

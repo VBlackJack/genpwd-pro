@@ -1,6 +1,6 @@
 # Register Native Messaging Host for Chrome
-$ManifestPath = Resolve-Path ".\src\desktop\native-host\com.genpwd.pro.host.json"
-$RegistryKey = "HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.genpwd.pro.host"
+$ManifestPath = (Resolve-Path ".\native-host\com.genpwdpro.nmh.json").Path
+$RegistryKey = "HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.genpwdpro.nmh"
 
 if (!(Test-Path $RegistryKey)) {
     New-Item -Path $RegistryKey -Force | Out-Null

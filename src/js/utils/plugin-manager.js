@@ -20,6 +20,11 @@ import { safeLog } from './logger.js';
 import { showToast } from './toast.js';
 import { i18n } from './i18n.js';
 
+const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const TRUSTED_REMOTE_PLUGIN_HOSTS = new Set([
+  'plugins.genpwd.app'
+]);
+
 /**
  * Plugin Interface Definition
  * @typedef {Object} PluginInterface
@@ -460,28 +465,36 @@ class PluginManager {
       const url = new URL(moduleUrl, window.location.origin);
 
       // SECURITY: Validate protocol
-      // - HTTPS: Always allowed
+      // - HTTPS: Only trusted hosts
       // - HTTP: Only on localhost for development
       // - file://: Only in Electron packaged app (not browser)
       const isElectronApp = typeof window.electronAPI !== 'undefined';
-      const isLocalhost = window.location.hostname === 'localhost';
+      const isLocalhostPage = LOCALHOST_HOSTS.has(window.location.hostname);
+      const isLocalPluginHost = LOCALHOST_HOSTS.has(url.hostname);
 
       if (url.protocol === 'file:') {
         // SECURITY: file:// only allowed in Electron packaged app
         // Prevents local file traversal attacks in browser context
         if (!isElectronApp) {
           safeLog(`Plugin from ${source}: file:// protocol only allowed in Electron app`);
-          showToast(i18n.t('toast.pluginFileProtocolDenied') || 'File protocol not allowed in browser', 'error');
+          showToast(i18n.t('toast.pluginFileProtocolDenied'), 'error');
           return false;
         }
       } else if (url.protocol === 'http:') {
-        // HTTP only on localhost for development
-        if (!isLocalhost) {
+        // HTTP only for local development (page + plugin source on localhost)
+        if (!isLocalhostPage || !isLocalPluginHost) {
           safeLog(`Plugin from ${source}: HTTP only allowed on localhost`);
           showToast(i18n.t('toast.pluginHttpsRequired'), 'error');
           return false;
         }
-      } else if (url.protocol !== 'https:') {
+      } else if (url.protocol === 'https:') {
+        // HTTPS requires explicit host allowlist (or localhost for development)
+        if (!isLocalPluginHost && !TRUSTED_REMOTE_PLUGIN_HOSTS.has(url.hostname)) {
+          safeLog(`Plugin from ${source}: Untrusted remote host ${url.hostname}`);
+          showToast(i18n.t('toast.pluginHostNotTrusted'), 'error');
+          return false;
+        }
+      } else {
         // Unknown protocol - reject
         safeLog(`Plugin from ${source}: Invalid protocol ${url.protocol}`);
         showToast(i18n.t('toast.pluginHttpsRequired'), 'error');

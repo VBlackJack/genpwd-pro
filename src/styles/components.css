@@ -13,7 +13,7 @@
   border-radius: var(--radius-md);
   padding: 12px 16px;
   font-size: 0.9375rem;
-  outline: none;
+  outline: 2px solid transparent;
   transition: all var(--transition-smooth);
 }
 
@@ -154,7 +154,7 @@ textarea.field-invalid {
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
-  outline: none;
+  outline: 2px solid transparent;
   cursor: pointer;
   transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
@@ -316,7 +316,7 @@ textarea.field-invalid {
 
 .btn.primary {
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   border: 1px solid var(--overlay-intense);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -387,7 +387,7 @@ textarea.field-invalid {
 [data-theme="dark"] .btn.primary:hover {
   background: linear-gradient(135deg, hsl(220, 90%, 55%), hsl(270, 80%, 55%));
   border-color: rgba(139, 92, 246, 0.6);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 [data-theme="dark"] select,
@@ -496,7 +496,7 @@ textarea.field-invalid {
 
 .btn-mini.random {
   background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   border: 1px solid transparent;
 }
 
@@ -640,7 +640,7 @@ textarea.field-invalid {
   transition: all var(--transition-normal);
   user-select: none;
   background: var(--accent-blue);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .chip:hover {
@@ -656,7 +656,7 @@ textarea.field-invalid {
 
 .chip.chip-title {
   background: var(--accent-green);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 /* ============================================================================
@@ -1030,7 +1030,7 @@ textarea.field-invalid {
 
 .cursor:focus,
 .cursor:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
   box-shadow: 0 0 0 3px rgba(21, 190, 255, 0.45), 0 12px 30px rgba(21, 190, 255, 0.3);
 }
 
@@ -1893,7 +1893,7 @@ textarea.field-invalid {
 
 .theme-dropdown-item:focus {
   background: var(--bg-tertiary);
-  outline: none;
+  outline: 2px solid transparent;
 }
 
 .theme-dropdown-item:focus-visible {
@@ -2120,7 +2120,7 @@ textarea.field-invalid {
   align-items: center;
   justify-content: center;
   background: var(--accent-purple, hsl(270, 80%, 65%));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   border-radius: 50%;
   box-shadow: 0 2px 8px hsla(270, 80%, 50%, 0.4);
   animation: check-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2210,7 +2210,7 @@ textarea.field-invalid {
 
 /* Inputs and Selects - Light Theme */
 [data-theme="light"] body .input {
-  background-color: white !important;
+  background-color: var(--bg-primary) !important;
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
   color: var(--text-primary) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
@@ -2219,7 +2219,7 @@ textarea.field-invalid {
 }
 
 [data-theme="light"] body select {
-  background-color: white !important;
+  background-color: var(--bg-primary) !important;
   /* Arrow color handled by [data-theme="light"] select rule above */
   background-repeat: no-repeat !important;
   background-position: right 12px center !important;
@@ -2249,13 +2249,13 @@ textarea.field-invalid {
 [data-theme="light"] body .input:hover,
 [data-theme="light"] body select:hover {
   border-color: rgba(99, 102, 241, 0.4) !important;
-  background-color: white !important;
+  background-color: var(--bg-primary) !important;
   box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1) !important;
 }
 
 [data-theme="light"] body .input:focus,
 [data-theme="light"] body select:focus {
-  background-color: white !important;
+  background-color: var(--bg-primary) !important;
   border-color: var(--accent-purple, #7c3aed) !important;
   box-shadow:
     0 0 0 3px rgba(124, 58, 237, 0.15),
@@ -2433,7 +2433,7 @@ textarea.field-invalid {
 [data-theme="light"] .btn.primary {
   background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
   border-color: transparent;
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 [data-theme="light"] .btn.primary:hover {
@@ -2472,7 +2472,7 @@ textarea.field-invalid {
 /* CTA Button - Primary call to action, one per screen */
 .btn.cta {
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   border: 1px solid var(--overlay-intense);
   font-size: 1rem;
   padding: 0.75rem 1.5rem;

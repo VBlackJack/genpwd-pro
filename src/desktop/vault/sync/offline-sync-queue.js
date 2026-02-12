@@ -19,6 +19,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { app, net } from 'electron';
 
@@ -145,7 +146,7 @@ export class OfflineSyncQueue extends EventEmitter {
    * @returns {string}
    */
   #generateId() {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    return `${Date.now()}-${randomBytes(8).toString('hex')}`;
   }
 
   /**

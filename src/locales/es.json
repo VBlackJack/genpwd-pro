@@ -1233,6 +1233,8 @@
     "pluginDirectCodeDisabled": "Carga de código directo deshabilitada por seguridad. Use módulos ES6.",
     "pluginError": "Error del plugin",
     "pluginHttpsRequired": "La URL del plugin debe usar HTTPS o archivo local",
+    "pluginFileProtocolDenied": "Las URL de archivo solo se permiten en la aplicación de escritorio",
+    "pluginHostNotTrusted": "El host del plugin no está en la lista de confianza",
     "pluginInstallFailed": "Error al instalar el plugin",
     "pluginLoading": "Cargando plugin...",
     "pluginMetadataExported": "¡Metadatos del plugin exportados!",

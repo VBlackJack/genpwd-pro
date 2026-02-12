@@ -119,7 +119,7 @@
   height: 40px;
   background: linear-gradient(135deg, var(--accent-blue, #6366f1), var(--accent-purple, #8b5cf6));
   border-radius: 50%;
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .vault-quick-action-icon svg {

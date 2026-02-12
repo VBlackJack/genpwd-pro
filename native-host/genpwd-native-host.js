@@ -22,13 +22,20 @@
  */
 
 const net = require('net');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const PIPE_NAME = '\\\\.\\pipe\\genpwd-pro';
+const APPDATA_ROOT = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+const PIPE_CONFIG_CANDIDATES = [
+  process.env.GENPWD_PIPE_INFO_PATH,
+  path.join(APPDATA_ROOT, 'genpwd-pro', 'runtime', 'native-messaging.json'),
+  path.join(APPDATA_ROOT, 'GenPwd Pro', 'runtime', 'native-messaging.json')
+].filter(Boolean);
 const PIPE_RETRY_INTERVAL = 1000;
 const PIPE_MAX_RETRIES = 5;
 const MESSAGE_TIMEOUT = 10000;
@@ -139,14 +146,49 @@ function writeMessage(message) {
 let pipeClient = null;
 let pendingRequests = new Map();
 let requestIdCounter = 0;
+let currentPipeConfig = null;
+
+function loadPipeConfig() {
+  for (const candidate of PIPE_CONFIG_CANDIDATES) {
+    try {
+      const raw = fs.readFileSync(candidate, 'utf8');
+      const parsed = JSON.parse(raw);
+      const validPipeName = typeof parsed.pipeName === 'string' && parsed.pipeName.startsWith('\\\\.\\pipe\\genpwd-pro-');
+      const validToken = typeof parsed.authToken === 'string' && parsed.authToken.length >= 32;
+      if (validPipeName && validToken) {
+        return { ...parsed, configPath: candidate };
+      }
+      log('warn', 'Invalid pipe configuration shape', { path: candidate });
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        log('warn', 'Failed to read pipe configuration', { path: candidate, error: error.message });
+      }
+    }
+  }
+
+  return null;
+}
 
 /**
  * Connect to the GenPwd Pro Electron app via named pipe
  */
 function connectToPipe(retries = 0) {
   return new Promise((resolve, reject) => {
-    pipeClient = net.createConnection(PIPE_NAME, () => {
-      log('info', 'Connected to GenPwd Pro app');
+    const pipeConfig = loadPipeConfig();
+    if (!pipeConfig) {
+      if (retries < PIPE_MAX_RETRIES) {
+        setTimeout(() => {
+          connectToPipe(retries + 1).then(resolve).catch(reject);
+        }, PIPE_RETRY_INTERVAL);
+      } else {
+        reject(new Error('Could not locate GenPwd Pro pipe configuration. Is the app running?'));
+      }
+      return;
+    }
+
+    currentPipeConfig = pipeConfig;
+    pipeClient = net.createConnection(pipeConfig.pipeName, () => {
+      log('info', 'Connected to GenPwd Pro app', { pipeName: pipeConfig.pipeName });
       resolve(true);
     });
 
@@ -165,6 +207,7 @@ function connectToPipe(retries = 0) {
     pipeClient.on('close', () => {
       log('info', 'Pipe connection closed');
       pipeClient = null;
+      currentPipeConfig = null;
 
       // Reject all pending requests
       for (const [id, { reject }] of pendingRequests) {
@@ -202,7 +245,7 @@ function connectToPipe(retries = 0) {
 function handlePipeResponse(response) {
   const { requestId, ...data } = response;
 
-  if (requestId && pendingRequests.has(requestId)) {
+  if (requestId !== undefined && pendingRequests.has(requestId)) {
     const { resolve, timeout } = pendingRequests.get(requestId);
     clearTimeout(timeout);
     pendingRequests.delete(requestId);
@@ -221,9 +264,13 @@ function sendToPipe(action, data = {}) {
       reject(new Error('Not connected to GenPwd Pro app'));
       return;
     }
+    if (!currentPipeConfig?.authToken) {
+      reject(new Error('Missing pipe authentication token'));
+      return;
+    }
 
     const requestId = ++requestIdCounter;
-    const request = { requestId, action, ...data };
+    const request = { requestId, action, authToken: currentPipeConfig.authToken, ...data };
 
     const timeout = setTimeout(() => {
       pendingRequests.delete(requestId);
@@ -232,7 +279,15 @@ function sendToPipe(action, data = {}) {
 
     pendingRequests.set(requestId, { resolve, reject, timeout });
 
-    pipeClient.write(JSON.stringify(request) + '\n');
+    pipeClient.write(JSON.stringify(request) + '\n', (error) => {
+      if (!error) {
+        return;
+      }
+
+      clearTimeout(timeout);
+      pendingRequests.delete(requestId);
+      reject(error);
+    });
   });
 }
 
@@ -244,42 +299,45 @@ function sendToPipe(action, data = {}) {
  * Handle messages from Chrome extension
  */
 async function handleExtensionMessage(message) {
-  const { type, ...data } = message;
+  const { requestId, type, ...data } = message;
+  const withRequestId = (payload) => (
+    requestId === undefined ? payload : { requestId, ...payload }
+  );
 
   try {
     switch (type) {
       case 'PING':
-        return { success: true, pong: true };
+        return withRequestId({ success: true, pong: true });
 
       case 'GET_STATUS':
-        return await sendToPipe('getStatus');
+        return withRequestId(await sendToPipe('getStatus'));
 
       case 'IS_UNLOCKED':
-        return await sendToPipe('isUnlocked');
+        return withRequestId(await sendToPipe('isUnlocked'));
 
       case 'GET_ENTRIES':
-        return await sendToPipe('getEntries', data);
+        return withRequestId(await sendToPipe('getEntries', data));
 
       case 'GET_ENTRIES_FOR_DOMAIN':
-        return await sendToPipe('getEntriesForDomain', { domain: data.domain });
+        return withRequestId(await sendToPipe('getEntriesForDomain', { domain: data.domain }));
 
       case 'SEARCH_ENTRIES':
-        return await sendToPipe('searchEntries', { query: data.query });
+        return withRequestId(await sendToPipe('searchEntries', { query: data.query }));
 
       case 'GET_ENTRY':
-        return await sendToPipe('getEntry', { id: data.id });
+        return withRequestId(await sendToPipe('getEntry', { id: data.id }));
 
       case 'GET_TOTP':
-        return await sendToPipe('getTOTP', { id: data.id });
+        return withRequestId(await sendToPipe('getTOTP', { id: data.id }));
 
       case 'FILL_ENTRY':
-        return await sendToPipe('fillEntry', { id: data.id });
+        return withRequestId(await sendToPipe('fillEntry', { id: data.id }));
 
       default:
-        return { success: false, error: `Unknown message type: ${type}` };
+        return withRequestId({ success: false, error: `Unknown message type: ${type}` });
     }
   } catch (error) {
-    return { success: false, error: error.message };
+    return withRequestId({ success: false, error: error.message });
   }
 }
 
@@ -304,6 +362,7 @@ async function main() {
 
   // Main message loop
   while (true) {
+    let extensionRequestId = null;
     try {
       const message = await readMessage();
 
@@ -311,6 +370,7 @@ async function main() {
         log('info', 'Received empty message, exiting');
         break;
       }
+      extensionRequestId = message.requestId ?? null;
 
       log('debug', 'Received message from extension', { type: message.type });
 
@@ -319,7 +379,7 @@ async function main() {
 
     } catch (error) {
       log('error', 'Error processing message', { error: error.message });
-      writeMessage({ success: false, error: error.message });
+      writeMessage({ requestId: extensionRequestId, success: false, error: error.message });
     }
   }
 

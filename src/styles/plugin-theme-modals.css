@@ -207,7 +207,7 @@
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: white;
+  background-color: var(--toggle-thumb-bg, var(--surface-contrast));
   border-radius: 50%;
   transition: transform 0.2s ease;
 }
@@ -377,7 +377,7 @@
 }
 
 .color-text:focus {
-  outline: none;
+  outline: 2px solid transparent;
   border-color: var(--accent-cyan);
 }
 
@@ -498,7 +498,7 @@
 }
 
 .preview-strength {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
@@ -578,3 +578,4 @@
     min-width: 80px;
   }
 }
+

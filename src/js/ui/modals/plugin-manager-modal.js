@@ -22,6 +22,11 @@ import { showToast } from '../../utils/toast.js';
 import { i18n } from '../../utils/i18n.js';
 import { isFeatureEnabled } from '../../core/enterprise/feature-flags.js';
 
+const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const TRUSTED_REMOTE_PLUGIN_HOSTS = new Set([
+  'plugins.genpwd.app'
+]);
+
 /**
  * Plugin Manager Modal
  *
@@ -281,10 +286,29 @@ export class PluginManagerModal extends Modal {
       return;
     }
 
-    // Check for HTTPS (or localhost for dev)
+    // Protocol and host allowlist validation
     const urlObj = new URL(url);
-    if (urlObj.protocol !== 'https:' && urlObj.hostname !== 'localhost') {
-      showToast(t('plugins.manager.httpsRequired'), 'error');
+    const isElectronApp = typeof window.electronAPI !== 'undefined';
+    const isLocalPluginHost = LOCALHOST_HOSTS.has(urlObj.hostname);
+    const isLocalhostPage = LOCALHOST_HOSTS.has(window.location.hostname);
+
+    if (urlObj.protocol === 'file:') {
+      if (!isElectronApp) {
+        showToast(t('toast.pluginFileProtocolDenied'), 'error');
+        return;
+      }
+    } else if (urlObj.protocol === 'http:') {
+      if (!isLocalhostPage || !isLocalPluginHost) {
+        showToast(t('plugins.manager.httpsRequired'), 'error');
+        return;
+      }
+    } else if (urlObj.protocol === 'https:') {
+      if (!isLocalPluginHost && !TRUSTED_REMOTE_PLUGIN_HOSTS.has(urlObj.hostname)) {
+        showToast(t('toast.pluginHostNotTrusted'), 'error');
+        return;
+      }
+    } else {
+      showToast(t('plugins.manager.invalidUrl'), 'error');
       return;
     }
 

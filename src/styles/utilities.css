@@ -9,7 +9,7 @@
   top: -40px;
   left: 0;
   background: var(--accent-primary, #3b82f6);
-  color: white;
+  color: var(--text-on-accent, #070b14);
   padding: 8px 16px;
   text-decoration: none;
   border-radius: 0 0 var(--radius-xs) 0;
@@ -139,7 +139,7 @@
 
 .toast-action:hover {
   background: var(--accent-blue);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .toast-action:focus-visible {
@@ -367,7 +367,7 @@ textarea[aria-invalid="true"]:focus-visible,
 select[aria-invalid="true"]:focus-visible {
   border-color: var(--accent-red) !important;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
-  outline: none;
+  outline: 2px solid transparent;
 }
 
 /* Shake animation for invalid fields */
@@ -447,7 +447,7 @@ button:disabled:focus-visible,
 .btn:disabled:focus-visible,
 [disabled]:focus,
 [disabled]:focus-visible {
-  outline: none !important;
+  outline: 2px solid transparent !important;
   box-shadow: none !important;
 }
 

@@ -244,7 +244,7 @@
   background: linear-gradient(135deg, var(--windows-hello-blue) 0%, var(--windows-hello-blue-hover) 100%);
   border: none;
   border-radius: var(--radius-md, 8px);
-  color: white;
+  color: var(--text-on-windows-hello, #ffffff);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast, 0.2s);
@@ -630,7 +630,7 @@
 
 .vault-quick-btn:hover {
   background: var(--vault-primary);
-  color: white;
+  color: var(--text-on-accent, #070b14);
   transform: scale(1.05);
   box-shadow: var(--shadow-primary);
 }
@@ -716,7 +716,7 @@ kbd {
   border: 1px solid var(--vault-border);
   border-radius: var(--radius-xs);
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--vault-text-muted);
 }
 
@@ -991,7 +991,7 @@ kbd {
 }
 
 .vault-meta-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--vault-text-dim);
@@ -1007,3 +1007,4 @@ body.no-blur .vault-lock-content {
   backdrop-filter: none;
   background: var(--bg-secondary);
 }
+

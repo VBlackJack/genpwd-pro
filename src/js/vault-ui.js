@@ -3169,7 +3169,12 @@ export class VaultUI {
     // Vault icon colors
     container.querySelectorAll('[data-vault-color]').forEach(el => {
       const color = el.dataset.vaultColor;
-      if (color) el.style.setProperty('--vault-icon-color', color);
+      if (color) {
+        // Keep legacy var for compatibility and set active vars used by CSS.
+        el.style.setProperty('--vault-icon-color', color);
+        el.style.setProperty('--icon-bg', color);
+        el.style.setProperty('--icon-fg', this.#getIconForegroundColor(color));
+      }
     });
 
     // Folder colors
@@ -6692,6 +6697,33 @@ export class VaultUI {
     }
     const index = Math.abs(hash) % VaultUI.#VAULT_COLORS.length;
     return VaultUI.#VAULT_COLORS[index];
+  }
+
+  /**
+   * Compute accessible foreground color for vault icon backgrounds.
+   * Uses a lightweight brightness heuristic and returns dark or white text.
+   * @param {string} hexColor
+   * @returns {string}
+   */
+  #getIconForegroundColor(hexColor) {
+    if (typeof hexColor !== 'string') return '#ffffff';
+    const clean = hexColor.trim().replace('#', '');
+    let r; let g; let b;
+
+    if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+      r = parseInt(clean[0] + clean[0], 16);
+      g = parseInt(clean[1] + clean[1], 16);
+      b = parseInt(clean[2] + clean[2], 16);
+    } else if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+      r = parseInt(clean.slice(0, 2), 16);
+      g = parseInt(clean.slice(2, 4), 16);
+      b = parseInt(clean.slice(4, 6), 16);
+    } else {
+      return '#ffffff';
+    }
+
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 150 ? '#070b14' : '#ffffff';
   }
 
   // Favicon helpers moved to ./vault/utils/favicon-manager.js

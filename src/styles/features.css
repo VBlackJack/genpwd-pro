@@ -887,7 +887,7 @@ input:checked + .toggle-slider::before {
 
 .tag {
   background: var(--accent-primary);
-  color: white;
+  color: var(--text-on-accent, #070b14);
   padding: 2px 8px;
   border-radius: var(--radius-md);
   font-size: 11px;
@@ -1039,7 +1039,7 @@ input:checked + .toggle-slider::before {
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
-  color: white;
+  color: var(--hibp-badge-text-color, #ffffff);
   margin-left: 10px;
   white-space: nowrap;
 }
@@ -1073,7 +1073,7 @@ input:checked + .toggle-slider::before {
 
 .info-box {
   background: linear-gradient(135deg, var(--accent-blue, #667eea) 0%, var(--accent-purple, #764ba2) 100%);
-  color: white;
+  color: var(--text-on-accent, #070b14);
   padding: 15px 20px;
   border-radius: var(--radius-sm);
   margin-bottom: 20px;
@@ -1144,17 +1144,17 @@ input:checked + .toggle-slider::before {
 /* Button color variants */
 .btn-green {
   background: var(--accent-green, #10b981) !important;
-  color: white !important;
+  color: var(--text-on-accent, #070b14) !important;
 }
 
 .btn-blue {
   background: var(--accent-blue, #2196F3) !important;
-  color: white !important;
+  color: var(--text-on-accent, #070b14) !important;
 }
 
 .btn-red {
   background: var(--accent-red, #f44336) !important;
-  color: white !important;
+  color: var(--text-on-accent, #070b14) !important;
 }
 
 /* Form label styling */
@@ -1252,9 +1252,9 @@ input:checked + .toggle-slider::before {
 }
 
 .pwa-update-btn {
-  background: white;
-  color: var(--accent-green, #10b981);
-  border: none;
+  background: var(--surface-contrast, #ffffff);
+  color: var(--text-on-surface-contrast, #070b14);
+  border: 1px solid color-mix(in srgb, var(--accent-green, #10b981) 45%, transparent);
   padding: 10px 16px;
   min-height: 44px;
   border-radius: var(--radius-sm, 6px);
@@ -1264,7 +1264,7 @@ input:checked + .toggle-slider::before {
 }
 
 .pwa-update-btn:hover {
-  background: var(--bg-tertiary, #f3f4f6);
+  background: var(--surface-contrast-hover, #f3f4f6);
 }
 
 .pwa-update-btn:focus-visible {
@@ -1274,8 +1274,8 @@ input:checked + .toggle-slider::before {
 
 .pwa-dismiss-btn {
   background: transparent;
-  color: white;
-  border: 1px solid white;
+  color: var(--text-on-windows-hello, #ffffff);
+  border: 1px solid currentColor;
   padding: 10px 16px;
   min-height: 44px;
   border-radius: var(--radius-sm, 6px);
@@ -1321,9 +1321,9 @@ input:checked + .toggle-slider::before {
 }
 
 .pwa-install-btn {
-  background: white;
-  color: var(--accent-purple, #8b5cf6);
-  border: none;
+  background: var(--surface-contrast, #ffffff);
+  color: var(--text-on-surface-contrast, #070b14);
+  border: 1px solid color-mix(in srgb, var(--accent-purple, #8b5cf6) 45%, transparent);
   padding: 10px 16px;
   min-height: 44px;
   border-radius: var(--radius-sm, 6px);
@@ -1334,7 +1334,7 @@ input:checked + .toggle-slider::before {
 }
 
 .pwa-install-btn:hover {
-  background: var(--bg-tertiary, #f3f4f6);
+  background: var(--surface-contrast-hover, #f3f4f6);
 }
 
 .pwa-install-btn:focus-visible {
@@ -1344,7 +1344,7 @@ input:checked + .toggle-slider::before {
 
 .pwa-install-dismiss-btn {
   background: transparent;
-  color: white;
+  color: var(--text-on-windows-hello, #ffffff);
   border: 1px solid rgba(255, 255, 255, 0.5);
   padding: 10px 16px;
   min-height: 44px;
@@ -1516,7 +1516,7 @@ input:checked + .toggle-slider::before {
   padding: 0 5px;
   background: var(--accent-purple);
   border-radius: 9px;
-  color: white;
+  color: var(--text-on-accent, #070b14);
   font-size: 11px;
   font-weight: 600;
   line-height: 18px;
@@ -1586,7 +1586,7 @@ input:checked + .toggle-slider::before {
 
 .copy-history-clear-btn:hover {
   background: var(--accent-red);
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .copy-history-list {
@@ -2177,7 +2177,7 @@ input:checked + .toggle-slider::before {
 }
 
 .achievement-progress-text {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -2357,14 +2357,14 @@ input:checked + .toggle-slider::before {
 }
 
 .activity-bar-label {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 0.25rem;
   text-transform: uppercase;
 }
 
 .activity-bar-count {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -2514,11 +2514,17 @@ input:checked + .toggle-slider::before {
   background: transparent;
   color: var(--text-primary);
   font-size: 1rem;
-  outline: none;
+  outline: 2px solid transparent;
 }
 
 .command-search::placeholder {
   color: var(--text-muted);
+}
+
+.command-search:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: -2px;
+  background: var(--bg-tertiary);
 }
 
 .command-list {
@@ -2697,3 +2703,4 @@ body.no-blur .copy-history-header {
     transition: none;
   }
 }
+

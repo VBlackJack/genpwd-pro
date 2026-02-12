@@ -71,7 +71,7 @@
 
 .vault-btn-primary {
   background: linear-gradient(135deg, var(--vault-primary), var(--accent-blue-light));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   box-shadow: 0 4px 15px -3px rgba(var(--rgb-primary), 0.4);
 }
 

@@ -89,7 +89,7 @@
 
 .changelog-version-badge .version-label {
   background: linear-gradient(135deg, var(--accent-primary, #6366f1), var(--accent-secondary, #8b5cf6));
-  color: white;
+  color: var(--text-on-accent, #070b14);
   padding: 0.35rem 0.75rem;
   border-radius: 20px;
   font-size: 0.875rem;
@@ -245,7 +245,7 @@
 }
 
 .progress-step.active .step-number {
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .progress-step.completed {
@@ -254,7 +254,7 @@
 }
 
 .progress-step.completed .step-number {
-  color: white;
+  color: var(--text-on-accent, #070b14);
 }
 
 .progress-line {

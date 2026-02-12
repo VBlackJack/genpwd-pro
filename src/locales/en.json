@@ -1920,6 +1920,8 @@
     "maxPluginsReached": "Maximum plugins limit reached",
     "pluginRegistrationFailed": "Plugin registration failed",
     "pluginHttpsRequired": "Plugin URL must use HTTPS or local file",
+    "pluginFileProtocolDenied": "File URLs are only allowed in the desktop app",
+    "pluginHostNotTrusted": "Plugin host is not in the trusted allowlist",
     "pluginModuleHttpsRequired": "Plugin must be loaded over HTTPS",
     "pluginMissingExport": "Plugin module must have default export",
     "pluginModuleLoadFailed": "Failed to load plugin module",
