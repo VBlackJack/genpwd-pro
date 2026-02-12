@@ -3243,14 +3243,16 @@ app.whenReady().then(async () => {
   }
 
   // Clean up on app quit
-  app.on('before-quit', () => {
+  app.on('before-quit', async () => {
     if (pipeServer) {
       pipeServer.close();
       devLog('[Pipe Server] Server closed');
     }
-    cleanupPipeConfig().catch((error) => {
+    try {
+      await cleanupPipeConfig();
+    } catch (error) {
       devError('[Pipe Server] Failed to remove runtime config:', error.message);
-    });
+    }
   });
 
   createWindow();

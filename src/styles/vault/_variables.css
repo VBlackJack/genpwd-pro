@@ -82,7 +82,7 @@
   --vault-focus-ring-offset: 0 0 0 4px rgba(var(--accent-primary-rgb, 99, 102, 241), 0.25);
 
   /* Typography scale */
-  --vault-font-xs: 0.75rem;   /* 11px */
+  --vault-font-xs: 0.6875rem;  /* 11px */
   --vault-font-sm: 0.75rem;     /* 12px */
   --vault-font-base: 0.8125rem; /* 13px */
   --vault-font-md: 0.875rem;    /* 14px */

@@ -21,11 +21,7 @@ import pluginManager from '../../utils/plugin-manager.js';
 import { showToast } from '../../utils/toast.js';
 import { i18n } from '../../utils/i18n.js';
 import { isFeatureEnabled } from '../../core/enterprise/feature-flags.js';
-
-const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
-const TRUSTED_REMOTE_PLUGIN_HOSTS = new Set([
-  'plugins.genpwd.app'
-]);
+import { LOCALHOST_HOSTS, TRUSTED_REMOTE_PLUGIN_HOSTS } from '../../core/plugin-security.js';
 
 /**
  * Plugin Manager Modal

@@ -32,7 +32,8 @@
   "host_permissions": [
     "https://*/*",
     "http://localhost/*",
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "http://[::1]/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -40,7 +41,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*", "http://[::1]/*"],
       "js": ["content-scripts/content-main.js"],
       "css": ["styles/content.css"],
       "run_at": "document_idle"
@@ -49,7 +50,7 @@
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],
-      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"]
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*", "http://[::1]/*"]
     }
   ],
   "content_security_policy": {

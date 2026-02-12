@@ -1726,7 +1726,8 @@ function validateOrigin(event) {
     throw new Error(t('errors.auth.unauthorized'));
   }
 
-  const isDevHttpOrigin = (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:')
+  const isDevHttpOrigin = IS_DEV
+    && (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:')
     && TRUSTED_DEV_HOSTS.has(parsedUrl.hostname);
   const isTrusted = TRUSTED_PROTOCOLS.has(parsedUrl.protocol) || isDevHttpOrigin;
 

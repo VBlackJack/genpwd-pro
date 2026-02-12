@@ -190,3 +190,6 @@ full_test_output*.txt
 # Claude Code temp files
 tmpclaude-*
 nul
+
+# npm cache audit
+.npm-cache-audit/

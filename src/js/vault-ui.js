@@ -6706,7 +6706,11 @@ export class VaultUI {
    * @returns {string}
    */
   #getIconForegroundColor(hexColor) {
-    if (typeof hexColor !== 'string') return '#ffffff';
+    const ICON_FG_DARK = '#070b14';
+    const ICON_FG_LIGHT = '#ffffff';
+    const YIQ_THRESHOLD = 150;
+
+    if (typeof hexColor !== 'string') return ICON_FG_LIGHT;
     const clean = hexColor.trim().replace('#', '');
     let r; let g; let b;
 
@@ -6719,11 +6723,11 @@ export class VaultUI {
       g = parseInt(clean.slice(2, 4), 16);
       b = parseInt(clean.slice(4, 6), 16);
     } else {
-      return '#ffffff';
+      return ICON_FG_LIGHT;
     }
 
     const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-    return yiq >= 150 ? '#070b14' : '#ffffff';
+    return yiq >= YIQ_THRESHOLD ? ICON_FG_DARK : ICON_FG_LIGHT;
   }
 
   // Favicon helpers moved to ./vault/utils/favicon-manager.js

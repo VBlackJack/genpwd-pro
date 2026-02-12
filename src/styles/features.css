@@ -1039,7 +1039,7 @@ input:checked + .toggle-slider::before {
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
-  color: var(--hibp-badge-text-color, #ffffff);
+  color: var(--text-on-accent, #ffffff);
   margin-left: 10px;
   white-space: nowrap;
 }

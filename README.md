@@ -1,6 +1,6 @@
 # GenPwd Pro
 
-> **v3.1.1** — Password generator + encrypted vault + TOTP
+> **v3.1.2** — Password generator + encrypted vault + TOTP
 
 [🇫🇷 Français](#-version-française) | [🇬🇧 English](#-english-version)
 
@@ -210,7 +210,7 @@ Pour l'architecture, les API et les instructions de build : [docs/DEVELOPMENT.md
 
 ---
 
-**Construit par Julien Bombled** | v3.1.1 | [GitHub](https://github.com/VBlackJack/genpwd-pro)
+**Construit par Julien Bombled** | v3.1.2 | [GitHub](https://github.com/VBlackJack/genpwd-pro)
 
 ---
 ---
@@ -419,4 +419,4 @@ For architecture, APIs, and build instructions: [docs/DEVELOPMENT.md](./docs/DEV
 
 ---
 
-**Built by Julien Bombled** | v3.1.1 | [GitHub](https://github.com/VBlackJack/genpwd-pro)
+**Built by Julien Bombled** | v3.1.2 | [GitHub](https://github.com/VBlackJack/genpwd-pro)

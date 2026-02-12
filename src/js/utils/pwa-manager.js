@@ -178,12 +178,12 @@ class PWAManager {
     `;
     updateBtn.innerHTML = sanitizeHTML(`
       <div class="pwa-update-content">
-        <span>✨ New version available!</span>
+        <span>✨ ${i18n.t('toast.updateAvailable')}</span>
         <button id="update-app-btn" class="pwa-update-btn">
-          Update
+          ${i18n.t('toast.updateAction')}
         </button>
         <button id="dismiss-update-btn" class="pwa-dismiss-btn">
-          Later
+          ${i18n.t('toast.updateDismiss')}
         </button>
       </div>
     `);
